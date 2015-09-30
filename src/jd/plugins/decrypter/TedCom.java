@@ -106,6 +106,7 @@ public class TedCom extends PluginForDecrypt {
         /* Load host plugin */
         JDUtilities.getPluginForHost("ted.com");
         cfg = SubConfiguration.getConfig("ted.com");
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
 
         if (this.br.getHttpConnection().getResponseCode() == 404) {

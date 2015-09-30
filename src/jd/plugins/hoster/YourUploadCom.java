@@ -72,6 +72,9 @@ public class YourUploadCom extends antiDDoSForHost {
         if (link.getDownloadURL().matches(regexEmbed)) {
             if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() > 400 || br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist") || br.containsHTML("No htmlCode read") || br.containsHTML("Could not redirect legacy")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.containsHTML("file[\r\n\t ]*?:[\r\n\t ]*?\\'\\',")) {
+                /* Browser will show "Error loading player: No playable sources found" in this case */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (filename == null) {

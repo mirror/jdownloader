@@ -45,7 +45,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
 
     private static final String     TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
-    private static final String     TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String     TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/.+";
     private static final String     TYPE_FUTURE                = "http://(www\\.)?future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
     private static final String     TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+";
     private static final String     TYPE_CINEMA                = "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
@@ -83,6 +83,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "deprecation" })
+    /**TODO: Re-Write parts of this - remove the bad language handling!*/
     /*
      * E.g. smil (rtmp) url:
      * http://www.arte.tv/player/v2/webservices/smil.smil?json_url=http%3A%2F%2Farte.tv%2Fpapi%2Ftvguide%2Fvideos%2Fstream
@@ -111,9 +112,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
         setBrowserExclusive();
         br.setFollowRedirects(false);
+        this.br.setAllowedResponseCodes(503);
         br.getPage(parameter);
         try {
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            if (this.br.getHttpConnection().getResponseCode() != 200) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
             /* First we need to have some basic data - this part is link-specific. */
@@ -258,7 +260,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     final LinkedHashMap<String, Object> errorInfomap = (LinkedHashMap<String, Object>) error_info;
                     final String errmsg = (String) errorInfomap.get("msg");
                     final String type = (String) errorInfomap.get("type");
-                    if (type.equals("error") && errmsg != null) {
+                    if ((type.equals("error") || type.equals("info")) && errmsg != null) {
                         title = errmsg + "_" + title;
                     } else {
                         title = "Unknown_error_" + title;
@@ -293,13 +295,19 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 final String vru = (String) videoJsonPlayer.get("VRU");
                 final String vra = (String) videoJsonPlayer.get("VRA");
-                if (vru != null && vra != null) {
+                final String vdb = (String) videoJsonPlayer.get("VDB");
+                if ((vru != null && vra != null) || vdb != null) {
                     date_formatted = formatDate(vra);
                     /*
                      * In this case the video is not yet released and there usually is a value "VDB" which contains the release-date of the
                      * video --> But we don't need that - right now, such videos are simply offline and will be added as offline.
                      */
-                    final String expired_message = jd.plugins.hoster.ArteTv.getExpireMessage(selectedLanguage, convertDateFormat(vra), convertDateFormat(vru));
+                    final String expired_message;
+                    if (vdb != null) {
+                        expired_message = String.format(jd.plugins.hoster.ArteTv.getPhrase("ERROR_CONTENT_NOT_AVAILABLE_YET"), jd.plugins.hoster.ArteTv.getNiceDate2(vdb));
+                    } else {
+                        expired_message = jd.plugins.hoster.ArteTv.getExpireMessage(selectedLanguage, convertDateFormat(vra), convertDateFormat(vru));
+                    }
                     if (expired_message != null) {
                         final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                         try {
@@ -502,8 +510,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     /* Collection of possible values */
-    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]", "VI" };
-    private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOA", "VOF", "VOSTF", "VE[ANG]", "VI" };
+    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]", "VI", "VO-STE[ANG]", "VO-STE[ESP]", "VO-STE[ITA]", "VO-STE[POL]" };
+    private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOA", "VOF", "VOSTF", "VE[ANG]", "VI", "OmU-ANG", "OmU-ESP", "OmU-ITA", "OmU-POL" };
 
     /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
     private int getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
@@ -523,14 +531,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]") || versionCode.equals("VI") || "VOA-STA".equals(versionCode)) {
+        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]") || versionCode.equals("VI") || "VOA-STA".equals(versionCode) || "VO-STE[ANG]".equals(versionCode) || versionCode.equals("VO-STE[ITA]")) {
             /* VE Actually means English but there is no specified selection for this. */
             /* Without language --> So it simply is our current language */
             lint = languageVersion;
         } else if (versionShortLibelle.equals("DE") || versionShortLibelle.equals("VA") || versionCode.equals("VO-STA") || versionShortLibelle.equals("VOSTA")) {
             /* German */
             lint = 1;
-        } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VF-STMF")) {
+        } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VF-STMF") || versionCode.equals("VO-STE[ESP]") || versionCode.equals("VO-STE[POL]")) {
             /* French */
             lint = 2;
         } else {

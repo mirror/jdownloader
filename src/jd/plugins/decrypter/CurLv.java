@@ -36,6 +36,7 @@ public class CurLv extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        this.br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.toString().length() < 30) {
             logger.info("Link offline: " + parameter);
@@ -50,7 +51,9 @@ public class CurLv extends PluginForDecrypt {
             return null;
         }
         br.getPage("http://cur.lv/redirect_curlv.php?code=" + lid + "&ticket=" + ticket + "&r=");
-        if (br.toString().length() < 30) {
+        /* E.g. https://coinurl.com/index.php?error=nolink */
+        final String redirect = this.br.getRedirectLocation();
+        if (br.toString().length() < 30 || redirect != null) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;

@@ -59,10 +59,23 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         final String parameter = param.toString().replace("https://", "http://");
         final String url_id = new Regex(parameter, "([a-z0-9]+)\\.html$").getMatch(0);
         br.setFollowRedirects(true);
+        this.br.getPage(parameter);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        final String url_player_html = this.br.getRegex("\"(/fernsehen/[^<>\"]*?\\-player_[^<>\"]*?\\.html)\"").getMatch(0);
+        final String url_json;
+        if (url_player_html != null) {
+            url_json = url_player_html.replace("-player_", "-ppjson_").replace(".html", ".json");
+        } else {
+            /* Fallback - this might sometimes work too */
+            url_json = "http://www.ndr.de/epg/" + url_id + ".json";
+        }
         /* API - well, basically returns same html code as if we simply access the normal link... */
-        br.getPage("http://www.ndr.de/epg/" + url_id + ".json");
+        br.getPage(url_json);
         /* Offline | livestream | no stream */
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("cid:[\t\n\r ]*?\"livestream") || !br.containsHTML("\"player info\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("cid:[\t\n\r ]*?\"livestream")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);
@@ -70,18 +83,34 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String date = this.br.getRegex("itemprop=\"(?:startDate|datePublished)\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String date = this.br.getRegex("itemprop=\"(?:startDate|datePublished)\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (date == null) {
+            date = getJson("publicationDate");
+        }
         String title = br.getRegex("name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (title == null) {
+            title = getJson("trackTitle");
+        }
         if (title == null || date == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         final String date_formatted = formatDate(date);
-        final String availablequalitiestext = br.getRegex("\\.,([a-z,]+),\\.mp4\\.csmil/master\\.m3u8\\'").getMatch(0);
+        final String availablequalitiestext = br.getRegex("\\.,([a-z,]+),\\.mp4\\.csmil/master\\.m3u8").getMatch(0);
         final Regex afnreg = br.getRegex("afn: \"TV-(\\d{4})(\\d{4})([0-9\\-]+)\"");
-        final String v_year = afnreg.getMatch(0);
-        final String v_id = afnreg.getMatch(1);
-        final String v_rest = afnreg.getMatch(2);
+        final Regex afneg_replacement = br.getRegex("hls\\.ndr\\.de/i/ndr/(\\d+)/(\\d+)/([^<>\"(]*?)\\.,");
+        String v_year = afnreg.getMatch(0);
+        if (v_year == null) {
+            v_year = afneg_replacement.getMatch(0);
+        }
+        String v_id = afnreg.getMatch(1);
+        if (v_id == null) {
+            v_id = afneg_replacement.getMatch(1);
+        }
+        String v_rest = afnreg.getMatch(2);
+        if (v_rest == null) {
+            v_rest = afneg_replacement.getMatch(2);
+        }
         if (availablequalitiestext == null || v_id == null || v_year == null || v_id == null || v_rest == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -210,10 +239,15 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         if (input == null || input.equals("")) {
             return "-";
         }
-        if (input.contains(":")) {
-            input = input.substring(0, input.lastIndexOf(":")) + "00";
+        final long date;
+        if (input.matches("\\d+T\\d{2}\\d{2}")) {
+            date = TimeFormatter.getMilliSeconds(input, "yyyyMMdd'T'HHmm", Locale.GERMAN);
+        } else {
+            if (input.contains(":")) {
+                input = input.substring(0, input.lastIndexOf(":")) + "00";
+            }
+            date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.GERMAN);
         }
-        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.GERMAN);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);
@@ -225,5 +259,25 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             formattedDate = input;
         }
         return formattedDate;
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 }
