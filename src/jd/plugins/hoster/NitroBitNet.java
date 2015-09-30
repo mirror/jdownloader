@@ -44,6 +44,7 @@ public class NitroBitNet extends PluginForHost {
         return "http://www.nitrobit.net/tos";
     }
 
+    /** Premium FULL browser response for case 'daily downloadlimit reached': "0הורדת קובץ זה תעבור על המכסה היומית" */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

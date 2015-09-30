@@ -214,6 +214,27 @@ public class ArteTv extends PluginForHost {
         return nicedate;
     }
 
+    public static String getNiceDate2(final String input) {
+        String nicedate = null;
+        SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss ZZZ", Locale.getDefault());
+        SimpleDateFormat convdf;
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            convdf = new SimpleDateFormat("dd.MMMM.yyyy '_' HH-mm 'Uhr'", Locale.GERMANY);
+        } else {
+            convdf = new SimpleDateFormat("MMMM.dd.yyyy '_' hh-mm 'o clock'", Locale.ENGLISH);
+        }
+        try {
+            Date date = null;
+            try {
+                date = df.parse(input);
+                nicedate = convdf.format(date);
+            } catch (Throwable e) {
+            }
+        } catch (Throwable e) {
+        }
+        return nicedate;
+    }
+
     private void download(final DownloadLink downloadLink) throws Exception {
         if (quality_intern.contains("_rtmp_")) {
             downloadRTMP(downloadLink);
@@ -342,20 +363,20 @@ public class ArteTv extends PluginForHost {
     }
 
     public static HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
-        }
-    };
+                                                        {
+                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
+                                                        }
+                                                    };
 
     public static HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
-        }
-    };
+                                                        {
+                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
+                                                        }
+                                                    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

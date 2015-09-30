@@ -31,15 +31,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "http://okdecrypted\\d+" }, flags = { 0 })
-public class OkRu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+" }, flags = { 0 })
+public class UdemyCom extends PluginForHost {
 
-    public OkRu(PluginWrapper wrapper) {
+    public UdemyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    // Porn_plugin
     // Tags:
     // protocol: no https
     // other:
@@ -53,10 +52,9 @@ public class OkRu extends PluginForHost {
 
     private String               DLLINK            = null;
 
-    public static void prepBR(final Browser br) {
-        /* Use mobile website to get http urls. */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
-        br.setFollowRedirects(true);
+    @Override
+    public String getAGBLink() {
+        return "https://www.udemy.com/terms/";
     }
 
     @SuppressWarnings("deprecation")
@@ -64,28 +62,25 @@ public class OkRu extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         DLLINK = null;
         this.setBrowserExclusive();
-        prepBR(this.br);
-        String mainlink = downloadLink.getStringProperty("mainlink", null);
-        if (mainlink == null) {
-            /* Leave this in for older URLs added <= rev 31219 */
-            mainlink = downloadLink.getDownloadURL();
-        }
-        br.getPage(mainlink);
-        /* Offline or private video */
-        if (isOffline(this.br)) {
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"mvtitle clamp __2\">([^<>\"]*?)</div").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = new Regex(mainlink, "(\\d+)$").getMatch(0);
+            filename = new Regex(downloadLink.getDownloadURL(), "udemy\\.com/(.+)\\?dtcode=").getMatch(0);
         }
-        DLLINK = br.getRegex("embedVPlayer\\(this,\\&#39;(http[^<>\"]*?)\\&#39;,\\&#39;").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("data\\-embedclass=\"yt_layer\" data\\-objid=\"\\d+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-        }
-        if (filename == null || DLLINK == null) {
+        final String url_embed = this.br.getRegex("(https?://(?:www\\.)?udemy\\.com/embed/video/[^<>\"]*?)\"").getMatch(0);
+        if (url_embed == null || filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        this.br.getPage(url_embed);
+        DLLINK = br.getRegex("\"file\":\"(http[^<>\"]*?)\",\"label\":\"720p").getMatch(0);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = DLLINK.replace("\\", "");
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -122,23 +117,6 @@ public class OkRu extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-    }
-
-    public static boolean isOffline(final Browser br) {
-        // class=\"empty\" is NOT an indication for an offline video!
-        if (br.containsHTML("error\\-page\"") || br.getHttpConnection().getResponseCode() == 404) {
-            return true;
-        }
-        /* Offline or private video */
-        if (br.containsHTML(">Access to this video has been restricted") || br.getURL().contains("/main/st.redirect/")) {
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://ok.ru/";
     }
 
     @Override

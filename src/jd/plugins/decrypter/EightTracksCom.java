@@ -142,6 +142,9 @@ public class EightTracksCom extends PluginForDecrypt {
 
             /* tracks in mix */
             String tracksInMix = br.getRegex("<span[^>]+class=\"gray\">\\((\\d+) tracks?\\)</span>").getMatch(0);
+            if (tracksInMix == null) {
+                tracksInMix = this.br.getRegex("id=\"tracks_count\">(\\d+)").getMatch(0);
+            }
             if (tracksInMix == null || mixid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
