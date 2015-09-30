@@ -355,7 +355,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     @Override
     protected long[] getInfos(Class<PluginForDecrypt> clazz) {
         final DecrypterPlugin infos = clazz.getAnnotation(DecrypterPlugin.class);
-        return new long[] { infos.interfaceVersion(), Formatter.getRevision(infos.revision()) };
+        if (infos != null) {
+            return new long[] { infos.interfaceVersion(), Formatter.getRevision(infos.revision()) };
+        }
+        return null;
     }
 
 }

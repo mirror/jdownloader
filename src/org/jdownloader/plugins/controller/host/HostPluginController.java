@@ -255,7 +255,11 @@ public class HostPluginController extends PluginController<PluginForHost> {
     @Override
     protected long[] getInfos(Class<PluginForHost> clazz) {
         final HostPlugin infos = clazz.getAnnotation(HostPlugin.class);
-        return new long[] { infos.interfaceVersion(), Formatter.getRevision(infos.revision()) };
+        if (infos != null) {
+            return new long[] { infos.interfaceVersion(), Formatter.getRevision(infos.revision()) };
+        } else {
+            return null;
+        }
     }
 
     private List<LazyHostPlugin> update(LogSource logger, final List<LazyHostPlugin> updateCache, final AtomicLong lastFolderModification) throws Exception {

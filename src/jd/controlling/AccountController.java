@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
@@ -50,6 +51,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountProperty;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -82,12 +84,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
 
-    };
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -407,8 +409,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                     * we are offline, so lets just return without any account update
-                     */
+                                                           * we are offline, so lets just return without any account update
+                                                           */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -853,7 +855,24 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     @Deprecated
     public Account getValidAccount(final PluginForHost pluginForHost) {
+        final Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof SingleDownloadController) {
+            final SingleDownloadController controller = (SingleDownloadController) currentThread;
+            final Account acc = controller.getAccount();
+            if (acc != null && StringUtils.equals(acc.getHoster(), pluginForHost.getHost())) {
+                return acc;
+            }
+        }
         final List<Account> ret = getValidAccounts(pluginForHost.getHost());
+        if (ret != null && ret.size() > 0) {
+            return ret.get(0);
+        }
+        return null;
+    }
+
+    @Deprecated
+    public Account getValidAccount(final PluginForDecrypt pluginForDecrypt) {
+        final List<Account> ret = getValidAccounts(pluginForDecrypt.getHost());
         if (ret != null && ret.size() > 0) {
             return ret.get(0);
         }

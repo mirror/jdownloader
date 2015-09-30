@@ -28,6 +28,8 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     /* PluginClassLoaderChild used to load this Class */
     private volatile WeakReference<PluginClassLoaderChild> classLoader;
 
+    private volatile MinTimeWeakReference<Matcher>         matcher         = null;
+
     public PluginWrapper getPluginWrapper() {
         return new PluginWrapper(this) {
             /* workaround for old plugin system */
@@ -103,13 +105,17 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     public boolean canHandle(String url) {
-        final Pattern pattern = this.getPattern();
-        if (pattern != null && StringUtils.isNotEmpty(pattern.pattern())) {
-            final Matcher matcher = pattern.matcher(url);
-            return matcher.find();
-        } else {
-            return false;
+        if (patternBytes.length > 0) {
+            final Matcher matcher = getMatcher();
+            synchronized (matcher) {
+                try {
+                    return matcher.reset(url).find();
+                } finally {
+                    matcher.reset("");
+                }
+            }
         }
+        return false;
     }
 
     public synchronized T getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
@@ -221,9 +227,19 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         }
     }
 
+    public final Matcher getMatcher() {
+        Matcher ret = null;
+        final MinTimeWeakReference<Matcher> lMatcher = matcher;
+        if (lMatcher != null && (ret = lMatcher.get()) != null) {
+            return ret;
+        }
+        matcher = new MinTimeWeakReference<Matcher>((ret = getPattern().matcher("")), 60 * 1000l, displayName, this);
+        return ret;
+    }
+
     public final Pattern getPattern() {
         Pattern ret = null;
-        MinTimeWeakReference<Pattern> lCompiledPattern = compiledPattern;
+        final MinTimeWeakReference<Pattern> lCompiledPattern = compiledPattern;
         if (lCompiledPattern != null && (ret = lCompiledPattern.get()) != null) {
             return ret;
         }
@@ -237,6 +253,8 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             compiledPattern = null;
         } else if (minTimeWeakReference == classLoader) {
             classLoader = null;
+        } else if (minTimeWeakReference == matcher) {
+            matcher = null;
         }
     }
 

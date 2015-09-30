@@ -143,6 +143,7 @@ public class SubConfiguration extends Property implements Serializable {
                 try {
                     LogController.GL.info("Save Name:" + getName() + "|SetMark:" + lastSetMark + "|File:" + file);
                     final String jsonString = JSonStorage.getMapper().objectToString(getProperties());
+                    writeMark.set(setMark.get());
                     JSonStorage.saveTo(this.file, false, KEY, jsonString);
                 } catch (final Throwable e) {
                     LogController.GL.log(e);
@@ -163,6 +164,10 @@ public class SubConfiguration extends Property implements Serializable {
             SAVEDELAYER.run();
         }
         return change;
+    }
+
+    public boolean setPropertyWithoutMark(final String key, final Object value) {
+        return super.setProperty(key, value);
     }
 
     @Override

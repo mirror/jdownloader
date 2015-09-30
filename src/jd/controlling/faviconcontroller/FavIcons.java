@@ -100,7 +100,8 @@ public class FavIcons {
         };
         THREAD_POOL.allowCoreThreadTimeOut(true);
 
-        long lastRefresh = CONFIG.getLastRefresh();
+        final long lastRefresh = CONFIG.getLastRefresh();
+        CONFIG.setLastRefresh(System.currentTimeMillis());
         /* load failed hosts list */
         ArrayList<String> FAILED_ARRAY_LIST = JsonConfig.create(FavIconsConfig.class).getFailedHosts();
         if (FAILED_ARRAY_LIST == null || (System.currentTimeMillis() - lastRefresh) > (1000l * 60 * 60 * 24 * 7)) {
@@ -120,8 +121,7 @@ public class FavIcons {
 
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
-                CONFIG.setLastRefresh(System.currentTimeMillis());
-                ArrayList<String> failedHosts = null;
+                final ArrayList<String> failedHosts;
                 synchronized (LOCK) {
                     failedHosts = new ArrayList<String>(FAILED_ICONS.keySet());
                 }
