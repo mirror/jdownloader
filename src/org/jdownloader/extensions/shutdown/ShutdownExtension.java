@@ -233,6 +233,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             /* modern windows versions */
         case WINDOWS_2000:
         case WINDOWS_NT:
+        case WINDOWS_10:
             /* not so modern windows versions */
             prepareHibernateOrStandby();
             try {
@@ -296,6 +297,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             /* modern windows versions */
         case WINDOWS_2000:
         case WINDOWS_NT:
+        case WINDOWS_10:
             /* not so modern windows versions */
             prepareHibernateOrStandby();
             try {

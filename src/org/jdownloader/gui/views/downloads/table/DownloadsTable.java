@@ -342,11 +342,12 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         // like dragging the mouse to select rows
         if (e.getID() == MouseEvent.MOUSE_PRESSED) {
             if (SwingUtilities.isLeftMouseButton(e) && !isExpandToggleEvent(e)) {
-                if (rowAtPoint(e.getPoint()) < 0) {
-                    final int rowCount = this.getRowCount();
-                    if (rowCount > 0) {
-                        this.getSelectionModel().setAnchorSelectionIndex(rowCount - 1);
-                        // this.clearSelection(); // not needed because this happens already in super method
+                if (getSelectionModel().getValueIsAdjusting()) {
+                    if (rowAtPoint(e.getPoint()) < 0) {
+                        final int rowCount = this.getRowCount();
+                        if (rowCount > 0) {
+                            this.getSelectionModel().setAnchorSelectionIndex(rowCount - 1);
+                        }
                     }
                 }
             }
