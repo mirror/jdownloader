@@ -420,211 +420,218 @@ public class FaceBookComVideos extends PluginForHost {
     @SuppressWarnings("unchecked")
     public void login(final Account account, Browser br) throws Exception {
         synchronized (LOCK) {
-            setHeaders(br);
-            // Load cookies
-            br.setCookiesExclusive(true);
-            final Cookies cookies = account.loadCookies("");
-            if (cookies != null) {
-                br.setCookies(FACEBOOKMAINPAGE, cookies);
-                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                    /* We trust these cookies --> Do not check them */
-                    return;
-                }
-                final boolean follow = br.isFollowingRedirects();
-                try {
-                    br.setFollowRedirects(true);
-                    br.getPage(FACEBOOKMAINPAGE);
-                } finally {
-                    br.setFollowRedirects(follow);
-                }
-                if (br.containsHTML("id=\"logoutMenu\"")) {
-                    /* Save cookies to save new valid cookie timestamp */
-                    account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
-                    return;
-                }
-                /* Get rid of old cookies / headers */
-                br = new Browser();
-                br.setCookiesExclusive(true);
+            try {
                 setHeaders(br);
-            }
-            br.setFollowRedirects(true);
-            final boolean prefer_mobile_login = false;
-            // better use the website login. else the error handling below might be broken.
-            if (prefer_mobile_login) {
-                /* Mobile login = no crypto crap */
-                br.getPage("https://m.facebook.com/");
-                final Form loginForm = br.getForm(0);
-                if (loginForm == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(FACEBOOKMAINPAGE, cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
                     }
-
-                }
-                loginForm.remove(null);
-                loginForm.put("email", Encoding.urlEncode(account.getUser()));
-                loginForm.put("pass", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginForm);
-                br.getPage("https://www.facebook.com/");
-            } else {
-                br.getPage("https://www.facebook.com/login.php");
-                final String lang = System.getProperty("user.language");
-
-                final Form loginForm = br.getForm(0);
-                if (loginForm == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-
-                loginForm.remove("persistent");
-                loginForm.put("persistent", "1");
-                loginForm.remove(null);
-                loginForm.remove("login");
-                loginForm.remove("trynum");
-                loginForm.remove("profile_selector_ids");
-                loginForm.remove("legacy_return");
-                loginForm.remove("enable_profile_selector");
-                loginForm.remove("display");
-                String _js_datr = br.getRegex("\"_js_datr\"\\s*,\\s*\"([^\"]+)").getMatch(0);
-
-                br.setCookie("https://facebook.com", "_js_datr", _js_datr);
-                br.setCookie("https://facebook.com", "_js_reg_fb_ref", Encoding.urlEncode("https://www.facebook.com/login.php"));
-                br.setCookie("https://facebook.com", "_js_reg_fb_gate", Encoding.urlEncode("https://www.facebook.com/login.php"));
-                loginForm.put("email", Encoding.urlEncode(account.getUser()));
-                loginForm.put("pass", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginForm);
-            }
-
-            /**
-             * Facebook thinks we're an unknown device, now we prove we're not ;)
-             */
-            if (br.containsHTML(">Your account is temporarily locked")) {
-                final String nh = br.getRegex("name=\"nh\" value=\"([a-z0-9]+)\"").getMatch(0);
-                final String dstc = br.getRegex("name=\"fb_dtsg\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (nh == null || dstc == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&submit%5BContinue%5D=Continue");
-
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", "facebook.com", "http://facebook.com", true);
-                String achal = br.getRegex("name=\"achal\" value=\"([a-z0-9]+)\"").getMatch(0);
-                final String captchaPersistData = br.getRegex("name=\"captcha_persist_data\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (captchaPersistData == null || achal == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                // Normal captcha handling
-                for (int i = 1; i <= 3; i++) {
-                    String captchaLink = br.getRegex("\"(https?://(www\\.)?facebook\\.com/captcha/tfbimage\\.php\\?captcha_challenge_code=[^<>\"]*?)\"").getMatch(0);
-                    if (captchaLink == null) {
-                        break;
-                    }
-                    captchaLink = Encoding.htmlDecode(captchaLink);
-
-                    String code;
+                    final boolean follow = br.isFollowingRedirects();
                     try {
-                        code = getCaptchaCode(captchaLink, dummyLink);
-                    } catch (final Exception e) {
-                        continue;
+                        br.setFollowRedirects(true);
+                        br.getPage(FACEBOOKMAINPAGE);
+                    } finally {
+                        br.setFollowRedirects(follow);
                     }
-                    br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&geo=true&captcha_persist_data=" + Encoding.urlEncode(captchaPersistData) + "&captcha_response=" + Encoding.urlEncode(code) + "&achal=" + achal + "&submit%5BSubmit%5D=Submit");
+                    if (br.containsHTML("id=\"logoutMenu\"")) {
+                        /* Save cookies to save new valid cookie timestamp */
+                        account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
+                        return;
+                    }
+                    /* Get rid of old cookies / headers */
+                    br = new Browser();
+                    br.setCookiesExclusive(true);
+                    setHeaders(br);
+                }
+                br.setFollowRedirects(true);
+                final boolean prefer_mobile_login = false;
+                // better use the website login. else the error handling below might be broken.
+                if (prefer_mobile_login) {
+                    /* Mobile login = no crypto crap */
+                    br.getPage("https://m.facebook.com/");
+                    final Form loginForm = br.getForm(0);
+                    if (loginForm == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+
+                    }
+                    loginForm.remove(null);
+                    loginForm.put("email", Encoding.urlEncode(account.getUser()));
+                    loginForm.put("pass", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(loginForm);
+                    br.getPage("https://www.facebook.com/");
+                } else {
+                    br.getPage("https://www.facebook.com/login.php");
+                    final String lang = System.getProperty("user.language");
+
+                    final Form loginForm = br.getForm(0);
+                    if (loginForm == null) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+
+                    loginForm.remove("persistent");
+                    loginForm.put("persistent", "1");
+                    loginForm.remove(null);
+                    loginForm.remove("login");
+                    loginForm.remove("trynum");
+                    loginForm.remove("profile_selector_ids");
+                    loginForm.remove("legacy_return");
+                    loginForm.remove("enable_profile_selector");
+                    loginForm.remove("display");
+                    String _js_datr = br.getRegex("\"_js_datr\"\\s*,\\s*\"([^\"]+)").getMatch(0);
+
+                    br.setCookie("https://facebook.com", "_js_datr", _js_datr);
+                    br.setCookie("https://facebook.com", "_js_reg_fb_ref", Encoding.urlEncode("https://www.facebook.com/login.php"));
+                    br.setCookie("https://facebook.com", "_js_reg_fb_gate", Encoding.urlEncode("https://www.facebook.com/login.php"));
+                    loginForm.put("email", Encoding.urlEncode(account.getUser()));
+                    loginForm.put("pass", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(loginForm);
                 }
 
-                // reCaptcha handling
-                for (int i = 1; i <= 3; i++) {
-                    final String rcID = br.getRegex("\"recaptchaPublicKey\":\"([^<>\"]*?)\"").getMatch(0);
-                    if (rcID == null) {
-                        break;
+                /**
+                 * Facebook thinks we're an unknown device, now we prove we're not ;)
+                 */
+                if (br.containsHTML(">Your account is temporarily locked")) {
+                    final String nh = br.getRegex("name=\"nh\" value=\"([a-z0-9]+)\"").getMatch(0);
+                    final String dstc = br.getRegex("name=\"fb_dtsg\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    if (nh == null || dstc == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
+                    br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&submit%5BContinue%5D=Continue");
 
-                    final String extraChallengeParams = br.getRegex("name=\"extra_challenge_params\" value=\"([^<>\"]*?)\"").getMatch(0);
-                    final String captchaSession = br.getRegex("name=\"captcha_session\" value=\"([^<>\"]*?)\"").getMatch(0);
-                    if (extraChallengeParams == null || captchaSession == null) {
-                        break;
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "facebook.com", "http://facebook.com", true);
+                    String achal = br.getRegex("name=\"achal\" value=\"([a-z0-9]+)\"").getMatch(0);
+                    final String captchaPersistData = br.getRegex("name=\"captcha_persist_data\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    if (captchaPersistData == null || achal == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
-
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setId(rcID);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c;
-                    try {
-                        c = getCaptchaCode("recaptcha", cf, dummyLink);
-                    } catch (final Exception e) {
-                        continue;
-                    }
-                    br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&geo=true&captcha_persist_data=" + Encoding.urlEncode(captchaPersistData) + "&captcha_session=" + Encoding.urlEncode(captchaSession) + "&extra_challenge_params=" + Encoding.urlEncode(extraChallengeParams) + "&recaptcha_type=password&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&captcha_response=" + Encoding.urlEncode(c) + "&achal=1&submit%5BSubmit%5D=Submit");
-                }
-
-                for (int i = 1; i <= 3; i++) {
-                    if (br.containsHTML(">To confirm your identity, please enter your birthday")) {
-                        achal = br.getRegex("name=\"achal\" value=\"([a-z0-9]+)\"").getMatch(0);
-                        if (achal == null) {
+                    // Normal captcha handling
+                    for (int i = 1; i <= 3; i++) {
+                        String captchaLink = br.getRegex("\"(https?://(www\\.)?facebook\\.com/captcha/tfbimage\\.php\\?captcha_challenge_code=[^<>\"]*?)\"").getMatch(0);
+                        if (captchaLink == null) {
                             break;
                         }
-                        String birthdayVerificationAnswer;
+                        captchaLink = Encoding.htmlDecode(captchaLink);
+
+                        String code;
                         try {
-                            birthdayVerificationAnswer = getUserInput("Enter your birthday (dd:MM:yyyy)", dummyLink);
+                            code = getCaptchaCode(captchaLink, dummyLink);
                         } catch (final Exception e) {
                             continue;
                         }
-                        final String[] bdSplit = birthdayVerificationAnswer.split(":");
-                        if (bdSplit == null || bdSplit.length != 3) {
-                            continue;
-                        }
-                        int bdDay = 0, bdMonth = 0, bdYear = 0;
-                        try {
-                            bdDay = Integer.parseInt(bdSplit[0]);
-                            bdMonth = Integer.parseInt(bdSplit[1]);
-                            bdYear = Integer.parseInt(bdSplit[2]);
-                        } catch (final Exception e) {
-                            continue;
-                        }
-                        br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&geo=true&birthday_captcha_month=" + bdMonth + "&birthday_captcha_day=" + bdDay + "&birthday_captcha_year=" + bdYear + "&captcha_persist_data=" + Encoding.urlEncode(captchaPersistData) + "&achal=" + achal + "&submit%5BSubmit%5D=Submit");
-                    } else {
-                        break;
+                        br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&geo=true&captcha_persist_data=" + Encoding.urlEncode(captchaPersistData) + "&captcha_response=" + Encoding.urlEncode(code) + "&achal=" + achal + "&submit%5BSubmit%5D=Submit");
                     }
+
+                    // reCaptcha handling
+                    for (int i = 1; i <= 3; i++) {
+                        final String rcID = br.getRegex("\"recaptchaPublicKey\":\"([^<>\"]*?)\"").getMatch(0);
+                        if (rcID == null) {
+                            break;
+                        }
+
+                        final String extraChallengeParams = br.getRegex("name=\"extra_challenge_params\" value=\"([^<>\"]*?)\"").getMatch(0);
+                        final String captchaSession = br.getRegex("name=\"captcha_session\" value=\"([^<>\"]*?)\"").getMatch(0);
+                        if (extraChallengeParams == null || captchaSession == null) {
+                            break;
+                        }
+
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setId(rcID);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c;
+                        try {
+                            c = getCaptchaCode("recaptcha", cf, dummyLink);
+                        } catch (final Exception e) {
+                            continue;
+                        }
+                        br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&geo=true&captcha_persist_data=" + Encoding.urlEncode(captchaPersistData) + "&captcha_session=" + Encoding.urlEncode(captchaSession) + "&extra_challenge_params=" + Encoding.urlEncode(extraChallengeParams) + "&recaptcha_type=password&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&captcha_response=" + Encoding.urlEncode(c) + "&achal=1&submit%5BSubmit%5D=Submit");
+                    }
+
+                    for (int i = 1; i <= 3; i++) {
+                        if (br.containsHTML(">To confirm your identity, please enter your birthday")) {
+                            achal = br.getRegex("name=\"achal\" value=\"([a-z0-9]+)\"").getMatch(0);
+                            if (achal == null) {
+                                break;
+                            }
+                            String birthdayVerificationAnswer;
+                            try {
+                                birthdayVerificationAnswer = getUserInput("Enter your birthday (dd:MM:yyyy)", dummyLink);
+                            } catch (final Exception e) {
+                                continue;
+                            }
+                            final String[] bdSplit = birthdayVerificationAnswer.split(":");
+                            if (bdSplit == null || bdSplit.length != 3) {
+                                continue;
+                            }
+                            int bdDay = 0, bdMonth = 0, bdYear = 0;
+                            try {
+                                bdDay = Integer.parseInt(bdSplit[0]);
+                                bdMonth = Integer.parseInt(bdSplit[1]);
+                                bdYear = Integer.parseInt(bdSplit[2]);
+                            } catch (final Exception e) {
+                                continue;
+                            }
+                            br.postPage(br.getURL(), "fb_dtsg=" + Encoding.urlEncode(dstc) + "&nh=" + nh + "&geo=true&birthday_captcha_month=" + bdMonth + "&birthday_captcha_day=" + bdDay + "&birthday_captcha_year=" + bdYear + "&captcha_persist_data=" + Encoding.urlEncode(captchaPersistData) + "&achal=" + achal + "&submit%5BSubmit%5D=Submit");
+                        } else {
+                            break;
+                        }
+                    }
+                } else if (br.containsHTML("/checkpoint/")) {
+                    br.getPage("https://www.facebook.com/checkpoint/");
+                    final String postFormID = br.getRegex("name=\"post_form_id\" value=\"(.*?)\"").getMatch(0);
+                    final String nh = br.getRegex("name=\"nh\" value=\"(.*?)\"").getMatch(0);
+                    if (nh == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&submit%5BContinue%5D=Weiter&nh=" + nh);
+                    br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&submit%5BThis+is+Okay%5D=Das+ist+OK&nh=" + nh);
+                    br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
+                    br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
                 }
-            } else if (br.containsHTML("/checkpoint/")) {
-                br.getPage("https://www.facebook.com/checkpoint/");
-                final String postFormID = br.getRegex("name=\"post_form_id\" value=\"(.*?)\"").getMatch(0);
-                final String nh = br.getRegex("name=\"nh\" value=\"(.*?)\"").getMatch(0);
-                if (nh == null) {
+                if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&submit%5BContinue%5D=Weiter&nh=" + nh);
-                br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&submit%5BThis+is+Okay%5D=Das+ist+OK&nh=" + nh);
-                br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
-                br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
-            }
-            if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /* Save cookies */
+                account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
+                account.setValid(true);
+                synchronized (LOCK) {
+                    checkFeatureDialog();
                 }
-            }
-            /* Save cookies */
-            account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
-            account.setValid(true);
-            synchronized (LOCK) {
-                checkFeatureDialog();
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
+                    account.removeProperty("");
+                }
+                throw e;
             }
         }
     }

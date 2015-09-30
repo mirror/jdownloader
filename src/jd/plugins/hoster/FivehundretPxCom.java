@@ -23,6 +23,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -52,6 +53,15 @@ public class FivehundretPxCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://500px.com/";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        if (link.getSetLinkID() == null) {
+            final String ID = new Regex(link.getPluginPatternMatcher(), "photo/(\\d+)").getMatch(0);
+            link.setLinkID(ID);
+        }
+        super.correctDownloadLink(link);
     }
 
     @SuppressWarnings({ "deprecation", "unchecked" })

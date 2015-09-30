@@ -309,7 +309,7 @@ public class PremiumTo extends UseNet {
                         int timesFailed = link.getIntegerProperty("timesfailedpremiumto_420dlerror", 0);
                         link.getLinkStatus().setRetryCount(0);
                         logger.info("premium.to: Download attempt failed because of server error 420");
-                        if (timesFailed <= 10) {
+                        if (timesFailed <= 5) {
                             timesFailed++;
                             link.setProperty("timesfailedpremiumto_420dlerror", timesFailed);
                             throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started (420)");

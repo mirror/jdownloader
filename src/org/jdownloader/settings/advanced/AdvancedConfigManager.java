@@ -3,6 +3,7 @@ package org.jdownloader.settings.advanced;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.controlling.linkchecker.LinkCheckerConfig;
@@ -55,9 +56,10 @@ public class AdvancedConfigManager {
         return AdvancedConfigManager.INSTANCE;
     }
 
-    private Set<AdvancedConfigEntry>  configInterfaces;
-    private AdvancedConfigEventSender eventSender;
-    private LogSource                 logger;
+    private final Set<AdvancedConfigEntry>             configInterfaces;
+    private final AdvancedConfigEventSender            eventSender;
+    private final LogSource                            logger;
+    private final WeakHashMap<ConfigInterface, Object> knownInterfaces = new WeakHashMap<ConfigInterface, Object>();
 
     private AdvancedConfigManager() {
         logger = LogController.getInstance().getLogger(AdvancedConfigManager.class.getName());
@@ -104,8 +106,13 @@ public class AdvancedConfigManager {
     }
 
     public void register(ConfigInterface cf) {
+        synchronized (this) {
+            if (knownInterfaces.put(cf, this) != null) {
+                return;
+            }
+        }
         logger.info("Register " + cf._getStorageHandler().getConfigInterface());
-        HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
+        final HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
         for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
             if (map.containsKey(m)) {
                 continue;
