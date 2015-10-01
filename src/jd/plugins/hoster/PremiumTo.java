@@ -497,7 +497,8 @@ public class PremiumTo extends UseNet {
         if (isUsenetLink(link)) {
             return 10;
         } else {
-            return super.getMaxSimultanDownload(link, account);
+            /* Not sure about this value. */
+            return 20;
         }
     }
 
