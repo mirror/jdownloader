@@ -52,15 +52,15 @@ import jd.utils.JDUtilities;
  */
 public abstract class K2SApi extends PluginForHost {
 
-    private String       authToken;
-    protected String     directlinkproperty;
-    protected int        chunks;
-    protected boolean    resumes;
-    protected boolean    isFree;
-    private final String lng              = getLanguage();
-    private final String AUTHTOKEN        = "auth_token";
-    private int          authTokenFail    = 0;
-    private int          loginCaptchaFail = -1;
+    private String          authToken;
+    protected String        directlinkproperty;
+    protected int           chunks;
+    protected boolean       resumes;
+    protected boolean       isFree;
+    private final String    lng                    = getLanguage();
+    private final String    AUTHTOKEN              = "auth_token";
+    private int             authTokenFail          = 0;
+    private int             loginCaptchaFail       = -1;
 
     // plugin config definition
     protected final String  USE_API                = "USE_API_2";
@@ -1299,9 +1299,9 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private static Object          CTRLLOCK = new Object();
-    protected static AtomicInteger maxPrem  = new AtomicInteger(1);
-    protected static AtomicInteger maxFree  = new AtomicInteger(1);
+    private static Object                CTRLLOCK                     = new Object();
+    protected static AtomicInteger       maxPrem                      = new AtomicInteger(1);
+    protected static AtomicInteger       maxFree                      = new AtomicInteger(1);
 
     /**
      * Connection Management<br />

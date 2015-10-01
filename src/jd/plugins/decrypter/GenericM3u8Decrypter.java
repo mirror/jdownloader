@@ -54,7 +54,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                         ret.add(link);
                     }
                 }
-
             }
         } else {
             //
@@ -64,7 +63,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             }
             ret.add(link);
         }
-
         return ret;
     }
 

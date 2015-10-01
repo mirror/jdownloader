@@ -744,23 +744,30 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
         String formattedDate = null;
         if (date != null && formattedpackagename.contains("*date*")) {
-            // 2011-08-10T22:50:49Z
-            date = date.replace("T", ":");
-            final String userDefinedDateFormat = CFG.getStringProperty(CUSTOM_DATE);
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm");
-            Date dateStr = formatter.parse(date);
-
-            formattedDate = formatter.format(dateStr);
-            Date theDate = formatter.parse(formattedDate);
-
-            if (userDefinedDateFormat != null) {
-                try {
-                    formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
-                } catch (Exception e) {
-                    // prevent user error killing plugin.
-                    formattedDate = "";
+            try {
+                final String userDefinedDateFormat = CFG.getStringProperty(CUSTOM_DATE);
+                final SimpleDateFormat formatter;
+                if (date.contains("/")) {
+                    formatter = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss'Z'");
+                } else {
+                    formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
                 }
+
+                final Date dateStr = formatter.parse(date);
+                formattedDate = formatter.format(dateStr);
+                final String defaultformattedDate = formattedDate;
+                if (userDefinedDateFormat != null) {
+                    try {
+                        final SimpleDateFormat customFormatter = new SimpleDateFormat(userDefinedDateFormat);
+                        formattedDate = customFormatter.format(dateStr);
+                    } catch (Exception e) {
+                        // prevent user error killing plugin.
+                        formattedDate = defaultformattedDate;
+                    }
+                }
+            } catch (Exception e) {
+                // prevent user error killing plugin.
+                formattedDate = null;
             }
             if (formattedDate != null) {
                 formattedpackagename = formattedpackagename.replace("*date*", formattedDate);

@@ -971,7 +971,9 @@ public class LinkCrawler {
     protected boolean breakPluginForDecryptLoop(final LazyCrawlerPlugin pDecrypt, final CrawledLink link) {
         final CrawledLink source = link.getSourceLink();
         if (source != null && source.getCryptedLink() != null) {
-            return canHandle(pDecrypt, source.getURL(), source);
+            if (StringUtils.equals(link.getURL(), source.getURL())) {
+                return canHandle(pDecrypt, source.getURL(), source);
+            }
         }
         return false;
     }
