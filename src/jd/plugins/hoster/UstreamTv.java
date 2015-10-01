@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
@@ -48,48 +49,58 @@ public class UstreamTv extends PluginForHost {
         return -1;
     }
 
-    private static final String MESSAGETOKEN_PRIVATEVIDEO = "errorVideoPrivated";
+    private boolean is_private = false;
 
-    private String              errormessage              = null;
+    private Browser prepBR(final Browser br) {
+        br.setAllowedResponseCodes(401);
+        return br;
+    }
 
     /* Thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/ustream.py */
+    /* 2015-10-01: Usage of new API call thx: http://ustream.github.io/api-docs/channel.html#video */
     /* Last revision containing the "old" AMF-handling: 26193 */
+    /** TODO: Add/Fix errorhandling for private videos */
     @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        errormessage = null;
+        is_private = false;
         setBrowserExclusive();
-        getFID(link);
+        this.br = prepBR(this.br);
+        final String fid = getFID(link);
         LinkedHashMap<String, Object> entries = null;
-        final String fid = link.getLinkID();
         /* Offline links should have nice filenames as well. */
         link.setName(fid + ".mp4");
         this.br.setFollowRedirects(true);
-        /* 2nd possibility: http://api.ustream.tv/json/video/<fid>/listAllVideos?key=laborautonomo&limit=1 */
-        final String getJsonURL = "http://cdngw.ustream.tv/rgwjson/Viewer.getVideo/%7B%22brandId%22:1,%22videoId%22:" + fid + ",%22autoplay%22:false%7D";
+        /* 2nd possibility (without downloadlinks): http://api.ustream.tv/json/video/<fid>/listAllVideos?key=laborautonomo&limit=1 */
+        /* Old method: */
+        // final String getJsonURL = "http://cdngw.ustream.tv/rgwjson/Viewer.getVideo/%7B%22brandId%22:1,%22videoId%22:" + fid +
+        // ",%22autoplay%22:false%7D";
+        final String getJsonURL = "https://api.ustream.tv/videos/" + fid + ".json";
         br.getPage(getJsonURL);
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        /* If !success the video is probably offline for some reason */
-        if (!((Boolean) entries.get("success")).booleanValue()) {
-            entries = (LinkedHashMap<String, Object>) entries.get("error");
-            errormessage = (String) entries.get("messageToken");
-            if (errormessage != null && errormessage.equals(MESSAGETOKEN_PRIVATEVIDEO)) {
-                link.getLinkStatus().setStatusText("This is a private video which only the owner can watch/download");
-                return AvailableStatus.TRUE;
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (this.br.getHttpConnection().getResponseCode() == 401) {
+            is_private = true;
+            link.getLinkStatus().setStatusText("This is a private video which only the owner can watch/download");
+            return AvailableStatus.TRUE;
         }
-        DLLINK = (String) entries.get("smoothStreamingUrl");
+        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        if (this.br.getHttpConnection().getResponseCode() == 404 || (String) entries.get("error") != null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        entries = (LinkedHashMap<String, Object>) entries.get("video");
+        DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "media_urls/smoothStreamingUrl");
+        if (DLLINK == null) {
+            /* Sometimes only lower quality mp4's are available??! */
+            DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "media_urls/mp4");
+        }
         if (DLLINK == null) {
             /* Sometimes only lower quality flv's are available! */
-            DLLINK = (String) entries.get("flv");
+            DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "media_urls/flv");
         }
-        entries = (LinkedHashMap<String, Object>) entries.get("moduleConfig");
-        entries = (LinkedHashMap<String, Object>) entries.get("meta");
-        final String channel = (String) entries.get("channelUrl");
-        final String user = (String) entries.get("userName");
+        final String user = (String) DummyScriptEnginePlugin.walkJson(entries, "owner/username");
         String title = (String) entries.get("title");
-        if (DLLINK == null || channel == null || user == null || title == null) {
+        final String description = (String) entries.get("description");
+        long filesize = DummyScriptEnginePlugin.toLong(entries.get("file_size"), -1);
+        if (DLLINK == null || user == null || title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = encodeUnicode(title);
@@ -100,31 +111,40 @@ public class UstreamTv extends PluginForHost {
         } else {
             ext = ".flv";
         }
-        final String filename = channel + " - " + user + " - " + fid + " - " + title + ext;
+        final String filename = user + " - " + fid + " - " + title + ext;
 
         link.setFinalFileName(filename);
+        if (description != null && link.getComment() == null) {
+            link.setComment(description);
+        }
 
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (filesize == -1) {
+            /* Only check if the json source did not contain filesize information */
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(DLLINK);
+                if (!con.getContentType().contains("html")) {
+                    filesize = con.getLongContentLength();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+
+        link.setDownloadSize(filesize);
+
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (errormessage != null && errormessage.equals(MESSAGETOKEN_PRIVATEVIDEO)) {
+        if (is_private) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video which only the owner can watch/download");
         }
         dl = BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
