@@ -328,7 +328,7 @@ public class FShareVn extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (dllink.contains("\"url\":")) {
-                    dllink = new Regex(dllink, "\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                    dllink = new Regex(dllink, "\"url\":\"(http:[^<>\"]*?)\"").getMatch(0).replace("\\", "");
                     logger.info("dllink: " + dllink); // See if it's run over here
                 }
             }
