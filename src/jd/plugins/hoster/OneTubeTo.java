@@ -22,9 +22,13 @@ import java.util.LinkedHashMap;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,12 +38,12 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1tube.to" }, urls = { "https?://(?:www\\.)?1tube\\.to/f/([^<>\"]*?\\-[A-Za-z0-9]+\\.html|[A-Za-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1tube.to" }, urls = { "https?://(?:www\\.)?1tube\\.to/f/([^<>\"]*?\\-[A-Za-z0-9]+\\.html|[A-Za-z0-9]+)" }, flags = { 2 })
 public class OneTubeTo extends PluginForHost {
 
     public OneTubeTo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+        this.enablePremium("https://1tube.to/reg/");
     }
 
     @Override
@@ -49,19 +53,19 @@ public class OneTubeTo extends PluginForHost {
 
     /* Tags: 1tube.to, hdstream.to */
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    /* Max total connections: 10 */
-    private static final int     FREE_MAXCHUNKS               = -2;
-    private static final int     FREE_MAXDOWNLOADS            = 5;
-
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean FREE_RESUME                  = false;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final boolean ACCOUNT_FREE_RESUME          = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
 
     private static final int     PREMIUM_OVERALL_MAXCON       = -ACCOUNT_PREMIUM_MAXDOWNLOADS;
+
+    private Exception            checklinksexception          = null;
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -69,9 +73,6 @@ public class OneTubeTo extends PluginForHost {
         link.setLinkID(fid);
         link.setUrlDownload("https://1tube.to/f/" + fid);
     }
-
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     /** Using API: https://1tube.to/p/api/ */
     @SuppressWarnings({ "unchecked", "deprecation" })
@@ -81,7 +82,7 @@ public class OneTubeTo extends PluginForHost {
             return false;
         }
         try {
-            final Browser br = new Browser();
+            prepBrowser(br);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -132,6 +133,7 @@ public class OneTubeTo extends PluginForHost {
                 }
             }
         } catch (final Exception e) {
+            checklinksexception = e;
             return false;
         }
         return true;
@@ -152,6 +154,11 @@ public class OneTubeTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        /* If exception happens in availablecheck it will be caught --> Browser is empty --> Throw it here to prevent further errors. */
+        if (checklinksexception != null) {
+            throw checklinksexception;
+        }
+        jd.plugins.hoster.HdStreamTo.checkDownloadable(this.br);
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
@@ -176,15 +183,14 @@ public class OneTubeTo extends PluginForHost {
                 dllink = br2.getRedirectLocation();
             }
             if (dllink == null) {
-                /* Download file - stream impossible */
+                /* Stream impossible? --> Download file! */
                 /*
-                 * Note that premiumtokens can override this NOTE that premiumtokens do not (yet) exist for this host (project), see
+                 * Note that premiumtokens can override this. NOTE that premiumtokens do not (yet) exist for this host (project), see
                  * hdstream.to plugin.
                  */
                 if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                }
-                if (traffic_left_free.equals("0")) {
+                } else if (traffic_left_free.equals("0")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 }
                 dllink = getDllink(downloadLink);
@@ -205,13 +211,69 @@ public class OneTubeTo extends PluginForHost {
         }
         this.br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        handleServerErrors();
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        jd.plugins.hoster.HdStreamTo.errorhandlingFree(this.dl, this.br);
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    private static final String MAINPAGE = "http://1tube.to";
+    private static Object       LOCK     = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                prepBrowser(this.br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.setFollowRedirects(false);
+                br.postPage("https://1tube.to/json/login.php", "data=%7B%22username%22%3A%22" + Encoding.urlEncode(account.getUser()) + "%22%2C+%22password%22%3A%22" + Encoding.urlEncode(account.getPass()) + "%22%7D");
+                if (br.getCookie(MAINPAGE, "username") == null || br.containsHTML("\"logged_in\":false")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        return jd.plugins.hoster.HdStreamTo.fetchAccountInfoHdstream(this.br, account);
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        jd.plugins.hoster.HdStreamTo.checkDownloadable(this.br);
+        login(account, false);
+        br.setFollowRedirects(false);
+        if (account.getType() == AccountType.FREE) {
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            final String dllink = getDllink(link);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            jd.plugins.hoster.HdStreamTo.errorhandlingPremium(this.dl, this.br, account);
+            link.setProperty("premium_directlink", dllink);
+            dl.startDownload();
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -269,144 +331,16 @@ public class OneTubeTo extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    // private static final String MAINPAGE = "http://1tube.to";
-    // private static Object LOCK = new Object();
-    //
-    // @SuppressWarnings("unchecked")
-    // private void login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // // Load cookies
-    // br.setCookiesExclusive(true);
-    // final Cookies cookies = account.loadCookies("");
-    // if (cookies != null && !force) {
-    // this.br.setCookies(this.getHost(), cookies);
-    // return;
-    // }
-    // br.setFollowRedirects(false);
-    // br.getPage("");
-    // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-    // if (br.getCookie(MAINPAGE, "") == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-    // } catch (final PluginException e) {
-    // account.clearCookies("");
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // try {
-    // login(account, true);
-    // } catch (PluginException e) {
-    // account.setValid(false);
-    // throw e;
-    // }
-    // String space = br.getRegex("").getMatch(0);
-    // if (space != null) {
-    // ai.setUsedSpace(space.trim());
-    // }
-    // ai.setUnlimitedTraffic();
-    // if (account.getBooleanProperty("free", false)) {
-    // maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-    // try {
-    // account.setType(AccountType.FREE);
-    // /* free accounts can still have captcha */
-    // account.setMaxSimultanDownloads(maxPrem.get());
-    // account.setConcurrentUsePossible(false);
-    // } catch (final Throwable e) {
-    // /* not available in old Stable 0.9.581 */
-    // }
-    // ai.setStatus("Registered (free) user");
-    // } else {
-    // final String expire = br.getRegex("").getMatch(0);
-    // if (expire == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // } else {
-    // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-    // }
-    // maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // try {
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(maxPrem.get());
-    // account.setConcurrentUsePossible(true);
-    // } catch (final Throwable e) {
-    // /* not available in old Stable 0.9.581 */
-    // }
-    // ai.setStatus("Premium account");
-    // }
-    // account.setValid(true);
-    // return ai;
-    // }
-    //
-    // @Override
-    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-    // requestFileInformation(link);
-    // login(account, false);
-    // br.setFollowRedirects(false);
-    // br.getPage(link.getDownloadURL());
-    // if (account.getBooleanProperty("free", false)) {
-    // doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    // } else {
-    // String dllink = this.checkDirectLink(link, "premium_directlink");
-    // if (dllink == null) {
-    // dllink = br.getRegex("").getMatch(0);
-    // if (dllink == null) {
-    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // }
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-    // if (dl.getConnection().getContentType().contains("html")) {
-    // if (dl.getConnection().getResponseCode() == 403) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-    // } else if (dl.getConnection().getResponseCode() == 404) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-    // }
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // link.setProperty("premium_directlink", dllink);
-    // dl.startDownload();
-    // }
-    // }
-    //
-    // @Override
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // /* workaround for free/premium issue on stable 09581 */
-    // return maxPrem.get();
-    // }
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+    }
 
-    private void handleServerErrors() throws PluginException {
-        if (dl.getConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-        }
-        if (dl.getConnection().getResponseCode() == 503) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-        }
+    private void prepBrowser(final Browser br) {
+        br.setCookie("http://hdstream.to/", "lang", "en");
+        /* User can select https or http in his hdstream account, therefore, redirects should be allowed */
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "JDownloader");
     }
 
     /**

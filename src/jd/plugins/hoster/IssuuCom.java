@@ -17,15 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,7 +36,7 @@ public class IssuuCom extends PluginForHost {
 
     public IssuuCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("https://issuu.com/signup");
     }
 
     @Override
@@ -54,17 +51,17 @@ public class IssuuCom extends PluginForHost {
 
     private String DOCUMENTID = null;
 
+    /** Using oembed API: http://developers.issuu.com/api/oembed.html */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">We can\\'t find what you\\'re looking for")) {
+        /* Tyically this oembed API returns 501 for offline content */
+        this.br.setAllowedResponseCodes(501);
+        this.br.setFollowRedirects(true);
+        this.br.getPage("https://issuu.com/oembed?format=json&url=" + Encoding.urlEncode(link.getDownloadURL()));
+        if (this.br.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        DOCUMENTID = br.getRegex("\"documentId\":\"([^<>\"]*?)\"").getMatch(0);
-        if (DOCUMENTID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(link.getStringProperty("finalname", null));
         return AvailableStatus.TRUE;
@@ -79,27 +76,15 @@ public class IssuuCom extends PluginForHost {
     private static final String MAINPAGE = "http://issuu.com";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 final String lang = System.getProperty("user.language");
                 if (isValidMailAdress(account.getUser())) {
@@ -119,17 +104,9 @@ public class IssuuCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -139,6 +116,7 @@ public class IssuuCom extends PluginForHost {
         return value.matches(".+@.+");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -150,17 +128,37 @@ public class IssuuCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
+        account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) User");
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        DOCUMENTID = this.br.getRegex("\"thumbnail_url\":\"https?://image\\.issuu\\.com/([^<>\"/]*?)/").getMatch(0);
+        if (DOCUMENTID == null) {
+            this.br.getPage(link.getDownloadURL());
+            if (br.containsHTML(">We can\\'t find what you\\'re looking for") || this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            DOCUMENTID = getJson("documentId");
+        }
+        if (DOCUMENTID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
         login(account, true);
         final String token = br.getCookie(MAINPAGE, "site.model.token");
         br.getPage("http://api.issuu.com/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
-        if (br.containsHTML("\"message\":\"Document access denied\"")) {
+        final String code = getJson("code");
+        final String message = getJson("message");
+        if ("015".equals(code) || "Download limit reached".equals(message)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        if ("Document access denied".equals(message)) {
+            /* TODO: Find errorcode for this */
             throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
         }
         String dllink = br.getRegex("\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -178,6 +176,26 @@ public class IssuuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

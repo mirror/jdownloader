@@ -16,17 +16,16 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -39,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -71,7 +71,7 @@ public class HdStreamTo extends PluginForHost {
 
     private static final int     PREMIUM_OVERALL_MAXCON       = -ACCOUNT_PREMIUM_MAXDOWNLOADS;
 
-    private Exception            checkjlinksexception         = null;
+    private Exception            checklinksexception          = null;
 
     /** Using API: http://hdstream.to/#!p=api */
     @SuppressWarnings("deprecation")
@@ -141,7 +141,7 @@ public class HdStreamTo extends PluginForHost {
                 }
             }
         } catch (final Exception e) {
-            checkjlinksexception = e;
+            checklinksexception = e;
             return false;
         }
         return true;
@@ -163,64 +163,219 @@ public class HdStreamTo extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         /* If exception happens in availablecheck it will be caught --> Browser is empty --> Throw it here to prevent further errors. */
-        if (checkjlinksexception != null) {
-            throw checkjlinksexception;
+        if (checklinksexception != null) {
+            throw checklinksexception;
         }
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
-        checkDownloadable();
-        String premiumtoken = getPremiumToken(downloadLink);
-        final String free_downloadable = getJson("downloadable");
-        final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
-        /* Note that premiumtokens can override this */
-        if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        String dllink = getDllink(downloadLink);
-        dllink += "&premium=" + premiumtoken;
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String fid = getFID(downloadLink);
-        try {
-            br.getPage("http://hdstream.to/json/filelist.php?file=" + fid);
-        } catch (final Throwable e) {
+        final String premiumtoken = getPremiumToken(downloadLink);
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (dllink == null) {
+            this.br.setFollowRedirects(false);
+            checkDownloadable(this.br);
+            br.getPage("https://hdstream.to/send.php?visited=" + fid + "&premium=" + premiumtoken);
+            final String canPlay = getJson("canPlay");
+            final String server = getJson("server");
+            String waittime = null;
+            final String free_downloadable = getJson("downloadable");
+            final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
+            final String traffic_left_free = getJson("traffic");
+            if ("true".equals(canPlay)) {
+                /* Prefer to download the stream if possible as it has the same filesize as download but no waittime. */
+                final Browser br2 = br.cloneBrowser();
+                br2.getPage("https://s" + server + ".hdstream.to/send.php?token=" + fid + "&stream=1");
+                dllink = br2.getRedirectLocation();
+            }
+            if (dllink == null) {
+                /* Stream impossible? --> Download file! */
+                /* Note that premiumtokens can override this */
+                if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } else if (traffic_left_free.equals("0")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                }
+                dllink = getDllink(downloadLink);
+                dllink += "&premium=" + premiumtoken;
+                br.getPage("/send.php?visited=" + fid + "&premium=" + premiumtoken);
+                waittime = getJson("wait");
+                if (waittime == null) {
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final int wait = Integer.parseInt(waittime);
+                /* Make sure that the premiumtoken is valid - if it is not valid, wait is higher than 0 */
+                if (!premiumtoken.equals("") && wait == 0) {
+                    logger.info("Seems like the user is using a valid premiumtoken, enabling chunks & resume...");
+                    resumable = ACCOUNT_PREMIUM_RESUME;
+                    maxchunks = PREMIUM_OVERALL_MAXCON;
+                } else {
+                    this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
+                }
+            }
         }
-        br.getPage("http://hdstream.to/send.php?visited=" + fid + "&premium=" + premiumtoken);
-        final String waittime = getJson("wait");
-        if (waittime == null) {
-            /* This should never happen! */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final int wait = Integer.parseInt(waittime);
-        /* Make sure that the premiumtoken is valid - if it is not valid, wait is higher than 0 */
-        if (!premiumtoken.equals("") && wait == 0) {
-            logger.info("Seems like the user is using a valid premiumtoken, enabling chunks & resume...");
-            resumable = ACCOUNT_PREMIUM_RESUME;
-            maxchunks = PREMIUM_OVERALL_MAXCON;
-        } else {
-            this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-        }
+        this.br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        errorhandlingFree(this.dl, this.br);
+        downloadLink.setProperty(directlinkproperty, dllink);
+        dl.startDownload();
+    }
+
+    private static final String MAINPAGE = "http://hdstream.to";
+    private static Object       LOCK     = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                prepBrowser(this.br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.postPage("http://hdstream.to/json/login.php", "data=%7B%22username%22%3A%22" + Encoding.urlEncode(account.getUser()) + "%22%2C+%22password%22%3A%22" + Encoding.urlEncode(account.getPass()) + "%22%7D");
+                if (br.getCookie(MAINPAGE, "username") == null || br.containsHTML("\"logged_in\":false")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // Save cookies
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        return fetchAccountInfoHdstream(this.br, account);
+    }
+
+    public static AccountInfo fetchAccountInfoHdstream(final Browser br, final Account account) throws IOException {
+        final AccountInfo ai = new AccountInfo();
+        br.getPage("https://" + account.getHoster() + "/json/userdata.php?user=" + Encoding.urlEncode(account.getUser()));
+        final String createtime = getJson(br, "joined");
+        final String expire = getJson(br, "premium");
+        final String trafficleft = getJson(br, "remaining_traffic");
+        ai.setCreateTime(TimeFormatter.getMilliSeconds(createtime, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        ai.setTrafficLeft(Long.parseLong(trafficleft) * 1024 * 1024);
+        if (expire.equals("0")) {
+            /*
+             * Free accounts are accepted but basically never used because their traffic is ZERO. Admin told us they only bring minor
+             * advantages, not related to downloading links of others so it's all fine.
+             */
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) user");
+        } else {
+            br.getPage("https://s." + account.getHoster() + "/js/data.js");
+            int max_prem_dls = ACCOUNT_PREMIUM_MAXDOWNLOADS;
+            try {
+                max_prem_dls = Integer.parseInt(getJson(br, "max_connections_premium"));
+            } catch (final Throwable e) {
+            }
+            ai.setValidUntil(Long.parseLong(expire) * 1000l);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(max_prem_dls);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium User");
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        checkDownloadable(this.br);
+        login(account, false);
+        if (account.getType() == AccountType.FREE) {
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            final String dllink = getDllink(link);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            errorhandlingPremium(this.dl, this.br, account);
+            link.setProperty("premium_directlink", dllink);
+            dl.startDownload();
+        }
+    }
+
+    public static void errorhandlingFree(final DownloadInterface dl, final Browser br) throws PluginException, IOException {
         if (dl.getConnection().getContentType().contains("html")) {
             /* 403 error means different things for free and premium */
             /* Should never happen here */
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
             }
-            handleServerErrors();
-            logger.warning("The final dllink seems not to be a file!");
+            errorhandlingGeneral(dl);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error - please contact our support", 30 * 60 * 1000l);
         }
-        dl.startDownload();
     }
 
-    private void handleServerErrors() throws PluginException {
+    public static void errorhandlingPremium(final DownloadInterface dl, final Browser br, final Account account) throws PluginException, IOException {
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                try {
+                    account.setError(AccountError.TEMP_DISABLED, "Daily traffic limit reached");
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            errorhandlingGeneral(dl);
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error - please contact our support", 30 * 60 * 1000l);
+        }
+    }
+
+    private static void errorhandlingGeneral(final DownloadInterface dl) throws PluginException {
         /* Should never happen */
         if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (dl.getConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
         }
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
@@ -250,6 +405,7 @@ public class HdStreamTo extends PluginForHost {
     }
 
     /** Get fid of the link, no matter which linktype is added by the user. */
+    @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         final String addedlink = dl.getDownloadURL();
         String fid = new Regex(addedlink, "([A-Za-z0-9]+)\\.html$").getMatch(0);
@@ -268,7 +424,7 @@ public class HdStreamTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getPremiumToken(final DownloadLink dl) {
         final String addedlink = dl.getDownloadURL();
-        String premtoken = new Regex(addedlink, "hdstream\\.to/(f/|#\\!f=)[A-Za-z0-9]+\\-([A-Za-z0-9]+)$").getMatch(1);
+        String premtoken = new Regex(addedlink, "hdstream\\.to/(?:f/|#\\!f=)[A-Za-z0-9]+\\-([A-Za-z0-9]+)$").getMatch(0);
         if (premtoken == null) {
             premtoken = "";
         }
@@ -279,8 +435,8 @@ public class HdStreamTo extends PluginForHost {
      * Check if the link can be downloaded - "download"=0 = NOT downloadable, not even for premium users - either server problems or only
      * streamable - rare case
      */
-    private void checkDownloadable() throws PluginException {
-        if (!this.getJson("download").equals("1")) {
+    public static void checkDownloadable(final Browser br) throws PluginException {
+        if (!getJson(br, "download").equals("1")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This link is not downloadable");
         }
     }
@@ -291,7 +447,7 @@ public class HdStreamTo extends PluginForHost {
      *
      * @author raztoki
      * */
-    private String getJson(final String source, final String key) {
+    public static String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
@@ -311,7 +467,7 @@ public class HdStreamTo extends PluginForHost {
      *
      * @author raztoki
      * */
-    private String getJson(final Browser ibr, final String key) {
+    public static String getJson(final Browser ibr, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
     }
 
@@ -357,127 +513,6 @@ public class HdStreamTo extends PluginForHost {
     /** Returns final downloadlink, same for free and premium */
     private String getDllink(final DownloadLink dl) {
         return "http://s" + getJson("server") + ".hdstream.to/send.php?token=" + getFID(dl);
-    }
-
-    private static final String MAINPAGE = "http://hdstream.to";
-    private static Object       LOCK     = new Object();
-
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                prepBrowser(this.br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.postPage("http://hdstream.to/json/login.php", "data=%7B%22username%22%3A%22" + Encoding.urlEncode(account.getUser()) + "%22%2C+%22password%22%3A%22" + Encoding.urlEncode(account.getPass()) + "%22%7D");
-                if (br.getCookie(MAINPAGE, "username") == null || br.containsHTML("\"logged_in\":false")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        br.getPage("http://hdstream.to/json/userdata.php?user=" + Encoding.urlEncode(account.getUser()));
-        final String createtime = this.getJson("joined");
-        final String expire = this.getJson("premium");
-        final String trafficleft = this.getJson("remaining_traffic");
-        ai.setCreateTime(TimeFormatter.getMilliSeconds(createtime, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-        ai.setTrafficLeft(Long.parseLong(trafficleft) * 1024 * 1024);
-        if (expire.equals("0")) {
-            /*
-             * Free accounts are accepted but basically never used because their traffic is ZERO. Admin told us they only bring minor
-             * advantages, not related to downloading links of others so it's all fine.
-             */
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
-        } else {
-            br.getPage("http://s.hdstream.to/js/data.js");
-            int max_prem_dls = ACCOUNT_PREMIUM_MAXDOWNLOADS;
-            try {
-                max_prem_dls = Integer.parseInt(getJson("max_connections_premium"));
-            } catch (final Throwable e) {
-            }
-            ai.setValidUntil(Long.parseLong(expire) * 1000l);
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(max_prem_dls);
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium User");
-        }
-        account.setValid(true);
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        String dllink;
-        requestFileInformation(link);
-        checkDownloadable();
-        dllink = getDllink(link);
-        login(account, false);
-        if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    logger.info("Received 403 error in premium mode --> Traffic limit reached or server error (usually traffic limit reached)");
-                    try {
-                        account.setError(AccountError.TEMP_DISABLED, "Daily traffic limit reached");
-                    } catch (final Throwable e) {
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                handleServerErrors();
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error - please contact our support", 30 * 60 * 1000l);
-            }
-            dl.startDownload();
-        }
     }
 
     @Override
