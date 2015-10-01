@@ -75,6 +75,7 @@ public class FShareVn extends PluginForHost {
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
+        setStartIntervall(2000l);
         this.enablePremium("http://www.fshare.vn/buyacc.php");
     }
 
@@ -320,15 +321,15 @@ public class FShareVn extends PluginForHost {
                 if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = getDllink();
+                    dllink = getJson(getDllink(), "url");
                 }
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (dllink.contains("\"url\":")) {
-                    dllink = new Regex(dllink, "\"url\":\"(http:[^<>\"]*?)\"").getMatch(0).replace("\\", "");
+                    dllink = new Regex(dllink, "\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
                     logger.info("dllink: " + dllink); // See if it's run over here
                 }
             }
@@ -523,7 +524,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -533,7 +534,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -543,7 +544,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -553,7 +554,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -563,7 +564,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -573,7 +574,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     * 
+     *
      * @author raztoki
      * @param source
      * @return
