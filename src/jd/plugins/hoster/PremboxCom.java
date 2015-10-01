@@ -40,7 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremboxCom extends PluginForHost {
@@ -110,6 +109,8 @@ public class PremboxCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
+        /* Not necessarily needed as long as we use the API */
+        br.setCookie(NICE_HOST, "lang", "en");
         return br;
     }
 
@@ -157,8 +158,6 @@ public class PremboxCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        String status = null;
-        String filename = null;
         this.br = newBrowser();
 
         synchronized (hostUnavailableMap) {
@@ -177,16 +176,17 @@ public class PremboxCom extends PluginForHost {
             }
         }
 
-        /*
-         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
-         * needed to get the individual host limits.
-         */
-        synchronized (CTRLLOCK) {
-            if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
-                logger.info("Performing full login to set individual host limits");
-                this.fetchAccountInfo(account);
-            }
-        }
+        /* Code unused as values are not given by API */
+        // /*
+        // * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
+        // * needed to get the individual host limits.
+        // */
+        // synchronized (CTRLLOCK) {
+        // if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
+        // logger.info("Performing full login to set individual host limits");
+        // this.fetchAccountInfo(account);
+        // }
+        // }
         setConstants(account, link);
 
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
@@ -322,7 +322,6 @@ public class PremboxCom extends PluginForHost {
         final long last_deleted_complete_download_history_time_ago = getLast_deleted_complete_download_history_time_ago();
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        logger.info("last_deleted_complete_download_history_time_ago: " + TimeFormatter.formatMilliSeconds(last_deleted_complete_download_history_time_ago, 0));
         login();
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
@@ -388,8 +387,9 @@ public class PremboxCom extends PluginForHost {
 
     /**
      * Deletes the complete download history.
+     *
+     * TODO: 2015:10-01: Wait and see if users want to have this function. Atm this requires a full login to get the login cookie.
      **/
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void deleteCompleteDownloadHistory(final String downloadtype) throws Exception {
     }
 
