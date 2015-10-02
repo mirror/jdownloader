@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellspy.cz" }, urls = { "https?://(www\\.)?hellspy\\.(cz|com)/(soutez/)?[a-z0-9\\-]+/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellspy.cz" }, urls = { "https?://(www\\.|porn\\.)?hellspy\\.(cz|com|sk)/(soutez/|sutaz/)?[a-z0-9\\-]+/\\d+" }, flags = { 2 })
 public class HellSpyCz extends PluginForHost {
 
     /*
@@ -79,7 +79,7 @@ public class HellSpyCz extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        final String linkpart = new Regex(link.getDownloadURL(), "hellspy.cz/(.+)").getMatch(0);
+        final String linkpart = new Regex(link.getDownloadURL(), "hellspy.(cz|com|sk)/(.+)").getMatch(1);
         link.setUrlDownload("http://www.hellspy.cz/" + linkpart);
     }
 
@@ -380,11 +380,7 @@ public class HellSpyCz extends PluginForHost {
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
         URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
+        con = br.openGetConnection(directlink);
         return con;
     }
 
