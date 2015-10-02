@@ -28,7 +28,7 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
     public ShutdownConfigPanel(ShutdownExtension trayExtension) {
         super(trayExtension);
         // Property subConfig = getPropertyConfig();
-        KeyHandler<Mode> keyHandler2 = (KeyHandler<Mode>) CFG_SHUTDOWN.SH.getKeyHandler(CFG_SHUTDOWN.SHUTDOWN_MODE.getKey(), KeyHandler.class);
+        KeyHandler<Mode> keyHandler2 = CFG_SHUTDOWN.SH.getKeyHandler(CFG_SHUTDOWN.SHUTDOWN_MODE.getKey(), KeyHandler.class);
 
         addPair(T._.gui_config_jdshutdown_mode(), null, new ComboBox<Mode>(keyHandler2, new Mode[] { Mode.SHUTDOWN, Mode.STANDBY, Mode.HIBERNATE, Mode.CLOSE }, new String[] { Mode.SHUTDOWN.getTranslation(), Mode.STANDBY.getTranslation(), Mode.HIBERNATE.getTranslation(), Mode.CLOSE.getTranslation() }));
         addPair(T._.gui_config_jdshutdown_forceshutdown(), null, new Checkbox(CFG_SHUTDOWN.FORCE_SHUTDOWN_ENABLED));
@@ -98,23 +98,18 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
     }
 
     protected void installMacForcedShutdown() throws IOException, DialogClosedException, DialogCanceledException {
-
         Dialog.getInstance().showConfirmDialog(0, T._.install_title(), T._.install_msg());
-        Executer exec = new Executer("/usr/bin/osascript");
-        File tmp = Application.getTempResource("osxnopasswordforshutdown.scpt");
+        final Executer exec = new Executer("/usr/bin/osascript");
+        final File tmp = Application.getTempResource("osxnopasswordforshutdown.scpt");
         FileCreationManager.getInstance().delete(tmp, null);
         try {
             IO.writeToFile(tmp, IO.readURL(getClass().getResource("osxnopasswordforshutdown.scpt")));
-
             exec.addParameter(tmp.getAbsolutePath());
             exec.setWaitTimeout(0);
             exec.start();
-
         } finally {
-
             tmp.deleteOnExit();
         }
-
     }
 
     @Override

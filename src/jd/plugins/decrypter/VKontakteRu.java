@@ -1457,6 +1457,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Decrypter " + decryptedData.size() + "entries...");
                 break;
             }
+            Thread.sleep(1000);
             logger.info("Parsing page " + i + " of " + maxLoops);
         }
 
@@ -1464,7 +1465,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** NOT using API - general method --> NEVER change a running system! */
-    private ArrayList<String> decryptMultiplePagesCommunityVideo(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
+    private ArrayList<String> decryptMultiplePagesCommunityVideo(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws Exception {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
         int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / increase);
@@ -1525,6 +1526,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Decrypter " + decryptedData.size() + "entries...");
                 break;
             }
+            Thread.sleep(1000);
             logger.info("Parsing page " + i + " of " + maxLoops);
         }
         if (decryptedData == null || decryptedData.size() == 0) {
@@ -1966,7 +1968,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Sets basic values/cookies */
     private void prepBrowser(final Browser br) {
-        jd.plugins.hoster.VKontakteRuHoster.prepBrowser(br);
+        final Browser requiredBecauseMethodSignatureChanged = jd.plugins.hoster.VKontakteRuHoster.prepBrowser(br);
     }
 
     /**
