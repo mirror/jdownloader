@@ -323,14 +323,14 @@ public class FShareVn extends PluginForHost {
                 }
                 dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = getJson(getDllink(), "url");
+                    dllink = getJson(getDllink(), "url").replace("\\", "");
                 }
                 if (dllink == null) {
+                    String msg = getJson(getDllink(), "msg");
+                    if (msg == "Server error, please try again later!") {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (dllink.contains("\"url\":")) {
-                    dllink = new Regex(dllink, "\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
-                    logger.info("dllink: " + dllink); // See if it's run over here
                 }
             }
             if (StringUtils.containsIgnoreCase(dllink, "Server error") && StringUtils.containsIgnoreCase(dllink, "please try again later")) {
@@ -524,7 +524,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -534,7 +534,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -544,7 +544,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -554,7 +554,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -564,7 +564,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -574,7 +574,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     *
+     * 
      * @author raztoki
      * @param source
      * @return
