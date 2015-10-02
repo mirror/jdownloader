@@ -58,7 +58,7 @@ public class WtchSrs extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches(".+/open/cale/\\d+\\.html")) {
-            final String result = br.getRegex("<a class=(\"|'|)myButton\\1 href=(\"|'\"|)(.*?)\\2").getMatch(2);
+            final String result = br.getRegex("<a class=(\"|'|)myButton.*?\\1 href=(\"|'\"|)(.*?)\\2").getMatch(2);
             if (result != null) {
                 decryptedLinks.add(createDownloadlink(result));
             }
