@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.URLStream;
 import org.jdownloader.logging.LogController;
 
@@ -231,52 +232,52 @@ public class GifDecoder {
 
                 code = datum & code_mask;
                 datum >>= code_size;
-                bits -= code_size;
+                    bits -= code_size;
 
-                // Interpret the code
+                    // Interpret the code
 
-                if (code > available || code == end_of_information) {
-                    break;
-                }
-                if (code == clear) {
-                    // Reset decoder.
-                    code_size = data_size + 1;
-                    code_mask = (1 << code_size) - 1;
-                    available = clear + 2;
-                    old_code = NullCode;
-                    continue;
-                }
-                if (old_code == NullCode) {
-                    pixelStack[top++] = suffix[code];
-                    old_code = code;
-                    first = code;
-                    continue;
-                }
-                in_code = code;
-                if (code == available) {
+                    if (code > available || code == end_of_information) {
+                        break;
+                    }
+                    if (code == clear) {
+                        // Reset decoder.
+                        code_size = data_size + 1;
+                        code_mask = (1 << code_size) - 1;
+                        available = clear + 2;
+                        old_code = NullCode;
+                        continue;
+                    }
+                    if (old_code == NullCode) {
+                        pixelStack[top++] = suffix[code];
+                        old_code = code;
+                        first = code;
+                        continue;
+                    }
+                    in_code = code;
+                    if (code == available) {
+                        pixelStack[top++] = (byte) first;
+                        code = old_code;
+                    }
+                    while (code > clear) {
+                        pixelStack[top++] = suffix[code];
+                        code = prefix[code];
+                    }
+                    first = suffix[code] & 0xff;
+
+                    // Add a new string to the string table,
+
+                    if (available >= MaxStackSize) {
+                        break;
+                    }
                     pixelStack[top++] = (byte) first;
-                    code = old_code;
-                }
-                while (code > clear) {
-                    pixelStack[top++] = suffix[code];
-                    code = prefix[code];
-                }
-                first = suffix[code] & 0xff;
-
-                // Add a new string to the string table,
-
-                if (available >= MaxStackSize) {
-                    break;
-                }
-                pixelStack[top++] = (byte) first;
-                prefix[available] = (short) old_code;
-                suffix[available] = (byte) first;
-                available++;
-                if ((available & code_mask) == 0 && available < MaxStackSize) {
-                    code_size++;
-                    code_mask += available;
-                }
-                old_code = in_code;
+                    prefix[available] = (short) old_code;
+                    suffix[available] = (byte) first;
+                    available++;
+                    if ((available & code_mask) == 0 && available < MaxStackSize) {
+                        code_size++;
+                        code_mask += available;
+                    }
+                    old_code = in_code;
             }
 
             // Pop a pixel off the pixel stack.
@@ -466,8 +467,8 @@ public class GifDecoder {
     public int read(String name) {
         status = STATUS_OK;
         try {
-            name = name.trim().toLowerCase();
-            if (name.indexOf("file:") >= 0 || name.indexOf(":/") > 0) {
+
+            if (StringUtils.containsIgnoreCase(name, "file:") || StringUtils.containsIgnoreCase(name, ":/")) {
                 final URL url = new URL(name);
                 in = new BufferedInputStream(URLStream.openStream(url));
             } else {
@@ -603,13 +604,13 @@ public class GifDecoder {
         read(); // block size
         int packed = read(); // packed fields
         dispose = (packed & 0x1c) >> 2; // disposal method
-        if (dispose == 0) {
-            dispose = 1; // elect to keep old image if discretionary
-        }
-        transparency = (packed & 1) != 0;
-        delay = readShort() * 10; // delay in milliseconds
-        transIndex = read(); // transparent color index
-        read(); // block terminator
+                    if (dispose == 0) {
+                        dispose = 1; // elect to keep old image if discretionary
+                    }
+                    transparency = (packed & 1) != 0;
+                    delay = readShort() * 10; // delay in milliseconds
+                    transIndex = read(); // transparent color index
+                    read(); // block terminator
     }
 
     /**
