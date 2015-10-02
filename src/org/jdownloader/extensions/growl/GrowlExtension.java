@@ -39,10 +39,12 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.growl.translate.GrowlTranslation;
 import org.jdownloader.extensions.growl.translate.T;
+import org.jdownloader.logging.LogController;
 
 public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslation> implements StateEventListener {
 
     private static final String TMP_GROWL_NOTIFICATION_SCPT = "growlNotification.scpt";
+    private volatile String     path                        = null;
 
     @Override
     protected void stop() throws StopException {
@@ -56,16 +58,17 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
 
     @Override
     protected void start() throws StartException {
-        File tmp = Application.getTempResource(TMP_GROWL_NOTIFICATION_SCPT);
+        final File tmp = Application.getTempResource(TMP_GROWL_NOTIFICATION_SCPT);
         FileCreationManager.getInstance().delete(tmp, null);
-        tmp.deleteOnExit();
         try {
-            IO.writeToFile(tmp, IO.readURL(getClass().getResource("osxnopasswordforshutdown.scpt")));
+            IO.writeToFile(tmp, IO.readURL(getClass().getResource(TMP_GROWL_NOTIFICATION_SCPT)));
+            path = tmp.getAbsolutePath();
         } catch (IOException e) {
-            e.printStackTrace();
+            LogController.CL().log(e);
             throw new StartException(e);
+        } finally {
+            tmp.deleteOnExit();
         }
-
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -117,7 +120,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
     private void growlNotification(String headline, String message, String title) {
         if (CrossSystem.isMac()) {
             Executer exec = new Executer("/usr/bin/osascript");
-            exec.addParameter(Application.getTempResource(GrowlExtension.TMP_GROWL_NOTIFICATION_SCPT).getAbsolutePath());
+            exec.addParameter(path);
             exec.addParameter(headline);
             exec.addParameter(message);
             exec.addParameter(title);
