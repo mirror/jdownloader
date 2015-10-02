@@ -64,7 +64,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
@@ -74,7 +73,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "salefiles.com" }, urls = { "https?://(www\\.)?salefiles\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
@@ -84,7 +82,7 @@ public class SaleFilesCom extends PluginForHost {
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://salefiles.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(salefiles\\.com)";
+    private final String               DOMAINS                      = "(salefiles\\.com|diskfiles\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input|>Password:</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
@@ -438,14 +436,16 @@ public class SaleFilesCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
-                if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
+                if (!inValidate(dllink)) {
+                    break;
+                } else if ((getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
                     if (i == repeat) {
                         logger.warning("Exausted repeat count, after 'dllink == null'");
                     } else {
                         logger.warning("Couldn't find 'download2' and 'dllink == null'");
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (inValidate(dllink) && getFormByKey(cbr, "op", "download2") != null) {
+                } else if (getFormByKey(cbr, "op", "download2") != null) {
                     dlForm = getFormByKey(cbr, "op", "download2");
                     continue;
                 } else {
@@ -1479,7 +1479,7 @@ public class SaleFilesCom extends PluginForHost {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-           
+
             final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             String code = "";
@@ -1495,7 +1495,7 @@ public class SaleFilesCom extends PluginForHost {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-             String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha,getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
+            String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha, getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
             if (result == null || "CANCEL".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -2066,9 +2066,9 @@ public class SaleFilesCom extends PluginForHost {
         }
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }
