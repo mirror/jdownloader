@@ -831,16 +831,22 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setConditionFilter(getConditionFilter());
         rule.setFiletypeFilter(getFiletypeFilter());
         rule.setMatchAlwaysFilter(getMatchAlwaysFilter());
-        rule.setDownloadDestination(cbDest.isSelected() ? fpDest.getTxt().getText() : null);
 
         if (cbDest.isSelected()) {
-            DownloadPathHistoryManager.getInstance().add(fpDest.getTxt().getText());
+            final String path = fpDest.getPath();
+            DownloadPathHistoryManager.getInstance().add(path);
+            rule.setDownloadDestination(path);
+        } else {
+            rule.setDownloadDestination(null);
         }
         if (cbMove.isSelected()) {
-            DownloadPathHistoryManager.getInstance().add(fpDest.getTxt().getText());
+            final String path = fpMove.getPath();
+            DownloadPathHistoryManager.getInstance().add(path);
+            rule.setMoveto(path);
+        } else {
+            rule.setMoveto(null);
         }
 
-        rule.setMoveto(cbMove.isSelected() ? fpMove.getPath() : null);
         rule.setRename(cbRename.isSelected() ? txtRename.getText() : null);
         rule.setLinkEnabled(cbEnable.isSelected() ? cobEnable.getSelectedIndex() == 0 : null);
         rule.setChunks(cbChunks.isSelected() ? ((Number) spChunks.getValue()).intValue() : -1);

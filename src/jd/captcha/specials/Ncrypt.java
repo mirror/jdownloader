@@ -30,6 +30,8 @@ import jd.captcha.utils.AnimatedGifEncoder;
 import jd.captcha.utils.GifDecoder;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.logging.LogController;
+
 public class Ncrypt {
     public static void main(final String args[]) throws IOException {
         final String hoster = "ncrypt.in";
@@ -67,6 +69,7 @@ public class Ncrypt {
                 ImageIO.write(frames[0].getImage(1), "png", fos);
             }
         } catch (final Throwable e) {
+            LogController.CL().log(e);
         } finally {
             try {
                 fos.close();
@@ -94,6 +97,7 @@ public class Ncrypt {
             }
             e.finish();
         } catch (final Throwable e) {
+            LogController.CL().log(e);
         }
     }
 }
