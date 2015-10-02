@@ -64,9 +64,12 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        String url = link.getPluginPatternMatcher();
+        final String url = link.getPluginPatternMatcher();
+        final String fileID = getPublicFileID(link);
+        if (link.getSetLinkID() == null) {
+            link.setLinkID(getHost() + fileID);
+        }
         if (url.startsWith("chrome://")) {
-            final String fileID = getPublicFileID(link);
             final String keyString = getPublicFileKey(link);
             if (fileID != null && keyString != null) {
                 link.setUrlDownload("https://mega.co.nz/#!" + fileID + "!" + keyString);

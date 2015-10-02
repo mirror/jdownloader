@@ -48,6 +48,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
@@ -739,6 +742,25 @@ public class VKontakteRuHoster extends PluginForHost {
         return br;
     }
 
+    @Override
+    public void errLog(Throwable e, Browser br, LogSource log, DownloadLink link, Account account) {
+        if (e != null && e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+            final LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
+            try {
+                errlogger.severe("HosterPlugin out of date: " + this + " :" + getVersion());
+                errlogger.severe("URL: " + link.getPluginPatternMatcher() + " | ContentUrl: " + link.getContentUrl() + " | ContainerUrl: " + link.getContainerUrl() + " | OriginUrl: " + link.getOriginUrl() + " | ReferrerUrl: " + link.getReferrerUrl());
+                if (e != null) {
+                    errlogger.log(e);
+                }
+                if (br != null) {
+                    errlogger.info(br.toString());
+                }
+            } finally {
+                errlogger.close();
+            }
+        }
+    }
+
     /**
      * Try to get best quality and test links until a working link is found. will also handle errors in case
      *
@@ -749,7 +771,9 @@ public class VKontakteRuHoster extends PluginForHost {
         final String json = br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
         if (json == null) {
             logger.warning("Failed to find source json of picturelink");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final PluginException e = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            errLog(e, br, dl);
+            throw e;
         }
         Map<String, Object> sourcemap = null;
         final String thisid = getPhotoID(dl);

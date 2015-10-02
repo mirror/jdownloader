@@ -18,7 +18,6 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAct
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autoextract());
         setSmallIcon(new ExtractIconVariant("refresh", 18, 14, 0, 0).crop());
         setSelected(false);
-
     }
 
     public void setSelected(final boolean selected) {

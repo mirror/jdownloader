@@ -1089,6 +1089,16 @@ public class TheVideoMe extends antiDDoSForHost {
                     submitForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
+                    if (dllink == null) {
+                        sleep(2000, downloadLink);
+                        dlform = br.getFormbyProperty("name", "F1");
+                        if (dlform == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        submitForm(dlform);
+                        checkErrors(downloadLink, true);
+                        dllink = getDllink();
+                    }
                 }
             }
             if (dllink == null) {

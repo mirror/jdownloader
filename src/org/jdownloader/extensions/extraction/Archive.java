@@ -145,7 +145,7 @@ public class Archive {
     private ContentView             contents;
 
     private boolean                 passwordRequiredToOpen;
-    private String                  archiveID = null;
+    private volatile String         archiveID = null;
 
     public String getArchiveID() {
         return archiveID;

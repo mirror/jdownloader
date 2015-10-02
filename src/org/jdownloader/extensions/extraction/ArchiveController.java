@@ -87,7 +87,7 @@ public class ArchiveController {
                 if (ret != null) {
                     return ret;
                 }
-                ret = createSettingsObject(id);
+                ret = createSettingsObject(internalID);
                 final BooleanStatus defaultAuto = BooleanStatus.get(defaultAutoExtract);
                 if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
                     /* only set AutoExtract value when it is UNSET */
