@@ -161,11 +161,7 @@ public class NCryptIn extends PluginForDecrypt {
                         final File captchaFile = this.getLocalCaptchaFile(".gif");
                         try {
                             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in" + captchaLink));
-                            try {
-                                jd.captcha.specials.Ncrypt.setDelay(captchaFile, 80);
-                            } catch (final Throwable e) {
-                                /* not existing in 09581 stable */
-                            }
+                            jd.captcha.specials.Ncrypt.setDelay(captchaFile, 80);
                             code = getCaptchaCode(captchaFile, param);
                         } finally {
                             captchaFile.delete();
