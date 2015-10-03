@@ -178,7 +178,7 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is required after changes")
-    @DefaultIntValue(3)
+    @DefaultIntValue(1)
     @SpinnerValidator(min = 0, max = 10)
     @DescriptionForConfigEntry("Max. Captchas Parallel")
     int getThreadpoolSize();
@@ -265,6 +265,14 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setDefaultTimeout(int ms);
 
     @AboutConfig
+    @DefaultIntValue(180)
+    @SpinnerValidator(min = 30, max = 900)
+    @DescriptionForConfigEntry("Interval for the notifications")
+    int getDefaultTimeoutNotification();
+
+    void setDefaultTimeoutNotification(int ms);
+
+    @AboutConfig
     @DefaultJsonObject("{\"jdownloader.org\":60000}")
     @DescriptionForConfigEntry("Host bound Waittime before using CES. Use CaptchaExchangeChanceToSkipBubbleTimeout for a global timeout")
     HashMap<String, Integer> getBubbleTimeoutByHostMap();
@@ -273,9 +281,16 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     @AboutConfig
     @DefaultIntValue(4)
-    @SpinnerValidator(min = 3, max = 20)
-    @DescriptionForConfigEntry("Max. Captchas per download")
+    @SpinnerValidator(min = 3, max = 50)
+    @DescriptionForConfigEntry("Max. captchas per download")
     int getmaxcaptchaperdl();
 
     void setmaxcaptchaperdl(int size);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate max. captchas per download")
+    boolean getmaxcaptcha();
+
+    void setmaxcaptcha(boolean b);
 }

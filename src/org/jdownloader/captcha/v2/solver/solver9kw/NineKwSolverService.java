@@ -65,7 +65,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
                 @Override
                 public boolean isEnabled() {
-                    return config.isEnabled() || config.ismouse();
+                    return config.isEnabled() || config.ismouse() || config.ispuzzle();
                 }
 
                 @Override
