@@ -216,11 +216,7 @@ public class Archive {
     }
 
     public void setArchiveFiles(java.util.List<ArchiveFile> collection) {
-        final List<ArchiveFile> archives = new CopyOnWriteArrayList<ArchiveFile>(collection);
-        for (ArchiveFile af : archives) {
-            af.setArchive(this);
-        }
-        this.archives = archives;
+        this.archives = new CopyOnWriteArrayList<ArchiveFile>(collection);
     }
 
     public void setArchiveType(ArchiveType singleFile) {
