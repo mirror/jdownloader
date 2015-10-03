@@ -67,7 +67,14 @@ public class MegaConz extends PluginForHost {
         final String url = link.getPluginPatternMatcher();
         final String fileID = getPublicFileID(link);
         if (link.getSetLinkID() == null) {
-            link.setLinkID(getHost() + fileID);
+            if (fileID != null) {
+                link.setLinkID(getHost() + "F" + fileID);
+            } else {
+                final String nodeID = getNodeFileID(link);
+                if (nodeID != null) {
+                    link.setLinkID(getHost() + "N" + nodeID);
+                }
+            }
         }
         if (url.startsWith("chrome://")) {
             final String keyString = getPublicFileKey(link);
