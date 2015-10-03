@@ -2,6 +2,7 @@ package org.jdownloader.extensions.extraction.bindings.crawledlink;
 
 import java.awt.Color;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -177,6 +178,37 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
                 if (dlLink != null) {
                     dlLink.setArchiveID(archiveID);
                     dlLink.setPartOfAnArchive(Boolean.TRUE);
+                }
+            }
+            boolean hasArchiveInfo = false;
+            for (final CrawledLink link : getLinks()) {
+                if (link.hasArchiveInfo()) {
+                    hasArchiveInfo = true;
+                    break;
+                }
+            }
+            if (hasArchiveInfo) {
+                List<String> existingPws = archive.getSettings().getPasswords();
+                if (existingPws == null) {
+                    existingPws = new ArrayList<String>();
+                }
+                final List<String> newPws = new ArrayList<String>();
+                final String finalPassword = archive.getSettings().getFinalPassword();
+                if (finalPassword != null && !existingPws.contains(finalPassword)) {
+                    newPws.add(finalPassword);
+                }
+                for (final CrawledLink link : getLinks()) {
+                    if (link.hasArchiveInfo()) {
+                        for (final String newPw : link.getArchiveInfo().getExtractionPasswords()) {
+                            if (newPw != null && !existingPws.contains(newPw)) {
+                                newPws.add(newPw);
+                            }
+                        }
+                    }
+                }
+                if (newPws.size() > 0) {
+                    existingPws.addAll(newPws);
+                    archive.getSettings().setPasswords(existingPws);
                 }
             }
         }
