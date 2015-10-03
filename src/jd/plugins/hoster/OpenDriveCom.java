@@ -124,7 +124,7 @@ public class OpenDriveCom extends PluginForHost {
         } else {
             dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/api/v\\d+/download/file\\.json/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<a class=\"download\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("<a class=\"[^\"]*download\" href=\"(http[^<>\"]*?|/download/[^\"]+)\"").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
                 }
