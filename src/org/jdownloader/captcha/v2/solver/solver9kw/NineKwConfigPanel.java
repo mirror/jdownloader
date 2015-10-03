@@ -75,6 +75,9 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
     private ExtButton                      btnUserDebug3crawler;
     private ExtButton                      btnUserDebugStatReset;
     private ExtButton                      btnUserDebugBlacklistReset;
+    private ExtButton                      btnUserDebugStatShow;
+    private ExtButton                      btnUserDebugBlacklistShow;
+    private ExtButton                      btnUserDebugBubbleShow;
     private Captcha9kwSettings             config;
     public static final String             DEBUGEXT         = ".txt";
     private static final long              serialVersionUID = -1805335184795063609L;
@@ -304,9 +307,12 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         toolbar9.add(poolcaptchas);
         toolbar9.add(label(_GUI._.NinekwService_createPanel_threadsizepool()));
 
+        Checkbox MAXCAPTCHADL_YES = new Checkbox(CFG_9KWCAPTCHA.MAXCAPTCHADL_YES);
         Spinner maxcaptchasperdl = new Spinner(CFG_9KWCAPTCHA.MAXCAPTCHADL_SIZE);
         maxcaptchasperdl.setToolTipText(_GUI._.NinekwService_createPanel_maxcaptchasperdl_tooltiptext());
+        MAXCAPTCHADL_YES.setToolTipText(_GUI._.NinekwService_createPanel_maxcaptchasperdl_tooltiptext());
         toolbar9.add(maxcaptchasperdl);
+        toolbar9.add(MAXCAPTCHADL_YES);
         toolbar9.add(label(_GUI._.NinekwService_createPanel_maxcaptchasperdl()));
 
         Tab1_9kw.add(toolbar9, "gapleft 33,spanx,pushx,growx");
@@ -727,6 +733,77 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         });
         btnUserDebugBlacklistReset.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebugBlacklistReset_tooltiptext());
         toolbardebug1.add(btnUserDebugBlacklistReset);
+
+        btnUserDebugStatShow = new ExtButton(new AppAction() {
+            private static final long serialVersionUID = -4020410143121908004L;
+            {
+                setName("Show Stats");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String crazylist = "";
+                crazylist += "OK: " + (Captcha9kwSolverClick.getInstance().click9kw_counterOK.get() + Captcha9kwSolver.getInstance().counterOK.get()) + "\n";
+                crazylist += " NotOK: " + (Captcha9kwSolverClick.getInstance().click9kw_counterNotOK.get() + Captcha9kwSolver.getInstance().counterNotOK.get()) + "\n";
+                crazylist += " Solved: " + (Captcha9kwSolverClick.getInstance().click9kw_counterSolved.get() + Captcha9kwSolver.getInstance().counterSolved.get()) + "\n";
+                crazylist += " Unused: " + (Captcha9kwSolverClick.getInstance().click9kw_counterUnused.get() + Captcha9kwSolver.getInstance().counterUnused.get()) + "\n";
+                crazylist += " Interrupted: " + (Captcha9kwSolverClick.getInstance().click9kw_counterInterrupted.get() + Captcha9kwSolver.getInstance().counterInterrupted.get()) + "\n";
+                crazylist += " Send: " + (Captcha9kwSolverClick.getInstance().click9kw_counterSend.get() + Captcha9kwSolver.getInstance().counterSend.get()) + "\n";
+                crazylist += " SendError: " + (Captcha9kwSolverClick.getInstance().click9kw_counterSendError.get() + Captcha9kwSolver.getInstance().counterSendError.get()) + "\n";
+                crazylist += " All: " + (Captcha9kwSolverClick.getInstance().click9kw_counter.get() + Captcha9kwSolver.getInstance().counter.get()) + "\n";
+
+                try {
+                    Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, "9kw stats", null, crazylist, NewTheme.getInstance().getIcon("proxy", 32), null, null);
+                } catch (DialogClosedException e2) {
+                    e2.printStackTrace();
+                } catch (DialogCanceledException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        });
+        toolbardebug1.add(btnUserDebugStatShow);
+
+        btnUserDebugBlacklistShow = new ExtButton(new AppAction() {
+            private static final long serialVersionUID = -4020410143121908004L;
+            {
+                setName("Show Blacklist");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String crazylist = Captcha9kwSolver.getInstance().captcha_map9kw.toString();
+
+                try {
+                    Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, "9kw stats", null, crazylist, NewTheme.getInstance().getIcon("proxy", 32), null, null);
+                } catch (DialogClosedException e2) {
+                    e2.printStackTrace();
+                } catch (DialogCanceledException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        });
+        toolbardebug1.add(btnUserDebugBlacklistShow);
+
+        btnUserDebugBubbleShow = new ExtButton(new AppAction() {
+            private static final long serialVersionUID = -4020410143121908004L;
+            {
+                setName("Show BubbleMap");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String crazylist = config.getBubbleTimeoutByHostMap().toString();
+
+                try {
+                    Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, "9kw BubbleTimeoutByHostMap", null, crazylist, NewTheme.getInstance().getIcon("proxy", 32), null, null);
+                } catch (DialogClosedException e2) {
+                    e2.printStackTrace();
+                } catch (DialogCanceledException e2) {
+                    e2.printStackTrace();
+                }
+            }
+        });
+        toolbardebug1.add(btnUserDebugBubbleShow);
 
         tabbedPane.addTab("Debug", Tab4_9kw);
 
