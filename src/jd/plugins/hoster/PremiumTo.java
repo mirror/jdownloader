@@ -105,19 +105,18 @@ public class PremiumTo extends UseNet {
             account.setValid(false);
             throw e;
         }
-        {
-            final Browser tbr = br.cloneBrowser();
-            tbr.getPage(API_BASE + "straffic.php");
-            final String[] traffic = tbr.toString().split(";");
-            if (traffic != null && traffic.length == 2) {
-                // because we can not account for separate traffic allocations.
-                final long nT = Long.parseLong(traffic[0]);
-                final long sT = Long.parseLong(traffic[1]);
-                ac.setTrafficLeft(nT + sT + "MiB");
-                // set both so we can check in canHandle.
-                account.setProperty(normalTraffic, nT);
-                account.setProperty(specialTraffic, sT);
-            }
+        Browser tbr = br.cloneBrowser();
+        tbr.getPage("http://premium.to/sstraffic.php");
+        String[] traffic = tbr.toString().split(";");
+        if (traffic != null && traffic.length == 3) {
+            // because we can not account for separate traffic allocations.
+            final long nT = Long.parseLong(traffic[0]);
+            final long spT = Long.parseLong(traffic[1]);
+            final long stT = Long.parseLong(traffic[2]);
+            ac.setTrafficLeft(nT + spT + stT + "MiB");
+            // set both so we can check in canHandle.
+            account.setProperty(normalTraffic, nT + stT);
+            account.setProperty(specialTraffic, stT);
         }
         {
             final Browser hbr = br.cloneBrowser();
