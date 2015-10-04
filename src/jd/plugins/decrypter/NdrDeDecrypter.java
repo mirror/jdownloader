@@ -98,7 +98,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         final String date_formatted = formatDate(date);
         final String availablequalitiestext = br.getRegex("\\.,([a-z,]+),\\.mp4\\.csmil/master\\.m3u8").getMatch(0);
         final Regex afnreg = br.getRegex("afn: \"TV-(\\d{4})(\\d{4})([0-9\\-]+)\"");
-        final Regex afneg_replacement = br.getRegex("hls\\.ndr\\.de/i/ndr/(\\d+)/(\\d+)/([^<>\"(]*?)\\.,");
+        final Regex afneg_replacement = br.getRegex("hls\\.ndr\\.de/i/ndr/(\\d+)/(\\d+)/TV\\-\\d+([^<>\"(]*?)\\.,");
         String v_year = afnreg.getMatch(0);
         if (v_year == null) {
             v_year = afneg_replacement.getMatch(0);

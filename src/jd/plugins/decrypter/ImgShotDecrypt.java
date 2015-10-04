@@ -84,7 +84,8 @@ public class ImgShotDecrypt extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (this.br.containsHTML("imgContinue")) {
+        /* general|imgtube.net */
+        if (this.br.containsHTML("imgContinue") || this.br.containsHTML("continue_to_image")) {
             br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
         }
         final String finallink = br.getRegex("(\\'|\")(http://(www\\.)?" + Pattern.quote(Browser.getHost(parameter)) + "(/upload/big/|/uploads/images/)[^<>\"]*?)\\1").getMatch(1);

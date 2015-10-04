@@ -24,9 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,6 +43,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbabes.com" }, urls = { "https?://(www\\.)?imgbabes\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class ImgBabesCom extends PluginForHost {
@@ -107,6 +107,7 @@ public class ImgBabesCom extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = new Browser();
@@ -123,6 +124,13 @@ public class ImgBabesCom extends PluginForHost {
             }
             lnk = lnk.concat("?attempt=1");
             getPage(lnk);
+            lnk = this.br.getRegex("window\\.location\\.href=\"(http://[^<>\"]*?\\?attempt=\\d+)\"").getMatch(0);
+            if (lnk != null) {
+                /* TODO! */
+                this.br.setCookie(this.getHost(), "denial", "e0562d8c31719816961c9be59ac4c114");
+                getPage(lnk);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -181,6 +189,9 @@ public class ImgBabesCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "id=\"this_image\" alt=\"([^<>\"]*?)\"").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
