@@ -73,7 +73,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
         String finalfilename = null;
         /* Some links don't have to be accessed (here) */
         try {
-            if (!new Regex(parameter, "1tool\\.biz|file4ever\\.us|tm-exchange\\.com/|mixconnect\\.com/|dwz\\.cn/|icefilms\\.info/|linkdecode\\.com|fastdecode\\.com").matches()) {
+            if (!new Regex(parameter, "1tool\\.biz|file4ever\\.us|tm-exchange\\.com/|mixconnect\\.com/|dwz\\.cn/|icefilms\\.info/|linkdecode\\.com|fastdecode\\.com/|is\\.gd/").matches()) {
                 br.getPage(parameter);
             }
             if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
@@ -584,15 +584,15 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                     finallink = Encoding.Base64Decode(finallink);
                 } else {
                     finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
+                    if (finallink == null) {
+                        finallink = br.getRegex("<a href\\s*=\\s*('|\")([^\r\n]*/\\?r=.*?)\\1[^>]*>Close</a>").getMatch(1);
+                    }
                 }
-                if (finallink == null && br.containsHTML("<title>DJURL\\.COM \\- The DJ Link Shortener</title>") || br.getHttpConnection().getResponseCode() == 404 || finallink.contains("djurl.com/")) {
+                if (finallink == null && (br.containsHTML("<title>DJURL\\.COM \\- The DJ Link Shortener</title>") || br.getHttpConnection().getResponseCode() == 404)) {
                     offline = true;
                 }
             } else if (parameter.contains("is.gd/")) {
-                if (br.containsHTML("content\\.incapsula\\.com/jsTest")) {
-                    logger.info("Cannot break through incapsula ddos protection stuff: " + parameter);
-                    return decryptedLinks;
-                }
+                getPage(parameter);
                 finallink = br.getRedirectLocation();
                 if (finallink == null || finallink.contains("is.gd/")) {
                     finallink = br.getRegex("the destination shown: \\-<br /><a href=\"(http[^<>\"]*?)\"").getMatch(0);

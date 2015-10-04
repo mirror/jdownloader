@@ -27,6 +27,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,19 +50,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv", "videopremium.net" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/(embed\\-)?[a-z0-9]{12}", "r489e0zu0564hjzrt50p9jhgtpiohkDELETE_MEdsngiurhz958hchswinefihighr" }, flags = { 2, 0 })
-public class VideoPremiumNet extends PluginForHost {
+public class VideoPremiumNet extends antiDDoSForHost {
 
     private String               passCode                     = null;
     private String               correctedBR                  = "";
@@ -85,7 +82,7 @@ public class VideoPremiumNet extends PluginForHost {
     /**
      * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
-     * */
+     */
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods: this is an RTMP host, removed F1 form- password- and captcha
     // handling
@@ -127,12 +124,16 @@ public class VideoPremiumNet extends PluginForHost {
         return true;
     }
 
-    public void prepBrowser() {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0");
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        return prepBr;
     }
 
     @Override
@@ -143,7 +144,6 @@ public class VideoPremiumNet extends PluginForHost {
         br.setFollowRedirects(true);
         // Correct previously added links
         correctDownloadLink(link);
-        prepBrowser();
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         /* Workaround not needed anymore */
         // getPage(link.getDownloadURL());
@@ -171,7 +171,7 @@ public class VideoPremiumNet extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 scanInfo(fileInfo);
             }
         }
@@ -272,36 +272,38 @@ public class VideoPremiumNet extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false, passCode);
                 dllink = getDllink();
             }
         }
-        Form dlForm = br.getFormbyProperty("name", "F1");
-        if (dlForm != null) {
-            logger.info("F1 form is available..");
-            if (correctedBR.contains(";background:#ccc;text-align")) {
-                logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                /* Captcha method by ManiacMansion */
-                final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
-                if (letters == null || letters.length == 0) {
-                    logger.warning("plaintext captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            Form dlForm = br.getFormbyProperty("name", "F1");
+            if (dlForm != null) {
+                logger.info("F1 form is available..");
+                if (correctedBR.contains(";background:#ccc;text-align")) {
+                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
+                    /* Captcha method by ManiacMansion */
+                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    if (letters == null || letters.length == 0) {
+                        logger.warning("plaintext captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                    for (String[] letter : letters) {
+                        capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+                    }
+                    final StringBuilder code = new StringBuilder();
+                    for (String value : capMap.values()) {
+                        code.append(value);
+                    }
+                    dlForm.put("code", code.toString());
+                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
                 }
-                final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                for (String[] letter : letters) {
-                    capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
-                }
-                final StringBuilder code = new StringBuilder();
-                for (String value : capMap.values()) {
-                    code.append(value);
-                }
-                dlForm.put("code", code.toString());
-                logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                waitTime(System.currentTimeMillis(), downloadLink);
+                submitForm(dlForm);
+                dllink = getDllink();
             }
-            waitTime(System.currentTimeMillis(), downloadLink);
-            sendForm(dlForm);
-            dllink = getDllink();
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -494,13 +496,15 @@ public class VideoPremiumNet extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void sendForm(Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -700,7 +704,6 @@ public class VideoPremiumNet extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -726,7 +729,7 @@ public class VideoPremiumNet extends PluginForHost {
                 // Handle stupid login captcha
                 if (br.containsHTML("solvemedia\\.com/papi/")) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "videopremium.tv", "http://videopremium.tv", true);
-                   
+
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, dummyLink);
@@ -739,7 +742,7 @@ public class VideoPremiumNet extends PluginForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("redirect", "http://" + CURRENT_DOMAIN + "/");
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -794,7 +797,7 @@ public class VideoPremiumNet extends PluginForHost {
                 if (dlform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                sendForm(dlform);
+                submitForm(dlform);
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
             }
@@ -877,9 +880,10 @@ public class VideoPremiumNet extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }
