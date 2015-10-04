@@ -256,7 +256,8 @@ public class ShareNeoNet extends PluginForHost {
                          * normal way hmm
                          */
                         this.br.getPage("/" + this.getFID(downloadLink).toUpperCase());
-                        if (isOffline()) {
+                        if (isOffline() && !this.br.containsHTML("google\\.com/recaptcha")) {
+                            /* Very rare case!! */
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     }

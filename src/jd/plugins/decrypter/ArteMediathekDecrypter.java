@@ -115,7 +115,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         this.br.setAllowedResponseCodes(503);
         br.getPage(parameter);
         try {
-            if (this.br.getHttpConnection().getResponseCode() != 200) {
+            if (this.br.getHttpConnection().getResponseCode() != 200 && this.br.getHttpConnection().getResponseCode() != 301) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
             /* First we need to have some basic data - this part is link-specific. */
