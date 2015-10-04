@@ -57,6 +57,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
@@ -1030,13 +1031,13 @@ public class FileFactory extends PluginForHost {
                     final String md5 = getJson(filter, "md5");
                     final String prem = getJson(filter, "premiumOnly");
                     final String pass = getJson(filter, "password");
-                    if (name != null) {
+                    if (StringUtils.isNotEmpty(name)) {
                         dl.setName(name);
                     }
-                    if (size != null) {
+                    if (size != null && size.matches("^\\d+$")) {
                         dl.setVerifiedFileSize(Long.parseLong(size));
                     }
-                    if (md5 != null) {
+                    if (StringUtils.isNotEmpty(md5)) {
                         dl.setMD5Hash(md5);
                     }
                     if (prem != null) {
