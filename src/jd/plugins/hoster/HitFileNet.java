@@ -25,6 +25,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,38 +53,34 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     /* Settings */
-    private static final String  SETTING_JAC                          = "SETTING_JAC";
-    private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    private static final String SETTING_JAC                          = "SETTING_JAC";
+    private static final String SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
 
-    private final String         UA                                   = RandomUserAgent.generate();
-    private static final String  HTML_RECAPTCHATEXT                   = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String  HTML_CAPTCHATEXT                     = "hitfile\\.net/captcha/";
+    private final String         UA                  = RandomUserAgent.generate();
+    private static final String  HTML_RECAPTCHATEXT  = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String  HTML_CAPTCHATEXT    = "hitfile\\.net/captcha/";
     /* Website will say something like "Searching file..." which means that it is offline. */
-    public static final String   HTML_FILE_OFFLINE                    = "class=\"code\\-404\"|<h1>Searching for the file\\.\\.\\.Please wait… </h1>";
-    private static final String  MAINPAGE                             = "http://hitfile.net";
-    public static Object         LOCK                                 = new Object();
-    private static final String  BLOCKED                              = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
-    private static final boolean ENABLE_CRYPTO_STUFF                  = false;
+    public static final String   HTML_FILE_OFFLINE   = "class=\"code\\-404\"|<h1>Searching for the file\\.\\.\\.Please wait… </h1>";
+    private static final String  MAINPAGE            = "http://hitfile.net";
+    public static Object         LOCK                = new Object();
+    private static final String  BLOCKED             = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
+    private static final boolean ENABLE_CRYPTO_STUFF = false;
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                          = true;
-    private static final int     FREE_MAXCHUNKS                       = 1;
-    private static final int     FREE_MAXDOWNLOADS                    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME               = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS            = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS         = 20;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger maxFree                              = new AtomicInteger(1);
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     public HitFileNet(final PluginWrapper wrapper) {
@@ -224,6 +224,8 @@ public class HitFileNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        br.getPage("http://ipcheck3.jdownloader.org");
+        br = new Browser();
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         setBrowserExclusive();
@@ -233,10 +235,10 @@ public class HitFileNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         simulateBrowser();
-        if (br.containsHTML("(\\'File not found\\. Probably it was deleted)") || br.containsHTML(HTML_FILE_OFFLINE)) {
+        if (br.containsHTML("'File not found\\. Probably it was deleted") || br.containsHTML(HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font\\-weight: bold; font\\-size: 14px;\">\\((.*?)\\)</span>");
+        final Regex fileInfo = br.getRegex("class='file-icon\\d+ [a-z0-9]+'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font-weight: bold; font\\-size: 14px;\">\\((.*?)\\)</span>");
         String filesize = fileInfo.getMatch(1);
         if (filesize != null) {
             filesize = filesize.replace("б", "b");
@@ -318,10 +320,10 @@ public class HitFileNet extends PluginForHost {
             if (StringUtils.equalsIgnoreCase(captchaForm.getAction(), "#")) {
                 captchaForm.setAction(br.getURL());
             }
-            final int retry = 2;
+            final int retry = 3;
             for (int i = 0; i < retry; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty(SETTING_JAC, false) || i == retry - 1) {
+                if (!getPluginConfig().getBooleanProperty(SETTING_JAC, false) || i >= 1) {
                     captchaCode = getCaptchaCode("hitfile.net.disabled", captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
@@ -422,10 +424,11 @@ public class HitFileNet extends PluginForHost {
         // if (res == null) {
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // }
+        final Browser br2 = br.cloneBrowser();
         if (res.matches(hf(10)) && this.ENABLE_CRYPTO_STUFF) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
-                br.getPage(res);
+                br2.getPage(res);
                 final String additionalWaittime = br.getRegex(hf(1)).getMatch(0);
                 if (additionalWaittime != null) {
                     sleep(Integer.parseInt(additionalWaittime) * 1001l, downloadLink);
@@ -446,14 +449,14 @@ public class HitFileNet extends PluginForHost {
                 res = correctRes;
             }
             sleep(tt * 1001, downloadLink);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage(res);
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.getPage(res);
         }
-        downloadUrl = br.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
+        downloadUrl = br2.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
         if (downloadUrl == null) {
-            downloadUrl = br.getRegex("\\'(/download/redirect/[^<>\"]*?)\\'").getMatch(0);
+            downloadUrl = br2.getRegex("\\'(/download/redirect/[^<>\"]*?)\\'").getMatch(0);
             if (downloadUrl == null) {
-                if (br.toString().matches("(?i)Error\\s*:\\s*\\d+")) {
+                if (br2.toString().matches("(?i)Error\\s*:\\s*\\d+")) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 // downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
@@ -762,7 +765,7 @@ public class HitFileNet extends PluginForHost {
         for (final String link : links) {
             // lets only add links related to this hoster.
             final String correctedLink = Request.getLocation(link, br.getRequest());
-            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/")) {
+            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/") && !correctedLink.contains("'")) {
                 if (dupe.add(correctedLink)) {
 
                     final Thread simulate = new Thread("SimulateBrowser") {
