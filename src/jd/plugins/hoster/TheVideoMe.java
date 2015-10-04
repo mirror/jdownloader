@@ -26,6 +26,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -48,10 +52,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class TheVideoMe extends antiDDoSForHost {
@@ -578,7 +578,7 @@ public class TheVideoMe extends antiDDoSForHost {
         if (dllink == null) {
             final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
             for (final String quality : qualities) {
-                dllink = new Regex(source, "\\'" + quality + "\\', \\'file\\' : \\'(http[^<>\"]*?)\\'").getMatch(0);
+                dllink = new Regex(source, "'" + quality + "',\\s*'?file\\'?\\s*:\\s*'(http[^<>\"]*?)'").getMatch(0);
                 if (dllink != null) {
                     break;
                 }
