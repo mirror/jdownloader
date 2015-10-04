@@ -38,6 +38,11 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -69,34 +74,29 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hugefiles.net" }, urls = { "https?://(www\\.)?hugefiles\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class HugeFilesNet extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://hugefiles.net";
+    private final String  COOKIE_HOST                = "http://hugefiles.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(hugefiles\\.net)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = true;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
+    private final String  DOMAINS                    = "(hugefiles\\.net)";
+    private final String  PASSWORDTEXT               = "<br><b>Passwor(d|t):</b> <input";
+    private final String  MAINTENANCE                = ">This server is in maintenance mode";
+    private final String  dllinkRegex                = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final boolean supportsHTTPS              = false;
+    private final boolean enforcesHTTPS              = false;
+    private final boolean useRUA                     = true;
+    private final boolean useAltLinkCheck            = false;
+    private final boolean useVidEmbed                = false;
+    private final boolean useAltEmbed                = true;
+    private final boolean useAltExpire               = true;
+    private final long    useLoginIndividual         = 6 * 3480000l;
+    private final boolean waitTimeSkipableReCaptcha  = true;
+    private final boolean waitTimeSkipableSolveMedia = false;
+    private final boolean waitTimeSkipableKeyCaptcha = false;
+    private final boolean captchaSkipableSolveMedia  = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
@@ -162,9 +162,9 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * @author raztoki
-     * 
+     *
      * @category 'Experimental', Mods written July 2012 - 2013
-     * */
+     */
     public HugeFilesNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -173,7 +173,7 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * defines custom browser requirements.
-     * */
+     */
     private Browser prepBrowser(final Browser prepBr) {
         HashMap<String, String> map = null;
         synchronized (cloudflareCookies) {
@@ -202,6 +202,7 @@ public class HugeFilesNet extends PluginForHost {
             prepBr.setAllowedResponseCodes(new int[] { 503 });
         } catch (Throwable e) {
         }
+        prepBr.setReadTimeout(2 * 60 * 1000);
         return prepBr;
     }
 
@@ -332,8 +333,8 @@ public class HugeFilesNet extends PluginForHost {
     /**
      * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
      * method doesn't give filename...
-     * 
-     * */
+     *
+     */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
@@ -435,6 +436,14 @@ public class HugeFilesNet extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
+                if (inValidate(dllink)) {
+                    // they place in another step here
+                    final Form newdlForm = getFormByKey(cbr, "op", "download2");
+                    if (newdlForm != null) {
+                        sendForm(dlForm);
+                        getDllink();
+                    }
+                }
                 if (inValidate(dllink) && (getFormByKey(cbr, "op", "download1") == null || i == repeat)) {
                     if (getFormByKey(cbr, "op", "download1") != null) {
                         logger.info("Captcha wrong");
@@ -453,12 +462,6 @@ public class HugeFilesNet extends PluginForHost {
                     break;
                 }
             }
-            final Form finaldlForm = getFormByKey(cbr, "op", "download2");
-            if (finaldlForm == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            sendForm(finaldlForm);
-            dllink = br.getRedirectLocation();
         }
         if (!inValidate(passCode)) {
             downloadLink.setProperty("pass", passCode);
@@ -526,7 +529,7 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
-     * 
+     *
      * @throws Exception
      * @author raztoki
      */
@@ -1037,44 +1040,44 @@ public class HugeFilesNet extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                    = new Browser();
+    private Browser cbr = new Browser();
 
-    private String                                            acctype                = null;
-    private String                                            directlinkproperty     = null;
-    private String                                            dllink                 = null;
-    private String                                            fuid                   = null;
-    private String                                            passCode               = null;
-    private String                                            usedHost               = null;
+    private String acctype            = null;
+    private String directlinkproperty = null;
+    private String dllink             = null;
+    private String fuid               = null;
+    private String passCode           = null;
+    private String usedHost           = null;
 
-    private int                                               chunks                 = 1;
+    private int chunks = 1;
 
-    private boolean                                           resumes                = false;
-    private boolean                                           skipWaitTime           = false;
+    private boolean resumes      = false;
+    private boolean skipWaitTime = false;
 
-    private final String                                      language               = System.getProperty("user.language");
-    private final String                                      preferHTTPS            = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String language            = System.getProperty("user.language");
+    private final String preferHTTPS         = "preferHTTPS";
+    private final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
+    private static AtomicInteger maxFree                = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
+    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
-    private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<String, String>                    cloudflareCookies = new HashMap<String, String>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap           = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     ACCLOCK                = new Object();
-    private static Object                                     CTRLLOCK               = new Object();
+    private static Object ACCLOCK  = new Object();
+    private static Object CTRLLOCK = new Object();
 
     /**
      * Rules to prevent new downloads from commencing
-     * 
-     * */
+     *
+     */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
             // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account
@@ -1106,9 +1109,9 @@ public class HugeFilesNet extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     * 
+     *
      * @author raztoki
-     * */
+     */
     @SuppressWarnings("unused")
     @Override
     public void correctDownloadLink(final DownloadLink downloadLink) {
@@ -1183,7 +1186,7 @@ public class HugeFilesNet extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {
@@ -1342,10 +1345,10 @@ public class HugeFilesNet extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -1428,9 +1431,9 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
-     * 
+     *
      * @author raztoki
-     * */
+     */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
         if (form.containsHTML(";background:#ccc;text-align") || cbr.containsHTML("name=\"ctype\" value=\"2\"")) {
@@ -1517,7 +1520,7 @@ public class HugeFilesNet extends PluginForHost {
                 code = getCaptchaCode(cf, downloadLink);
                 chid = sm.getChallenge(code);
             }
-            form.put("adcopy_challenge", chid);
+            form.put("adcopy_challenge", Encoding.urlEncode(chid));
             form.put("adcopy_response", Encoding.urlEncode(code));
             skipWaitTime = waitTimeSkipableSolveMedia;
         } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
@@ -1541,7 +1544,7 @@ public class HugeFilesNet extends PluginForHost {
      * @param source
      *            for the Regular Expression match against
      * @return String result
-     * */
+     */
     private String regexDllink(final String source) {
         if (inValidate(source)) {
             return null;
@@ -1570,7 +1573,7 @@ public class HugeFilesNet extends PluginForHost {
      * @param source
      *            String for decoder to process
      * @return String result
-     * */
+     */
     private void decodeDownloadLink(final String s) {
         String decoded = null;
 
@@ -1601,16 +1604,16 @@ public class HugeFilesNet extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
@@ -1628,11 +1631,11 @@ public class HugeFilesNet extends PluginForHost {
     /**
      * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
      * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
-     * 
+     *
      * @param account
-     * 
+     *
      * @category 'Experimental', Mod written February 2013
-     * */
+     */
     private void controlSimHost(final Account account) {
         synchronized (CTRLLOCK) {
             if (usedHost == null) {
@@ -1667,14 +1670,14 @@ public class HugeFilesNet extends PluginForHost {
      * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
      * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
      * hosts/IP setup. This will help with those situations by allowing more connection when possible.
-     * 
+     *
      * @param Account
      *            Account that's been used, can be null
      * @param DownloadLink
      * @param action
      *            To add or remove slot, true == adds, false == removes
      * @throws Exception
-     * */
+     */
     private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
         synchronized (CTRLLOCK) {
             // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
@@ -1773,12 +1776,12 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * Sets Key and Values to respective Account stored within hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
-     * */
+     */
     private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
         if (usedHost == null || x == null) {
             return;
@@ -1818,10 +1821,10 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * Returns String key from Account@usedHost from hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private synchronized String getHashedHashedKey(final Account account) {
         if (usedHost == null) {
             return null;
@@ -1840,10 +1843,10 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * Returns integer value from Account@usedHost from hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private synchronized Integer getHashedHashedValue(final Account account) {
         if (usedHost == null) {
             return null;
@@ -1862,12 +1865,12 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * Returns true if hostMap contains 'key'
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
      * @param key
      *            String of what ever you want to find
-     * */
+     */
     private synchronized boolean isHashedHashedKey(final Account account, final String key) {
         if (key == null) {
             return false;
@@ -1887,12 +1890,12 @@ public class HugeFilesNet extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -1904,14 +1907,14 @@ public class HugeFilesNet extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      *            name
      * @param value
      *            expected value
      * @param ibr
      *            import browser
-     * */
+     */
     private Form getFormByKey(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();
         if (workaround != null) {
@@ -1934,11 +1937,11 @@ public class HugeFilesNet extends PluginForHost {
     /**
      * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
      * InputField parse(final String data). Affects revision 19688 and earlier!
-     * 
+     *
      * TODO: remove after JD2 goes stable!
-     * 
+     *
      * @author raztoki
-     * */
+     */
     private Form cleanForm(Form form) {
         if (form == null) {
             return null;
@@ -1966,13 +1969,13 @@ public class HugeFilesNet extends PluginForHost {
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
-     * 
+     *
      * @param ibr
      *            Import Browser
      * @param t
      *            Provided replacement string output browser
      * @author raztoki
-     * */
+     */
     private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
         String dMD5 = JDHash.getMD5(ibr.toString());
         // preserve valuable original request components.
