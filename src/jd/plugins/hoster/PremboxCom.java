@@ -74,6 +74,8 @@ public class PremboxCom extends PluginForHost {
 
     private int                                            statuscode                                = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                        = new HashMap<Account, HashMap<String, Long>>();
+    /* Contains <host><Boolean resume possible|impossible> */
+    private static HashMap<String, Boolean>                hostResumeMap                             = new HashMap<String, Boolean>();
     /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Integer>                hostMaxchunksMap                          = new HashMap<String, Integer>();
     /* Contains <host><number of max possible simultan downloads> */
@@ -177,22 +179,40 @@ public class PremboxCom extends PluginForHost {
         }
 
         /* Code unused as values are not given by API */
-        // /*
-        // * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
-        // * needed to get the individual host limits.
-        // */
-        // synchronized (CTRLLOCK) {
-        // if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
-        // logger.info("Performing full login to set individual host limits");
-        // this.fetchAccountInfo(account);
-        // }
-        // }
+        /*
+         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
+         * needed to get the individual host limits.
+         */
+        synchronized (CTRLLOCK) {
+            if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty() || hostResumeMap.isEmpty()) {
+                logger.info("Performing full login to set individual host limits");
+                this.fetchAccountInfo(account);
+            }
+        }
         setConstants(account, link);
 
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             if (cloudOnlyHosts.contains(link.getHost())) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Not yet implemented!");
+                /* Try max 10 minutes */
+                int counter = 0;
+                int count_max = 60;
+                this.postAPISafe(API_SERVER + "/downloadLink", "directDownload=0&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
+                /* dllink will be "fileNotReadyYet" here */
+                do {
+                    this.postAPISafe(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
+                    dllink = getJson("downloadLink");
+                    if (!inValidate(dllink)) {
+                        break;
+                    }
+                    /* As long as it is not downloaded, dllink will be "" */
+                    counter++;
+                    this.sleep(5000l, link);
+                } while (counter <= count_max);
+                if (inValidate(dllink)) {
+                    /* Should never happen */
+                    handleErrorRetries("dllinknull_cloud", 50, 2 * 60 * 1000l);
+                }
             } else {
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
                 this.postAPISafe(API_SERVER + "/downloadLink", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
@@ -200,7 +220,7 @@ public class PremboxCom extends PluginForHost {
                 // "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" +
                 // Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
                 dllink = getJson("downloadLink");
-                if (dllink == null) {
+                if (inValidate(dllink)) {
                     /* Should never happen */
                     handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
                 }
@@ -210,11 +230,28 @@ public class PremboxCom extends PluginForHost {
         handleDL(account, link, dllink);
     }
 
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     */
+    protected boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         // final String requestID = link.getStringProperty("premboxrequestId", null);
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
+        boolean resume = ACCOUNT_PREMIUM_RESUME;
         /* First set hardcoded limit */
         int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
         /* Then check if we got an individual limit. */
@@ -223,17 +260,16 @@ public class PremboxCom extends PluginForHost {
             synchronized (hostMaxchunksMap) {
                 if (hostMaxchunksMap.containsKey(thishost)) {
                     maxChunks = hostMaxchunksMap.get(thishost);
+                    resume = hostResumeMap.get(thishost);
                 }
             }
         }
-        /* Then check if chunks failed before. */
-        if (link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        boolean resume = ACCOUNT_PREMIUM_RESUME;
         if (link.getBooleanProperty(PremboxCom.NORESUME, false)) {
             resume = false;
             link.setProperty(PremboxCom.NORESUME, Boolean.valueOf(false));
+        }
+        if (!resume || link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false)) {
+            maxChunks = 1;
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
@@ -352,6 +388,7 @@ public class PremboxCom extends PluginForHost {
         cloudOnlyHosts.clear();
         for (final Object domaininfo_o : ressourcelist) {
             final LinkedHashMap<String, Object> domaininfo = (LinkedHashMap<String, Object>) domaininfo_o;
+            final boolean canResume = ((Boolean) domaininfo.get("resumable")).booleanValue();
             final long isoffline = DummyScriptEnginePlugin.toLong(domaininfo.get("tmpTurnedOff"), 0);
             final long cloudonly = DummyScriptEnginePlugin.toLong(domaininfo.get("serverOnly"), 0);
             final int maxChunks = (int) DummyScriptEnginePlugin.toLong(domaininfo.get("maxChunks"), 1);
@@ -367,6 +404,7 @@ public class PremboxCom extends PluginForHost {
             }
             hostMaxchunksMap.put(host, this.correctChunks(maxChunks));
             hostMaxdlsMap.put(host, this.correctMaxdls(maxDownloads));
+            hostResumeMap.put(host, canResume);
         }
         ai.setMultiHostSupport(this, supportedHosts);
         if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT, default_clear_download_history_complete) && (last_deleted_complete_download_history_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL || last_deleted_complete_download_history_time_ago == 0)) {
@@ -393,15 +431,15 @@ public class PremboxCom extends PluginForHost {
     private void deleteCompleteDownloadHistory(final String downloadtype) throws Exception {
     }
 
-    private String getDownloadType() {
-        String type;
-        if (PROPERTY_DOWNLOADTYPE_cloud.equals(this.currDownloadLink.getStringProperty(PROPERTY_DOWNLOADTYPE, null))) {
-            type = PROPERTY_DOWNLOADTYPE_cloud;
-        } else {
-            type = PROPERTY_DOWNLOADTYPE_instant;
-        }
-        return type;
-    }
+    // private String getDownloadType() {
+    // String type;
+    // if (PROPERTY_DOWNLOADTYPE_cloud.equals(this.currDownloadLink.getStringProperty(PROPERTY_DOWNLOADTYPE, null))) {
+    // type = PROPERTY_DOWNLOADTYPE_cloud;
+    // } else {
+    // type = PROPERTY_DOWNLOADTYPE_instant;
+    // }
+    // return type;
+    // }
 
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
     private long getLast_deleted_complete_download_history_time_ago() {

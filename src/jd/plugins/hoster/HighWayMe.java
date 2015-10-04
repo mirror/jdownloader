@@ -58,7 +58,7 @@ public class HighWayMe extends UseNet {
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
-    /* Contains <host><number of max possible chunks per download> */
+    /* Contains <host><Boolean resume possible|impossible> */
     private static HashMap<String, Boolean>                hostResumeMap                       = new HashMap<String, Boolean>();
     /* Contains <host><number of max possible chunks per download> */
     private static HashMap<String, Integer>                hostMaxchunksMap                    = new HashMap<String, Integer>();
