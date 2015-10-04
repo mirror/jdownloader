@@ -509,11 +509,26 @@ public class HitFileNet extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<h1><a href=\\'(http://.*?)\\'><b>").getMatch(0);
+
+        String dllink = br.getRegex("<h1><a href='(http://.*?)'><b>").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\\'(http://hitfile\\.net//download/redirect/[a-z0-9]+/[A-Za-z0-9]+)\\'").getMatch(0);
+            dllink = br.getRegex("'(http://hitfile\\.net//download/redirect/[a-z0-9]+/[A-Za-z0-9]+)'").getMatch(0);
         }
         if (dllink == null) {
+            if (br.containsHTML("You have reached the.*? limit of premium downloads")) {
+                /*
+                 * "You have reached the <a href='/user/messages'>monthly</a> limit of premium downloads<"
+                 */
+                // they also show extra messages that are unread, which show how long its blocked for...
+                /*
+                 * <div class='unread-messages-text'>Your Premium access to downloads is temporarily blocked.<br/>Reason: You have reached
+                 * the limit of your monthly traffic quota (300 GB)<br/>Blocking end time: 2015-10-19 17:27:48<br/></div>
+                 */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Out of premium traffic. Please open hoster messages for more about this.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            if (br.containsHTML("'>Premium access is blocked<")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
