@@ -782,11 +782,18 @@ public class TurboBitNet extends PluginForHost {
         br.getPage(dllink);
         if (br.getRedirectLocation() != null) {
             dllink = br.getRedirectLocation();
-        }
-        if (dllink.matches(".+&md5=[a-f0-9]{32}.+")) {
-            String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
+            final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
             if (md5sum != null) {
                 link.setMD5Hash(md5sum);
+            }
+        } else {
+            // redirect is expected here.... but also errors can happen here
+            if (br.containsHTML(">Der Link ist abgelaufen\\. Fordern Sie bitte <a href='/" + getFUID(link) + "\\.html'>new</a> download link\\.<")) {
+                /*
+                 * <div class="action-block"><p>Der Link ist abgelaufen. Fordern Sie bitte <a href='/FUID.html'>new</a> download
+                 * link.</p></div></div> </div>
+                 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Generated Premium link has expired!");
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
