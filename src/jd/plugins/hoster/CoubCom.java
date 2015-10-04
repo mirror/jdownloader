@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "http://(?:www\\.)?coub\\.com/view/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/view/[A-Za-z0-9]+" }, flags = { 0 })
 public class CoubCom extends PluginForHost {
 
     public CoubCom(PluginWrapper wrapper) {
@@ -71,22 +70,14 @@ public class CoubCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        String filename = (String) entries.get("raw_video_title");
-        if (filename == null) {
-            filename = (String) entries.get("title");
-        }
-        if (filename == null) {
-            /* This should never happen! */
-            filename = fid;
-        }
+        final String filename = getFilename(entries, fid);
         DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "file_versions/web/template");
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = encodeUnicode(filename);
         /* Format URL so that it is valid */
         DLLINK = DLLINK.replace("%{type}", "mp4").replace("%{version}", "big");
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -111,6 +102,20 @@ public class CoubCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    public static String getFilename(final LinkedHashMap<String, Object> entries, final String fid) {
+        String filename = (String) entries.get("raw_video_title");
+        if (filename == null) {
+            filename = (String) entries.get("title");
+        }
+        if (filename == null) {
+            /* This should never happen! */
+            filename = fid;
+        }
+        filename += ".mp4";
+        filename = encodeUnicode(filename);
+        return filename;
     }
 
     @Override

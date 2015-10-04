@@ -202,7 +202,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 fid = br.getRegex("\"http://future\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
-                hybridAPIUrl = "http://future.arte.tv/%s/player/%s";
+                if (fid != null) {
+                    hybridAPIUrl = "http://future.arte.tv/%s/player/%s";
+                } else {
+                    fid = br.getRegex("api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)").getMatch(0);
+                    hybridAPIUrl = "https://api.arte.tv/api/player/v1/config/%s/%s?vector=FUTURE&autostart=1";
+                }
             } else if (parameter.matches(TYPE_CINEMA)) {
                 scanForExternalUrls();
                 if (decryptedLinks.size() > 0) {
