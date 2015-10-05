@@ -28,7 +28,6 @@ public class PackageQueryStorable extends DownloadPackageQuery implements Storab
         FULL.setChildCount(true);
         FULL.setHosts(true);
         FULL.setSaveTo(true);
-        FULL.setPassword(true);
     }
 
     public PackageQueryStorable(/* Storable */) {
