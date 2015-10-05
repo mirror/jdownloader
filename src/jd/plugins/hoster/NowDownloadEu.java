@@ -126,7 +126,7 @@ public class NowDownloadEu extends PluginForHost {
                 if (AVAILABLE_PRECHECK.get() == false) {
                     /*
                      * == Fix original link ==
-                     *
+                     * 
                      * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
                      * proceed, to select one available.
                      */
@@ -161,7 +161,11 @@ public class NowDownloadEu extends PluginForHost {
         }
 
         final Regex fileInfo = br.getRegex(">Downloading</span> <br> (.*?) ([\\d+\\.]+ (B|KB|MB|GB|TB))");
-        String filename = br.getRegex(domains + "/nowdownload/[a-z0-9]+/[a-z0-9]+/[^<>]+/([^<>\"]*?)\"").getMatch(1);
+        /* Looks very bad but sometimes this is the only way to get the full filenames with extension! */
+        String filename = this.br.getRegex("<\\!-- Ads - DO NOT MODIFY -->[\t\n\r ]*?<\\!--([^<>\"]*?)-->[\t\n\r ]*?<hr class=\"footer_sep\">").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(domains + "/nowdownload/[a-z0-9]+/[a-z0-9]+/[^<>]+/([^<>\"]*?)\"").getMatch(1);
+        }
         if (filename == null) {
             filename = fileInfo.getMatch(0);
             if (filename != null) {
