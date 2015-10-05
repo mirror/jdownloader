@@ -1225,7 +1225,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     }
 
     private boolean isFree(final Account acc) {
-        return acc.getBooleanProperty("free", false);
+        return acc.getBooleanProperty("free", false) || AccountType.FREE.equals(acc.getType());
     }
 
     @Override
