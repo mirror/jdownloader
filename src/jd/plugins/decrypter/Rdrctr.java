@@ -18,8 +18,11 @@ package jd.plugins.decrypter;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -102,6 +105,13 @@ public class Rdrctr extends antiDDoSForDecrypt {
         if ("sht.io".equals(this.getHost()) && !inValidate(declink)) {
             // link inside a link
             declink = new Regex(declink, ".+((?:ftp|https?)://.+)$").getMatch(0);
+        }
+        // bit.ly (hosts many short link domains via dns alias), they have protection/warnings
+        if (StringUtils.isNotEmpty(declink) && new Regex(declink, "https?://bitly\\.com/a/warning\\?hash=[a-z0-9]+.+").matches()) {
+            final String newlink = new Regex(declink, "&url=(.+)(?!&)?").getMatch(0);
+            if (StringUtils.isNotEmpty(newlink)) {
+                declink = Encoding.urlDecode(newlink, false);
+            }
         }
         // when empty it's not always an error, specially when we use lazy regex!
         if (declink != null) {
