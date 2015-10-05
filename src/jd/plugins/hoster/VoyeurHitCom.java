@@ -79,24 +79,28 @@ public class VoyeurHitCom extends PluginForHost {
             ext = default_Extension;
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
-                final String redirect_url = this.br.getHttpConnection().getRequest().getUrl();
-                con = this.br.openHeadConnection(redirect_url);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+        if (downloadLink.getDownloadSize() > 0) { // Get size once only
             return AvailableStatus.TRUE;
-        } finally {
+        } else {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (this.br.getHttpConnection().getResponseCode() == 404) {
+                    /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
+                    final String redirect_url = this.br.getHttpConnection().getRequest().getUrl();
+                    con = this.br.openHeadConnection(redirect_url);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
     }
