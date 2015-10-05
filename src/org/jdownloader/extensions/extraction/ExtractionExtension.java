@@ -629,8 +629,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     public boolean cancel(final ExtractionController controller) {
         final boolean wasInProgress = getJobQueue().isInProgress(controller);
-        final boolean ret = getJobQueue().remove(controller);
+        final boolean ret;
         if (wasInProgress) {
+            ret = true;
+            if (!controller.isFinished() && !controller.gotKilled()) {
+                controller.kill();
+            }
+        } else {
+            ret = getJobQueue().remove(controller);
+        }
+        if (wasInProgress && ret) {
             fireEvent(new ExtractionEvent(controller, ExtractionEvent.Type.CLEANUP));
         }
         return ret;

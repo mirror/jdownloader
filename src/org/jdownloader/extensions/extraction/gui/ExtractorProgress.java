@@ -12,12 +12,14 @@ import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
@@ -92,7 +94,14 @@ public class ExtractorProgress extends IconedProcessIndicator {
                             }
 
                             public void actionPerformed(ActionEvent e) {
-                                extension.cancel(activeValue);
+                                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                                    @Override
+                                    protected Void run() throws RuntimeException {
+                                        extension.cancel(activeValue);
+                                        return null;
+                                    }
+                                });
                                 pu.setVisible(false);
                             }
                         });

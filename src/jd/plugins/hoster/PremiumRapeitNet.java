@@ -107,7 +107,7 @@ public class PremiumRapeitNet extends antiDDoSForHost {
         if (link.getBooleanProperty(PremiumRapeitNet.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
+        final long downloadCurrentRaw = link.getDownloadCurrentRaw();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -123,23 +123,22 @@ public class PremiumRapeitNet extends antiDDoSForHost {
                     }
                 } catch (final Throwable e) {
                 }
+            }
+        } catch (final PluginException e) {
+            if (link.getDownloadCurrent() > downloadCurrentRaw + (1024 * 1024l)) {
+                throw e;
+            } else {
+                if (maxChunks == 1) {
+                    link.setProperty(NICE_HOST + "directlink", Property.NULL);
+                }
+                // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(PremiumRapeitNet.NOCHUNKS, false) == false) {
+                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(PremiumRapeitNet.NOCHUNKS, false) == false) {
                     link.setProperty(PremiumRapeitNet.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+                throw e;
             }
-        } catch (final PluginException e) {
-            if (maxChunks == 1) {
-                link.setProperty(NICE_HOST + "directlink", Property.NULL);
-            }
-            // New V2 chunk errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(PremiumRapeitNet.NOCHUNKS, false) == false) {
-                link.setProperty(PremiumRapeitNet.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
         }
     }
 

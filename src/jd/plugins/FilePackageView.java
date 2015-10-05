@@ -30,7 +30,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.ConditionalSkipReason;
-import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
@@ -39,8 +38,10 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private static class LinkInfo {
-        private long bytesTotal = -1;
-        private long bytesDone  = -1;
+        private long         bytesTotal = -1;
+        private long         bytesDone  = -1;
+        private long         speed      = -1;
+        private DownloadLink link;
     }
 
     private final FilePackage              fp;
@@ -145,16 +146,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             } finally {
                 fp.getModifyLock().readUnlock(readL);
             }
-            for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
-                if (linkInfo.bytesTotal >= 0) {
-                    tmp.newSize += linkInfo.bytesTotal;
-                } else {
-                    tmp.newUnknownFileSizes++;
-                }
-                if (linkInfo.bytesDone >= 0) {
-                    tmp.newDone += linkInfo.bytesDone;
-                }
-            }
             writeTempToFields(tmp);
             updatesDone = lupdatesRequired;
             final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
@@ -167,20 +158,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private class Temp {
         private int                          newUnknownFileSizes = 0;
         private int                          newFinalCount       = 0;
-        private long                         newSize             = -1;
-        private long                         newDone             = -1;
         private long                         newFinishedDate     = -1;
         private int                          newOffline          = 0;
         private int                          newOnline           = 0;
         private int                          newEnabledCount     = 0;
         private int                          items               = 0;
-        private long                         fpETA               = -1;
-        private long                         fpTODO              = 0;
-        private long                         fpSPEED             = 0;
-        private boolean                      sizeKnown           = false;
-        private boolean                      fpRunning           = false;
         private HashMap<String, LinkInfo>    linkInfos           = new HashMap<String, LinkInfo>();
-        private HashSet<String>              eta                 = new HashSet<String>();
         private HashSet<DomainInfo>          newInfos            = new HashSet<DomainInfo>();
         private boolean                      allFinished         = true;
         private String                       sameSource          = null;
@@ -216,11 +199,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
 
-        @Override
-        public int compare(DomainInfo o1, DomainInfo o2) {
-            return o1.getTld().compareTo(o2.getTld());
-        }
-    };
+                                                                         @Override
+                                                                         public int compare(DomainInfo o1, DomainInfo o2) {
+                                                                             return o1.getTld().compareTo(o2.getTld());
+                                                                         }
+                                                                     };
 
     @Override
     public FilePackageView setItems(List<DownloadLink> updatedItems) {
@@ -229,80 +212,98 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             final Temp tmp = new Temp();
-                    final boolean readL = fp.getModifyLock().readLock();
-                    try {
-                        for (final DownloadLink link : fp.getChildren()) {
-                            tmp.newInfos.add(link.getDomainInfo());
-                            addLinkToTemp(tmp, link);
-                        }
-                    } finally {
-                        fp.getModifyLock().readUnlock(readL);
-                    }
-                    for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
-                        if (linkInfo.bytesTotal >= 0) {
-                            tmp.newSize += linkInfo.bytesTotal;
-                        } else {
-                            tmp.newUnknownFileSizes++;
-                        }
-                        if (linkInfo.bytesDone >= 0) {
-                            tmp.newDone += linkInfo.bytesDone;
-                        }
-                    }
-                    if (updatedItems == null) {
-                        tmp.items = 0;
-                    } else {
-                        tmp.items = updatedItems.size();
-                    }
-                    writeTempToFields(tmp);
-                    updatesDone = lupdatesRequired;
-                    final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
-                    Collections.sort(lst, DOMAININFOCOMPARATOR);
-                    infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
+            final boolean readL = fp.getModifyLock().readLock();
+            try {
+                for (final DownloadLink link : fp.getChildren()) {
+                    tmp.newInfos.add(link.getDomainInfo());
+                    addLinkToTemp(tmp, link);
+                }
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
+            }
+            if (updatedItems == null) {
+                tmp.items = 0;
+            } else {
+                tmp.items = updatedItems.size();
+            }
+            writeTempToFields(tmp);
+            updatesDone = lupdatesRequired;
+            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
+            Collections.sort(lst, DOMAININFOCOMPARATOR);
+            infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
         }
         return this;
     }
 
-    protected void writeTempToFields(Temp tmp) {
-        size = tmp.newSize;
-        done = tmp.newDone;
-        items = tmp.items;
+    protected void writeTempToFields(final Temp tmp) {
+        long size = -1;
+        long done = 0;
+        long speed = -1;
+        long maxSingleETA = -1;
+        for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
+            if (linkInfo.speed >= 0) {
+                if (speed == -1) {
+                    speed = 0;
+                }
+                speed += linkInfo.speed;
+            }
+            if (linkInfo.bytesTotal >= 0) {
+                if (size == -1) {
+                    size = 0;
+                }
+                size += linkInfo.bytesTotal;
+            } else {
+                tmp.newUnknownFileSizes++;
+            }
+            if (linkInfo.bytesDone >= 0) {
+                done += linkInfo.bytesDone;
+            }
+            final long bytesLeft = Math.max(-1, linkInfo.bytesTotal - linkInfo.bytesDone);
+            if (linkInfo.speed > 0 && bytesLeft >= 0) {
+                final long singleETA = bytesLeft / linkInfo.speed;
+                if (singleETA > maxSingleETA) {
+                    maxSingleETA = singleETA;
+                }
+            }
+        }
+        this.items = tmp.items;
+        this.done = done;
+        this.size = size;
         this.finalCount = tmp.newFinalCount;
         this.unknownFileSizes = tmp.newUnknownFileSizes;
-        if (tmp.newUnknownFileSizes == tmp.items) {
-            size = -1;
-        }
         this.enabledCount = tmp.newEnabledCount;
         if (tmp.allFinished) {
             /* all links have reached finished state */
-            finishedDate = tmp.newFinishedDate;
+            this.finishedDate = tmp.newFinishedDate;
         } else {
             /* not all have finished */
-            finishedDate = -1;
+            this.finishedDate = -1;
         }
-        lastRunningState = tmp.fpRunning;
-        if (tmp.fpRunning) {
-            if (tmp.sizeKnown && tmp.fpSPEED > 0) {
+        if (speed >= 0) {
+            this.lastRunningState = true;
+            if (size >= 0 && speed > 0) {
                 /* we could calc an ETA because at least one filesize is known */
-                estimatedETA = tmp.fpETA;
+                final long bytesLeft = Math.max(-1, size - done);
+                final long packageETA = bytesLeft / speed;
+                this.estimatedETA = Math.max(maxSingleETA, packageETA);
             } else {
                 /* no filesize is known, we use Integer.Min_value to signal this */
-                estimatedETA = Integer.MIN_VALUE;
+                this.estimatedETA = Integer.MIN_VALUE;
             }
         } else {
             /* no download running */
-            estimatedETA = -1;
+            this.estimatedETA = -1;
+            this.lastRunningState = false;
         }
         if (!tmp.sameSourceFullUrl) {
             tmp.sameSource += "[...]";
         }
         this.commonSourceUrl = tmp.sameSource;
-
         this.pluginStates = new PluginStateCollection(tmp.pluginStates.values());
-
-        offline = tmp.newOffline;
-        online = tmp.newOnline;
+        this.offline = tmp.newOffline;
+        this.online = tmp.newOnline;
         updateAvailability(tmp);
-        availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.items);
+        this.availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.items);
     }
 
     public String getCommonSourceUrl() {
@@ -310,7 +311,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     private ConditionalSkipReason getConditionalSkipReason(DownloadLink link) {
-        ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+        final ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason == null || conditionalSkipReason.isConditionReached()) {
             return null;
         }
@@ -326,7 +327,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     protected void addLinkToTemp(Temp tmp, final DownloadLink link) {
         final DownloadLinkView view = link.getView();
         String sourceUrl = view.getDisplayUrl();
-
         if (sourceUrl != null) {
             tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
             tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
@@ -569,86 +569,55 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
         final boolean isEnabled = link.isEnabled();
         if (isEnabled) {
-            /*
-             * we still have enabled links, so package must be enabled too
-             */
-
+            if (finalLinkState != null) {
+                tmp.allFinished = false;
+            }
             tmp.newEnabledCount++;
-        }
-
-        final boolean isMirrorLoading = link.getConditionalSkipReason() instanceof MirrorLoading;
-        final String displayName = view.getDisplayName();
-        if (!isMirrorLoading) {
-            LinkInfo linkInfo = tmp.linkInfos.get(displayName);
-            if (linkInfo == null) {
-                linkInfo = new LinkInfo();
-                linkInfo.bytesTotal = view.getBytesTotal();
-                linkInfo.bytesDone = view.getBytesLoaded();
-                tmp.linkInfos.put(displayName, linkInfo);
+            final String displayName = view.getDisplayName();
+            if (conditionalSkipReason instanceof MirrorLoading) {
+                final MirrorLoading mirrorLoading = (MirrorLoading) conditionalSkipReason;
+                final DownloadLink downloadLink = mirrorLoading.getDownloadLink();
+                LinkInfo linkInfo = tmp.linkInfos.get(displayName);
+                if (linkInfo == null || linkInfo.link != downloadLink) {
+                    linkInfo = new LinkInfo();
+                    linkInfo.link = downloadLink;
+                    final DownloadLinkView downloadView = downloadLink.getView();
+                    linkInfo.bytesTotal = downloadView.getBytesTotal();
+                    linkInfo.bytesDone = downloadView.getBytesLoaded();
+                    final SingleDownloadController controller = downloadLink.getDownloadLinkController();
+                    if (controller != null) {
+                        final DownloadInterface downloadInterface = controller.getDownloadInstance();
+                        if (downloadInterface == null || ((System.currentTimeMillis() - downloadInterface.getStartTimeStamp()) < 5000)) {
+                            linkInfo.speed = 0;
+                        } else {
+                            linkInfo.speed = downloadView.getSpeedBps();
+                        }
+                    }
+                    tmp.linkInfos.put(displayName, linkInfo);
+                }
             } else {
-                if (!tmp.eta.contains(displayName)) {
-                    if (isEnabled) {
-                        linkInfo.bytesTotal = view.getBytesTotal();
-                        linkInfo.bytesDone = view.getBytesLoaded();
+                LinkInfo linkInfo = tmp.linkInfos.get(displayName);
+                if (linkInfo == null) {
+                    linkInfo = new LinkInfo();
+                    tmp.linkInfos.put(displayName, linkInfo);
+                }
+                final SingleDownloadController controller = link.getDownloadLinkController();
+                if (controller != null) {
+                    linkInfo.bytesTotal = view.getBytesTotal();
+                    linkInfo.bytesDone = view.getBytesLoaded();
+                    final DownloadInterface downloadInterface = controller.getDownloadInstance();
+                    if (downloadInterface == null || ((System.currentTimeMillis() - downloadInterface.getStartTimeStamp()) < 5000)) {
+                        linkInfo.speed = 0;
                     } else {
+                        linkInfo.speed = view.getSpeedBps();
+                    }
+                } else {
+                    if (linkInfo.speed < 0) {
                         if (linkInfo.bytesTotal < view.getBytesTotal()) {
                             linkInfo.bytesTotal = view.getBytesTotal();
                         }
                         if (linkInfo.bytesDone < view.getBytesLoaded()) {
                             linkInfo.bytesDone = view.getBytesLoaded();
-                        }
-                    }
-                }
-            }
-        }
-
-        /* ETA calculation */
-        if (isEnabled && link.getFinalLinkState() == null) {
-            tmp.allFinished = false;
-            if (!isMirrorLoading) {
-                final SingleDownloadController controller = link.getDownloadLinkController();
-                final boolean isDownloading = link.getPluginProgress() instanceof DownloadPluginProgress;
-                if (isDownloading || !tmp.eta.contains(displayName)) {
-                    final DownloadInterface dli;
-                    if (controller != null) {
-                        dli = controller.getDownloadInstance();
-                        tmp.fpRunning = true;
-                        tmp.eta.add(displayName);
-                    } else {
-                        dli = null;
-                    }
-                    final long bytesTotal = link.getView().getBytesTotal();
-                    if (bytesTotal >= 0) {
-                        /* we know at least one filesize */
-                        tmp.sizeKnown = true;
-                    }
-                    final long linkTodo = Math.max(-1, bytesTotal - view.getBytesLoaded());
-                    final long linkSpeed;
-                    if (dli == null || isDownloading == false || ((System.currentTimeMillis() - dli.getStartTimeStamp()) < 5000)) {
-                        /* wait at least 5 secs when download is running, to avoid speed fluctuations in overall ETA */
-                        linkSpeed = 0;
-                    } else {
-                        linkSpeed = view.getSpeedBps();
-                        tmp.fpSPEED += linkSpeed;
-                    }
-                    if (linkTodo > 0) {
-                        tmp.fpTODO += linkTodo;
-                    }
-                    if (tmp.fpSPEED > 0) {
-                        /* we have ongoing downloads, lets calculate ETA */
-                        final long newfpETA = tmp.fpTODO / tmp.fpSPEED;
-                        if (newfpETA > tmp.fpETA) {
-                            tmp.fpETA = newfpETA;
-                        }
-                    }
-                    if (linkSpeed > 0 && linkTodo >= 0) {
-                        /* link is running,lets calc ETA for single link */
-                        final long currentETA = linkTodo / linkSpeed;
-                        if (currentETA > tmp.fpETA) {
-                            /*
-                             * ETA for single link is bigger than ETA for all, so we use the bigger one
-                             */
-                            tmp.fpETA = currentETA;
                         }
                     }
                 }
