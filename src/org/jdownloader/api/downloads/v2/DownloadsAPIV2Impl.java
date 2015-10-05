@@ -94,6 +94,10 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         FilePackageView fpView = new FilePackageView(fp);
         fpView.aggregate();
 
+        if (queryParams.isPassword() && !fp.getChildren().isEmpty()) {
+            fps.setDownloadPassword(fp.getChildren().get(0).getDownloadPassword());
+        }
+
         if (queryParams.isPriority()) {
             fps.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(fp.getPriorityEnum().name()));
         }
@@ -136,7 +140,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         }
         if (queryParams.isBytesLoaded()) {
             fps.setBytesLoaded(fpView.getDone());
-
         }
 
         if (queryParams.isComment()) {
@@ -288,6 +291,11 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     public static DownloadLinkAPIStorableV2 toStorable(LinkQueryStorable queryParams, DownloadLink dl, Object caller) {
         DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2(dl);
+
+        if (queryParams.isPassword()) {
+            dls.setDownloadPassword(dl.getDownloadPassword());
+        }
+
         if (queryParams.isPriority()) {
             dls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(dl.getPriorityEnum().name()));
         }
