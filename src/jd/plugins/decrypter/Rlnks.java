@@ -105,8 +105,8 @@ public class Rlnks extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            if (br.containsHTML("<title>404</title>")) {
-                logger.info("Link offline: " + parameter);
+            if (br.containsHTML("<title>404</title>") || this.br.getURL().contains("relink.us/notfound.php")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             if (ALLFORM != null && ALLFORM.getRegex("password").matches()) {

@@ -178,9 +178,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
         if (dllink == null) {
             String host_downloadlink = link.getDownloadURL();
             /* Workaround for serverside debriditalia bug. */
-            if ((link.getHost().equals("share-online.biz") || link.getHost().equals("depfile.com")) && host_downloadlink.startsWith("https://")) {
-                host_downloadlink = host_downloadlink.replace("https://", "http://");
-            }
+            /*
+             * Known hosts for which they do definitly not accept https urls [ last updated 2015-10-05]: share-online.biz, depfile.com,
+             * inclouddrive.com, secureupload.eu
+             */
+            host_downloadlink = host_downloadlink.replace("https://", "http://");
             final String encodedLink = Encoding.urlEncode(host_downloadlink);
             getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + encodedLink);
             /* Either server error or the host is broken (we have to find out by retrying) */

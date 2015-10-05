@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "http://(www\\.)?microsoft\\.com/(en\\-us|de\\-de)/download/(details|confirmation)\\.aspx\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "https?://(?:www\\.)?microsoft\\.com/(?:en\\-us|de\\-de)/download/(?:details|confirmation)\\.aspx\\?id=\\d+" }, flags = { 0 })
 public class MicrosoftComDecrypter extends PluginForDecrypt {
 
     public MicrosoftComDecrypter(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class MicrosoftComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String dlid = new Regex(param.toString(), "(\\d+)$").getMatch(0);
-        final String parameter = "http://www.microsoft.com/en-us/download/details.aspx?id=" + dlid;
+        final String parameter = "https://www.microsoft.com/en-us/download/details.aspx?id=" + dlid;
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {

@@ -53,7 +53,10 @@ public class GigaDe extends PluginForDecrypt {
         }
         final String[][] links = br.getRegex("id=\"NVBPlayer(\\d+\\-\\d+)\">.*?<span property=\"media:title\" content=\"([^<>\"/]+)\".*?<source src=\"(http://video\\.giga\\.de/data/[a-z0-9\\-]+\\-normal\\.mp4)\"").getMatches();
         final String[] otherLinks = br.getRegex("rel=\"media:video\" resource=\"(http://(www\\.)?video\\.giga\\.de/data/[^<>/\"]*?\\.mp4)\"").getColumn(0);
-        final String[] api_links = br.getRegex("\"[^<>\"]*?/#v=(\\d+)\\&p=\\d+[^<>\"]*?\"").getColumn(0);
+        String[] api_links = br.getRegex("\"[^<>\"]*?/#v=(\\d+)\\&p=\\d+[^<>\"]*?\"").getColumn(0);
+        if (api_links == null || api_links.length == 0) {
+            api_links = br.getRegex("/#video\\-(\\d+)\"").getColumn(0);
+        }
         if ((links == null || links.length == 0) && (otherLinks == null || otherLinks.length == 0) && (api_links == null || api_links.length == 0) || fpName == null) {
             if (!br.containsHTML("id=\"adsense_video_")) {
                 logger.info("Link offline: " + parameter);
@@ -102,7 +105,7 @@ public class GigaDe extends PluginForDecrypt {
                     for (final String quality : qualities) {
                         final String quali = getJson("quality", quality);
                         String url = getJson("src", quality);
-                        if (url != null && quali != null) {
+                        if (url != null && !url.equals("") && quali != null) {
                             url = url.replace("\\", "");
                             final DownloadLink dl = createDownloadlink("directhttp://" + url);
                             String ext = url.substring(url.lastIndexOf("."));

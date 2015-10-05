@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "http://download\\.microsoft\\.com/download/[^<>\"]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "microsoft.com" }, urls = { "https?://download\\.microsoft\\.com/download/[^<>\"]+" }, flags = { 0 })
 public class MicrosoftCom extends PluginForHost {
 
     public MicrosoftCom(PluginWrapper wrapper) {
@@ -40,13 +40,14 @@ public class MicrosoftCom extends PluginForHost {
         return "http://www.microsoft.com/en-us/legal/intellectualproperty/copyright/default.aspx";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getDownloadURL());
+            con = br.openHeadConnection(link.getDownloadURL());
             if (!con.getContentType().contains("html")) {
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
                 link.setDownloadSize(con.getLongContentLength());
@@ -62,6 +63,7 @@ public class MicrosoftCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
