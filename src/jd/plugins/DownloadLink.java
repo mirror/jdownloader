@@ -1925,6 +1925,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         try {
             if (string != null) {
                 lExtractionStatus = ExtractionStatus.valueOf(string);
+                if (extractionStatus == null || ExtractionStatus.RUNNING.equals(lExtractionStatus)) {
+                    extractionStatus = ExtractionStatus.NA;
+                    return ExtractionStatus.NA;
+                }
                 extractionStatus = lExtractionStatus;
                 if (ExtractionStatus.NA.equals(lExtractionStatus)) {
                     return null;
