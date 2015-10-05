@@ -89,72 +89,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return ret;
     }
 
-    public FilePackageAPIStorableV2 toStorable(PackageQueryStorable queryParams, FilePackage fp, DownloadWatchDog dwd) {
-        FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
-        FilePackageView fpView = new FilePackageView(fp);
-        fpView.aggregate();
-
-        if (queryParams.isPassword() && !fp.getChildren().isEmpty()) {
-            fps.setDownloadPassword(fp.getChildren().get(0).getDownloadPassword());
-        }
-
-        if (queryParams.isPriority()) {
-            fps.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(fp.getPriorityEnum().name()));
-        }
-
-        if (queryParams.isSaveTo()) {
-            fps.setSaveTo(fpView.getDownloadDirectory());
-
-        }
-        if (queryParams.isBytesTotal()) {
-
-            fps.setBytesTotal(fpView.getSize());
-
-        }
-        if (queryParams.isChildCount()) {
-            fps.setChildCount(fpView.size());
-        }
-        if (queryParams.isHosts()) {
-            DomainInfo[] di = fpView.getDomainInfos();
-            String[] hosts = new String[di.length];
-            for (int j = 0; j < hosts.length; j++) {
-                hosts[j] = di[j].getTld();
-            }
-
-            fps.setHosts(hosts);
-        }
-
-        if (queryParams.isSpeed()) {
-            fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
-        }
-        if (queryParams.isStatus()) {
-
-            setStatus(fps, fpView);
-        }
-        if (queryParams.isFinished()) {
-
-            fps.setFinished(fpView.isFinished());
-        }
-        if (queryParams.isEta()) {
-            fps.setEta(fpView.getETA());
-        }
-        if (queryParams.isBytesLoaded()) {
-            fps.setBytesLoaded(fpView.getDone());
-        }
-
-        if (queryParams.isComment()) {
-            fps.setComment(fp.getComment());
-
-        }
-        if (queryParams.isEnabled()) {
-            fps.setEnabled(fpView.isEnabled());
-        }
-        if (queryParams.isRunning()) {
-            fps.setRunning(dwd.getRunningFilePackages().contains(fp));
-        }
-        return fps;
-    }
-
     public static FilePackageAPIStorableV2 setStatus(FilePackageAPIStorableV2 fps, FilePackageView fpView) {
 
         PluginStateCollection ps = fpView.getPluginStates();
@@ -295,7 +229,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (queryParams.isPassword()) {
             dls.setDownloadPassword(dl.getDownloadPassword());
         }
-
         if (queryParams.isPriority()) {
             dls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(dl.getPriorityEnum().name()));
         }
@@ -308,37 +241,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
         if (queryParams.isStatus()) {
             setStatus(dls, dl, caller);
-
-            // if (value instanceof DownloadLink)
-
-            // } else {
-            // FilePackage fp = (FilePackage) value;
-            // FilePackageView view = fp.getView();
-            //
-            // PluginStateCollection ps = view.getPluginStates();
-            // if (ps.size() > 0) {
-            // icon = ps.getMergedIcon();
-            // label = ps.isMultiline() ? "" : ps.getText();
-            //
-            // tooltip = ps.getText();
-            // return;
-            // }
-            // if (view.isFinished()) {
-            // icon = trueIcon;
-            // label = finishedText;
-            // tooltip = null;
-            // return;
-            // } else if (view.getETA() != -1) {
-            // icon = null;
-            // label = runningText;
-            // tooltip = null;
-            // return;
-            // }
-            // tooltip = null;
-            // icon = null;
-            // label = "";
-            //
-            // }
         }
         if (queryParams.isBytesLoaded()) {
             dls.setBytesLoaded(dl.getView().getBytesLoaded());

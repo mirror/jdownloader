@@ -104,11 +104,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 final CrawledPackageView view = new CrawledPackageView(pkg);
                 view.aggregate();
 
-                if (queryParams.isPassword() && !pkg.getChildren().isEmpty()) {
-                    final DownloadLink link = pkg.getChildren().get(0).getDownloadLink();
-                    cps.setDownloadPassword(link.getDownloadPassword());
-                }
-
                 if (queryParams.isSaveTo()) {
                     cps.setSaveTo(LinkTreeUtils.getDownloadDirectory(pkg).toString());
 
@@ -244,11 +239,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             CrawledLink cl = links.get(i);
             CrawledLinkAPIStorableV2 cls = new CrawledLinkAPIStorableV2(cl);
 
-            if (queryParams.isPassword()) {
-                final DownloadLink link = cl.getDownloadLink();
-                if (link != null) {
-                    cls.setDownloadPassword(link.getDownloadPassword());
-                }
+            if (queryParams.isPassword() && cl.getDownloadLink() != null) {
+                cls.setDownloadPassword(cl.getDownloadLink().getDownloadPassword());
             }
 
             if (queryParams.isPriority()) {
