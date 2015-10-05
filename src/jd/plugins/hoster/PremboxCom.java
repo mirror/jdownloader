@@ -44,10 +44,7 @@ import org.appwork.storage.simplejson.JSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremboxCom extends PluginForHost {
 
-    private static final String                            CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK        = "CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK";
-    private static final String                            CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT   = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
-    private static final String                            CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD     = "CLEAR_DOWNLOAD_HISTORY_COMPLETE_CLOUD";
-    private static final String                            CLEAR_ALLOWED_IP_ADDRESSES                = "CLEAR_ALLOWED_IP_ADDRESSES";
+    private static final String                            CLEAR_DOWNLOAD_HISTORY                    = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
 
     /* Properties */
     private static final String                            PROPERTY_DOWNLOADTYPE                     = "premboxdownloadtype";
@@ -70,7 +67,6 @@ public class PremboxCom extends PluginForHost {
      * does check the account)
      */
     private static final long                              DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL = 1 * 60 * 60 * 1000l;
-    private static final long                              CLOUD_MAX_WAITTIME                        = 600000l;
 
     private int                                            statuscode                                = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                        = new HashMap<Account, HashMap<String, Long>>();
@@ -89,7 +85,6 @@ public class PremboxCom extends PluginForHost {
     public static Object                                   ACCLOCK                                   = new Object();
     private static Object                                  CTRLLOCK                                  = new Object();
     private static AtomicInteger                           maxPrem                                   = new AtomicInteger(1);
-    private long                                           deletedDownloadHistoryEntriesNum          = 0;
 
     @SuppressWarnings("deprecation")
     public PremboxCom(PluginWrapper wrapper) {
@@ -196,18 +191,19 @@ public class PremboxCom extends PluginForHost {
             if (cloudOnlyHosts.contains(link.getHost())) {
                 /* Try max 10 minutes */
                 int counter = 0;
-                int count_max = 60;
+                int count_max = 15;
                 this.postAPISafe(API_SERVER + "/downloadLink", "directDownload=0&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
-                /* dllink will be "fileNotReadyYet" here */
+                /* 'downloadLink' value will be "fileNotReadyYet" at this stage. */
                 do {
                     this.postAPISafe(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
                     dllink = getJson("downloadLink");
                     if (!inValidate(dllink)) {
                         break;
                     }
-                    /* As long as it is not downloaded, dllink will be "" */
+                    /* As long as the file is not downloaded to the prembox servers, 'downloadLink' value will be "" */
                     counter++;
-                    this.sleep(5000l, link);
+                    /* Admin requested us to use 20 seconds (instead of e.g.5) to not to overload their servers. */
+                    this.sleep(20000l, link);
                 } while (counter <= count_max);
                 if (inValidate(dllink)) {
                     /* Should never happen */
@@ -351,7 +347,7 @@ public class PremboxCom extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
@@ -407,13 +403,12 @@ public class PremboxCom extends PluginForHost {
             hostResumeMap.put(host, canResume);
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT, default_clear_download_history_complete) && (last_deleted_complete_download_history_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL || last_deleted_complete_download_history_time_ago == 0)) {
+        if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history_complete) && (last_deleted_complete_download_history_time_ago >= DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL || last_deleted_complete_download_history_time_ago == 0)) {
             /*
              * Go in here if user wants to have it's history deleted && last deletion was before DELETE_COMPLETE_DOWNLOAD_HISTORY_INTERVAL
              * or never executed (0).
              */
             this.deleteCompleteDownloadHistory(PROPERTY_DOWNLOADTYPE_instant);
-            account.setProperty("last_time_deleted_history", System.currentTimeMillis());
         }
         return ai;
     }
@@ -424,11 +419,23 @@ public class PremboxCom extends PluginForHost {
     }
 
     /**
-     * Deletes the complete download history.
-     *
-     * TODO: 2015:10-01: Wait and see if users want to have this function. Atm this requires a full login to get the login cookie.
+     * Deletes the complete download list / history.
      **/
     private void deleteCompleteDownloadHistory(final String downloadtype) throws Exception {
+        boolean success = false;
+        /* This moves the downloaded files/entries to the download history. */
+        postAPISafe(API_SERVER + "/clearFileList", "login=" + JSonUtils.escape(currAcc.getUser()) + "&pass=" + JSonUtils.escape(currAcc.getPass()));
+        success = Boolean.parseBoolean(this.getJson("success"));
+        if (!success) {
+            logger.warning("Failed to delete file list");
+        }
+        /* This deletes the download history. */
+        postAPISafe(API_SERVER + "/clearHistory", "login=" + JSonUtils.escape(currAcc.getUser()) + "&pass=" + JSonUtils.escape(currAcc.getPass()));
+        success = Boolean.parseBoolean(this.getJson("success"));
+        if (!success) {
+            logger.warning("Failed to delete download history");
+        }
+        this.currAcc.setProperty("last_time_deleted_history", System.currentTimeMillis());
     }
 
     // private String getDownloadType() {
@@ -444,11 +451,6 @@ public class PremboxCom extends PluginForHost {
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
     private long getLast_deleted_complete_download_history_time_ago() {
         return System.currentTimeMillis() - this.currAcc.getLongProperty("last_time_deleted_history", System.currentTimeMillis());
-    }
-
-    /* Returns the time difference between now and the last time the complete download history has been deleted. */
-    private long getLast_deleted_complete_download_history_time_ago(final Account acc) {
-        return System.currentTimeMillis() - acc.getLongProperty("last_time_deleted_history", System.currentTimeMillis());
     }
 
     /**
@@ -655,7 +657,7 @@ public class PremboxCom extends PluginForHost {
     private final boolean default_clear_download_history_complete = false;
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT, "Delete download history?").setDefaultValue(default_clear_download_history_complete));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, "Delete download history every 60 minutes (on each 2nd full account check)?").setDefaultValue(default_clear_download_history_complete));
     }
 
     @Override
