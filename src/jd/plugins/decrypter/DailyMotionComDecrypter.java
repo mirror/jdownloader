@@ -26,6 +26,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -44,8 +46,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }, flags = { 0 })
 public class DailyMotionComDecrypter extends PluginForDecrypt {
@@ -54,7 +54,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String                          VIDEOSOURCE       = null;
+    private String                          VIDEOSOURCE    = null;
     /**
      * @ 1hd1080URL or stream_h264_hd1080_url [1920x1080]
      *
@@ -72,34 +72,34 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
      *
      * @String[] = {"Direct download url", "filename, if available before quality selection"}
      */
-    private LinkedHashMap<String, String[]> FOUNDQUALITIES    = new LinkedHashMap<String, String[]>();
-    private String                          FILENAME          = null;
-    private String                          PARAMETER         = null;
+    private LinkedHashMap<String, String[]> FOUNDQUALITIES = new LinkedHashMap<String, String[]>();
+    private String                          FILENAME       = null;
+    private String                          PARAMETER      = null;
 
-    private static final String             ALLOW_LQ          = "ALLOW_LQ";
-    private static final String             ALLOW_SD          = "ALLOW_SD";
-    private static final String             ALLOW_HQ          = "ALLOW_HQ";
-    private static final String             ALLOW_720         = "ALLOW_720";
-    private static final String             ALLOW_1080        = "ALLOW_1080";
-    private static final String             ALLOW_OTHERS      = "ALLOW_OTHERS";
-    public static final String              ALLOW_AUDIO       = "ALLOW_AUDIO";
-    private static final String             ALLOW_HDS         = "ALLOW_HDS";
+    private static final String ALLOW_LQ     = "ALLOW_LQ";
+    private static final String ALLOW_SD     = "ALLOW_SD";
+    private static final String ALLOW_HQ     = "ALLOW_HQ";
+    private static final String ALLOW_720    = "ALLOW_720";
+    private static final String ALLOW_1080   = "ALLOW_1080";
+    private static final String ALLOW_OTHERS = "ALLOW_OTHERS";
+    public static final String  ALLOW_AUDIO  = "ALLOW_AUDIO";
+    private static final String ALLOW_HDS    = "ALLOW_HDS";
 
-    private static final String             TYPE_PLAYLIST     = "https?://(?:www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?";
-    private static final String             TYPE_USER         = "https?://(?:www\\.)?dailymotion\\.com/user/[A-Za-z0-9_\\-]+/\\d+";
-    private static final String             TYPE_USER_SEARCH  = "https?://(?:www\\.)?dailymotion\\.com/.*?/user/[^/]+/search/[^/]+/\\d+";
-    private static final String             TYPE_VIDEO        = "https?://(?:www\\.)?dailymotion\\.com/((?:embed/)?video/[A-Za-z0-9\\-_]+(\\?.+)?|swf(?:/video)?/[A-Za-z0-9]+)";
+    private static final String TYPE_PLAYLIST    = "https?://(?:www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?";
+    private static final String TYPE_USER        = "https?://(?:www\\.)?dailymotion\\.com/user/[A-Za-z0-9_\\-]+/\\d+";
+    private static final String TYPE_USER_SEARCH = "https?://(?:www\\.)?dailymotion\\.com/.*?/user/[^/]+/search/[^/]+/\\d+";
+    private static final String TYPE_VIDEO       = "https?://(?:www\\.)?dailymotion\\.com/((?:embed/)?video/[A-Za-z0-9\\-_]+(\\?.+)?|swf(?:/video)?/[A-Za-z0-9]+)";
 
-    private static final String             REGEX_VIDEOURLS   = "preview_link[\t\n\r ]*?\"[\t\n\r ]*?href=\"(/video/[^<>\"/]+)\"";
+    private static final String REGEX_VIDEOURLS = "preview_link[\t\n\r ]*?\"[\t\n\r ]*?href=\"(/video/[^<>\"/]+)\"";
 
-    public final static boolean             defaultAllowAudio = true;
+    public final static boolean defaultAllowAudio = true;
 
-    private ArrayList<DownloadLink>         decryptedLinks    = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-    private boolean                         acc_in_use        = false;
+    private boolean acc_in_use = false;
 
-    private static AtomicBoolean            pluginLoaded      = new AtomicBoolean(false);
-    private static Object                   ctrlLock          = new Object();
+    private static AtomicBoolean pluginLoaded = new AtomicBoolean(false);
+    private static Object        ctrlLock     = new Object();
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
@@ -700,7 +700,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
             // if (FOUNDQUALITIES.isEmpty()) {
             // String[] values =
-            // br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
+            // br.getRegex("new
+            // SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
             // if (values == null || values.length != 2) {
             // /** RTMP */
             // final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new
@@ -733,9 +734,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
              * https://board.jdownloader.org/showthread.php?t=64943&page=2
              */
             videosource = br.getRegex("window\\.playerV5 = dmp\\.create\\(document\\.getElementById\\(\\'player\\'\\), (\\{.*?\\}\\})\\);").getMatch(0);
-        }
-        if (videosource != null) {
-            videosource = videosource.replace("\\", "");
         }
         return videosource;
     }
