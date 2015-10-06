@@ -174,6 +174,10 @@ public class MotherLessCom extends PluginForDecrypt {
                 }
             }
         }
+        String GM = br.getRegex("<a href=\"(/GM\\w+)\"").getMatch(0); // Gallery Mixed
+        if (GM != null) {
+            br.getPage(GM);
+        }
         // grabs final page as count.
         String totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
         if (totalpages == null) {
@@ -195,13 +199,13 @@ public class MotherLessCom extends PluginForDecrypt {
                 logger.info("Decryption aborted by user");
                 break;
             }
-            String[] picturelinks = br.getRegex("<[^>]+data-mediatype=\"image\"[^>]+>[\r\n\t ]+<a href=\"(/[a-zA-Z0-9]+){1,2}\" class=\"img-container\"").getColumn(0);
             // stupid site jumps URLS for NextPage depending on parameter
             String nextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             if (nextPage == null) {
                 /* Wide open RegEx */
                 nextPage = br.getRegex("<a href=\"(/[^<>\"]+\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             }
+            String[] picturelinks = br.getRegex("<[^>]+data-mediatype=\"image\"[^>]+>[\r\n\t ]+<a href=\"(/[a-zA-Z0-9]+){1,2}\" class=\"img-container\"").getColumn(0);
             if (picturelinks != null && picturelinks.length != 0) {
                 logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
                 for (String singlelink : picturelinks) {
