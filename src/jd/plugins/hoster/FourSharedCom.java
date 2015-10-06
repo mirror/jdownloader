@@ -295,7 +295,7 @@ public class FourSharedCom extends PluginForHost {
                             // Ticket Time
                             String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
                             if (ttt == null) {
-                                ttt = br.getRegex("id=\"downloadDelayTimeSec\"\\s+?class=\"sec alignCenter light-blue\">(\\d+)</div>").getMatch(0);
+                                ttt = br.getRegex("id=\"downloadDelayTimeSec\"\\s+?class=\"sec( alignCenter light-blue)?\">(\\d+)</div>").getMatch(1);
                             }
                             int tt = 20;
                             if (ttt != null) {
