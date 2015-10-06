@@ -1,3 +1,4 @@
+ExampleMenuEntry=@%s1: %s2
 INTERVAL=時間間隔
 LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON=按下功能表的連結擷取器按鈕
 MAIN_MENU_BUTTON=按下主功能表按鈕
@@ -25,6 +26,7 @@ editor_testrun=測試執行
 event_trigger=觸發器
 example_play_sound=播放 Wav 檔案
 example_script_name=範例
+interval_settings=以毫秒為呼叫間隔
 loading_editor_title=正在載入編輯器...
 none_trigger=// 這個事件將永遠不會被觸發。
 permission_title=事件指令碼所需的權限！
