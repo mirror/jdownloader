@@ -507,7 +507,7 @@ public class LinkCrawler {
         if (allowInstantCrawl && Thread.currentThread() instanceof LinkCrawlerThread) {
             final int generation = this.getCrawlerGeneration(true);
             resultSet = new HtmlParserResultSet() {
-                private final HashSet<CharSequence> fastResults = new HashSet<CharSequence>();
+                private final HashSet<HtmlParserCharSequence> fastResults = new HashSet<HtmlParserCharSequence>();
 
                 @Override
                 public boolean add(HtmlParserCharSequence e) {
@@ -526,8 +526,17 @@ public class LinkCrawler {
                 @Override
                 protected LinkedHashSet<String> exportResults() {
                     final LinkedHashSet<String> ret = new LinkedHashSet<String>();
-                    for (HtmlParserCharSequence result : this.getResults()) {
+                    outerLoop: for (final HtmlParserCharSequence result : this.getResults()) {
                         if (!fastResults.contains(result)) {
+                            final int index = result.indexOf("...");
+                            if (index > 0) {
+                                final HtmlParserCharSequence check = result.subSequence(0, index);
+                                for (final HtmlParserCharSequence fastResult : fastResults) {
+                                    if (fastResult.startsWith(check) && result != fastResult && !fastResult.contains("...")) {
+                                        continue outerLoop;
+                                    }
+                                }
+                            }
                             ret.add(result.toString());
                         }
                     }
