@@ -534,19 +534,19 @@ public class MegaConz extends PluginForHost {
     }
 
     private String getPublicFileID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#\\!([a-zA-Z0-9]+)\\!").getMatch(0);
+        return new Regex(link.getDownloadURL(), "#(!|%21)([a-zA-Z0-9]+)(!|%21)").getMatch(1);
     }
 
     private String getPublicFileKey(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
+        return new Regex(link.getDownloadURL(), "#(!|%21)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-]+)").getMatch(2);
     }
 
     private String getNodeFileID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#N\\!([a-zA-Z0-9]+)\\!").getMatch(0);
+        return new Regex(link.getDownloadURL(), "#N(!|%21)([a-zA-Z0-9]+)(!|%21)").getMatch(1);
     }
 
     private String getNodeFileKey(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#N\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
+        return new Regex(link.getDownloadURL(), "#N(!|%21)[a-zA-Z0-9]+(!|%21)([a-zA-Z0-9_,\\-]+)").getMatch(2);
     }
 
     private byte[] b64decode(String data) {
