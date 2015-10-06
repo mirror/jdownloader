@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtensionAction;
 import org.jdownloader.extensions.shutdown.CFG_SHUTDOWN;
 import org.jdownloader.extensions.shutdown.ShutdownExtension;
@@ -22,9 +23,13 @@ public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtens
     public void setSelected(final boolean selected) {
         super.setSelected(selected);
         if (selected) {
-            setName(T._.shutdown_toggle_action_enabled2());
+            final String string = T._.shutdown_toggle_action_disable();
+            setName(string);
+            setTooltipText(string);
         } else {
-            setName(T._.shutdown_toggle_action_disabled2());
+            final String string = T._.shutdown_toggle_action_enable();
+            setName(string);
+            setTooltipText(string);
         }
     }
 
@@ -39,7 +44,13 @@ public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtens
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        setSelected(CFG_SHUTDOWN.SHUTDOWN_ACTIVE.isEnabled());
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setSelected(CFG_SHUTDOWN.SHUTDOWN_ACTIVE.isEnabled());
+            }
+        };
     }
 
 }
