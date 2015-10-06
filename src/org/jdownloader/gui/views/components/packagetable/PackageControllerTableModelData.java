@@ -72,7 +72,7 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
                             final List<? extends AbstractNode> children = dataPackage.getVisibleChildren();
                             final int childIndex = children.indexOf(node);
                             if (childIndex >= 0) {
-                                if (children.size() == 1) {
+                                if (isHiddenPackageSingleChildIndex(packageIndex)) {
                                     return packageIndex;
                                 } else {
                                     return packageIndex + childIndex + 1;
@@ -206,7 +206,7 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
 
     /*
      * updates the filtered flag
-     *
+     * 
      * we don't want quickfilters to count as filtered state, users will still be able to move/dragdrop stuff
      */
     private void updateFilteredState() {
