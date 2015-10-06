@@ -38,6 +38,11 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -69,34 +74,29 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hugefiles.net" }, urls = { "https?://(www\\.)?hugefiles\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class HugeFilesNet extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://hugefiles.net";
+    private final String  COOKIE_HOST                = "http://hugefiles.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(hugefiles\\.net)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = true;
-    private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000l;
-    private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;
-    private final boolean              captchaSkipableSolveMedia    = false;
+    private final String  DOMAINS                    = "(hugefiles\\.net)";
+    private final String  PASSWORDTEXT               = "<br><b>Passwor(d|t):</b> <input";
+    private final String  MAINTENANCE                = ">This server is in maintenance mode";
+    private final String  dllinkRegex                = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final boolean supportsHTTPS              = false;
+    private final boolean enforcesHTTPS              = false;
+    private final boolean useRUA                     = true;
+    private final boolean useAltLinkCheck            = false;
+    private final boolean useVidEmbed                = false;
+    private final boolean useAltEmbed                = false;
+    private final boolean useAltExpire               = true;
+    private final long    useLoginIndividual         = 6 * 3480000l;
+    private final boolean waitTimeSkipableReCaptcha  = true;
+    private final boolean waitTimeSkipableSolveMedia = false;
+    private final boolean waitTimeSkipableKeyCaptcha = false;
+    private final boolean captchaSkipableSolveMedia  = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
@@ -256,7 +256,6 @@ public class HugeFilesNet extends PluginForHost {
         if (inValidate(fileInfo[0])) {
             Form download1 = getFormByKey(cbr, "op", "download1");
             if (download1 != null) {
-                download1 = cleanForm(download1);
                 download1.remove("method_premium");
                 sendForm(download1);
                 scanInfo(downloadLink, fileInfo);
@@ -372,9 +371,6 @@ public class HugeFilesNet extends PluginForHost {
         if (inValidate(dllink)) {
             getDllink();
         }
-        this.br.setCookie(this.getHost(), "_cb_ls", "1");
-        this.br.setCookie(this.getHost(), "__utmt", "1");
-        this.br.setCookie(this.getHost(), "http://hugefiles.net/" + this.fuid, "");
         // Third, do they provide video hosting?
         if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
@@ -398,74 +394,45 @@ public class HugeFilesNet extends PluginForHost {
                 cbr = obrc;
             }
         }
-        // // Fourth, continue like normal.
-        // if (inValidate(dllink)) {
-        // checkErrors(downloadLink, account, false);
-        // Form download1 = getFormByKey(cbr, "op", "download1");
-        // if (download1 != null) {
-        // // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
-        // download1 = cleanForm(download1);
-        // // end of backward compatibility
-        // download1.remove("method_premium");
-        // sendForm(download1);
-        // checkErrors(downloadLink, account, false);
-        // getDllink();
-        // }
-        // }
         if (inValidate(dllink)) {
-            Form dlForm = getFormByKey(cbr, "op", "download1");
-            if (dlForm == null) {
+            // captcha is in download1
+            Form dlForm1 = getFormByKey(cbr, "op", "download1");
+            if (dlForm1 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // how many forms deep do you want to try.
-            int repeat = 2;
+            final int repeat = 1;
             for (int i = 0; i <= repeat; i++) {
-                dlForm = cleanForm(dlForm);
                 // custom form inputs
-                dlForm.remove("method_premium");
+                dlForm1.remove("method_premium");
                 final long timeBefore = System.currentTimeMillis();
                 if (cbr.containsHTML(PASSWORDTEXT)) {
                     logger.info("The downloadlink seems to be password protected.");
-                    dlForm = handlePassword(dlForm, downloadLink);
+                    dlForm1 = handlePassword(dlForm1, downloadLink);
                 }
                 /* Captcha START */
-                dlForm = captchaForm(downloadLink, dlForm);
+                dlForm1 = captchaForm(downloadLink, dlForm1);
                 /* Captcha END */
                 if (!skipWaitTime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                dlForm.remove("method_premium");
-                sendForm(dlForm);
+                sendForm(dlForm1);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
-                if (inValidate(dllink)) {
-                    // they place in another step here
-                    final Form newdlForm = getFormByKey(cbr, "op", "download2");
-                    if (newdlForm != null) {
-                        newdlForm.remove(null);
-                        newdlForm.put("Referer", "http%3A%2F%2Fhugefiles.net%2F" + this.fuid);
-                        sendForm(dlForm);
-                        getDllink();
-                    }
-                }
-                if (inValidate(dllink) && (getFormByKey(cbr, "op", "download1") == null || i == repeat)) {
-                    if (getFormByKey(cbr, "op", "download1") != null) {
-                        logger.info("Captcha wrong");
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    if (i == repeat) {
-                        logger.warning("Exausted repeat count, after 'dllink == null'");
-                    } else {
-                        logger.warning("Couldn't find 'download2' and 'dllink == null'");
-                    }
+                if (inValidate(dllink) && getFormByKey(cbr, "op", "download1") != null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (inValidate(dllink) && getFormByKey(cbr, "op", "download1") != null) {
-                    dlForm = getFormByKey(cbr, "op", "download1");
-                    continue;
                 } else {
                     break;
                 }
+            }
+        }
+        if (inValidate(dllink)) {
+            // they place in another step here
+            final Form dlForm2 = getFormByKey(cbr, "op", "download2");
+            if (dlForm2 != null) {
+                sendForm(dlForm2);
+                getDllink();
             }
         }
         if (!inValidate(passCode)) {
@@ -895,7 +862,6 @@ public class HugeFilesNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                loginform = cleanForm(loginform);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
@@ -931,6 +897,7 @@ public class HugeFilesNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        br = new Browser();
         setConstants(account);
         requestFileInformation(downloadLink);
         login(account, false);
@@ -1045,39 +1012,39 @@ public class HugeFilesNet extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                    = new Browser();
+    private Browser cbr = new Browser();
 
-    private String                                            acctype                = null;
-    private String                                            directlinkproperty     = null;
-    private String                                            dllink                 = null;
-    private String                                            fuid                   = null;
-    private String                                            passCode               = null;
-    private String                                            usedHost               = null;
+    private String acctype            = null;
+    private String directlinkproperty = null;
+    private String dllink             = null;
+    private String fuid               = null;
+    private String passCode           = null;
+    private String usedHost           = null;
 
-    private int                                               chunks                 = 1;
+    private int chunks = 1;
 
-    private boolean                                           resumes                = false;
-    private boolean                                           skipWaitTime           = false;
+    private boolean resumes      = false;
+    private boolean skipWaitTime = false;
 
-    private final String                                      language               = System.getProperty("user.language");
-    private final String                                      preferHTTPS            = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String language            = System.getProperty("user.language");
+    private final String preferHTTPS         = "preferHTTPS";
+    private final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
+    private static AtomicInteger maxFree                = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
+    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
-    private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<String, String>                    cloudflareCookies = new HashMap<String, String>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap           = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     ACCLOCK                = new Object();
-    private static Object                                     CTRLLOCK               = new Object();
+    private static Object ACCLOCK  = new Object();
+    private static Object CTRLLOCK = new Object();
 
     /**
      * Rules to prevent new downloads from commencing
@@ -1090,6 +1057,8 @@ public class HugeFilesNet extends PluginForHost {
             return false;
         } else if (downloadLink.getBooleanProperty("requiresAnyAccount", false) && account == null) {
             // Prevent another non account download method from starting, when account been determined as required.
+            return false;
+        } else if (account == null && downloadLink.getDownloadSize() > 786432000) {
             return false;
         } else {
             return true;
@@ -1328,6 +1297,7 @@ public class HugeFilesNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        br = new Browser();
         setConstants(null);
         AvailableStatus availableStatus = requestFileInformation(downloadLink);
         if (availableStatus != null) {
@@ -1937,38 +1907,6 @@ public class HugeFilesNet extends PluginForHost {
             }
         }
         return null;
-    }
-
-    /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
-     * InputField parse(final String data). Affects revision 19688 and earlier!
-     *
-     * TODO: remove after JD2 goes stable!
-     *
-     * @author raztoki
-     */
-    private Form cleanForm(Form form) {
-        if (form == null) {
-            return null;
-        }
-        String data = form.getHtmlCode();
-        ArrayList<String> cleanupRegex = new ArrayList<String>();
-        cleanupRegex.add("(\\w+\\s*=\\s*\"[^\"]+\")");
-        cleanupRegex.add("(\\w+\\s*=\\s*'[^']+')");
-        for (String reg : cleanupRegex) {
-            String results[] = new Regex(data, reg).getColumn(0);
-            if (results != null) {
-                String quote = new Regex(reg, "(\"|')").getMatch(0);
-                for (String result : results) {
-                    String cleanedResult = result.replaceFirst(quote, "\\\"").replaceFirst(quote + "$", "\\\"");
-                    data = data.replace(result, cleanedResult);
-                }
-            }
-        }
-        Form ret = new Form(data);
-        ret.setAction(form.getAction());
-        ret.setMethod(form.getMethod());
-        return ret;
     }
 
     /**
