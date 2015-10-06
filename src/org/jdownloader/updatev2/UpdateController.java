@@ -50,7 +50,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
     /**
      * get the only existing instance of UpdateController. This is a singleton
-     * 
+     *
      * @return
      */
     public static UpdateController getInstance() {
@@ -78,17 +78,18 @@ public class UpdateController implements UpdateCallbackInterface {
 
     }
 
-    private UpdateHandler       handler;
-    private boolean             running;
-    private HashSet<Thread>     confirmedThreads;
-    private String              appid;
-    private String              updaterid;
-    private UpdaterEventSender  eventSender;
-    private Icon                statusIcon;
-    private String              statusLabel;
-    private double              statusProgress    = -1;
-    private volatile boolean    hasPendingUpdates = false;
-    public static final boolean DEBUG_SELFTEST    = System.getProperty("DEBUG_SELFTEST") != null;
+    private UpdateHandler      handler;
+    private boolean            running;
+    private HashSet<Thread>    confirmedThreads;
+    private String             appid;
+    private String             updaterid;
+    private UpdaterEventSender eventSender;
+    private Icon               statusIcon;
+    private String             statusLabel;
+    private double             statusProgress      = -1;
+    private volatile boolean   hasPendingUpdates   = false;
+
+    public static final int    DEBUG_SELFTEST_PORT = System.getProperty("DEBUG_SELFTEST") == null ? -1 : Integer.parseInt(System.getProperty("DEBUG_SELFTEST"));
 
     public UpdateHandler getHandler() {
         return handler;
@@ -533,7 +534,7 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public Process runExeAsynch(List<String> call, File root) throws IOException {
 
-        if (DEBUG_SELFTEST) {
+        if (DEBUG_SELFTEST_PORT > 0) {
             call.addAll(RestartController.getInstance().getFilteredRestartParameters());
             logger.info("Call: " + call + " in " + root);
             if (CrossSystem.isWindows()) {
@@ -631,7 +632,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
     /**
      * forces the updatesystem to reinstall the existions.
-     * 
+     *
      * @param list
      */
     public void runExtensionsFullUpdate(ArrayList<String> list) {
