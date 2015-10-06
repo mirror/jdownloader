@@ -90,7 +90,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     public static FilePackageAPIStorableV2 setStatus(FilePackageAPIStorableV2 fps, FilePackageView fpView) {
-
         PluginStateCollection ps = fpView.getPluginStates();
         if (ps.size() > 0) {
 
