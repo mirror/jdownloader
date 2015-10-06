@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
-import javax.swing.ListSelectionModel;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeVisitor;
@@ -61,18 +60,48 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 int selectedRowIndex = selectedRowsBitSet.length();
                 PackageControllerTableModelDataPackage currentPackageData = null;
                 PackageControllerTableModelDataPackage oldPackageData = null;
+                final PackageController<PackageType, ChildrenType> controller = getController();
                 int lastOldRowIndex = -1;
                 while (selectedRowIndex >= 0) {
                     final int oldRowIndex = selectedRowsBitSet.previousSetBit(selectedRowIndex);
                     selectedRowIndex = oldRowIndex - 1;
                     if (oldRowIndex >= 0) {
                         lastOldRowIndex = oldRowIndex;
-                        final AbstractNode oldObject = oldTableModelData.get(oldRowIndex);
+                        final AbstractNode oldNode = oldTableModelData.get(oldRowIndex);
                         final UniqueAlltimeID previousParentNodeID;
-                        if (oldObject instanceof AbstractPackageChildrenNode) {
-                            previousParentNodeID = ((AbstractPackageChildrenNode) oldObject).getPreviousParentNodeID();
+                        if (oldNode instanceof AbstractPackageChildrenNode) {
+                            previousParentNodeID = ((AbstractPackageChildrenNode) oldNode).getPreviousParentNodeID();
+                            final Object parentNode = ((AbstractPackageChildrenNode) oldNode).getParentNode();
+                            if (parentNode != null) {
+                                final AbstractPackageNode parent = (AbstractPackageNode) parentNode;
+                                if (parent.getControlledBy() != null && parent.getControlledBy() == controller) {
+                                    // links got merged
+                                    final int row = getRowforObject(parent);
+                                    if (row >= 0) {
+                                        return new int[] { row };
+                                    }
+                                }
+                            }
                         } else {
-                            // AbstractPackageNode no longer existing
+                            for (final PackageControllerTableModelDataPackage dataPackage : oldTableModelData.getModelDataPackages()) {
+                                if (dataPackage.getPackage() == oldNode) {
+                                    final List<? extends AbstractNode> oldChildren = dataPackage.getVisibleChildren();
+                                    for (final AbstractNode oldChildrenNode : oldChildren) {
+                                        final Object parentNode = ((AbstractPackageChildrenNode) oldChildrenNode).getParentNode();
+                                        if (parentNode != null) {
+                                            final AbstractPackageNode parent = (AbstractPackageNode) parentNode;
+                                            if (parent.getControlledBy() != null && parent.getControlledBy() == controller) {
+                                                // links got merged
+                                                final int row = getRowforObject(parent);
+                                                if (row >= 0) {
+                                                    return new int[] { row };
+                                                }
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
                             continue;
                         }
                         if (skip.contains(previousParentNodeID)) {
@@ -109,7 +138,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                             }
                         }
                         final List<? extends AbstractNode> oldChildren = oldPackageData.getVisibleChildren();
-                        final int oldChildIndex = oldChildren.indexOf(oldObject);
+                        final int oldChildIndex = oldChildren.indexOf(oldNode);
                         if (oldChildIndex >= 0) {
                             final AbstractNode searchChild;
                             if (oldChildIndex + 1 < oldChildren.size()) {
@@ -129,6 +158,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                         }
                     }
                 }
+
                 lastOldRowIndex -= 1;
                 if (lastOldRowIndex >= 0) {
                     return new int[] { Math.min(lastOldRowIndex, getRowCount() - 1) };
@@ -141,38 +171,13 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     @Override
-    protected int findFirstSelectedRow(ListSelectionModel s) {
-        try {
-            final SelectionInfo<PackageType, ChildrenType> selectionInfo = getTable().getSelectionInfo(true, true);
-            final PackageView<PackageType, ChildrenType> firstPackageView = selectionInfo.getPackageViews().size() == 0 ? null : selectionInfo.getPackageViews().get(0);
-            if (firstPackageView != null) {
-                final PackageType pkg = firstPackageView.getPackage();
-                if (pkg.getControlledBy() == null) {
-                    return getRowforObject(pkg);
-                } else {
-                    final boolean full;
-                    final boolean readL = pkg.getModifyLock().readLock();
-                    try {
-                        full = pkg.getChildren().size() == 0 || pkg.getChildren().size() == firstPackageView.getChildren().size();
-                    } finally {
-                        pkg.getModifyLock().readUnlock(readL);
-                    }
-                    if (full) {
-                        return getRowforObject(pkg);
-                    }
-                }
-            }
-            final ChildrenType firstLink = selectionInfo.getChildren().size() == 0 ? null : selectionInfo.getChildren().get(0);
-            if (firstLink != null) {
-                return getRowforObject(firstLink);
-            }
-            return -1;
-        } catch (Throwable e) {
-            // catch ... exceptions here would break the whole table
-            e.printStackTrace();
-        }
-        return -1;
+    public int getRowforObject(final AbstractNode node) {
+        return getTableData().getRowforObject(node, getController());
+    }
 
+    @Override
+    public boolean contains(final AbstractNode node) {
+        return getTableData().getRowforObject(node, getController()) >= 0;
     }
 
     public abstract class TableDataModification {
@@ -727,7 +732,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             }
             if (visibleChildren.size() == 1 && hideSingleChildPackages) {
                 final int visibleIndex = newData.size();
-                newData.addHiddenPackageSingleChild(visibleChildren.get(0));
+                final int packageNodeIndex = newData.addHiddenPackageSingleChild(visibleChildren.get(0));
                 final PackageControllerTableModelDataPackage modelDataPackage;
                 if (filteredChildren.size() == 0) {
                     modelDataPackage = new PackageControllerTableModelDataPackage() {
@@ -751,6 +756,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                         public PackageType getPackage() {
                             return node;
                         }
+
+                        @Override
+                        public int getPackageIndex() {
+                            return packageNodeIndex;
+                        };
 
                     };
                 } else {
@@ -779,12 +789,17 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                             return node;
                         }
 
+                        @Override
+                        public int getPackageIndex() {
+                            return packageNodeIndex;
+                        };
+
                     };
                 }
                 newData.add(modelDataPackage);
             } else {
                 /* only add package node if it contains children */
-                newData.add(node);
+                final int packageNodeIndex = newData.addPackageNode(node);
                 final PackageControllerTableModelDataPackage modelDataPackage;
                 if (expanded) {
                     /* expanded, add its children */
@@ -825,6 +840,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                                 return node;
                             }
 
+                            @Override
+                            public int getPackageIndex() {
+                                return packageNodeIndex;
+                            };
+
                         };
                     } else {
                         final int filteredIndex = newData.getFilteredChildren().size();
@@ -851,6 +871,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                             public PackageType getPackage() {
                                 return node;
                             }
+
+                            @Override
+                            public int getPackageIndex() {
+                                return packageNodeIndex;
+                            };
 
                         };
                     }
@@ -881,6 +906,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                                 return node;
                             }
 
+                            @Override
+                            public int getPackageIndex() {
+                                return packageNodeIndex;
+                            };
+
                         };
                     } else {
                         final int filteredIndex = newData.getFilteredChildren().size();
@@ -907,6 +937,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                             public PackageType getPackage() {
                                 return node;
                             }
+
+                            @Override
+                            public int getPackageIndex() {
+                                return packageNodeIndex;
+                            };
 
                         };
                     }

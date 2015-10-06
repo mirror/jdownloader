@@ -11,6 +11,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildrenView;
+import jd.controlling.packagecontroller.PackageController;
 
 import org.jdownloader.gui.views.linkgrabber.quickfilter.FilterTable;
 
@@ -25,6 +26,8 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
         public List<? extends AbstractNode> getVisibleChildren();
 
         public List<? extends AbstractNode> getInvisibleChildren();
+
+        public int getPackageIndex();
     }
 
     private final static AtomicLong                                            VERSION                          = new AtomicLong(-1);
@@ -46,9 +49,56 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
         return filteredChildren;
     }
 
-    protected void addHiddenPackageSingleChild(AbstractNode node) {
-        hiddenPackagesSingleChildIndices.set(this.size());
-        add(node);
+    protected int getRowforObject(final AbstractNode node, final PackageController controller) {
+        if (node instanceof AbstractPackageNode) {
+            final AbstractPackageNode pkg = (AbstractPackageNode) node;
+            if (pkg.getControlledBy() == controller) {
+                for (final PackageControllerTableModelDataPackage dataPackage : getModelDataPackages()) {
+                    if (dataPackage.getPackage() == pkg) {
+                        return dataPackage.getPackageIndex();
+                    }
+                }
+            }
+            return -1;
+        }
+        if (node instanceof AbstractPackageChildrenNode) {
+            final Object parent = ((AbstractPackageChildrenNode) node).getParentNode();
+            if (parent != null) {
+                final AbstractPackageNode pkg = (AbstractPackageNode) parent;
+                if (pkg.getControlledBy() == controller) {
+                    for (final PackageControllerTableModelDataPackage dataPackage : getModelDataPackages()) {
+                        if (dataPackage.getPackage() == pkg) {
+                            final int packageIndex = dataPackage.getPackageIndex();
+                            final List<? extends AbstractNode> children = dataPackage.getVisibleChildren();
+                            final int childIndex = children.indexOf(node);
+                            if (childIndex >= 0) {
+                                if (children.size() == 1) {
+                                    return packageIndex;
+                                } else {
+                                    return packageIndex + childIndex + 1;
+                                }
+                            }
+                            return -1;
+                        }
+                    }
+                }
+            }
+            return -1;
+        }
+        return -1;
+    }
+
+    protected int addHiddenPackageSingleChild(ChildrenType childNode) {
+        final int index = this.size();
+        hiddenPackagesSingleChildIndices.set(index);
+        add(childNode);
+        return index;
+    }
+
+    protected int addPackageNode(PackageType pkgNode) {
+        final int index = this.size();
+        super.add(pkgNode);
+        return index;
     }
 
     public boolean isHiddenPackageSingleChildIndex(int index) {
