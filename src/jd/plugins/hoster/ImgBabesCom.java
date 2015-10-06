@@ -24,6 +24,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,9 +51,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbabes.com" }, urls = { "https?://(www\\.)?imgbabes\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class ImgBabesCom extends PluginForHost {
@@ -118,19 +123,23 @@ public class ImgBabesCom extends PluginForHost {
         getPage(lnk);
         if (br.getHttpConnection().getContentLength() < 2000 && br.containsHTML("You can not access this site because your browser does not support cookies")) {
             // set cookie
-            final String[] ck = br.getRegex("Decode\\(\\)\\s*\\{document\\.cookie\\s*=\\s*\"(\\w+)\\s*=\\s*([a-f0-9]{32});").getRow(0);
-            if (ck != null && ck.length == 2) {
-                br.setCookie(COOKIE_HOST, ck[0], ck[1]);
-            }
-            lnk = lnk.concat("?attempt=1");
-            getPage(lnk);
-            lnk = this.br.getRegex("window\\.location\\.href=\"(http://[^<>\"]*?\\?attempt=\\d+)\"").getMatch(0);
-            if (lnk != null) {
-                /* TODO! */
-                this.br.setCookie(this.getHost(), "denial", "e0562d8c31719816961c9be59ac4c114");
-                getPage(lnk);
+            final String a = br.getRegex("a\\s*=\\s*toNumbers\\(\"([^\"]+)").getMatch(0);
+            final String b = br.getRegex("b\\s*=\\s*toNumbers\\(\"([^\"]+)").getMatch(0);
+            final String c = br.getRegex("c\\s*=\\s*toNumbers\\(\"([^\"]+)").getMatch(0);
+            lnk = br.getRegex("window\\.location\\.href=\"(https?://[^<>\"]*imgbabes\\.com/" + fuid + "[^<>\"]*\\?attempt=\\d+)\"").getMatch(0);
+            if (a == null || b == null || c == null || lnk == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final byte[] encrypted = HexFormatter.hexToByteArray(c);
+            final byte[] key = HexFormatter.hexToByteArray(a);
+            final byte[] iv = HexFormatter.hexToByteArray(b);
+            final IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+            final Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            final byte[] bin = cipher.doFinal(encrypted);
+            br.setCookie(COOKIE_HOST, "denial", HexFormatter.byteArrayToHex(bin));
+            getPage(lnk);
         }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -182,7 +191,7 @@ public class ImgBabesCom extends PluginForHost {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                                 if (fileInfo[0] == null) {
                                     /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)(?:\\.html)</textarea").getMatch(2);
                                 }
                             }
                         }
