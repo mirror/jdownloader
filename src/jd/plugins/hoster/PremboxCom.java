@@ -205,10 +205,6 @@ public class PremboxCom extends PluginForHost {
                     /* Admin requested us to use 20 seconds (instead of e.g.5) to not to overload their servers. */
                     this.sleep(20000l, link);
                 } while (counter <= count_max);
-                if (inValidate(dllink)) {
-                    /* Should never happen */
-                    handleErrorRetries("dllinknull_cloud", 50, 2 * 60 * 1000l);
-                }
             } else {
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
                 this.postAPISafe(API_SERVER + "/downloadLink", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
@@ -216,10 +212,11 @@ public class PremboxCom extends PluginForHost {
                 // "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" +
                 // Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
                 dllink = getJson("downloadLink");
-                if (inValidate(dllink)) {
-                    /* Should never happen */
-                    handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
-                }
+            }
+            /* Check if the url starts with "http" --> Extra errorhandling for faulty API responses */
+            if (inValidate(dllink) || !dllink.startsWith("http")) {
+                /* Should never happen */
+                handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
         }
