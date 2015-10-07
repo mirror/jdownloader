@@ -9,6 +9,7 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.extensions.schedulerV2.CFG_SCHEDULER;
 import org.jdownloader.extensions.schedulerV2.actions.AbstractScheduleAction;
+import org.jdownloader.extensions.schedulerV2.actions.AddAllDownloadsAction;
 import org.jdownloader.extensions.schedulerV2.actions.CaptchaServiceAction;
 import org.jdownloader.extensions.schedulerV2.actions.DebugAction;
 import org.jdownloader.extensions.schedulerV2.actions.DisableAccountAction;
@@ -31,27 +32,28 @@ import org.jdownloader.extensions.schedulerV2.translate.T;
 public class ActionHelper {
 
     public static final List<AbstractScheduleAction> ACTIONS = Collections.unmodifiableList(new ArrayList<AbstractScheduleAction>() {
-                                                                 {
-                                                                     if (CFG_SCHEDULER.CFG.isDebugMode()) {
-                                                                         add(new DebugAction(null));
-                                                                     }
-                                                                     add(new StartDownloadAction(null));
-                                                                     add(new SetStopMarkAction(null));
-                                                                     add(new StopDownloadAction(null));
-                                                                     add(new SetDownloadspeedAction(null));
-                                                                     add(new DisableSpeedLimitAction(null));
-                                                                     add(new SetConnectionsAction(null));
-                                                                     add(new SetChunksAction(null));
-                                                                     add(new PauseDownloadAction(null));
-                                                                     add(new UnpauseDownloadAction(null));
-                                                                     add(new ReconnectAction(null));
-                                                                     add(new EnableReconnectAction(null));
-                                                                     add(new DisableReconnectAction(null));
-                                                                     add(new CaptchaServiceAction(null));
-                                                                     add(new EnableAccountAction(null));
-                                                                     add(new DisableAccountAction(null));
-                                                                 }
-                                                             });
+        {
+            if (CFG_SCHEDULER.CFG.isDebugMode()) {
+                add(new DebugAction(null));
+            }
+            add(new StartDownloadAction(null));
+            add(new AddAllDownloadsAction(null));
+            add(new SetStopMarkAction(null));
+            add(new StopDownloadAction(null));
+            add(new SetDownloadspeedAction(null));
+            add(new DisableSpeedLimitAction(null));
+            add(new SetConnectionsAction(null));
+            add(new SetChunksAction(null));
+            add(new PauseDownloadAction(null));
+            add(new UnpauseDownloadAction(null));
+            add(new ReconnectAction(null));
+            add(new EnableReconnectAction(null));
+            add(new DisableReconnectAction(null));
+            add(new CaptchaServiceAction(null));
+            add(new EnableAccountAction(null));
+            add(new DisableAccountAction(null));
+        }
+    });
 
     public static AbstractScheduleAction newActionInstance(ScheduleEntryStorable actionStorable) throws Exception {
         for (AbstractScheduleAction action : ACTIONS) {
@@ -102,15 +104,15 @@ public class ActionHelper {
     }
 
     public static final HashMap<Integer, WEEKDAY> dayMap = new HashMap<Integer, ActionHelper.WEEKDAY>() {
-                                                             {
-                                                                 put(Calendar.MONDAY, WEEKDAY.MONDAY);
-                                                                 put(Calendar.TUESDAY, WEEKDAY.TUESDAY);
-                                                                 put(Calendar.WEDNESDAY, WEEKDAY.WEDNESDAY);
-                                                                 put(Calendar.THURSDAY, WEEKDAY.THURSDAY);
-                                                                 put(Calendar.FRIDAY, WEEKDAY.FRIDAY);
-                                                                 put(Calendar.SATURDAY, WEEKDAY.SATURDAY);
-                                                                 put(Calendar.SUNDAY, WEEKDAY.SUNDAY);
-                                                             }
-                                                         };
+        {
+            put(Calendar.MONDAY, WEEKDAY.MONDAY);
+            put(Calendar.TUESDAY, WEEKDAY.TUESDAY);
+            put(Calendar.WEDNESDAY, WEEKDAY.WEDNESDAY);
+            put(Calendar.THURSDAY, WEEKDAY.THURSDAY);
+            put(Calendar.FRIDAY, WEEKDAY.FRIDAY);
+            put(Calendar.SATURDAY, WEEKDAY.SATURDAY);
+            put(Calendar.SUNDAY, WEEKDAY.SUNDAY);
+        }
+    };
 
 }

@@ -117,6 +117,9 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Start Downloads" })
     String action_startDownload();
 
+    @Default(lngs = { "en" }, values = { "Add all Downloads" })
+    String action_addAllDownloads();
+
     @Default(lngs = { "en" }, values = { "Set Chunks per File" })
     String action_setChunks();
 
