@@ -102,13 +102,16 @@
 
 
 		<copy todir="${dist}/libs">
-			<fileset dir="${res}/libs" includes="**/*" />
+			<fileset dir="${res}/libs" includes="**/*">
+				<exclude name="**/*.info" />	
+			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
 				<!-- -->
 
 				<exclude name="miglayout.jar" />
+				<exclude name="**/*.info" />
 			</fileset>
 		</copy>
 
@@ -118,6 +121,8 @@
 
 		<copy todir="${dist}/licenses">
 			<fileset dir="${res}/licenses" includes="**/*" />
+			<fileset dir="${res}/libs/" includes="**/*.info" />
+			<fileset dir="${dep.awu}/libs/" includes="**/*.info" />
 		</copy>
 
 		<copy todir="${dist}/tools">
