@@ -27,12 +27,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     String action_changelog_tooltip();
 
-    @Default(lngs = { "en" }, values = { "Enable or Disable Clipboard Observer." })
+    @Default(lngs = { "en" }, values = { "Enable or Disable Clipboard Observer" })
     String action_clipboard_observer_tooltip();
 
     @Default(lngs = { "en" }, values = { "Exit" })
     String action_exit();
 
+    @Default(lngs = { "en" }, values = { "Exit JDownloader" })
     String action_exit_tooltip();
 
     @Default(lngs = { "en" }, values = { "Help" })

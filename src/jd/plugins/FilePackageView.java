@@ -41,6 +41,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         private long         bytesTotal = -1;
         private long         bytesDone  = -1;
         private long         speed      = -1;
+        private boolean      enabled    = true;
         private DownloadLink link;
     }
 
@@ -240,7 +241,17 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         long done = 0;
         long speed = -1;
         long maxSingleETA = -1;
+        boolean atLeastOneEnabled = false;
         for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
+            if (linkInfo.enabled) {
+                atLeastOneEnabled = true;
+                break;
+            }
+        }
+        for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
+            if (atLeastOneEnabled == true && linkInfo.enabled == false) {
+                continue;
+            }
             if (linkInfo.speed >= 0) {
                 if (speed == -1) {
                     speed = 0;
@@ -272,7 +283,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         this.finalCount = tmp.newFinalCount;
         this.unknownFileSizes = tmp.newUnknownFileSizes;
         this.enabledCount = tmp.newEnabledCount;
-        if (tmp.allFinished) {
+        if (tmp.allFinished && atLeastOneEnabled) {
             /* all links have reached finished state */
             this.finishedDate = tmp.newFinishedDate;
         } else {
@@ -568,12 +579,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         }
 
         final boolean isEnabled = link.isEnabled();
+        final String displayName = view.getDisplayName();
         if (isEnabled) {
             if (finalLinkState == null || FinalLinkState.PLUGIN_DEFECT.equals(finalLinkState)) {
                 tmp.allFinished = false;
             }
             tmp.newEnabledCount++;
-            final String displayName = view.getDisplayName();
             if (conditionalSkipReason instanceof MirrorLoading) {
                 final MirrorLoading mirrorLoading = (MirrorLoading) conditionalSkipReason;
                 final DownloadLink downloadLink = mirrorLoading.getDownloadLink();
@@ -601,6 +612,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     linkInfo = new LinkInfo();
                     tmp.linkInfos.put(displayName, linkInfo);
                 }
+                linkInfo.enabled = true;
                 final SingleDownloadController controller = link.getDownloadLinkController();
                 if (controller != null) {
                     linkInfo.bytesTotal = view.getBytesTotal();
@@ -620,6 +632,21 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                             linkInfo.bytesDone = view.getBytesLoaded();
                         }
                     }
+                }
+            }
+        } else {
+            LinkInfo linkInfo = tmp.linkInfos.get(displayName);
+            if (linkInfo == null) {
+                linkInfo = new LinkInfo();
+                linkInfo.enabled = false;
+                tmp.linkInfos.put(displayName, linkInfo);
+            }
+            if (linkInfo.enabled == false && linkInfo.speed < 0) {
+                if (linkInfo.bytesTotal < view.getBytesTotal()) {
+                    linkInfo.bytesTotal = view.getBytesTotal();
+                }
+                if (linkInfo.bytesDone < view.getBytesLoaded()) {
+                    linkInfo.bytesDone = view.getBytesLoaded();
                 }
             }
         }
