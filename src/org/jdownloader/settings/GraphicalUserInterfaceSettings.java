@@ -798,7 +798,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
         @EnumLabel("NORMAL! Show the most important 'Are you sure?' dialogs!")
         NORMAL,
-        @EnumLabel("LOW! Show only servere 'Are you sure?' dialogs!")
+        @EnumLabel("LOW! Show only severe 'Are you sure?' dialogs!")
         /** Only severe ones */
         LOW,
         @EnumLabel("DISABLED! Hide all 'Are you sure?' dialogs! (As far as possible)")
