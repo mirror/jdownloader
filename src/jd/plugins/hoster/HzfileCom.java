@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hzfile.com" }, urls = { "https?://(www\\.)?hzfile\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hzfile.com", "hzfile.asia" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424", "https?://(?:www\\.)?hzfile\\.(?:com|asia)/(embed\\-)?[a-z0-9]{12}" }, flags = { 2, 2 })
 public class HzfileCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -67,11 +67,11 @@ public class HzfileCom extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                   = "http://hzfile.com";
+    private static final String            COOKIE_HOST                   = "http://hzfile.asia";
     private static final String            NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                       = "(hzfile\\.com)";
+    private static final String            DOMAINS                       = "(hzfile\\.(?:com|asia))";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
@@ -133,9 +133,19 @@ public class HzfileCom extends PluginForHost {
     // mods:
     // limit-info: free (+ free account) download not possible, set default limits
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype:
     // other:
     // TODO: Add case maintenance + alternative filesize check
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("hzfile.com".equals(getHost())) {
+            if (host == null || "hzfile.com".equals(host)) {
+                return "hzfile.asia";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     @SuppressWarnings("deprecation")
     @Override
