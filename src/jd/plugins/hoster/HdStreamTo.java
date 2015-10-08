@@ -267,14 +267,19 @@ public class HdStreamTo extends PluginForHost {
         return fetchAccountInfoHdstream(this.br, account);
     }
 
+    @SuppressWarnings("deprecation")
     public static AccountInfo fetchAccountInfoHdstream(final Browser br, final Account account) throws IOException {
         final AccountInfo ai = new AccountInfo();
         br.getPage("https://" + account.getHoster() + "/json/userdata.php?user=" + Encoding.urlEncode(account.getUser()));
         final String createtime = getJson(br, "joined");
         final String expire = getJson(br, "premium");
-        final String trafficleft = getJson(br, "remaining_traffic");
+        final String trafficleft_string = getJson(br, "remaining_traffic");
+        long trafficleft_long = 0;
+        if (trafficleft_string != null && !trafficleft_string.equals("null")) {
+            trafficleft_long = Long.parseLong(trafficleft_string) * 1024 * 1024;
+        }
         ai.setCreateTime(TimeFormatter.getMilliSeconds(createtime, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-        ai.setTrafficLeft(Long.parseLong(trafficleft) * 1024 * 1024);
+        ai.setTrafficLeft(trafficleft_long);
         if (expire.equals("0")) {
             /*
              * Free accounts are accepted but basically never used because their traffic is ZERO. Admin told us they only bring minor
