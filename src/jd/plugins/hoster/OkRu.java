@@ -87,6 +87,11 @@ public class OkRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
+        final String url_quality = new Regex(DLLINK, "(st.mq=\\d+)").getMatch(0);
+        if (url_quality != null) {
+            /* Always prefer highest quality available */
+            DLLINK = DLLINK.replace(url_quality, "st.mq=5");
+        }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);

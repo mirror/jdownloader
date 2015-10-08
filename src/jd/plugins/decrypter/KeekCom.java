@@ -54,6 +54,13 @@ public class KeekCom extends PluginForDecrypt {
         final int max_ids_per_page_first_page = 48;
         int page = 1;
         String loadmore_id = null;
+
+        if (numberof_ids == 0) {
+            logger.info("User has zero content!");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
         do {
             if (this.isAbort()) {
                 logger.info("User aborted decryption");

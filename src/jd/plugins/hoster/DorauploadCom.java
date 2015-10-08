@@ -58,7 +58,6 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doraupload.com" }, urls = { "https?://(www\\.)?doraupload\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class DorauploadCom extends PluginForHost {
@@ -96,12 +95,12 @@ public class DorauploadCom extends PluginForHost {
     private static final int               WAITSECONDSMAX               = 100;
     private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 0;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean           FREE_RESUME                  = false;
+    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME          = false;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
@@ -116,7 +115,7 @@ public class DorauploadCom extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.8.5
     // Tags: Script, template
-    // mods:
+    // mods: scanInfo[Removed filesize generic failovers]
     // limit-info:
     // protocol: no https
     // captchatype: solvemedia
@@ -286,18 +285,18 @@ public class DorauploadCom extends PluginForHost {
                     fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                     if (fileInfo[1] == null) {
                         fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                        // generic failover#1
-                        if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                        }
-                        // generic failover#2
-                        if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
-                        }
                     }
                 }
             }
         }
+        // // generic failover#1
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        // }
+        // // generic failover#2
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+        // }
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
@@ -495,7 +494,7 @@ public class DorauploadCom extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(),new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -1233,9 +1232,9 @@ public class DorauploadCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

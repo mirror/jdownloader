@@ -297,9 +297,9 @@ public class NicoVideoJp extends PluginForHost {
         } else if (br.containsHTML(">This is a private video and not available")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Now downloadable: This is a private video");
         }
-        if (br.getURL().matches(TYPE_WATCH)) {
+        String flashvars = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
+        if (br.getURL().matches(TYPE_WATCH) || flashvars != null) {
             /* We already got the finallink in our html code but it is double-htmlencoded. */
-            String flashvars = br.getRegex("id=\"watchAPIDataContainer\" style=\"display:none\">(.*?)</div>").getMatch(0);
             if (flashvars == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

@@ -16,14 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,10 +28,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://[^/]+\\.vsco\\.co/media/[a-z0-9]+" }, flags = { 0 })
-public class VscoCo extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bicycling.com" }, urls = { "http://(?:www\\.)?bicycling\\.com/video/[a-z0-9\\-_]+" }, flags = { 0 })
+public class BicyclingCom extends PluginForHost {
 
-    public VscoCo(PluginWrapper wrapper) {
+    public BicyclingCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -44,7 +41,7 @@ public class VscoCo extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
+    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -54,34 +51,51 @@ public class VscoCo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://vsco.co/terms_of_use";
+        return "http://www.bicycling.com/";
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"video_page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex urlregex = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)\\.vsco\\.co/media/(.+)");
-        final String fid = urlregex.getMatch(1);
-        downloadLink.setLinkID(fid);
-        String filename = urlregex.getMatch(0) + "_" + fid + ".jpg";
-        DLLINK = br.getRegex("property=\"og:image\"[ ]*?content=\"(http[^<>\"]*?)(?:\\?w=\\d+)?\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(https?://im\\.vsco\\.co/\\d+/[^<>\"]*?)(?:\\?w=\\d+)?\"").getMatch(0);
+        String playerID = br.getRegex("name=\"playerID\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (playerID == null) {
+            playerID = "1686393384001";
         }
-        if (filename == null || DLLINK == null) {
+        String playerKey = br.getRegex("name=\"playerKey\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (playerKey == null) {
+            playerKey = "AQ~~,AAAAAB9cZG8~,VsmvaF3_bYDedNqkpR7gMGQyInJKsvED";
+        }
+        String publisherID = br.getRegex("name=\"publisherID\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (publisherID == null) {
+            publisherID = "110743091001";
+        }
+        final String videoID = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
+        if (videoID == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String flashID = "myExperience" + videoID;
+
+        final String brightcove_URL = "http://c.brightcove.com/services/viewer/htmlFederated?&width=340&height=192&flashID=" + flashID + "&includeAPI=true&templateLoadHandler=templateLoaded&templateReadyHandler=playerReady&bgcolor=%23FFFFFF&htmlFallback=true&playerID=" + playerID + "&publisherID=" + publisherID + "&playerKey=" + Encoding.urlEncode(playerKey) + "&isVid=true&isUI=true&dynamicStreaming=true&optimizedContentLoad=true&wmode=transparent&%40videoPlayer=" + videoID + "&allowScriptAccess=always";
+        this.br.getPage(brightcove_URL);
+        final jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoHttpByFilesize(this.br);
+
+        String filename = bestBrightcoveVersion.displayName;
+        if (bestBrightcoveVersion == null || bestBrightcoveVersion.creationDate == -1 || filename == null || bestBrightcoveVersion.downloadurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        DLLINK = bestBrightcoveVersion.downloadurl;
+        final String date_formatted = formatDate(bestBrightcoveVersion.creationDate);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
+        filename = date_formatted + "_bicycling_com_" + filename;
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -91,29 +105,8 @@ public class VscoCo extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br2.openHeadConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        downloadLink.setDownloadSize(bestBrightcoveVersion.size);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -152,9 +145,27 @@ public class VscoCo extends PluginForHost {
         return output;
     }
 
+    private String formatDate(final long date) {
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = Long.toString(date);
+        }
+        return formattedDate;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
