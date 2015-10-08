@@ -60,6 +60,11 @@ public class VscoCo extends PluginForDecrypt {
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             if (page == 1) {
                 amount_total = DummyScriptEnginePlugin.toLong(entries.get("total"), 0);
+                if (amount_total == 0) {
+                    logger.info("User has zero content!");
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
             }
             final ArrayList<Object> ressources = (ArrayList) entries.get("media");
             for (final Object ressource : ressources) {

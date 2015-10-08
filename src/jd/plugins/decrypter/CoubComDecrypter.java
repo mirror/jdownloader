@@ -27,8 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/[a-f0-9]{32}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/(?!view)[^/]+" }, flags = { 0 })
 public class CoubComDecrypter extends PluginForDecrypt {
 
     public CoubComDecrypter(PluginWrapper wrapper) {
@@ -38,40 +39,62 @@ public class CoubComDecrypter extends PluginForDecrypt {
     /** Using API: http://coub.com/dev/docs */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String lid = new Regex(parameter, "([a-f0-9]{32})$").getMatch(0);
         this.br.setLoadLimit(this.br.getLoadLimit() * 4);
-        this.br.getPage("http://coub.com/api/v2/timeline/channel/" + lid + "?per_page=1000&permalink=" + lid + "&order_by=newest&page=1");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final ArrayList<Object> ressources = (ArrayList) entries.get("coubs");
-        for (final Object ressource : ressources) {
-            entries = (LinkedHashMap<String, Object>) ressource;
-            final String coub_type = (String) entries.get("type");
-            final String fid = (String) entries.get("permalink");
-            if (coub_type == null || fid == null) {
-                return null;
-            }
-            final String url_content = "https://coub.com/view/" + fid;
-            final String filename = jd.plugins.hoster.CoubCom.getFilename(entries, fid);
-            if (!coub_type.equals("Coub::Simple")) {
-                /* Do not decrypt re-coups (similar to re-tweets) - only decrypt content which the user itself posted! */
-                continue;
-            }
-            final DownloadLink dl = this.createDownloadlink(url_content);
-            dl.setContentUrl(url_content);
-            dl.setName(filename);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-        }
-
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        final String lid = new Regex(parameter, "/([^/]+)$").getMatch(0);
+        final short max_entries_per_page = 500;
+        short page = 1;
+        short pages_total = 0;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(lid);
-        fp.addLinks(decryptedLinks);
+        do {
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                break;
+            }
+            this.br.getPage("http://coub.com/api/v2/timeline/channel/" + lid + "?per_page=" + max_entries_per_page + "&permalink=" + lid + "&order_by=newest&page=" + page);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+
+            if (page == 1) {
+                pages_total = (short) DummyScriptEnginePlugin.toLong(entries.get("total_pages"), 1);
+            }
+
+            if (entries.size() < max_entries_per_page) {
+                /* Fail safe */
+                break;
+            }
+
+            final ArrayList<Object> ressources = (ArrayList) entries.get("coubs");
+            for (final Object ressource : ressources) {
+                entries = (LinkedHashMap<String, Object>) ressource;
+                final String coub_type = (String) entries.get("type");
+                final String fid = (String) entries.get("permalink");
+                if (coub_type == null || fid == null) {
+                    return null;
+                }
+                final String url_content = "https://coub.com/view/" + fid;
+                final String filename = jd.plugins.hoster.CoubCom.getFilename(entries, fid);
+                if (!coub_type.equals("Coub::Simple")) {
+                    /* Do not decrypt re-coups (similar to re-tweets) - only decrypt content which the user itself posted! */
+                    continue;
+                }
+                final DownloadLink dl = this.createDownloadlink(url_content);
+                dl.setContentUrl(url_content);
+                dl.setName(filename);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
+                distribute(dl);
+            }
+
+            page++;
+
+        } while (page <= pages_total);
 
         return decryptedLinks;
     }

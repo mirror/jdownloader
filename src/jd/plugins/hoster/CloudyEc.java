@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec" }, urls = { "http://(?:www\\.)?cloudy\\.ec/v/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec" }, urls = { "https?://(?:www\\.)?cloudy\\.ec/(?:v/|embed\\.php\\?id=)[a-z0-9]+" }, flags = { 0 })
 public class CloudyEc extends PluginForHost {
 
     private static final String DOMAIN = "cloudy.ec";
@@ -50,6 +50,13 @@ public class CloudyEc extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String vid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        link.setLinkID(vid);
+        link.setUrlDownload("http://www.cloudy.ec/v/" + vid);
+    }
+
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, VidGg, CloudyEc */
     @SuppressWarnings("deprecation")
     // This plugin is 99,99% copy the same as the DivxStageNet plugin, if this
@@ -62,7 +69,7 @@ public class CloudyEc extends PluginForHost {
         correctDownloadLink(downloadLink);
         br.getHeaders().put("Accept-Encoding", "identity");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers|The Video no longer exists)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0);

@@ -283,7 +283,13 @@ public class FileJokerNet extends PluginForHost {
         }
         if (dllink == null) {
             final Form[] allForms = br.getForms();
-            Form dlForm = allForms[allForms.length - 1];
+            Form dlForm = br.getFormbyKey("method_free");
+            if (dlForm == null) {
+                dlForm = br.getFormByInputFieldKeyValue("op", "download2");
+            }
+            if (dlForm == null) {
+                dlForm = allForms[allForms.length - 1];
+            }
             if (dlForm == null) {
                 handlePluginBroken(downloadLink, "dlform_f1_null", 3);
             }
