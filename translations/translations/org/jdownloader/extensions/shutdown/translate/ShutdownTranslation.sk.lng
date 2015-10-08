@@ -23,5 +23,3 @@ jd_plugins_optional_jdshutdown=JD vypnutie
 jd_plugins_optional_jdshutdown_description=Automaticky vypne, uspí, hibernuje Váš počítač alebo zatvorí program JDownloader po dokončení sťahovania.
 lit_shutdownn=Vypnúť
 show_admin=Sú potrebné administrátorské práva pre nastavenie JDownloadera na prechod do režimu spánku alebo pohotovostného režimu.
-shutdown_toggle_action_disabled2=Vypnúť po stiahnutí
-shutdown_toggle_action_enabled2=Vypnúť po stiahnutí

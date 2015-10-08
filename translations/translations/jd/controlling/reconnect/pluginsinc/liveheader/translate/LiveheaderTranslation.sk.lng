@@ -1,6 +1,6 @@
 DataCompareDialog_DataCompareDialog_=Porovnať informácie o routeri
 DataCompareDialog_layoutDialogContent__desc=Skontrolujte prosím nasledujúce informácie a snažte sa vyplniť prázdne polia čo najpresnejšie, ako je možné.
-DataCompareDialog_layoutDialogContent_firmware=Firmware/verzia
+DataCompareDialog_layoutDialogContent_firmware=Firmvér/verzia
 DataCompareDialog_layoutDialogContent_firmware_help=Zadajte verziu firmvéru... ponechajte prázdne, ak nie je známa
 DataCompareDialog_layoutDialogContent_ip=IP alebo názov hostiteľa
 DataCompareDialog_layoutDialogContent_ip_help=Zadajte názov hostiteľa webového rozhrania...
