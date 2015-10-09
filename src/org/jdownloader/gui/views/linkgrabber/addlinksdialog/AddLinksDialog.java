@@ -220,14 +220,14 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         final LinkCollectingJob ret = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG, null), input.getText());
         final boolean overwritePackagizerRules = isOverwritePackagizerEnabled();
         final String finalPackageName = packagename.getText().trim();
-        if (StringUtils.isNotEmpty(finalPackageName)) {
-            PackageHistoryManager.getInstance().add(finalPackageName);
-        }
         final String finalComment = getComment().trim();
         final String finalDownloadPassword = downloadPassword.getText();
         final String finalDestination = destination.getFile() != null ? destination.getFile().getAbsolutePath() : null;
         if (StringUtils.isNotEmpty(finalDestination)) {
             DownloadPathHistoryManager.getInstance().add(finalDestination);
+        }
+        if (StringUtils.isNotEmpty(finalPackageName)) {
+            PackageHistoryManager.getInstance().add(finalPackageName);
         }
         if (StringUtils.isNotEmpty(finalDownloadPassword)) {
             ret.setCrawlerPassword(finalDownloadPassword);
@@ -397,7 +397,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
         } else {
             destination.setFile(new File(latest));
-
         }
 
         input = new ExtTextArea() {

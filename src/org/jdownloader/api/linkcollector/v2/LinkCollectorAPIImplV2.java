@@ -41,6 +41,7 @@ import org.jdownloader.api.utils.SelectionInfoUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
+import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.logging.LogController;
@@ -374,6 +375,12 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         lcj.setCrawledLinkModifierPrePackagizer(modifier);
         if (StringUtils.isNotEmpty(query.getDestinationFolder()) || StringUtils.isNotEmpty(query.getPackageName())) {
             lcj.setCrawledLinkModifierPostPackagizer(modifier);
+        }
+        if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
+            DownloadPathHistoryManager.getInstance().add(query.getDestinationFolder());
+        }
+        if (StringUtils.isNotEmpty(query.getPackageName())) {
+            PackageHistoryManager.getInstance().add(query.getPackageName());
         }
         LinkCollector.getInstance().getAddLinksThread(lcj, null).start();
     }
