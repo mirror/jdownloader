@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -36,36 +38,34 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|entertainmentone|filmdistrict|focus_features|fox|fox_searchlight|independent|lions_gate|lucasfilm|magnolia|marvel|oscilloscope|paramount|picturehouse|relativity|sony|sony_pictures|summit|(universial|universal)|wb|(weinstein|weinstien))/[a-zA-Z0-9_]+/" }, flags = { 0 })
+/**
+ * @author raztoki
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|entertainmentone|filmdistrict|focus_features|fox|fox_searchlight|independent|lions_gate|lucasfilm|magnolia|marvel|mgm|oscilloscope|paramount|picturehouse|relativity|sony|sony_pictures|summit|(universial|universal)|wb|(weinstein|weinstien))/[a-zA-Z0-9_]+/" }, flags = { 0 })
 public class AppleTrailer extends PluginForDecrypt {
 
-    /**
-     * @author raztoki
-     * */
     public AppleTrailer(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private Browser                 br1            = new Browser();
-    private Browser                 br2            = null;
-    private boolean                 itunes         = false;
-    private boolean                 poster         = false;
-    private boolean                 tryposter      = false;
-    private static boolean          loaded         = false;
-    private String                  parameter      = null;
-    private String                  title          = null;
-    private ArrayList<DownloadLink> decryptedLinks = null;
-    private ArrayList<DownloadLink> SD             = new ArrayList<DownloadLink>();
-    private ArrayList<DownloadLink> HD             = new ArrayList<DownloadLink>();
-    private HashSet<String>         dupe           = null;
+    private Browser                       br1            = new Browser();
+    private Browser                       br2            = null;
+    private boolean                       itunes         = false;
+    private boolean                       poster         = false;
+    private boolean                       tryposter      = false;
+    private static boolean                loaded         = false;
+    private String                        parameter      = null;
+    private String                        title          = null;
+    private final ArrayList<DownloadLink> decryptedLinks = null;
+    private final ArrayList<DownloadLink> SD             = new ArrayList<DownloadLink>();
+    private final ArrayList<DownloadLink> HD             = new ArrayList<DownloadLink>();
+    private final HashSet<String>         dupe           = null;
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // prevent results from carring over when debugging
-        decryptedLinks = new ArrayList<DownloadLink>();
-        dupe = new HashSet<String>();
+        decryptedLinks.clear();
+        dupe.clear();
 
         // cleanup required
         parameter = param.toString().replaceAll("://(\\w+\\.)?apple", "://trailers.apple");
