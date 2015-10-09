@@ -263,7 +263,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
             dialog.resetDummyInit();
         }
 
-        ApiHandle handle = remoteHandler.enqueue(class1, impl);
+        final ApiHandle handle = remoteHandler.enqueue(class1, impl);
         try {
             try {
                 if (impl instanceof AbstractDialog) {
@@ -271,8 +271,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                     // ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " DialogID: " + handle.getId());
                     // }
                     if (org.appwork.utils.Application.isHeadless()) {
-                        handle.waitFor();
-
+                        if (handle != null) {
+                            handle.waitFor();
+                        }
                     } else {
                         Dialog.getInstance().showDialog((AbstractDialog<?>) impl);
                     }
@@ -295,10 +296,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
             if (handle == null) {
                 return impl;
             }
-            T ret = (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
+            final T ret = (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
 
             if (impl instanceof AbstractDialog) {
-
                 AbstractDialog<?> dialog = (AbstractDialog<?>) impl;
                 if (dialog.isDontShowAgainFlagEabled()) {
                     boolean dontShowAgain = ret.isDontShowAgainSelected();
@@ -309,7 +309,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
             }
             return ret;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(e);
         }
         return impl;
 

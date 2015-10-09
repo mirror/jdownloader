@@ -11,6 +11,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "bitusenet.com" }, urls = { "" }, flags = { 0 })
@@ -38,8 +39,11 @@ public class NewsBitUsenetCom extends UseNet {
         if (br.getCookie(getHost(), "bitusenet") == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        final String accountStatus = br.getRegex("Account Status</h4>\\s*?</li>\\s*?<li>\\s*?<p>(.*?)</").getMatch(0);
+        String accountStatus = br.getRegex("Account Status</h4>\\s*?</li>\\s*?<li>\\s*?<p>(.*?)</").getMatch(0);
         if (!"Active".equalsIgnoreCase(accountStatus)) {
+            if (StringUtils.isEmpty(accountStatus)) {
+                accountStatus = br.getRegex("<h4 class=\"nomargin\">(.*?account.*?)</h4>").getMatch(0);
+            }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, accountStatus, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         final String started = br.getRegex("Started</h4>\\s*?</li>\\s*?<li>\\s*?<p>(.*? \\d+,\\s*? \\d+)</").getMatch(0);

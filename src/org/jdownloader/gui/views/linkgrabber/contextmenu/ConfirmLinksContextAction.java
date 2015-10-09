@@ -462,13 +462,13 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                     }
 
                                 };
-                                UIOManager.I().show(null, combo);
+                                final ComboBoxDialogInterface result = UIOManager.I().show(ComboBoxDialogInterface.class, combo);
                                 try {
-                                    combo.throwCloseExceptions();
+                                    result.throwCloseExceptions();
                                 } catch (Exception e) {
                                     return;
                                 }
-                                handleOfflineLoc = options[combo.getSelectedIndex()];
+                                handleOfflineLoc = options[result.getSelectedIndex()];
                                 CFG_LINKGRABBER.CFG.setHandleOfflineOnConfirmLatestSelection(handleOfflineLoc);
                             }
                             switch (handleOfflineLoc) {
