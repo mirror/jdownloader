@@ -37,7 +37,7 @@ public class VideoOnlineUaDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Allow adult videos
         br.setCookie("http://video.online.ua/", "online_18", "1");
-        String parameter = param.toString();
+        String parameter = param.toString() + "/";
         br.getPage(parameter);
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String externID = br.getRegex("\"(http://megogo\\.net/e/\\d+)\"").getMatch(0);
@@ -58,10 +58,7 @@ public class VideoOnlineUaDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("(?:\"|\\')(//(www\\.)?youtube\\.com/embed/[^<>\"]*?)(?:\"|\\')").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("src=\\'https?:(//(www\\.)?youtube\\.com/embed/[A-Za-z0-9\\-_]+)\\'").getMatch(0);
-        }
+        externID = br.getRegex("(https?://(www\\.)?youtube\\.com/embed/[^<>\"]*?)(?:\"|\\')").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http:" + externID));
             return decryptedLinks;
