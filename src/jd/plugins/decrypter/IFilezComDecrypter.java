@@ -41,7 +41,7 @@ public class IFilezComDecrypter extends PluginForDecrypt {
     }
 
     private static final String DEPFILEDECRYPTED = "depfiledecrypted.com/";
-    private static final String INVALIDLINKS     = "https?://(www\\.)?depfile\\.com/(uploads|support|privacy|checkfiles|register|premium|terms|childpolicy|affiliate)";
+    private static final String INVALIDLINKS     = "https?://(www\\.)?depfile\\.com/(uploads|support|privacy|checkfiles|register|premium|terms|childpolicy|affiliate|report|data|dmca|favicon|ajax|API|robots)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
