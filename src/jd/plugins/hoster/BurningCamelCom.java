@@ -55,7 +55,7 @@ public class BurningCamelCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.burningcamel.com/") || br.containsHTML("<title>Amateur Porn and Free Amateur Sex Videos \\| Burning Camel</title>")) {
+        if (br.getURL().equals("http://www.burningcamel.com/") || br.containsHTML("<title>Amateur Porn and Free Amateur Sex Videos \\| Burning Camel</title>|<title>404: File Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?)( \\| Burning Camel)?</title>").getMatch(0);
