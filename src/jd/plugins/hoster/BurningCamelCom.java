@@ -58,17 +58,24 @@ public class BurningCamelCom extends PluginForHost {
         if (br.getURL().equals("http://www.burningcamel.com/") || br.containsHTML("<title>Amateur Porn and Free Amateur Sex Videos \\| Burning Camel</title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?) \\| Burning Camel</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)( \\| Burning Camel)?</title>").getMatch(0);
         Regex basicRegex = br.getRegex("createPlayer\\(\"(http://.*?)\",\"http://.*?\",\"(.*?)\"");
         DLLINK = basicRegex.getMatch(0);
         String token = basicRegex.getMatch(1);
-        if (filename == null || DLLINK == null || token == null) {
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(https?://burningcamel.com/media/videos/.*?)(\\'|\")").getMatch(0);
+        }
+
+        // if (filename == null || DLLINK == null || token == null) {
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
-        DLLINK += "?start=0&id=videoplayer&client=FLASH%20WIN%2010,3,181,26&version=4.2.95&width=662&token=" + token;
+        if (token != null) {
+            DLLINK += "?start=0&id=videoplayer&client=FLASH%20WIN%2010,3,181,26&version=4.2.95&width=662&token=" + token;
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
