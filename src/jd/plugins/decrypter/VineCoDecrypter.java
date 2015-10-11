@@ -46,7 +46,7 @@ public class VineCoDecrypter extends PluginForDecrypt {
         ArrayList<Object> resource_data_list = null;
         final String parameter = param.toString().replace("http://", "https://");
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"profile-details\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"?profile-details\"?")) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
             } catch (final Throwable e) {
