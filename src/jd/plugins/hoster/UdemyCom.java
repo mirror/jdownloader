@@ -19,11 +19,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,11 +36,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/(.+\\?dtcode=[A-Za-z0-9]+|.+/#/lecture/\\d+)" }, flags = { 2 })
 public class UdemyCom extends PluginForHost {
 
     public UdemyCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.udemy.com/courses/");
     }
 
     /* DEV NOTES */
@@ -44,13 +50,17 @@ public class UdemyCom extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
+    private static final String  default_Extension   = ".mp4";
 
-    private String               DLLINK            = null;
+    /* Connection stuff */
+    private static final boolean FREE_RESUME         = true;
+    private static final int     FREE_MAXCHUNKS      = 0;
+    private static final int     FREE_MAXDOWNLOADS   = 20;
+
+    private String               DLLINK              = null;
+
+    private static final String  TYPE_FREE           = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
+    private static final String  TYPE_ACCOUNT_NEEDED = "https?://(?:www\\.)?udemy\\.com/.+/#/lecture/\\d+";
 
     @Override
     public String getAGBLink() {
@@ -63,20 +73,78 @@ public class UdemyCom extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null;
+        String url_embed = null;
+        boolean loggedin = false;
+        final String fid_accountneeded = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            try {
+                this.login(aa, false);
+                loggedin = true;
+            } catch (final Throwable e) {
+            }
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "udemy\\.com/(.+)\\?dtcode=").getMatch(0);
+        if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_ACCOUNT_NEEDED)) {
+            downloadLink.setName(fid_accountneeded);
+            downloadLink.getLinkStatus().setStatusText("Cannot check this url without account");
+            return AvailableStatus.TRUE;
+        } else if (downloadLink.getDownloadURL().matches(TYPE_ACCOUNT_NEEDED)) {
+            /* Prepare the API-Headers to get the videourl */
+            downloadLink.setName(fid_accountneeded);
+            final String clientid = this.br.getCookie(MAINPAGE, "client_id");
+            final String bearertoken = this.br.getCookie(MAINPAGE, "access_token");
+            final String newrelicid = "XAcEWV5ADAEDUlhaDw==";
+            if (clientid == null || bearertoken == null || newrelicid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getHeaders().put("X-NewRelic-ID", newrelicid);
+            this.br.getHeaders().put("X-Udemy-Client-Id", clientid);
+            this.br.getHeaders().put("X-Udemy-Bearer-Token", bearertoken);
+            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            this.br.getPage("https://www.udemy.com/api-1.1/lectures/" + fid_accountneeded + "/content?videoOnly=0&instructorPreviewMode=False");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
+            url_embed = this.br.getRegex("src=\"(/new\\-lecture/view/[^<>\"]*?)\"").getMatch(0);
+            if (url_embed == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getPage(url_embed);
+            final String[] qualities = { "1080", "720", "480", "360", "240" };
+            for (final String quality : qualities) {
+                DLLINK = this.br.getRegex("src=\"(https?://[^<>\"]*?)\" type=\\'video/mp4\\' data\\-res=\"" + quality + "\"").getMatch(0);
+                if (DLLINK != null) {
+                    break;
+                }
+            }
+            if (DLLINK != null) {
+                DLLINK = Encoding.htmlDecode(DLLINK);
+                filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
+                if (filename == null) {
+                    filename = fid_accountneeded;
+                } else {
+                    filename = fid_accountneeded + "_" + filename;
+                }
+            }
+        } else {
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Normal (FREE) url */
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(downloadLink.getDownloadURL(), "udemy\\.com/(.+)\\?dtcode=").getMatch(0);
+            }
+            url_embed = this.br.getRegex("(https?://(?:www\\.)?udemy\\.com/embed/video/[^<>\"]*?)\"").getMatch(0);
+            if (url_embed == null || filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getPage(url_embed);
+            DLLINK = br.getRegex("\"file\":\"(http[^<>\"]*?)\",\"label\":\"720p").getMatch(0);
         }
-        final String url_embed = this.br.getRegex("(https?://(?:www\\.)?udemy\\.com/embed/video/[^<>\"]*?)\"").getMatch(0);
-        if (url_embed == null || filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.br.getPage(url_embed);
-        DLLINK = br.getRegex("\"file\":\"(http[^<>\"]*?)\",\"label\":\"720p").getMatch(0);
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -119,10 +187,19 @@ public class UdemyCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        if (downloadLink.getDownloadURL().matches(TYPE_ACCOUNT_NEEDED)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+        handleDownload(downloadLink);
+    }
+
+    public void handleDownload(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -137,6 +214,77 @@ public class UdemyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private static final String MAINPAGE = "https://udemy.com";
+    private static Object       LOCK     = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.setFollowRedirects(true);
+                br.getPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE");
+                final String csrftoken = this.br.getCookie(MAINPAGE, "csrftoken");
+                if (csrftoken == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                final String postData = "csrfmiddlewaretoken=" + csrftoken + "&locale=de_DE&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&displayType=ajax";
+                br.postPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE", postData);
+                if (this.br.containsHTML("data-purpose=\"do-login\"")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        account.setConcurrentUsePossible(true);
+        account.setType(AccountType.PREMIUM);
+        /* There is no separate free/premium - users can buy videos which will be available for their accounts only afterwards. */
+        ai.setStatus("Valid account");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        /* No need to log in - we're already logged in! */
+        handleDownload(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return FREE_MAXDOWNLOADS;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
@@ -157,7 +305,7 @@ public class UdemyCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
