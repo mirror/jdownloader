@@ -54,12 +54,13 @@ public class VineCo extends PluginForHost {
         }
         final String fid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
         downloadLink.setLinkID(fid);
-        String filename = br.getRegex("property=\"?og:title\"? content=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("property=\"?og:title\"? content=\"?([^<>\"]*?)\"?>").getMatch(0);
         DLLINK = br.getRegex("property=\"twitter:player:stream\" content=\"(https?://[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("contentUrl\" : \"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
+            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
