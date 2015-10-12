@@ -31,6 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubewolf.com" }, urls = { "http://(www\\.)?tubewolf\\.com/movies/[\\w\\-]+" }, flags = { 0 })
 public class TubeWolfCom extends PluginForHost {
@@ -129,6 +130,11 @@ public class TubeWolfCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override

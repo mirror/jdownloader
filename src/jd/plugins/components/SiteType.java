@@ -30,6 +30,12 @@ public class SiteType {
          */
         ImageHosting_ImgShot,
         /**
+         * Script used by some video/porn hosting sites.<br />
+         * Can be bought e.g. from here: <a href="http://www.kernel-video-sharing.com/en/"</a> >kernel-video-sharing.com</a>.<br />
+         * Demo: <a href="http://www.kvs-demo.com/">kvs-demo.com</a>
+         */
+        KernelVideoSharing,
+        /**
          * Should cover all given templates.<br />
          * <a href="http://sibsoft.net/xfilesharing.html">XFileSharing<a><br />
          * <a href="http://sibsoft.net/xfilesharing_free.html">XFileSharing FREE (old version)</a><br />
