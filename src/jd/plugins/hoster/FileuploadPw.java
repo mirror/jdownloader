@@ -118,7 +118,7 @@ public class FileuploadPw extends PluginForHost {
     // limit-info: free account untested, set FREE limits
     // protocol: no https
     // captchatype: reCaptchaV1
-    // other:
+    // other: related: uploadzone.com, filesupload.pw
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
