@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,6 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/folder/([A-Z0-9]+)" }, flags = { 0 })
 public class FShareVnFolder extends PluginForDecrypt {
@@ -43,6 +43,7 @@ public class FShareVnFolder extends PluginForDecrypt {
         final String parameter = param.toString().replace("mega.1280.com", "fshare.vn");
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         boolean failed = false;
+        br.getPage("https://www.fshare.vn/location/en");
         br.getPage(parameter);
         if (!br.containsHTML("filename")) {
             logger.info("Link offline: " + parameter);
@@ -87,11 +88,12 @@ public class FShareVnFolder extends PluginForDecrypt {
                     }
                     final String filename = new Regex(data, "title=\"(.*?)\"").getMatch(0);
                     final String filesize = new Regex(data, "file_size align-right\">(.*?)</div>").getMatch(0);
-                    final String dlink = new Regex(data, "(http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getMatch(0);
+                    final String dlink = new Regex(data, "(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getMatch(0);
                     if (filename == null && filesize == null && dlink == null) {
                         continue;
                     }
                     if (dlink == null) {
+                        logger.info("Failed to get dlink from data: " + data);
                         return null;
                     }
                     if (!dupe.add(dlink)) {
