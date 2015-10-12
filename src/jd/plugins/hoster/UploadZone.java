@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -55,8 +55,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upload.zone" }, urls = { "https?://(www\\.)?upload\\.zone/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class UploadZone extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -64,11 +64,11 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://ForDevsToPlayWith.com";
+    private static final String            COOKIE_HOST                     = "http://upload.zone";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(ForDevsToPlayWith\\.com)";
+    private static final String            DOMAINS                         = "(upload\\.zone)";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
@@ -130,13 +130,13 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                            = new Object();
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.7.0.3
+    // XfileSharingProBasic Version 2.7.0.2
     // Tags: Script, template
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
-    // other:
+    // captchatype: recaptcha
+    // other: related: uploadzone.com, filesupload.pw
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
@@ -165,9 +165,9 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public UploadZone(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -725,17 +725,10 @@ public class XFileSharingProBasic extends PluginForHost {
                 dllink = new Regex(correctedBR, "(https?://[^/]+/img/\\d+/[^<>\"\\']+)").getMatch(0);
             }
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
+                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+)").getMatch(0);
             }
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);
-            }
-            if (dllink != null && dllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
-                /* Do NOT download thumbnails! */
-                dllink = null;
+                dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+)").getMatch(0);
             }
         }
         return dllink;
@@ -1002,7 +995,7 @@ public class XFileSharingProBasic extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only|>You can download files up to)").matches() || this.br.containsHTML("( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only|>You can download files up to)")) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();

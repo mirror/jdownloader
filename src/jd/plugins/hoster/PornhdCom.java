@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,12 +30,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "palcomix.com" }, urls = { "http://(www\\.)?palcomix\\.com/[^/]+/imagepages/image\\d+\\.html" }, flags = { 0 })
-public class PalcomixCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhd.com" }, urls = { "https?://(?:www\\.)?pornhd\\.com/(videos/\\d+/[^/]+|video/embed/\\d+)" }, flags = { 0 })
+public class PornhdCom extends PluginForHost {
 
-    public PalcomixCom(PluginWrapper wrapper) {
+    public PornhdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,18 +43,25 @@ public class PalcomixCom extends PluginForHost {
     // protocol: no https
     // other:
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fid = getFID(link);
+        link.setLinkID(fid);
+        link.setUrlDownload("http://www.pornhd.com/videos/" + fid);
+    }
+
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
+    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = false;
-    private static final int     free_maxchunks    = 1;
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
     private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://palcomix.com/";
+        return "http://www.pornhd.com/legal/terms";
     }
 
     @SuppressWarnings("deprecation")
@@ -66,21 +71,28 @@ public class PalcomixCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        final String fid = getFID(downloadLink);
+        String url_filename = new Regex(downloadLink.getDownloadURL(), "/\\d+/([^/]+)$").getMatch(0);
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex finfo = new Regex(downloadLink.getDownloadURL(), "palcomix\\.com/([^/]+)/imagepages/image(\\d+)\\.html");
-        final String galleryname = finfo.getMatch(0);
-        final String imagenumber = finfo.getMatch(1);
-        final DecimalFormat df = new DecimalFormat("00");
-        String filename = galleryname + " - image" + imagenumber;
-        DLLINK = this.br.getRegex("<img src=\"\\.\\.(/images/page\\d+[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK != null) {
-            /* final URL via html */
-            DLLINK = "http://palcomix.com/" + galleryname + DLLINK;
-        } else {
-            /* Final URL custom-built! */
-            DLLINK = "http://palcomix.com/" + galleryname + "/images/page" + df.format(Long.parseLong(imagenumber)) + ".jpg";
+        if (url_filename == null) {
+            url_filename = new Regex(this.br.getURL(), "/\\d+/([^/]+)$").getMatch(0);
+        }
+        String filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?)\\| PornHD\\.com\"").getMatch(0);
+        if (filename == null) {
+            if (url_filename != null) {
+                filename = fid + "_" + url_filename;
+            } else {
+                filename = fid;
+            }
+        }
+        final String[] qualities = { "1080p", "720p", "480p", "240p" };
+        for (final String quality : qualities) {
+            DLLINK = br.getRegex("\\'" + quality + "\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            if (DLLINK != null) {
+                break;
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -104,7 +116,7 @@ public class PalcomixCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -121,6 +133,11 @@ public class PalcomixCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "/(\\d+)/[^/]+$").getMatch(0);
     }
 
     @Override
@@ -162,25 +179,6 @@ public class PalcomixCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.ArlesImageWebPageCreator;
     }
 
     @Override
