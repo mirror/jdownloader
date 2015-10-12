@@ -60,10 +60,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String hash_temp = null;
+        String hash_complete = null;
         if (parameter.matches(type_docviewer)) {
             /* TODO: Change that --> FILE-URLs --> Should work fine then with the fixed decrypter! */
             /* Documents in web view mode --> File-URLs! */
             hash_temp = new Regex(parameter, type_docviewer).getMatch(0);
+            hash_complete = new Regex(parameter, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
             String hash_temp_decoded = Encoding.htmlDecode(hash_temp);
             String fname_url = new Regex(parameter, "\\&name=([^/\\&]+)").getMatch(0);
             if (fname_url == null) {
@@ -134,6 +136,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        // final String sk = this.getJson("skLocal");
+
         String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("class=\"nb\\-panel__title\" title=\"([^<>\"]*?)\"").getMatch(0);
@@ -146,6 +150,17 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         // /* First try to get files of current folder */
         // final String hashID_special_encoded = hashID.replace("%2F", "/").replace("%28", "(").replace("%29", ")");
         // String linktext = br.getRegex("\"idEncoded\":\"/public/" + hashID_special_encoded + "parents\":\\[(.*?)\\]").getMatch(0);
+
+        // this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        // this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        // this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // String postData = "idClient=" + jd.plugins.hoster.DiskYandexNet.CLIENT_ID + "&version=" + DiskYandexNet.VERSION + "&sk=" + sk +
+        // "&_model.0=resources&idContext.0=%2Fpublic%2" + Encoding.urlEncode(mainhashID) + "&offset.0=40&amount.0=40";
+        // if (false) {
+        // postData += "&idItemLast.0=" + Encoding.urlEncode(mainhashID);
+        // }
+        // this.br.postPage("/models/?_m=resources", postData);
+
         final String json = br.getRegex("type=\"application/json\">(\\[\\{\"model\":\"environment.*?\\])</script>").getMatch(0);
         ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
         final String walk_string = "{" + (ressourcelist.size() - 1) + "}/data";

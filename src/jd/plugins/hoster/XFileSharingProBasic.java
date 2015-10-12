@@ -728,7 +728,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 dllink = new Regex(correctedBR, "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
             }
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);
+                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+)").getMatch(0);
             }
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);

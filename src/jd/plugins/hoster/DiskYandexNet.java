@@ -260,7 +260,7 @@ public class DiskYandexNet extends PluginForHost {
             maxchunks = 0;
         } else {
             String hash = getHash(downloadLink);
-            String sk = br.getRegex("\"sk\":\"([^<>\"]+)\"").getMatch(0);
+            String sk = getSK(this.br);
             if (sk == null) {
                 logger.warning("sk in account handling (without move) is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -270,7 +270,7 @@ public class DiskYandexNet extends PluginForHost {
             br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(hash) + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
             /** TODO: Find out why we have the wrong SK here and remove this workaround! */
             if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
-                sk = br.getRegex("\"sk\":\"([^<>\"]*?)\"").getMatch(0);
+                sk = getSK(this.br);
                 if (sk == null || sk.equals("")) {
                     logger.warning("sk in account handling (without move) is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -452,7 +452,7 @@ public class DiskYandexNet extends PluginForHost {
                         }
                     }
                     if (dllink == null) {
-                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + hash + "&async.0=0&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + ACCOUNT_SK);
+                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + hash + "&async.0=0&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + ACCOUNT_SK);
                         /* TODO: Maybe add/find a way to verify if the file really has been moved to the account. */
                         if (br.containsHTML("\"code\":85")) {
                             logger.info("No free space available, failed to move file to account");
@@ -496,7 +496,7 @@ public class DiskYandexNet extends PluginForHost {
             } else {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                 br.getPage(getMainLink(link));
-                br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+                br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
                 handleFreeErrors();
                 dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -548,7 +548,7 @@ public class DiskYandexNet extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
-                postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + urlencodedfname + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + this.ACCOUNT_SK);
+                postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + urlencodedfname + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
                 /* 28 = file not found, 70 = folder not found */
                 if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
                     logger.info("getLinkFromFileInAccount: Moved file was not found in directory: " + downloaddir);
@@ -625,15 +625,8 @@ public class DiskYandexNet extends PluginForHost {
         return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
-    private String parse(final String var, final Browser srcbr) {
-        if (var == null) {
-            return null;
-        }
-        String result = srcbr.getRegex("<" + var + ">([^<>\"]*?)</" + var + ">").getMatch(0);
-        if (result == null) {
-            result = srcbr.getRegex("\"" + var + "\":\"([^\"]+)").getMatch(0);
-        }
-        return result;
+    public static String getSK(final Browser br) {
+        return getJson(br.toString(), "sk");
     }
 
     private void prepBr() {
@@ -702,6 +695,26 @@ public class DiskYandexNet extends PluginForHost {
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
         getConfig().addEntry(moveFilesToAcc);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "2. Delete moved files & empty trash after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false));
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    public static String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private void checkDiskFeatureDialog() {

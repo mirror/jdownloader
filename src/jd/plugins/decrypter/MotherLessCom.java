@@ -60,6 +60,7 @@ public class MotherLessCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setLoadLimit(4194304);
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(503);
         JDUtilities.getPluginForHost("motherless.com");
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MotherLessCom.ua);
         // alters 'domain/(g/name/)uid' by removing all but uid
@@ -97,7 +98,7 @@ public class MotherLessCom extends PluginForDecrypt {
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
-        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(jd.plugins.hoster.MotherLessCom.html_OFFLINE) || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(jd.plugins.hoster.MotherLessCom.html_OFFLINE) || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404") || this.br.getHttpConnection().getResponseCode() == 503) {
             // this can have text which could be contained in previous if statements... has to be last!
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dl.setContentUrl(parameter);

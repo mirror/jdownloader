@@ -16,12 +16,13 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -50,47 +51,36 @@ public class BeegCom extends PluginForHost {
 
     private static final String INVALIDLINKS = "http://(www\\.)?beeg\\.com/generator.+";
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL().toLowerCase());
-        // Link offline
-        if (br.containsHTML("(<h1>404 error \\- Page Not found</h1>|<title>beeg\\. \\— Page Not Found\\. \\(Error 404\\)</title>|<p>In about 5 seconds, you will be automatically redirected to the main page| the page you’re looking for can\\'t be found\\. May be invalid or outdated\\.</h2>)")) {
+        this.br.getPage("http://beeg.com/api/v1/video/" + fid);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // Invalid link
-        if (br.containsHTML("404 2") || br.getURL().equals("http://beeg.com/")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>(.*?) \\(Bang Bros[^<>]+</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"description\" content=\"([^\"<>]+)\"").getMatch(0);
-        }
-        DLLINK = br.getRegex("\\'file\\': \\'(https?://[^\\'\"\\,]+)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'file\\'(,|: )\\'(http://.*?)\\'").getMatch(1);
-        }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(http://\\d+\\.video\\.mystreamservice\\.com/default/[a-z0-9\\-]+\\.flv)\\'").getMatch(0);
-        }
-        if (DLLINK == null) {
-            final String[] qualities = { "1080", "720", "480", "360", "240" };
-            for (final String quality : qualities) {
-                DLLINK = br.getRegex("\\'" + quality + "p\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-                if (DLLINK != null) {
-                    break;
-                }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        String filename = (String) entries.get("title");
+        final String[] qualities = { "1080", "720", "480", "360", "240" };
+        for (final String quality : qualities) {
+            DLLINK = (String) entries.get(quality + "p");
+            if (DLLINK != null) {
+                break;
             }
         }
 
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (DLLINK.startsWith("//")) {
+            DLLINK = "http:" + DLLINK;
+        }
+        DLLINK = DLLINK.replace("{DATA_MARKERS}", "data=pc.DE");
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
             ext = ".flv";

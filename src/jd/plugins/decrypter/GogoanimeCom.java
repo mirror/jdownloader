@@ -94,13 +94,15 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         // Offline
-        if (br.containsHTML("Oops\\! Page Not Found<|>404 Not Found<|Content has been removed due to copyright or from users\\.<")) {
+        if (br.containsHTML("Oops\\! Page Not Found<|>404 Not Found<|Content has been removed due to copyright or from users\\.<") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 403) {
             logger.info("This link is offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         // Invalid link
         if (br.containsHTML("No htmlCode read")) {
             logger.info("This link is invalid: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 

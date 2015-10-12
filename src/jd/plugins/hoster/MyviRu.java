@@ -55,6 +55,8 @@ public class MyviRu extends PluginForHost {
 
     private String               DLLINK            = null;
 
+    private boolean              temp_unavailable  = false;
+
     @Override
     public String getAGBLink() {
         return "http://myvi.ru/ru/help/license.aspx";
@@ -69,6 +71,9 @@ public class MyviRu extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getURL().contains("myvi.ru/coming-soon?aspxerrorpath")) {
+            temp_unavailable = true;
+            return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
@@ -130,6 +135,9 @@ public class MyviRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (temp_unavailable) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is not available at the moment", 30 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
