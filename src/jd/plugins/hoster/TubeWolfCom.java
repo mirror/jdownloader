@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubewolf.com" }, urls = { "http://(www\\.)?tubewolf\\.com/movies/[\\w\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubewolf.com" }, urls = { "http://(www\\.)?tubewolf\\.com/movies/[\\w\\-]+" }, flags = { 0 })
 public class TubeWolfCom extends PluginForHost {
 
     /* All similar: TubeWolfCom, AlphaPornoCom */
