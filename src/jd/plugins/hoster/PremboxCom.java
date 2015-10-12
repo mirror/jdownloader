@@ -61,7 +61,7 @@ public class PremboxCom extends PluginForHost {
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME                    = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
-    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS              = 20;
+    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS              = 10;
     /*
      * This is the interval in which the complete download history will be deleted from the account (if etting is checked by the user && JD
      * does check the account)
@@ -368,6 +368,7 @@ public class PremboxCom extends PluginForHost {
         }
         ai.setTrafficLeft(traffic_left);
         account.setValid(true);
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         this.getAPISafe(API_SERVER + "/supportedHosts");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());

@@ -196,7 +196,11 @@ public class HdStreamTo extends PluginForHost {
                 if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } else if (traffic_left_free.equals("0")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                    /*
+                     * We can never know how long we habve to wait - also while we might have this problem for one file, other, smaller
+                     * files can still be downloadable --> Let's wait an hour, then try again.
+                     */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
                 }
                 dllink = getDllink(downloadLink);
                 dllink += "&premium=" + premiumtoken;
