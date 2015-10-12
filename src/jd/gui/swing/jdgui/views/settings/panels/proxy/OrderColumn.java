@@ -18,8 +18,8 @@ import org.jdownloader.images.NewTheme;
 public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
 
     /**
-	 * 
-	 */
+     *
+     */
     private static final long         serialVersionUID = 5932073061658364800L;
     private MigPanel                  renderer;
     private MigPanel                  editor;
@@ -46,8 +46,8 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
 
         editorUp = new ExtButton(new AppAction() {
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = -6373308629670760194L;
 
             {
@@ -65,8 +65,8 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
 
         editorDown = new ExtButton(new AppAction() {
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = 359422892536364704L;
 
             {

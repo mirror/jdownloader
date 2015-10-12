@@ -99,7 +99,7 @@ import org.mozilla.javascript.tools.shell.Global;
  * @author thomas
  *
  */
-public class JSPermissionRestricter {
+public class JSRhinoPermissionRestricter {
     static public class SandboxContextFactory extends ContextFactory {
 
         static public class MyContext extends Context {

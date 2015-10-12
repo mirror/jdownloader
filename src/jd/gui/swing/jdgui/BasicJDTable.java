@@ -34,14 +34,15 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventListener<Integer> {
 
-    private static final long serialVersionUID = -9181860215412270250L;
-    protected int             mouseOverRow     = -1;
+    private static final long serialVersionUID                 = -9181860215412270250L;
+    protected int             mouseOverRow                     = -1;
     private Color             sortNotifyColor;
     private final boolean     overwriteHorizontalLinesPossible;
 
-    private boolean showHorizontalLineBelowLastEntry = true;
+    private boolean           showHorizontalLineBelowLastEntry = true;
 
-    private boolean noRepaint                        = false;
+    private boolean           noRepaint                        = false;
+
     public BasicJDTable(ExtTableModel<T> tableModel) {
         super(tableModel);
         this.setShowVerticalLines(true);
@@ -73,6 +74,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
                 overwriteHorizontalLinesPossible = false;
             }
         }
+
     }
 
     protected void addSelectionHighlighter() {

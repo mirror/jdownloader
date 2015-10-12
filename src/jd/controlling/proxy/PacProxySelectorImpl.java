@@ -32,14 +32,15 @@ import com.btr.proxy.selector.pac.UrlPacScriptSource;
 
 public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
-    private static final LogSource                  logger           = LogController.getInstance().getLogger(PacProxySelectorImpl.class.getName());
+    private static final LogSource                  logger             = LogController.getInstance().getLogger(PacProxySelectorImpl.class.getName());
 
     private volatile String                         pacUrl;
-    private final HashMap<String, PacProxySelector> selectors        = new HashMap<String, PacProxySelector>();
-    private final AtomicLong                        latestValidation = new AtomicLong(-1);
-    private final HashMap<String, HTTPProxy>        cacheMap         = new HashMap<String, HTTPProxy>();
-    private final HashMap<String, String[]>         tempAuthMap      = new HashMap<String, String[]>();
-    private boolean                                 nativeProxy      = false;
+    private final HashMap<String, PacProxySelector> selectors          = new HashMap<String, PacProxySelector>();
+    private final AtomicLong                        latestValidation   = new AtomicLong(-1);
+    private final AtomicLong                        doNotValidateUntil = new AtomicLong(-1);
+    private final HashMap<String, HTTPProxy>        cacheMap           = new HashMap<String, HTTPProxy>();
+    private final HashMap<String, String[]>         tempAuthMap        = new HashMap<String, String[]>();
+    private boolean                                 nativeProxy        = false;
 
     public PacProxySelectorImpl(String url, String user, String pass) {
         if (!JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
@@ -200,17 +201,27 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         } else {
             PacProxySelector selector = selectors.get(pacUrl);
             if (selector == null || System.currentTimeMillis() - latestValidation.get() > 15 * 60 * 1000l) {
-                tempAuthMap.clear();
-                cacheMap.clear();
-                selectors.clear();
-                latestValidation.set(-1);
-                PacScriptSource pacSource = new UrlPacScriptSource(lPacURL);
-                if (pacSource.isScriptValid()) {
-                    selector = new PacProxySelector(pacSource);
-                    latestValidation.set(System.currentTimeMillis());
-                    selectors.put(lPacURL, selector);
-                } else {
-                    selector = null;
+                if (doNotValidateUntil.get() < System.currentTimeMillis()) {
+                    tempAuthMap.clear();
+                    cacheMap.clear();
+                    selectors.clear();
+                    latestValidation.set(-1);
+
+                    PacScriptSource pacSource = new UrlPacScriptSource(lPacURL);
+                    logger.info("Download PAC Script!");
+                    long t = System.currentTimeMillis();
+                    if (pacSource.isScriptValid()) {
+                        selector = new PacProxySelector(pacSource);
+                        latestValidation.set(System.currentTimeMillis());
+                        selectors.put(lPacURL, selector);
+                    } else {
+                        selector = null;
+                        if (System.currentTimeMillis() - t > 5000) {
+                            // Validation took to long (download/evaluation). lets ban it for 5 minutes
+                            doNotValidateUntil.set(System.currentTimeMillis() + 5 * 60 * 1000l);
+                        }
+                    }
+
                 }
             }
             return selector;
