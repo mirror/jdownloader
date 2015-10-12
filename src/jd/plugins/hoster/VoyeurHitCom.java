@@ -27,8 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "voyeurhit.com" }, urls = { "http://(www\\.)?voyeurhit\\.com/videos/[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "voyeurhit.com" }, urls = { "http://(www\\.)?voyeurhit\\.com/videos/[^/]+" }, flags = { 0 })
 public class VoyeurHitCom extends PluginForHost {
 
     // Porn_get_file_/videos/_basic Version 0.X
@@ -114,6 +115,11 @@ public class VoyeurHitCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override

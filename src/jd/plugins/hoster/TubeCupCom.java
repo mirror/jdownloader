@@ -29,8 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubecup.com" }, urls = { "http://(www\\.)?tubecup\\.com/(channel/[a-z0-9\\-_]+/\\d+/|videos/\\d+/[a-z0-9\\-_]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubecup.com" }, urls = { "http://(www\\.)?tubecup\\.com/(channel/[a-z0-9\\-_]+/\\d+/|videos/\\d+/[a-z0-9\\-_]+/)" }, flags = { 0 })
 public class TubeCupCom extends PluginForHost {
 
     public TubeCupCom(PluginWrapper wrapper) {
@@ -134,6 +135,11 @@ public class TubeCupCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override

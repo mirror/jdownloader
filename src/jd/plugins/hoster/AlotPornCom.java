@@ -30,8 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/(?:\\d+(/[A-Za-z0-9\\-_]+/)?|(?:embed\\.php\\?id=|embed/)\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/(?:\\d+(/[A-Za-z0-9\\-_]+/)?|(?:embed\\.php\\?id=|embed/)\\d+)" }, flags = { 0 })
 public class AlotPornCom extends PluginForHost {
 
     // DEV NOTES
@@ -121,7 +122,7 @@ public class AlotPornCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = openConnection(br2, DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -147,18 +148,9 @@ public class AlotPornCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override

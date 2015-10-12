@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com", "hclips.com", "mylust.com", "pornfun.com", "pornoid.com", "pornwhite.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com", "wetplace.com", "xbabe.com", "xfig.net", "hdzog.com", "sex3.com", "egbo.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com", "bravotube.net", "upornia.com" }, urls = { "http://(?:www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/",
         "http://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/",
@@ -247,6 +248,11 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override
