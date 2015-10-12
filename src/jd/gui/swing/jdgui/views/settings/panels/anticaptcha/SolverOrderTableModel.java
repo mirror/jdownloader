@@ -53,6 +53,11 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
     }
 
     @Override
+    protected void autoColumnWidth() {
+        super.autoColumnWidth();
+    }
+
+    @Override
     protected void initColumns() {
 
         this.addColumn(new ExtCheckColumn<SolverService>(_GUI._.premiumaccounttablemodel_column_enabled()) {
@@ -273,12 +278,17 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             }
 
             @Override
+            public boolean isAutoWidthEnabled() {
+                return true;
+            }
+
+            @Override
             protected boolean isDefaultResizable() {
-                return false;
+                return true;
             }
 
             protected String generateID() {
-                return "CaptchaOrderTable.timeoutbutton";
+                return "CaptchaOrderTable.timeoutbutton3";
             }
 
             @Override
@@ -288,7 +298,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
             @Override
             public int getDefaultWidth() {
-                return 100;
+                return 3;
             }
 
             @Override
@@ -380,7 +390,12 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
             @Override
             protected boolean isDefaultResizable() {
-                return false;
+                return true;
+            }
+
+            @Override
+            public boolean isAutoWidthEnabled() {
+                return true;
             }
 
             @Override
@@ -427,7 +442,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             }
 
             protected String generateID() {
-                return "CaptchaOrderTable.editButton";
+                return "CaptchaOrderTable.editButton2";
             }
 
             @Override

@@ -481,7 +481,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
             @Override
             protected boolean isDefaultResizable() {
-                return false;
+                return true;
             }
 
             @Override
@@ -490,8 +490,18 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
 
             @Override
+            public boolean isAutoWidthEnabled() {
+                return true;
+            }
+
+            @Override
             public boolean isSortable(final AbstractProxySelectorImpl obj) {
                 return false;
+            }
+
+            @Override
+            protected String generateID() {
+                return "ProxyTable.filter";
             }
 
             @Override
@@ -587,13 +597,23 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
 
             @Override
+            protected String generateID() {
+                return "ProxyTable.problems";
+            }
+
+            @Override
             protected boolean isDefaultResizable() {
-                return false;
+                return true;
             }
 
             @Override
             public int getDefaultWidth() {
                 return 80;
+            }
+
+            @Override
+            public boolean isAutoWidthEnabled() {
+                return true;
             }
 
             @Override

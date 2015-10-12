@@ -114,7 +114,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.OperatingSystemEventSender;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
-import org.jdownloader.scripting.JSPermissionRestricter;
+import org.jdownloader.scripting.JSRhinoPermissionRestricter;
 import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -128,6 +128,13 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import com.btr.proxy.selector.pac.PACScriptEngineFactory;
+import com.btr.proxy.selector.pac.PacProxySelector;
+import com.btr.proxy.selector.pac.PacScriptParser;
+import com.btr.proxy.selector.pac.PacScriptSource;
+import com.btr.proxy.selector.pac.ProxyEvaluationException;
+import com.btr.proxy.selector.pac.RhinoPacScriptParser;
 
 public class SecondLevelLaunch {
     static {
@@ -310,9 +317,26 @@ public class SecondLevelLaunch {
     public static void mainStart(final String args[]) {
         SecondLevelLaunch.LOG = LogController.GL;
         /* setup JSPermission */
+
+        try {
+            // Ensure that proxyVole uses Rhino and not the build-in engines.
+            // Rhino is Sandboxed by JSRhinoPermissionRestricter
+            PacProxySelector.SCRIPT_ENGINE_FACTORY = new PACScriptEngineFactory() {
+
+                @Override
+                public PacScriptParser selectEngine(PacProxySelector selector, PacScriptSource pacSource) throws ProxyEvaluationException {
+
+                    return new RhinoPacScriptParser(pacSource);
+
+                }
+            };
+
+        } catch (final Throwable e) {
+            SecondLevelLaunch.LOG.log(e);
+        }
         try {
 
-            JSPermissionRestricter.init();
+            JSRhinoPermissionRestricter.init();
 
         } catch (final Throwable e) {
             SecondLevelLaunch.LOG.log(e);
