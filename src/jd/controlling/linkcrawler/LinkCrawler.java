@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -1499,25 +1500,26 @@ public class LinkCrawler {
 
     protected LinkCrawlerRule matchesDeepDecryptRule(CrawledLink link, String url) {
         if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "file:/") || StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
-            Integer knownDepth = null;
+            final HashMap<UniqueAlltimeID, AtomicInteger> deepMap = new HashMap<UniqueAlltimeID, AtomicInteger>();
             for (final LinkCrawlerRule rule : linkCrawlerRules) {
                 if (rule.isEnabled() && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule()) && rule.matches(url)) {
                     if (rule.getMaxDecryptDepth() == -1) {
                         return rule;
                     } else {
-                        if (knownDepth == null) {
+                        AtomicInteger depth = deepMap.get(rule._getId());
+                        if (depth == null) {
                             Iterator<CrawledLink> it = link.iterator();
-                            int depth = 0;
+                            depth = new AtomicInteger();
+                            deepMap.put(rule._getId(), depth);
                             while (it.hasNext()) {
                                 final CrawledLink next = it.next();
                                 final LinkCrawlerRule matchingRule = next.getMatchingRule();
                                 if (matchingRule != null && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule())) {
-                                    depth++;
+                                    depth.incrementAndGet();
                                 }
                             }
-                            knownDepth = depth;
                         }
-                        if (knownDepth < rule.getMaxDecryptDepth()) {
+                        if (depth.get() <= rule.getMaxDecryptDepth()) {
                             return rule;
                         }
                     }
