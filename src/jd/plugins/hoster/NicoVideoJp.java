@@ -365,6 +365,15 @@ public class NicoVideoJp extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile\\-[a-z]+\\d+\\.nicovideo\\.jp/smile\\?(?:v|m)=[0-9\\.]+)").getMatch(0);
         }
+        if (dllink == null) {
+            /* Maybe html decode failed --> Do that manually */
+            dllink = this.br.getRegex("5%26url%3D(http%253A%252F%252F[^<>\"]*?)%26ms%3D").getMatch(0);
+            if (dllink != null) {
+                dllink = Encoding.htmlDecode(dllink);
+                /* Double encoded */
+                dllink = Encoding.htmlDecode(dllink);
+            }
+        }
         return dllink;
     }
 

@@ -18,16 +18,16 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.TimeFormatter;
 
 /*Similar websites: bca-onlive.de, asscompact.de*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "asscompact.de" }, urls = { "https?://(www\\.)?asscompact\\.de/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "asscompact.de" }, urls = { "https?://(www\\.)?asscompactdecrypted\\.de/.+" }, flags = { 0 })
 public class AsscompactDe extends PluginForHost {
 
     public AsscompactDe(PluginWrapper wrapper) {
@@ -48,30 +48,9 @@ public class AsscompactDe extends PluginForHost {
         return "http://www.asscompact.de/node/95";
     }
 
-    /* Decrypter */
     @SuppressWarnings("deprecation")
-    @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-        try {
-            if (ret != null && ret.size() > 0) {
-                /*
-                 * we make sure only one result is in ret, thats the case for svn/next major version
-                 */
-                final DownloadLink link = ret.get(0);
-                br.getPage(link.getDownloadURL());
-                /* Look for external urls */
-                final String externID = br.getRegex("\"(https?://player\\.vimeo\\.com/video/\\d+)\"").getMatch(0);
-                if (externID != null) {
-                    ret.clear();
-                    final DownloadLink fina = new DownloadLink(this, null, getHost(), externID, true);
-                    ret.add(fina);
-                }
-            }
-        } catch (final Throwable e) {
-            logger.severe(e.getMessage());
-        }
-        return ret;
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("asscompactdecrypted.de/", "asscompact.de/"));
     }
 
     @SuppressWarnings("deprecation")
@@ -79,17 +58,9 @@ public class AsscompactDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final URLConnectionAdapter con = this.br.openGetConnection(link.getDownloadURL());
-        if (!con.getContentType().contains("html")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        this.br.followConnection();
-        con.disconnect();
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"artikelTeaser\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        isOffline(this.br, link.getDownloadURL());
         String date = br.getRegex("class=\"showDate\">([^<>\"]*?)<").getMatch(0);
-        String filename = br.getRegex("id=\"page\\-title\">([^<>]*?)<").getMatch(0);
+        String filename = getFilename(this.br, link.getDownloadURL());
         if (filename == null) {
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
@@ -105,6 +76,38 @@ public class AsscompactDe extends PluginForHost {
         filename = date_formatted + "_asscompact_" + filename + ".mp4";
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br, final String url_source) throws IOException {
+        final URLConnectionAdapter con = br.openGetConnection(url_source);
+        if (!con.getContentType().contains("html")) {
+            return true;
+        }
+        br.followConnection();
+        con.disconnect();
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"artikelTeaser\"")) {
+            return true;
+        }
+        return false;
+    }
+
+    public static String getFilename(final Browser br, final String url_source) {
+        String date = br.getRegex("class=\"showDate\">([^<>\"]*?)<").getMatch(0);
+        String filename = br.getRegex("id=\"page\\-title\">([^<>]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null || date == null) {
+            filename = new Regex(url_source, "asscompact\\.de/(.+)").getMatch(0);
+        }
+        date = date.trim();
+        filename = Encoding.htmlDecode(filename).trim();
+        filename = encodeUnicode(filename);
+
+        final String date_formatted = formatDate(date);
+
+        filename = date_formatted + "_asscompact_" + filename + ".mp4";
+        return filename;
     }
 
     @Override
@@ -158,7 +161,7 @@ public class AsscompactDe extends PluginForHost {
         return output;
     }
 
-    private String formatDate(final String input) {
+    public static String formatDate(final String input) {
         final long date = TimeFormatter.getMilliSeconds(input, "dd. MMMM yyyy", Locale.GERMAN);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";

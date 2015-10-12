@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -42,6 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -51,6 +54,7 @@ public class EHentaiOrg extends PluginForHost {
     public EHentaiOrg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://exhentai.org/");
+        setConfigElements();
     }
 
     /* DEV NOTES */
@@ -59,19 +63,20 @@ public class EHentaiOrg extends PluginForHost {
     // other:
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
+    private static final boolean free_resume             = true;
     /* Limit chunks to 1 as we only download small files */
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
+    private static final int     free_maxchunks          = 1;
+    private static final int     free_maxdownloads       = -1;
 
-    private static final long    minimal_filesize  = 1000;
+    private static final long    minimal_filesize        = 1000;
 
-    private String               DLLINK            = null;
-    private final boolean        ENABLE_RANDOM_UA  = true;
+    private String               DLLINK                  = null;
+    private final boolean        ENABLE_RANDOM_UA        = true;
+    private static final String  PREFER_ORIGINAL_QUALITY = "PREFER_ORIGINAL_QUALITY";
 
-    private static final String  TYPE_EHENTAI      = "http://g\\.e\\-hentai\\.orgdecrypted\\d+";
-    private static final String  TYPE_EXHENTAI     = "http://exhentai\\.orgdecrypted\\d+";
-    private static final String  default_ext       = ".jpg";
+    private static final String  TYPE_EHENTAI            = "http://g\\.e\\-hentai\\.orgdecrypted\\d+";
+    private static final String  TYPE_EXHENTAI           = "http://exhentai\\.orgdecrypted\\d+";
+    private static final String  default_ext             = ".jpg";
 
     @Override
     public String getAGBLink() {
@@ -113,7 +118,7 @@ public class EHentaiOrg extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (downloadLink.getDownloadURL().matches(TYPE_EHENTAI) && loggedin) {
+        if (downloadLink.getDownloadURL().matches(TYPE_EHENTAI) && loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
             /* Try to get fullsize (original) image. */
             final Regex fulllinkinfo = br.getRegex("href=\"(https?://g\\.e\\-hentai\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
             dllink_fullsize = fulllinkinfo.getMatch(0);
@@ -342,6 +347,12 @@ public class EHentaiOrg extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    private final boolean default_PREFER_ORIGINAL_QUALITY = true;
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_QUALITY, JDL.L("plugins.hoster.EHentaiOrg.DownloadZip", "Account only: Prefer original quality (bigger filesize, higher resolution)?")).setDefaultValue(default_PREFER_ORIGINAL_QUALITY));
     }
 
     @Override

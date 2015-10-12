@@ -77,6 +77,7 @@ public class IFilezCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("depfiledecrypted.com/", "depfile.com/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -86,6 +87,9 @@ public class IFilezCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         handleErrors();
+        if (isOffline()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = new Regex(link.getDownloadURL(), "depfile\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
         if (!link.getDownloadURL().matches("http://(www\\.)?depfiledecrypted\\.com/downloads/i/\\d+/f/.+")) {
             filename = br.getRegex("<th>File name:</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
@@ -187,6 +191,7 @@ public class IFilezCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -335,6 +340,13 @@ public class IFilezCom extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private boolean isOffline() {
+        if (this.br.getURL().contains("depfile.com/premium")) {
+            return true;
+        }
+        return false;
     }
 
     public void handleErrors() throws PluginException {

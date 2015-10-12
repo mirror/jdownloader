@@ -39,12 +39,12 @@ public class StolenVideosNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("stolen\\.png\"")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String tempID = br.getRedirectLocation();
         if (tempID != null && tempID.length() < 40) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (tempID != null) {
@@ -59,7 +59,9 @@ public class StolenVideosNet extends PluginForDecrypt {
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Stolen XXX Videos - Daily Free XXX Porn Videos</title>").getMatch(0);
 
         tempID = br.getRegex("\"http://(www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-(\\d+)\\.html\"").getMatch(1);
-        if (tempID == null) tempID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[^<>\"]*?\\|(\\d+)\\|\\d+\"").getMatch(0);
+        if (tempID == null) {
+            tempID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[^<>\"]*?\\|(\\d+)\\|\\d+\"").getMatch(0);
+        }
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornyeah.com/videos/x-" + tempID + ".html");
             decryptedLinks.add(dl);
