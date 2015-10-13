@@ -597,7 +597,6 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public void runExtensionUnInstallation(String id) throws InterruptedException {
-
         handler.uninstallExtension(id);
     }
 
