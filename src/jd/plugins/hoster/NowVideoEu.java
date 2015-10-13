@@ -46,7 +46,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at|ec|li)/(video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014" }, flags = { 2, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at|ec|li|to)/(video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014" }, flags = { 2, 0, 0 })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
@@ -56,13 +56,13 @@ public class NowVideoEu extends PluginForHost {
     private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www." + currentMainDomain);
     private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
     private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
-    private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at|ec|li)";
+    private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at|ec|li|to)";
     private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
     private static AtomicReference<String> agent              = new AtomicReference<String>("http://www." + currentMainDomain);
 
     private String validateHost() {
-        final String[] ccTLDs = { "ch", "sx", "eu", "co", "ag", "at", "ec", "li" };
+        final String[] ccTLDs = { "ch", "sx", "eu", "co", "ag", "at", "ec", "li", "to" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
             String CCtld = ccTLDs[i];
