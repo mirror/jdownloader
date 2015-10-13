@@ -100,6 +100,7 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implement
                         setdebug(job, "Hoster on whitelist - " + challenge.getTypeID());
                     } else {
                         setdebug(job, "Hoster not on whitelist - " + challenge.getTypeID());
+                        Thread.sleep(2000);
                         return;
                     }
                 }
@@ -111,6 +112,7 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implement
                 if (config.getblacklist().length() > 5) {
                     if (config.getblacklist().contains(challenge.getTypeID())) {
                         setdebug(job, "Hoster on blacklist - " + challenge.getTypeID());
+                        Thread.sleep(2000);
                         return;
                     } else {
                         setdebug(job, "Hoster not on blacklist - " + challenge.getTypeID());
