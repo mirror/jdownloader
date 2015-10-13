@@ -183,13 +183,21 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         Checkbox puzzlecaptchas = new Checkbox(CFG_9KWCAPTCHA.PUZZLE);
         puzzlecaptchas.setToolTipText(_GUI._.NinekwService_createPanel_puzzlecaptchas_tooltiptext());
-        puzzlecaptchas.setEnabled(false);// TODO: Puzzle Captchas for 9kw.eu (Test possible?)
+        if (config.ispuzzle()) {
+            puzzlecaptchas.setEnabled(true);
+        } else {
+            puzzlecaptchas.setEnabled(false);// TODO: Puzzle Captchas for 9kw.eu (Test possible?)
+        }
         toolbar3.add(puzzlecaptchas);
         toolbar3.add(label(_GUI._.NinekwService_createPanel_puzzlecaptchas()));
 
         Checkbox slidercaptchas = new Checkbox(CFG_9KWCAPTCHA.SLIDER);
         slidercaptchas.setToolTipText(_GUI._.NinekwService_createPanel_slidercaptchas_tooltiptext());
-        slidercaptchas.setEnabled(false);// TODO: Slider Captchas for 9kw.eu
+        if (config.isslider()) {
+            slidercaptchas.setEnabled(true);
+        } else {
+            slidercaptchas.setEnabled(false);// TODO: Slider Captchas for 9kw.eu
+        }
         toolbar3.add(slidercaptchas);
         toolbar3.add(label(_GUI._.NinekwService_createPanel_slidercaptchas()));
         Tab1_9kw.add(toolbar3, "gapleft 33,spanx,pushx,growx");

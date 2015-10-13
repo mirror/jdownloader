@@ -123,7 +123,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                         setdebug(solverJob, "Hoster on whitelist - " + captchaChallenge.getTypeID());
                     } else {
                         setdebug(solverJob, "Hoster not on whitelist - " + captchaChallenge.getTypeID());
-                        Thread.sleep(30000);
+                        Thread.sleep(2000);
                         return;
                     }
                 }
@@ -135,7 +135,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                 if (config.getblacklist().length() > 5) {
                     if (config.getblacklist().contains(captchaChallenge.getTypeID())) {
                         setdebug(solverJob, "Hoster on blacklist - " + captchaChallenge.getTypeID());
-                        Thread.sleep(30000);
+                        Thread.sleep(2000);
                         return;
                     } else {
                         setdebug(solverJob, "Hoster not on blacklist - " + captchaChallenge.getTypeID());
