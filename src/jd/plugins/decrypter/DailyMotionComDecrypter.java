@@ -514,7 +514,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         fp.setName(FILENAME);
 
         /** Decrypt subtitles if available */
-        String[] subtitles = new Regex(VIDEOSOURCE, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt(?:\\?\\d+)?)\"").getColumn(0);
+        String subsource = new Regex(VIDEOSOURCE, "\"recorded\",(.*?\\}\\})").getMatch(0).replace("\\/", "/");
+        String[] subtitles = new Regex(subsource, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt(?:\\?\\d+)?)\"").getColumn(0);
         if (subtitles != null && subtitles.length != 0) {
             final FilePackage fpSub = FilePackage.getInstance();
             fpSub.setName(FILENAME + "_Subtitles");
@@ -737,7 +738,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         if (videosource == null) {
             // buildPlayer({"context": ... "ui":{}}});
-            videosource = br.getRegex("buildPlayer\\((\\{\"context\":.*?\\}\\})\\);").getMatch(0);
+            videosource = br.getRegex("buildPlayer\\((\\{\"context\":.*?\\}\\})\\)\\;").getMatch(0);
         }
         return videosource;
     }
