@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
@@ -40,19 +41,18 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/.{1}" }, flags = { 2 })
-public class CZShareCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/.{1}" }, flags = { 2 })
+public class SdilejCz extends PluginForHost {
 
+    /** Former czshare.com */
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
     private static Object        LOCK                 = new Object();
     private static final String  MAINPAGE             = "http://sdilej.cz/";
     private static final String  CAPTCHATEXT          = "captcha\\.php";
 
-    public CZShareCom(PluginWrapper wrapper) {
+    public SdilejCz(PluginWrapper wrapper) {
         super(wrapper);
-        if ("sdilej.cz".equals(getHost())) {
-            this.enablePremium("http://sdilej.cz/registrace");
-        }
+        this.enablePremium("http://sdilej.cz/registrace");
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -73,6 +73,7 @@ public class CZShareCom extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
@@ -86,10 +87,11 @@ public class CZShareCom extends PluginForHost {
         return super.rewriteHost(host);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
+        prepBR(this.br);
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
@@ -107,8 +109,9 @@ public class CZShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -116,7 +119,8 @@ public class CZShareCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String trafficleft = br.getRegex("kredit: <strong>(.*?)</").getMatch(0);
+        this.br.getPage("/upload/");
+        final String trafficleft = br.getRegex("kredit: <strong>([^<>\"]*?)<").getMatch(0);
         if (trafficleft == null) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
@@ -153,6 +157,7 @@ public class CZShareCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -199,6 +204,11 @@ public class CZShareCom extends PluginForHost {
         // sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("unknown")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             if (br.containsHTML("Soubor je dočasně nedostupný\\.") || dl.getConnection().getContentType().contains("unknown")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
@@ -209,8 +219,9 @@ public class CZShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account, false);
         br.setFollowRedirects(true);
@@ -233,6 +244,11 @@ public class CZShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -241,10 +257,10 @@ public class CZShareCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, final boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                br.setCustomCharset("utf-8");
+                prepBR(this.br);
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -253,7 +269,9 @@ public class CZShareCom extends PluginForHost {
                 }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (cookies.containsKey("SSL") && account.isValid()) {
+                    /* Removed 2015-10-14 */
+                    // if (cookies.containsKey("SSL") && account.isValid()) {
+                    if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
@@ -264,9 +282,12 @@ public class CZShareCom extends PluginForHost {
                 }
 
                 br.setFollowRedirects(true);
-                // br.postPage("https://sdilej.cz/index.php", "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit+SSL&login-name=" +
-                // Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()));
-                br.postPage("http://sdilej.cz/index.php", "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit+SSL&login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()));
+                this.br.getPage("http://sdilej.cz/index.php?pg=prihlasit");
+                // final URLConnectionAdapter con = this.br.openPostConnection("/index.php",
+                // "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit&login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" +
+                // Encoding.urlEncode(account.getPass()));
+                // con.disconnect();
+                br.postPage("/index.php", "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit&login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "trvale") == null) {
                     final String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
@@ -289,6 +310,12 @@ public class CZShareCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private Browser prepBR(final Browser br) {
+        br.setCustomCharset("utf-8");
+        br.setLoadLimit(br.getLoadLimit() * 3);
+        return br;
     }
 
     @Override
