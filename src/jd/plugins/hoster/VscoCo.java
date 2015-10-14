@@ -71,9 +71,9 @@ public class VscoCo extends PluginForHost {
         final String fid = urlregex.getMatch(1);
         downloadLink.setLinkID(fid);
         String filename = urlregex.getMatch(0) + "_" + fid + ".jpg";
-        DLLINK = br.getRegex("property=\"og:image\"[ ]*?content=\"(http[^<>\"]*?)(?:\\?w=\\d+)?\"").getMatch(0);
+        DLLINK = br.getRegex("property=\"og:image\"[ ]*?content=\"(http[^<>\"]*?)(?:\\?\\w=\\d+)?\"").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(https?://im\\.vsco\\.co/\\d+/[^<>\"]*?)(?:\\?w=\\d+)?\"").getMatch(0);
+            DLLINK = br.getRegex("\"(https?://im\\.vsco\\.co/\\d+/[^<>\"]*?)(?:\\?\\w=\\d+)?\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
