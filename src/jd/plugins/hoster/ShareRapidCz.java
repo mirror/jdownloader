@@ -248,7 +248,7 @@ public class ShareRapidCz extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE + "login");
                 final String lang = System.getProperty("user.language");
-                final Form form = br.getForm(0);
+                final Form form = this.br.getFormbyKey("password");
                 if (form == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);

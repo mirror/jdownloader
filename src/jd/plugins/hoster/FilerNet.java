@@ -22,10 +22,12 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -90,7 +92,6 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
         prepBrowser();
         fuid = getFID(link);
         if (fuid == null) {
@@ -115,9 +116,13 @@ public class FilerNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        doFree(downloadLink);
+    }
+
+    @SuppressWarnings({ "deprecation", "static-access" })
+    public void doFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         handleDownloadErrors();
         if (checkShowFreeDialog(getHost())) {
@@ -244,7 +249,6 @@ public class FilerNet extends PluginForHost {
         return null;
     }
 
-    @SuppressWarnings("unused")
     private Browser prepBrowser(final Browser prepBr) {
         prepBr.setFollowRedirects(false);
         prepBr.getHeaders().put("Accept-Charset", null);
@@ -274,6 +278,52 @@ public class FilerNet extends PluginForHost {
         }
     }
 
+    /* E.g. used for free account downloads */
+    private void loginWebsite(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /* Load cookies */
+                br.setCookiesExclusive(true);
+                prepBrowser(br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.setFollowRedirects(true);
+                this.br.getPage("https://filer.net/login");
+                final Form loginform = this.br.getFormbyKey("_username");
+                if (loginform == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                loginform.put("_username", Encoding.urlEncode(account.getUser()));
+                loginform.put("_password", Encoding.urlEncode(account.getPass()));
+                loginform.remove("_remember_me");
+                loginform.put("_remember_me", "on");
+                this.br.submitForm(loginform);
+                if (br.getCookie(this.getHost(), "REMEMBERME") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -286,14 +336,16 @@ public class FilerNet extends PluginForHost {
             throw e;
         }
         if (getJson("state", br.toString()).equals("free")) {
-            ai.setStatus("Account type unsupported | Free Account (dieser Accounttyp wird nicht unterstützt)");
-            account.setValid(false);
-            return ai;
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free User");
+            ai.setUnlimitedTraffic();
+        } else {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium User");
+            ai.setTrafficLeft(Long.parseLong(getJson("traffic", br.toString())));
+            ai.setValidUntil(Long.parseLong(getJson("until", br.toString())) * 1000);
         }
-        ai.setTrafficLeft(Long.parseLong(getJson("traffic", br.toString())));
-        ai.setValidUntil(Long.parseLong(getJson("until", br.toString())) * 1000);
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -301,51 +353,56 @@ public class FilerNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setBrowserExclusive();
-        requestFileInformation(downloadLink);
-        handleDownloadErrors();
-        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-        callAPI("http://filer.net/api/dl/" + fuid + ".json");
-        if (statusCode == 504) {
-            logger.info("No traffic available!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        } else if (statusCode == UNKNOWNERROR) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT);
-        }
-        final String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Important!! */
-        br.getHeaders().put("Authorization", "");
-        boolean resume = true;
-        if (downloadLink.getBooleanProperty(FilerNet.NORESUME, false)) {
-            resume = false;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            // Temporary errorhandling for a bug which isn't handled by the API
-            if (br.getURL().equals("http://filer.net/error/500")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
+        if (account.getType() == AccountType.FREE) {
+            loginWebsite(account, false);
+            doFree(downloadLink);
+        } else {
+            requestFileInformation(downloadLink);
+            handleDownloadErrors();
+            br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+            callAPI("http://filer.net/api/dl/" + fuid + ".json");
+            if (statusCode == 504) {
+                logger.info("No traffic available!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (statusCode == UNKNOWNERROR) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT);
             }
-            if (br.getURL().equals("http://filer.net/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.setAllowFilenameFromURL(true);
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) {
-                    return;
+            /* Important!! */
+            br.getHeaders().put("Authorization", "");
+            boolean resume = true;
+            if (downloadLink.getBooleanProperty(FilerNet.NORESUME, false)) {
+                resume = false;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                // Temporary errorhandling for a bug which isn't handled by the API
+                if (br.getURL().equals("http://filer.net/error/500")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
                 }
-            } catch (final Throwable e) {
+                if (br.getURL().equals("http://filer.net/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
-                if (downloadLink.getBooleanProperty(FilerNet.NORESUME, false) == false) {
-                    downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(FilerNet.NORESUME, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+            dl.setAllowFilenameFromURL(true);
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
+                } catch (final Throwable e) {
+                }
+                if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                    if (downloadLink.getBooleanProperty(FilerNet.NORESUME, false) == false) {
+                        downloadLink.setChunksProgress(null);
+                        downloadLink.setProperty(FilerNet.NORESUME, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                 }
             }
         }
