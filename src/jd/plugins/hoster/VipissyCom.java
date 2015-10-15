@@ -129,15 +129,15 @@ public class VipissyCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    br.getPage(MAINPAGE);
-                    if (this.br.containsHTML(HTML_LOGGED_IN)) {
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
-                    }
+                    // if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    // /* We trust these cookies --> Do not check them */
+                    // return;
+                    // }
+                    // br.getPage(MAINPAGE);
+                    // if (this.br.containsHTML(HTML_LOGGED_IN)) {
+                    // account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    // return;
+                    // }
                     this.br = new Browser();
                 }
                 br.setFollowRedirects(true);
@@ -147,8 +147,10 @@ public class VipissyCom extends PluginForHost {
                 // this.setDownloadLink(dummy);
                 // }
                 // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                // this.br.setCookie(".vipissy.com", "pcah", "dXdxc2F4UE9hNXNLWS9Lc3ZHN3YzWlZjdkZBZm5PVSsK");
                 final String postData = "rmb=y&rlm=Members+Only&for=http%253a%252f%252fmembers%252evipissy%252ecom%252f&uid=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass());
                 br.postPage("http://members.vipissy.com/auth.form", postData);
+                this.br.getPage("http://members.vipissy.com/profile/");
                 if (!this.br.containsHTML(HTML_LOGGED_IN)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
