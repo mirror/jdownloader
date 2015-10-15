@@ -101,6 +101,7 @@ extttable_enabled_all=全て有効
 inactive=無効
 lit_continue=続行
 lit_save=保存
+lit_yes=はい
 literally_byte=%s1 B
 literally_gibibyte=%s1 GB
 literally_kibibyte=%s1 KB
