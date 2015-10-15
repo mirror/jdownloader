@@ -62,33 +62,34 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends antiDDoSForHost {
 
-    private static final String                                     COOKIE_HOST                          = "http://share-online.biz";
-    private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS                         = new WeakHashMap<Account, HashMap<String, String>>();
-    private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES                       = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
-    private static Object                                           LOCK                                 = new Object();
-    private static HashMap<Long, Long>                              noFreeSlot                           = new HashMap<Long, Long>();
-    private static HashMap<Long, Long>                              overloadedServer                     = new HashMap<Long, Long>();
-    private long                                                    server                               = -1;
-    private long                                                    waitNoFreeSlot                       = 10 * 60 * 1000l;
-    private long                                                    waitOverloadedServer                 = 5 * 60 * 1000l;
+    private static final String                                     COOKIE_HOST                             = "http://share-online.biz";
+    private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS                            = new WeakHashMap<Account, HashMap<String, String>>();
+    private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES                          = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
+    private static Object                                           LOCK                                    = new Object();
+    private static HashMap<Long, Long>                              noFreeSlot                              = new HashMap<Long, Long>();
+    private static HashMap<Long, Long>                              overloadedServer                        = new HashMap<Long, Long>();
+    private long                                                    server                                  = -1;
+    private long                                                    waitNoFreeSlot                          = 10 * 60 * 1000l;
+    private long                                                    waitOverloadedServer                    = 5 * 60 * 1000l;
 
     /* Connection stuff */
-    private static final boolean                                    free_resume                          = false;
-    private static final int                                        free_maxchunks                       = 1;
-    private static final int                                        free_maxdownloads                    = 1;
-    private static final boolean                                    account_premium_resume               = true;
-    private static final int                                        account_premium_maxchunks            = 0;
-    private static final int                                        account_premium_maxdownloads         = 10;
-    private static final int                                        account_premium_penalty_maxdownloads = 2;
+    private static final boolean                                    free_resume                             = false;
+    private static final int                                        free_maxchunks                          = 1;
+    private static final int                                        free_maxdownloads                       = 1;
+    private static final boolean                                    account_premium_resume                  = true;
+    private static final int                                        account_premium_maxchunks               = 0;
+    private static final int                                        account_premium_maxdownloads            = 10;
+    private static final int                                        account_premium_vipspecial_maxdownloads = 2;
+    private static final int                                        account_premium_penalty_maxdownloads    = 2;
 
-    private boolean                                                 hideID                               = true;
-    private static AtomicInteger                                    maxChunksnew                         = new AtomicInteger(-2);
-    private char[]                                                  FILENAMEREPLACES                     = new char[] { '_', '&', 'ü' };
-    private final String                                            SHARED_IP_WORKAROUND                 = "SHARED_IP_WORKAROUND";
-    private final String                                            TRAFFIC_WORKAROUND                   = "TRAFFIC_WORKAROUND";
-    private final String                                            PREFER_HTTPS                         = "PREFER_HTTPS";
+    private boolean                                                 hideID                                  = true;
+    private static AtomicInteger                                    maxChunksnew                            = new AtomicInteger(-2);
+    private char[]                                                  FILENAMEREPLACES                        = new char[] { '_', '&', 'ü' };
+    private final String                                            SHARED_IP_WORKAROUND                    = "SHARED_IP_WORKAROUND";
+    private final String                                            TRAFFIC_WORKAROUND                      = "TRAFFIC_WORKAROUND";
+    private final String                                            PREFER_HTTPS                            = "PREFER_HTTPS";
 
-    private static AtomicInteger                                    maxPrem                              = new AtomicInteger(1);
+    private static AtomicInteger                                    maxPrem                                 = new AtomicInteger(1);
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -617,6 +618,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             final int max;
             if ("Penalty-Premium".equalsIgnoreCase(account.getStringProperty("group", null))) {
                 max = account_premium_penalty_maxdownloads;
+            } else if ("VIP-Special".equalsIgnoreCase(account.getStringProperty("group", null))) {
+                max = account_premium_vipspecial_maxdownloads;
             } else {
                 final AccountInfo ai = account.getAccountInfo();
                 if (userTrafficWorkaround() && ai != null) {
