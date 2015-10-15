@@ -59,12 +59,12 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
         if (!isEnabled()) {
             return;
         }
+        final List<?> children = getSelection().getChildren();
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-            private final Object LOCK = new Object();
 
             @Override
             protected Void run() throws RuntimeException {
-                List<?> children = getSelection().getChildren();
+
                 final List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
                 final LinkCheckProgress linkCheckProgress = new LinkCheckProgress();
                 for (Object l : children) {
