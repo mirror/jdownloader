@@ -600,7 +600,10 @@ public class ExtensionController implements MenuExtenderHandler {
             throw exc;
         }
         for (LazyExtension le : getExtensions()) {
-            if (className.startsWith(le.getClass().getPackage().getName())) {
+            String packageName = le.getClassname();
+            packageName = packageName.substring(0, packageName.lastIndexOf("."));
+
+            if (className.startsWith(packageName)) {
                 //
 
                 throw new ExtensionNotLoadedException(le.getClassname() + " - " + className);
