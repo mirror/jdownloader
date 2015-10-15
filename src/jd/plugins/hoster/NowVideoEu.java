@@ -46,13 +46,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at|ec|li|to)/(video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014" }, flags = { 2, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to", "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014", "NEVERUSETHISSUPERDUBERREGEXATALL2015" }, flags = { 2, 0, 0, 0 })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
 
     private static Object                  LOCK               = new Object();
-    private static final String            currentMainDomain  = "nowvideo.ch";
+    private static final String            currentMainDomain  = "nowvideo.to";
     private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www." + currentMainDomain);
     private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
     private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
