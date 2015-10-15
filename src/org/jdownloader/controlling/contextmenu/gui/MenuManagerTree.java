@@ -191,7 +191,7 @@ public class MenuManagerTree extends JTree {
                     if (oldParent == parent) {
                         return true;
                     }
-                    return !parent._getItemIdentifiers().contains(item._getIdentifier());
+                    return true;
 
                 } catch (Exception e) {
 
