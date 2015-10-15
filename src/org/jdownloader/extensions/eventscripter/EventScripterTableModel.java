@@ -241,8 +241,18 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             }
 
             @Override
+            public boolean isResizable() {
+                return true;
+            }
+
+            @Override
+            public boolean isAutoWidthEnabled() {
+                return true;
+            }
+
+            @Override
             protected boolean isDefaultResizable() {
-                return false;
+                return true;
             }
 
             @Override
