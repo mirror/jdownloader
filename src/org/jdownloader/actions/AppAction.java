@@ -13,9 +13,9 @@ import org.jdownloader.images.NewTheme;
 
 /**
  * This abstract class is the parent class for all actions in JDownloader
- * 
+ *
  * @author thomas
- * 
+ *
  */
 public abstract class AppAction extends BasicAction {
 
@@ -34,7 +34,7 @@ public abstract class AppAction extends BasicAction {
 
     /**
      * e.g. KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK
-     * 
+     *
      * @param vkQ
      * @param ctrlDownMask
      */
@@ -44,7 +44,7 @@ public abstract class AppAction extends BasicAction {
 
     /**
      * KeyEvent.VK_Q
-     * 
+     *
      * @param vkQ
      */
     public void setAccelerator(int vkQ) {
@@ -92,7 +92,7 @@ public abstract class AppAction extends BasicAction {
 
     /**
      * invalid actions should not be used.
-     * 
+     *
      * @return
      */
     public boolean isVisible() {
@@ -100,7 +100,9 @@ public abstract class AppAction extends BasicAction {
     }
 
     public void setVisible(boolean newValue) {
-        if (visible == newValue) return;
+        if (visible == newValue) {
+            return;
+        }
         boolean oldValue = visible;
         this.visible = newValue;
 
