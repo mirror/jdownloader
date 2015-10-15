@@ -129,15 +129,15 @@ public class VipissyCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    // if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                    // /* We trust these cookies --> Do not check them */
-                    // return;
-                    // }
-                    // br.getPage(MAINPAGE);
-                    // if (this.br.containsHTML(HTML_LOGGED_IN)) {
-                    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-                    // return;
-                    // }
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
+                    br.getPage(MAINPAGE);
+                    if (this.br.containsHTML(HTML_LOGGED_IN)) {
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    }
                     this.br = new Browser();
                 }
                 br.setFollowRedirects(true);
