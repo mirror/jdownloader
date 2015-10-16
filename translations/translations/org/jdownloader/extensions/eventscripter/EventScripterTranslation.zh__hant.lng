@@ -35,6 +35,6 @@ script_editor_title=指令碼編輯器：%s1
 securityLoading=您正在試圖從 %s1 載入並執行 JavaScript。請記住，這個指令碼具有目前環境屬性和功能的完全存取權限。請執行受信任的代碼！我們建議只載入本地信任的 JavaScript 檔案。
 securityLoading_title=安全警告！
 showMessageDialog_title=%s1@%s2 的警報訊息
-sure_delete_entries=您要刪除 %s1 指令碼嗎？
+sure_delete_entries=您要刪除 %s1 個指令碼嗎？
 syntax_error=JavaScript 語法錯誤
 title=事件指令碼
