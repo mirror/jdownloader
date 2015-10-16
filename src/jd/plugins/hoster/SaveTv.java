@@ -27,10 +27,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Random;
 
 import javax.swing.JLabel;
@@ -47,7 +45,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -117,10 +114,7 @@ public class SaveTv extends PluginForHost {
     public static final String    PROPERTY_acc_count_telecast_ids           = "acc_count_telecast_ids";
     public static final String    PROPERTY_acc_type                         = "acc_type";
     public static final String    PROPERTY_acc_count_archive_entries        = "acc_count_archive_entries";
-    public static final String    PROPERTY_cookies                          = "cookies";
     public static final String    PROPERTY_lastuse                          = "lastuse";
-    public static final String    PROPERTY_name                             = "name";
-    public static final String    PROPERTY_pass                             = "pass";
     public static final String    PROPERTY_category                         = "category";
     public static final String    PROPERTY_originaldate_end                 = "originaldate_end";
     public static final String    PROPERTY_site_runtime_minutes             = "site_runtime_minutes";
@@ -650,9 +644,9 @@ public class SaveTv extends PluginForHost {
             /* TODO: Check if the numbers are still correct */
             /* TODO: Enhance ad-free check - check if selected format is available and if it is available in ad-free */
             final String ad_Free_availability = getJson(br.toString(), "BADFREEAVAILABLE");
-            if (ad_Free_availability.equals("3")) {
+            if (ad_Free_availability.equals("3") || ad_Free_availability.equalsIgnoreCase("false")) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", USERTEXT_NOCUTAVAILABLE));
-            } else if (ad_Free_availability.equals("1")) {
+            } else if (ad_Free_availability.equals("1") || ad_Free_availability.equalsIgnoreCase("true")) {
                 downloadLink.getLinkStatus().setStatusText(USERTEXT_ADSFREEAVAILABLE);
                 ISADSFREEAVAILABLE = true;
             } else {
@@ -887,7 +881,7 @@ public class SaveTv extends PluginForHost {
                         logger.info("Failed to get long session cookie");
                     } else {
                         logger.info("Successfully received long session cookie and saved cookies");
-                        saveCookies(br, account);
+                        account.saveCookies(this.br.getCookies(COOKIE_HOST), "");
                     }
                 } else {
                     logger.info("Long session cookie exists");
@@ -969,29 +963,17 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static void login_site(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
         final String lang = System.getProperty("user.language");
         site_prepBrowser(br);
         synchronized (LOCK) {
             try {
-                /* Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty(PROPERTY_cookies, null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty(PROPERTY_name, Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty(PROPERTY_pass, Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
+                /* Load cookies */
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(COOKIE_HOST, cookies);
+                    return;
                 }
                 final String postData = "sUsername=" + Encoding.urlEncode(account.getUser()) + "&sPassword=" + Encoding.urlEncode(account.getPass()) + "&bAutoLoginActivate=1";
                 br.postPage("https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM", postData);
@@ -1010,9 +992,9 @@ public class SaveTv extends PluginForHost {
                     account.setProperty(PROPERTY_acc_count_archive_entries, acc_count_archive_entries);
                 }
                 /* Save cookies & account data */
-                saveCookies(br, account);
+                account.saveCookies(br.getCookies(COOKIE_HOST), "");
             } catch (final PluginException e) {
-                account.setProperty(PROPERTY_cookies, Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -1424,18 +1406,6 @@ public class SaveTv extends PluginForHost {
             apikey = configuredKey;
         }
         return apikey;
-    }
-
-    private static void saveCookies(final Browser br, final Account acc) {
-        /* Save cookies */
-        final HashMap<String, String> cookies = new HashMap<String, String>();
-        final Cookies add = br.getCookies(COOKIE_HOST);
-        for (final Cookie c : add.getCookies()) {
-            cookies.put(c.getKey(), c.getValue());
-        }
-        acc.setProperty(PROPERTY_name, Encoding.urlEncode(acc.getUser()));
-        acc.setProperty(PROPERTY_pass, Encoding.urlEncode(acc.getPass()));
-        acc.setProperty(PROPERTY_cookies, cookies);
     }
 
     private boolean is_API_enabled() {
