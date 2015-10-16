@@ -101,6 +101,7 @@ extttable_enabled_all=Omogući sve
 inactive=Onemogućeno
 lit_continue=Nastavi
 lit_save=Sačuvaj
+lit_yes=Da
 literally_byte=%s1 B
 literally_gibibyte=%s1 GB
 literally_kibibyte=%s1 KB
