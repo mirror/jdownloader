@@ -101,6 +101,7 @@ extttable_enabled_all=Povolit vše
 inactive=Zakázáno
 lit_continue=Pokračovat
 lit_save=Uložit
+lit_yes=Ano
 literally_byte=%s1 B
 literally_gibibyte=%s1 GB
 literally_kibibyte=%s1 KB
