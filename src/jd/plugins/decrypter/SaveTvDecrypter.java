@@ -320,9 +320,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return;
         }
+        /* Parse as double as 'totalLinks' can contain dots although it makes absolutely no sense as that number will always be flat! */
+        totalLinksNum = (int) Double.parseDouble(totalLinks);
         /* Save on account to display in account information */
-        acc.setProperty(SaveTv.PROPERTY_acc_count_telecast_ids, totalLinks);
-        totalLinksNum = Integer.parseInt(totalLinks);
+        acc.setProperty(SaveTv.PROPERTY_acc_count_telecast_ids, Integer.toString(totalLinksNum));
         final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
         requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
@@ -390,7 +391,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     private void addID_site(final String id_source) throws ParseException, DecrypterException, PluginException {
-        final String telecast_id = getJson(id_source, "ITELECASTID");
+        String telecast_id = getJson(id_source, "ITELECASTID");
+        /* What the hell? Correct this serverside bullshit! */
+        telecast_id = telecast_id.replace(".", "");
         final DownloadLink dl = createStvDownloadlink(telecast_id);
         jd.plugins.hoster.SaveTv.parseFilenameInformation_site(dl, id_source);
         jd.plugins.hoster.SaveTv.parseQualityTag(dl, id_source);
