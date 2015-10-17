@@ -58,7 +58,7 @@ public class LnkShnkNt extends PluginForDecrypt {
         br.setFollowRedirects(false);
 
         if (parameter.matches(type_direct)) {
-            final String finallink = new Regex(parameter, "linkshrink\\.net/[A-Za-z]{4}=(https?://.+)").getMatch(0).replace("", "");
+            final String finallink = new Regex(parameter, "linkshrink\\.net/[A-Za-z]{4}=(https?://.+)").getMatch(0).replace("{d}", "?d=");
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }
