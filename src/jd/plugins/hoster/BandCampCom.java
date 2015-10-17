@@ -117,12 +117,15 @@ public class BandCampCom extends PluginForHost {
         if (br.containsHTML("(>Sorry, that something isn\\'t here|>start at the beginning</a> and you\\'ll certainly find what)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("\"file\":.*?\"(https?:.*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\"file\":.*?\"((https?:)?//.*?)\"").getMatch(0);
         logger.info("DLLINK = " + DLLINK);
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
+        if (DLLINK.startsWith("//")) {
+            DLLINK = "http:" + DLLINK;
+        }
         if (!downloadLink.getBooleanProperty("fromdecrypter", false)) {
             String tracknumber = br.getRegex("\"track_number\":(\\d+)").getMatch(0);
             if (tracknumber == null) {
@@ -162,6 +165,7 @@ public class BandCampCom extends PluginForHost {
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         try {
+            /* Server does NOT like HEAD requests! */
             con = br2.openGetConnection(DLLINK);
             if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
                 downloadLink.setVerifiedFileSize(con.getLongContentLength());

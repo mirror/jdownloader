@@ -61,36 +61,38 @@ public class PCloudCom extends PluginForHost {
     }
 
     /* Linktypes */
-    private static final String  TYPE_OLD                           = "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|pc\\.cd/)[A-Za-z0-9]+";
+    private static final String  TYPE_OLD                                        = "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|pc\\.cd/)[A-Za-z0-9]+";
 
-    private static final String  MAINPAGE                           = "http://pcloud.com";
-    private static final String  NICE_HOST                          = "pcloud.com";
-    private static final String  NICE_HOSTproperty                  = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String  NOCHUNKS                           = NICE_HOSTproperty + "NOCHUNKS";
+    private static final String  MAINPAGE                                        = "http://pcloud.com";
+    private static final String  NICE_HOST                                       = "pcloud.com";
+    private static final String  NICE_HOSTproperty                               = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String  NOCHUNKS                                        = NICE_HOSTproperty + "NOCHUNKS";
 
     /* Plugin Settings */
-    private static final String  DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
-    private final String         MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
-    private final String         DELETE_AFTER_DOWNLOADLINK_CREATION = "DELETE_AFTER_DOWNLOADLINK_CREATION";
+    private static final String  DOWNLOAD_ZIP                                    = "DOWNLOAD_ZIP_2";
+    private static final String  MOVE_FILES_TO_ACCOUNT                           = "MOVE_FILES_TO_ACCOUNT";
+    private static final String  DELETE_FILE_AFTER_DOWNLOADLINK_CREATION         = "DELETE_FILE_AFTER_DOWNLOADLINK_CREATION";
+    private static final String  DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION = "DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION";
+    private static final String  EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION         = "EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION";
 
     /* Errorcodes */
-    private static final long    ERROR_OKAY                         = 0;
-    private static final long    ERROR_PREMIUMONLY                  = 7005;
+    private static final long    ERROR_OKAY                                      = 0;
+    private static final long    ERROR_PREMIUMONLY                               = 7005;
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                        = true;
-    private static final int     FREE_MAXCHUNKS                     = 0;
-    private static final int     FREE_MAXDOWNLOADS                  = 20;
-    private static final boolean ACCOUNT_FREE_RESUME                = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS             = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS          = 20;
+    private static final boolean FREE_RESUME                                     = true;
+    private static final int     FREE_MAXCHUNKS                                  = 0;
+    private static final int     FREE_MAXDOWNLOADS                               = 20;
+    private static final boolean ACCOUNT_FREE_RESUME                             = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS                          = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS                       = 20;
 
-    private int                  statuscode                         = 0;
+    private int                  statuscode                                      = 0;
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem                            = new AtomicInteger(1);
-    private static Object        LOCK                               = new Object();
-    private String               account_auth                       = null;
+    private static AtomicInteger maxPrem                                         = new AtomicInteger(1);
+    private static Object        LOCK                                            = new Object();
+    private String               account_auth                                    = null;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -350,7 +352,7 @@ public class PCloudCom extends PluginForHost {
         String download_host = null;
         String api_filename = null;
         requestFileInformation(link);
-        if (this.statuscode == ERROR_PREMIUMONLY && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT) || true) {
+        if (this.statuscode == ERROR_PREMIUMONLY && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
             int maxchunks = ACCOUNT_FREE_MAXCHUNKS;
             /* File has too much traffic on it --> Move it into our account so we can download it (if wished by user). */
             login(account, false);
@@ -373,13 +375,19 @@ public class PCloudCom extends PluginForHost {
                 }
                 download_host = (String) ressourcelist.get(new Random().nextInt(ressourcelist.size() - 1));
                 freeaccount_dllink = "https://" + download_host + freeaccount_dllink;
-                if (this.getPluginConfig().getBooleanProperty(DELETE_AFTER_DOWNLOADLINK_CREATION, defaultDELETE_AFTER_DOWNLOADLINK_CREATION)) {
+                if (this.getPluginConfig().getBooleanProperty(DELETE_FILE_AFTER_DOWNLOADLINK_CREATION, defaultDELETE_DELETE_FILE_AFTER_DOWNLOADLINK_CREATION)) {
                     /*
                      * It sounds crazy but we'll actually delete the file before we download it as the directlink will still be valid and
                      * this way we avoid filling up the space of our account.
                      */
                     getAPISafe("/deletefile?fileid=" + new_fileid + "&name=" + Encoding.urlEncode(api_filename) + "&id=000-0&auth=" + this.account_auth);
-                    /* And let's empty the trash */
+                    if (this.getPluginConfig().getBooleanProperty(DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION, defaultDELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION)) {
+                        /* Delete file inside trash (FOREVER) in case user wants that. */
+                        getAPISafe("/trash_clear?fileid=" + new_fileid + "&id=000-0&auth=" + this.account_auth);
+                    }
+                }
+                if (this.getPluginConfig().getBooleanProperty(EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION, defaultEMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION)) {
+                    /* Let's empty the trash in case the user wants this. */
                     getAPISafe("/trash_clear?folderid=0&auth=" + this.account_auth);
                 }
             }
@@ -588,9 +596,11 @@ public class PCloudCom extends PluginForHost {
         }
     }
 
-    private static final boolean defaultDOWNLOAD_ZIP                       = false;
-    private static final boolean defaultMOVE_FILES_TO_ACCOUNT              = false;
-    private static final boolean defaultDELETE_AFTER_DOWNLOADLINK_CREATION = false;
+    private static final boolean defaultDOWNLOAD_ZIP                                    = false;
+    private static final boolean defaultMOVE_FILES_TO_ACCOUNT                           = false;
+    private static final boolean defaultDELETE_DELETE_FILE_AFTER_DOWNLOADLINK_CREATION  = false;
+    private static final boolean defaultDELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION = false;
+    private static final boolean defaultEMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION         = false;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Crawler settings:"));
@@ -598,7 +608,9 @@ public class PCloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Host plugin settings:"));
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.PCloudCom.MoveFilesToAccount", "1. Move files with too high traffic to account before downloading them to avoid downloadlimits?")).setDefaultValue(defaultMOVE_FILES_TO_ACCOUNT);
         getConfig().addEntry(moveFilesToAcc);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_AFTER_DOWNLOADLINK_CREATION, JDL.L("plugins.hoster.PCloudCom.EmptyTrashAfterSuccessfulDownload", "2. Delete moved files & empty trash after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(defaultDELETE_AFTER_DOWNLOADLINK_CREATION));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.PCloudCom.DeleteMovedFiles", "2. Delete moved files after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(defaultDELETE_DELETE_FILE_AFTER_DOWNLOADLINK_CREATION));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION, JDL.L("plugins.hoster.PCloudCom.DeleteMovedFilesForever", "3. Delete moved files FOREVER (inside trash) after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(defaultDELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION, JDL.L("plugins.hoster.PCloudCom.EmptyTrashAfterSuccessfulDownload", "4. Empty trash after downloadlink-generation?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(defaultEMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION));
     }
 
     @Override
