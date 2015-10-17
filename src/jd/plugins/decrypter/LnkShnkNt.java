@@ -37,14 +37,14 @@ import jd.plugins.PluginForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/([A-Za-z0-9]{6}|[A-Za-z0-9]{4}=(?:https?|ftp)://.+)" }, flags = { 0 })
 public class LnkShnkNt extends PluginForDecrypt {
 
     public LnkShnkNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_direct  = "https?://(www\\.)?linkshrink\\.net/[A-Za-z]{4}=https?://.+";
+    private static final String type_direct  = "https?://(www\\.)?linkshrink\\.net/[A-Za-z0-9]{4}=https?://.+";
 
     private static final String type_invalid = "https?://(www\\.)?linkshrink\\.net/(report|login)";
 
@@ -56,13 +56,11 @@ public class LnkShnkNt extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
-
         if (parameter.matches(type_direct)) {
-            final String finallink = new Regex(parameter, "linkshrink\\.net/[A-Za-z]{4}=(https?://.+)").getMatch(0).replace("{d}", "?d=");
+            final String finallink = new Regex(parameter, "linkshrink\\.net/[A-Za-z0-9]{4}=((?:https?|ftp)://.+)").getMatch(0).replace("{d}", "?d=");
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }
-
         br.getPage(parameter);
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || (br.getRedirectLocation() != null && br.getRedirectLocation().matches(type_invalid))) {
             decryptedLinks.add(createOfflinelink(parameter));
