@@ -202,8 +202,8 @@ public class PremiumRapeitNet extends antiDDoSForHost {
             ac.setMultiHostSupport(this, supportedHosts);
         }
         // These information are not available (anymore). 20150606
-        String traffic_left = br.getRegex("Available premium bandwidth: <strong>([^<>\"]+)</strong>").getMatch(0);
-        String traffic_downloaded = br.getRegex("Total used premium bandwidth: <strong>([^<>\"]+)</strong>").getMatch(0);
+        String traffic_left = br.getRegex("Available: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        String traffic_downloaded = br.getRegex("Total spent: <strong>([^<>\"]*?)</strong>").getMatch(0);
         if (traffic_left != null && traffic_downloaded != null) {
             traffic_left = traffic_left.replace(",", ".");
             traffic_downloaded = traffic_downloaded.replace(",", ".");
