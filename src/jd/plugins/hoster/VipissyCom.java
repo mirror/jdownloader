@@ -18,10 +18,13 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,9 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipissy.com" }, urls = { "https?://(?:www\\.)?members\\.vipissy\\.com/video\\-[^/]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipissy.com" }, urls = { "https?://(?:www\\.)?members\\.vipissy\\.com/(?:updates/)video\\-[^/]+/" }, flags = { 2 })
 public class VipissyCom extends PluginForHost {
 
     public VipissyCom(PluginWrapper wrapper) {
@@ -87,12 +88,12 @@ public class VipissyCom extends PluginForHost {
             filename = new Regex(link.getDownloadURL(), "/updates/video\\-(.+)/$").getMatch(0);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-        final String[] quality_info = this.br.getRegex("<a href=\"https?://content\\.vipissy\\.com/videos/.*?</span></a>)").getColumn(0);
+        final String[] quality_info = this.br.getRegex("<a href=\"(https?://content\\.vipissy\\.com/videos/.*?</span></a>)").getColumn(0);
         if (quality_info == null || quality_info.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String best_quality_info = quality_info[quality_info.length - 1];
-        dllink = new Regex(best_quality_info, "href=\"(http[^<>\"]*?)\"").getMatch(0);
+        dllink = new Regex(best_quality_info, "(http[^<>\"]*?)\"").getMatch(0);
         final String filesize = new Regex(best_quality_info, "(\\d+(?: ?\\d+)?(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
         if (filesize == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -142,12 +143,12 @@ public class VipissyCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE);
-                // final DownloadLink dummy = new DownloadLink(this, "Account", "members.vipissy.com", "http://members.vipissy.com", true);
-                // if (this.getDownloadLink() == null) {
-                // this.setDownloadLink(dummy);
-                // }
-                // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                // this.br.setCookie(".vipissy.com", "pcah", "dXdxc2F4UE9hNXNLWS9Lc3ZHN3YzWlZjdkZBZm5PVSsK");
+                {
+                    // required for the pcah cookie
+                    URLConnectionAdapter con = null;
+                    final Browser br2 = br.cloneBrowser();
+                    con = br2.openGetConnection("/img.cptcha");
+                }
                 final String postData = "rmb=y&rlm=Members+Only&for=http%253a%252f%252fmembers%252evipissy%252ecom%252f&uid=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass());
                 br.postPage("http://members.vipissy.com/auth.form", postData);
                 this.br.getPage("http://members.vipissy.com/profile/");
