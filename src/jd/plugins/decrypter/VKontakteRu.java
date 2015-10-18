@@ -372,9 +372,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     /**
                      * Photo albums lists/overviews Example: http://vk.com/albums46486585
                      */
-                    if (br.containsHTML("class=\"photos_no_content\"")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
                     decryptPhotoAlbums();
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_POST_LINK)) {
                     /**
@@ -902,6 +899,9 @@ public class VKontakteRu extends PluginForDecrypt {
          * --> XXX may also be the owner_id, depending on linktype.
          */
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
+        if (br.containsHTML("class=\"photos_no_content\"")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
         final String type = "multiplephotoalbums";
         if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
             this.CRYPTEDLINK_FUNCTIONAL = getProtocol() + "vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
