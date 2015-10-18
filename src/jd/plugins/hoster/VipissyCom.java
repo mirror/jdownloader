@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -36,6 +34,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipissy.com" }, urls = { "https?://(?:www\\.)?members\\.vipissy\\.com/(?:updates/)video\\-[^/]+/" }, flags = { 2 })
 public class VipissyCom extends PluginForHost {
@@ -88,16 +88,21 @@ public class VipissyCom extends PluginForHost {
             filename = new Regex(link.getDownloadURL(), "/updates/video\\-(.+)/$").getMatch(0);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-        final String[] quality_info = this.br.getRegex("<a href=\"(https?://content\\.vipissy\\.com/videos/.*?</span></a>)").getColumn(0);
+        final String[] dltables = this.br.getRegex("<ul class=\"con_video_list\">(.*?)</ul>").getColumn(0);
+        if (dltables == null || dltables.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String[] quality_info = new Regex(dltables[0], "<a href=\"(https?://content\\.vipissy\\.com/downloads/.*?</span></a>)").getColumn(0);
         if (quality_info == null || quality_info.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String best_quality_info = quality_info[quality_info.length - 1];
         dllink = new Regex(best_quality_info, "(http[^<>\"]*?)\"").getMatch(0);
-        final String filesize = new Regex(best_quality_info, "(\\d+(?: ?\\d+)?(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        String filesize = new Regex(best_quality_info, "(\\d+(?: ?\\d+)?(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
         if (filesize == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        filesize = filesize.replace(" ", "");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
