@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/[A-Za-z0-9\\-]+_\\d+\\.html|http://(www\\.)?chip\\.de/video/[A-Za-z0-9\\-]+_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|http://(?:www\\.)?chip\\.de/video/[A-Za-z0-9_\\-]+_\\d+\\.html" }, flags = { 0 })
 public class ChipDe extends PluginForHost {
 
     public ChipDe(PluginWrapper wrapper) {
@@ -54,9 +54,9 @@ public class ChipDe extends PluginForHost {
     }
 
     private static final String type_file_invalidlinks = "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/download\\-manager\\-for\\-free\\-zum\\-download.+";
-    private static final String type_file              = "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/[A-Za-z0-9\\-]+_\\d+\\.html";
-    private static final String type_file_chip_eu      = "http://(www\\.)?download\\.chip\\.(eu|asia)/.{2}/[A-Za-z0-9\\-]+_\\d+\\.html";
-    private static final String type_video             = "http://(www\\.)?chip\\.de/video/[A-Za-z0-9\\-]+_\\d+\\.html";
+    private static final String type_file              = "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html";
+    private static final String type_file_chip_eu      = "http://(www\\.)?download\\.chip\\.(eu|asia)/.{2}/[A-Za-z0-9_\\-]+_\\d+\\.html";
+    private static final String type_video             = "http://(www\\.)?chip\\.de/video/[A-Za-z0-9_\\-]+_\\d+\\.html";
 
     private String              DLLINK                 = null;
 
