@@ -93,8 +93,12 @@ public class NosUploadCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        /* Nicer names for offline urls as well ... */
+        link.setName(fid);
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         prepBrowser();
