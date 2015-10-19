@@ -232,6 +232,7 @@ public class DiskYandexNet extends PluginForHost {
             dl.setAvailable(false);
             return AvailableStatus.FALSE;
         }
+        filename = encodeUnicode(filename);
         if (md5 != null) {
             dl.setMD5Hash(md5);
         }
@@ -735,24 +736,6 @@ public class DiskYandexNet extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
-    }
-
-    /* TODO: Remove this compatibility early in 2015 */
-    private static String fixHash(final String input) {
-        /* First fully decode it */
-        String hash = input;
-        if (hash.contains("+") || hash.contains(" ")) {
-            hash = Encoding.htmlDecode(hash);
-            hash = hash.replace("+", "%2B");
-            hash = hash.replace("=", "%3D");
-            hash = hash.replace(" ", "-");
-            hash = hash.replace("/", "%2F");
-        } else {
-            // hash = hash.replace("%20", "+");
-            // hash = hash.replace("%2F", "_");
-            // hash = hash.replace("/", "_");
-        }
-        return hash;
     }
 
     private void getPage(final String url) throws Exception {
