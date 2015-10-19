@@ -159,7 +159,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     throw e;
                 }
                 final String code = getCaptchaCode(cf, param);
-                if ("".equals(code)) {
+                if (StringUtils.isEmpty(code)) {
                     if (counter + 1 < retry) {
                         continue;
                     } else {
@@ -171,10 +171,8 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("adcopy_challenge", chid);
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
-
-                String result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
-
-                if (result == null) {
+                final String result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
+                if (StringUtils.isEmpty(result)) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 if ("CANCEL".equals(result)) {
@@ -188,7 +186,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 // using bismarck original observation, this type is skipable.
                 if (counter > 0) {
                     final String code = getCaptchaCode(captcha, param);
-                    if ("".equals(code)) {
+                    if (StringUtils.isEmpty(code)) {
                         if (counter + 1 < retry) {
                             continue;
                         } else {

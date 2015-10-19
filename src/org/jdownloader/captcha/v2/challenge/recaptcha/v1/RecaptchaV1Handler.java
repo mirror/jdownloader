@@ -66,10 +66,8 @@ public abstract class RecaptchaV1Handler {
         if (StringUtils.isNotEmpty(rcBr.getCookie("google.com", "SID")) && StringUtils.isNotEmpty(rcBr.getCookie("google.com", "HSID"))) {
             return null;
         }
-
         final AtomicReference<String> url = new AtomicReference<String>();
-
-        AbstractBrowserChallenge dummyChallenge = new AbstractBrowserChallenge("recaptcha", null) {
+        final AbstractBrowserChallenge dummyChallenge = new AbstractBrowserChallenge("recaptcha", null) {
 
             @Override
             public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
@@ -125,7 +123,6 @@ public abstract class RecaptchaV1Handler {
         } finally {
             ref.dispose();
         }
-        ;
         if (!BrowserSolverService.getInstance().getConfig().isBrowserLoopUserConfirmed()) {
             ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI._.RecaptchaV1Handler_load_help__title(), _GUI._.RecaptchaV1Handler_load_help_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), _GUI._.RecaptchaV1Handler_ok(), _GUI._.RecaptchaV1Handler_disable()) {
                 {
@@ -185,9 +182,9 @@ public abstract class RecaptchaV1Handler {
                 };
             };
             d.setTimeout(120000);
-            UIOManager.I().show(ConfirmDialogInterface.class, d);
+            final ConfirmDialogInterface impl = UIOManager.I().show(ConfirmDialogInterface.class, d);
             try {
-                d.throwCloseExceptions();
+                impl.throwCloseExceptions();
                 StatsManager.I().track("browserloop/enabled");
                 BrowserSolverService.getInstance().getConfig().setBrowserLoopUserConfirmed(true);
             } catch (DialogCanceledException e) {
@@ -197,10 +194,9 @@ public abstract class RecaptchaV1Handler {
                     StatsManager.I().track("browserloop/disabled");
                 }
             } catch (DialogClosedException e) {
-
             }
         }
-        String urlString = url.get();
+        final String urlString = url.get();
         if (StringUtils.isEmpty(urlString)) {
             return null;
         }

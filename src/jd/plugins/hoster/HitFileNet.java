@@ -21,13 +21,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -53,34 +50,38 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     /* Settings */
-    private static final String SETTING_JAC                          = "SETTING_JAC";
-    private static final String SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    private static final String  SETTING_JAC                          = "SETTING_JAC";
+    private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
 
-    private final String         UA                  = RandomUserAgent.generate();
-    private static final String  HTML_RECAPTCHATEXT  = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String  HTML_CAPTCHATEXT    = "hitfile\\.net/captcha/";
+    private final String         UA                                   = RandomUserAgent.generate();
+    private static final String  HTML_RECAPTCHATEXT                   = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String  HTML_CAPTCHATEXT                     = "hitfile\\.net/captcha/";
     /* Website will say something like "Searching file..." which means that it is offline. */
-    public static final String   HTML_FILE_OFFLINE   = "class=\"code\\-404\"|<h1>Searching for the file\\.\\.\\.Please wait… </h1>";
-    private static final String  MAINPAGE            = "http://hitfile.net";
-    public static Object         LOCK                = new Object();
-    private static final String  BLOCKED             = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
-    private static final boolean ENABLE_CRYPTO_STUFF = false;
+    public static final String   HTML_FILE_OFFLINE                    = "class=\"code\\-404\"|<h1>Searching for the file\\.\\.\\.Please wait… </h1>";
+    private static final String  MAINPAGE                             = "http://hitfile.net";
+    public static Object         LOCK                                 = new Object();
+    private static final String  BLOCKED                              = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
+    private static final boolean ENABLE_CRYPTO_STUFF                  = false;
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                          = true;
+    private static final int     FREE_MAXCHUNKS                       = 1;
+    private static final int     FREE_MAXDOWNLOADS                    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME               = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS            = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS         = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxFree                              = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     public HitFileNet(final PluginWrapper wrapper) {
@@ -92,7 +93,9 @@ public class HitFileNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        link.setLinkID(fid);
+        if (link.getSetLinkID() == null) {
+            link.setLinkID(getHost() + "://" + fid);
+        }
         link.setUrlDownload(MAINPAGE + "/" + fid);
     }
 
@@ -134,7 +137,7 @@ public class HitFileNet extends PluginForHost {
                 br.postPage("http://" + getHost() + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String linkID = getID(dllink.getDownloadURL());
-                    final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\">(?:[\t\n\r ]+)<img src=\"(?:[^<>\"]+)?/img/icon/(done|error)\\.png\"");
+                    final Regex fileInfo = br.getRegex(Pattern.compile("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\">(?:[\t\n\r ]+)<img src=\"(?:[^<>\"]+)?/img/icon/(done|error)\\.png\""));
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         dllink.setAvailable(false);
                         logger.warning("Linkchecker broken for " + getHost());

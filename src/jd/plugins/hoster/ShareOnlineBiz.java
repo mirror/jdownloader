@@ -616,9 +616,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             return 1;
         } else {
             final int max;
-            if ("Penalty-Premium".equalsIgnoreCase(account.getStringProperty("group", null))) {
+            final String group = account.getStringProperty("group", null);
+            if ("Penalty-Premium".equalsIgnoreCase(group)) {
                 max = account_premium_penalty_maxdownloads;
-            } else if ("VIP-Special".equalsIgnoreCase(account.getStringProperty("group", null))) {
+            } else if ("VIP-Special".equalsIgnoreCase(group) || "VIP".equalsIgnoreCase(group)) {
                 max = account_premium_vipspecial_maxdownloads;
             } else {
                 final AccountInfo ai = account.getAccountInfo();

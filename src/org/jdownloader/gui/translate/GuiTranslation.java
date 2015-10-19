@@ -1761,10 +1761,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Running" })
     String TaskColumn_getStringValue_running_();
 
-    @Default(lngs = { "en" }, values = { "Current IP is blocked by %s1" })
+    @Default(lngs = { "en" }, values = { "The current IP is blocked by %s1" })
     String TaskColumn_onSingleClick_object_(String host);
 
-    @Default(lngs = { "en" }, values = { "%s1 blocked your current IP (Internet Address).\r\nIn many cases, JDownloader us able to do a Reconnect and get a new IP.\r\nIf this is not possible, we recommend to use %s1's Premium Mode." })
+    @Default(lngs = { "en" }, values = { "%s1 has blocked your current IP (Internet Address).\r\nIn many cases, JDownloader is able to do a Reconnect and get a new IP.\r\nIf this is not possible, we recommend to use %s1's Premium Mode." })
     String TaskColumn_getDescription_object_(String tld);
 
     @Default(lngs = { "en" }, values = { "Premium Alerts" })

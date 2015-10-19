@@ -221,7 +221,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                             doNotValidateUntil.set(System.currentTimeMillis() + 5 * 60 * 1000l);
                         }
                     }
-
                 }
             }
             return selector;
