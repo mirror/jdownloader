@@ -16,8 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.swing.JOptionPane;
@@ -54,7 +54,7 @@ public class DiskYandexNet extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://passport.yandex.ru/passport?mode=register&from=cloud&retpath=https%3A%2F%2Fdisk.yandex.ru%2F%3Fauth%3D1&origin=face.en");
         setConfigElements();
-        this.setStartIntervall(5 * 1000);
+        this.setStartIntervall(1 * 1000);
     }
 
     @Override
@@ -98,6 +98,11 @@ public class DiskYandexNet extends PluginForHost {
     private static final String   TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
     private static final String   ACCOUNTONLYTEXT                    = "class=\"nb-panel__warning aside\\-public__warning\\-speed\"|>File download limit exceeded";
     private Account               currAcc                            = null;
+    private String                currHash                           = null;
+    private String                currPath                           = null;
+
+    private static final boolean  use_api_file_free_availablecheck   = true;
+    private static final boolean  use_api_file_free_download         = true;
 
     /* Make sure we always use our main domain */
     private String getMainLink(final DownloadLink dl) {
@@ -108,17 +113,22 @@ public class DiskYandexNet extends PluginForHost {
         return mainlink;
     }
 
-    private void setConstants(final Account acc) {
+    private void setConstants(final DownloadLink dl, final Account acc) {
         currAcc = acc;
+        currHash = this.getHash(dl);
+        currPath = this.getPath(dl);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        this.setConstants(link, null);
         setBrowserExclusive();
         this.br = prepBR(this.br);
         br.setFollowRedirects(true);
         String filename;
+        String filesize_str;
+        long filesize_long = -1;
         String final_filename = link.getStringProperty("plain_filename", null);
         if (final_filename == null) {
             final_filename = link.getFinalFileName();
@@ -157,41 +167,87 @@ public class DiskYandexNet extends PluginForHost {
             if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!link.getDownloadURL().matches(TYPE_DISK)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (use_api_file_free_availablecheck) {
+                if (this.currHash == null || this.currPath == null) {
+                    /* Errorhandling for old urls */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
+                if (apiAvailablecheckIsOffline(br)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                link.setProperty("premiumonly", false);
+                return parseInformationAPIAvailablecheck(link, (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString()));
+            } else {
+                br.getPage(getMainLink(link));
+                if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)") || br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                filename = this.br.getRegex("class=\"nb-panel__title\" title=\"([^<>\"]*?)\"").getMatch(0);
+                filesize_str = link.getStringProperty("plain_size", null);
+                if (filesize_str == null) {
+                    filesize_str = this.br.getRegex("class=\"item-details__name\">Size:</span> ([^<>\"]+)</div>").getMatch(0);
+                }
+                if (filesize_str == null) {
+                    /* Language independant */
+                    filesize_str = this.br.getRegex("class=\"item-details__name\">[^<>\"]+</span> ([\\d\\.]+ (?:B|KB|MB|GB))</div>").getMatch(0);
+                }
+                if (filesize_str != null) {
+                    filesize_str = filesize_str.replace(",", ".");
+                    filesize_long = SizeFormatter.getSize(filesize_str);
+                }
+                if (final_filename == null && filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (final_filename == null) {
+                    final_filename = filename;
+                }
+                /* Important for account download handling */
+                if (br.containsHTML(ACCOUNTONLYTEXT)) {
+                    link.setProperty("premiumonly", true);
+                } else {
+                    link.setProperty("premiumonly", false);
+                }
             }
-            br.getPage(getMainLink(link));
-            if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = this.br.getRegex("class=\"nb-panel__title\" title=\"([^<>\"]*?)\"").getMatch(0);
-            String filesize = link.getStringProperty("plain_size", null);
-            if (filesize == null) {
-                filesize = this.br.getRegex("class=\"item-details__name\">Size:</span> ([^<>\"]+)</div>").getMatch(0);
-            }
-            if (filesize == null) {
-                /* Language independant */
-                filesize = this.br.getRegex("class=\"item-details__name\">[^<>\"]+</span> ([\\d\\.]+ (?:B|KB|MB|GB))</div>").getMatch(0);
-            }
-            if (filesize != null) {
-                filesize = filesize.replace(",", ".");
-                link.setDownloadSize(SizeFormatter.getSize(filesize));
-            }
-            if (final_filename == null && filename == null) {
+            if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (final_filename == null) {
-                final_filename = filename;
             }
             link.setFinalFileName(filename);
         }
-        /* Important for account download handling */
-        if (br.containsHTML(ACCOUNTONLYTEXT)) {
-            link.setProperty("premiumonly", true);
-        } else {
-            link.setProperty("premiumonly", false);
+        if (filesize_long > -1) {
+            link.setDownloadSize(filesize_long);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static AvailableStatus parseInformationAPIAvailablecheck(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
+        final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size"), -1);
+        final String error = (String) entries.get("error");
+        final String hash = (String) entries.get("public_key");
+        String filename = (String) entries.get("name");
+        final String path = (String) entries.get("path");
+        final String md5 = (String) entries.get("md5");
+        if (error != null || filename == null || path == null || hash == null || filesize == -1) {
+            /* Whatever - our link is probably offline! */
+            dl.setAvailable(false);
+            return AvailableStatus.FALSE;
+        }
+        if (md5 != null) {
+            dl.setMD5Hash(md5);
+        }
+        dl.setProperty("path", path);
+        dl.setProperty("hash_main", hash);
+        dl.setFinalFileName(filename);
+        dl.setDownloadSize(filesize);
+        dl.setAvailable(true);
+        return AvailableStatus.TRUE;
+    }
+
+    public static boolean apiAvailablecheckIsOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        return false;
     }
 
     public static Browser prepBR(final Browser br) {
@@ -200,95 +256,115 @@ public class DiskYandexNet extends PluginForHost {
         return br;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        String dllink;
         requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(TYPE_DISK)) {
+            boolean resume;
+            int maxchunks;
             checkDiskFeatureDialog();
-        }
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
-    }
-
-    @SuppressWarnings("deprecation")
-    private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
-        if (downloadableViaAccountOnly(downloadLink)) {
-            /*
-             * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case the
-             * user can only download the link by importing it into his account and downloading it "from there".
-             */
-            try {
+            if (downloadableViaAccountOnly(downloadLink)) {
+                /*
+                 * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case
+                 * the user can only download the link by importing it into his account and downloading it "from there".
+                 */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
+            }
+            if (use_api_file_free_download) {
+                /**
+                 * Download API:
+                 *
+                 * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
+                 * */
+                /* Free API download. */
+                this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                dllink = (String) entries.get("href");
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
-        }
-        String dllink;
-        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
-            final String linkpart = new Regex(downloadLink.getDownloadURL(), "/iframe/(.+)").getMatch(0);
-            final String width = br.getRegex("width\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
-            final String height = br.getRegex("width\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
-            String file = br.getRegex("\\&quot;file\\&quot;:\\&quot;([a-z0-9]+)\\&quot;").getMatch(0);
-            if (file == null) {
-                file = br.getRegex("name=\"twitter:image\" content=\"https?://static\\.video\\.yandex.ru/get/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_\\.]+/([A-Za-z0-9]+)\\.jpg\"").getMatch(0);
-            }
-            if (file == null && (width != null && height != null)) {
-                file = "m" + width + "x" + height + ".flv";
-                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
-            } else if (file == null) {
-                file = "0.flv";
-                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
             } else {
-                file += ".mp4";
-                downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", ".mp4"));
-            }
-            br.getPage("http://static.video.yandex.net/get-token/" + linkpart + "?nc=0." + System.currentTimeMillis());
-            final String token = br.getRegex("<token>([^<>\"]*?)</token>").getMatch(0);
-            if (token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage("http://streaming.video.yandex.ru/get-location/" + linkpart + "/" + file + "?token=" + token + "&ref=video.yandex.ru");
-            dllink = br.getRegex("<video\\-location>(http://[^<>\"]*?)</video\\-location>").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = Encoding.htmlDecode(dllink);
-            resumable = true;
-            maxchunks = 0;
-        } else {
-            String hash = getHash(downloadLink);
-            String sk = getSK(this.br);
-            if (sk == null) {
-                logger.warning("sk in account handling (without move) is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(hash) + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
-            /** TODO: Find out why we have the wrong SK here and remove this workaround! */
-            if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
-                sk = getSK(this.br);
-                if (sk == null || sk.equals("")) {
+                /* Free website download. */
+                String hash = getHash(downloadLink);
+                String sk = getSK(this.br);
+                if (sk == null) {
                     logger.warning("sk in account handling (without move) is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + this.CLIENT_ID + "&version=" + this.VERSION + "&sk=" + sk);
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(hash) + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
+                /** TODO: Find out why we have the wrong SK here and remove this workaround! */
+                if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
+                    sk = getSK(this.br);
+                    if (sk == null || sk.equals("")) {
+                        logger.warning("sk in account handling (without move) is null");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
+                }
+                handleFreeErrors();
+                dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (dllink.startsWith("//")) {
+                    dllink = "http:" + dllink;
+                }
+                /* Don't do htmldecode because the link will be invalid then */
+                dllink = HTMLEntities.unhtmlentities(dllink);
             }
-            handleFreeErrors();
-            dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
+            if (isZippedFolder(downloadLink)) {
+                resume = false;
+                maxchunks = 1;
+            } else {
+                resume = FREE_RESUME;
+                maxchunks = FREE_MAXCHUNKS;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                handleServerErrors(downloadLink);
+                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dllink.startsWith("//")) {
-                dllink = "http:" + dllink;
-            }
-            /* Don't do htmldecode because the link will be invalid then */
-            dllink = HTMLEntities.unhtmlentities(dllink);
+            dl.startDownload();
+        } else {
+            handleDownloadVideo(downloadLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+    }
+
+    private void handleDownloadVideo(final DownloadLink downloadLink) throws Exception {
+        final String linkpart = new Regex(downloadLink.getDownloadURL(), "/iframe/(.+)").getMatch(0);
+        final String width = br.getRegex("width\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
+        final String height = br.getRegex("width\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
+        String file = br.getRegex("\\&quot;file\\&quot;:\\&quot;([a-z0-9]+)\\&quot;").getMatch(0);
+        if (file == null) {
+            file = br.getRegex("name=\"twitter:image\" content=\"https?://static\\.video\\.yandex.ru/get/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_\\.]+/([A-Za-z0-9]+)\\.jpg\"").getMatch(0);
+        }
+        if (file == null && (width != null && height != null)) {
+            file = "m" + width + "x" + height + ".flv";
+            downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
+        } else if (file == null) {
+            file = "0.flv";
+            downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
+        } else {
+            file += ".mp4";
+            downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", ".mp4"));
+        }
+        br.getPage("http://static.video.yandex.net/get-token/" + linkpart + "?nc=0." + System.currentTimeMillis());
+        final String token = br.getRegex("<token>([^<>\"]*?)</token>").getMatch(0);
+        if (token == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("http://streaming.video.yandex.ru/get-location/" + linkpart + "/" + file + "?token=" + token + "&ref=video.yandex.ru");
+        String dllink = br.getRegex("<video\\-location>(http://[^<>\"]*?)</video\\-location>").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.htmlDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             handleServerErrors(downloadLink);
             br.followConnection();
@@ -319,13 +395,17 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String getHash(final DownloadLink dl) {
+        /* TODO: Remove this compatibility beginning 2016 */
         String hash = dl.getStringProperty("plain_id", null);
-        /* TODO: Remove this compatibility mid 2015 */
         if (hash == null) {
-            hash = dl.getStringProperty("hash_encoded", null);
-            hash = fixHash(hash);
+            /* CURRENT property! */
+            hash = dl.getStringProperty("hash_main", null);
         }
         return hash;
+    }
+
+    private String getPath(final DownloadLink dl) {
+        return dl.getStringProperty("path", null);
     }
 
     private String getCkey() throws PluginException {
@@ -336,14 +416,17 @@ public class DiskYandexNet extends PluginForHost {
         return ckey;
     }
 
+    private boolean isZippedFolder(final DownloadLink dl) {
+        return dl.getBooleanProperty("is_zipped_folder", false);
+    }
+
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBr();
-                setConstants(account);
+                prepbrWebsite(this.br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -417,10 +500,10 @@ public class DiskYandexNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account);
         ACCOUNT_SK = account.getStringProperty("saved_sk", null);
         requestFileInformation(link);
-        login(this.currAcc, false);
+        login(account, false);
+        setConstants(link, account);
         String dllink = checkDirectLink(link, "directlink_account");
 
         if (dllink == null) {
@@ -629,8 +712,13 @@ public class DiskYandexNet extends PluginForHost {
         return getJson(br.toString(), "sk");
     }
 
-    private void prepBr() {
+    private Browser prepbrWebsite(final Browser br) {
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        return br;
+    }
+
+    public static Browser prepbrAPI(final Browser br) {
+        return br;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
