@@ -26,7 +26,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
-import org.appwork.controlling.State;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
@@ -89,7 +88,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     private void shutdown() {
-        LogController.CL().info("shutdown");
+        logger.info("shutdown");
         DownloadWatchDog.getInstance().stopDownloads();
         LinkCollector.getInstance().abort();
 
@@ -217,7 +216,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     private void prepareHibernateOrStandby() {
         checkStandbyHibernateSettings(getSettings().getShutdownMode());
-        LogController.CL().info("Stop all running downloads");
+        logger.info("Stop all running downloads");
         DownloadWatchDog.getInstance().stopDownloads();
         LinkCollector.getInstance().abort();
         // /* reset enabled flag */
@@ -256,13 +255,13 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             break;
         case WINDOWS_OTHERS:
             /* older windows versions */
-            LogController.CL().info("no hibernate support, use shutdown");
+            logger.info("no hibernate support, use shutdown");
             shutdown();
             break;
         case MAC:
             /* mac os */
             prepareHibernateOrStandby();
-            LogController.CL().info("no hibernate support, use shutdown");
+            logger.info("no hibernate support, use shutdown");
             shutdown();
             break;
         default:
@@ -320,7 +319,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             break;
         case WINDOWS_OTHERS:
             /* older windows versions */
-            LogController.CL().info("no standby support, use shutdown");
+            logger.info("no standby support, use shutdown");
             shutdown();
             break;
         case MAC:
@@ -368,7 +367,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             case SHUTDOWN:
                 /* try to shutdown */
                 if (showDialog) {
-                    LogController.CL().info("ask user about shutdown");
+                    logger.info("ask user about shutdown");
                     final String message = _.interaction_shutdown_dialog_msg_shutdown();
                     final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
                     final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
@@ -381,7 +380,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                         break;
                     }
                 } else {
-                    LogController.CL().info("don't ask user about shutdown");
+                    logger.info("don't ask user about shutdown");
                     shutdown();
                     return;
                 }
@@ -389,7 +388,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             case STANDBY:
                 /* try to standby */
                 if (showDialog) {
-                    LogController.CL().info("ask user about standby");
+                    logger.info("ask user about standby");
                     final String message = _.interaction_shutdown_dialog_msg_standby();
                     final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_standby(), message);
                     final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
@@ -402,7 +401,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                         break;
                     }
                 } else {
-                    LogController.CL().info("don't ask user about standby");
+                    logger.info("don't ask user about standby");
                     standby();
                     return;
                 }
@@ -410,7 +409,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             case HIBERNATE:
                 /* try to hibernate */
                 if (showDialog) {
-                    LogController.CL().info("ask user about hibernate");
+                    logger.info("ask user about hibernate");
                     final String message = _.interaction_shutdown_dialog_msg_hibernate();
                     final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_hibernate(), message);
                     final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
@@ -423,7 +422,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                         break;
                     }
                 } else {
-                    LogController.CL().info("dont' ask user about hibernate");
+                    logger.info("dont' ask user about hibernate");
                     hibernate();
                     return;
                 }
@@ -431,7 +430,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             case CLOSE:
                 /* try to close */
                 if (showDialog) {
-                    LogController.CL().info("ask user about closing");
+                    logger.info("ask user about closing");
                     final String message = _.interaction_shutdown_dialog_msg_closejd();
                     final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_closejd(), message);
                     final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
@@ -444,7 +443,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                         break;
                     }
                 } else {
-                    LogController.CL().info("don't ask user about closing");
+                    logger.info("don't ask user about closing");
                     RestartController.getInstance().exitAsynch(new SmartRlyExitRequest(true));
                     return;
                 }
@@ -490,10 +489,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         }
         if (!getSettings().isShutdownActiveByDefaultEnabled()) {
             CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(false);
+        } else {
+            CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(true);
         }
-
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
-        LogController.CL().info("Shutdown OK");
+        logger.info("Shutdown OK");
     }
 
     @Override
@@ -508,68 +508,62 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     protected void initExtension() throws StartException {
-
         if (!Application.isHeadless()) {
             configPanel = new ShutdownConfigPanel(this);
         }
     }
 
     public void onStateChange(StateEvent event) {
-        final StateMachine sm = DownloadWatchDog.getInstance().getStateMachine();
-        if (!getSettings().isShutdownActive()) {
-            return;
-        }
-        State state = sm.getState();
-
         if (event.getNewState() == DownloadWatchDog.STOPPED_STATE) {
-            if (DownloadWatchDog.getInstance().getSession().getDownloadsStarted() > 0) {
-                ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
-
-                if (request.hasVetos()) {
-
-                    logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
-                    for (ShutdownVetoException e : request.getVetos()) {
-                        logger.log(e);
-                        logger.info(e.getSource() + "");
-                    }
-                    new Thread("Wait to Shutdown") {
-                        public void run() {
-
-                            while (true) {
-
-                                if (sm.isState(DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
-                                    logger.info("Cancel Shutdown.");
-                                    return;
-                                }
-                                ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
-
-                                if (!request.hasVetos()) {
-                                    logger.info("No Vetos");
-                                    if (sm.isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
-
-                                        doShutdown();
+            final boolean active = getSettings().isShutdownActive();
+            if (!active) {
+                logger.info("ShutdownExtension is not active!");
+            } else {
+                logger.info("ShutdownExtension is active!");
+                if (DownloadWatchDog.getInstance().getSession().getDownloadsStarted() > 0) {
+                    final ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
+                    if (request.hasVetos()) {
+                        logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
+                        for (ShutdownVetoException e : request.getVetos()) {
+                            logger.log(e);
+                            logger.info(e.getSource() + "");
+                        }
+                        new Thread("Wait to Shutdown") {
+                            public void run() {
+                                while (true) {
+                                    final StateMachine sm = DownloadWatchDog.getInstance().getStateMachine();
+                                    if (sm.isState(DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                                        logger.info("Cancel Shutdown.");
+                                        return;
+                                    }
+                                    final ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
+                                    if (!request.hasVetos()) {
+                                        logger.info("No Vetos");
+                                        if (sm.isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
+                                            doShutdown();
+                                            return;
+                                        }
+                                    }
+                                    logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
+                                    for (ShutdownVetoException e : request.getVetos()) {
+                                        logger.log(e);
+                                        logger.info(e.getSource() + "");
+                                    }
+                                    try {
+                                        Thread.sleep(1000);
+                                    } catch (InterruptedException e) {
                                         return;
                                     }
                                 }
-                                logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
-                                for (ShutdownVetoException e : request.getVetos()) {
-                                    logger.log(e);
-                                    logger.info(e.getSource() + "");
-                                }
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    return;
-                                }
-
                             }
-                        }
-                    }.start();
+                        }.start();
+                    } else {
+                        doShutdown();
+                    }
                 } else {
-                    doShutdown();
+                    logger.info("No downloads have been started in last session! ByPass ShutdownExtension!");
                 }
             }
-
         }
     }
 

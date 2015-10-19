@@ -157,8 +157,8 @@ public class DummyCNL extends PluginForDecrypt {
             key = HexFormatter.hexToByteArray(k);
         }
         /* workaround for wrong relink post encoding! */
-        crypted = crypted.trim().replaceAll("\\s", "+");
-        byte[] baseDecoded = Base64.decode(crypted);
+        final String base = crypted.trim().replaceAll("\\s", "+");
+        byte[] baseDecoded = Base64.decode(base);
         return decrypt(baseDecoded, key).trim();
     }
 

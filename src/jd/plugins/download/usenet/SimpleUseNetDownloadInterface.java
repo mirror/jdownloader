@@ -33,6 +33,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -196,6 +198,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
 
     @Override
     public boolean startDownload() throws Exception {
+        boolean deletePartFile = false;
         try {
             DownloadPluginProgress downloadPluginProgress = null;
             downloadable.setConnectionHandler(this.getManagedConnetionHandler());
@@ -222,6 +225,9 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 downloadable.addPluginProgress(downloadPluginProgress);
                 downloadable.setAvailable(AvailableStatus.TRUE);
                 download();
+            } catch (MessageBodyNotFoundException e) {
+                deletePartFile = true;
+                throw e;
             } finally {
                 try {
                     downloadable.free(reservation);
@@ -260,6 +266,9 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
         } finally {
             downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
             cleanupDownladInterface();
+            if (deletePartFile) {
+                FileCreationManager.getInstance().delete(outputPartFile, DeleteOption.NULL);
+            }
         }
     }
 

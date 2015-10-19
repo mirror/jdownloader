@@ -160,17 +160,17 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      */
     protected abstract void start() throws StartException;
 
-    private String         name;
+    private String            name;
 
-    private int            version = -1;
+    private int               version = -1;
 
-    private ConfigType     store;
+    private ConfigType        store;
     /**
      * The Translationobject. Extent me if you need further Entries
      */
-    public TranslationType _;
+    public TranslationType    _;
 
-    protected LogSource    logger;
+    protected final LogSource logger;
 
     public LogSource getLogger() {
         return logger;

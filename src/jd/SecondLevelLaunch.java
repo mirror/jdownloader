@@ -756,7 +756,6 @@ public class SecondLevelLaunch {
             @Override
             public void run() {
                 try {
-
                     CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
 
                         @Override

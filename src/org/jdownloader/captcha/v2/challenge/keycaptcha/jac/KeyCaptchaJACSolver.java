@@ -31,28 +31,19 @@ public class KeyCaptchaJACSolver extends ChallengeSolver<String> {
     @Override
     public void solve(SolverJob<String> solverJob) throws InterruptedException, SolverException, SkipException {
         try {
-            KeyCaptchaPuzzleChallenge challenge = ((KeyCaptchaPuzzleChallenge) solverJob.getChallenge());
-
-            KeyCaptchaAutoSolver kcSolver = new KeyCaptchaAutoSolver();
-
-            String out = kcSolver.solve(challenge.getHelper().getPuzzleData().getImages());
-            ArrayList<Integer> marray = new ArrayList<Integer>();
+            final KeyCaptchaPuzzleChallenge challenge = ((KeyCaptchaPuzzleChallenge) solverJob.getChallenge());
+            final KeyCaptchaAutoSolver kcSolver = new KeyCaptchaAutoSolver();
+            final String out = kcSolver.solve(challenge.getHelper().getPuzzleData().getImages());
+            final ArrayList<Integer> marray = new ArrayList<Integer>();
             marray.addAll(kcSolver.getMouseArray());
             if (out == null) {
                 return;
             }
-            // if ("CANCEL".equals(out)) {
-            // System.out.println("KeyCaptcha: User aborted captcha dialog.");
-            // return out;
-            // }
-            String token;
-
-            token = challenge.getHelper().sendPuzzleResult(marray, out);
-
+            final String token = challenge.getHelper().sendPuzzleResult(marray, out);
             if (token != null) {
                 solverJob.addAnswer(new KeyCaptchaResponse(challenge, this, token, 95));
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             solverJob.getLogger().log(e);
         }
     }

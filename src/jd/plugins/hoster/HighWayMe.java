@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -67,14 +68,15 @@ public class HighWayMe extends UseNet {
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap                = new HashMap<String, AtomicInteger>();
 
+    private static HashMap<String, Integer>                hostRabattMap                       = new HashMap<String, Integer>();
+    private static Object                                  UPDATELOCK                          = new Object();
+
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS                 = 10;
     private static final int                               defaultMAXCHUNKS                    = -4;
     private static final boolean                           defaultRESUME                       = false;
 
-    private static Object                                  CTRLLOCK                            = new Object();
     private int                                            statuscode                          = 0;
-    private static AtomicInteger                           maxPrem                             = new AtomicInteger(1);
     private Account                                        currAcc                             = null;
     private DownloadLink                                   currDownloadLink                    = null;
     private long                                           currentWaittimeOnFailue             = 0;
@@ -103,6 +105,18 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
+    public void update(final DownloadLink downloadLink, final Account account, long bytesTransfered) throws PluginException {
+        synchronized (UPDATELOCK) {
+            final String currentHost = this.correctHost(downloadLink.getHost());
+            final Integer rabatt = hostRabattMap.get(currentHost);
+            if (rabatt != null) {
+                bytesTransfered = (bytesTransfered * (100 - rabatt)) / 100;
+            }
+        }
+        super.update(downloadLink, account, bytesTransfered);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
@@ -118,7 +132,7 @@ public class HighWayMe extends UseNet {
             return false;
         }
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
-        synchronized (hostRunningDlsNumMap) {
+        synchronized (UPDATELOCK) {
             final String currentHost = this.correctHost(downloadLink.getHost());
             if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
@@ -148,24 +162,17 @@ public class HighWayMe extends UseNet {
         br.setFollowRedirects(true);
         boolean resume = account.getBooleanProperty("resume", defaultRESUME);
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
-        /* Then check if we got an individual host limit. */
-        if (hostMaxchunksMap != null) {
-            final String thishost = link.getHost();
-            synchronized (hostMaxchunksMap) {
-                if (hostMaxchunksMap.containsKey(thishost)) {
-                    maxChunks = hostMaxchunksMap.get(thishost);
-                }
+
+        final String thishost = link.getHost();
+        synchronized (UPDATELOCK) {
+            if (hostMaxchunksMap.containsKey(thishost)) {
+                maxChunks = hostMaxchunksMap.get(thishost);
+            }
+            if (hostResumeMap.containsKey(thishost)) {
+                resume = hostResumeMap.get(thishost);
             }
         }
 
-        if (hostResumeMap != null) {
-            final String thishost = link.getHost();
-            synchronized (hostResumeMap) {
-                if (hostResumeMap.containsKey(thishost)) {
-                    resume = hostResumeMap.get(thishost);
-                }
-            }
-        }
         if (link.getBooleanProperty(NORESUME, false)) {
             resume = false;
         }
@@ -202,7 +209,7 @@ public class HighWayMe extends UseNet {
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
          */
-        synchronized (CTRLLOCK) {
+        synchronized (UPDATELOCK) {
             if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
                 logger.info("Performing full login to set individual host limits");
                 this.fetchAccountInfo(account);
@@ -213,11 +220,10 @@ public class HighWayMe extends UseNet {
             super.handleMultiHost(link, account);
             return;
         } else {
-
-            synchronized (hostUnavailableMap) {
-                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            synchronized (UPDATELOCK) {
+                final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
                 if (unavailableMap != null) {
-                    Long lastUnavailable = unavailableMap.get(link.getHost());
+                    final Long lastUnavailable = unavailableMap.get(link.getHost());
                     if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                         final long wait = lastUnavailable - System.currentTimeMillis();
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
@@ -321,10 +327,10 @@ public class HighWayMe extends UseNet {
         /* TODO: Real traffic is missing. */
         final long free_traffic_max_daily = ((Number) info_account.get("free_traffic")).longValue();
         long free_traffic_left = ((Number) info_account.get("remain_free_traffic")).longValue();
-
         final long premium_bis = ((Number) info_account.get("premium_bis")).longValue();
         final long premium_traffic = ((Number) info_account.get("premium_traffic")).longValue();
         final long premium_traffic_max = ((Number) info_account.get("premium_max")).longValue();
+
         /* Set account type and related things */
         if (premium_bis > 0 && premium_traffic_max > 0) {
             ai.setTrafficLeft(premium_traffic);
@@ -349,7 +355,7 @@ public class HighWayMe extends UseNet {
         account.setConcurrentUsePossible(true);
         /* Set supported hosts, limits and account limits */
         account.setProperty("account_maxchunks", this.correctChunks(account_maxchunks));
-        account.setProperty("account_maxdls", account_maxdls);
+        account.setMaxSimultanDownloads(account_maxdls);
         if (account_resume == 1) {
             account.setProperty("resume", true);
         } else {
@@ -357,30 +363,64 @@ public class HighWayMe extends UseNet {
         }
 
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        hostMaxchunksMap.clear();
-        hostMaxdlsMap.clear();
-        account.setMaxSimultanDownloads(account_maxdls);
-        for (final Object hoster : array_hoster) {
-            final LinkedHashMap<String, Object> hoster_map = (LinkedHashMap<String, Object>) hoster;
-            final String domain = correctHost((String) hoster_map.get("name"));
-            final String active = (String) hoster_map.get("active");
-            final int resume = Integer.parseInt((String) hoster_map.get("resume"));
-            final int maxchunks = Integer.parseInt((String) hoster_map.get("chunks"));
-            final int maxdls = Integer.parseInt((String) hoster_map.get("downloads"));
-            // final String unlimited = (String) hoster_map.get("unlimited");
-            if (active.equals("1")) {
-                supportedHosts.add(domain);
-                hostMaxchunksMap.put(domain, correctChunks(maxchunks));
-                hostMaxdlsMap.put(domain, correctMaxdls(maxdls));
-                if (resume == 0) {
-                    hostResumeMap.put(domain, false);
-                } else {
-                    hostResumeMap.put(domain, true);
+        synchronized (UPDATELOCK) {
+            hostMaxchunksMap.clear();
+            hostRabattMap.clear();
+            hostMaxdlsMap.clear();
+            account.setMaxSimultanDownloads(account_maxdls);
+            for (final Object hoster : array_hoster) {
+                final LinkedHashMap<String, Object> hoster_map = (LinkedHashMap<String, Object>) hoster;
+                final String domain = correctHost((String) hoster_map.get("name"));
+                final String active = (String) hoster_map.get("active");
+                final int resume = Integer.parseInt((String) hoster_map.get("resume"));
+                final int maxchunks = Integer.parseInt((String) hoster_map.get("chunks"));
+                final int maxdls = Integer.parseInt((String) hoster_map.get("downloads"));
+                final int rabatt = Integer.parseInt((String) hoster_map.get("rabatt"));
+                // final String unlimited = (String) hoster_map.get("unlimited");
+                hostRabattMap.put(domain, rabatt);
+                if (active.equals("1")) {
+                    supportedHosts.add(domain);
+                    hostMaxchunksMap.put(domain, correctChunks(maxchunks));
+                    hostMaxdlsMap.put(domain, correctMaxdls(maxdls));
+                    if (resume == 0) {
+                        hostResumeMap.put(domain, false);
+                    } else {
+                        hostResumeMap.put(domain, true);
+                    }
+
                 }
             }
         }
+        final Map<String, Object> usenetLogins = (Map<String, Object>) info_account.get("usenet");
+        if (usenetLogins != null) {
+            final String usenetUsername = (String) usenetLogins.get("username");
+            final String usenetPassword = (String) usenetLogins.get("pass");
+            ai.setProperty("usenetU", usenetUsername);
+            ai.setProperty("usenetP", usenetPassword);
+        } else {
+            supportedHosts.remove("usenet");
+            supportedHosts.remove("Usenet");
+        }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
+    }
+
+    @Override
+    protected String getUsername(Account account) {
+        final AccountInfo ai = account.getAccountInfo();
+        if (ai != null) {
+            return ai.getStringProperty("usenetU", null);
+        }
+        return null;
+    }
+
+    @Override
+    protected String getPassword(Account account) {
+        final AccountInfo ai = account.getAccountInfo();
+        if (ai != null) {
+            return ai.getStringProperty("usenetP", null);
+        }
+        return null;
     }
 
     /** Login without errorhandling */
@@ -427,7 +467,7 @@ public class HighWayMe extends UseNet {
             /* API timeout can override default timeout */
             timeout = this.currentWaittimeOnFailue;
         }
-        synchronized (hostUnavailableMap) {
+        synchronized (UPDATELOCK) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
@@ -516,11 +556,8 @@ public class HighWayMe extends UseNet {
      *            (+1|-1)
      * */
     private void controlSlot(final int num) {
-        synchronized (CTRLLOCK) {
+        synchronized (UPDATELOCK) {
             final String currentHost = correctHost(this.currDownloadLink.getHost());
-            int was = maxPrem.get();
-            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), this.currAcc.getIntegerProperty("account_maxdls", defaultMAXDOWNLOADS)));
-            logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
             AtomicInteger currentRunningDls = new AtomicInteger(0);
             if (hostRunningDlsNumMap.containsKey(currentHost)) {
                 currentRunningDls = hostRunningDlsNumMap.get(currentHost);
@@ -676,11 +713,23 @@ public class HighWayMe extends UseNet {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if (isUsenetLink(link)) {
-            return 10;
-        } else {
-            return maxPrem.get();
+        if (account != null) {
+            if (isUsenetLink(link)) {
+                return 5;
+            } else {
+                if (link == null) {
+                    return account.getMaxSimultanDownloads();
+                } else {
+                    final String currentHost = correctHost(link.getHost());
+                    synchronized (UPDATELOCK) {
+                        if (hostMaxdlsMap.containsKey(currentHost)) {
+                            return hostMaxdlsMap.get(currentHost);
+                        }
+                    }
+                }
+            }
         }
+        return 0;
     }
 
     @Override

@@ -332,6 +332,8 @@ public class Multi extends IExtraction {
                     } else {
                         return initLibrary("Linux-i386");
                     }
+                case PPC:
+                    return initLibrary("Linux-ppc");
                 default:
                     return false;
                 }
@@ -357,7 +359,7 @@ public class Multi extends IExtraction {
     public boolean isAvailable(ExtractionExtension extractionExtension) {
         final boolean ret = hasLibrarySupport(extractionExtension);
         if (!ret) {
-            logger.info("Unsupported SevenZipJBinding|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            logger.info("Unsupported SevenZipJBinding|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
         }
         return ret;
     }

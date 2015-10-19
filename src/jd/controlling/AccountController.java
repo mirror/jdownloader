@@ -84,12 +84,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
 
-                                                                                                  };
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -409,8 +409,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                                                           * we are offline, so lets just return without any account update
-                                                           */
+                     * we are offline, so lets just return without any account update
+                     */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -855,15 +855,11 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     @Deprecated
     public Account getValidAccount(final PluginForHost pluginForHost) {
-        final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof SingleDownloadController) {
-            final SingleDownloadController controller = (SingleDownloadController) currentThread;
-            final Account acc = controller.getAccount();
-            if (acc != null && StringUtils.equals(acc.getHoster(), pluginForHost.getHost())) {
-                return acc;
-            }
-        }
-        final List<Account> ret = getValidAccounts(pluginForHost.getHost());
+        return getValidAccount(pluginForHost.getHost());
+    }
+
+    protected Account getValidAccount(final String host) {
+        final List<Account> ret = getValidAccounts(host);
         if (ret != null && ret.size() > 0) {
             return ret.get(0);
         }
@@ -872,34 +868,42 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     @Deprecated
     public Account getValidAccount(final PluginForDecrypt pluginForDecrypt) {
-        final List<Account> ret = getValidAccounts(pluginForDecrypt.getHost());
-        if (ret != null && ret.size() > 0) {
-            return ret.get(0);
-        }
-        return null;
+        return getValidAccount(pluginForDecrypt.getHost());
     }
 
-    public ArrayList<Account> getValidAccounts(String host) {
+    public ArrayList<Account> getValidAccounts(final String host) {
         if (StringUtils.isEmpty(host)) {
             return null;
-        }
-        final ArrayList<Account> ret;
-        synchronized (AccountController.this) {
-            final List<Account> accounts = ACCOUNTS.get(host = host.toLowerCase(Locale.ENGLISH));
-            if (accounts == null || accounts.size() == 0) {
-                return null;
+        } else {
+            final ArrayList<Account> ret;
+            final Thread currentThread = Thread.currentThread();
+            if (currentThread instanceof SingleDownloadController) {
+                // requestFileInformation must use the account from DownloadLinkCandidate of SingleDownloadController
+                final SingleDownloadController controller = (SingleDownloadController) currentThread;
+                final Account acc = controller.getAccount();
+                if (acc != null && StringUtils.equals(acc.getHoster(), host)) {
+                    ret = new ArrayList<Account>();
+                    ret.add(acc);
+                    return ret;
+                }
             }
-            ret = new ArrayList<Account>(accounts);
-        }
-        final ListIterator<Account> it = ret.listIterator(ret.size());
-        while (it.hasPrevious()) {
-            final Account next = it.previous();
-            if (!next.isEnabled() || !next.isValid() || next.isTempDisabled() || next.getPlugin() == null) {
-                /* we remove every invalid/disabled/tempdisabled/blocked account */
-                it.remove();
+            synchronized (AccountController.this) {
+                final List<Account> accounts = ACCOUNTS.get(host.toLowerCase(Locale.ENGLISH));
+                if (accounts == null || accounts.size() == 0) {
+                    return null;
+                }
+                ret = new ArrayList<Account>(accounts);
             }
+            final ListIterator<Account> it = ret.listIterator(ret.size());
+            while (it.hasPrevious()) {
+                final Account next = it.previous();
+                if (!next.isEnabled() || !next.isValid() || next.isTempDisabled() || next.getPlugin() == null) {
+                    /* we remove every invalid/disabled/tempdisabled/blocked account */
+                    it.remove();
+                }
+            }
+            return ret;
         }
-        return ret;
     }
 
     public boolean hasAccount(final String host, final Boolean isEnabled, final Boolean isValid, final Boolean isPremium, final Boolean isExpired) {

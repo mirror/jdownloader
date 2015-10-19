@@ -17,6 +17,12 @@ public class ArchiveInfo {
         this.extractionPasswords = extractionPasswords;
     }
 
+    public void addExtractionPassword(final String extractionPassword) {
+        if (extractionPassword != null) {
+            extractionPasswords.add(extractionPassword);
+        }
+    }
+
     public Collection<String> getExtractionPasswords() {
         return extractionPasswords;
     }
@@ -30,8 +36,12 @@ public class ArchiveInfo {
     }
 
     public ArchiveInfo migrate(ArchiveInfo ai) {
-        if (ai == null) return this;
-        if (autoExtract == BooleanStatus.UNSET) autoExtract = ai.getAutoExtract();
+        if (ai == null) {
+            return this;
+        }
+        if (autoExtract == BooleanStatus.UNSET) {
+            autoExtract = ai.getAutoExtract();
+        }
         getExtractionPasswords().addAll(ai.getExtractionPasswords());
         return this;
     }
