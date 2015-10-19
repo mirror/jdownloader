@@ -44,7 +44,7 @@ public class FlogPl extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
+    public static final String   default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;

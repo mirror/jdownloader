@@ -192,6 +192,14 @@ public class SaveTv extends PluginForHost {
     private static final String   API_FORMAT_HD                             = "6";
     private static final String   API_FORMAT_HQ                             = "5";
     private static final String   API_FORMAT_LQ                             = "4";
+
+    /*
+     * In some cases it is good to have these values in Long. Also note that, except from the website download request they now seem to use
+     * the same values for the website which they use for the API!
+     */
+    private static final long     API_FORMAT_HD_L                           = 6;
+    private static final long     API_FORMAT_HQ_L                           = 5;
+    private static final long     API_FORMAT_LQ_L                           = 4;
     /* Save.tv internal quality/format constants (IDs) for the website */
     private static final String   SITE_FORMAT_HD                            = "2";
     private static final String   SITE_FORMAT_HQ                            = "0";
@@ -255,7 +263,7 @@ public class SaveTv extends PluginForHost {
      * @property "category": 0 = undefined, 1 = movies,category: 2 = series, 3 = show, 7 = music
      */
 
-    @SuppressWarnings({ "deprecation", "unused" })
+    @SuppressWarnings({ "deprecation", "unused", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -301,13 +309,11 @@ public class SaveTv extends PluginForHost {
             if (!br.getURL().contains("/JSON/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* Find data of the current telecastID */
-            final String data_source = br.getRegex("\"TELECASTDETAILS\":\\{(.+)").getMatch(0);
-            if (data_source == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            parseFilenameInformation_site(link, data_source);
-            parseQualityTag(link, br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> sourcelist = (ArrayList) entries.get("ARRALLOWDDOWNLOADFORMATS");
+            entries = (LinkedHashMap<String, Object>) entries.get("TELECASTDETAILS");
+            parseFilenameInformation_site(link, entries);
+            parseQualityTag(link, sourcelist);
         }
         link.setAvailable(true);
         final String availablecheck_filename = getFilename(link);
@@ -389,38 +395,50 @@ public class SaveTv extends PluginForHost {
         return filename;
     }
 
-    public static void parseFilenameInformation_site(final DownloadLink dl, final String source) throws PluginException {
-        final String site_title = getJson(source, "STITLE");
+    public static void parseFilenameInformation_site(final DownloadLink dl, final LinkedHashMap<String, Object> sourcemap) throws PluginException {
+        final String site_title = (String) sourcemap.get("STITLE");
         long datemilliseconds = 0;
 
         /* For series only */
-        String episodenumber = getJson(source, "SFOLGE");
-        final String episodename = getJson(source, "SSUBTITLE");
+        String episodenumber;
+        final String episodename;
+        final Object episodenumber_o = sourcemap.get("SFOLGE");
+        final Object episodename_o = sourcemap.get("SSUBTITLE");
+        if (episodenumber_o != null && episodenumber_o instanceof Double) {
+            episodenumber = Double.toString(((Double) episodenumber_o).doubleValue());
+        } else {
+            episodenumber = (String) episodenumber_o;
+        }
+        if (episodename_o != null && episodename_o instanceof Double) {
+            episodename = Double.toString(((Double) episodename_o).doubleValue());
+        } else {
+            episodename = (String) episodename_o;
+        }
 
         /* General */
-        final String genre = getJson(source, "SCHAR");
-        final String producecountry = getJson(source, "SCOUNTRY");
-        String produceyear = new Regex(source, "\"SPRODUCTIONYEAR\":(\\d+)\\.0").getMatch(0);
+        final String genre = (String) sourcemap.get("SCHAR");
+        final String producecountry = (String) sourcemap.get("SCOUNTRY");
+        final String produceyear = Long.toString(DummyScriptEnginePlugin.toLong(sourcemap.get("SPRODUCTIONYEAR"), 0));
 
-        String category = getJson(source, "TVCATEGORYID");
+        String category = Long.toString(DummyScriptEnginePlugin.toLong(sourcemap.get("TVCATEGORYID"), -1));
         /* Happens in decrypter - errorhandling! */
-        if (category == null && (episodename != null || episodenumber != null)) {
+        if (category.equals("-1") && (episodename != null || episodenumber != null)) {
             category = "2";
         } else if (category == null) {
             category = "1";
         }
 
-        final String runtime_start = getJson(source, "DSTARTDATE");
+        final String runtime_start = (String) sourcemap.get("DSTARTDATE");
         /* For hosterplugin */
-        String runtime_end = getJson(source, "ENDDATE");
+        String runtime_end = (String) sourcemap.get("ENDDATE");
         /* For decrypterplugin */
         if (runtime_end == null) {
-            runtime_end = getJson(source, "DENDDATE");
+            runtime_end = (String) sourcemap.get("DENDDATE");
         }
         final long runtime_end_long = TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         final long site_runtime_minutes = (runtime_end_long - datemilliseconds) / 1000 / 60;
-        final String tv_station = getJson(source, "STVSTATIONNAME");
+        final String tv_station = (String) sourcemap.get("STVSTATIONNAME");
 
         /* TODO: Add more/all numbers here, improve this! */
         if (category.equals("2")) {
@@ -449,12 +467,13 @@ public class SaveTv extends PluginForHost {
             }
             dl.setProperty(PROPERTY_episodenumber, correctData(episodenumber));
         }
-        if (episodename != null) {
+        /* Sometimes episodetitle == episodenumber (double) --> Do NOT set it as episodetitle is NOT given in this case! */
+        if (episodename != null && !episodename.matches("\\d+\\.\\d+")) {
             dl.setProperty(PROPERTY_episodename, correctData(episodename));
         }
 
         /* Add other information */
-        if (produceyear != null) {
+        if (!produceyear.equals("0")) {
             dl.setProperty(PROPERTY_produceyear, correctData(produceyear));
         }
         if (genre != null) {
@@ -551,22 +570,24 @@ public class SaveTv extends PluginForHost {
         dl.setProperty(PROPERTY_site_runtime_minutes, site_runtime_minutes);
     }
 
-    public static void parseQualityTag(final DownloadLink dl, final String source) {
+    @SuppressWarnings("unchecked")
+    public static void parseQualityTag(final DownloadLink dl, final ArrayList<Object> sourcelist) {
         final int selected_video_format = getConfiguredVideoFormat();
         /*
          * If we have no source, we can select HQ if the user chose HQ because it is always available. If the user selects any other quality
          * we need to know whether it exists or not and then set the data.
          */
-        if (source == null) {
+        if (sourcelist == null) {
             if (selected_video_format == 1) {
                 dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
             }
         } else {
-            final String availableformatstext = new Regex(source, "\"ARRALLOWDDOWNLOADFORMATS\":\\[(.*?)\\]").getMatch(0);
-            // final String[] availableformats_array = availableformatstext.split("\\},\\{");
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
+            final String quality_best = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("RECORDINGFORMATID"), API_FORMAT_HQ_L));
+            final boolean isHDAvailable = sourcelist.size() == 3 || quality_best.equals("");
             switch (selected_video_format) {
             case 0:
-                if (availableformatstext.contains("\"RECORDINGFORMATID\":6.0")) {
+                if (isHDAvailable) {
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_HD);
                 } else {
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
@@ -576,7 +597,8 @@ public class SaveTv extends PluginForHost {
                 dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
                 break;
             case 2:
-                if (availableformatstext.contains("\"RECORDINGFORMATID\":4.0")) {
+                if (sourcelist.size() == 2) {
+                    /* Mobile available (should alyways be the case) */
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_LQ);
                 } else {
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
@@ -698,7 +720,7 @@ public class SaveTv extends PluginForHost {
             for (final String format : formats) {
                 api_postDownloadPage(downloadLink, format, downloadWithoutAds_request_value);
                 /* TODO: Decide whether we want to throw an error here or try until we find an existing format. */
-                if (br.containsHTML(HTML_API_DL_IMPOSSIBLE) && stv_request_selected_format_value == API_FORMAT_HD) {
+                if ((br.containsHTML(HTML_API_DL_IMPOSSIBLE) || this.br.getHttpConnection().getResponseCode() == 500) && stv_request_selected_format_value == API_FORMAT_HD) {
                     // continue;
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
                 }
@@ -1003,12 +1025,12 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public static String login_api(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
+        api_prepBrowser(br);
         final String lang = System.getProperty("user.language");
         String api_sessionid = account.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null);
         final long lastUse = getLongProperty(account, PROPERTY_lastuse, -1l);
         /* Only generate new sessionID if we have none or it's older than 6 hours */
         if (api_sessionid == null || (System.currentTimeMillis() - lastUse) > 360000 || force) {
-            api_prepBrowser(br);
             api_doSoapRequest(br, "http://tempuri.org/ISession/CreateSession", "<apiKey>" + api_getAPIKey() + "</apiKey>");
             api_sessionid = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
             final String errorcode = br.getRegex("<ErrorCodeID xmlns=\"http://schemas\\.datacontract\\.org/2004/07/SmilingBits\\.Data\\.BusinessLayer\\.Stv\\.Api\\.Contract\\.Common\">(\\d+)</ErrorCodeID>").getMatch(0);
@@ -1151,16 +1173,6 @@ public class SaveTv extends PluginForHost {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
     private static boolean resultIsEmpty(final String source, final String key) {
         return source.matches(".+\"" + key + "\":\"\"(,|\\}).+");
     }
@@ -1241,6 +1253,8 @@ public class SaveTv extends PluginForHost {
         br.setConnectTimeout(3 * 60 * 1000);
         br.getHeaders().put("User-Agent", "kSOAP/2.0");
         br.getHeaders().put("Content-Type", "text/xml");
+        /* Happens e.g. if we attempt to start a download with the HD parameter but HD is not available ... */
+        br.setAllowedResponseCodes(500);
     }
 
     private boolean apiActive() {
