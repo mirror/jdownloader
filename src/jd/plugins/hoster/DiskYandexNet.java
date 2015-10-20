@@ -78,8 +78,8 @@ public class DiskYandexNet extends PluginForHost {
     private static final String[] downloaddirs                       = { "%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8", "Downloads" };
 
     /* Connection limits */
-    private final boolean         FREE_RESUME                        = false;
-    private final int             FREE_MAXCHUNKS                     = 1;
+    private final boolean         FREE_RESUME                        = true;
+    private final int             FREE_MAXCHUNKS                     = 0;
     private static final int      FREE_MAXDOWNLOADS                  = 20;
     private final boolean         ACCOUNT_FREE_RESUME                = true;
     private final int             ACCOUNT_FREE_MAXCHUNKS             = 0;
