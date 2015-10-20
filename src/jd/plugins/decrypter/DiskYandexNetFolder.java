@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=.+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=.+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" }, flags = { 0, 0 })
 public class DiskYandexNetFolder extends PluginForDecrypt {
 
     public DiskYandexNetFolder(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     private static final String type_docviewer    = "https?://docviewer\\.yandex\\.[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
-    private final String        type_primaryURLs  = "https?://(?:www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=.+|#.+)";
+    private final String        type_primaryURLs  = "https?://(?:www\\.)?(((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+)";
     private final String        type_shortURLs_d  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
     private final String        type_shortURLs_i  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
 
@@ -61,29 +61,35 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         jd.plugins.hoster.DiskYandexNet.prepbrAPI(this.br);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String hash_temp = null;
-        String hash_complete = null;
+        String hash_decoded = null;
         String fname_url = null;
+        String fpName = null;
+        String mainhashID = null;
+        String path_main = "/";
         if (parameter.matches(type_docviewer)) {
             /* TODO: Change that --> FILE-URLs --> Should work fine then with the fixed decrypter! */
             /* Documents in web view mode --> File-URLs! */
-            hash_temp = new Regex(parameter, type_docviewer).getMatch(0);
-            hash_complete = new Regex(parameter, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
-            String hash_temp_decoded = Encoding.htmlDecode(hash_temp);
+            /* First lets fix broken URLs by removing unneeded parameters ... */
+            final String remove = new Regex(parameter, "(\\&[a-z0-9]+=.+)").getMatch(0);
+            if (remove != null) {
+                parameter = parameter.replace(remove, "");
+            }
+            mainhashID = new Regex(parameter, type_docviewer).getMatch(0);
+            mainhashID = new Regex(parameter, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
+            String hash_temp_decoded = Encoding.htmlDecode(mainhashID);
             fname_url = new Regex(parameter, "\\&name=([^/\\&]+)").getMatch(0);
             if (fname_url == null) {
                 fname_url = new Regex(hash_temp_decoded, ":/([^/]+)$").getMatch(0);
             }
             fname_url = Encoding.htmlDecode(fname_url);
         } else if (parameter.matches(type_yadi_sk_mail)) {
-            hash_temp = new Regex(parameter, "hash=(.+)").getMatch(0);
-            parameter = "https://disk.yandex.com/public/?hash=" + hash_temp;
+            mainhashID = new Regex(parameter, "hash=(.+)").getMatch(0);
+            parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
         } else {
-            parameter = parameter.replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash=");
+            parameter = parameter.replace("#", "?hash=");
+            mainhashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
         }
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-        String fpName = null;
-        String mainhashID = null;
         if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
             br.getPage(parameter);
             if (br.containsHTML(OFFLINE_TEXT)) {
@@ -100,8 +106,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
             parameter = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(mainhashID);
         }
-        mainhashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
-        mainhashID = fixHash(mainhashID);
+        hash_decoded = Encoding.htmlDecode(mainhashID);
+        if (hash_decoded.contains(":/")) {
+            final Regex hashregex = new Regex(hash_decoded, "(.*?):(/.+)");
+            mainhashID = hashregex.getMatch(0);
+            path_main = hashregex.getMatch(1);
+        }
+        // mainhashID = fixHash(mainhashID);
         parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
 
         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -123,7 +134,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.info("Decryption aborted by user");
                 break;
             }
-            this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID));
+            this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + Encoding.urlEncode(path_main));
             if (this.getJson("error") != null) {
                 main.setAvailable(false);
                 main.setProperty("offline", true);
@@ -174,25 +185,28 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 final String hash = (String) entries.get("public_key");
                 final String path = (String) entries.get("path");
                 final String md5 = (String) entries.get("md5");
+                final String url_preview = (String) entries.get("preview");
                 if (type == null || path == null) {
                     return null;
                 }
                 String name = (String) entries.get("name");
                 if (type.equals(JSON_TYPE_DIR)) {
-                    final String folderlink = "https://disk.yandex.com/public/?hash=" + hash + Encoding.urlEncode(path);
-                    /** TODO: Implement decryption of subfolders ! */
-                    // decryptedLinks.add(createDownloadlink(folderlink));
+                    /* Subfolders go back into our decrypter! */
+                    final String folderlink = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                    decryptedLinks.add(createDownloadlink(folderlink));
                 } else {
-                    // if (url_short == null && hasPreview) {
-                    // /* Probably a document so we need to build the view-url */
-                    // url_short = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash);
-                    // }
                     if (name == null || hash == null) {
                         return null;
                     }
                     final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                     decryptSingleFile(dl, entries);
-                    final String url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                    final String url_content;
+                    if (url_preview != null) {
+                        url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                    } else {
+                        /* TODO: Fix this or set the main hash via URL in this case! */
+                        url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                    }
 
                     dl.setProperty("hash_main", hash);
                     dl.setProperty("mainlink", url_content);

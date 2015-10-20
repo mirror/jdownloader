@@ -16,7 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -67,9 +68,9 @@ public class UdemyCom extends PluginForHost {
         return "https://www.udemy.com/terms/";
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -98,34 +99,35 @@ public class UdemyCom extends PluginForHost {
             if (clientid == null || bearertoken == null || newrelicid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            this.br.getPage(downloadLink.getDownloadURL());
+            final String courseid = this.br.getRegex("data-course-id=\"(\\d+)\"").getMatch(0);
+            if (courseid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             this.br.getHeaders().put("X-NewRelic-ID", newrelicid);
-            this.br.getHeaders().put("X-Udemy-Client-Id", clientid);
-            this.br.getHeaders().put("X-Udemy-Bearer-Token", bearertoken);
+            // this.br.getHeaders().put("X-Udemy-Client-Id", clientid);
+            this.br.getHeaders().put("Authorization", "Bearer " + bearertoken);
+            this.br.getHeaders().put("X-Udemy-Authorization", "Bearer " + bearertoken);
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getPage("https://www.udemy.com/api-1.1/lectures/" + fid_accountneeded + "/content?videoOnly=0&instructorPreviewMode=False");
+            this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + fid_accountneeded + "?video_only=&auto_play=&fields%5Blecture%5D=asset%2Cembed_url&fields%5Basset%5D=asset_type%2Cdownload_urls%2Ctitle&instructorPreviewMode=False");
+            // this.br.getPage("https://www.udemy.com/api-2.0/lectures/" + fid_accountneeded +
+            // "/content?videoOnly=0&instructorPreviewMode=False");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
-            url_embed = this.br.getRegex("src=\"(/new\\-lecture/view/[^<>\"]*?)\"").getMatch(0);
-            if (url_embed == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.br.getPage(url_embed);
-            final String[] qualities = { "1080", "720", "480", "360", "240" };
-            for (final String quality : qualities) {
-                DLLINK = this.br.getRegex("src=\"(https?://[^<>\"]*?)\" type=\\'video/mp4\\' data\\-res=\"" + quality + "\"").getMatch(0);
-                if (DLLINK != null) {
-                    break;
-                }
-            }
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("asset");
+            filename = (String) entries.get("title");
+            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "download_urls/Video");
+            DLLINK = (String) DummyScriptEnginePlugin.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
             if (DLLINK != null) {
-                DLLINK = Encoding.htmlDecode(DLLINK);
-                filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
                 if (filename == null) {
-                    filename = fid_accountneeded;
-                } else {
-                    filename = fid_accountneeded + "_" + filename;
+                    filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
+                    if (filename == null) {
+                        filename = fid_accountneeded;
+                    } else {
+                        filename = fid_accountneeded + "_" + filename;
+                    }
                 }
             }
         } else {
@@ -148,8 +150,6 @@ public class UdemyCom extends PluginForHost {
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = DLLINK.replace("\\", "");
-        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);

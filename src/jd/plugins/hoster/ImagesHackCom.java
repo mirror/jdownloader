@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,8 +30,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com", "imageshack.us" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:sus|com)/(i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)", "z690hi09erhj6r0nrheswhrzogjrtehoDELETE_MEfhjtzjzjzthj" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com", "imageshack.us" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)", "z690hi09erhj6r0nrheswhrzogjrtehoDELETE_MEfhjtzjzjzthj" }, flags = { 0, 0 })
 public class ImagesHackCom extends PluginForHost {
+
+    private static final String  TYPE_DOWNLOAD     = "https?://(?:www\\.)?imageshack\\.(?:us|com)/f/\\d+/[^<>\"/]+";
+    private static final String  TYPE_IMAGE        = "https?://(?:www\\.)?imageshack\\.(?:us|com)/i/[A-Za-z0-9]+";
+    private static final boolean enable_api_image  = true;
+    // private static final String TYPE_DIRECT =
+    // "https?://imagizer\\.imageshack\\.(?:com|us)/(?:a/img\\d+/\\d+/|v2/\\d+x\\d+q\\d+/\\d+/)([A-Za-z0-9]+)\\.[A-Za-z]{3,5}";
+    private String               DLLINK            = null;
+    private String               fid               = null;
+    private String               passCode          = null;
+    private boolean              passwordprotected = false;
 
     public ImagesHackCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,10 +52,9 @@ public class ImagesHackCom extends PluginForHost {
         return "https://imageshack.com/terms";
     }
 
-    // More is possible but 1 is good to prevent errors
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @SuppressWarnings("deprecation")
@@ -52,17 +62,18 @@ public class ImagesHackCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("imageshack.us/", "imageshack.com/").replace("http://", "https://"));
     }
 
-    private static final String  TYPE_DOWNLOAD    = "https?://(?:www\\.)?imageshack\\.(?:us|com)/f/\\d+/[^<>\"/]+";
-    private static final String  TYPE_IMAGE       = "https?://(?:www\\.)?imageshack\\.(?:us|com)/i/[A-Za-z0-9]+";
-    private String               DLLINK           = null;
-    private static final boolean enable_api_image = true;
-
-    private String               fid              = null;
-
+    /** Using API: https://api.imageshack.com/ */
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        /* Set password-cookies if needed */
+        passCode = link.getStringProperty("pass", null);
+        final String pwcookie = link.getStringProperty("pwcookie", null);
+        if (pwcookie != null) {
+            final String[] cookieinfo = pwcookie.split(":");
+            this.br.setCookie(this.getHost(), cookieinfo[0], cookieinfo[1]);
+        }
         if (link.getDownloadURL().matches(TYPE_DOWNLOAD) || br.containsHTML("class=\"download-block\"")) {
             /* Download */
             br.setFollowRedirects(true);
@@ -73,8 +84,20 @@ public class ImagesHackCom extends PluginForHost {
             DLLINK = br.getRegex("\"(https?://imageshack\\.us/download/[^<>\"]*?)\"").getMatch(0);
         } else if (enable_api_image) {
             /* Image + usage of API. */
+            prepBR_API(this.br);
             this.fid = getFIDFRomURL_image(link);
-            this.br.getPage("https://api.imageshack.com/v2/images/" + this.fid + "?next_prev_limit=0&related_images_limit=0");
+            this.br.getPage("https://api.imageshack.com/v2/images/" + this.fid + "?next_prev_limit=0&related_images_limit=0&password=" + Encoding.urlEncode(passCode));
+
+            if (this.br.getHttpConnection().getResponseCode() == 401) {
+                /*
+                 * TThis case is nearly impossible as only albums can be password protected --> Correct password should already be available
+                 * through decrypter but okay I guess users could also open such folders via browser, then add links to JDownloader - plus
+                 * passwords could be changed too.
+                 */
+                passwordprotected = true;
+                link.getLinkStatus().setStatusText("Link is password protected");
+                return AvailableStatus.TRUE;
+            }
 
             if (this.br.getHttpConnection().getResponseCode() != 200) {
                 /* Typically response 500 for offline */
@@ -91,7 +114,6 @@ public class ImagesHackCom extends PluginForHost {
             return status;
         } else {
             /* Image - handling via website. */
-            prepBR_API(this.br);
             this.fid = getFIDFRomURL_image(link);
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
@@ -131,9 +153,16 @@ public class ImagesHackCom extends PluginForHost {
         }
         final String id = api_json_get_id(json);
         final long filesize = DummyScriptEnginePlugin.toLong(json.get("filesize"), -1);
-        final String username = (String) DummyScriptEnginePlugin.walkJson(json, "owner/username");
-        final String album = (String) DummyScriptEnginePlugin.walkJson(json, "album/title");
-        final boolean isDeleted = ((Boolean) json.get("hidden")).booleanValue();
+        final String username = api_json_get_username(json);
+        final String album = api_json_get_album(json);
+        final Object isDeleted_o = json.get("hidden");
+        final boolean isDeleted;
+        if (isDeleted_o != null) {
+            isDeleted = ((Boolean) json.get("hidden")).booleanValue();
+        } else {
+            isDeleted = false;
+        }
+
         /*
          * Do NOT use 'original_filename' as it can happen that file got converted on the imageshack servers so we'd have a wrong file
          * extension!
@@ -143,10 +172,16 @@ public class ImagesHackCom extends PluginForHost {
             dl.setAvailable(false);
             return AvailableStatus.FALSE;
         }
-        if (!inValidate(album)) {
+        if (!inValidate(album) && !inValidate(username)) {
             filename = username + " - " + album + "_" + filename;
         } else {
-            filename = username + "_" + filename;
+            if (!inValidate(username)) {
+                /* E.g. username is hidden for private images but images are downloadable/viewable. */
+                filename = username + "_" + filename;
+            } else if (!inValidate(album)) {
+                /* An image does not necessarily have to be part of an album. */
+                filename = album + "_" + filename;
+            }
         }
         filename = encodeUnicode(filename);
         dl.setFinalFileName(filename);
@@ -158,8 +193,16 @@ public class ImagesHackCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static String api_json_get_album(final LinkedHashMap<String, Object> json) {
+        return (String) DummyScriptEnginePlugin.walkJson(json, "album/title");
+    }
+
     public static String api_json_get_id(final LinkedHashMap<String, Object> json) {
         return (String) json.get("id");
+    }
+
+    public static String api_json_get_username(final LinkedHashMap<String, Object> json) {
+        return (String) DummyScriptEnginePlugin.walkJson(json, "owner/username");
     }
 
     /**
@@ -178,26 +221,37 @@ public class ImagesHackCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
 
-        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE) && !br.containsHTML("class=\"download-block\"")) {
-            br.setFollowRedirects(true);
-            br.getPage(downloadLink.getDownloadURL());
-            DLLINK = br.getRegex("/rss\\+xml\" href=\"(.*?)\\.comments\\.xml\"").getMatch(0);
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        if (passwordprotected) {
+            // passCode = Plugin.getUserInput("Password?", downloadLink);
+            // /* Simply do the availablecheck again - it will use the password. */
+            // requestFileInformation(downloadLink);
+            // if (this.br.getHttpConnection().getResponseCode() == 401) {
+            // downloadLink.setProperty("pass", Property.NULL);
+            // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            // }
+            /* Very very very rare case - but until now there is no way to set passwords for single images! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This picture is password protected", 3 * 60 * 60 * 1000l);
         }
-
         // More is possible but 1 chunk is good to prevent errors
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 401) {
+                /* Should never happen */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 500) {
+                /* Should never happen */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("pass", this.passCode);
         dl.startDownload();
     }
 
@@ -207,6 +261,9 @@ public class ImagesHackCom extends PluginForHost {
     }
 
     public static Browser prepBR_API(final Browser br) {
+        /* Password required */
+        br.setAllowedResponseCodes(401);
+        /* Offline content */
         br.setAllowedResponseCodes(500);
         return br;
     }

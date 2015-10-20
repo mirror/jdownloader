@@ -119,7 +119,7 @@ public class BytewhaleCom extends PluginForHost {
     // mods: heavily modified do NOT upgrade!
     // limit-info:
     // protocol: no https
-    // captchatype: null
+    // captchatype: reCaptcha
     // other: reCaptcha + waittime NOT skippable!
 
     @SuppressWarnings("deprecation")
@@ -281,6 +281,9 @@ public class BytewhaleCom extends PluginForHost {
         }
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "<div id=\"fnsd(?:2|\\d+)\">([^<>\"]*?)<span>").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, ">Download File:</h2>[\t\n\r ]+<span style=\"[^<>\"]+\">([^<>\"]*?) \\[\\d+(?:\\.\\d+)? ?(?:KB|MB|GB)\\]</span>").getMatch(0);
         }
         if (fileInfo[0] == null) {
             /* For premiumonly files */
