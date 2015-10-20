@@ -56,10 +56,10 @@ public class AppleTrailer extends PluginForDecrypt {
     private static boolean                loaded         = false;
     private String                        parameter      = null;
     private String                        title          = null;
-    private final ArrayList<DownloadLink> decryptedLinks = null;
+    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();;
     private final ArrayList<DownloadLink> SD             = new ArrayList<DownloadLink>();
     private final ArrayList<DownloadLink> HD             = new ArrayList<DownloadLink>();
-    private final HashSet<String>         dupe           = null;
+    private final HashSet<String>         dupe           = new HashSet<String>();
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
