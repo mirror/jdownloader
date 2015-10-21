@@ -18,8 +18,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,7 +35,7 @@ import jd.plugins.FilePackage;
  *
  *
  * @author raztoki
- * */
+ */
 @DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.com" }, urls = { "https?://(?:www\\.)?kissanime\\.com/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+" }, flags = { 0 })
 public class KisAmeCm extends antiDDoSForDecrypt {
 
@@ -62,7 +65,13 @@ public class KisAmeCm extends antiDDoSForDecrypt {
             final String[][] quals = new Regex(qualityselection, "<option [^>]*value\\s*=\\s*('|\"|)(.*?)\\1[^>]*>(\\d+p)").getMatches();
             if (quals != null) {
                 for (final String qual[] : quals) {
-                    final String decode = Encoding.Base64Decode(qual[1]);
+                    String decode = Encoding.Base64Decode(qual[1]);
+                    if (StringUtils.contains(decode, "blogspot.com/")) {
+                        // this is redirect bullshit
+                        final Browser test = new Browser();
+                        test.getPage(decode);
+                        decode = test.getRedirectLocation();
+                    }
                     DownloadLink dl = createDownloadlink(decode);
                     dl.setFinalFileName(title + "-" + qual[2] + ".mp4");
                     dl.setAvailableStatus(AvailableStatus.TRUE);
