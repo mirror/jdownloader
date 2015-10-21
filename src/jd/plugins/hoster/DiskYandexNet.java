@@ -71,11 +71,11 @@ public class DiskYandexNet extends PluginForHost {
 
     /* Some constants which they used in browser */
     public static final String    CLIENT_ID                          = "6214e1ac6b579eb984b716151bcb5143";
-    public static String          VERSION                            = "2.19.2";
+    public static String          VERSION                            = "2.22.1";
     private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Different languages == different 'downloads' directory names */
-    private static final String[] downloaddirs                       = { "%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8", "Downloads" };
+    private static final String[] downloaddirs                       = { "Downloads", "%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8" };
 
     /* Connection limits */
     private final boolean         FREE_RESUME                        = true;
@@ -177,6 +177,13 @@ public class DiskYandexNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 link.setProperty("premiumonly", false);
+                if (isZippedFolder(link)) {
+                    /*
+                     * We cannot get filename/size from zipped root folders - we already set these information in the decrypter so now we
+                     * know it is online!
+                     */
+                    return AvailableStatus.TRUE;
+                }
                 return parseInformationAPIAvailablecheck(link, (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString()));
             } else {
                 br.getPage(getMainLink(link));
@@ -281,6 +288,15 @@ public class DiskYandexNet extends PluginForHost {
                  * */
                 /* Free API download. */
                 this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
+                if (this.br.containsHTML("DiskNotFoundError")) {
+                    /* Inside key 'error' */
+                    /*
+                     * Usually this would mean that the file is offline but we checked it before so it has probably simply reached the
+                     * traffic limit.
+                     */
+                    downloadLink.setProperty("premiumonly", true);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
                 dllink = (String) entries.get("href");
                 if (dllink == null) {
@@ -306,7 +322,7 @@ public class DiskYandexNet extends PluginForHost {
                     }
                     br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
                 }
-                handleFreeErrors();
+                handleErrorsFree();
                 dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -336,6 +352,7 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void handleDownloadVideo(final DownloadLink downloadLink) throws Exception {
         final String linkpart = new Regex(downloadLink.getDownloadURL(), "/iframe/(.+)").getMatch(0);
         final String width = br.getRegex("width\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
@@ -374,7 +391,7 @@ public class DiskYandexNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleFreeErrors() throws PluginException {
+    private void handleErrorsFree() throws PluginException {
         if (br.containsHTML("\"title\":\"invalid ckey\"")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid ckey'", 5 * 60 * 1000l);
         } else if (br.containsHTML("\"code\":21")) {
@@ -508,7 +525,6 @@ public class DiskYandexNet extends PluginForHost {
         String dllink = checkDirectLink(link, "directlink_account");
 
         if (dllink == null) {
-            br.getPage(getMainLink(link));
             final String hash = getHash(link);
             /* This should never happen */
             if (ACCOUNT_SK == null) {
@@ -536,7 +552,7 @@ public class DiskYandexNet extends PluginForHost {
                         }
                     }
                     if (dllink == null) {
-                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + hash + "&async.0=0&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + ACCOUNT_SK);
+                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&async.0=0&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + ACCOUNT_SK);
                         /* TODO: Maybe add/find a way to verify if the file really has been moved to the account. */
                         if (br.containsHTML("\"code\":85")) {
                             logger.info("No free space available, failed to move file to account");
@@ -581,8 +597,8 @@ public class DiskYandexNet extends PluginForHost {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                 br.getPage(getMainLink(link));
                 br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
-                handleFreeErrors();
-                dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+                handleErrorsFree();
+                dllink = siteGetDllink(link);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -590,13 +606,19 @@ public class DiskYandexNet extends PluginForHost {
         }
 
         boolean resume = ACCOUNT_FREE_RESUME;
+        int maxchunks = ACCOUNT_FREE_MAXCHUNKS;
         if (link.getBooleanProperty(DiskYandexNet.NORESUME, false)) {
             logger.info("Resume is disabled for this try");
             resume = false;
             link.setProperty(DiskYandexNet.NORESUME, Boolean.valueOf(false));
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, ACCOUNT_FREE_MAXCHUNKS);
+        if (isZippedFolder(link)) {
+            resume = false;
+            maxchunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             handleServerErrors(link);
             logger.warning("The final dllink seems not to be a file!");
@@ -611,6 +633,7 @@ public class DiskYandexNet extends PluginForHost {
         return dl.getBooleanProperty("premiumonly", false);
     }
 
+    @SuppressWarnings("deprecation")
     private void handleServerErrors(final DownloadLink link) throws PluginException {
         if (dl.getConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
@@ -625,14 +648,14 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String getLinkFromFileInAccount(final DownloadLink dl, final Browser br2) {
-        final String urlencodedfname = Encoding.urlTotalEncode(dl.getName());
+        final String filepath = siteGetInternalFilePath(dl);
         String dllink = null;
         for (final String downloaddir : downloaddirs) {
             try {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Referer", "https://disk.yandex.com/client/disk/Downloads");
-                postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + urlencodedfname + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
+                postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
                 /* 28 = file not found, 70 = folder not found */
                 if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
                     logger.info("getLinkFromFileInAccount: Moved file was not found in directory: " + downloaddir);
@@ -640,7 +663,7 @@ public class DiskYandexNet extends PluginForHost {
                 }
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+                    dllink = siteGetDllink(dl);
                 }
                 br.setFollowRedirects(true);
                 /* Fix links - cookies sit on the other domain */
@@ -658,9 +681,10 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void moveFileToTrash(final DownloadLink dl) {
+        final String filepath = siteGetInternalFilePath(dl);
         for (final String downloaddir : downloaddirs) {
             try {
-                postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2F" + downloaddir + "%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
+                postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
                 /* 28 = file not found, 70 = folder not found */
                 if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
                     logger.info("moveFileToTrash: ");
@@ -673,6 +697,30 @@ public class DiskYandexNet extends PluginForHost {
                 break;
             }
         }
+    }
+
+    private String siteGetDllink(final DownloadLink dl) {
+        final String dllink;
+        if (isZippedFolder(dl)) {
+            dllink = br.getRegex("\"folder\":\"(http[^<>\"]*?)\"").getMatch(0);
+        } else {
+            dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        return dllink;
+    }
+
+    /* Returns URL-encoded internal path for download/move/file POST-requests */
+    private String siteGetInternalFilePath(final DownloadLink dl) {
+        final String plain_filename = dl.getStringProperty("plain_filename", null);
+        String filepath = null;
+        if (isZippedFolder(dl)) {
+            /* Rare case */
+            filepath = plain_filename.substring(0, plain_filename.lastIndexOf("."));
+            filepath = Encoding.urlEncode(filepath);
+        } else {
+            filepath = Encoding.urlEncode(plain_filename);
+        }
+        return filepath;
     }
 
     private void emptyTrash() {
@@ -760,7 +808,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Folders: Download .zip file of all files in the folder?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Folders: Download .zip file of all files in the folder [works only for root folders]?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);

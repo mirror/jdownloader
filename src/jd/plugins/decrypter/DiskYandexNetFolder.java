@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -33,7 +32,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=.+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" }, flags = { 0, 0 })
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -132,7 +130,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
-                break;
+                return decryptedLinks;
             }
             this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + Encoding.urlEncode(path_main));
             if (this.getJson("error") != null) {
@@ -147,12 +145,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             final String type_main = (String) entries.get("type");
 
             if (!type_main.equals(JSON_TYPE_DIR)) {
-                /* We only have a single URL */
+                /* We only have a single file --> Add to downloadliste / host plugin */
                 final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                 if (jd.plugins.hoster.DiskYandexNet.apiAvailablecheckIsOffline(this.br)) {
                     dl.setAvailable(false);
                     dl.setProperty("offline", true);
-                    dl.setFinalFileName("");
+                    dl.setFinalFileName(mainhashID);
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
@@ -168,7 +166,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 /* Set total number of entries on first loop. */
                 numberof_entries = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "_embedded/total"), 0);
                 fpName = (String) entries.get("name");
-                if (fpName == null || fpName.equals("")) {
+                if (inValidate(fpName)) {
+                    /* Maybe our folder has no name. */
                     fpName = mainhashID;
                 }
                 fp.setName(fpName);
@@ -180,7 +179,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             for (final Object list_object : resource_data_list) {
                 entries = (LinkedHashMap<String, Object>) list_object;
 
-                // final boolean hasPreview = entries.get("preview") != null;
                 final String type = (String) entries.get("type");
                 final String hash = (String) entries.get("public_key");
                 final String path = (String) entries.get("path");
@@ -202,16 +200,23 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     decryptSingleFile(dl, entries);
                     final String url_content;
                     if (url_preview != null) {
+                        /*
+                         * Given preview URLs are bullshit as trhey only e.g. link to a thumbnail of a .pdf file - but we know how to build
+                         * good "open in browser" content URLs ...
+                         */
                         url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
                     } else {
-                        /* TODO: Fix this or set the main hash via URL in this case! */
-                        url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash) + "%3A" + Encoding.urlEncode(path);
+                        /*
+                         * We do not have any URL - set main URL.
+                         */
+                        url_content = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash);
                     }
 
                     dl.setProperty("hash_main", hash);
                     dl.setProperty("mainlink", url_content);
 
                     if (md5 != null) {
+                        /* md5 hash is usually given */
                         dl.setMD5Hash(md5);
                     }
                     dl.setContentUrl(url_content);
@@ -230,42 +235,25 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
 
         } while (offset < numberof_entries);
-        /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip with a wrong filename */
-        final boolean is_root_plus_zip = (!mainhashID.contains("/") && decryptedLinks.size() > 0);
-        /* If we did not find any other links it's probably a single file. */
-        final boolean is_single = (decryptedLinks.size() == 0);
-        /* Empty folder --> Offline */
-        if (is_single && numberof_entries == 0) {
-            main.setAvailable(false);
-            main.setProperty("offline", true);
-            decryptedLinks.add(main);
-            return decryptedLinks;
-        } else if (is_single) {
-            main.setFinalFileName(mainhashID);
-            main.setProperty("plain_filename", mainhashID);
-            String filesize = br.getRegex(">Size: ([^<>\"]*?)<br/").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex(">Size:</span>([^<>\"]*?)</div>").getMatch(0);
-            }
-            if (filesize != null) {
-                filesize = fixFilesize(filesize);
-                main.setDownloadSize(filesize_total);
-                main.setProperty("plain_size", filesize);
-            }
-            main.setAvailable(true);
-            decryptedLinks.add(main);
-        } else if (is_root_plus_zip && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty(DOWNLOAD_ZIP, false)) {
-            main.setFinalFileName(mainhashID + ".zip");
-            main.setProperty("plain_filename", mainhashID + ".zip");
-            main.setProperty("path", "/");
+        if (decryptedLinks.size() == 0) {
+            /* Should never happen! */
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+
+        /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip anyways which makes no sense. */
+        final boolean is_root_folder = path_main.equals("/");
+        if (is_root_folder && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty(DOWNLOAD_ZIP, false)) {
+            /* User wants a .zip file of the complete (sub) folder --> Do that */
+            main.setFinalFileName(fpName + ".zip");
+            main.setProperty("plain_filename", fpName + ".zip");
+            main.setProperty("path", path_main);
             main.setProperty("is_zipped_folder", true);
+            main.setContentUrl(parameter);
+            main.setLinkID(mainhashID + path_main);
             main.setDownloadSize(filesize_total);
             main.setAvailable(true);
             decryptedLinks.add(main);
-        }
-        if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
         }
 
         return decryptedLinks;
@@ -276,61 +264,20 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         dl.setAvailableStatus(status);
     }
 
-    private static String fixHash(final String input) {
-        /* First fully decode it */
-        String hash = input;
-        if (hash.contains("+") || hash.contains(" ")) {
-            hash = Encoding.htmlDecode(hash);
-            hash = hash.replace("+", "%2B");
-            hash = hash.replace("=", "%3D");
-            hash = hash.replace(" ", "-");
-            hash = hash.replace("/", "%2F");
-        } else {
-            // hash = hash.replace("%20", "+");
-            // hash = hash.replace("%2F", "_");
-            // hash = hash.replace("/", "_");
-        }
-        return hash;
-    }
-
-    /* For multiple files in folders */
-    private static String fixHashFileFolder(final String input) {
-        /* First fully decode it */
-        String hash = input;
-        hash = hash.replace("=", "%3D");
-        hash = hash.replace(":", "%3A");
-        hash = hash.replace("/", "%2F");
-        hash = hash.replace(" ", "+");
-        return hash;
-    }
-
-    private String fixFilesize(String filesize) {
-        filesize = filesize.replace("Г", "G");
-        filesize = filesize.replace("М", "M");
-        filesize = filesize.replaceAll("(к|К)", "k");
-        filesize = filesize.replaceAll("(Б|б)", "");
-        filesize = filesize + "b";
-        return filesize;
-    }
-
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
-        }
-        return jd.plugins.hoster.Youtube.unescape(s);
-    }
-
     /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+     */
+    private boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**

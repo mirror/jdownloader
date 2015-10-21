@@ -39,15 +39,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://(www\\.)?fernsehkritik\\.tv/folge\\-\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv" }, urls = { "http://(?:www\\.)?fernsehkritik\\.tv/folge\\-\\d+" }, flags = { 0 })
 public class FernsehkritikTvA extends PluginForDecrypt {
 
-    private static final String DL_AS_MOV          = "DL_AS_MOV";
-    private static final String DL_AS_MP4          = "DL_AS_MP4";
-    private static final String DL_AS_FLV          = "DL_AS_FLV";
-    private boolean             MOV                = true;
-    private boolean             MP4                = true;
-    private boolean             FLV                = true;
     private static final String GRAB_POSTECKE      = "GRAB_POSTECKE";
     private static final String CUSTOM_DATE        = "CUSTOM_DATE";
     private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME";
@@ -81,11 +75,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         br.getPage(parameter);
 
         if (br.containsHTML(jd.plugins.hoster.FernsehkritikTv.HTML_MASSENGESCHMACK_OFFLINE)) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
@@ -118,7 +108,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             }
         }
 
-        final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("fernsehkritik.tv");
+        final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("massengeschmack.tv");
         Account account = null;
         if (accounts != null && accounts.size() != 0) {
             Iterator<Account> it = accounts.iterator();
@@ -131,27 +121,11 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             }
         }
         if (account != null) {
-            MOV = CFG.getBooleanProperty(DL_AS_MOV, true);
-            MP4 = CFG.getBooleanProperty(DL_AS_MP4, true);
-            FLV = CFG.getBooleanProperty(DL_AS_FLV, true);
-            if (MOV) {
-                final DownloadLink dlLink = createDownloadlink("http://couch.fernsehkritik.tv/dl/fernsehkritik" + EPISODENUMBER + ".mov");
-                decryptedLinks.add(dlLink);
-            }
-            if (MP4) {
-                final DownloadLink dlLink = createDownloadlink("http://couch.fernsehkritik.tv/dl/fernsehkritik" + EPISODENUMBER + ".mp4");
-                decryptedLinks.add(dlLink);
-            }
-            if (FLV) {
-                final DownloadLink dlLink = createDownloadlink("http://couch.fernsehkritik.tv/userbereich/archive#stream:" + EPISODENUMBER);
-                decryptedLinks.add(dlLink);
-            }
-            if (!MOV && !MP4 && !FLV) {
-                ArrayList<DownloadLink> dllinks = getFktvParts(parameter, EPISODENUMBER);
-                decryptedLinks.addAll(dllinks);
-            }
+            /* Account available? Add URL as premium! */
+            final DownloadLink dl = this.createDownloadlink("http://massengeschmack.tv/play/1/fktv" + EPISODENUMBER);
+            decryptedLinks.add(dl);
         } else {
-            ArrayList<DownloadLink> dllinks = getFktvParts(parameter, EPISODENUMBER);
+            final ArrayList<DownloadLink> dllinks = getFktvParts(parameter, EPISODENUMBER);
             decryptedLinks.addAll(dllinks);
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
@@ -193,12 +167,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         }
         decryptedLinks.add(dlLink);
         return decryptedLinks;
-    }
-
-    private String fileExtension(final String arg) {
-        String ext = arg.substring(arg.lastIndexOf("."));
-        ext = ext == null ? ".flv" : ext;
-        return ext;
     }
 
     private final static String defaultCustomPackagename = "Fernsehkritik.tv Folge *episodenumber* vom *date*";

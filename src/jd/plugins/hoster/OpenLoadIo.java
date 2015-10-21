@@ -512,6 +512,8 @@ public class OpenLoadIo extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case 405:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case 509:
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API error 509 'bandwidth usage too high (peak hours). out of capacity for non-browser downloads.'", 10 * 60 * 1000l);
         default:
             throw new PluginException(LinkStatus.ERROR_FATAL, "API error " + status);
 
