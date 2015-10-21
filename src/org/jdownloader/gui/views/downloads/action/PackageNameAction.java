@@ -8,6 +8,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 
 public class PackageNameAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
@@ -21,14 +22,14 @@ public class PackageNameAction extends CustomizableTableContextAppAction<FilePac
     }
 
     public void actionPerformed(ActionEvent e) {
-        String name = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_editpackagename_message(), getSelection().getFirstPackage().getName());
-        if (name == null) {
-            return;
+        final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
+        final String name = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_editpackagename_message(), selection.getFirstPackage().getName());
+        if (name != null) {
+            for (final PackageView<FilePackage, DownloadLink> packagee : selection.getPackageViews()) {
+                packagee.getPackage().setName(name);
+            }
         }
 
-        for (PackageView<FilePackage, DownloadLink> packagee : getSelection().getPackageViews()) {
-            packagee.getPackage().setName(name);
-        }
     }
 
 }

@@ -19,6 +19,7 @@ package jd.plugins;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectInputStream.GetField;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -136,20 +137,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
     private long                                        downloadMax                         = -1;
 
-    @Deprecated
-    private String                                      browserurl                          = null;
-
     private FilePackage                                 filePackage;
 
     /** Hoster des Downloads */
     private String                                      host;
 
     private boolean                                     isEnabled;
-
-    @Deprecated
-    private LinkStatus                                  linkStatus;
-    @Deprecated
-    private int                                         linkType                            = 0;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
@@ -305,18 +298,89 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* deserialize object and then fill other stuff(transient..) */
-        stream.defaultReadObject();
+        final GetField fields = stream.readFields();
         setView(new DefaultDownloadLinkViewImpl());
         history = null;
         extractionStatus = null;
         linkInfo = null;
         availableStatus = AvailableStatus.UNCHECKED;
-        if (linkType == 0) {
+        try {
+            final int linkType = fields.get("linkType", 0);
+            if (linkType == 0) {
+                urlProtection = UrlProtection.UNSET;
+            } else {
+                urlProtection = UrlProtection.PROTECTED_CONTAINER;
+            }
+        } catch (final Throwable e) {
             urlProtection = UrlProtection.UNSET;
-        } else {
-            urlProtection = UrlProtection.PROTECTED_CONTAINER;
+            e.printStackTrace();
         }
         try {
+            final String sourcePluginComment = (String) fields.get("sourcePluginComment", null);
+            if (sourcePluginComment != null) {
+                setComment(sourcePluginComment);
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            this.created = fields.get("created", -1l);
+        } catch (final Throwable e) {
+            this.created = System.currentTimeMillis();
+            e.printStackTrace();
+        }
+        try {
+            this.downloadCurrent = fields.get("downloadCurrent", 0l);
+        } catch (final Throwable e) {
+            this.downloadCurrent = 0;
+            e.printStackTrace();
+        }
+        try {
+            chunksProgress = (long[]) fields.get("chunksProgress", null);
+        } catch (final Throwable e) {
+            this.chunksProgress = null;
+            downloadCurrent = 0;
+            e.printStackTrace();
+        }
+
+        try {
+            this.downloadMax = fields.get("downloadMax", -1l);
+        } catch (final Throwable e) {
+            this.downloadMax = -1l;
+            e.printStackTrace();
+        }
+        try {
+            this.isEnabled = fields.get("isEnabled", true);
+        } catch (final Throwable e) {
+            this.isEnabled = true;
+            e.printStackTrace();
+        }
+        try {
+            this.urlDownload = (String) fields.get("urlDownload", null);
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            final String name = (String) fields.get("name", null);
+            if (name != null) {
+                setName(name);
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            this.host = (String) fields.get("host", null);
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            this.finalFileName = (String) fields.get("finalFileName", null);
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            final LinkStatus linkStatus = (LinkStatus) fields.get("linkStatus", null);
             if (linkStatus != null) {
                 if (linkStatus.getStatus() == LinkStatus.FINISHED || linkStatus.hasStatus(LinkStatus.FINISHED)) {
                     setFinalLinkState(FinalLinkState.FINISHED);
@@ -328,7 +392,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
         } catch (final Throwable e) {
         }
-        linkStatus = null;
     }
 
     public UniqueAlltimeID getUniqueID() {

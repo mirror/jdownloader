@@ -12,6 +12,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 
@@ -21,7 +22,6 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
 
     @Override
     public void requestUpdate(Object requestor) {
-
         super.requestUpdate(requestor);
         if (hasSelection()) {
             if (DownloadWatchDog.getInstance().getSession().isStopMark(getSelection().getRawContext())) {
@@ -40,12 +40,13 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (getSelection().isLinkContext()) {
+        final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
+        if (selection.isLinkContext()) {
             JDGui.help(_GUI._.StopsignAction_actionPerformed_help_title_(), _GUI._.StopsignAction_actionPerformed_help_msg_(), NewTheme.I().getIcon("stopsign", 32));
         } else {
             JDGui.help(_GUI._.StopsignAction_actionPerformed_help_title_package_(), _GUI._.StopsignAction_actionPerformed_help_msg_package_(), NewTheme.I().getIcon("stopsign", 32));
         }
-        final AbstractNode context = getSelection().getRawContext();
+        final AbstractNode context = selection.getRawContext();
         DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
 
             @Override

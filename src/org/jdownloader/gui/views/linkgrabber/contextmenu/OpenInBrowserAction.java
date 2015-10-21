@@ -61,7 +61,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
         if (!isEnabled()) {
             return;
         }
-        SelectionInfo<CrawledPackage, CrawledLink> lselection = getSelection();
+        final SelectionInfo<CrawledPackage, CrawledLink> lselection = getSelection();
         if (lselection == null) {
             return;
         }

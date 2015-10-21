@@ -18,6 +18,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
@@ -30,7 +31,8 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
     @Override
     public void actionPerformed(ActionEvent e) {
         String def = null;
-        for (AbstractNode n : getSelection().getRawSelection()) {
+        final SelectionInfo<PackageType, ChildrenType> selection = getSelection();
+        for (AbstractNode n : selection.getRawSelection()) {
             if (n instanceof DownloadLink) {
                 def = ((DownloadLink) n).getComment();
             } else if (n instanceof CrawledLink) {
@@ -40,7 +42,9 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
             } else if (n instanceof CrawledPackage) {
                 def = ((CrawledPackage) n).getComment();
             }
-            if (!StringUtils.isEmpty(def)) break;
+            if (!StringUtils.isEmpty(def)) {
+                break;
+            }
         }
 
         try {
@@ -49,7 +53,7 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    for (AbstractNode n : getSelection().getRawSelection()) {
+                    for (AbstractNode n : selection.getRawSelection()) {
                         if (n instanceof DownloadLink) {
                             ((DownloadLink) n).setComment(comment);
                         } else if (n instanceof CrawledLink) {

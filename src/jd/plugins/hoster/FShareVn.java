@@ -60,7 +60,6 @@ public class FShareVn extends PluginForHost {
     private final String         IPBLOCKED                    = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
     private static Object        LOCK                         = new Object();
     private String               dllink                       = null;
-    private String               uid                          = null;
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
@@ -81,10 +80,16 @@ public class FShareVn extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("mega.1280.com", "fshare.vn"));
-        uid = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-        if (uid != null) {
-            link.setLinkID(this.getHost() + "://" + uid);
+        if (link.getSetLinkID() == null) {
+            final String uid = getUID(link);
+            if (uid != null) {
+                link.setLinkID(this.getHost() + "://" + uid);
+            }
         }
+    }
+
+    private String getUID(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -310,6 +315,7 @@ public class FShareVn extends PluginForHost {
             // we get page again, because we do not take directlink from requestfileinfo.
             br.getPage(link.getDownloadURL());
             dllink = br.getRedirectLocation();
+            final String uid = getUID(link);
             if (dllink != null && dllink.endsWith("/file/" + uid)) {
                 br.getPage(dllink);
                 if (br.containsHTML("Your account is being used from another device")) {

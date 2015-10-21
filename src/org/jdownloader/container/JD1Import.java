@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.crypto.Cipher;
@@ -88,7 +89,9 @@ public class JD1Import extends PluginsC {
                             }
                         };
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
-                        DownloadController.getInstance().addAll(packages);
+                        final LinkedList<FilePackage> fps = new LinkedList<FilePackage>(packages);
+                        DownloadController.getInstance().preProcessFilePackages(fps, true);
+                        DownloadController.getInstance().addAll(fps);
                         cs.setStatus(ContainerStatus.STATUS_FINISHED);
                         return cs;
                     } catch (DialogNoAnswerException e) {

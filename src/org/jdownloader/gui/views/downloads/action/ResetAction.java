@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
+import java.util.List;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -19,6 +20,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class ResetAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -35,12 +37,14 @@ public class ResetAction extends CustomizableTableContextAppAction<FilePackage, 
         if (!isEnabled()) {
             return;
         }
+        final SelectionInfo<FilePackage, DownloadLink> rawSelection = getSelection();
+        final List<DownloadLink> selection = rawSelection.getChildren();
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
                 final DownloadLinkAggregator agg = new DownloadLinkAggregator();
                 agg.setLocalFileUsageEnabled(true);
-                agg.update(getSelection().getChildren());
+                agg.update(selection);
                 final String question = _GUI._.gui_downloadlist_reset2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), agg.getLocalFileCount());
                 new EDTHelper<Void>() {
 
@@ -54,7 +58,7 @@ public class ResetAction extends CustomizableTableContextAppAction<FilePackage, 
                         };
                         try {
                             Dialog.getInstance().showDialog(confirmDialog);
-                            DownloadWatchDog.getInstance().reset(getSelection().getChildren());
+                            DownloadWatchDog.getInstance().reset(selection);
                         } catch (DialogClosedException e) {
                             e.printStackTrace();
                         } catch (DialogCanceledException e) {
