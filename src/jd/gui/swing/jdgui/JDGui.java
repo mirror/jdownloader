@@ -1744,7 +1744,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     protected void updateTitle() {
-        String title = "JDownloader 2 BETA";
+        String title = "JDownloader 2";
         title = generateTitle(title);
         getMainFrame().setTitle(title);
     }
