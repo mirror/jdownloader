@@ -99,6 +99,10 @@ public class ImagesHackCom extends PluginForDecrypt {
                     final String key = c.getKey();
                     final String value = c.getValue();
                     pwcookie = key + ":" + value;
+                    /*
+                     * Break because we only have one cookie for the valid password. Okay this might sound a bit glitchy but usually we'll
+                     * nearly never run into any password protected case for this image host.
+                     */
                     break;
                 }
             }
