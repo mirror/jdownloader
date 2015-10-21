@@ -2117,6 +2117,26 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
+    public void abort(final List<DownloadLink> abortLinks) {
+        enqueueJob(new DownloadWatchDogJob() {
+
+            @Override
+            public void execute(DownloadSession currentSession) {
+                for (final DownloadLink link : abortLinks) {
+                    final SingleDownloadController con = link.getDownloadLinkController();
+                    if (con != null) {
+                        con.abort();
+                    }
+                }
+                return;
+            }
+
+            @Override
+            public void interrupt() {
+            }
+        });
+    }
+
     /**
      * activates new Downloads as long as possible and returns how many got activated
      *
@@ -3121,34 +3141,34 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                                                          @Override
-                                                          public void delayedrun() {
-                                                              enqueueJob(new DownloadWatchDogJob() {
+                            @Override
+                            public void delayedrun() {
+                                enqueueJob(new DownloadWatchDogJob() {
 
-                                                                  @Override
-                                                                  public void interrupt() {
-                                                                  }
+                                    @Override
+                                    public void interrupt() {
+                                    }
 
-                                                                  @Override
-                                                                  public void execute(DownloadSession currentSession) {
-                                                                      /* reset CONNECTION_UNAVAILABLE */
-                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        /* reset CONNECTION_UNAVAILABLE */
+                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                                                          @Override
-                                                                          public int returnMaxResults() {
-                                                                              return 0;
-                                                                          }
+                                            @Override
+                                            public int returnMaxResults() {
+                                                return 0;
+                                            }
 
-                                                                          @Override
-                                                                          public boolean acceptNode(DownloadLink node) {
-                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                                                          }
-                                                                      });
-                                                                      unSkip(unSkip);
-                                                                  }
-                                                              });
-                                                          }
-                                                      };
+                                            @Override
+                                            public boolean acceptNode(DownloadLink node) {
+                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                            }
+                                        });
+                                        unSkip(unSkip);
+                                    }
+                                });
+                            }
+                        };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
