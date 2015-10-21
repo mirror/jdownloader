@@ -13,6 +13,7 @@ import java.util.Comparator;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import jd.controlling.linkcrawler.ArchiveInfo;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.parser.Regex;
 import jd.plugins.ContainerStatus;
@@ -48,11 +49,16 @@ public class NZB extends PluginsC {
             final SAXParser saxParser = factory.newSAXParser();
             saxParser.parse(new InputSource(fileInputStream), handler);
             final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(downloadLinks.size());
+            final ArchiveInfo archiveInfo;
+            if (StringUtils.isNotEmpty(nzbPassword)) {
+                archiveInfo = new ArchiveInfo();
+                archiveInfo.addExtractionPassword(nzbPassword);
+            } else {
+                archiveInfo = null;
+            }
             for (final DownloadLink downloadLink : downloadLinks) {
                 final CrawledLink crawledLink = new CrawledLink(downloadLink);
-                if (StringUtils.isNotEmpty(nzbPassword)) {
-                    crawledLink.getArchiveInfo().addExtractionPassword(nzbPassword);
-                }
+                crawledLink.setArchiveInfo(archiveInfo);
                 crawledLinks.add(crawledLink);
             }
             cls = crawledLinks;
@@ -82,15 +88,15 @@ public class NZB extends PluginsC {
         private boolean                             isyEnc            = false;
         private final Comparator<UsenetFileSegment> segmentComparator = new Comparator<UsenetFileSegment>() {
 
-                                                                          public int compare(int x, int y) {
-                                                                              return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                          }
+            public int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
 
-                                                                          @Override
-                                                                          public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
-                                                                              return compare(o1.getIndex(), o2.getIndex());
-                                                                          }
-                                                                      };
+            @Override
+            public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
+                return compare(o1.getIndex(), o2.getIndex());
+            }
+        };
 
         private NZBSAXHandler(ArrayList<DownloadLink> downloadLinks) {
             this.downloadLinks = downloadLinks;

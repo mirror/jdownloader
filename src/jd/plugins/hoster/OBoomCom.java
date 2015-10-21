@@ -19,6 +19,7 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -148,7 +149,7 @@ public class OBoomCom extends PluginForHost {
 
     private Map<String, String> loginAPI(Account account, boolean forceLogin) throws Exception {
         synchronized (ACCOUNTINFOS) {
-            boolean follow = br.isFollowingRedirects();
+            final boolean follow = br.isFollowingRedirects();
             try {
                 Map<String, String> infos = ACCOUNTINFOS.get(account);
                 if (infos == null || forceLogin) {
@@ -239,11 +240,24 @@ public class OBoomCom extends PluginForHost {
         return HexFormatter.byteArrayToHex(hash);
     }
 
+    private static Map<String, Map<String, String>> GUESTSESSION = new HashMap<String, Map<String, String>>();
+    private String                                  guestIP      = null;
+
+    private String getIP() {
+        try {
+            return new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
+        } catch (final Exception e) {
+            LogSource.exception(logger, e);
+        }
+        return null;
+    }
+
     private Map<String, String> getGuestSession(boolean forceNew, String forceNewIfSession, AtomicBoolean newSignal) throws Exception {
-        synchronized (ACCOUNTINFOS) {
-            boolean follow = br.isFollowingRedirects();
+        guestIP = getIP();
+        synchronized (GUESTSESSION) {
+            final boolean follow = br.isFollowingRedirects();
             try {
-                Map<String, String> infos = ACCOUNTINFOS.get(null);
+                Map<String, String> infos = GUESTSESSION.get(guestIP);
                 if (infos == null || forceNew || forceNewIfSession != null && forceNewIfSession.equals(infos.get("guestSession"))) {
                     br.setFollowRedirects(true);
                     br.getPage("https://www.oboom.com/1.0/guestsession?source=" + APPID);
@@ -259,14 +273,14 @@ public class OBoomCom extends PluginForHost {
                     if (newSignal != null) {
                         newSignal.set(true);
                     }
-                    ACCOUNTINFOS.put(null, infos);
+                    GUESTSESSION.put(guestIP, infos);
                 }
                 if (newSignal != null) {
                     newSignal.set(false);
                 }
                 return infos;
             } catch (final Exception e) {
-                ACCOUNTINFOS.remove(null);
+                GUESTSESSION.remove(guestIP);
                 throw e;
             } finally {
                 br.setFollowRedirects(follow);
@@ -515,10 +529,10 @@ public class OBoomCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-         * account != null &&
-         */
-                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+             * account != null &&
+             */
+        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }
@@ -527,9 +541,17 @@ public class OBoomCom extends PluginForHost {
         final boolean auth_problem = br.containsHTML("400,\"auth") || br.containsHTML("403,\"token") || br.containsHTML("404,\"token") || br.containsHTML("403,\"resume") || br.containsHTML("421,\"connections");
         if (auth_problem && freshInfos == false) {
             /* only retry on NON-fresh tokens */
-            synchronized (ACCOUNTINFOS) {
-                if (ACCOUNTINFOS.get(account) == usedInfos) {
-                    ACCOUNTINFOS.remove(account);
+            if (account != null) {
+                synchronized (ACCOUNTINFOS) {
+                    if (ACCOUNTINFOS.get(account) == usedInfos) {
+                        ACCOUNTINFOS.remove(account);
+                    }
+                }
+            } else {
+                synchronized (GUESTSESSION) {
+                    if (GUESTSESSION.get(guestIP) == usedInfos) {
+                        GUESTSESSION.remove(guestIP);
+                    }
                 }
             }
             throw new PluginException(LinkStatus.ERROR_RETRY);

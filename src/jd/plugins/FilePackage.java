@@ -18,6 +18,7 @@ package jd.plugins;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectInputStream.GetField;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -239,7 +240,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     private String                                                 name              = null;
-
     private long                                                   created           = -1l;
 
     private transient Boolean                                      isExpanded        = null;
@@ -267,9 +267,9 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return uniqueID;
     }
 
-    private volatile transient FilePackageView        fpInfo = null;
+    private volatile transient FilePackageView                  fpInfo = null;
 
-    private PackageControllerComparator<DownloadLink> sorter;
+    private transient PackageControllerComparator<DownloadLink> sorter;
 
     /*
      * (non-Javadoc)
@@ -329,11 +329,52 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
       */
      private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
          /* deserialize object and and set all transient variables */
-         stream.defaultReadObject();
+         final GetField fields = stream.readFields();
          try {
              isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
          } catch (final Throwable e) {
              isExpanded = false;
+         }
+         try {
+             final String comment = (String) fields.get("comment", null);
+             if (comment != null) {
+                 setComment(comment);
+             }
+         } catch (final Throwable e) {
+             e.printStackTrace();
+         }
+         try {
+             this.created = fields.get("created", -1l);
+         } catch (final Throwable e) {
+             this.created = System.currentTimeMillis();
+             e.printStackTrace();
+         }
+         try {
+             final String name = (String) fields.get("name", null);
+             if (name != null) {
+                 setName(name);
+             }
+         } catch (final Throwable e) {
+             e.printStackTrace();
+         }
+         try {
+             final String downloadDirectory = (String) fields.get("downloadDirectory", null);
+             if (downloadDirectory != null) {
+                 setDownloadDirectory(downloadDirectory);
+             }
+         } catch (final Throwable e) {
+             e.printStackTrace();
+         }
+         try {
+             final Object downloadLinkList = fields.get("downloadLinkList", null);
+             if (downloadLinkList != null && downloadLinkList instanceof List) {
+                 this.downloadLinkList = (ArrayList<DownloadLink>) downloadLinkList;
+                 for (DownloadLink downloadLink : this.downloadLinkList) {
+                     downloadLink.setParentNode(this);
+                 }
+             }
+         } catch (final Throwable e) {
+             e.printStackTrace();
          }
          uniqueID = null;
          lock = null;

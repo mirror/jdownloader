@@ -119,84 +119,86 @@ public class EzFileCh extends PluginForHost {
         downloadLink.setLinkID(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         if (useFilecheckAPI) {
             br.getPage("https://ezfile.ch/?m=api&a=check_file&fkey=" + downloadLink.getLinkID());
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final Object filesizeo = entries.get("fsize");
-            final String status = (String) entries.get("status");
-            final String message = (String) entries.get("message");
-            final String ftype = (String) entries.get("ftype");
-            filename = (String) entries.get("fname");
-            if (message != null && message.equals("private file")) {
-                /* We cannot get filename/size for this case but we know that the file is online. */
-                isPrivateFile = true;
-                downloadLink.getLinkStatus().setStatusText("This is a private file which can only be downloaded by its owner");
-                return AvailableStatus.TRUE;
-            } else if (!"ok".equals(status)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (filename == null || filesizeo == null || ftype == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            downloadLink.setFinalFileName(filename);
-            downloadLink.setDownloadSize(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(filesizeo, -1));
-            /* 0=normal, 2=directdownload */
-            if (ftype.equals("2")) {
-                dllink = downloadLink.getDownloadURL();
-            }
-        } else {
-            final boolean isfollowingRedirect = br.isFollowingRedirects();
-            // clear old browser
-            br = prepBrowser(new Browser());
-            // can be direct link!
-            URLConnectionAdapter con = null;
-            br.setFollowRedirects(true);
-            try {
-                con = br.openGetConnection(downloadLink.getDownloadURL());
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    if (con.getResponseCode() == 503) {
-                        // they are using cloudflare these days!
-                        // downloadLink.getLinkStatus().setStatusText(UNDERMAINTENANCEUSERTEXT);
-                        // UNDERMAINTENANCE.set(true);
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                    br.followConnection();
-                } else {
-                    downloadLink.setName(getFileNameFromHeader(con));
-                    try {
-                        // @since JD2
-                        downloadLink.setVerifiedFileSize(con.getLongContentLength());
-                    } catch (final Throwable t) {
-                        downloadLink.setDownloadSize(con.getLongContentLength());
-                    }
-                    // lets also set dllink
-                    dllink = br.getURL();
-                    // set constants so we can save link, no point wasting this link!
+            if (!br.containsHTML("HTTP 404 > no such module or action<")) {
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final Object filesizeo = entries.get("fsize");
+                final String status = (String) entries.get("status");
+                final String message = (String) entries.get("message");
+                final String ftype = (String) entries.get("ftype");
+                filename = (String) entries.get("fname");
+                if (message != null && message.equals("private file")) {
+                    /* We cannot get filename/size for this case but we know that the file is online. */
+                    isPrivateFile = true;
+                    downloadLink.getLinkStatus().setStatusText("This is a private file which can only be downloaded by its owner");
                     return AvailableStatus.TRUE;
+                } else if (!"ok".equals(status)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (filename == null || filesizeo == null || ftype == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } finally {
-                br.setFollowRedirects(isfollowingRedirect);
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                downloadLink.setFinalFileName(filename);
+                downloadLink.setDownloadSize(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(filesizeo, -1));
+                /* 0=normal, 2=directdownload */
+                if (ftype.equals("2")) {
+                    dllink = downloadLink.getDownloadURL();
                 }
-            }
-            if (br.containsHTML("The file at this URL was either removed or") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML(">This file is private")) {
-                /* We cannot get filename/size for this case but we know that the file is online. */
-                isPrivateFile = true;
-                downloadLink.getLinkStatus().setStatusText("This is a private file which can only be downloaded by its owner");
                 return AvailableStatus.TRUE;
             }
-            final Regex finfo = br.getRegex("class=\"fa fa-file[a-z0-9\\- ]+\"></i>\\&nbsp;([^<>\"]*?) \\[(\\d+(?:,\\d+)?(?:\\.\\d{1,2})? [A-Za-z]{1,5})\\]</span>");
-            filename = finfo.getMatch(0);
-            filesize = finfo.getMatch(1);
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            filename = Encoding.htmlDecode(filename).trim();
-            filesize = filesize.replace(",", "");
-            downloadLink.setName(filename);
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         }
+        final boolean isfollowingRedirect = br.isFollowingRedirects();
+        // clear old browser
+        br = prepBrowser(new Browser());
+        // can be direct link!
+        URLConnectionAdapter con = null;
+        br.setFollowRedirects(true);
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getResponseCode() == 503) {
+                    // they are using cloudflare these days!
+                    // downloadLink.getLinkStatus().setStatusText(UNDERMAINTENANCEUSERTEXT);
+                    // UNDERMAINTENANCE.set(true);
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                br.followConnection();
+            } else {
+                downloadLink.setName(getFileNameFromHeader(con));
+                try {
+                    // @since JD2
+                    downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                } catch (final Throwable t) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                }
+                // lets also set dllink
+                dllink = br.getURL();
+                // set constants so we can save link, no point wasting this link!
+                return AvailableStatus.TRUE;
+            }
+        } finally {
+            br.setFollowRedirects(isfollowingRedirect);
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        if (br.containsHTML("The file at this URL was either removed or") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">This file is private")) {
+            /* We cannot get filename/size for this case but we know that the file is online. */
+            isPrivateFile = true;
+            downloadLink.getLinkStatus().setStatusText("This is a private file which can only be downloaded by its owner");
+            return AvailableStatus.TRUE;
+        }
+        final Regex finfo = br.getRegex("class=\"fa fa-file[a-z0-9\\- ]+\"></i>\\&nbsp;([^<>\"]*?) \\[(\\d+(?:,\\d+)?(?:\\.\\d{1,2})? [A-Za-z]{1,5})\\]</span>");
+        filename = finfo.getMatch(0);
+        filesize = finfo.getMatch(1);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        filesize = filesize.replace(",", "");
+        downloadLink.setName(filename);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

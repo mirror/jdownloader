@@ -78,6 +78,9 @@ public class NewsTweaknewsEu extends UseNet {
             if (userName != null) {
                 account.setProperty(USENET_USERNAME, userName);
             } else {
+                if (br.containsHTML("ADD NEW SUBSRIPTION")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "No active/valid subscription", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String packageType = br.getRegex("name\">Package:(.*?)</div>").getMatch(0);

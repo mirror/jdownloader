@@ -14,6 +14,7 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
 public class ForceDownloadAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
@@ -44,9 +45,10 @@ public class ForceDownloadAction extends CustomizableTableContextAppAction<FileP
         if (!isEnabled()) {
             return;
         }
+        final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
         JDGui.help(_GUI._.ForceDownloadAction_actionPerformed_help_title_(), _GUI._.ForceDownloadAction_actionPerformed_help_msg_(), NewTheme.I().getIcon("robot_info", -1));
-        DownloadWatchDog.getInstance().resume(getSelection().getChildren());
-        DownloadWatchDog.getInstance().forceDownload(getSelection().getChildren());
+        DownloadWatchDog.getInstance().resume(selection.getChildren());
+        DownloadWatchDog.getInstance().forceDownload(selection.getChildren());
 
     }
 

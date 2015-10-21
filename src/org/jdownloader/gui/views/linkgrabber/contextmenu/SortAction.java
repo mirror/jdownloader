@@ -15,6 +15,7 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.DownloadsView;
@@ -25,7 +26,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
     /**
-     * 
+     *
      */
     private static final long       serialVersionUID = -3883739313644803093L;
     private ExtColumn<AbstractNode> column;
@@ -71,7 +72,8 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
             return;
         }
         if (column.getModel() instanceof PackageControllerTableModel) {
-            PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
+            final SelectionInfo<PackageType, ChildrenType> selection = getSelection();
+            final PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
             model.getController().getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
 
                 @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -81,7 +83,7 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                     if (column.getModel() instanceof PackageControllerTableModel) {
                         PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
                         PackageControllerComparator<AbstractNode> comparator = null;
-                        for (PackageView<PackageType, ChildrenType> node : getSelection().getPackageViews()) {
+                        for (PackageView<PackageType, ChildrenType> node : selection.getPackageViews()) {
 
                             if (comparator == null) {
                                 final PackageControllerComparator currentSorter = node.getPackage().getCurrentSorter();

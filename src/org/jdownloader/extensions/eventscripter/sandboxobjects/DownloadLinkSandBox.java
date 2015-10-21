@@ -61,6 +61,12 @@ public class DownloadLinkSandBox {
         return -1;
     }
 
+    public void abort() {
+        final List<DownloadLink> abort = new ArrayList<DownloadLink>();
+        abort.add(downloadLink);
+        DownloadWatchDog.getInstance().abort(abort);
+    }
+
     public Object getProperty(String key) {
         if (downloadLink == null) {
             return null;
