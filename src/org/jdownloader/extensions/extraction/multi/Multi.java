@@ -291,7 +291,22 @@ public class Multi extends IExtraction {
                     switch (CrossSystem.getARCHFamily()) {
                     case X86:
                         if (Application.is64BitJvm()) {
-                            return initLibrary("FreeBSD-amd64");
+                            final LinkedHashSet<String> libIDs = new LinkedHashSet<String>();
+                            final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
+                            if (StringUtils.isNotEmpty(lastWorkingLibID)) {
+                                libIDs.add(lastWorkingLibID);
+                                extractionExtension.getSettings().setLastWorkingLibID(null);
+                                extractionExtension.getSettings()._getStorageHandler().write();
+                            }
+                            libIDs.add("FreeBSD-amd64");
+                            libIDs.add("FreeBSD-amd64-2");
+                            for (final String libID : libIDs) {
+                                if (initLibrary(libID)) {
+                                    extractionExtension.getSettings().setLastWorkingLibID(libID);
+                                    return true;
+                                }
+                            }
+                            return false;
                         } else {
                             return initLibrary("FreeBSD-i386");
                         }

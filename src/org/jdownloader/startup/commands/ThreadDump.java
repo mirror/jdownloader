@@ -20,6 +20,7 @@ public class ThreadDump extends AbstractStartupCommand {
             }
             logger.severe(sb.toString());
         }
+        logger.flush();
     }
 
     @Override
