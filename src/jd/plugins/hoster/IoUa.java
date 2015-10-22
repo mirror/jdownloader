@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "io.ua" }, urls = { "https?://(?:www\\.)?io\\.ua/\\d+p" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "io.ua" }, urls = { "https?://(?:www\\.)?io\\.ua/\\d+" }, flags = { 0 })
 public class IoUa extends PluginForHost {
 
     public IoUa(PluginWrapper wrapper) {
@@ -63,64 +63,70 @@ public class IoUa extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final Regex urlregex = new Regex(downloadLink.getDownloadURL(), "(\\d+)p$");
-        String filename = null;
-        /* Better filenames even for offline urls */
-        downloadLink.setName(filename);
+        final String imageID = new Regex(downloadLink.getDownloadURL(), "/(\\d+)").getMatch(0);
         br.getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // DLLINK = br.getRegex("id=\\'mainfoto\\' src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'http://m\\.io\\.ua/img_aa/medium/([^<>\"]*?)\\'").getMatch(0);
+        if (br.containsHTML("'/" + imageID + "u'")) {
+            br.getPage("http://io.ua/" + imageID + "u");
         }
-        filename = this.br.getRegex("class=\\'shadow_big\\' alt=\\'([^<>\"\\']*?)\\'").getMatch(0);
+        String imageURL = br.getRegex("'(https?://\\w+\\.io\\.ua/img_aa/full/.*?)'").getMatch(0);
+        if (imageURL == null) {
+            imageURL = br.getRegex("'(https?://\\w+\\.io\\.ua/img_aa/large/.*?)'").getMatch(0);
+            if (imageURL == null) {
+                imageURL = br.getRegex("'(https?://\\w+\\.io\\.ua/img_aa/medium/.*?)'").getMatch(0);
+            }
+        }
+        String filename = this.br.getRegex("class=\\'shadow_big\\' alt=\\'([^<>\"\\']*?)\\'").getMatch(0);
         if (filename == null) {
-            filename = urlregex.getMatch(0);
+            filename = imageID;
+        } else {
+            filename = filename + "_" + imageID;
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || imageURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        /* Prefer fullsize */
-        DLLINK = "http://f.io.ua/img_aa/full/" + DLLINK;
-        DLLINK = DLLINK.replace(".jpg", "_f.jpg");
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+        DLLINK = imageURL;
+        if (downloadLink.getFinalFileName() == null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            /* Make sure that we get a correct extension */
+            if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+                ext = default_Extension;
+            }
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            downloadLink.setFinalFileName(filename);
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (downloadLink.getKnownDownloadSize() == -1) {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                try {
+                    con = br2.openHeadConnection(DLLINK);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -128,15 +134,11 @@ public class IoUa extends PluginForHost {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

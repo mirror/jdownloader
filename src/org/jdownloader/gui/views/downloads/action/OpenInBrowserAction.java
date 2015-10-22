@@ -60,11 +60,11 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
         }
         final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
         if (hasSelection(selection)) {
+            final List<DownloadLink> links = selection.getChildren();
             new Thread("OpenInBrowserAction") {
                 public void run() {
-                    final List<DownloadLink> links = selection.getChildren();
                     final HashSet<String> urls = LinkTreeUtils.getURLs(links, true);
-                    if (links.size() < 5) {
+                    if (urls.size() < 5) {
                         for (String url : urls) {
                             CrossSystem.openURLOrShowMessage(url);
                         }
@@ -81,8 +81,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
                             for (String url : urls) {
                                 CrossSystem.openURLOrShowMessage(url);
                                 current++;
-                                Thread.sleep(500);
-
+                                Thread.sleep(1000);
                             }
                         }
 
@@ -96,8 +95,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
                             if (total == 0) {
                                 return -1;
                             }
-                            int ret = (current * 100) / total;
-
+                            final int ret = (current * 100) / total;
                             return ret;
                         }
 

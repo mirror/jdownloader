@@ -17,6 +17,7 @@ import jd.http.SocketConnectionFactory;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.jdownloader.logging.LogController;
 
@@ -126,7 +127,7 @@ public class SimpleUseNet {
     }
 
     protected SSLSocketFactory getSSLSocketFactory() throws IOException {
-        return SocketConnection.getSSLSocketFactory(true);
+        return JavaSSLSocketStreamFactory.getSSLSocketFactory(true);
     }
 
     protected boolean useSNIWorkaround() {
