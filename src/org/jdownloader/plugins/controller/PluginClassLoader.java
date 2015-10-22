@@ -418,7 +418,7 @@ public class PluginClassLoader extends URLClassLoader {
     private static final HashMap<String, String>                                                          DYNAMIC_LOADABLE_LOBRARIES   = new HashMap<String, String>();
     static {
         synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
-            DYNAMIC_LOADABLE_LOBRARIES.put("org.bouncycastle", "bcprov-jdk15on-147.jar");
+            DYNAMIC_LOADABLE_LOBRARIES.put("org.bouncycastle", "bcprov-jdk15on.jar");
         }
     }
 

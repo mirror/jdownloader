@@ -87,6 +87,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.os.SecuritySoftwareException;
@@ -111,6 +112,7 @@ import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.net.BCTLSSocketStreamFactory;
 import org.jdownloader.osevents.OperatingSystemEventSender;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
@@ -755,6 +757,16 @@ public class SecondLevelLaunch {
         final Thread thread = new Thread() {
             @Override
             public void run() {
+                try {
+                    if (Application.getJavaVersion() < Application.JAVA17) {
+                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
+                        SecondLevelLaunch.LOG.info("Use BouncyCastle for default SSLSocketStreamFactory!");
+                    } else {
+                        SecondLevelLaunch.LOG.info("Use JSSE for default SSLSocketStreamFactory!");
+                    }
+                } catch (final Throwable e) {
+                    SecondLevelLaunch.LOG.log(e);
+                }
                 try {
                     CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
 

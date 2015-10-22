@@ -69,7 +69,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
         new Thread("OpenInBrowserAction") {
             public void run() {
                 final HashSet<String> urls = LinkTreeUtils.getURLs(links, true);
-                if (links.size() < 5) {
+                if (urls.size() < 5) {
                     for (String url : urls) {
                         CrossSystem.openURLOrShowMessage(url);
                     }
@@ -86,8 +86,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
                         for (String url : urls) {
                             CrossSystem.openURLOrShowMessage(url);
                             current++;
-                            Thread.sleep(500);
-
+                            Thread.sleep(1000);
                         }
                     }
 
@@ -101,8 +100,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
                         if (total == 0) {
                             return -1;
                         }
-                        int ret = (current * 100) / total;
-
+                        final int ret = (current * 100) / total;
                         return ret;
                     }
 

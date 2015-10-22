@@ -59,7 +59,6 @@
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-core.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-mapper.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/miglayout.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on-147.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingLinux.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/MyJDownloaderClient"/>
@@ -105,5 +104,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/antlr-runtime.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaPlain.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
