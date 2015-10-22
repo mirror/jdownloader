@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -32,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drss.tv" }, urls = { "http://(www\\.)?drssdecrypted\\.tv/sendung/\\d{2}\\-\\d{2}\\-\\d{4}/" }, flags = { 2 })
 public class DrssTv extends PluginForHost {
@@ -67,7 +72,8 @@ public class DrssTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        String filename = null;
+        final String date_formatted;
+        String filename;
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -83,17 +89,22 @@ public class DrssTv extends PluginForHost {
             date = new Regex(link.getDownloadURL(), "sendung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0).replace("-", ".");
         }
         filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (inValidate(filename)) {
+            filename = this.br.getRegex("class=\"text\\-cutted\">Komplette Sendung</h4>[\t\n\r ]+<p class=\"descr\">([^<>]*?)</p>").getMatch(0);
+        }
         if (link.getBooleanProperty("special_vimeo", false)) {
+            /* Sometimes we got special vimeo 1080p URLs! */
             DLLINK = br.getRegex("data\\-url=\"(https?://player\\.vimeo\\.com/external/\\d+\\.hd\\.mp4[^<>\"]*?)\"").getMatch(0);
         } else {
             DLLINK = br.getRegex("\"(http://[^<>\"]*?(\\.mp4|\\.flv|/flv))\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || date == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        date_formatted = formatDate(date);
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        filename = date + "_" + filename;
+        filename = date_formatted + "_drsstv_" + filename;
 
         if (DLLINK.contains("medianac.nacamar.de/")) {
             br.getHeaders().put("Accept-Encoding", null);
@@ -161,6 +172,37 @@ public class DrssTv extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String formatDate(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (final Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     */
+    private boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

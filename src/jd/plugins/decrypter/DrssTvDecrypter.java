@@ -92,7 +92,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
             return DECRYPTEDLINKS;
         }
         DESCRIPTION = this.br.getRegex("<div class=\"row profile-container-text margin-bottom\">(.*?)<div class=\"row\">").getMatch(0);
-        ALLVIDEOS = this.br.getRegex("data\\-src=\"(https?://(www\\.)?(youtube|dailymotion)\\.com/[^<>\"]*?)\"").getColumn(0);
+        ALLVIDEOS = this.br.getRegex("data\\-src=\"(https?://(?:www\\.)?(?:youtube|dailymotion)\\.com/[^<>\"]*?)\"").getColumn(0);
 
         try {
             if (DESCRIPTION != null) {
@@ -190,14 +190,24 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                     DECRYPTEDLINKS.add(MAIN);
                 }
             }
-            decryptVideolistStuff(false);
+            decryptVideolistStuff(false, false);
         } else {
-            if (ALLVIDEOS == null || ALLVIDEOS.length == 0) {
-                logger.warning("Decrypter broken for link: " + PARAMETER);
-                throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            if (ALLVIDEOS != null && ALLVIDEOS.length > 0) {
+                /* This is most likely just a trailer. */
+                DECRYPTEDLINKS.add(createDownloadlink(ALLVIDEOS[0]));
+            } else {
+                /*
+                 * 2015-10-22
+                 * 
+                 * Trust our code - in very very rare cases the video is officially not there but chances are high that the trailer == the
+                 * full episode e.g.:
+                 * 
+                 * http://www.drss.tv/sendung/27-08-2015/
+                 * 
+                 * --> Force trailer download
+                 */
+                decryptVideolistStuff(true, false);
             }
-            /* This is most likely just a trailer. */
-            DECRYPTEDLINKS.add(createDownloadlink(ALLVIDEOS[0]));
         }
         /* Check if the user also wants to have the photo gallery... */
         final String[] pics = br.getRegex("href=\"(/images/data/edition/\\d+/[a-z0-9\\-]+\\.jpg)\"").getColumn(0);
@@ -248,26 +258,29 @@ public class DrssTvDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
-        decryptVideolistStuff(true);
+        decryptVideolistStuff(false, true);
     }
 
     /**
      * Decrypts all the things in the videolist on the right side of the page.
      *
      * @throws DecrypterException
-     * @param force_others
+     * @param force_other_content
      *            : Force the decryption of uncategorized (video) material. If true, this overrides the users' setting. Only important for
      *            uncategorized linktypes.
      * @throws IOException
      */
     @SuppressWarnings("deprecation")
-    private void decryptVideolistStuff(final boolean force_others) throws DecrypterException, IOException {
+    private void decryptVideolistStuff(final boolean force_trailer, final boolean force_other_content) throws DecrypterException, IOException {
         final SubConfiguration cfg = SubConfiguration.getConfig("drss.tv");
         final boolean allow_teaser_pic = cfg.getBooleanProperty(ALLOW_TEASER_PIC, false);
-        final boolean allow_trailer = cfg.getBooleanProperty(ALLOW_TRAILER, false);
+        boolean allow_trailer = cfg.getBooleanProperty(ALLOW_TRAILER, false);
         boolean allow_others = cfg.getBooleanProperty(ALLOW_OTHERS, false);
-        if (force_others) {
+        if (force_other_content) {
             allow_others = true;
+        }
+        if (force_trailer) {
+            allow_trailer = true;
         }
         final String[] bigtitles = br.getRegex("<h4 class=\"text\\-cutted\">([^<>\"]*?)</h4>").getColumn(0);
         final String[] subtitles = br.getRegex("<p class=\"descr\">([^<>\"]*?)</p>").getColumn(0);
@@ -322,6 +335,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                             logger.warning("Failed to find trailer!");
                             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
                         }
+                        trailer_externlink += "&forced_referer=" + Encoding.Base64Encode(this.br.getURL());
                         DECRYPTEDLINKS.add(createDownloadlink(trailer_externlink));
                     }
                 } else {
