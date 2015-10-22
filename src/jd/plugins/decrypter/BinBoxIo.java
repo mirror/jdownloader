@@ -39,9 +39,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
-
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(www\\.)?binbox\\.io/\\w+#\\w+" }, flags = { 0 })
 public class BinBoxIo extends PluginForDecrypt {
@@ -68,7 +65,7 @@ public class BinBoxIo extends PluginForDecrypt {
             Form captcha = br.getFormbyProperty("id", "captchaForm");
             if (captcha != null && captcha.containsHTML("solvemedia\\.com/papi/")) {
                 for (int i = 1; i <= 3; i++) {
-                   
+
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -86,7 +83,7 @@ public class BinBoxIo extends PluginForDecrypt {
                     }
                     final String chid = sm.getChallenge(code);
                     captcha.put("adcopy_response", Encoding.urlEncode(code));
-                    captcha.put("adcopy_challenge", chid);
+                    captcha.put("adcopy_challenge", Encoding.urlEncode(chid));
                     br.submitForm(captcha);
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
                         continue;
@@ -187,6 +184,9 @@ public class BinBoxIo extends PluginForDecrypt {
         token = br.getRegex("\\?token=([a-f0-9]{40})").getMatch(0);
         Form action = br.getFormbyProperty("id", "paste-form");
         if (action != null) {
+            if (action.getAction().contains("'+hash+")) {
+                action.setAction(action.getAction().replaceAll("'\\s*\\+\\s*hash\\s*\\+'", ""));
+            }
             br.setFollowRedirects(true);
             br.submitForm(action);
             getPaste();
