@@ -26,6 +26,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -65,6 +66,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
     private int          CURRENTTIME   = 0;
     private final String NIGHTDOWNLOAD = "NIGHTDOWNLOAD";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
         this.setBrowserExclusive();
@@ -79,6 +81,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
 
         final boolean downloadInNightOnly = this.getPluginConfig().getBooleanProperty(NIGHTDOWNLOAD, true);
         Calendar cal = new GregorianCalendar();
+        cal.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"));
         CURRENTTIME = cal.get(Calendar.HOUR_OF_DAY) * 60 * 60;
         CURRENTTIME += cal.get(Calendar.MINUTE) * 60;
         CURRENTTIME += cal.get(Calendar.SECOND);
@@ -222,6 +225,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

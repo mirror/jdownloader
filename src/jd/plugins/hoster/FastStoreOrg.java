@@ -1045,6 +1045,32 @@ public class FastStoreOrg extends PluginForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+                if (this.br.containsHTML("/captchas/")) {
+                    final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                    String captchaurl = null;
+                    if (sitelinks == null || sitelinks.length == 0) {
+                        logger.warning("Standard captcha captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (String link : sitelinks) {
+                        if (link.contains("/captchas/")) {
+                            captchaurl = link;
+                            break;
+                        }
+                    }
+                    if (captchaurl == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "faststore.org", COOKIE_HOST, true);
+                    final String c = getCaptchaCode("xfilesharingprobasic", captchaurl, dummyLink);
+                    loginform.put("code", c);
+                }
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
