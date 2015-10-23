@@ -760,9 +760,9 @@ public class SecondLevelLaunch {
                 try {
                     if (Application.getJavaVersion() < Application.JAVA17) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        SecondLevelLaunch.LOG.info("Use BouncyCastle for default SSLSocketStreamFactory!");
+                        SecondLevelLaunch.LOG.info("Use 'BouncyCastle' for default SSLSocketStreamFactory!");
                     } else {
-                        SecondLevelLaunch.LOG.info("Use JSSE for default SSLSocketStreamFactory!");
+                        SecondLevelLaunch.LOG.info("Use 'JSSE' for default SSLSocketStreamFactory!");
                     }
                 } catch (final Throwable e) {
                     SecondLevelLaunch.LOG.log(e);
