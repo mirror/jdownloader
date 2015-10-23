@@ -20,14 +20,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -36,6 +35,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files\\?[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class OpenDriveCom extends PluginForHost {
@@ -170,7 +171,28 @@ public class OpenDriveCom extends PluginForHost {
                     }
                 }
                 this.br.setFollowRedirects(true);
-                this.br.postPage("https://www.opendrive.com/login", "action=od_login&remember_me=on&login_username=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+                this.br.getPage("https://www.opendrive.com/login");
+                Form loginform = this.br.getFormbyProperty("id", "login-form");
+                if (loginform == null) {
+                    loginform = this.br.getForm(0);
+                }
+                if (loginform == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+
+                loginform.put("login_username", account.getUser());
+                loginform.put("login_password", account.getPass());
+                loginform.remove("remember_me");
+                loginform.put("remember_me", "on");
+
+                this.br.submitForm(loginform);
+
                 if (!this.br.containsHTML("\"user-controls-menu\"")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -200,8 +222,8 @@ public class OpenDriveCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("https://www.opendrive.com/settings");
-        if (!br.containsHTML(">Personal account<")) {
+        br.getPage("/settings");
+        if (br.containsHTML("<b>Personal account</b><br>[\t\n\r ]*?Basic")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
