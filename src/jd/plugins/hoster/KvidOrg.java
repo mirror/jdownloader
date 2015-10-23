@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kvid.org" }, urls = { "http://(www\\.)?kvid\\.org/(?:watch|embed)\\-[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kvid.org" }, urls = { "http://(www\\.)?kvid\\.org/(?:watch|embed|v2/vid)\\-[A-Za-z0-9]+" }, flags = { 0 })
 public class KvidOrg extends PluginForHost {
 
     public KvidOrg(PluginWrapper wrapper) {
@@ -74,12 +75,21 @@ public class KvidOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Watching now : ([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        }
         DLLINK = br.getRegex("document\\.write\\(\\'([^<>\"]*?)\\'\\);").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+        }
+
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        DLLINK = "http://www.kvid.org/stream/" + DLLINK;
+        if (downloadLink.getDownloadURL().contains("/watch")) {
+            DLLINK = "http://www.kvid.org/stream/" + DLLINK;
+        }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
