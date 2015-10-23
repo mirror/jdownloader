@@ -118,8 +118,8 @@ public class Tb7Pl extends PluginForHost {
         /*
          * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
          */
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "storbit.net", "uploadable.ch", "uploaded.to", "uploaded.net", "ul.to"
-                // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com"
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "uploadable.ch", "uploaded.to", "uploaded.net", "ul.to"
+                // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "storbit.net"
                 ));
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
@@ -171,6 +171,7 @@ public class Tb7Pl extends PluginForHost {
             }
         }
 
+        final String downloadUrl = link.getPluginPatternMatcher();
         boolean resume = true;
         showMessage(link, "Phase 1/3: Login");
 
@@ -189,7 +190,7 @@ public class Tb7Pl extends PluginForHost {
         if (generatedLink == null) {
 
             /* generate new downloadlink */
-            String url = Encoding.urlEncode(link.getDownloadURL());
+            String url = Encoding.urlEncode(downloadUrl);
             String postData = "step=1" + "&content=" + url;
             showMessage(link, "Phase 2/3: Generating Link");
             br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
@@ -236,10 +237,12 @@ public class Tb7Pl extends PluginForHost {
         sleep(1 * 1000l, link);
         int chunks = 0;
 
-        // generated fileshark link allows only 1 chunk
+        // generated fileshark/lunaticfiles/devilshare link allows only 1 chunk
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
-        if (link.getBrowserUrl().contains("fileshark.pl") || link.getDownloadURL().contains("fileshark.pl") || link.getBrowserUrl().contains("lunaticfiles.com") || link.getDownloadURL().contains("lunaticfiles.com")) {
+        final String browserUrl = link.getBrowserUrl();
+        final String oneChunkHostersPattern = ".*(lunaticfiles\\.com|devilshare\\.net|fileshark\\.pl).*";
+        if (browserUrl.matches(oneChunkHostersPattern) || downloadUrl.matches(oneChunkHostersPattern)) {
             chunks = 1;
             resume = false;
         }
