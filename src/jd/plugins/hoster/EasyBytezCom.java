@@ -83,10 +83,11 @@ public class EasyBytezCom extends PluginForHost {
     // primary website url, take note of redirects
     public final String                COOKIE_HOST                  = "http://easybytez.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(easybytez\\.com|easybytez\\.to|zingload\\.com|easyload\\.to|ezbytez\\.com)";
+    private final String               DOMAINS                      = "(easybytez\\.com|easybytez\\.to|zingload\\.com|easyload\\.to|ezbytez\\.com|ebytez\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final String               dllinkRegex_2                = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?[a-z0-9\\-\\.]+)(:\\d{1,5})?/(files(/(dl|download))?|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = true;
@@ -556,7 +557,7 @@ public class EasyBytezCom extends PluginForHost {
 
     private void getDllink() {
         dllink = br.getRedirectLocation();
-        if (inValidate(dllink) || (!inValidate(dllink) && !dllink.matches(dllinkRegex))) {
+        if (inValidate(dllink) || (!inValidate(dllink) && !dllink.matches(dllinkRegex) && !dllink.matches(dllinkRegex_2))) {
             dllink = regexDllink(cbr.toString());
             if (inValidate(dllink)) {
                 final String cryptedScripts[] = cbr.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);

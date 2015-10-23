@@ -118,9 +118,9 @@ public class EHentaiOrg extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (downloadLink.getDownloadURL().matches(TYPE_EHENTAI) && loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
+        if (loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
             /* Try to get fullsize (original) image. */
-            final Regex fulllinkinfo = br.getRegex("href=\"(https?://g\\.e\\-hentai\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
+            final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:g\\.e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
             dllink_fullsize = fulllinkinfo.getMatch(0);
             final String html_filesize = fulllinkinfo.getMatch(1);
             if (dllink_fullsize != null && html_filesize != null) {
