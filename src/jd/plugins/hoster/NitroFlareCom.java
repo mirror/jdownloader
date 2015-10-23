@@ -381,6 +381,9 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
+        if (StringUtils.startsWithCaseInsensitive(br.toString(), "﻿Free download is currently unavailable due to overloading in the server. <br>Please try again later")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Free download Overloaded, will try again later", 5 * 60 * 1000l);
+        }
     }
 
     private Browser ajax = null;
