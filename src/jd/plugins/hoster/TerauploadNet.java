@@ -40,20 +40,20 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nosvideo.com" }, urls = { "https?://(?:www\\.)?(?:nosvideo|noslocker)\\.com/[A-Za-z0-9]+" }, flags = { 0 })
-public class NosVideoCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teraupload.net" }, urls = { "https?://(?:www\\.)?teraupload\\.net/[A-Za-z0-9]+" }, flags = { 0 })
+public class TerauploadNet extends PluginForHost {
 
-    public NosVideoCom(PluginWrapper wrapper) {
+    public TerauploadNet(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(mainpage + "/upgrade." + type);
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.5.8-psp
-    // mods: heavily modified, do NOT upgrade!
+    // YetiShareBasic Version 0.5.9-psp
+    // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: null
+    // captchatype: null, solvemedia, reCaptchaV1, reCaptchaV2
     // other:
 
     @Override
@@ -62,8 +62,8 @@ public class NosVideoCom extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String         mainpage                                     = "http://nosvideo.com";
-    private final String         domains                                      = "(nosvideo\\.com|noslocker\\.com)";
+    private final String         mainpage                                     = "http://teraupload.net";
+    private final String         domains                                      = "(teraupload\\.net)";
     private final String         type                                         = "html";
     private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     additional_WAIT_SECONDS                      = 3;
@@ -71,13 +71,15 @@ public class NosVideoCom extends PluginForHost {
     private static final boolean supportshttps                                = false;
     private static final boolean supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean available_CHECK_OVER_INFO_PAGE               = false;
+    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
     private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
     private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
     private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
-    private static final String  url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
+    /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
+    /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
+    private static final String  url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to";
     /* Texts for the known errors */
     private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
     private static final String  errortext_ERROR_SERVER                       = "Server error";
@@ -101,7 +103,6 @@ public class NosVideoCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("noslocker.com/", "nosvideo.com/"));
         if (!supportshttps) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
         } else if (supportshttps && supportshttps_FORCED) {
@@ -120,12 +121,16 @@ public class NosVideoCom extends PluginForHost {
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("Filename:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            /* Small workaround for crippled (too long) filenames */
+            filename = this.br.getRegex("> Information of: ([^<>\"]*?)<").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("(?:Filename|Dateiname):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            }
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
-            filesize = br.getRegex("Filesize:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            filesize = br.getRegex("(?:Filesize|Dateigröße):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
         } else {
             br.getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
@@ -146,25 +151,16 @@ public class NosVideoCom extends PluginForHost {
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
             filename = fInfo.getMatch(0);
-            if (filename == null) {
-                filename = this.br.getRegex("<title>([^<>\"]*?) \\- Nosvideo \\- The Fast, Free and Easy way to Share your Videos</title>").getMatch(0);
-            }
-            if (filename == null) {
-                filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\" style=\"[^<>\"]+\">([^<>\"]*?)<").getMatch(0);
-            }
             filesize = fInfo.getMatch(1);
             if (filesize == null) {
                 filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
             }
         }
-        if (filename == null) {
+        if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename).trim());
-        if (filesize != null) {
-            filesize = Encoding.htmlDecode(filesize.replace(",", "")).trim();
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
+        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -176,7 +172,6 @@ public class NosVideoCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String fid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
         String continue_link = null;
         boolean captcha = false;
         boolean success = false;
@@ -203,9 +198,6 @@ public class NosVideoCom extends PluginForHost {
                 for (int i = 1; i <= 5; i++) {
                     logger.info("Handling pre-download page #" + i);
                     continue_link = getContinueLink();
-                    if (i == 2) {
-                        continue_link = "http://noslocker.com/vj/video.php?u=" + fid + "&w=&h=530";
-                    }
                     if (i == 1 && continue_link == null) {
                         logger.info("No continue_link available, plugin broken");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

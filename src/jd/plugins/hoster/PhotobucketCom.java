@@ -66,7 +66,10 @@ public class PhotobucketCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("\"fullsizeUrl\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\"originalUrl\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"fullsizeUrl\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
