@@ -75,6 +75,7 @@ public class ChoMikujPl extends PluginForHost {
     /* TODO: Verify if premium users really can resume */
     private boolean             account_resume              = true;
     private int                 account_maxdls              = -1;
+    private boolean             serverIssue                 = false;
 
     /* ChomikujPlScript */
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -90,6 +91,7 @@ public class ChoMikujPl extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        serverIssue = false;
         this.setBrowserExclusive();
         prepBR(this.br);
         final String mainlink = link.getStringProperty("mainlink", null);
@@ -131,7 +133,7 @@ public class ChoMikujPl extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(DLLINK);
+            con = br.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 // Only set final filename if it wasn't set before as video and
@@ -140,15 +142,16 @@ public class ChoMikujPl extends PluginForHost {
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 }
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /* Just because we get html here that doesn't mean that the file is offline ... */
+                serverIssue = true;
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     private static synchronized String unescape(final String s) {
@@ -455,6 +458,8 @@ public class ChoMikujPl extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+        } else if (serverIssue) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
         if (!isVideo(downloadLink)) {
             if (!getDllink(downloadLink, br, false)) {
