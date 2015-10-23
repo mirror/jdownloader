@@ -67,6 +67,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = null;
+        br.setLoadLimit(3123000);
         if (param.toString().matches(PAGEDECRYPTLINK)) {
             String base = new Regex(param.toString(), "\\.pl/result/(.+)").getMatch(0);
             parameter = Encoding.Base64Decode(base);
