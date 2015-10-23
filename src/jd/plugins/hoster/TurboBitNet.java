@@ -290,6 +290,8 @@ public class TurboBitNet extends PluginForHost {
         }
     }
 
+    private String id = null;
+
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
@@ -327,8 +329,7 @@ public class TurboBitNet extends PluginForHost {
             }
             downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
         }
-        String downloadUrl = null, waittime = null;
-        String id = getFUID(downloadLink);
+        id = getFUID(downloadLink);
         br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
         br.getPage("/download/free/" + id);
         if (br.getHttpConnection().getCompleteContentLength() < 200) {
@@ -361,7 +362,11 @@ public class TurboBitNet extends PluginForHost {
                 }
             }
         }
+        partTwo(downloadLink, captchaform);
+    }
 
+    private final void partTwo(final DownloadLink downloadLink, final Form captchaform) throws Exception {
+        String downloadUrl = null, waittime = null;
         if (captchaform == null) {
             if (br.containsHTML(tb(0))) {
                 waittime = br.getRegex(tb(1)).getMatch(0);
@@ -782,18 +787,24 @@ public class TurboBitNet extends PluginForHost {
         br.getPage(dllink);
         if (br.getRedirectLocation() != null) {
             dllink = br.getRedirectLocation();
+            // we expect md5 redirect here...
             final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
             if (md5sum != null) {
                 link.setMD5Hash(md5sum);
-            }
-        } else {
-            // redirect is expected here.... but also errors can happen here
-            if (br.containsHTML(">Der Link ist abgelaufen\\. Fordern Sie bitte <a href='/" + getFUID(link) + "\\.html'>new</a> download link\\.<")) {
-                /*
-                 * <div class="action-block"><p>Der Link ist abgelaufen. Fordern Sie bitte <a href='/FUID.html'>new</a> download
-                 * link.</p></div></div> </div>
-                 */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Generated Premium link has expired!");
+            } else {
+                // errors can happen here
+                if (StringUtils.endsWithCaseInsensitive(dllink, "://turbobit.net/")) {
+                    // expired/invalid?
+                    // @see Link; 0418034739341.log; 1111047; jdlog://0418034739341
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Premium link no longer valid");
+                } else if (br.containsHTML(">Der Link ist abgelaufen\\. Fordern Sie bitte <a href='/" + getFUID(link) + "\\.html'>new</a> download link\\.<")) {
+                    /*
+                     * <div class="action-block"><p>Der Link ist abgelaufen. Fordern Sie bitte <a href='/FUID.html'>new</a> download
+                     * link.</p></div></div> </div>
+                     */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Generated Premium link has expired!");
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error");
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
