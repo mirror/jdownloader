@@ -61,7 +61,7 @@ public class KvidOrg extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("kvid.org/embed-", "kvid.org/watch-"));
+        // link.setUrlDownload(link.getDownloadURL().replace("kvid.org/embed-", "kvid.org/watch-"));
     }
 
     @SuppressWarnings("deprecation")
@@ -71,7 +71,7 @@ public class KvidOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Cette vidÃ©o n'existe pas ou a Ã©tÃ© supprimÃ©e<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Watching now : ([^<>\"]*?)<").getMatch(0);
