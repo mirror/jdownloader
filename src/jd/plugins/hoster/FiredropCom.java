@@ -96,10 +96,10 @@ public class FiredropCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
-    private static final int     free_MAXCHUNKS                               = 0;
+    private static final int     free_MAXCHUNKS                               = 1;
     private static final int     free_MAXDOWNLOADS                            = 20;
     private static final boolean account_FREE_RESUME                          = true;
-    private static final int     account_FREE_MAXCHUNKS                       = 0;
+    private static final int     account_FREE_MAXCHUNKS                       = 1;
     private static final int     account_FREE_MAXDOWNLOADS                    = 20;
     private static final boolean account_PREMIUM_RESUME                       = true;
     private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
@@ -405,7 +405,7 @@ public class FiredropCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
