@@ -450,6 +450,7 @@ LiveHeaderDetectionWizard_testList_firstSuccess_title=Nájdený úspešný skrip
 LiveHeaderDetectionWizard_testList_ok=Áno, prosím, vyskúšajte to!
 LiveHeaderDetectionWizard_testList_use=Nie, zastaviť hľadanie a použiť tento skript!
 LiveHeaderScriptConfirmDialog_LiveHeaderScriptConfirmDialog_edit=Upraviť skript
+LiveHeaderScriptConfirmDialog_layoutDialogContent_Manufactor=Výrobca:
 LiveHeaderScriptConfirmDialog_layoutDialogContent_routerip=LAN IP routera alebo modemu:
 LiveHeaderScriptConfirmDialog_layoutDialogContent_routername=Názov routera alebo modemu:
 LiveaheaderDetection_find_router=Hľadať IP adresu routera
