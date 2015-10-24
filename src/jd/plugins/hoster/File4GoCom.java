@@ -20,9 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +38,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" }, flags = { 2, 0, 0 })
 public class File4GoCom extends PluginForHost {
 
@@ -54,7 +54,7 @@ public class File4GoCom extends PluginForHost {
         return MAINPAGE;
     }
 
-    private static final String MAINPAGE = "http://sizedrive.com";
+    private static final String MAINPAGE = "http://file4go.net";
     private static Object       LOCK     = new Object();
 
     @Override
@@ -121,7 +121,8 @@ public class File4GoCom extends PluginForHost {
             }
             this.sleep(wait * 1001l, downloadLink);
             br.submitForm(getDownload);
-            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.sizedrive\\.com:\\d+/betafree/[^<>\"]*?)\"").getMatch(0);
+            // dllink = br.getRegex("\"(https?://[a-z0-9]+\\.sizedrive\\.com:\\d+/betafree/[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.file4go\\.net:\\d+/betafree/[^<>\"]*?)\"").getMatch(0); // Free only
             if (dllink == null) {
                 dllink = getDllink();
             }
@@ -210,7 +211,7 @@ public class File4GoCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www.sizedrive.com/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://www.file4go.net/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                     if ("de".equalsIgnoreCase(lang)) {
