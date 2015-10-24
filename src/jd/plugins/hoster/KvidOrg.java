@@ -70,8 +70,9 @@ public class KvidOrg extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Cette vidÃ©o n'existe pas ou a Ã©tÃ© supprimÃ©e<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Cette vidéo n\\'existe pas") || this.br.containsHTML("class=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Watching now : ([^<>\"]*?)<").getMatch(0);

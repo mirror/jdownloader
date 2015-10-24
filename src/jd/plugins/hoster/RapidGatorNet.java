@@ -26,9 +26,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -46,7 +44,6 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -613,6 +610,7 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
         synchronized (RapidGatorNet.LOCK) {
             try {
@@ -764,41 +762,25 @@ public class RapidGatorNet extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, String> login_web(final Account account, final boolean force) throws Exception {
+    private Cookies login_web(final Account account, final boolean force) throws Exception {
         synchronized (RapidGatorNet.LOCK) {
             try {
                 // Load cookies
                 this.br.setCookiesExclusive(true);
                 RapidGatorNet.prepareBrowser(this.br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof Map<?, ?>) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(RapidGatorNet.MAINPAGE, key, value);
-                        }
-                        if (force) {
-                            /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
-                            this.br.setFollowRedirects(true);
-                            br.getPage("http://rapidgator.net/");
-                            if (br.containsHTML("<a href=\"/auth/logout\"")) {
-                                if (this.br.containsHTML("Account:&nbsp;<a href=\"/article/premium\">Free</a>")) {
-                                    account.setType(AccountType.FREE);
-                                } else {
-                                    account.setType(AccountType.PREMIUM);
-                                }
-                                return cookies;
-                            }
-                        } else {
-                            return cookies;
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && account.isValid()) {
+                    /*
+                     * Make sure that we're logged in. Doing this for every downloadlink might sound like a waste of server capacity but
+                     * really it doesn't hurt anybody.
+                     */
+                    this.br.setCookies(this.getHost(), cookies);
+                    /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
+                    this.br.setFollowRedirects(true);
+                    this.br.getPage("http://rapidgator.net/");
+                    if (this.br.containsHTML("<a href=\"/auth/logout\"")) {
+                        setAccountTypeWebsite(account, this.br);
+                        return cookies;
                     }
                 }
                 this.br.setFollowRedirects(true);
@@ -857,26 +839,22 @@ public class RapidGatorNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (this.br.containsHTML("Account:&nbsp;<a href=\"/article/premium\">Free</a>")) {
-                    account.setType(AccountType.FREE);
-                } else {
-                    account.setType(AccountType.PREMIUM);
-                }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(RapidGatorNet.MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                setAccountTypeWebsite(account, this.br);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
                 return cookies;
             } catch (final PluginException e) {
                 account.setType(null);
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
+        }
+    }
+
+    private void setAccountTypeWebsite(final Account account, final Browser br) {
+        if (br.containsHTML("Account:\\&nbsp;<a href=\"/article/premium\">Free</a>")) {
+            account.setType(AccountType.FREE);
+        } else {
+            account.setType(AccountType.PREMIUM);
         }
     }
 
@@ -1185,9 +1163,10 @@ public class RapidGatorNet extends PluginForHost {
         this.dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
         this.logger.info("Performing cached login sequence!!");
-        Map<String, String> cookies = this.login_web(account, false);
+        Cookies cookies = this.login_web(account, false);
         final int repeat = 2;
         for (int i = 0; i <= repeat; i++) {
             this.br.setFollowRedirects(false);
@@ -1202,7 +1181,7 @@ public class RapidGatorNet extends PluginForHost {
                 // failure
                 this.logger.warning("handlePremium Failed! Please report to JDownloader Development Team.");
                 synchronized (RapidGatorNet.LOCK) {
-                    if (cookies == account.getProperty("cookies", null)) {
+                    if (cookies == null) {
                         account.setProperty("cookies", Property.NULL);
                     }
                 }
