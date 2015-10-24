@@ -97,10 +97,9 @@ public class BitsterCz extends PluginForHost {
             filename = this.fid;
         }
         final String filesize = br.getRegex("text-white left-30 margin-0 width-auto\"u003e([^<>\"/]*?) / .+").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        filename = Encoding.htmlDecode(filename.trim());
+        /* Do NOT set final filenames here!! Trust their server filenames! */
+        link.setName(filename);
         if (filesize != null) {
             /* Filesize should usually be given - we just don't want our plugin to fail because of missing filesize! */
             link.setDownloadSize(SizeFormatter.getSize(filesize));
