@@ -89,7 +89,7 @@ public class BitsterCz extends PluginForHost {
         link.setLinkID(this.fid);
         this.setBrowserExclusive();
         prepBR(this.br);
-        this.br.getPage("/api/file_getinfo?param=" + this.fid);
+        this.br.getPage("https://bitster.cz/api/file_getinfo?param=" + this.fid);
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.toString().equals(HTML_ERROR_NOTFOUND) || this.br.toString().equals(HTML_ERROR_ABUSED)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
