@@ -182,6 +182,15 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
+
+            String page = br.getRegex("listView_paginator\">(.*?)class=\"clear\"").getMatch(0);
+            String next = new Regex(page, "<a href=\"(/[^\"]*?)\" class=\"right\"").getMatch(0);
+            if (next != null) {
+                logger.info("next: " + next);
+                DownloadLink dl = createDownloadlink("http://lolabits.es" + next);
+                decryptedLinks.add(dl);
+            }
+
         }
 
         return decryptedLinks;
