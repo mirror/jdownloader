@@ -91,8 +91,10 @@ public class PhotobucketCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
+                String server_filename = getFileNameFromHeader(con);
+                server_filename = server_filename.replace("~original", "");
                 downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                downloadLink.setFinalFileName(server_filename);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
