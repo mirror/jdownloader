@@ -19,14 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -52,9 +48,10 @@ public class EvilAngelCom extends PluginForHost {
         return "http://www.evilangel.com/en/terms";
     }
 
-    private static final String HTML_LOGOUT = "id=\"headerLinkLogout\"";
-    private static final String FILMLINK    = "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
-    private String              DLLINK      = null;
+    public static final long    trust_cookie_age = 30000l;
+    private static final String HTML_LOGOUT      = "id=\"headerLinkLogout\"";
+    private static final String FILMLINK         = "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
+    private String              DLLINK           = null;
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -74,7 +71,7 @@ public class EvilAngelCom extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             String filename = null;
-            login(aa, false);
+            login(aa);
             if (link.getDownloadURL().matches(FILMLINK)) {
                 br.getPage(link.getDownloadURL());
                 filename = br.getRegex("<h1 class=\"title\">([^<>\"]*?)</h1>").getMatch(0);
@@ -105,8 +102,6 @@ public class EvilAngelCom extends PluginForHost {
                 DLLINK = link.getDownloadURL();
             }
             final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = openConnection(br2, DLLINK);
@@ -150,33 +145,27 @@ public class EvilAngelCom extends PluginForHost {
     private static final String MAINPAGE = "http://evilangel.com";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                br.setCookie(MAINPAGE, "enterSite", "en");
-                br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
+                this.br = prepBR(this.br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
                         return;
                     }
+
+                    br.getPage("http://members.evilangel.com/en");
+                    if (br.containsHTML(HTML_LOGOUT)) {
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    }
+                    this.br = prepBR(new Browser());
                 }
-                br.setFollowRedirects(true);
                 /* We re over 18 */
-                br.setCookie("www.evilangel.com", "enterSite", "en");
+                this.br.setFollowRedirects(true);
                 br.getPage("http://members.evilangel.com/en");
                 if (br.containsHTML(">We are experiencing some problems\\!<")) {
                     final AccountInfo ai = new AccountInfo();
@@ -206,22 +195,18 @@ public class EvilAngelCom extends PluginForHost {
                 final String time = sd.format(d);
                 final String timedatestring = date + " " + time;
                 br.setCookie(MAINPAGE, "mDateTime", Encoding.urlEncode(timedatestring));
-                br.setCookie(MAINPAGE, "mOffset", "2");
+                br.setCookie(MAINPAGE, "mOffset", "1");
                 br.setCookie(MAINPAGE, "origin", "promo");
                 br.setCookie(MAINPAGE, "timestamp", Long.toString(System.currentTimeMillis()));
-                br.setCookie(MAINPAGE, "_gat_tracker1", "1");
-                br.setCookie(MAINPAGE, "_gat_tracker2", "1");
-                br.setCookie(MAINPAGE, "_gat_tracker3", "1");
-                br.setCookie(MAINPAGE, "_gat_tracker4", "1");
-                final String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([a-z0-9]{32})\"").getMatch(0);
+                final String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([A-Za-z0-9\\.]+)\"").getMatch(0);
                 String postData = "csrfToken=" + csrftoken + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Click+here+to+login&mDate=&mTime=&mOffset=&back=" + Encoding.urlEncode(back);
-                // Handle stupid login captcha
+                /* Handle stupid login captcha */
                 if (captcha != null) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "evilangel.com", "http://evilangel.com", true);
                     final String code = getCaptchaCode("http://www.evilangel.com/en/captcha/" + captcha, dummyLink);
                     postData += "&captcha%5Bid%5D=" + captcha + "&captcha%5Binput%5D=" + Encoding.urlEncode(code);
                 }
-                br.postPage("http://www.evilangel.com/en/login", postData);
+                br.postPage(this.br.getURL(), postData);
                 if (br.containsHTML(">Your account is deactivated for abuse")) {
                     final AccountInfo ai = new AccountInfo();
                     ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
@@ -238,17 +223,9 @@ public class EvilAngelCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -260,11 +237,7 @@ public class EvilAngelCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         try {
             // Prevent direct login to prevent login captcha
-            login(account, false);
-            br.getPage("http://members.evilangel.com/en");
-            if (!br.containsHTML(HTML_LOGOUT)) {
-                login(account, true);
-            }
+            login(account);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
@@ -279,7 +252,7 @@ public class EvilAngelCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(account);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -290,17 +263,15 @@ public class EvilAngelCom extends PluginForHost {
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
+        final URLConnectionAdapter con = br.openHeadConnection(directlink);
         return con;
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+    private Browser prepBR(final Browser br) {
+        br.setCookie(MAINPAGE, "enterSite", "en");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.setCookiesExclusive(true);
+        return br;
     }
 
     @Override

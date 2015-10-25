@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -36,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitster.cz" }, urls = { "https?://(?:www\\.)?bitster\\.(?:cz|sk)/(?:#?file|download)/[a-z0-9]+" }, flags = { 2 })
 public class BitsterCz extends PluginForHost {
@@ -62,6 +64,9 @@ public class BitsterCz extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
+    private static final String  HTML_ERROR_NOTFOUND          = "\"NOTFOUND\"";
+    private static final String  HTML_ERROR_ABUSED            = "\"ABUSED\"";
+
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -70,39 +75,50 @@ public class BitsterCz extends PluginForHost {
     private Browser prepBR(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
+        br.setCookie(this.getHost(), "lang", "en");
+        br.setCookie(this.getHost(), "drones-modal-hidden", "true");
+        br.setCookie(this.getHost(), "cookies_accepted", "true");
         return br;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        boolean set_finalname = true;
         this.fid = getFID(link);
         link.setLinkID(this.fid);
         this.setBrowserExclusive();
         prepBR(this.br);
-        this.br.getPage("https://bitster.cz/api/file_validate?param=" + this.fid);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || !this.br.toString().equals("\"True\"")) {
+        this.br.getPage("/api/file_getinfo?param=" + this.fid);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.toString().equals(HTML_ERROR_NOTFOUND) || this.br.toString().equals(HTML_ERROR_ABUSED)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.br.getPage("/page/getpagecontent?page=/file/" + this.fid + "&loadedpage=&_=" + System.currentTimeMillis());
-        this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        String description = (String) entries.get("longdescription");
+        if (inValidate(description)) {
+            description = (String) entries.get("shortdescription");
+        }
         /* Do not perform any additional offline checks - we trust their API! */
         // if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Hups, soubor byl smaz")) {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // }
-        String filename = br.getRegex("property=\"og:title\"[\t\n\r ]*?content=\"([^<>\"]*?) \\- Bitster\\.cz\"").getMatch(0);
+        final long filesize = DummyScriptEnginePlugin.toLong(entries.get("length"), 0);
+        String filename = (String) entries.get("title");
         if (filename == null) {
-            filename = this.br.getRegex("OpenSansRegular text-grey9 text-left break-word-all\"u003ern([^<>\"]*?)rn[\t\n\r ]+u003c/div").getMatch(0);
-        }
-        if (filename == null) {
+            /* Ultimate fallback */
             filename = this.fid;
+            set_finalname = false;
         }
-        final String filesize = br.getRegex("text-white left-30 margin-0 width-auto\"u003e([^<>\"/]*?) / .+").getMatch(0);
         filename = Encoding.htmlDecode(filename.trim());
-        /* Do NOT set final filenames here!! Trust their server filenames! */
-        link.setName(filename);
-        if (filesize != null) {
-            /* Filesize should usually be given - we just don't want our plugin to fail because of missing filesize! */
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        filename = encodeUnicode(filename);
+        if (set_finalname) {
+            link.setFinalFileName(filename);
+        } else {
+            link.setName(filename);
+        }
+        link.setDownloadSize(filesize);
+        if (link.getComment() == null) {
+            link.setComment(description);
         }
         return AvailableStatus.TRUE;
     }
@@ -185,7 +201,7 @@ public class BitsterCz extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(false);
-                br.getPage("https://bitster.cz/api/validatebasicauth");
+                this.br.postPage("https://bitster.cz/api/validatebasicauth", "");
                 if (!this.br.toString().equals("\"True\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -212,13 +228,12 @@ public class BitsterCz extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        /* Also possible: /user/getcreditsheadermenuvalue?_=1445712393099 */
-        /* Also possible: /user/getprofitheadermenuvalue?_=1445712393100 */
-        this.br.getPage("/user/getcreditsheadervalue?_=" + System.currentTimeMillis());
-        final String trafficleft_str = this.br.getRegex("\"(\\d+(?:\\.\\d+)? ?(KB|MB|GB|TB))\"").getMatch(0);
+        this.br.getPage("");
+        final String joindate = this.getJson("joindate");
+        final String trafficleft_str = this.getJson("creditbalance");
         long trafficleft = 0;
-        if (trafficleft_str != null) {
-            trafficleft = SizeFormatter.getSize(trafficleft_str);
+        if (trafficleft_str != null && trafficleft_str.matches("\\d+")) {
+            trafficleft = Long.parseLong(trafficleft_str);
         }
         if (trafficleft <= 0) {
             /*
@@ -240,6 +255,9 @@ public class BitsterCz extends PluginForHost {
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
             ai.setTrafficLeft(trafficleft);
+        }
+        if (joindate != null) {
+            ai.setCreateTime(TimeFormatter.getMilliSeconds(joindate, "ddd, dd MMM yyyy HH:mm:ss Z", Locale.US));
         }
         account.setValid(true);
         return ai;
@@ -287,9 +305,9 @@ public class BitsterCz extends PluginForHost {
     private void apiHandleErrors() throws PluginException {
         if (this.br.containsHTML("\"DELETED\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("\"ABUSED\"")) {
+        } else if (this.br.containsHTML(HTML_ERROR_ABUSED)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("\"NOTFOUND\"")) {
+        } else if (this.br.containsHTML(HTML_ERROR_NOTFOUND)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("\"NOTAVAILABLE\"")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
@@ -303,12 +321,62 @@ public class BitsterCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private file");
         } else if (this.br.containsHTML("\"LOCKED\"")) {
             // TODO
+        } else if (this.br.containsHTML("User is not logged in\\!")) {
+            /* E.g. FULL html: "User is not logged in!" (including the "") */
+            /* Happens e.g. if you try this without- or with wrong Authorization-Header: bitster.cz/api/User_GetAccountInfo */
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
     }
 
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     */
+    protected boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
