@@ -107,6 +107,7 @@ public class PremiumTo extends UseNet {
         }
         Browser tbr = br.cloneBrowser();
         tbr.getPage("http://premium.to/sstraffic.php");
+        /* NormalTraffic:SpecialTraffic:TorrentTraffic */
         String[] traffic = tbr.toString().split(";");
         if (traffic != null && traffic.length == 3) {
             // because we can not account for separate traffic allocations.
@@ -116,7 +117,7 @@ public class PremiumTo extends UseNet {
             ac.setTrafficLeft(nT + spT + stT + "MiB");
             // set both so we can check in canHandle.
             account.setProperty(normalTraffic, nT + stT);
-            account.setProperty(specialTraffic, stT);
+            account.setProperty(specialTraffic, spT);
         }
         {
             final Browser hbr = br.cloneBrowser();
