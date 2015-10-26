@@ -15,7 +15,7 @@ import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -132,7 +132,7 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
                     } catch (DialogNoAnswerException e) {
                         return;
                     } catch (Throwable e) {
-                        Log.exception(e);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                     }
 
                 }

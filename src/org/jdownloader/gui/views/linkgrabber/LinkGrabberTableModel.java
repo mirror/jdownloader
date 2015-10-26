@@ -10,7 +10,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
@@ -128,7 +128,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         try {
             this.getTable().getStorage().put(this.getTable().getColumnStoreKey("VISABLE_COL_", column.getID()), visible);
         } catch (final Exception e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         this.getTable().updateColumns();
 

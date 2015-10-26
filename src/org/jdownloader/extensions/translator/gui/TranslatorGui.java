@@ -48,7 +48,7 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -818,7 +818,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
      */
     @Override
     protected void onDeactivated() {
-        Log.L.finer("onDeactivated " + getClass().getSimpleName());
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("onDeactivated " + getClass().getSimpleName());
         if (!getExtension().getSettings().isRememberLoginsEnabled()) {
             try {
                 getExtension().doLogout();
@@ -833,7 +833,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
      */
     @Override
     protected void onActivated() {
-        Log.L.finer("onActivated " + getClass().getSimpleName());
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("onActivated " + getClass().getSimpleName());
 
     }
 
@@ -866,7 +866,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         ti.start();
         ShutdownController.getInstance().addShutdownVetoListener(this);
 
-        Log.L.finer("Shown " + getClass().getSimpleName());
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Shown " + getClass().getSimpleName());
         if (getExtension().isLoggedIn()) {
             return;
         }
@@ -920,7 +920,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
      */
     @Override
     protected void onHide() {
-        Log.L.finer("hidden " + getClass().getSimpleName());
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("hidden " + getClass().getSimpleName());
         ShutdownController.getInstance().removeShutdownVetoListener(this);
         ti.stop();
     }
@@ -1086,7 +1086,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         }
         stopEditing = true;
         try {
-            Log.L.info("Wait for editstop");
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Wait for editstop");
 
             while (new EDTHelper<Boolean>() {
 
@@ -1100,7 +1100,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
         } finally {
             stopEditing = false;
-            Log.L.info("Editing has stopped");
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Editing has stopped");
         }
     }
 

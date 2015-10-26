@@ -49,7 +49,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -172,7 +172,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 }
             });
         } catch (Throwable t) {
-            Log.exception(t);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
 
         }
 

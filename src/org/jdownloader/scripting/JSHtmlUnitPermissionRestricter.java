@@ -21,7 +21,7 @@ import net.sourceforge.htmlunit.corejs.javascript.WrapFactory;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.utils.logging.Log;
+
 
 /**
  * from http://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
@@ -180,7 +180,7 @@ public class JSHtmlUnitPermissionRestricter {
                         // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
                         //
                         // }
-                        Log.L.severe("Javascript error occured");
+                              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.ConsString")) {
@@ -188,7 +188,7 @@ public class JSHtmlUnitPermissionRestricter {
                         // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
                         //
                         // }
-                        Log.L.severe("Javascript error occured");
+                              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.JavaScriptException")) {
@@ -196,7 +196,7 @@ public class JSHtmlUnitPermissionRestricter {
                         // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
                         //
                         // }
-                        Log.L.severe("Javascript error occured");
+                              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EvaluatorException")) {
@@ -204,7 +204,7 @@ public class JSHtmlUnitPermissionRestricter {
                         // ScriptRuntime.constructError("Thread Loaded ", className).printStackTrace();
                         //
                         // }
-                        Log.L.severe("Javascript error occured");
+                              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else {
@@ -275,7 +275,7 @@ public class JSHtmlUnitPermissionRestricter {
         @Override
         public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
             if (javaObject instanceof EcmaError) {
-                // Log.exception((EcmaError) javaObject);
+                // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log((EcmaError) javaObject);
             }
             String str = (javaObject + "").replaceAll("[\r\n]+", " ");
             if (str.length() > 100) {
@@ -300,7 +300,7 @@ public class JSHtmlUnitPermissionRestricter {
         public Object get(String name, Scriptable start) {
 
             if (name.equals("getClass")) {
-                Log.L.severe("JS Security Exception");
+                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("JS Security Exception");
                 return NOT_FOUND;
             }
 

@@ -15,7 +15,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.logging.LogController;
@@ -124,7 +124,7 @@ public class AuthenticationController {
         } else if (url.startsWith("http")) {
             type = Type.HTTP;
         } else {
-            Log.L.info("Unknown Protocoll: " + url);
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
             return null;
         }
         final ArrayList<AuthenticationInfo> possibleInfos = new ArrayList<AuthenticationInfo>();
@@ -198,7 +198,7 @@ public class AuthenticationController {
         } else if (url.startsWith("http")) {
             type = Type.HTTP;
         } else {
-            Log.L.info("Unknown Protocoll: " + url);
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
             return;
         }
 

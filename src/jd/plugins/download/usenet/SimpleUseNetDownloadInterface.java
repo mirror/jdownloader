@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -30,6 +29,7 @@ import jd.plugins.download.SparseFile;
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
@@ -44,7 +44,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
 
     private final Downloadable                      downloadable;
     private final ManagedThrottledConnectionHandler connectionHandler;
-    private final Logger                            logger;
+    private final LogInterface                      logger;
 
     private final AtomicBoolean                     abort                    = new AtomicBoolean(false);
     private final AtomicBoolean                     terminated               = new AtomicBoolean(false);

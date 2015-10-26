@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Level;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -91,7 +90,7 @@ public class CNL extends PluginForDecrypt {
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new String(cipher.doFinal(b), "UTF-8");
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(e);
         }
         return null;
     }

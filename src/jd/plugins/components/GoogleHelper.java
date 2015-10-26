@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.InputDialog;
@@ -54,18 +54,18 @@ public class GoogleHelper {
         this.cacheEnabled = cacheEnabled;
     }
 
-    LogSource logger = null;
+    LogInterface logger = null;
 
-    public LogSource getLogger() {
+    public LogInterface getLogger() {
         return logger;
     }
 
-    public void setLogger(LogSource logger) {
+    public void setLogger(LogInterface logger) {
         this.logger = logger;
     }
 
     private void log(String str) {
-        LogSource logger = getLogger();
+        LogInterface logger = getLogger();
         if (logger != null) {
             logger.info(str);
         }

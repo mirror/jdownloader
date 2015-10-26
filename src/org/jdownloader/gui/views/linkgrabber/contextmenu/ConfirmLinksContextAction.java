@@ -30,7 +30,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
@@ -406,7 +406,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 } catch (DialogNoAnswerException e) {
                     return;
                 } catch (Throwable e) {
-                    Log.exception(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
                 ArrayList<CrawledLink> offline = new ArrayList<CrawledLink>();
 

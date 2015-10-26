@@ -7,7 +7,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -53,7 +53,7 @@ public class JDAPIImpl implements JDAPI {
             return (Integer) map.get("JDownloaderRevision");
 
         } catch (Throwable t) {
-            Log.exception(t);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
         }
         return -1;
     }

@@ -11,7 +11,6 @@ import java.net.SocketTimeoutException;
 import java.rmi.ConnectException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -27,6 +26,7 @@ import jd.plugins.PluginException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
@@ -39,7 +39,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
 
     private final Downloadable                      downloadable;
     private final ManagedThrottledConnectionHandler connectionHandler;
-    private final Logger                            logger;
+    private final LogInterface                      logger;
     private final SimpleFTP                         simpleFTP;
     private String                                  filePath;
     private AtomicBoolean                           abort                    = new AtomicBoolean(false);

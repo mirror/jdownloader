@@ -18,7 +18,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.exceptions.WTFException;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -55,7 +55,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
 
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == this.okButton) {
-            Log.L.fine("Answer: Button<OK:" + this.okButton.getText() + ">");
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.okButton.getText() + ">");
 
             Account ac = creater.getAccount();
             ac.setHoster(info.getTld());
@@ -70,7 +70,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
             }
             this.setReturnmask(true);
         } else if (e.getSource() == this.cancelButton) {
-            Log.L.fine("Answer: Button<CANCEL:" + this.cancelButton.getText() + ">");
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<CANCEL:" + this.cancelButton.getText() + ">");
             this.setReturnmask(false);
         }
         this.dispose();

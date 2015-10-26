@@ -163,7 +163,7 @@ public class VideorajCh extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log( e);
             return null;
         }
         return result;

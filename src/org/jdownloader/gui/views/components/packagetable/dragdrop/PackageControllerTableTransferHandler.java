@@ -16,7 +16,7 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -96,7 +96,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             }
             return (PackageControllerTableTransferableContent<PackageType, ChildrenType>) content;
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             return null;
         }
     }
@@ -304,7 +304,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                     }
                 });
             } else {
-                Log.exception(new WTFException("this should not happen!"));
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new WTFException("this should not happen!"));
             }
         } else {
             /* insert,move */

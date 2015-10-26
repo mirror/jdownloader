@@ -41,7 +41,7 @@ import org.appwork.uio.MultiSelectionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.uio.UserIODefinition;
 import org.appwork.utils.BinaryLogic;
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -283,7 +283,7 @@ public class UserIO {
         if (currentThread instanceof LinkCrawlerThread) {
             /* Crawler */
             final PluginForDecrypt plugin = (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
-            LogSource logger = plugin.getLogger();
+            LogInterface logger = plugin.getLogger();
             String title = titleTemplate;
             if (title == null) {
                 title = explain;
@@ -330,7 +330,7 @@ public class UserIO {
             }
             return new Point(c.getResult().getValue().getX(), c.getResult().getValue().getY());
         } else {
-            Log.exception(new WTFException("DO NOT USE OUTSIDE DECRYPTER"));
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new WTFException("DO NOT USE OUTSIDE DECRYPTER"));
         }
         return null;
     }

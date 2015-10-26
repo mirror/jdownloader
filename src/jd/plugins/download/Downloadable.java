@@ -1,7 +1,6 @@
 package jd.plugins.download;
 
 import java.io.File;
-import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -12,13 +11,15 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkDatabindingInterface;
 import jd.plugins.PluginProgress;
 
+import org.appwork.utils.logging2.LogInterface;
+
 public interface Downloadable {
 
     void setResumeable(boolean value);
 
     Browser getContextBrowser();
 
-    Logger getLogger();
+    LogInterface getLogger();
 
     void setDownloadInterface(DownloadInterface di);
 

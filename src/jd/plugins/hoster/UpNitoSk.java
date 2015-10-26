@@ -223,7 +223,7 @@ public class UpNitoSk extends PluginForHost {
             engine.eval(fun + injectFn);
             result = inv.invokeFunction(function, gwt, token);
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log( e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (result == null) {

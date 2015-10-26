@@ -21,6 +21,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
@@ -132,7 +133,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         setServerRoot("http://" + CFG_MYJD.CONNECT_IP.getValue() + ":" + CFG_MYJD.CLIENT_CONNECT_PORT.getValue());
         br = new Browser() {
             @Override
-            public java.util.logging.Logger getLogger() {
+            public LogInterface getLogger() {
                 return MyJDownloaderAPI.this.getLogger();
             };
         };

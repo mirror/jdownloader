@@ -55,7 +55,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -497,7 +497,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                     p.add(list);
                     p.show(btnIcon, 0, btnIcon.getHeight());
                 } catch (URISyntaxException e1) {
-                    Log.exception(Level.WARNING, e1);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
                 }
             }
         });

@@ -22,12 +22,13 @@ import org.appwork.utils.Application;
 
 /**
  * Jac Training
- * 
+ *
  * @author JD-Team
  */
 public class JACTestrun {
 
     public static void main(String args[]) throws InterruptedException {
+        Application.ensureFrameWorkInit();
         Application.setApplication(".jd_home");
         JACTestrun main = new JACTestrun();
         main.go();

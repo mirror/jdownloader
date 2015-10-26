@@ -7,7 +7,6 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -19,6 +18,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.ReusableByteArrayOutputStream;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
@@ -55,7 +55,7 @@ public class RAFChunk extends Thread {
 
     private Downloadable                    downloadable;
 
-    private Logger                          logger;
+    private LogInterface                    logger;
 
     protected ReusableByteArrayOutputStream buffer           = null;
     private AtomicBoolean                   running          = new AtomicBoolean(false);

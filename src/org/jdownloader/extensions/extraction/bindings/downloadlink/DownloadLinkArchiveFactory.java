@@ -17,7 +17,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -85,7 +85,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             }
             return CrossSystem.fixPathSeparators(path);
         } catch (Exception e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         return null;
     }

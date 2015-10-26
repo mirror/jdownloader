@@ -7,7 +7,7 @@ import java.util.List;
 import jd.plugins.PluginsC;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.logging.Log;
+
 
 public class ContainerPluginController {
 
@@ -28,42 +28,42 @@ public class ContainerPluginController {
         try {
             plugins.add(new org.jdownloader.container.JD1Import());
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         try {
             plugins.add(new org.jdownloader.container.NZB());
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         try {
             plugins.add(new org.jdownloader.container.AMZ());
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         try {
             plugins.add(new org.jdownloader.container.C());
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         try {
             plugins.add(new org.jdownloader.container.D());
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         try {
             plugins.add(new org.jdownloader.container.MetaLink());
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         try {
             plugins.add(new org.jdownloader.container.R());
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         try {
             plugins.add(new org.jdownloader.container.SFT());
         } catch (final Throwable e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         list = Collections.unmodifiableList(plugins);
     }

@@ -24,7 +24,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
@@ -343,17 +343,17 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         try {
                             s.setSubPathMinFilesTreshhold((Integer) subPathMinFiles.getComponent().getValue());
                         } catch (final Throwable e) {
-                            Log.exception(e);
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                         }
                         try {
                             s.setSubPathMinFoldersTreshhold((Integer) subPathMinFolders.getComponent().getValue());
                         } catch (final Throwable e) {
-                            Log.exception(e);
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                         }
                         try {
                             s.setSubPathMinFilesOrFoldersTreshhold((Integer) subPathMinFilesOrFolders.getComponent().getValue());
                         } catch (final Throwable e) {
-                            Log.exception(e);
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                         }
                         s.setUseOriginalFileDate(toggleUseOriginalFileDate.getComponent().isSelected());
                     }

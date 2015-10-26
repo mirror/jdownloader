@@ -25,7 +25,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,6 +57,7 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.auth.Login;
@@ -89,13 +89,13 @@ public abstract class Plugin implements ActionListener {
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /* after 0.95xx */
-    protected Logger                                              logger              = LogController.TRASH;
+    protected LogInterface                                        logger              = LogController.TRASH;
 
     protected final CopyOnWriteArrayList<File>                    cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
     private static final HashMap<String, HashMap<String, Object>> CACHE               = new HashMap<String, HashMap<String, Object>>();
     private CrawledLink                                           currentLink         = null;
 
-    public void setLogger(Logger logger) {
+    public void setLogger(LogInterface logger) {
         if (logger == null) {
             logger = LogController.TRASH;
         }
@@ -119,7 +119,7 @@ public abstract class Plugin implements ActionListener {
         this.currentLink = currentLink;
     }
 
-    public Logger getLogger() {
+    public LogInterface getLogger() {
         return logger;
     }
 

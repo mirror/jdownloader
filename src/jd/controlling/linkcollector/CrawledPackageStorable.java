@@ -9,7 +9,7 @@ import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.storage.Storable;
 import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
@@ -136,7 +136,7 @@ public class CrawledPackageStorable implements Storable {
                 }
             }
         } catch (Throwable t) {
-            Log.exception(t);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
         }
 
     }

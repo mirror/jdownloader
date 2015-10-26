@@ -366,7 +366,7 @@ public class MediafireCom extends PluginForHost {
                     }
                 }
             } catch (final Exception e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.log( e);
                 if (e instanceof PluginException) {
                     throw (PluginException) e;
                 }

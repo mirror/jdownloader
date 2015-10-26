@@ -26,7 +26,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 public class QuickFilterExceptionsTable extends FilterTable {
 
     /**
-     * 
+     *
      */
     private static final long                              serialVersionUID = 658947589171018284L;
     private volatile CopyOnWriteArrayList<ExceptionFilter> allFilters       = new CopyOnWriteArrayList<ExceptionFilter>();
@@ -56,9 +56,13 @@ public class QuickFilterExceptionsTable extends FilterTable {
     private void convertLinkgrabberFilterRuleWrapper() {
         List<LinkgrabberFilterRuleWrapper> filtersToSetup = new ArrayList<LinkgrabberFilterRuleWrapper>();
         List<LinkgrabberFilterRuleWrapper> filters = LinkFilterController.getInstance().getAcceptFileFilter();
-        if (filters != null) filtersToSetup.addAll(filters);
+        if (filters != null) {
+            filtersToSetup.addAll(filters);
+        }
         filters = LinkFilterController.getInstance().getAcceptUrlFilter();
-        if (filters != null) filtersToSetup.addAll(filters);
+        if (filters != null) {
+            filtersToSetup.addAll(filters);
+        }
         CopyOnWriteArrayList<ExceptionFilter> newAllFilters = new CopyOnWriteArrayList<ExceptionFilter>();
         CopyOnWriteArraySet<Filter> newEnabledFilters = new CopyOnWriteArraySet<Filter>();
         for (final LinkgrabberFilterRuleWrapper rule : filtersToSetup) {
@@ -70,7 +74,9 @@ public class QuickFilterExceptionsTable extends FilterTable {
                 }
             };
             newAllFilters.add(filter);
-            if (!filter.isEnabled()) newEnabledFilters.add(filter);
+            if (!filter.isEnabled()) {
+                newEnabledFilters.add(filter);
+            }
         }
         allFilters = newAllFilters;
         enabledFilters = newEnabledFilters;
@@ -176,8 +182,12 @@ public class QuickFilterExceptionsTable extends FilterTable {
     public boolean isFiltered(CrawledLink v) {
         Filter exception = getFilterException();
         for (Filter enabledFilter : enabledFilters) {
-            if (enabledFilter == exception) continue;
-            if (enabledFilter.isFiltered(v)) return true;
+            if (enabledFilter == exception) {
+                continue;
+            }
+            if (enabledFilter.isFiltered(v)) {
+                return true;
+            }
         }
         return false;
     }

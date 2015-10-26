@@ -32,7 +32,7 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.gui.views.components.SearchCatInterface;
@@ -326,7 +326,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
     public void setSelectedCategory(SearchCat selectedCategory) {
         if (selectedCategory == null) {
-            Log.exception(Level.WARNING, new NullPointerException("selectedCategory null"));
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new NullPointerException("selectedCategory null"));
         }
         final SearchCat old = this.selectedCategory.getAndSet(selectedCategory);
         if (old != selectedCategory) {

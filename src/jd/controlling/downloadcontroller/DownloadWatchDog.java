@@ -3731,6 +3731,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                         }
                     } catch (Throwable e) {
+
                         LogSource.exception(controller.getLogger(), e);
                         if (e instanceof SkipReasonException) {
                             throw (SkipReasonException) e;

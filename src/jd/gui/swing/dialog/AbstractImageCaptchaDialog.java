@@ -30,7 +30,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.URLStream;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractCaptchaDialog;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -70,7 +70,7 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
             stream = URLStream.openStream(url);
             return getGifImages(stream);
         } catch (IOException e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         } finally {
             try {
                 stream.close();

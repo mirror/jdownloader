@@ -45,7 +45,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.PublicSuffixList;
 import org.appwork.utils.net.httpserver.requests.HttpRequestInterface;
@@ -599,7 +599,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                             try {
                                 name = Plugin.extractFileNameFromURL(url);
                             } catch (final Throwable e) {
-                                Log.exception(e);
+                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                             }
                             final DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
                             if (StringUtils.isNotEmpty(downloadPassword)) {
@@ -623,7 +623,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                             try {
                                 defaultplg.correctDownloadLink(direct);
                             } catch (final Throwable e) {
-                                Log.exception(e);
+                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                             }
                             link.setDownloadLink(direct);
                         }

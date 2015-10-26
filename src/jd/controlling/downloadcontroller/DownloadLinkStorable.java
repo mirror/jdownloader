@@ -14,7 +14,7 @@ import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.plugins.FinalLinkState;
 
@@ -127,7 +127,7 @@ public class DownloadLinkStorable implements Storable {
                     link.setFinalLinkState(FinalLinkState.FAILED_FATAL);
                 }
             } catch (final Throwable e) {
-                Log.exception(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         }
     }

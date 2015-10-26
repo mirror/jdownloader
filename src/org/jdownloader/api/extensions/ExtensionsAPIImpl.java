@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
@@ -44,7 +44,7 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
 
                     }
                 } catch (Exception e) {
-                    Log.exception(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 } finally {
 
                 }

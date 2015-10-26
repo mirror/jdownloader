@@ -43,7 +43,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
@@ -321,7 +321,7 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
                     ((LazyExtension) list.getSelectedValue()).init();
                     ext = ((LazyExtension) list.getSelectedValue())._getExtension();
                 } catch (Exception e) {
-                    Log.exception(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                     Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
                     return null;
                 }

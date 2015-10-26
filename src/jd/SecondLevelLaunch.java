@@ -39,9 +39,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -85,7 +82,6 @@ import org.appwork.utils.JarHandlerWorkaround;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.os.CrossSystem;
@@ -627,7 +623,7 @@ public class SecondLevelLaunch {
             IO.writeToFile(FILE, (new SimpleDateFormat("dd.MMM.yyyy HH:mm").format(new Date())).getBytes("UTF-8"));
 
         } catch (Exception e) {
-            Log.exception(Level.WARNING, e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
 
         }
         FILE.deleteOnExit();
@@ -658,48 +654,48 @@ public class SecondLevelLaunch {
 
     private static void go() {
         SecondLevelLaunch.LOG.info("Initialize JDownloader2");
-        try {
-            Log.closeLogfile();
-        } catch (final Throwable e) {
-            SecondLevelLaunch.LOG.log(e);
-        }
-        try {
-            for (Handler handler : Log.L.getHandlers()) {
-                Log.L.removeHandler(handler);
-            }
-        } catch (final Throwable e) {
-        }
-        Log.L.setUseParentHandlers(true);
-        Log.L.setLevel(Level.ALL);
-        Log.L.addHandler(new Handler() {
-            LogSource oldLogger = LogController.getInstance().getLogger("OldLogL");
-
-            @Override
-            public void publish(LogRecord record) {
-
-                LogSource ret = LogController.getInstance().getPreviousThreadLogSource();
-
-                if (ret != null) {
-
-                    record.setMessage("Utils>" + ret.getName() + ">" + record.getMessage());
-                    ret.log(record);
-                    return;
-                }
-                LogSource logger = LogController.getRebirthLogger();
-                if (logger == null) {
-                    logger = oldLogger;
-                }
-                logger.log(record);
-            }
-
-            @Override
-            public void flush() {
-            }
-
-            @Override
-            public void close() throws SecurityException {
-            }
-        });
+        // try {
+        // Log.closeLogfile();
+        // } catch (final Throwable e) {
+        // SecondLevelLaunch.LOG.log(e);
+        // }
+        // try {
+        // for (Handler handler : org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().getHandlers()) {
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().removeHandler(handler);
+        // }
+        // } catch (final Throwable e) {
+        // }
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().setUseParentHandlers(true);
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().setLevel(Level.ALL);
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().addHandler(new Handler() {
+        // LogSource oldLogger = LogController.getInstance().getLogger("OldLogL");
+        //
+        // @Override
+        // public void publish(LogRecord record) {
+        //
+        // LogSource ret = LogController.getInstance().getPreviousThreadLogSource();
+        //
+        // if (ret != null) {
+        //
+        // record.setMessage("Utils>" + ret.getName() + ">" + record.getMessage());
+        // ret.log(record);
+        // return;
+        // }
+        // LogSource logger = LogController.getRebirthLogger();
+        // if (logger == null) {
+        // logger = oldLogger;
+        // }
+        // logger.log(record);
+        // }
+        //
+        // @Override
+        // public void flush() {
+        // }
+        //
+        // @Override
+        // public void close() throws SecurityException {
+        // }
+        // });
 
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
 

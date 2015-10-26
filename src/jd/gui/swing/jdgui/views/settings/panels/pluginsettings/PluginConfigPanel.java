@@ -9,7 +9,7 @@ import jd.plugins.Plugin;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.components.ExtTextArea;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
@@ -38,7 +38,7 @@ public class PluginConfigPanel extends SwitchPanel {
         try {
             if (selectedItem != null) proto = selectedItem.getPrototype(null);
         } catch (UpdateRequiredClassNotFoundException e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
 
         AddonConfig cp2 = null;

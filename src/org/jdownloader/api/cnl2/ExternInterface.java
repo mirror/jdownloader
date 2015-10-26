@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.api.DeprecatedAPIHttpServerController;
 import org.jdownloader.api.RemoteAPIConfig;
 
@@ -30,7 +30,7 @@ public class ExternInterface {
                             }
                         }
                     } catch (Throwable e) {
-                        Log.exception(e);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                     }
                 }
             };

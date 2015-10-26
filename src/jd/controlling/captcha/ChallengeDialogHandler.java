@@ -1,7 +1,5 @@
 package jd.controlling.captcha;
 
-import java.util.logging.Logger;
-
 import javax.swing.SwingUtilities;
 
 import jd.gui.swing.dialog.DialogType;
@@ -12,6 +10,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -129,8 +128,8 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
 
     }
 
-    protected Logger getLogger() {
-        Logger logger = null;
+    protected LogInterface getLogger() {
+        LogInterface logger = null;
         final Plugin plg = captchaChallenge.getPlugin();
         if (plg != null) {
             if (plg instanceof PluginForHost) {

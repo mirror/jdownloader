@@ -23,7 +23,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
@@ -355,7 +354,7 @@ public class FavIcons {
         return image;
     }
 
-    private static BufferedImage download_FavIconIco(String host, Logger logger) throws IOException {
+    private static BufferedImage download_FavIconIco(String host, LogSource logger) throws IOException {
         String url = "http://" + host + "/favicon.ico";
         final Browser favBr = new Browser();
         favBr.setLogger(logger);
@@ -441,7 +440,7 @@ public class FavIcons {
         return null;
     }
 
-    private static BufferedImage download_FavIconTag(String host, Logger logger) throws IOException {
+    private static BufferedImage download_FavIconTag(String host, LogSource logger) throws IOException {
         final Browser favBr = new Browser();
         favBr.setLogger(logger);
         favBr.setConnectTimeout(10000);

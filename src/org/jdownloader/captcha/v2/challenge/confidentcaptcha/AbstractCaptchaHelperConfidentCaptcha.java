@@ -1,18 +1,17 @@
 package org.jdownloader.captcha.v2.challenge.confidentcaptcha;
 
-import java.util.logging.Logger;
-
 import jd.http.Browser;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperConfidentCaptcha<T extends Plugin> {
-    protected T       plugin;
-    protected Logger  logger;
-    protected Browser br;
-    protected String  siteKey;
+    protected T            plugin;
+    protected LogInterface logger;
+    protected Browser      br;
+    protected String       siteKey;
 
     public AbstractCaptchaHelperConfidentCaptcha(T plugin, Browser br, final String siteKey) {
         this.plugin = plugin;

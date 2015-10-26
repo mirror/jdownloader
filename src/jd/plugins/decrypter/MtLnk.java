@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.CharArrayWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -55,14 +54,14 @@ public class MtLnk extends PluginForDecrypt {
 
     final private UnknownCrawledLinkHandler handler       = new UnknownCrawledLinkHandler() {
 
-                                                              @Override
-                                                              public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
-                                                                  final DownloadLink dlLink = link.getDownloadLink();
-                                                                  if (dlLink != null && !StringUtils.startsWithCaseInsensitive(dlLink.getPluginPatternMatcher(), "directhttp://")) {
-                                                                      dlLink.setPluginPatternMatcher("directhttp://" + dlLink.getPluginPatternMatcher());
-                                                                  }
-                                                              }
-                                                          };
+        @Override
+        public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+            final DownloadLink dlLink = link.getDownloadLink();
+            if (dlLink != null && !StringUtils.startsWithCaseInsensitive(dlLink.getPluginPatternMatcher(), "directhttp://")) {
+                dlLink.setPluginPatternMatcher("directhttp://" + dlLink.getPluginPatternMatcher());
+            }
+        }
+    };
 
     public MtLnk(PluginWrapper wrapper) {
         super(wrapper);
@@ -101,7 +100,7 @@ public class MtLnk extends PluginForDecrypt {
             final StringReader input = new StringReader(metalink);
             saxParser.parse(new InputSource(input), handler);
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, t.getMessage(), t);
+            logger.log(t);
         }
 
         if (packageName != null) {

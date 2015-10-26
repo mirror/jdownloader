@@ -17,7 +17,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderRequestInterface;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
@@ -165,7 +165,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             }
 
         } catch (Exception e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
         }
     }

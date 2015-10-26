@@ -21,7 +21,7 @@ import java.util.List;
 import jd.http.Browser;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.AuthenticationInfo;
 import org.jdownloader.auth.AuthenticationInfo.Type;
@@ -55,7 +55,7 @@ public class HTACCESSController {
         } else if (url.startsWith("http")) {
             type = Type.HTTP;
         } else {
-            Log.L.info("Unknown Protocoll: " + url);
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Unknown Protocoll: " + url);
             return;
         }
         AuthenticationInfo info = new AuthenticationInfo();

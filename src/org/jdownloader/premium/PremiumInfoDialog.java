@@ -16,7 +16,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
@@ -90,7 +90,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         try {
             plg = HostPluginController.getInstance().get(info.getTld()).getPrototype(null);
         } catch (UpdateRequiredClassNotFoundException e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         if (plg != null) {
             // let's ask the plugin

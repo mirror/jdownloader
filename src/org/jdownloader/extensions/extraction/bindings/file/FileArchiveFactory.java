@@ -13,7 +13,7 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -109,19 +109,19 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         try {
             if (path.contains(PACKAGENAME)) {
                 path = path.replace(PACKAGENAME, "");
-                Log.L.severe("Could not set packagename for " + firstArchiveFile.getFilePath());
+                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Could not set packagename for " + firstArchiveFile.getFilePath());
             }
             if (path.contains(ARCHIVENAME)) {
                 if (!StringUtils.isEmpty(archiv.getName())) {
                     path = path.replace(ARCHIVENAME, archiv.getName());
                 } else {
                     path = path.replace(ARCHIVENAME, "");
-                    Log.L.severe("Could not set archivename for " + firstArchiveFile.getFilePath());
+                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Could not set archivename for " + firstArchiveFile.getFilePath());
                 }
             }
             if (path.contains(HOSTER)) {
                 path = path.replace(HOSTER, "");
-                Log.L.severe("Could not set hoster for " + firstArchiveFile.getFilePath());
+                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Could not set hoster for " + firstArchiveFile.getFilePath());
             }
             if (path.contains("$DATE:")) {
                 int start = path.indexOf("$DATE:");
@@ -136,7 +136,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                     path = path.replace(path.substring(start, end + 1), format.format(new Date()));
                 } catch (Exception e) {
                     path = path.replace(path.substring(start, end + 1), "");
-                    Log.L.severe("Could not set extraction date. Maybe pattern is wrong. For " + firstArchiveFile.getFilePath());
+                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Could not set extraction date. Maybe pattern is wrong. For " + firstArchiveFile.getFilePath());
                 }
             }
             String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(getFile().getParent(), "");
@@ -146,7 +146,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
             path = path.replace(SUBFOLDER, dif);
             return CrossSystem.fixPathSeparators(path);
         } catch (Exception e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         return null;
     }

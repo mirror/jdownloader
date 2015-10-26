@@ -35,7 +35,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -150,7 +150,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                             Dialog.getInstance().showMessageDialog(_GUI._.PluginSettingsPanel_actionPerformed_reset_done(currentItem.getDisplayName()));
                         }
                     } catch (UpdateRequiredClassNotFoundException e1) {
-                        Log.exception(e1);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
                     } catch (DialogClosedException e1) {
                         e1.printStackTrace();
                     } catch (DialogCanceledException e1) {

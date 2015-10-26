@@ -7,7 +7,7 @@ import jd.http.Browser;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
+
 
 public class AsynchLogger extends QueueAction<Void, RuntimeException> {
 
@@ -18,8 +18,8 @@ public class AsynchLogger extends QueueAction<Void, RuntimeException> {
     }
 
     public boolean handleException(final Throwable e) {
-        Log.L.finer("Stats Logger Failed: " + e.getMessage());
-        Log.exception(Level.FINEST, e);
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Stats Logger Failed: " + e.getMessage());
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log( e);
         return false;
     }
 

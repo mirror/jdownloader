@@ -25,7 +25,7 @@ import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.IDIcon;
 import org.appwork.utils.Hash;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
@@ -63,7 +63,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
             ImageIO.write(IconIO.toBufferedImage(favIcon), "png", out);
         } catch (IOException e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
 
         } finally {
@@ -84,7 +84,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
             ImageIO.write(IconIO.toBufferedImage(CrossSystem.getMime().getFileIcon(extension, 16, 16)), "png", out);
         } catch (IOException e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
         } finally {
             try {
@@ -162,7 +162,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
                 ImageIO.write(ico, "png", out);
             }
         } catch (IOException e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
         } finally {
             try {

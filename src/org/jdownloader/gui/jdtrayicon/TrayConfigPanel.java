@@ -19,7 +19,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -76,7 +76,7 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
                     extension.setEnabled(header.isHeaderEnabled());
                     updateHeaders(header.isHeaderEnabled());
                 } catch (Exception e1) {
-                    Log.exception(e1);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
                     Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
                 }
             }

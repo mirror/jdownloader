@@ -52,7 +52,7 @@ public class FlnksCm extends PluginForDecrypt {
                 decryptedLinks.add(dlLink);
             }
         } catch (IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            logger.log( e);
             return null;
         }
         return decryptedLinks;

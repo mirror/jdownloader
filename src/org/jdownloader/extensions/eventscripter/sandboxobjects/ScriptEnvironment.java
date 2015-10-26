@@ -46,7 +46,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OSFamily;
@@ -656,7 +656,7 @@ public class ScriptEnvironment {
                         muteControl.setValue(true);
                         muteControl.setValue(false);
                     } catch (Exception e) {
-                        Log.exception(e);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                     }
                     final AtomicBoolean runningFlag = new AtomicBoolean(true);
                     clip.addLineListener(new LineListener() {

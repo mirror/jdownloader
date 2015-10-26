@@ -602,7 +602,7 @@ public class FileFactory extends PluginForHost {
         } catch (final InterruptedException e2) {
             return;
         } catch (final IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            logger.log( e);
             if (e.getMessage() != null && e.getMessage().contains("502")) {
                 logger.severe("Filefactory returned Bad gateway.");
                 Thread.sleep(1000);

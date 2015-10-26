@@ -11,7 +11,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -65,7 +65,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     new File(out).setLastModified(Math.max(lastModifiedAudio, lastModifiedVideo));
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LoggerFactory.log(logger, e);
             }
             return true;
         }
@@ -86,7 +86,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LoggerFactory.log(logger, e);
             }
             return true;
         }
@@ -107,7 +107,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LoggerFactory.log(logger, e);
             }
             return true;
         }
@@ -128,7 +128,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LoggerFactory.log(logger, e);
             }
             return true;
         }
@@ -145,7 +145,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LoggerFactory.log(logger, e);
             }
             return true;
         }
@@ -163,7 +163,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LoggerFactory.log(logger, e);
             }
             return true;
         }
@@ -181,7 +181,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
     // new File(out).setLastModified(lastModifiedAudio);
     // }
     // } catch (final Throwable e) {
-    // LogSource.exception(logger, e);
+    // LoggerFactory.log(logger, e);
     // }
     // return true;
     // }
@@ -221,7 +221,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                                 f.setLastModified(lastModifiedAudio);
                             }
                         } catch (final Throwable e1) {
-                            LogSource.exception(logger, e1);
+                            LoggerFactory.log(logger, e1);
                         }
                     } else {
                         File f;
@@ -232,7 +232,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                                 f.setLastModified(lastModifiedAudio);
                             }
                         } catch (final Throwable e1) {
-                            LogSource.exception(logger, e1);
+                            LoggerFactory.log(logger, e1);
                         }
                     }
 
@@ -266,7 +266,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     new File(out).setLastModified(Math.max(lastModifiedAudio, lastModifiedVideo));
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LoggerFactory.log(logger, e);
             }
             return true;
         }
@@ -286,7 +286,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LoggerFactory.log(logger, e);
             }
             return true;
         }

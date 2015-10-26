@@ -33,7 +33,7 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.IconLabelToolTip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.ToolTipHandler;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -228,21 +228,21 @@ public class RegexListTextPane extends TextPane implements ToolTipHandler {
                     try {
                         txt.getHighlighter().addHighlight(start, end, new UnderlineHighlightPainter(line++, g2, true));
                     } catch (final BadLocationException e1) {
-                        Log.exception(Level.WARNING, e1);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
 
                     }
                 } else {
                     try {
                         txt.getHighlighter().addHighlight(start, end, new UnderlineHighlightPainter(line++, g2, false));
                     } catch (final BadLocationException e1) {
-                        Log.exception(Level.WARNING, e1);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
 
                     }
                 }
 
             }
         } catch (Throwable e) {
-            Log.exception(Level.WARNING, e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
     }
 

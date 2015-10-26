@@ -14,8 +14,10 @@ import jd.plugins.PluginsC;
 
 import org.appwork.utils.event.queue.QueueThread;
 import org.appwork.utils.logging2.LogConsoleHandler;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.LogSourceProvider;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionQueue;
 
@@ -43,17 +45,17 @@ public class LogController extends LogSourceProvider {
     private static volatile WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
 
     /**
-     * get the only existing instance of LogController. This is a singleton
-     * 
+     * get the only existing instance of org.appwork.utils.logging2.extmanager.LoggerFactory. This is a singleton
+     *
      * @return
      */
     public static LogController getInstance() {
-        return LogController.INSTANCE;
+        return INSTANCE;
     }
 
     private LogController() {
         super(System.currentTimeMillis());
-
+        LoggerFactory.I().setDelegate(this);
     }
 
     public static LogSource CL(Class<?> clazz) {
@@ -66,7 +68,7 @@ public class LogController extends LogSourceProvider {
 
     /**
      * CL = Class Logger, returns a logger for calling Class
-     * 
+     *
      * @return
      */
     public static LogSource CL() {
@@ -82,7 +84,7 @@ public class LogController extends LogSourceProvider {
     }
 
     public static LogSource getRebirthLogger() {
-        Logger logger = null;
+        LogInterface logger = null;
         Thread currentThread = Thread.currentThread();
         /* fetch logger from map if we have one set for current Thread */
         logger = map.get(currentThread);

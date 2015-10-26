@@ -22,7 +22,7 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.myjdownloader.client.json.JsonMap;
@@ -147,7 +147,7 @@ public class AccountAPIImpl implements AccountAPI {
             }
 
         } catch (IOException e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
         } finally {
             try {

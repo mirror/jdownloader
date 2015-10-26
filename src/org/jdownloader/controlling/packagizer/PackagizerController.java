@@ -35,7 +35,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
@@ -866,7 +866,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         txt = replacer.replace(modifier, link, txt, lgr);
                     }
                 } catch (final Throwable e) {
-                    Log.exception(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
             }
         }
@@ -1001,24 +1001,24 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (!originalFolder.equals(moveToFolder) || !originalFileName.equals(dummyLink.getName())) {
             final File newFile = new File(moveToFolder, dummyLink.getName());
             if (newFile.getParentFile().exists() == false && FileCreationManager.getInstance().mkdir(newFile.getParentFile()) == false) {
-                Log.L.warning("Packagizer could not create " + newFile.getParentFile());
+                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer could not create " + newFile.getParentFile());
                 return;
             }
             boolean successful = false;
             if ((successful = file.renameTo(newFile)) == false) {
-                Log.L.warning("Packagizer rename failed " + file + " to" + newFile);
+                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer rename failed " + file + " to" + newFile);
                 try {
-                    Log.L.warning("Packagizer try copy " + file + " to" + newFile);
+                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer try copy " + file + " to" + newFile);
                     IO.copyFile(file, newFile);
                     FileCreationManager.getInstance().delete(file, null);
                     successful = true;
                 } catch (final Throwable e) {
                     FileCreationManager.getInstance().delete(newFile, null);
-                    Log.L.warning("Packagizer could not move/rename " + file + " to" + newFile);
+                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer could not move/rename " + file + " to" + newFile);
                 }
             }
             if (successful) {
-                Log.L.info("Packagizer moved/renamed " + file + " to " + newFile);
+                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Packagizer moved/renamed " + file + " to " + newFile);
                 FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(PackagizerController.this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
             }
         }

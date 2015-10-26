@@ -35,7 +35,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
@@ -54,19 +54,19 @@ import org.jdownloader.translate._JDT;
 
 public abstract class PluginsC {
 
-    private final Pattern pattern;
+    private final Pattern  pattern;
 
-    private final String  name;
+    private final String   name;
 
-    private final long    version;
+    private final long     version;
 
-    protected LogSource   logger = LogController.TRASH;
+    protected LogInterface logger = LogController.TRASH;
 
-    public LogSource getLogger() {
+    public LogInterface getLogger() {
         return logger;
     }
 
-    public void setLogger(LogSource logger) {
+    public void setLogger(LogInterface logger) {
         if (logger == null) {
             logger = LogController.TRASH;
         }

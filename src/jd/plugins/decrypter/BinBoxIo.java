@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -135,8 +134,8 @@ public class BinBoxIo extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                 }
             } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
-                    /* suspended or deactivated account */"|This link is unavailable because |" +
-                    /* content deleted */"The content you have requested has been deleted\\.")) {
+            /* suspended or deactivated account */"|This link is unavailable because |" +
+            /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
                 } catch (final Throwable t) {
@@ -169,7 +168,7 @@ public class BinBoxIo extends PluginForDecrypt {
         } catch (final ScriptException e) {
             return new String[0];
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(e);
             return null;
         }
         if (isEmpty(result)) {

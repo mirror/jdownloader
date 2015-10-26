@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.controlling.HTACCESSController;
@@ -61,7 +60,9 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.ClearableLogInterface;
+import org.appwork.utils.logging2.ClosableLogInterface;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationController;
@@ -1673,9 +1674,9 @@ public class LinkCrawler {
                     LinkCrawler previousCrawler = null;
                     boolean oldDebug = false;
                     boolean oldVerbose = false;
-                    Logger oldLogger = null;
+                    LogInterface oldLogger = null;
                     try {
-                        LogSource logger = LogController.getFastPluginLogger(wplg.getHost());
+                        LogInterface logger = LogController.getFastPluginLogger(wplg.getHost());
                         logger.info("Processing: " + possibleCryptedLink.getURL());
                         if (lct != null) {
                             /* mark thread to be used by crawler plugin */
@@ -1693,7 +1694,9 @@ public class LinkCrawler {
                             lct.setDebug(true);
                         }
                         wplg.setBrowser(new Browser());
+
                         wplg.setLogger(logger);
+
                         String url = possibleCryptedLink.getURL();
                         FilePackage sourcePackage = null;
                         if (possibleCryptedLink.getDownloadLink() != null) {
@@ -1722,13 +1725,17 @@ public class LinkCrawler {
                                 }
                             }
                             /* in case the function returned without exceptions, we can clear log */
-                            logger.clear();
+                            if (logger instanceof ClearableLogInterface) {
+                                ((ClearableLogInterface) logger).clear();
+                            }
                         } finally {
                             wplg.setCurrentLink(null);
                             final long endTime = System.currentTimeMillis() - startTime;
                             wplg.getLazyP().updateParseRuntime(endTime);
                             /* close the logger */
-                            logger.close();
+                            if (logger instanceof ClosableLogInterface) {
+                                ((ClosableLogInterface) logger).close();
+                            }
                         }
                         if (crawledLinks.size() > 0) {
                             final boolean singleDest = crawledLinks.size() == 1;
@@ -2138,9 +2145,9 @@ public class LinkCrawler {
                 LinkCrawler previousCrawler = null;
                 boolean oldDebug = false;
                 boolean oldVerbose = false;
-                Logger oldLogger = null;
+                LogInterface oldLogger = null;
                 try {
-                    LogSource logger = LogController.getFastPluginLogger(plg.getName());
+                    LogInterface logger = LogController.getFastPluginLogger(plg.getName());
                     if (lct != null) {
                         /* mark thread to be used by crawler plugin */
                         owner = lct.getCurrentOwner();
@@ -2160,7 +2167,9 @@ public class LinkCrawler {
                     try {
                         final List<CrawledLink> decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
                         /* in case the function returned without exceptions, we can clear log */
-                        logger.clear();
+                        if (logger instanceof ClearableLogInterface) {
+                            ((ClearableLogInterface) logger).clear();
+                        }
                         if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
                             /* we found some links, distribute them */
                             final boolean singleDest = decryptedPossibleLinks.size() == 1;
@@ -2200,7 +2209,9 @@ public class LinkCrawler {
                         }
                     } finally {
                         /* close the logger */
-                        logger.close();
+                        if (logger instanceof ClosableLogInterface) {
+                            ((ClosableLogInterface) logger).close();
+                        }
                     }
                 } finally {
                     if (lct != null) {
@@ -2242,8 +2253,8 @@ public class LinkCrawler {
                     return;
                 }
                 wplg.setBrowser(new Browser());
-                LogSource logger = null;
-                Logger oldLogger = null;
+                LogInterface logger = null;
+                LogInterface oldLogger = null;
                 boolean oldVerbose = false;
                 boolean oldDebug = false;
                 logger = LogController.getFastPluginLogger(wplg.getHost());
@@ -2436,14 +2447,18 @@ public class LinkCrawler {
                             dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
                         }
                         /* in case we return normally, clear the logger */
-                        logger.clear();
+                        if (logger instanceof ClearableLogInterface) {
+                            ((ClearableLogInterface) logger).clear();
+                        }
                     } finally {
                         /* close the logger */
                         wplg.setLinkCrawlerAbort(null);
                         wplg.setCurrentLink(null);
                         final long endTime = System.currentTimeMillis() - startTime;
                         lazyC.updateCrawlRuntime(endTime);
-                        logger.close();
+                        if (logger instanceof ClosableLogInterface) {
+                            ((ClosableLogInterface) logger).close();
+                        }
                     }
                 } finally {
                     if (lct != null) {

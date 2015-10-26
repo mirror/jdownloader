@@ -29,7 +29,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.URLStream;
 import org.appwork.utils.locale._AWU;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 
@@ -103,9 +103,9 @@ class SliderCaptchaDialog extends AbstractDialog<String> {
                         }
                     }
                 } catch (IOException e) {
-                    Log.exception(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 } catch (InterruptedException e) {
-                    Log.exception(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
             }
         };
@@ -220,7 +220,7 @@ class SliderCaptchaDialog extends AbstractDialog<String> {
     @Override
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == dynamicOkButton) {
-            Log.L.fine("Answer: Button<OK:" + dynamicOkButton.getText() + ">");
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + dynamicOkButton.getText() + ">");
             setReturnmask(true);
         } else if (e.getActionCommand().equals("enterPushed")) {
             return;
