@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,17 +44,29 @@ public class TwenteeFourVideoNet extends PluginForHost {
         return "http://www.24video.net/staticPage/view/agreement_en";
     }
 
+    private Browser ajax = null;
+
+    private void ajaxGetPage(final String string) throws IOException {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getPage(string);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://www.24video.net/video/xml/" + getFID(link) + "?mode=init");
+        // are you 18 ?
+        br.setCookie(this.getHost(), "plus18-1", "true");
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<video><error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("txt=\\'([^<>]*?)\\'").getMatch(0);
-        final String filesize = br.getRegex("filesize=\\'(\\d+)\\'").getMatch(0);
+        ajaxGetPage("/video/xml/" + getFID(link) + "?mode=init");
+        String filename = ajax.getRegex("txt='([^<>]*?)'").getMatch(0);
+        final String filesize = ajax.getRegex("filesize='(\\d+)'").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -69,13 +82,13 @@ public class TwenteeFourVideoNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             final String fid = getFID(downloadLink);
-            br.getPage(downloadLink.getDownloadURL());
-            br.getPage("http://www.24video.com/auth/setSession?id=" + br.getCookie("http://24video.net/", "JSESSIONID"));
-            br.getPage("http://www.24video.net/video/download/" + fid);
-            br.getPage("http://www.24video.net/video/download2/" + fid + "?type=mp4");
-            dllink = br.getRegex("\\&url=(http[^<>\"]*?)\"").getMatch(0);
+            ajaxGetPage("/auth/setSession?id=" + br.getCookie("http://24video.net/", "JSESSIONID"));
+            // lets place some random time in here
+            sleep(new Random().nextInt(10) * 1001l, downloadLink);
+            ajaxGetPage("/video/xml/" + fid + "?mode=play");
+            dllink = ajax.getRegex("<video url=('|\")(http[^<>\"]*?)\\1").getMatch(1);
             if (dllink == null) {
-                dllink = br.getRegex("\"(http://dl\\.24video[^<>\"]*?)\"").getMatch(0);
+                dllink = ajax.getRegex("\"(http://dl\\.24video[^<>\"]*?)\"").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
