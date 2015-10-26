@@ -66,11 +66,15 @@ public class BitsterCz extends PluginForHost {
 
     private static final String  HTML_ERROR_NOTFOUND          = "\"NOTFOUND\"";
     private static final String  HTML_ERROR_ABUSED            = "\"ABUSED\"";
+    private static final String  HTML_ERROR_LOCKED            = "\"LOCKED\"";
 
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     private String               fid                          = null;
+    private String               password                     = "";
+    private DownloadLink         currDownloadlink             = null;
+    private boolean              passwordprotected            = false;
 
     private Browser prepBR(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
@@ -84,30 +88,46 @@ public class BitsterCz extends PluginForHost {
     @SuppressWarnings("unchecked")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        passwordprotected = false;
+        password = link.getStringProperty("pass", null);
+        currDownloadlink = link;
+        String filename;
+        long filesize = -1;
+        String description = null;
+        String md5 = null;
         boolean set_finalname = true;
         this.fid = getFID(link);
         link.setLinkID(this.fid);
         this.setBrowserExclusive();
         prepBR(this.br);
-        this.br.getPage("https://bitster.cz/api/file_getinfo?param=" + this.fid);
+        this.br.getPage("https://bitster.cz/api/file_getinfo?param=" + this.fid + "&pw=" + password);
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.toString().equals(HTML_ERROR_NOTFOUND) || this.br.toString().equals(HTML_ERROR_ABUSED)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        String description = (String) entries.get("longdescription");
-        if (inValidate(description)) {
-            description = (String) entries.get("shortdescription");
-        }
-        /* Do not perform any additional offline checks - we trust their API! */
-        // if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Hups, soubor byl smaz")) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        final long filesize = DummyScriptEnginePlugin.toLong(entries.get("length"), 0);
-        String filename = (String) entries.get("title");
-        if (filename == null) {
-            /* Ultimate fallback */
+        if (this.br.toString().equals(HTML_ERROR_LOCKED)) {
+            link.getLinkStatus().setStatusText("This url is password protected");
             filename = this.fid;
             set_finalname = false;
+        } else {
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            /* Do not perform any additional offline checks - we trust their API! */
+            // if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Hups, soubor byl smaz")) {
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
+            filesize = DummyScriptEnginePlugin.toLong(entries.get("length"), -1);
+            filename = (String) entries.get("title");
+            md5 = getJson("md5");
+            description = (String) entries.get("longdescription");
+            /* This shouldn't be needed but okay let's double check/set passwordprotected state here. */
+            passwordprotected = ((Boolean) entries.get("passwordprotected")).booleanValue();
+            if (inValidate(description)) {
+                description = (String) entries.get("shortdescription");
+            }
+            if (filename == null) {
+                /* Ultimate fallback */
+                filename = this.fid;
+                set_finalname = false;
+            }
         }
         filename = Encoding.htmlDecode(filename.trim());
         filename = encodeUnicode(filename);
@@ -116,9 +136,14 @@ public class BitsterCz extends PluginForHost {
         } else {
             link.setName(filename);
         }
-        link.setDownloadSize(filesize);
+        if (filesize > -1) {
+            link.setDownloadSize(filesize);
+        }
         if (link.getComment() == null) {
             link.setComment(description);
+        }
+        if (md5 != null) {
+            link.setMD5Hash(md5);
         }
         return AvailableStatus.TRUE;
     }
@@ -148,8 +173,16 @@ public class BitsterCz extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getDllink() throws IOException, PluginException {
-        getPage("/api/file_download?param=" + this.fid);
+    private String getDllink() throws Exception {
+        if (this.passwordprotected) {
+            this.password = getUserInput("Password?", this.currDownloadlink);
+            this.requestFileInformation(this.currDownloadlink);
+            /* Wrong password entered? Will be caught here! */
+            apiHandleErrors();
+            /* Password seems to be correct --> Save it */
+            this.currDownloadlink.setProperty("pass", this.password);
+        }
+        getPage("/api/file_download?param=" + this.fid + "&pw=" + this.password);
         final String dllink = this.br.toString().replace("\"", "");
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -314,13 +347,19 @@ public class BitsterCz extends PluginForHost {
         } else if (this.br.containsHTML("\"ERROR\"")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 60 * 1000l);
         } else if (this.br.containsHTML("\"NOTLOGGEDIN\"")) {
-            // TODO
+            /* I guess this happens if we try to download premium things without logging in (missing Authorization Header)?! */
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else if (this.br.containsHTML("\"NOTENOUGHCREDITS\"")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else if (this.br.containsHTML("\"PRIVATE\"")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private file");
-        } else if (this.br.containsHTML("\"LOCKED\"")) {
-            // TODO
+        } else if (this.br.containsHTML(HTML_ERROR_LOCKED)) {
+            this.currDownloadlink.setProperty("pass", Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
         } else if (this.br.containsHTML("User is not logged in\\!")) {
             /* E.g. FULL html: "User is not logged in!" (including the "") */
             /* Happens e.g. if you try this without- or with wrong Authorization-Header: bitster.cz/api/User_GetAccountInfo */
