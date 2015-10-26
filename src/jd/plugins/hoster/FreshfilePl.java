@@ -412,7 +412,7 @@ public class FreshfilePl extends PluginForHost {
                 date = dateFormat.parse(userPremiumDateEnd);
                 ai.setValidUntil(date.getTime());
             } catch (final Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                logger.log( e);
             }
         }
         account.setError(null, null);

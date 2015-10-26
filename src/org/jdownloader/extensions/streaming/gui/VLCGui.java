@@ -14,7 +14,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.streaming.StreamingExtension;
@@ -123,7 +123,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
      */
     @Override
     protected void onDeactivated() {
-        Log.L.finer("onDeactivated " + getClass().getSimpleName());
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("onDeactivated " + getClass().getSimpleName());
     }
 
     /**
@@ -131,7 +131,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
      */
     @Override
     protected void onActivated() {
-        Log.L.finer("onActivated " + getClass().getSimpleName());
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("onActivated " + getClass().getSimpleName());
     }
 
     @Override
@@ -160,7 +160,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
      */
     @Override
     protected void onShow() {
-        Log.L.finer("Shown " + getClass().getSimpleName());
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Shown " + getClass().getSimpleName());
     }
 
     /**
@@ -169,7 +169,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
      */
     @Override
     protected void onHide() {
-        Log.L.finer("hidden " + getClass().getSimpleName());
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("hidden " + getClass().getSimpleName());
     }
 
     @Override

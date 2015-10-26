@@ -1451,7 +1451,7 @@ public class TbCm extends PluginForDecrypt {
                 }
             } catch (final IOException e) {
                 this.br.getHttpConnection().disconnect();
-                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                logger.log( e);
                 // return null;
             }
         }

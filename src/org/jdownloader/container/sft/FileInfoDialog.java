@@ -25,7 +25,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.locale._AWU;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 
@@ -97,11 +97,11 @@ public class FileInfoDialog extends AbstractDialog<String> implements ActionList
     @Override
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == this.dynamicOkButton) {
-            Log.L.fine("Answer: Button<OK:" + this.dynamicOkButton.getText() + ">");
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.dynamicOkButton.getText() + ">");
             this.setReturnmask(true);
         } else if (e.getActionCommand().equals("enterPushed")) {
             if (this.container.isDecrypted()) {
-                Log.L.fine("Answer: Button<OK:" + this.okButton.getText() + ">");
+                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.okButton.getText() + ">");
                 this.setReturnmask(true);
             } else
                 return;

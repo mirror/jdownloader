@@ -87,7 +87,7 @@ public class D extends PluginsC {
         // try {
         // if (a.trim().startsWith("<dlc>")) return e(d);
         // } catch (Exception e) {
-        // Log.L.log(java.util.logging.Level.SEVERE,
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,
         // "Exception occured", e);
         // cs.setStatusText("DLC2 failed");
         // return cs;
@@ -102,8 +102,8 @@ public class D extends PluginsC {
         }
 
         String a0 = a.substring(a.length() - 88).trim();
-        // Log.L.info(dlcString);
-        // Log.L.info(key + " - " + key.length());
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(dlcString);
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(key + " - " + key.length());
         a = a.substring(0, a.length() - 88).trim();
 
         if (Encoding.filterString(a, "1234567890QAWSEDRFTGZHUJIKOLPMNBVCXY+/=qaywsxedcrfvtgbzhnujmikolp\r\n").length() != a.length()) {
@@ -112,7 +112,7 @@ public class D extends PluginsC {
             cs.setStatusText(JDL.L("sys.warning.dlcerror_invalid", "It seems that your dlc is not valid."));
             return cs;
         }
-        // Log.L.info(dlcString);
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(dlcString);
         java.util.List<URL> s1;
 
         try {
@@ -136,7 +136,7 @@ public class D extends PluginsC {
                             continue;
 
                         }
-                        // Log.L.info("Dec key "+decodedKey);
+                        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Dec key "+decodedKey);
                         if (x == null) {
                             logger.severe("DLC Error(key): " + s2);
                             ee += s2 + "" + JDL.L("sys.warning.dlcerror_key", "DLC: Key Fehler") + " ";
@@ -155,8 +155,8 @@ public class D extends PluginsC {
 
                             continue;
                         }
-                        // Log.L.info("PLAIN KEY: " + plain);
-                        // Log.L.info("PLAIN dlc: " + dlcString);
+                        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("PLAIN KEY: " + plain);
+                        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("PLAIN dlc: " + dlcString);
                         // plain="11b857cd4c4edd19";
                     }
                     String dds1 = d5(a, p);
@@ -169,7 +169,7 @@ public class D extends PluginsC {
                         continue;
                     }
                     dds1 = filterString(dds1);
-                    // Log.L.info("Decr " + decryptedDlcString);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Decr " + decryptedDlcString);
                     pxs(dds1, d);
                     /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
                     k = p.getBytes();
@@ -180,26 +180,26 @@ public class D extends PluginsC {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_java", "DLC: Outdated Javaversion ") + e.getMessage() + " ";
 
                 } catch (MalformedURLException e) {
-                    // Log.L.log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_url", "DLC: URL Fehler: ") + e.getMessage() + " ";
                 } catch (IOException e) {
-                    // Log.L.log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_io", "DLC: Server Fehler(offline? ") + e.getMessage() + " ";
 
                 } catch (SAXException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler: Veraltete JD Version (1) ") + " ";
 
-                    // Log.L.log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 } catch (ParserConfigurationException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler: Veraltete JD Version (2)") + " ";
-                    // Log.L.log(java.util.logging.Level.SEVERE,"Exception occured",e);
+                    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(java.util.logging.Level.SEVERE,"Exception occured",e);
                 }
 
                 catch (Exception e) {
                     e.printStackTrace();
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_unknown", "DLC Fehler: ") + e.getMessage() + " ";
 
-                    logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    logger.log(e);
                 }
             }
         } catch (Exception e) {
@@ -240,7 +240,7 @@ public class D extends PluginsC {
     // d9 += (b - d[d9]) + 1;
     // }
     // if (d9 != 16) {
-    // Log.L.info("Wrong JD Version");
+    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Wrong JD Version");
     // return null;
     // }
     // k0 = null;
@@ -291,7 +291,7 @@ public class D extends PluginsC {
     //
     // pxs(dds, d4);
     // if (dlU == null || dlU.size() == 0) {
-    // Log.L.severe("No Links found: " + dss);
+    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("No Links found: " + dss);
     //
     // return cs;
     // } else {
@@ -303,7 +303,7 @@ public class D extends PluginsC {
 
     // private String cs2(String s, String m) throws IOException {
     //
-    // Log.L.finer("Call  " + s);
+    // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Call  " + s);
     // Browser br = new Browser();
     //
     // String rk = br.postPage(s, "dt=jdtc&st=dlc&d=" + Encoding.urlEncode(m));
@@ -322,10 +322,10 @@ public class D extends PluginsC {
         try {
             String rk = Hash.getMD5("" + c7).substring(0, 16);
             // randomKey = JDHash.getMD5("11").substring(0, 16);
-            // Log.L.info("Key: " + randomKey);
+            // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Key: " + randomKey);
             /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
             byte[] k = rk.getBytes();
-            // Log.L.info("ENcode " + base64);
+            // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("ENcode " + base64);
             IvParameterSpec ivSpec = new IvParameterSpec(k);
             SecretKeySpec skeySpec = new SecretKeySpec(k, "AES");
 
@@ -338,7 +338,7 @@ public class D extends PluginsC {
             // return new BASE64Encoder().encode(original);
         } catch (Exception e) {
 
-            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(e);
             logger.severe("DLC encryption failed (5)");
             return null;
 
@@ -388,7 +388,7 @@ public class D extends PluginsC {
             // 0x60, (byte) 0x4a, (byte) 0x7c, (byte) 0x84, (byte) 0x0e, (byte)
             // 0x88, (byte) 0xd0, (byte) 0x3a, (byte) 0x67, (byte) 0xf6, (byte)
             // 0xb7, (byte) 0xd8};
-            // Log.L.info( ri.getHtmlCode());
+            // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info( ri.getHtmlCode());
 
             // a7b3b706e3cf3770931f081926ed0d95
             if (!br.getHttpConnection().isOK() || !br.containsHTML("rc")) {
@@ -569,7 +569,7 @@ public class D extends PluginsC {
                         dpi.setComment(comment);
                         nl.setDesiredPackageInfo(dpi);
                         cls.add(nl);
-                        // Log.L.info(""+links.get(linkCounter));
+                        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(""+links.get(linkCounter));
 
                         c++;
                         // }
@@ -825,13 +825,13 @@ public class D extends PluginsC {
     private void pxs(String cs, File dlc) throws SAXException, IOException, ParserConfigurationException, InstantiationException, IllegalAccessException {
 
         DocumentBuilderFactory f;
-        // Log.L.info(jdtc);
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(jdtc);
         InputSource is;
         Document doc;
 
         f = DocumentBuilderFactory.newInstance();
         f.setValidating(false);
-        // Log.L.info("encrypted: "+dlcString);
+        // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("encrypted: "+dlcString);
         if (cs.trim().startsWith("<dlc")) {
             // New (cbc Änderung)
             is = new InputSource(new StringReader(cs));
@@ -904,7 +904,7 @@ public class D extends PluginsC {
                 }
 
             }
-            // Log.L.info("Header " + header);
+            // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Header " + header);
         }
 
     }

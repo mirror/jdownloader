@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -28,6 +27,7 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
@@ -44,7 +44,7 @@ import org.jdownloader.translate._JDT;
 
  * http://code.google.com/p/mp-onlinevideos2/source/browse/trunk/
  * http://svn.wordrider.net/svn/freerapid-plugins/trunk/src/adobehds/cz/vity/freerapid/plugins/services/adobehds/
- * 
+ *
  */
 public class HDSDownloader extends DownloadInterface {
 
@@ -74,7 +74,7 @@ public class HDSDownloader extends DownloadInterface {
     private DownloadLinkDownloadable          downloadable;
     private DownloadLink                      link;
     private long                              startTimeStamp;
-    private Logger                            logger;
+    private LogInterface                      logger;
     private URLConnectionAdapter              currentConnection;
     private ManagedThrottledConnectionHandler connectionHandler;
     private File                              outputCompleteFile;

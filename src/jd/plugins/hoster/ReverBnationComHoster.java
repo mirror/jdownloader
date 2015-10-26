@@ -126,7 +126,7 @@ public class ReverBnationComHoster extends PluginForHost {
     // try {
     // result = ((Double) engine.eval(fun)).longValue();
     // } catch (final Exception e) {
-    // logger.log(Level.SEVERE, e.getMessage(), e);
+    // logger.log( e);
     // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     // }
     // return result.toString();

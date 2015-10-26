@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.logging2.LogSourceProvider;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -73,7 +74,7 @@ public class LogAction extends AbstractLogAction {
 
     @Override
     protected void flushLogs() {
-        LogController.getInstance().flushSinks(true, false);
+        LogSourceProvider.flushAllSinks(true, false);
     }
 
     @Override

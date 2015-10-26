@@ -14,6 +14,7 @@ import jd.controlling.captcha.SkipRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -89,7 +90,9 @@ public class SolverJob<T> {
                 try {
                     ((ChallengeResponseValidation) solver).setUnused(abstractResponse, this);
                 } catch (final Throwable e) {
-                    LogSource.exception(getLogger(), e);
+
+                    LoggerFactory.log(getLogger(), e);
+
                 }
             }
         }
@@ -367,20 +370,20 @@ public class SolverJob<T> {
                         try {
                             validation.setValid(response, this);
                         } catch (final Throwable e) {
-                            LogSource.exception(getLogger(), e);
+                            LoggerFactory.log(getLogger(), e);
                         }
                     } else {
                         if (sameResponseValue(returnedResponse, response)) {
                             try {
                                 validation.setValid(response, this);
                             } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
+                                LoggerFactory.log(getLogger(), e);
                             }
                         } else {
                             try {
                                 validation.setInvalid(response, this);
                             } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
+                                LoggerFactory.log(getLogger(), e);
                             }
                         }
                     }
@@ -397,13 +400,13 @@ public class SolverJob<T> {
                                     try {
                                         validation.setValid(response, this);
                                     } catch (final Throwable e) {
-                                        LogSource.exception(getLogger(), e);
+                                        LoggerFactory.log(getLogger(), e);
                                     }
                                 } else {
                                     try {
                                         validation.setInvalid(response, this);
                                     } catch (final Throwable e) {
-                                        LogSource.exception(getLogger(), e);
+                                        LoggerFactory.log(getLogger(), e);
                                     }
                                 }
                             }
@@ -428,20 +431,20 @@ public class SolverJob<T> {
                         try {
                             validation.setInvalid(response, this);
                         } catch (final Throwable e) {
-                            LogSource.exception(getLogger(), e);
+                            LoggerFactory.log(getLogger(), e);
                         }
                     } else {
                         if (sameResponseValue(returnedResponse, response)) {
                             try {
                                 validation.setInvalid(response, this);
                             } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
+                                LoggerFactory.log(getLogger(), e);
                             }
                         } else {
                             try {
                                 validation.setUnused(response, this);
                             } catch (final Throwable e) {
-                                LogSource.exception(getLogger(), e);
+                                LoggerFactory.log(getLogger(), e);
                             }
                         }
                     }
@@ -458,13 +461,13 @@ public class SolverJob<T> {
                                     try {
                                         validation.setInvalid(response, this);
                                     } catch (final Throwable e) {
-                                        LogSource.exception(getLogger(), e);
+                                        LoggerFactory.log(getLogger(), e);
                                     }
                                 } else {
                                     try {
                                         validation.setUnused(response, this);
                                     } catch (final Throwable e) {
-                                        LogSource.exception(getLogger(), e);
+                                        LoggerFactory.log(getLogger(), e);
                                     }
                                 }
                             }

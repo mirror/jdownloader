@@ -21,12 +21,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -45,7 +41,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.JSonHandler;
 import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
@@ -58,7 +53,7 @@ public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
 
     static {
-
+        Application.ensureFrameWorkInit();
         // only use ipv4, because debian changed default stack to ipv6
         /*
          * we have to make sure that this property gets set before any network stuff gets loaded!!
@@ -93,57 +88,7 @@ public class Main {
             e.printStackTrace();
         }
         Dialog.getInstance().setLafManager(LookAndFeelController.getInstance());
-        try {
-            // the logmanager should not be initialized here. so setting the
-            // property should tell the logmanager to init a ExtLogManager
-            // instance.
-            if (LogManager.getLogManager() instanceof ExtLogManager || LogManager.getLogManager() == null) {
-                System.setProperty("java.util.logging.manager", ExtLogManager.class.getName());
-                ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-            LogManager lm = LogManager.getLogManager();
-            System.err.println("Logmanager: " + lm);
-            try {
-                if (lm != null) {
-                    // seems like the logmanager has already been set, and is
-                    // not of type ExtLogManager. try to fix this here
-                    // we experiences this bug once on a mac system. may be
-                    // caused by mac jvm, or the mac install4j launcher
 
-                    // 12.11:
-                    // a winxp user had this problem with install4j (exe4j) as well.
-                    // seems like 4xeej sets a logger before our main is reached.
-                    Field field = LogManager.class.getDeclaredField("manager");
-                    field.setAccessible(true);
-                    ExtLogManager manager = new ExtLogManager();
-
-                    field.set(null, manager);
-                    Field rootLogger = LogManager.class.getDeclaredField("rootLogger");
-                    rootLogger.setAccessible(true);
-                    Logger rootLoggerInstance = (Logger) rootLogger.get(lm);
-                    rootLogger.set(manager, rootLoggerInstance);
-                    manager.addLogger(rootLoggerInstance);
-
-                    // Adding the global Logger. Doing so in the Logger.<clinit>
-                    // would deadlock with the LogManager.<clinit>.
-
-                    Method setLogManager = Logger.class.getDeclaredMethod("setLogManager", new Class[] { LogManager.class });
-                    setLogManager.setAccessible(true);
-                    setLogManager.invoke(Logger.global, manager);
-
-                    Enumeration<String> names = lm.getLoggerNames();
-                    while (names.hasMoreElements()) {
-                        manager.addLogger(lm.getLogger(names.nextElement()));
-
-                    }
-                }
-            } catch (Throwable e1) {
-                e1.printStackTrace();
-            }
-
-        }
         IO.setErrorHandler(new IOErrorHandler() {
             private final AtomicBoolean reported = new AtomicBoolean(Application.isHeadless());
 

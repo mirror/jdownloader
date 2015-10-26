@@ -16,7 +16,7 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -101,7 +101,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
         @Override
         public void killQueue() {
-            Log.exception(new Throwable("YOU CANNOT KILL ME!"));
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
             /*
              * this queue can't be killed
              */

@@ -37,7 +37,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -101,7 +101,7 @@ public class DonationDialog extends AbstractDialog<Object> {
     public void actionPerformed(final ActionEvent e) {
 
         if (e.getSource() == this.okButton) {
-            Log.L.fine("Answer: Button<OK:" + this.okButton.getText() + ">");
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.okButton.getText() + ">");
             this.setReturnmask(true);
             final double amt = getProviderPanel().getAmount();
             if (amt <= 0) {
@@ -263,7 +263,7 @@ public class DonationDialog extends AbstractDialog<Object> {
             }
 
         } else if (e.getSource() == this.cancelButton) {
-            Log.L.fine("Answer: Button<CANCEL:" + this.cancelButton.getText() + ">");
+                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<CANCEL:" + this.cancelButton.getText() + ">");
             this.setReturnmask(false);
         }
 

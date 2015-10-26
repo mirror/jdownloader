@@ -22,7 +22,7 @@ import jd.nutils.Formatter;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -116,10 +116,10 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     }
 
     private void testReconnect() {
-        Log.L.info("Reconnect Testing");
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Reconnect Testing");
 
         btnTest.setEnabled(false);
-        Log.L.info("Start Reconnect");
+              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Start Reconnect");
         this.lblStatusMessage.setText(_JDT._.gui_warning_reconnect_running());
         this.lblStatusMessage.setEnabled(true);
         this.lblBeforeIP.setText(IPController.getInstance().getIP().toString());

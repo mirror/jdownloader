@@ -8,7 +8,6 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
@@ -36,6 +35,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.plugins.FinalLinkState;
@@ -93,7 +93,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
-    public Logger getLogger() {
+    public LogInterface getLogger() {
         return plugin.getLogger();
     }
 
@@ -536,7 +536,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     public void updateFinalFileName() {
         if (getFinalFileName() == null) {
-            Logger logger = getLogger();
+            LogInterface logger = getLogger();
             DownloadInterface dl = getDownloadInterface();
             URLConnectionAdapter connection = getDownloadInterface().getConnection();
             logger.info("FinalFileName is not set yet!");

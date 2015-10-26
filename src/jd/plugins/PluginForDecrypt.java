@@ -40,6 +40,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
@@ -89,7 +90,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     @Override
-    public LogSource getLogger() {
+    public LogInterface getLogger() {
         return (LogSource) super.getLogger();
     }
 

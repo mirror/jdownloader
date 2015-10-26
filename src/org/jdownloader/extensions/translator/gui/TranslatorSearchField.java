@@ -22,7 +22,7 @@ import javax.swing.border.Border;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
@@ -130,7 +130,7 @@ public class TranslatorSearchField extends ExtTextField implements MouseMotionLi
                 table2Filter.updaterFilter(this);
 
             } catch (final Throwable e) {
-                Log.exception(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         } else {
             filterPatterns = null;

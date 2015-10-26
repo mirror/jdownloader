@@ -266,7 +266,7 @@ public class CMS extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         } catch (final IOException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            logger.log(e);
             return null;
         }
 

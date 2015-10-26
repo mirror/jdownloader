@@ -12,7 +12,7 @@ import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -45,7 +45,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
             defValue = selection.getFirstPackage().getName();
         } catch (Throwable e2) {
             // too many unsafe casts. catch problems - just to be sure
-            Log.exception(e2);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e2);
         }
         return defValue;
     }

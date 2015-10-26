@@ -3,7 +3,7 @@ package org.jdownloader.extensions.schedulerV2.gui.actions;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.extensions.schedulerV2.gui.AddScheduleEntryDialog;
@@ -50,7 +50,7 @@ public class EditAction extends AbstractAddAction {
         } catch (DialogNoAnswerException e1) {
             e1.printStackTrace();
         } catch (Exception e1) {
-            Log.exception(e1);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
         }
 
     }

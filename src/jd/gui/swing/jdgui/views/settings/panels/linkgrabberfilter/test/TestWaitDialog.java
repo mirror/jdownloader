@@ -204,11 +204,11 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         recThread = new Thread("LinkFilterTesting") {
 
             private LinkCrawler              lc  = new LinkCrawler(true, true) {
-                                                     @Override
-                                                     protected Long getDefaultAverageRuntime() {
-                                                         return -100l;
-                                                     }
-                                                 };
+                @Override
+                protected Long getDefaultAverageRuntime() {
+                    return -100l;
+                }
+            };
             private LinkChecker<CrawledLink> lch = new LinkChecker<CrawledLink>();
 
             @Override

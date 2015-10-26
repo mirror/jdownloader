@@ -21,7 +21,7 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.config.ValidationException;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.api.jdanywhere.api.interfaces.IDashboardApi;
 import org.jdownloader.api.jdanywhere.api.storable.RunningObjectStorable;
@@ -280,7 +280,7 @@ public class DashboardApi implements IDashboardApi {
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
             ImageIO.write(bufferedImage, "png", out);
         } catch (IOException e) {
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
         } finally {
             try {

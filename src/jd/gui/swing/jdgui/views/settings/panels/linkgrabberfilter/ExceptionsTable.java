@@ -29,7 +29,7 @@ public class ExceptionsTable extends AbstractFilterTable {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.ArrayList,
      * org.appwork.swing.exttable.ExtColumn)
      */
@@ -61,7 +61,7 @@ public class ExceptionsTable extends AbstractFilterTable {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList , java.awt.event.KeyEvent, boolean)
      */
     @Override

@@ -34,7 +34,7 @@ import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
@@ -271,7 +271,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                     isMultiArchive = archive != null && archive.getArchiveFiles().size() > 1;
                 }
             } catch (Throwable e) {
-                Log.exception(Level.SEVERE, e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log( e);
             }
             ((CrawledLink) object).setName(value);
             if (isMultiArchive) {
@@ -290,7 +290,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                     isMultiArchive = archive != null && archive.getArchiveFiles().size() > 1;
                 }
             } catch (Throwable e) {
-                Log.exception(Level.SEVERE, e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log( e);
             }
             DownloadWatchDog.getInstance().renameLink(((DownloadLink) object), value);
             if (isMultiArchive) {

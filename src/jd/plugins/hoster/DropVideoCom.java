@@ -112,7 +112,7 @@ public class DropVideoCom extends PluginForHost {
             engine.eval("var res = " + js);
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log( e);
             return null;
         }
         final String dllink = new Regex(result, "(\"|')(https?://\\w+\\.dropvideo\\.com/v/[a-f0-9]{32}\\.mp4.*?)\\1").getMatch(1);

@@ -519,7 +519,7 @@ public class RapiduNet extends PluginForHost {
                 date = dateFormat.parse(userPremiumDateEnd);
                 ai.setValidUntil(date.getTime());
             } catch (final Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                logger.log( e);
             }
             // set max simult. downloads using API method
             account.setMaxSimultanDownloads(checkMaxSimultanPremiumDowloadNum());

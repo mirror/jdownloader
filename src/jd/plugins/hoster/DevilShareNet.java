@@ -225,7 +225,7 @@ public class DevilShareNet extends PluginForHost {
                 date = dateFormat.parse(userPremiumExpire);
                 ai.setValidUntil(date.getTime());
             } catch (final Exception e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                logger.log( e);
             }
         } else {
             ai.setProperty("premium", "false");

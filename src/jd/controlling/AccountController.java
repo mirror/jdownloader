@@ -27,7 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
@@ -62,6 +61,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.logging.LogController;
@@ -84,12 +84,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
 
-    };
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -275,7 +275,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             plugin.setLogger(logger);
             Thread currentThread = Thread.currentThread();
             BrowserSettingsThread bThread = null;
-            Logger oldLogger = null;
+            LogInterface oldLogger = null;
             if (currentThread instanceof BrowserSettingsThread) {
                 bThread = (BrowserSettingsThread) currentThread;
             }
@@ -409,8 +409,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                     * we are offline, so lets just return without any account update
-                     */
+                                                           * we are offline, so lets just return without any account update
+                                                           */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");

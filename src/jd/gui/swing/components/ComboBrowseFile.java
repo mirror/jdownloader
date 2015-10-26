@@ -34,7 +34,7 @@ import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.gui.translate._GUI;
 
@@ -86,7 +86,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
             try {
                 setFiles(new Vector<String>((List<String>) list));
             } catch (final Throwable e) {
-                Log.exception(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         }
         if (files == null) setFiles(new Vector<String>());

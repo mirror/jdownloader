@@ -55,7 +55,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.DesktopSupportLinux;
 import org.appwork.utils.swing.EDTHelper;
@@ -745,7 +745,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }
         } catch (final Throwable e1) {
             /* plugin not loaded yet */
-            Log.exception(e1);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
         }
         // no special mac handling. the typical mac handling would be close to tray
         RestartController.getInstance().exitAsynch(new SmartRlyExitRequest(asked.get()));

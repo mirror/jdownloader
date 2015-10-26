@@ -278,7 +278,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             decryptedLinks.add(androidLink);
 
         } catch (final IOException e) {
-            this.logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+            this.logger.log(e);
             return null;
         } finally {
             try {

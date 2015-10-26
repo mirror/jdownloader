@@ -681,7 +681,7 @@ public class DepositFiles extends antiDDoSForHost {
                 date = dateFormat.parse(expire);
                 ai.setValidUntil(date.getTime());
             } catch (final ParseException e) {
-                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                logger.log( e);
             }
         }
         return ai;
@@ -1057,7 +1057,7 @@ public class DepositFiles extends antiDDoSForHost {
                     date = dateFormat.parse(expire);
                     ai.setValidUntil(date.getTime());
                 } catch (final ParseException e) {
-                    logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                    logger.log( e);
                 }
             } else {
                 ai.setStatus("Free Account");

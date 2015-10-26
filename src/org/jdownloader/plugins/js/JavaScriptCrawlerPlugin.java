@@ -21,7 +21,7 @@ import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.scripting.ContextCallback;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
@@ -54,7 +54,7 @@ public class JavaScriptCrawlerPlugin implements ContextCallback {
 
     }
 
-    protected LogSource getLogger() {
+    protected LogInterface getLogger() {
         return plugin.getLogger();
     }
 

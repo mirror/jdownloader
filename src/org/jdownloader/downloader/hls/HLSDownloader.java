@@ -40,6 +40,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpServer;
@@ -68,7 +69,7 @@ public class HLSDownloader extends DownloadInterface {
     private DownloadLinkDownloadable          downloadable;
     private final DownloadLink                link;
     private long                              startTimeStamp;
-    private final LogSource                   logger;
+    private final LogInterface                logger;
     private URLConnectionAdapter              currentConnection;
     private ManagedThrottledConnectionHandler connectionHandler;
     private File                              outputCompleteFile;
@@ -94,7 +95,7 @@ public class HLSDownloader extends DownloadInterface {
         logger = initLogger(link);
     }
 
-    public LogSource initLogger(final DownloadLink link) {
+    public LogInterface initLogger(final DownloadLink link) {
         PluginForHost plg = link.getLivePlugin();
         if (plg == null) {
             plg = link.getDefaultPlugin();

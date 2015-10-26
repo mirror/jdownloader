@@ -24,7 +24,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -52,7 +51,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 
 public class EasyCaptchaTool {
@@ -115,7 +113,9 @@ public class EasyCaptchaTool {
                 return null;
             }
         }.waitForEDT();
-        if (ef.file == null) return null;
+        if (ef.file == null) {
+            return null;
+        }
         return ef;
     }
 
@@ -130,7 +130,9 @@ public class EasyCaptchaTool {
                 JPanel box = new JPanel(new GridLayout(3, 1));
                 JButton btcs = new JButton(T._.easycaptcha_tool_continuelastsession());
                 final EasyMethodFile lastEF = (EasyMethodFile) config.get(CONFIG_LASTSESSION, null);
-                if (lastEF == null) btcs.setEnabled(false);
+                if (lastEF == null) {
+                    btcs.setEnabled(false);
+                }
                 btcs.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
@@ -188,7 +190,9 @@ public class EasyCaptchaTool {
                                             ef.file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), tfHoster.getText());
                                             dialog.dispose();
                                             cHosterDialog.dispose();
-                                            if (tfAuthor.getText() != null && !tfAuthor.getText().matches("\\s*")) config.put(CONFIG_AUTHOR, tfAuthor.getText());
+                                            if (tfAuthor.getText() != null && !tfAuthor.getText().matches("\\s*")) {
+                                                config.put(CONFIG_AUTHOR, tfAuthor.getText());
+                                            }
                                             CreateHoster.create(new EasyMethodFile("easycaptcha"), ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
 
                                         } else {
@@ -223,8 +227,9 @@ public class EasyCaptchaTool {
                     // config.put(CONFIG_LASTSESSION, ef);
                     saveConfig();
                     return ef;
-                } else
+                } else {
                     return null;
+                }
             }
         }.getReturnValue();
 
@@ -381,8 +386,7 @@ public class EasyCaptchaTool {
     }
 
     public static void main(String[] args) throws IOException {
-
-        Log.L.setLevel(Level.ALL);
+        Application.ensureFrameWorkInit();
         Application.setApplication(".jd_home");
 
         JSonStorage.setMapper(new JacksonMapper());

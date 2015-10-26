@@ -72,6 +72,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.LogSourceProvider;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
@@ -678,7 +679,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         final File folder = Application.getTempResource("logs/" + name);
                         try {
                             try {
-                                LogController.getInstance().flushSinks(true, false);
+                                LogSourceProvider.flushAllSinks(true, false);
                                 writer = new ZipIOWriter(zip) {
                                     @Override
                                     public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {

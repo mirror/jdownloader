@@ -29,7 +29,7 @@ import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.ConsoleLogImpl;
 import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
@@ -284,23 +284,7 @@ public class TestClient {
                 HTTPConnection con = null;
                 byte[] ret = null;
                 final BasicHTTP br = new BasicHTTP();
-                br.setLogger(new LogInterface() {
-
-                    @Override
-                    public void log(Throwable e) {
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void info(String msg) {
-                        System.out.println(msg);
-                    }
-
-                    @Override
-                    public void fine(String string) {
-                        System.out.println(string);
-                    }
-                });
+                br.setLogger(new ConsoleLogImpl());
                 br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
                 final int[] codes = new int[999];
                 for (int i = 0; i < codes.length; i++) {

@@ -49,7 +49,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.locale._AWU;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
@@ -420,7 +420,7 @@ public class LiveHeaderDetectionWizard {
                 }
 
             } catch (ReconnectException e) {
-                Log.exception(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
             processCallBack.setProgress(getPlugin(), Math.min(99, (i + 1) * 100 / tests.size()));
         }

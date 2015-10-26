@@ -3,7 +3,7 @@ package org.jdownloader.controlling.filter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.translate._GUI;
 
@@ -378,7 +378,7 @@ public class CompiledFiletypeFilter {
             }
         } catch (final IllegalArgumentException e) {
             /* custom regex may contain errors */
-            Log.exception(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         matchType = filetypeFilter.getMatchType();
         this.list = list.toArray(new Pattern[list.size()]);

@@ -50,9 +50,9 @@ import java.net.URL;
 import java.rmi.ConnectException;
 import java.util.Locale;
 import java.util.StringTokenizer;
-import java.util.logging.Logger;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.Login;
@@ -72,14 +72,14 @@ public class SimpleFTP {
     private BufferedWriter   writer             = null;
     private String           dir                = "/";
     private String           host;
-    private Logger           logger             = LogController.CL();
+    private LogInterface     logger             = LogController.CL();
     private String           latestResponseLine = null;
 
-    public Logger getLogger() {
+    public LogInterface getLogger() {
         return logger;
     }
 
-    public void setLogger(Logger logger) {
+    public void setLogger(LogInterface logger) {
         if (logger == null) {
             logger = LogController.CL();
         }

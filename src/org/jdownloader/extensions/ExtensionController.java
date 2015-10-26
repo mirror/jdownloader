@@ -35,7 +35,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.io.J7FileList;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -123,7 +123,7 @@ public class ExtensionController implements MenuExtenderHandler {
                         ret = load();
                     } catch (Throwable e) {
                         logger.severe("@ExtensionController: update failed!");
-                        Log.exception(e);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                     }
                 } else {
                     /* try to load from cache */
@@ -131,7 +131,7 @@ public class ExtensionController implements MenuExtenderHandler {
                         ret = loadFromCache();
                     } catch (Throwable e) {
                         logger.severe("@ExtensionController: cache failed!");
-                        Log.exception(e);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                     }
                     if (ret.size() == 0) {
                         try {
@@ -139,7 +139,7 @@ public class ExtensionController implements MenuExtenderHandler {
                             ret = load();
                         } catch (Throwable e) {
                             logger.severe("@ExtensionController: update failed!");
-                            Log.exception(e);
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                         }
                     }
                 }
@@ -157,7 +157,7 @@ public class ExtensionController implements MenuExtenderHandler {
                     }
                 });
             } catch (final Throwable e) {
-                Log.exception(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
             if (!org.appwork.utils.Application.isHeadless()) {
                 MenuManagerMainmenu.getInstance().registerExtender(this);
@@ -334,7 +334,7 @@ public class ExtensionController implements MenuExtenderHandler {
                                                     }
                                                 }
                                             } catch (Throwable e1) {
-                                                Log.exception(e1);
+                                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
                                             }
                                         }
                                     } finally {
@@ -387,7 +387,7 @@ public class ExtensionController implements MenuExtenderHandler {
                                                         }
                                                     }
                                                 } catch (Throwable e1) {
-                                                    Log.exception(e1);
+                                                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
                                                 }
                                             }
                                         } finally {
@@ -410,7 +410,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
                     }
                 } catch (Throwable e) {
-                    Log.exception(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
             }
         }
@@ -427,7 +427,7 @@ public class ExtensionController implements MenuExtenderHandler {
             try {
                 root = new File(ret.toURI());
             } catch (URISyntaxException e) {
-                Log.exception(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 logger.finer("Did not load unpacked Extensions from " + ret);
                 return retl;
             }
@@ -478,7 +478,7 @@ public class ExtensionController implements MenuExtenderHandler {
                         } catch (IllegalArgumentException e) {
                             logger.warning("Did not init Extension " + module + " : " + e.getMessage());
                         } catch (Throwable e) {
-                            Log.exception(e);
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                             UIOManager.I().showConfirmDialog(0, e.getMessage(), Exceptions.getStackTrace(e));
                             // UIOManager.I().show(ExceptionDialogInterface.class, new
                             // ExceptionDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | UIOManager.BUTTONS_HIDE_CANCEL, "Error",

@@ -1114,7 +1114,7 @@ public class DirectHTTP extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Network problem: " + e.getMessage(), 30 * 60 * 1000l);
         } catch (final Exception e) {
-            this.logger.log(Level.SEVERE, e.getMessage(), e);
+            this.logger.log( e);
         } finally {
             try {
                 urlConnection.disconnect();

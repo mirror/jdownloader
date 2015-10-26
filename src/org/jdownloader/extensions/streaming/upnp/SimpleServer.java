@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.streaming.upnp;
 
 import java.io.IOException;
-import java.util.logging.LogManager;
 
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
@@ -31,20 +30,12 @@ import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.Res;
 import org.fourthline.cling.support.model.SortCriterion;
 import org.fourthline.cling.support.model.item.VideoItem;
-import org.jdownloader.logging.ExtLogManager;
-import org.jdownloader.logging.LogController;
 import org.seamless.util.MimeType;
 
 public class SimpleServer {
     public static void main(String[] args) {
 
         System.setProperty("java.net.preferIPv4Stack", "true");
-        // }
-
-        // the logmanager should not be initialized here. so setting the property should tell the logmanager to init a ExtLogManager
-        // instance.
-        System.setProperty("java.util.logging.manager", "jd.ExtLogManager");
-        ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
 
         new Thread() {
             public void run() {

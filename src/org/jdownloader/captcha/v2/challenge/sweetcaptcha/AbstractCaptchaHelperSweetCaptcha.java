@@ -1,19 +1,18 @@
 package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 
-import java.util.logging.Logger;
-
 import jd.http.Browser;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperSweetCaptcha<T extends Plugin> {
-    protected T       plugin;
-    protected Logger  logger;
-    protected Browser br;
-    protected String  siteKey;
-    protected String  appKey;
+    protected T            plugin;
+    protected LogInterface logger;
+    protected Browser      br;
+    protected String       siteKey;
+    protected String       appKey;
 
     public AbstractCaptchaHelperSweetCaptcha(T plugin, Browser br, final String siteKey, final String appKey) {
         this.plugin = plugin;

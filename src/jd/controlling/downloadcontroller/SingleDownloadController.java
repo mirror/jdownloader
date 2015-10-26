@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
@@ -55,6 +54,7 @@ import jd.plugins.download.HashResult;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.controlling.download.DownloadControllerListener;
@@ -593,7 +593,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     @Override
-    public void setLogger(Logger logger) {
+    public void setLogger(LogInterface logger) {
         /* we dont allow external changes */
     }
 

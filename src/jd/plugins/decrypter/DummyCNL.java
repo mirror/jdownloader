@@ -41,7 +41,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummycnl.jdownloader.org" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" }, flags = { 0 })
 public class DummyCNL extends PluginForDecrypt {
@@ -171,7 +171,7 @@ public class DummyCNL extends PluginForDecrypt {
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new String(cipher.doFinal(b), "UTF-8");
         } catch (Throwable e) {
-            Log.exception(e);
+            LoggerFactory.I().getDefaultLogger().log(e);
         }
         return null;
     }

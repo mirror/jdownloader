@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -58,6 +57,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.HashCheckPluginProgress;
@@ -95,7 +95,7 @@ public class OldRAFDownload extends DownloadInterface {
     protected Downloadable                      downloadable;
 
     protected PluginException                   caughtPluginException    = null;
-    public Logger                               logger;
+    public LogInterface                         logger;
 
     public static final String                  PROPERTY_DOFILESIZECHECK = "DOFILESIZECHECK";
     protected Request                           request                  = null;
@@ -1085,7 +1085,7 @@ public class OldRAFDownload extends DownloadInterface {
         }
     }
 
-    public Logger getLogger() {
+    public LogInterface getLogger() {
         return logger;
     }
 

@@ -71,6 +71,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
@@ -112,7 +113,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     private final YoutubeConfig           cfg;
 
-    private final LogSource               logger;
+    private final LogInterface            logger;
     private String                        base;
     private List<YoutubeVariantInterface> variants;
 
@@ -634,7 +635,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return sb.toString();
     }
 
-    public YoutubeHelper(final Browser br, final YoutubeConfig cfg, final LogSource logger) {
+    public YoutubeHelper(final Browser br, final YoutubeConfig cfg, final LogInterface logger) {
         this.br = br;
         this.logger = logger;
 

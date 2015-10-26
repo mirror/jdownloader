@@ -21,7 +21,7 @@ import org.jdownloader.images.NewTheme;
 
 public class NewAction extends AbstractAddAction {
     /**
-     * 
+     *
      */
     private static final long   serialVersionUID = 1L;
 
@@ -49,7 +49,9 @@ public class NewAction extends AbstractAddAction {
     }
 
     private AbstractFilterTable getTable() {
-        if (table != null) return table;
+        if (table != null) {
+            return table;
+        }
         return linkgrabberFilter.getTable();
     }
 

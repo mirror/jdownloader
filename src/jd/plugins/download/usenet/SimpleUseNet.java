@@ -15,7 +15,7 @@ import javax.net.ssl.SSLSocketFactory;
 import jd.http.SocketConnectionFactory;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.socketconnection.SocketConnection;
@@ -98,18 +98,18 @@ public class SimpleUseNet {
         return socket;
     }
 
-    private OutputStream    outputStream = null;
-    private InputStream     inputStream  = null;
-    private final byte[]    CRLF         = "\r\n".getBytes();
+    private OutputStream       outputStream = null;
+    private InputStream        inputStream  = null;
+    private final byte[]       CRLF         = "\r\n".getBytes();
 
-    private final LogSource logger;
-    private final HTTPProxy proxy;
+    private final LogInterface logger;
+    private final HTTPProxy    proxy;
 
     public HTTPProxy getProxy() {
         return proxy;
     }
 
-    public SimpleUseNet(HTTPProxy proxy, LogSource logger) {
+    public SimpleUseNet(HTTPProxy proxy, LogInterface logger) {
         this.proxy = proxy;
         if (logger != null) {
             this.logger = logger;
@@ -224,11 +224,11 @@ public class SimpleUseNet {
     }
 
     private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream() {
-                                                       @Override
-                                                       public synchronized byte[] toByteArray() {
-                                                           return buf;
-                                                       };
-                                                   };
+        @Override
+        public synchronized byte[] toByteArray() {
+            return buf;
+        };
+    };
 
     protected synchronized String readLine() throws IOException {
         return readLine(lineBuffer);

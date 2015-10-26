@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -119,7 +119,7 @@ public class AtvAt extends PluginForDecrypt {
                             // try to get the video quality
                             HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
                                 @Override
-                                public LogSource initLogger(DownloadLink link) {
+                                public LogInterface initLogger(DownloadLink link) {
                                     return getLogger();
                                 }
                             };

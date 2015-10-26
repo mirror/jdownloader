@@ -1,18 +1,17 @@
 package org.jdownloader.captcha.v2.challenge.areyouahuman;
 
-import java.util.logging.Logger;
-
 import jd.http.Browser;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperAreYouHuman<T extends Plugin> {
-    protected T       plugin;
-    protected Logger  logger;
-    protected Browser br;
-    protected String  siteKey;
+    protected T            plugin;
+    protected LogInterface logger;
+    protected Browser      br;
+    protected String       siteKey;
 
     public AbstractCaptchaHelperAreYouHuman(T plugin, Browser br, String siteKey) {
         this.plugin = plugin;
@@ -29,8 +28,8 @@ public abstract class AbstractCaptchaHelperAreYouHuman<T extends Plugin> {
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @author raztoki
      * @since JD2
      * @return
@@ -41,7 +40,7 @@ public abstract class AbstractCaptchaHelperAreYouHuman<T extends Plugin> {
 
     /**
      * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
-     * 
+     *
      * @author raztoki
      * @since JD2
      * @return

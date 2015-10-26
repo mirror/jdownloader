@@ -2,7 +2,7 @@ package org.jdownloader.scripting;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.appwork.utils.logging.Log;
+
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
@@ -133,7 +133,7 @@ public class JSRhinoPermissionRestricter {
                 public boolean visibleToScripts(String className) {
                     Thread cur = Thread.currentThread();
                     if (TRUSTED_THREAD.containsKey(cur)) {
-                        Log.L.severe("Trusted Thread Loads: " + className);
+                              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Trusted Thread Loads: " + className);
                         return true;
 
                     }
@@ -142,7 +142,7 @@ public class JSRhinoPermissionRestricter {
                     } else if (className.startsWith("org.mozilla.javascript.ConsString")) {
                         return true;
                     } else if (className.equals("org.mozilla.javascript.EcmaError")) {
-                        Log.L.severe("Javascript error occured");
+                              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         return true;
 
                     } else {
@@ -162,7 +162,7 @@ public class JSRhinoPermissionRestricter {
         @Override
         public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
             if (javaObject instanceof EcmaError) {
-                Log.exception((EcmaError) javaObject);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log((EcmaError) javaObject);
             }
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
@@ -182,7 +182,7 @@ public class JSRhinoPermissionRestricter {
         public Object get(String name, Scriptable start) {
 
             if (name.equals("getClass")) {
-                Log.L.severe("JS Security Exception");
+                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("JS Security Exception");
                 return NOT_FOUND;
             }
 

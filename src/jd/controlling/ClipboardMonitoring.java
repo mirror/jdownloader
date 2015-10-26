@@ -32,7 +32,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
@@ -303,7 +303,7 @@ public class ClipboardMonitoring {
                             waitTimeout = 5000;
                             final String message = e.getMessage();
                             if (!StringUtils.containsIgnoreCase(message, "Owner failed to convert data") && !StringUtils.containsIgnoreCase(message, "Owner timed out") && !StringUtils.containsIgnoreCase(message, "system clipboard data unavailable")) {
-                                Log.exception(e);
+                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                             }
                         }
                     }

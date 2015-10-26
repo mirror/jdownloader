@@ -51,7 +51,7 @@ public class TimSahCom extends PluginForHost {
         try {
             result = engine.eval(fun);
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log( e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -8,7 +8,7 @@ import javax.swing.JProgressBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.logging.Log;
+
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
@@ -144,7 +144,7 @@ public class UninstalledExtension {
                                     }
 
                                 } catch (Exception e) {
-                                    Log.exception(e);
+                                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                                 } finally {
 
                                 }

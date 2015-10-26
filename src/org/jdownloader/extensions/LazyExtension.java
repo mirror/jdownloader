@@ -16,7 +16,7 @@ import jd.plugins.ExtensionConfigInterface;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
+
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -305,10 +305,10 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
             } else {
                 // jared cache loader
                 try {
-                    Log.L.info("Use " + jarPath + " classloader");
+                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Use " + jarPath + " classloader");
                     classLoader = new URLClassLoader(new URL[] { new File(jarPath).toURI().toURL() });
                 } catch (MalformedURLException e) {
-                    Log.L.info("WTF");
+                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("WTF");
                     e.printStackTrace();
                     throw new WTFException(e);
                 }

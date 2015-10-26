@@ -276,7 +276,7 @@ public class DropboxCom extends PluginForHost {
             } catch (PluginException e) {
                 throw e;
             } catch (Exception e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.log( e);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
@@ -412,7 +412,7 @@ public class DropboxCom extends PluginForHost {
             signature = new String(org.appwork.utils.encoding.Base64.encodeToString(digest, false)).trim();
 
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log( e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         url += "&oauth_signature=" + Encoding.urlEncode(signature);

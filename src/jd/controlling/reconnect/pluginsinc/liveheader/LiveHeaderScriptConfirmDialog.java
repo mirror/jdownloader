@@ -117,7 +117,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     }
 
     /**
-     * 
+     *
      */
     private HashSet<String> confirmed = new HashSet<String>();
     private AppAction       editAction;
@@ -336,7 +336,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     }
 
     /**
-     * 
+     *
      */
     public void updateScriptInfo() {
         try {
