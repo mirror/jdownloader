@@ -573,11 +573,7 @@ public class TurboBitNet extends PluginForHost {
             br2.getPage(continueLink);
             downloadUrl = br2.getRegex("(\"|')(/?/download/redirect/.*?)\\1").getMatch(1);
             if (downloadUrl == null) {
-                if (br2.toString().matches("Error: \\d+")) {
-                    // unknown error...
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                handleDownloadRedirectErrors(br2);
             }
             br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
         }
@@ -614,6 +610,17 @@ public class TurboBitNet extends PluginForHost {
         }
         handleServerErrors();
         dl.startDownload();
+    }
+
+    private void handleDownloadRedirectErrors(final Browser br) throws PluginException {
+        if (br.toString().matches("Error: \\d+")) {
+            // unknown error...
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (br.toString().matches("^The file is not avaliable now because of technical problems\\. <br> Try to download it once again after 10-15 minutes\\..*?")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File not avaiable due to technical problems.", 15 * 60 * 1001l);
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error");
     }
 
     private String getCurrentTimeCookie(Browser ibr) throws PluginException {
@@ -804,7 +811,7 @@ public class TurboBitNet extends PluginForHost {
                      */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Generated Premium link has expired!");
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error");
+                handleDownloadRedirectErrors(br);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
