@@ -64,6 +64,7 @@ public class BitsterCz extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
+    private static final String  HTML_ERROR_DELETED           = "\"DELETED\"";
     private static final String  HTML_ERROR_NOTFOUND          = "\"NOTFOUND\"";
     private static final String  HTML_ERROR_ABUSED            = "\"ABUSED\"";
     private static final String  HTML_ERROR_LOCKED            = "\"LOCKED\"";
@@ -91,7 +92,7 @@ public class BitsterCz extends PluginForHost {
         passwordprotected = false;
         password = link.getStringProperty("pass", null);
         currDownloadlink = link;
-        String filename;
+        String filename = null;
         long filesize = -1;
         String description = null;
         String md5 = null;
@@ -101,33 +102,33 @@ public class BitsterCz extends PluginForHost {
         this.setBrowserExclusive();
         prepBR(this.br);
         this.br.getPage("https://bitster.cz/api/file_getinfo?param=" + this.fid + "&pw=" + password);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.toString().equals(HTML_ERROR_NOTFOUND) || this.br.toString().equals(HTML_ERROR_ABUSED)) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.toString().equals(HTML_ERROR_NOTFOUND) || this.br.toString().equals(HTML_ERROR_ABUSED) || this.br.toString().equals(HTML_ERROR_DELETED)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (this.br.toString().equals(HTML_ERROR_LOCKED)) {
             link.getLinkStatus().setStatusText("This url is password protected");
-            filename = this.fid;
-            set_finalname = false;
+            passwordprotected = true;
         } else {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            /* Do not perform any additional offline checks - we trust their API! */
-            // if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Hups, soubor byl smaz")) {
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // }
             filesize = DummyScriptEnginePlugin.toLong(entries.get("length"), -1);
             filename = (String) entries.get("title");
             md5 = getJson("md5");
             description = (String) entries.get("longdescription");
             /* This shouldn't be needed but okay let's double check/set passwordprotected state here. */
-            passwordprotected = ((Boolean) entries.get("passwordprotected")).booleanValue();
+            final Object passwordprotected_o = entries.get("passwordprotected");
+            if (passwordprotected_o instanceof String) {
+                passwordprotected = Boolean.parseBoolean((String) passwordprotected_o);
+            } else {
+                passwordprotected = ((Boolean) entries.get("passwordprotected")).booleanValue();
+            }
             if (inValidate(description)) {
                 description = (String) entries.get("shortdescription");
             }
-            if (filename == null) {
-                /* Ultimate fallback */
-                filename = this.fid;
-                set_finalname = false;
-            }
+        }
+        if (filename == null) {
+            /* Ultimate fallback for password protected urls or unknown states. */
+            filename = this.fid;
+            set_finalname = false;
         }
         filename = Encoding.htmlDecode(filename.trim());
         filename = encodeUnicode(filename);
@@ -182,7 +183,7 @@ public class BitsterCz extends PluginForHost {
             /* Password seems to be correct --> Save it */
             this.currDownloadlink.setProperty("pass", this.password);
         }
-        getPage("/api/file_download?param=" + this.fid + "&pw=" + this.password);
+        getPage("/api/file_download?param=" + this.fid);
         final String dllink = this.br.toString().replace("\"", "");
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -235,7 +236,8 @@ public class BitsterCz extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 this.br.postPage("https://bitster.cz/api/validatebasicauth", "");
-                if (!this.br.toString().equals("\"True\"")) {
+                final String result = getJson("result");
+                if (!"true".equals(result)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -261,7 +263,7 @@ public class BitsterCz extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        this.br.getPage("");
+        this.br.getPage("/api/User_GetAccountInfo");
         final String joindate = this.getJson("joindate");
         final String trafficleft_str = this.getJson("creditbalance");
         long trafficleft = 0;
@@ -336,7 +338,7 @@ public class BitsterCz extends PluginForHost {
     }
 
     private void apiHandleErrors() throws PluginException {
-        if (this.br.containsHTML("\"DELETED\"")) {
+        if (this.br.containsHTML(HTML_ERROR_DELETED)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML(HTML_ERROR_ABUSED)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -368,6 +370,9 @@ public class BitsterCz extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
+        } else if (this.br.containsHTML("Error occurred, please contact")) {
+            /* Should never happen */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 60 * 1000l);
         }
     }
 
