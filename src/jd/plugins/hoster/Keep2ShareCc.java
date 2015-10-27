@@ -22,6 +22,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,9 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://keep2sharedecrypted\\.cc/file/[a-z0-9]+" }, flags = { 2 })
 public class Keep2ShareCc extends K2SApi {
@@ -209,7 +209,7 @@ public class Keep2ShareCc extends K2SApi {
                 filesize = br.getRegex("<b>File size:</b>(.*?)<br>").getMatch(0);
             }
         }
-        return filesize;
+        return filesize != null ? filesize.replaceAll("\\s", "") : null;
     }
 
     @Override
@@ -726,7 +726,7 @@ public class Keep2ShareCc extends K2SApi {
 
     /**
      * because stable is lame!
-     * */
+     */
     public void setBrowser(final Browser ibr) {
         this.br = ibr;
     }
