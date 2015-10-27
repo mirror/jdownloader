@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,14 +40,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitster.cz" }, urls = { "https?://(?:www\\.)?bitster\\.(?:cz|sk)/(?:#?file|download)/[a-z0-9]+" }, flags = { 2 })
 public class BitsterCz extends PluginForHost {
 
     public BitsterCz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://bitster.cz/");
+        this.enablePremium("https://bitster.cz/premium");
     }
 
     @Override
@@ -90,7 +90,7 @@ public class BitsterCz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         passwordprotected = false;
-        password = link.getStringProperty("pass", null);
+        password = link.getStringProperty("pass", "");
         currDownloadlink = link;
         String filename = null;
         long filesize = -1;
@@ -386,7 +386,7 @@ public class BitsterCz extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }

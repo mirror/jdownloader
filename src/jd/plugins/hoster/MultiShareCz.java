@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,12 +35,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/(stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" }, flags = { 2 })
-public class MultiShareCz extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/((?:[a-z]{2}/)?stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" }, flags = { 2 })
+public class MultiShareCz extends antiDDoSForHost {
 
     public MultiShareCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -120,68 +119,6 @@ public class MultiShareCz extends PluginForHost {
         return ai;
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
     @Override
     public String getAGBLink() {
         return "http://www.multishare.cz/kontakt/";
@@ -205,8 +142,7 @@ public class MultiShareCz extends PluginForHost {
         }
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String fileid = new Regex(downloadLink.getDownloadURL(), "/stahnout/(\\d+)/").getMatch(0);
-        String dllink = "https://www.multishare.cz/html/download_free.php?ID=" + fileid;
+        String dllink = "https://www.multishare.cz/html/download_free.php?ID=" + getFuid(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -236,8 +172,7 @@ public class MultiShareCz extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
-        String fileid = new Regex(downloadLink.getDownloadURL(), "/stahnout/(\\d+)/").getMatch(0);
-        String dllink = "https://www.multishare.cz/html/download_premium.php?ID=" + fileid;
+        String dllink = "https://www.multishare.cz/html/download_premium.php?ID=" + getFuid(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -381,22 +316,35 @@ public class MultiShareCz extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        // support English page as its easier to understand for all our programmers.
+        br.getPage("https://www.multishare.cz/en/stahnout/" + getFuid(downloadLink) + "/");
+        // need to find the new error response in English!!
         if (br.containsHTML("(Požadovaný soubor neexistuje|Je možné, že byl již tento soubor vymazán uploaderem nebo porušoval autorská práva)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>MultiShare\\.cz :: Stáhnout soubor \"(.*?)\"</title>").getMatch(0);
+        final String title = "<title>Stáhnout (.*?)\\s*\\(([\\d\\.\\, a-zA-Z]+)\\)\\s*\\|\\s*MultiShare.cz</title>";
+        String filename = br.getRegex(title).getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<li>Název: <strong>(.*?)</strong>").getMatch(0);
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         }
-        String filesize = br.getRegex("Velikost: <strong>(.*?)</strong").getMatch(0);
-        if (filename == null || filesize == null) {
+        String filesize = br.getRegex(title).getMatch(1);
+        if (filesize == null) {
+            filesize = br.getRegex("<span class=\"download-file-size\"><span>([\\d\\.\\, a-zA-Z]+)</span>").getMatch(0);
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setName(filename.trim());
-        filesize = filesize.replace("&nbsp;", "");
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            filesize = filesize.replace("&nbsp;", "");
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
+    }
+
+    private String getFuid(DownloadLink downloadLink) {
+        final String fuid = new Regex(downloadLink.getDownloadURL(), "/(\\d+)/?$").getMatch(0);
+        return fuid;
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
