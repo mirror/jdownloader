@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,17 +30,16 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
 names = { "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "imgserve.net", "pic4you.ru", "tuspics.net", "imagetwist.com", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
 
-urls = { "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(www\\.)?imgserve\\.net/img\\-[a-z0-9]+\\.html", "http://(www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postim(age|g)\\.org/image/[a-z0-9]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+",
+urls = { "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(www\\.)?imgserve\\.net/img\\-[a-z0-9]+\\.html", "http://(www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/.+)", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+",
         "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
 
 flags = { 0 })
-public class ImageHosterDecrypter extends PluginForDecrypt {
+public class ImageHosterDecrypter extends antiDDoSForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -218,9 +216,20 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("picsapart.com/")) {
             finallink = parameter.replace("/photo/", "/download/");
             finalfilename = new Regex(parameter, "picsapart\\.com/photo/(\\d+)").getMatch(0) + ".jpg";
-        } else if (new Regex(parameter, Pattern.compile(".+postim(age|g)\\.org/.+", Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (new Regex(parameter, ".+postim(age|g)\\.org/.+").matches()) {
+            // they use cloudflare
+            if (new Regex(parameter, ".+://s\\d{1,2}\\.postimg\\.org/.+").matches()) {
+                // these are finallinks and not direct downloadable...
+                br.setFollowRedirects(false);
+                getPage(parameter);
+                // this will redirect within html (old fashion meta refresh or javascript to the proper uid
+                final String newparm = br.getRegex("http-equiv=('|\")refresh\\1 content=('|\")\\d+; url=(.*?)\\2").getMatch(2);
+                if (newparm != null) {
+                    parameter = newparm;
+                }
+            }
             br.setFollowRedirects(true);
-            br.getPage(parameter.replace("postimage/", "postimg/") + "/full/");
+            getPage(parameter.replace("postimage/", "postimg/") + (parameter.endsWith("/") ? "" : "/") + "full/");
             if (!br.getURL().contains("/full")) {
                 try {
                     decryptedLinks.add(this.createOfflinelink(parameter));
