@@ -226,7 +226,7 @@ public class Music163Com extends PluginForHost {
                 logger.warning("Failed to get/set lyrics");
             }
             /* Now find the highest DOWNLOADABLE quality available */
-            boolean trackDownloadable = false;
+            boolean trackDownloadableViaEncryptedUrl = false;
             for (final String quality : audio_qualities) {
                 if (this.isAbort()) {
                     logger.info("User stopped downloads --> Stepping out of 'quality loop'");
@@ -242,7 +242,6 @@ public class Music163Com extends PluginForHost {
                      * bMusic (and often/alyways) lMusic == mp3Url - in theory we don't have to generate the final downloadlink for these
                      * cases as it is already given.
                      */
-                    // DLLINK = (String) entries.get("mp3Url");
                     DLLINK = String.format(dlurl_format, encrypted_dfsid, dfsid);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
                     /* Sometimes HQ versions of songs are officially available but directlinks return 404 on download attempt. */
@@ -251,12 +250,17 @@ public class Music163Com extends PluginForHost {
                         continue;
                     }
                     logger.info("Version " + quality + " is downloadable --> Starting download");
-                    trackDownloadable = true;
+                    trackDownloadableViaEncryptedUrl = true;
                     break;
                 }
             }
-            if (!trackDownloadable) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - track is not downloadable at the moment", 30 * 60 * 1000l);
+            if (!trackDownloadableViaEncryptedUrl) {
+                /* Last chance handling */
+                DLLINK = (String) entries.get("mp3Url");
+                if (DLLINK == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - track is not downloadable at the moment", 30 * 60 * 1000l);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
             }
         } else {
             if (DLLINK == null) {
@@ -272,7 +276,7 @@ public class Music163Com extends PluginForHost {
             }
             br.followConnection();
             /* We're using the API so nothing can really break */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
         }
         downloadLink.setProperty(directlinkproperty, DLLINK);
         dl.startDownload();
@@ -312,7 +316,7 @@ public class Music163Com extends PluginForHost {
         final byte[] md5bytes = MessageDigest.getInstance("MD5").digest(byte2);
         final String b64 = new sun.misc.BASE64Encoder().encode(md5bytes);
         /*
-         * In the above linked pyton examples it seems like they remove the last character of the base64 String but it seems like this is
+         * In the above linked Python examples it seems like they remove the last character of the base64 String but it seems like this is
          * not necessary.
          */
         result = b64.replace("/", "_");
@@ -389,24 +393,24 @@ public class Music163Com extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
-                                                      put("GRAB_COVER", "For albums & playlists: Grab cover?");
-                                                      put("CUSTOM_DATE", "Enter your custom date:");
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal id of the content e.g. '01485'\r\n*ext* = Extension of the file");
-                                                      put("LABEL_FILENAME", "Define custom filename:");
-                                                  }
-                                              };
+        {
+            put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
+            put("GRAB_COVER", "For albums & playlists: Grab cover?");
+            put("CUSTOM_DATE", "Enter your custom date:");
+            put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal id of the content e.g. '01485'\r\n*ext* = Extension of the file");
+            put("LABEL_FILENAME", "Define custom filename:");
+        }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
-                                                      put("GRAB_COVER", "Für Alben und Playlists: Cover auch herunterladen?");
-                                                      put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
-                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-                                                  }
-                                              };
+        {
+            put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
+            put("GRAB_COVER", "Für Alben und Playlists: Cover auch herunterladen?");
+            put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
+            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
+            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
