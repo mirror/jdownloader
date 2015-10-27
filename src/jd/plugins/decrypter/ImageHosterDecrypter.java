@@ -361,7 +361,8 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             brc = br.cloneBrowser();
             brc.getPage(url);
         }
-        String finallink = brc.getRegex("(\\'|\")(https?://\\d+\\.imagebam\\.com/download/[^<>\\s]+\\.(?:[a-z0-9]{3,4}))\\1").getMatch(1);
+        // note: long filenames wont have extensions! server header doesn't specify the file extension either!
+        String finallink = brc.getRegex("(\\'|\")(https?://\\d+\\.imagebam\\.com/download/[^<>\\s]+)\\1").getMatch(1);
         if (finallink == null) {
             finallink = brc.getRegex("onclick=\"scale\\(this\\);\" src=\"(https?://.*?)\"").getMatch(0);
         }
@@ -370,7 +371,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         }
         finallink = Encoding.htmlDecode(finallink);
         DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-        final String finalfilename = new Regex(finallink, "/([^/]+\\.[a-z]+)$").getMatch(0);
+        final String finalfilename = new Regex(finallink, "/([^/]+)$").getMatch(0);
         if (finalfilename != null) {
             dl.setFinalFileName(Encoding.htmlDecode(finalfilename));
         }
