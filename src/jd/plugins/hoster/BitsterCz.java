@@ -90,7 +90,7 @@ public class BitsterCz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         passwordprotected = false;
-        password = link.getStringProperty("pass", "");
+        password = link.getStringProperty("pass", null);
         currDownloadlink = link;
         String filename = null;
         long filesize = -1;
@@ -101,7 +101,7 @@ public class BitsterCz extends PluginForHost {
         link.setLinkID(this.fid);
         this.setBrowserExclusive();
         prepBR(this.br);
-        this.br.getPage("https://bitster.cz/api/file_getinfo?param=" + this.fid + "&pw=" + password);
+        this.br.getPage("https://bitster.cz/api/file_getinfo?param=" + this.fid + (password != null ? "&pw=" + password : ""));
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.toString().equals(HTML_ERROR_NOTFOUND) || this.br.toString().equals(HTML_ERROR_ABUSED) || this.br.toString().equals(HTML_ERROR_DELETED)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -112,7 +112,7 @@ public class BitsterCz extends PluginForHost {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             filesize = DummyScriptEnginePlugin.toLong(entries.get("length"), -1);
             filename = (String) entries.get("title");
-            md5 = getJson("md5");
+            md5 = (String) entries.get("md5");
             description = (String) entries.get("longdescription");
             /* This shouldn't be needed but okay let's double check/set passwordprotected state here. */
             final Object passwordprotected_o = entries.get("passwordprotected");
@@ -138,7 +138,7 @@ public class BitsterCz extends PluginForHost {
             link.setName(filename);
         }
         if (filesize > -1) {
-            link.setDownloadSize(filesize);
+            link.setVerifiedFileSize(filesize);
         }
         if (link.getComment() == null) {
             link.setComment(description);
