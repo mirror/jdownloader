@@ -33,9 +33,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drss.tv" }, urls = { "http://(www\\.)?drss\\.tv/(sendung/\\d{2}\\-\\d{2}\\-\\d{4}|video/[a-z0-9\\-]+|profil/[a-z0-9\\-]+|[a-z0-9\\-]+)/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drss.tv" }, urls = { "http://(www\\.)?drss\\.tv/(sendung/\\d{2}\\-\\d{2}\\-\\d{4}|video/[a-z0-9\\-]+|profil/[a-z0-9\\-]+|[a-z0-9\\-]+)/" }, flags = { 0 })
 public class DrssTvDecrypter extends PluginForDecrypt {
 
+    @SuppressWarnings("deprecation")
     public DrssTvDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,12 +54,15 @@ public class DrssTvDecrypter extends PluginForDecrypt {
 
     private static final String     type_directlink_vimeo = "https?://player\\.vimeo\\.com/external/\\d+\\.(?:hd|sd)\\.mp4.+";
 
-    private DownloadLink            MAIN                  = null;
-    private String                  PARAMETER             = null;
-    private ArrayList<DownloadLink> DECRYPTEDLINKS        = new ArrayList<DownloadLink>();
-    private String[]                ALLVIDEOS             = null;
-    private String                  TITLE                 = null;
-    private String                  DESCRIPTION           = null;
+    private String                  parameter             = null;
+    private ArrayList<DownloadLink> decryptedlinks        = new ArrayList<DownloadLink>();
+    private String[]                allvideos             = null;
+    private String                  title                 = null;
+    private String                  description           = null;
+
+    private boolean                 force_trailer         = false;
+    private boolean                 force_other_content   = false;
+    private short                   counter_real          = 1;
 
     /*
      * TODO: Add support for profile links & galleries: http://www.drss.tv/profil/xxx/ , Add plugin settings, download trailer/pictures and
@@ -66,102 +70,116 @@ public class DrssTvDecrypter extends PluginForDecrypt {
      */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        PARAMETER = param.toString();
-        if (PARAMETER.matches(invalidlinks)) {
-            MAIN = createDownloadlink("directhttp://" + PARAMETER);
-            MAIN.setFinalFileName(new Regex(PARAMETER, "drss\\.tv/(.+)/?").getMatch(0));
-            MAIN.setAvailable(false);
-            MAIN.setProperty("offline", true);
-            DECRYPTEDLINKS.add(MAIN);
-            return DECRYPTEDLINKS;
+        final SubConfiguration cfg = SubConfiguration.getConfig("drss.tv");
+        final boolean allow_gallery = cfg.getBooleanProperty(ALLOW_GALLERY, false);
+        parameter = param.toString();
+        DownloadLink main = createDownloadlink(parameter.replace("drss.tv/", "drssdecrypted.tv/") + "?video=1");
+        if (parameter.matches(invalidlinks)) {
+            main = createDownloadlink("directhttp://" + parameter);
+            main.setFinalFileName(new Regex(parameter, "drss\\.tv/(.+)/?").getMatch(0));
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+            decryptedlinks.add(main);
+            return decryptedlinks;
         }
-        MAIN = createDownloadlink(PARAMETER.replace("drss.tv/", "drssdecrypted.tv/"));
         try {
-            MAIN.setContentUrl(PARAMETER);
+            main.setContentUrl(parameter);
         } catch (final Throwable e) {
             /* Not available ind old 0.9.581 Stable */
-            MAIN.setBrowserUrl(PARAMETER);
+            main.setBrowserUrl(parameter);
         }
         this.br.setFollowRedirects(true);
-        this.br.getPage(PARAMETER);
+        this.br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
-            MAIN.setFinalFileName("drss Sendung vom " + new Regex(PARAMETER, "endung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0) + ".mp4");
-            MAIN.setAvailable(false);
-            MAIN.setProperty("offline", true);
-            DECRYPTEDLINKS.add(MAIN);
-            return DECRYPTEDLINKS;
+            main.setFinalFileName("drss Sendung vom " + new Regex(parameter, "endung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0) + ".mp4");
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+            decryptedlinks.add(main);
+            return decryptedlinks;
         }
-        DESCRIPTION = this.br.getRegex("<div class=\"row profile-container-text margin-bottom\">(.*?)<div class=\"row\">").getMatch(0);
-        ALLVIDEOS = this.br.getRegex("data\\-src=\"(https?://(?:www\\.)?(?:youtube|dailymotion)\\.com/[^<>\"]*?)\"").getColumn(0);
+        description = this.br.getRegex("<div class=\"row profile-container-text margin-bottom\">(.*?)<div class=\"row\">").getMatch(0);
+        allvideos = this.br.getRegex("data\\-src=\"(https?://(?:www\\.)?(?:youtube|dailymotion)\\.com/[^<>\"]*?)\"").getColumn(0);
 
         try {
-            if (DESCRIPTION != null) {
-                MAIN.setComment(DESCRIPTION);
+            if (description != null) {
+                main.setComment(description);
             }
         } catch (final Throwable e) {
             /* Not available in old 0.9.581 Stable */
         }
 
-        if (PARAMETER.matches(type_video)) {
+        if (parameter.matches(type_video)) {
             /* This is just a single video. */
-            if (ALLVIDEOS == null || ALLVIDEOS.length == 0) {
-                logger.warning("Decrypter broken for link: " + PARAMETER);
-                throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            if (allvideos == null || allvideos.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
-            DECRYPTEDLINKS.add(createDownloadlink(ALLVIDEOS[0]));
-        } else if (PARAMETER.matches(type_normal_episode)) {
-            decryptEpisode();
-        } else if (PARAMETER.matches(type_profile)) {
+            decryptedlinks.add(createDownloadlink(allvideos[0]));
+        } else if (parameter.matches(type_profile)) {
             /* Profiles */
             decryptProfile();
         } else {
-            /* Handles all undefined linktypes - should be videolinks though. */
-            decryptOther();
+            /* Handles all other linktypes */
+            decryptVideolistStuff();
+        }
+
+        /* Check if the user also wants to have the photo gallery... */
+        final String[] pics = br.getRegex("href=\"(/images/data/edition/\\d+/[a-z0-9\\-]+\\.jpg)\"").getColumn(0);
+        if (allow_gallery && pics != null) {
+            final DecimalFormat df = new DecimalFormat("00");
+            int counter = 1;
+            for (String piclink : pics) {
+                piclink = "directhttp://http://www.drss.tv" + piclink;
+                final DownloadLink pic = createDownloadlink(piclink);
+                pic.setFinalFileName(title + "_" + df.format(counter) + ".jpg");
+                pic.setAvailable(true);
+                decryptedlinks.add(pic);
+                counter++;
+            }
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(TITLE);
-        fp.addLinks(DECRYPTEDLINKS);
+        fp.setName(title);
+        fp.addLinks(decryptedlinks);
 
-        return DECRYPTEDLINKS;
+        return decryptedlinks;
     }
 
-    @SuppressWarnings("deprecation")
     private void decryptEpisode() throws DecrypterException, IOException {
-        final SubConfiguration cfg = SubConfiguration.getConfig("drss.tv");
-        final boolean allow_gallery = cfg.getBooleanProperty(ALLOW_GALLERY, false);
-
-        TITLE = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (TITLE == null) {
-            logger.warning("Decrypter broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+        final String url_content = this.parameter + "?video=" + this.counter_real;
+        final DownloadLink main = createDownloadlink(url_content.replace("drss.tv/", "drssdecrypted.tv/"));
+        main.setContentUrl(url_content);
+        title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (title == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         String date = br.getRegex("class=\"subline\">Sendung vom (\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
         if (date == null) {
             /* Only get date from url when site fails as url date is sometimes wrong/not accurate! */
-            date = new Regex(PARAMETER, "sendung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0).replace("-", ".");
+            date = new Regex(parameter, "sendung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0).replace("-", ".");
         }
-        TITLE = date + "_" + Encoding.htmlDecode(TITLE).trim();
+        title = date + "_" + Encoding.htmlDecode(title).trim();
         String externID = null;
         /* Check whether we can get the whole episode or only the trailer(s) and or pre-recorded video(s) and/or picture gallery. */
         if (br.containsHTML("class=\"descr\">Sendung \\- Part \\d+<|>Komplette Sendung</h4>")) {
             /* We have a full single episode - let's check what type it is... */
             if (br.containsHTML("class=\"descr\">Sendung \\- Part \\d+<")) {
-                if (ALLVIDEOS == null || ALLVIDEOS.length == 0) {
-                    logger.warning("Decrypter broken for link: " + PARAMETER);
-                    throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+                if (allvideos == null || allvideos.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    throw new DecrypterException("Decrypter broken for link: " + parameter);
                 }
                 /* Full episode split in multiple YouTube parts. */
                 final String[] infos = br.getRegex("class=\"descr\">([^<>\"]*?)<").getColumn(0);
                 /* Only get the parts of the episode by default - leave out e.g. bonus material. */
                 int counter = 0;
                 for (final String info : infos) {
-                    if (counter > ALLVIDEOS.length - 1) {
+                    if (counter > allvideos.length - 1) {
                         /* Small fail safe. */
                         break;
                     }
                     if (info.matches("Sendung \\- Part \\d+") || info.contains("Youtube Sendung")) {
-                        DECRYPTEDLINKS.add(createDownloadlink(ALLVIDEOS[counter]));
+                        decryptedlinks.add(createDownloadlink(allvideos[counter]));
                     }
                     counter++;
                 }
@@ -180,62 +198,48 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                      * quality via the vimeo "API" so it's easier to just grab this one as it's plain in the html code and download it via
                      * hostplugin.
                      */
-                    MAIN.setProperty("special_vimeo", true);
-                    DECRYPTEDLINKS.add(MAIN);
+                    main.setProperty("special_vimeo", true);
+                    decryptedlinks.add(main);
                 } else if (externID != null) {
                     externID = externID + "&forced_referer=" + Encoding.Base64Encode(this.br.getURL());
-                    DECRYPTEDLINKS.add(createDownloadlink(externID));
+                    decryptedlinks.add(createDownloadlink(externID));
                 } else {
                     /* Now let's assume that the video is hosted on drss.tv and return the link to the host plugin. */
-                    DECRYPTEDLINKS.add(MAIN);
+                    decryptedlinks.add(main);
                 }
             }
-            decryptVideolistStuff(false, false);
         } else {
-            if (ALLVIDEOS != null && ALLVIDEOS.length > 0) {
+            if (allvideos != null && allvideos.length > 0) {
                 /* This is most likely just a trailer. */
-                DECRYPTEDLINKS.add(createDownloadlink(ALLVIDEOS[0]));
+                decryptedlinks.add(createDownloadlink(allvideos[0]));
             } else {
                 /*
                  * 2015-10-22
-                 * 
+                 *
                  * Trust our code - in very very rare cases the video is officially not there but chances are high that the trailer == the
                  * full episode e.g.:
-                 * 
+                 *
                  * http://www.drss.tv/sendung/27-08-2015/
-                 * 
+                 *
                  * --> Force trailer download
                  */
-                decryptVideolistStuff(true, false);
-            }
-        }
-        /* Check if the user also wants to have the photo gallery... */
-        final String[] pics = br.getRegex("href=\"(/images/data/edition/\\d+/[a-z0-9\\-]+\\.jpg)\"").getColumn(0);
-        if (allow_gallery && pics != null) {
-            final DecimalFormat df = new DecimalFormat("00");
-            int counter = 1;
-            for (String piclink : pics) {
-                piclink = "directhttp://http://www.drss.tv" + piclink;
-                final DownloadLink pic = createDownloadlink(piclink);
-                pic.setFinalFileName(TITLE + "_" + df.format(counter) + ".jpg");
-                pic.setAvailable(true);
-                DECRYPTEDLINKS.add(pic);
-                counter++;
+                /* Loop continues - force trailer download */
+                this.force_trailer = true;
             }
         }
     }
 
     private void decryptProfile() throws DecrypterException {
-        TITLE = br.getRegex("class=\"profile\\-title\\-block\" style=\"margin:0px -15px\">([^<>\"]*?)<").getMatch(0);
+        title = br.getRegex("class=\"profile\\-title\\-block\" style=\"margin:0px -15px\">([^<>\"]*?)<").getMatch(0);
         final String[] episodes = br.getRegex("\"(/sendung/[0-9\\-]+/)\"").getColumn(0);
-        if (episodes == null || episodes.length == 0 || TITLE == null) {
+        if (episodes == null || episodes.length == 0 || title == null) {
             /* Every profile has at least participated in one episode and of course title should exist! */
             logger.warning("Failed to decrypt profile");
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         for (String episodelink : episodes) {
             episodelink = "http://www.drss.tv" + episodelink;
-            DECRYPTEDLINKS.add(createDownloadlink(episodelink));
+            decryptedlinks.add(createDownloadlink(episodelink));
         }
         final String[] pics = br.getRegex("href=\"(/images/data/girls/\\d+/[a-z0-9\\-_]+\\.jpg)\"").getColumn(0);
         if (pics != null) {
@@ -244,21 +248,12 @@ public class DrssTvDecrypter extends PluginForDecrypt {
             for (String piclink : pics) {
                 piclink = "directhttp://http://www.drss.tv" + piclink;
                 final DownloadLink pic = createDownloadlink(piclink);
-                pic.setFinalFileName(TITLE + "_" + df.format(counter) + ".jpg");
+                pic.setFinalFileName(title + "_" + df.format(counter) + ".jpg");
                 pic.setAvailable(true);
-                DECRYPTEDLINKS.add(pic);
+                decryptedlinks.add(pic);
                 counter++;
             }
         }
-    }
-
-    private void decryptOther() throws DecrypterException, IOException {
-        TITLE = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (TITLE == null) {
-            logger.warning("Decrypter broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
-        }
-        decryptVideolistStuff(false, true);
     }
 
     /**
@@ -271,111 +266,136 @@ public class DrssTvDecrypter extends PluginForDecrypt {
      * @throws IOException
      */
     @SuppressWarnings("deprecation")
-    private void decryptVideolistStuff(final boolean force_trailer, final boolean force_other_content) throws DecrypterException, IOException {
+    private void decryptVideolistStuff() throws DecrypterException, IOException {
         final SubConfiguration cfg = SubConfiguration.getConfig("drss.tv");
         final boolean allow_teaser_pic = cfg.getBooleanProperty(ALLOW_TEASER_PIC, false);
         boolean allow_trailer = cfg.getBooleanProperty(ALLOW_TRAILER, false);
         boolean allow_others = cfg.getBooleanProperty(ALLOW_OTHERS, false);
+        if (!this.parameter.matches(type_video)) {
+            /* Force decryption of non video content in this case */
+            allow_others = true;
+        }
         if (force_other_content) {
             allow_others = true;
         }
         if (force_trailer) {
             allow_trailer = true;
         }
-        final String[] bigtitles = br.getRegex("<h4 class=\"text\\-cutted\">([^<>\"]*?)</h4>").getColumn(0);
-        final String[] subtitles = br.getRegex("<p class=\"descr\">([^<>\"]*?)</p>").getColumn(0);
+        title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (title == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
+        }
+        final String[] bigtitles = getBigtitles();
+        final String[] subtitles = getSubtitles();
         if (subtitles == null || subtitles.length == 0 || bigtitles == null || bigtitles.length == 0) {
-            logger.warning("Decrypter method decryptVideolistStuff broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            logger.warning("Decrypter method decryptVideolistStuff broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
 
         final int bigtitles_length = bigtitles.length;
         final int subtitles_length = subtitles.length;
         if (bigtitles_length != subtitles_length) {
-            logger.warning("Decrypter method decryptVideolistStuff broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            logger.warning("Decrypter method decryptVideolistStuff broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
-        int real_counter = 1;
         for (int counter = 0; counter <= bigtitles_length - 1; counter++) {
             final String bigtitle = bigtitles[counter];
             final String subtitle = subtitles[counter];
             try {
                 /* First some errorhandling. */
-                if (bigtitle.equals("Komplette Sendung")) {
+                if (bigtitle.equals("Komplette Sendung") || (bigtitle.equals("Video") && subtitle.matches("Teil \\d+"))) {
+                    decryptEpisode();
                     continue;
+                }
+                if (this.counter_real == 1 && this.parameter.matches(type_normal_episode)) {
+                    /*
+                     * No main video available but we have a video url? Well then they added it as a trailer by mistake --> Force trailer
+                     * download!
+                     */
+                    force_trailer = true;
+                    allow_trailer = true;
                 }
                 if (subtitle.equals("Titelbild")) {
                     if (allow_teaser_pic) {
-                        br.getPage(PARAMETER + "?video=" + real_counter);
+                        br.getPage(parameter + "?video=" + counter_real);
                         String teaser_picture = br.getRegex("property=\"og:image\" content=\"(/images/[^<>\"]*?\\.jpg)\"").getMatch(0);
                         if (teaser_picture == null) {
-                            teaser_picture = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<img [^>]+ src=\"(/images/[^<>\"]*?\\.jpg)\"").getMatch(0);
+                            teaser_picture = br.getRegex("player\\-" + counter_real + "\">[\t\n\r ]+<img [^>]+ src=\"(/images/[^<>\"]*?\\.jpg)\"").getMatch(0);
                         }
                         if (teaser_picture == null) {
                             logger.warning("Failed to find teaser picture!");
-                            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+                            throw new DecrypterException("Decrypter broken for link: " + parameter);
                         }
                         teaser_picture = "directhttp://http://www.drss.tv" + teaser_picture;
                         final DownloadLink pic = createDownloadlink(teaser_picture);
-                        pic.setFinalFileName(TITLE + "_Titelbild_.jpg");
+                        pic.setFinalFileName(title + "_Titelbild_.jpg");
                         pic.setAvailable(true);
-                        DECRYPTEDLINKS.add(pic);
+                        decryptedlinks.add(pic);
                     }
                 } else if (subtitle.contains("Trailer")) {
                     /*
                      * Trailer exists and user wants to download it --> Find it. Trailers are usually hosted externally.
                      */
                     if (allow_trailer) {
-                        br.getPage(PARAMETER + "?video=" + real_counter);
-                        String trailer_externlink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
+                        br.getPage(parameter + "?video=" + counter_real);
+                        String trailer_externlink = br.getRegex("player\\-" + counter_real + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
                         if (trailer_externlink == null) {
-                            trailer_externlink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<div class=\"jp\\-video jp\\-video\\-wide\"[^<>]+data\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
+                            trailer_externlink = br.getRegex("player\\-" + counter_real + "\">[\t\n\r ]+<div class=\"jp\\-video jp\\-video\\-wide\"[^<>]+data\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
                         }
                         if (trailer_externlink == null) {
                             logger.warning("Failed to find trailer!");
-                            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+                            throw new DecrypterException("Decrypter broken for link: " + parameter);
                         }
                         trailer_externlink += "&forced_referer=" + Encoding.Base64Encode(this.br.getURL());
-                        DECRYPTEDLINKS.add(createDownloadlink(trailer_externlink));
+                        decryptedlinks.add(createDownloadlink(trailer_externlink));
                     }
                 } else {
                     /*
                      * Now we should have a video which is neither trailer nor any other undefined video type.
                      */
                     if (allow_others) {
-                        br.getPage(PARAMETER + "?video=" + real_counter);
-                        String videolink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
+                        br.getPage(parameter + "?video=" + counter_real);
+                        String videolink = br.getRegex("player\\-" + counter_real + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
                         if (videolink == null) {
-                            videolink = br.getRegex("\"(\\?video=" + real_counter + ")\"").getMatch(0);
+                            videolink = br.getRegex("\"(\\?video=" + counter_real + ")\"").getMatch(0);
                         }
                         if (videolink == null) {
                             logger.warning("Failed to find trailer!");
-                            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+                            throw new DecrypterException("Decrypter broken for link: " + parameter);
                         }
                         if (videolink.matches("\\?video=\\d+")) {
                             final DownloadLink segmentdl = crawlSegment(videolink);
-                            segmentdl.setFinalFileName(TITLE + "_" + bigtitle + "_" + subtitle + ".mp4");
-                            DECRYPTEDLINKS.add(segmentdl);
+                            segmentdl.setFinalFileName(title + "_" + bigtitle + "_" + subtitle + ".mp4");
+                            decryptedlinks.add(segmentdl);
                         } else {
-                            DECRYPTEDLINKS.add(createDownloadlink(videolink));
+                            decryptedlinks.add(createDownloadlink(videolink));
                         }
                         logger.info("Decrypted unknown bigtitle: " + bigtitle);
                         logger.info("Decrypted unknown subtitle: " + subtitle);
                     }
                 }
             } finally {
-                real_counter++;
+                counter_real++;
             }
         }
     }
 
+    private String[] getBigtitles() {
+        return br.getRegex("<h4 class=\"text\\-cutted\">([^<>\"]*?)</h4>").getColumn(0);
+    }
+
+    private String[] getSubtitles() {
+        return br.getRegex("<p class=\"descr\">([^<>\"]*?)</p>").getColumn(0);
+    }
+
     private DownloadLink crawlSegment(final String input) throws DecrypterException, IOException {
         final Browser segmentBR = this.br.cloneBrowser();
-        segmentBR.getPage(PARAMETER + input);
+        segmentBR.getPage(parameter + input);
         String finallink = segmentBR.getRegex("data\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             logger.warning("Failed to crawl segment: " + input);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         if (finallink.matches(type_directlink_vimeo)) {
             finallink = "directhttp://" + finallink;

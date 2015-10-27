@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -38,7 +39,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drss.tv" }, urls = { "http://(www\\.)?drssdecrypted\\.tv/sendung/\\d{2}\\-\\d{2}\\-\\d{4}/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drss.tv" }, urls = { "http://(www\\.)?drssdecrypted\\.tv/sendung/\\d{2}\\-\\d{2}\\-\\d{4}/\\?video=\\d+" }, flags = { 2 })
 public class DrssTv extends PluginForHost {
 
     public DrssTv(PluginWrapper wrapper) {
@@ -73,7 +74,7 @@ public class DrssTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         final String date_formatted;
-        String filename;
+        String title;
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -83,14 +84,16 @@ public class DrssTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final DecimalFormat df = new DecimalFormat("00");
+        final short part = Short.parseShort(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         String date = br.getRegex("class=\"subline\">Sendung vom (\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
         if (date == null) {
             /* Only get date from url when site fails as url date is sometimes wrong/not accurate! */
             date = new Regex(link.getDownloadURL(), "sendung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0).replace("-", ".");
         }
-        filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (inValidate(filename)) {
-            filename = this.br.getRegex("class=\"text\\-cutted\">Komplette Sendung</h4>[\t\n\r ]+<p class=\"descr\">([^<>]*?)</p>").getMatch(0);
+        title = this.br.getRegex("class=\"text\\-cutted\">Komplette Sendung</h4>[\t\n\r ]+<p class=\"descr\">([^<>]*?)</p>").getMatch(0);
+        if (inValidate(title)) {
+            title = this.getSiteTitle();
         }
         if (link.getBooleanProperty("special_vimeo", false)) {
             /* Sometimes we got special vimeo 1080p URLs! */
@@ -98,27 +101,43 @@ public class DrssTv extends PluginForHost {
         } else {
             DLLINK = br.getRegex("\"(http://[^<>\"]*?(\\.mp4|\\.flv|/flv))\"").getMatch(0);
         }
-        if (filename == null || date == null || DLLINK == null) {
+        if (title == null || date == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final Regex finfo = new Regex(title, "(.*?)Staffel (\\d+).+Folge (\\d+).*?");
+        final String name_actress = getNameActress();
+        final String season_str = finfo.getMatch(1);
+        final String episode_str = finfo.getMatch(2);
         date_formatted = formatDate(date);
+
+        String filename = date_formatted + "_drsstv_";
+
+        if (season_str != null && episode_str != null) {
+            String series_id = "S" + df.format(Short.parseShort(season_str)) + "E" + df.format(Short.parseShort(episode_str));
+            if (series_id.equals("S03E17") && "Jenny Sternchen".equals(name_actress)) {
+                /* Workaround for one serverside wrong episode number :) */
+                series_id = "S03E18";
+            }
+            filename += series_id + "_";
+        }
+        filename += "part_" + df.format(part) + "_";
+        if (!inValidate(name_actress)) {
+            filename += name_actress;
+        } else {
+            filename += title;
+        }
+
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        filename = date_formatted + "_drsstv_" + filename;
 
         if (DLLINK.contains("medianac.nacamar.de/")) {
+            /* Make this server happy */
             br.getHeaders().put("Accept-Encoding", null);
         }
         URLConnectionAdapter con = null;
         try {
             try {
-                try {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(DLLINK);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
-                }
+                con = br.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -133,7 +152,7 @@ public class DrssTv extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
@@ -172,6 +191,29 @@ public class DrssTv extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    /** Finds the name of the actress - not that easy... */
+    private String getNameActress() {
+        final String site_title = getSiteTitle();
+        String name_actress = this.br.getRegex("property=\"og:title\" content=\"([^<>\"/]*?) zu Gast \\- Rene Schwuchow Show\"").getMatch(0);
+        if (name_actress == null) {
+            name_actress = this.br.getRegex("property=\"og:title\" content=\"([^<>\"/]*?) \\- Rene Schwuchow Show\"").getMatch(0);
+        }
+        if (inValidate(name_actress) && site_title != null && site_title.contains("Staffel") || site_title.contains("Folge")) {
+            name_actress = new Regex(site_title, "(.*?) zu Gast \\- Staffel (\\d+).+Folge (\\d+).*?").getMatch(0);
+            if (name_actress == null) {
+                name_actress = new Regex(site_title, "(.*?) \\- Staffel (\\d+).+Folge (\\d+).*?").getMatch(0);
+            }
+        } else if (inValidate(name_actress)) {
+            /* No name found? Then our site title is probably */
+            name_actress = site_title;
+        }
+        return name_actress;
+    }
+
+    private String getSiteTitle() {
+        return this.br.getRegex("property=\"og:title\" content=\"([^<>\"/]*?)\"").getMatch(0);
     }
 
     private String formatDate(final String input) {
