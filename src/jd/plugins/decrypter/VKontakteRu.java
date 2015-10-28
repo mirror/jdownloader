@@ -443,7 +443,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -617,7 +617,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API, TODO: Return host-plugin links here to improve the overall stability.
-     *
+     * 
      * @throws Exception
      */
     private void decryptAudioPage() throws Exception {
@@ -1040,7 +1040,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     private void decryptCommunityVideoAlbum() throws Exception {
@@ -1355,7 +1355,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -1597,7 +1597,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Returns the ownerID which belongs to a name e.g. vk.com/some_name
-     *
+     * 
      * @throws Exception
      */
     private String resolveScreenNameAPI(final String screenname) throws Exception {
@@ -1627,7 +1627,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Handles these error-codes: https://vk.com/dev/errors
-     *
+     * 
      * @return true = ready to retry, false = problem - failed!
      */
     private boolean apiHandleErrors() throws Exception {
@@ -1780,7 +1780,25 @@ public class VKontakteRu extends PluginForDecrypt {
 
             }
             if (br.containsHTML("You tried to load the same page more than once in one second")) {
-                Thread.sleep(2000);
+                if (counter == 0) {
+                    logger.info("You tried to load the same page more than once in one second, sleep 3 seconds");
+                    Thread.sleep(3000);
+                } else if (counter == 1) {
+                    logger.info("You tried to load the same page more than once in one second, sleep 6 seconds");
+                    Thread.sleep(6000);
+                } else if (counter == 2) {
+                    logger.info("You tried to load the same page more than once in one second, sleep 9 seconds");
+                    Thread.sleep(9000);
+                } else if (counter == 3) {
+                    logger.info("You tried to load the same page more than once in one second, sleep 15 seconds");
+                    Thread.sleep(15000);
+                } else if (counter == 4) {
+                    logger.info("You tried to load the same page more than once in one second, sleep 30 seconds");
+                    Thread.sleep(30000);
+                } else if (counter == 5) {
+                    logger.info("You tried to load the same page more than once in one second, sleep 60 seconds");
+                    Thread.sleep(60000);
+                }
                 continue;
             } else {
                 break;
