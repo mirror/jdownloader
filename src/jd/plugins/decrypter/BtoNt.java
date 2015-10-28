@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "batoto.net" }, urls = { "http://[\\w\\.]*(?:batoto\\.net|bato\\.to)/read/_/\\d+/[\\w\\-_\\.]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "batoto.net" }, urls = { "http://bato\\.to/reader#[a-z0-9]+" }, flags = { 0 })
 public class BtoNt extends PluginForDecrypt {
 
     /**
@@ -49,93 +47,42 @@ public class BtoNt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String url = parameter.toString().replace("batoto.net/", "bato.to/");
-        if (url.endsWith("/")) {
-            url = url.substring(0, url.length() - 1);
-        }
-        // enforcing one img per page because you can't always get all images displayed on one page.
-        br.setCookie("bato.to", "supress_webtoon", "t");
-        // Access chapter one
-        try {
-            br.getPage(url + "/1");
-        } catch (final BrowserException e) {
-            logger.info("Link offline ? (server error): " + parameter);
-            return decryptedLinks;
-        }
+        final String url = "http://bato.to/areader?id=" + new Regex(parameter.toString(), "([a-z0-9]+)$").getMatch(0) + "&p=";
+        // // enforcing one img per page because you can't always get all images displayed on one page.
+        // br.setCookie("bato.to", "supress_webtoon", "t");
+        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        this.br.getHeaders().put("Referer", "http://bato.to/reader");
+        // Access page one
+        br.getPage(url + 1);
 
-        if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"https?://[\\w\\.]*(?:batoto\\.net|bato\\.to)/images/404-Error\\.jpg\" alt=\"File not found\" /></div>")) {
-            logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
+        if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"https?://[\\w\\.]*(?:batoto\\.net|bato\\.to)/images/404-Error\\.jpg\" alt=\"File not found\" /></div>|The page you were looking for is no longer available")) {
+            decryptedLinks.add(this.createOfflinelink(url));
             return decryptedLinks;
         } else if (br.containsHTML(">This chapter has been removed due to infringement\\.<")) {
-            logger.info("Offline content: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(url));
             return decryptedLinks;
         }
 
         // We get the title
-        String[] t = new String[6];
         String tag_title = br.getRegex("<title>.*?</title>").getMatch(-1);
+        if (tag_title == null) {
+            tag_title = this.br.getRegex("document\\.title = \\'([^<>\"]*?) Page \\d+ \\| Batoto\\!';").getMatch(0);
+        }
         if (tag_title != null) {
             // cleanup bad html entity
             tag_title = tag_title.replaceAll("&amp;?", "&");
-        }
-        // works for individual pages, with and without volume, and all in one page
-        t = new Regex(tag_title, "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )(Page [\\d\\.]+ )?\\|[^<]+</title").getRow(0);
-        if (t == null) {
-            // try this
-            t = new Regex(tag_title, "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )?(Page [\\d\\.]+ )?\\|[^<]+</title").getRow(0);
-            if (t == null || t[4] == null) {
-                // some times no chapter or page is shown, this is a bug on there side.. we can then construct ourselves.
-                String chapter = br.getRegex("selected=\"selected\">Ch\\.([\\d\\.v\\-]+[\\: a-z]*)</option>").getMatch(0);
-                if (chapter == null) {
-                    // http://board.jdownloader.org/showpost.php?p=306380&postcount=3
-                    // when no chapter is present http://bato.to/read/_/260463/925-nishi-uko_by_helheim
-                    chapter = br.getRegex("selected=\"selected\">(?:vol\\s*(?:[\\d\\.]+) )?Ch\\.([\\d\\.]):?.*?</option>").getMatch(0);
-                }
-                if (chapter != null) {
-                    if (t == null) {
-                        t = new String[6];
-                    }
-                    t[4] = chapter;
-                }
-                if (t == null) {
-                    logger.warning("Decrypter possibly broken for: " + parameter + " @ t, please confirm in browser!");
-                    return decryptedLinks;
-                }
-            }
         }
         final FilePackage fp = FilePackage.getInstance();
         // may as well set this globally. it used to belong inside 2 of the formatting if statements
         fp.setProperty("CLEANUP_NAME", false);
 
-        DecimalFormat df_title = new DecimalFormat("000");
-        // some rudimentary cleanup
-        if (t[4] != null) {
-            t[4] = t[4].replaceAll("[\\-\\: ]", "");
-        }
-
-        // decimal place fks with formatting!
-        if (t[2] != null && (t[2].contains(".") || t[2].matches(".+[a-z]$"))) {
-            String[] s = new Regex(t[2], "(\\d+)(\\.\\d+)?([a-z]*)").getRow(0);
-            t[2] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
-        } else if (t[2] != null) {
-            t[2] = df_title.format(Integer.parseInt(t[2]));
-        }
-        if (t[4] != null && (t[4].matches("(\\d+)([\\.v\\d]+\\d+)?([A-Za-z]*)"))) {
-            String[] s = new Regex(t[4], "(\\d+)([\\.v\\d]+\\d+)?([A-Za-z]*)").getRow(0);
-            t[4] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
-        } else if (t[4] != null) {
-            t[4] = df_title.format(Integer.parseInt(t[4]));
-        }
-        if (t[0] == null && t[1] == null && t[2] == null && t[3] == null && t[4] == null && t[5] == null) {
-            logger.warning("Decrypter broken for: " + parameter + " @ df_title");
-            return null;
-        }
-        final String title = Encoding.htmlDecode(t[0].trim() + (t[2] != null ? " - Volume " + t[2] : "") + (t[4] != null ? " - Chapter " + t[4] : ""));
+        final String title = tag_title;
 
         String pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
         if (pages == null) {
             // even though the cookie is set... they don't always respect this for small page count
             // http://www.batoto.net/read/_/249050/useful-good-for-nothing_ch1_by_suras-place
+            /* TODO: Check if this is still working ... */
             br.getPage("?supress_webtoon=t");
             pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
         }
@@ -161,7 +108,9 @@ public class BtoNt extends PluginForDecrypt {
                     // Not available in old 0.9.581 Stable
                 }
                 if (i != 1) {
-                    br.getPage(url + "/" + i);
+                    this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    this.br.getHeaders().put("Referer", "http://bato.to/reader");
+                    br.getPage(url + i);
                 }
                 String pageNumber = df_page.format(i);
                 // /comics/2014/02/02/1/read52ee48ff90491/img000001.jpg /comics/date/date/date/first[0-z]charof title/read+hash/img\\d+
@@ -185,11 +134,7 @@ public class BtoNt extends PluginForDecrypt {
                 link.setFinalFileName(title + " - Page " + pageNumber + extension);
                 link.setAvailable(true);
                 fp.add(link);
-                try {
-                    distribute(link);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                }
+                distribute(link);
                 decryptedLinks.add(link);
             }
         } else {
