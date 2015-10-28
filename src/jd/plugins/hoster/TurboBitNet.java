@@ -35,11 +35,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -65,6 +60,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
@@ -886,6 +886,7 @@ public class TurboBitNet extends PluginForHost {
         prepBr.getHeaders().put("User-Agent", UA);
         prepBr.getHeaders().put("Referer", null);
         prepBr.setCustomCharset("UTF-8");
+        prepBr.setCookie(MAINPAGE, "JD", "1");
         return prepBr;
     }
 
