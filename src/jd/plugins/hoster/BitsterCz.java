@@ -21,8 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,6 +37,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitster.cz" }, urls = { "https?://(?:www\\.)?bitster\\.(?:cz|sk)/(?:#?file|download)/[a-z0-9]+" }, flags = { 2 })
 public class BitsterCz extends PluginForHost {
@@ -83,6 +83,8 @@ public class BitsterCz extends PluginForHost {
         br.setCookie(this.getHost(), "lang", "en");
         br.setCookie(this.getHost(), "drones-modal-hidden", "true");
         br.setCookie(this.getHost(), "cookies_accepted", "true");
+        /* Typically this is their response code for IP/country block. */
+        br.setAllowedResponseCodes(502);
         return br;
     }
 
@@ -109,6 +111,8 @@ public class BitsterCz extends PluginForHost {
             link.getLinkStatus().setStatusText("This url is password protected");
             passwordprotected = true;
         } else {
+            /* Check for further problems e.g. country/IP range blocked by host. */
+            this.apiHandleErrors();
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             filesize = DummyScriptEnginePlugin.toLong(entries.get("length"), -1);
             filename = (String) entries.get("title");
@@ -373,6 +377,12 @@ public class BitsterCz extends PluginForHost {
         } else if (this.br.containsHTML("Error occurred, please contact")) {
             /* Should never happen */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 60 * 1000l);
+        }
+        if (this.br.getHttpConnection().getResponseCode() == 502) {
+            if (this.currDownloadlink != null) {
+                this.currDownloadlink.getLinkStatus().setStatusText("This service blocks your country / IP range");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "This service blocks your country / IP range", 3 * 60 * 60 * 1000l);
+            }
         }
     }
 
