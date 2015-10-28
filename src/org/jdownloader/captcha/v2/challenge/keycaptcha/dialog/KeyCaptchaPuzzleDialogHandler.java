@@ -8,15 +8,9 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleResponseD
 
 public class KeyCaptchaPuzzleDialogHandler extends AbstractDialogHandler<KeyCaptchaPuzzleDialog, KeyCaptchaPuzzleChallenge, KeyCaptchaPuzzleResponseData> {
 
-    private KeyCaptchaPuzzleResponseData response;
-
     public KeyCaptchaPuzzleDialogHandler(KeyCaptchaPuzzleChallenge captchaChallenge) {
         super(captchaChallenge.getDomainInfo(), captchaChallenge);
 
-    }
-
-    public KeyCaptchaPuzzleResponseData getResponseString() {
-        return response;
     }
 
     @Override

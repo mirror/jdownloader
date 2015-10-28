@@ -3,7 +3,6 @@ package org.jdownloader.controlling.contextmenu;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.storage.JSonStorage;
@@ -11,6 +10,7 @@ import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
+import org.jdownloader.logging.LogController;
 
 public class MenuContainerRoot extends MenuContainer implements Storable {
 
@@ -37,7 +37,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
     /**
      * Validates the items, and removes invalid entries. replaces generic entries with an actual class instance
-     * 
+     *
      * @param container
      * @param full
      */
@@ -52,7 +52,6 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
             if (container.getItems() != null) {
 
                 HashMap<MenuItemData, MenuItemData> replaceMap = new HashMap<MenuItemData, MenuItemData>();
-                HashSet<Object> set = new HashSet<Object>();
                 MenuItemData last = null;
                 for (int i = 0; i < container.getItems().size(); i++) {
                     MenuItemData mid = container.getItems().get(i);
@@ -72,6 +71,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                             }
 
                         } catch (ClassCurrentlyNotAvailableException e) {
+                            LogController.CL().log(e);
                             // extension not loaded or anything like this.
                             mid._setValidateException(e);
                             lr = mid;
@@ -104,8 +104,8 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                         }
                         last = lr;
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    } catch (Throwable e) {
+                        LogController.CL().log(e);
                         container.getItems().remove(i);
                         ret = false;
                         continue main;
@@ -176,7 +176,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
     /**
      * add A path
-     * 
+     *
      * @param path
      * @throws ExtensionNotLoadedException
      * @throws ClassNotFoundException

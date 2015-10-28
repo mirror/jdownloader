@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -21,7 +21,11 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
-    protected volatile long                fileSize                 = 0;
+    private static class LinkInfo {
+        private long bytesTotal = -1;
+    }
+
+    protected volatile long                fileSize                 = -1;
     private volatile DomainInfo[]          domainInfos              = new DomainInfo[0];
     protected volatile boolean             enabled                  = false;
     private volatile int                   offline                  = 0;
@@ -54,12 +58,12 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             }
         } else {
             synchronized (this) {
-                Temp tmp = new Temp();
+                final Temp tmp = new Temp();
                 /* this is called for repaint, so only update values that could have changed for existing items */
                 final PackageControllerTableModelDataPackage tableModelDataPackage = getTableModelDataPackage();
                 int size = 0;
                 if (tableModelDataPackage != null) {
-                    for (AbstractNode item : tableModelDataPackage.getVisibleChildren()) {
+                    for (final AbstractNode item : tableModelDataPackage.getVisibleChildren()) {
                         size++;
                         addtoTmp(tmp, (CrawledLink) item);
                     }
@@ -68,27 +72,26 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                 updateAvailability(size, tmp.newOffline, tmp.newOnline);
                 availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, size);
             }
-            return this;
         }
+        return this;
     }
 
     private class Temp {
-        final HashMap<String, Long> names             = new HashMap<String, Long>();
-        final TreeSet<DomainInfo>   domains           = new TreeSet<DomainInfo>();
-        int                         newOnline         = 0;
-        long                        newFileSize       = 0;
-        boolean                     newEnabled        = false;
-        int                         newOffline        = 0;
+        final HashMap<String, LinkInfo> linkInfos         = new HashMap<String, LinkInfo>();
+        final HashSet<DomainInfo>       domains           = new HashSet<DomainInfo>();
+        int                             newOnline         = 0;
+        boolean                         newEnabled        = false;
+        int                             newOffline        = 0;
 
-        String                      sameSource        = null;
-        boolean                     sameSourceFullUrl = true;
-        long                        lupdatesRequired  = updatesRequired.get();
+        String                          sameSource        = null;
+        boolean                         sameSourceFullUrl = true;
+        long                            lupdatesRequired  = updatesRequired.get();
     }
 
     @Override
     public CrawledPackageView setItems(List<CrawledLink> items) {
-        final Temp tmp = new Temp();
         synchronized (this) {
+            final Temp tmp = new Temp();
             /* this is called for tablechanged, so update everything for given items */
             if (items != null) {
                 for (CrawledLink item : items) {
@@ -98,7 +101,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                 }
             }
             writeTmpToFields(tmp);
-            ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
+            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
             Collections.sort(lst, new Comparator<DomainInfo>() {
 
                 @Override
@@ -123,7 +126,16 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         if (!tmp.sameSourceFullUrl) {
             commonSourceUrl += "[...]";
         }
-        fileSize = tmp.newFileSize;
+        long size = -1;
+        for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
+            if (linkInfo.bytesTotal != -1) {
+                if (size == -1) {
+                    size = 0;
+                }
+                size += linkInfo.bytesTotal;
+            }
+        }
+        fileSize = size;
         enabled = tmp.newEnabled;
         offline = tmp.newOffline;
         online = tmp.newOnline;
@@ -131,14 +143,13 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     protected void addtoTmp(Temp tmp, CrawledLink link) {
-        DownloadLink dlLink = link.getDownloadLink();
-        String sourceUrl = dlLink.getView().getDisplayUrl();
+        final DownloadLink dlLink = link.getDownloadLink();
+        final String sourceUrl = dlLink.getView().getDisplayUrl();
 
         if (sourceUrl != null) {
             tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
             tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
         }
-
         // enabled
         if (link.isEnabled()) {
             tmp.newEnabled = true;
@@ -150,19 +161,15 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             // online
             tmp.newOnline++;
         }
-        String name = link.getName();
-        Long size = tmp.names.get(name);
-        /* we use the largest filesize */
-        long itemSize = Math.max(0, link.getSize());
-        if (size == null) {
-            tmp.names.put(name, itemSize);
-            tmp.newFileSize += itemSize;
-        } else if (size < itemSize) {
-            tmp.newFileSize -= size;
-            tmp.names.put(name, itemSize);
-            tmp.newFileSize += itemSize;
+        final String name = link.getName();
+        LinkInfo existing = tmp.linkInfos.get(name);
+        final long linkSize = link.getSize();
+        if (existing == null) {
+            existing = new LinkInfo();
+            existing.bytesTotal = linkSize;
+        } else if (linkSize > existing.bytesTotal) {
+            existing.bytesTotal = linkSize;
         }
-
     }
 
     private final void updateAvailability(int size, int offline, int online) {

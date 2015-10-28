@@ -240,8 +240,8 @@ public class SolverJob<T> {
     }
 
     public boolean isSolved() {
-        int autoPriority = config.getAutoCaptchaPriorityThreshold();
-        ResponseList<T> response = getResponse();
+        final int autoPriority = config.getAutoCaptchaPriorityThreshold();
+        final ResponseList<T> response = getResponse();
         return (response != null && response.getSum() >= autoPriority);
     }
 
@@ -275,11 +275,10 @@ public class SolverJob<T> {
         }
         try {
             while (!areDone(instances)) {
-                if (Thread.interrupted()) {
-                    throw new InterruptedException(this + " got interrupted");
-                }
                 if (isSolved()) {
                     throw new InterruptedException(this + " is Solved");
+                } else if (Thread.interrupted()) {
+                    throw new InterruptedException(this + " got interrupted");
                 }
                 synchronized (this) {
                     if (!areDone(instances)) {
@@ -300,11 +299,10 @@ public class SolverJob<T> {
                     }
                 }
             }
-            if (Thread.interrupted()) {
-                throw new InterruptedException(this + " got interrupted");
-            }
             if (isSolved()) {
                 throw new InterruptedException(this + " is Solved");
+            } else if (Thread.interrupted()) {
+                throw new InterruptedException(this + " got interrupted");
             }
             log("Exit " + this + " by done: " + areDone(instances));
         } catch (InterruptedException e) {

@@ -31,13 +31,10 @@ public class ActionData extends AbstractJsonData {
                 return null;
             }
             if (_isExtensionAction()) {
-
                 clazz = ExtensionController.getInstance().loadClass(getClazzName());
-
             } else {
                 clazz = Class.forName(getClazzName());
             }
-
         } else if (_isExtensionAction()) {
             clazz = ExtensionController.getInstance().loadClass(getClazzName());
         }
