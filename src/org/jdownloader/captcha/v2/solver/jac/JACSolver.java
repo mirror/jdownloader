@@ -86,7 +86,7 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
 
     @Override
     public void enqueue(SolverJob<String> job) {
-        if (isEnabled() && super.canHandle(job.getChallenge())) {
+        if (isEnabled() && canHandle(job.getChallenge())) {
             super.enqueue(job);
         }
     }

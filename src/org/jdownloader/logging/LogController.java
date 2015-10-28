@@ -31,16 +31,16 @@ public class LogController extends LogSourceProvider {
     public static LogSource                                TRASH    = new LogSource("Trash") {
 
                                                                         @Override
-                                                                        public synchronized void log(LogRecord record) {
-                                                                            /* trash */
-                                                                        }
+        public synchronized void log(LogRecord record) {
+            /* trash */
+        }
 
-                                                                        @Override
-                                                                        public String toString() {
-                                                                            return "Log > /dev/null!";
-                                                                        }
+        @Override
+        public String toString() {
+            return "Log > /dev/null!";
+        }
 
-                                                                    };
+    };
 
     private static volatile WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
 

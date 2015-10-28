@@ -173,8 +173,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         return ret;
     }
 
-    CopyOnWriteArraySet<MenuExtenderHandler> extender = new CopyOnWriteArraySet<MenuExtenderHandler>();
-    private Runnable                         afterInitCallback;
+    private final CopyOnWriteArraySet<MenuExtenderHandler> extender = new CopyOnWriteArraySet<MenuExtenderHandler>();
+    private Runnable                                       afterInitCallback;
 
     // public void addExtensionAction(MenuContainerRoot parent, int index, MenuExtenderHandler extender, ExtensionContextMenuItem
     // archiveSubMenu) {
@@ -358,17 +358,16 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void setMenuData(MenuContainerRoot root) {
-        String rootString = JSonStorage.serializeToJson(root);
-        String orgDefString = JSonStorage.serializeToJson(setupDefaultStructure());
-        MenuContainerRoot def = JSonStorage.restoreFromString(orgDefString, new TypeRef<MenuContainerRoot>() {
+        final String rootString = JSonStorage.serializeToJson(root);
+        final String orgDefString = JSonStorage.serializeToJson(setupDefaultStructure());
+        final MenuContainerRoot def = JSonStorage.restoreFromString(orgDefString, new TypeRef<MenuContainerRoot>() {
         });
         def.validate();
-        String defaultString = JSonStorage.serializeToJson(def);
+        final String defaultString = JSonStorage.serializeToJson(def);
         if (rootString.equals(defaultString)) {
             root = null;
         }
         if (root == null) {
-
             config.setMenu(null);
             config.setUnusedItems(null);
             menuData = setupDefaultStructure();
@@ -376,12 +375,10 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
         } else {
             menuData = root;
-
             config.setMenu(root);
             config.setUnusedItems(getUnused(root));
         }
         updateGui();
-
     }
 
     private ArrayList<String> getUnused(MenuContainerRoot root) {
@@ -429,12 +426,17 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void registerExtender(MenuExtenderHandler handler) {
-        if (Application.isHeadless()) {
-            return;
-        }
-        if (extender.add(handler)) {
-            menuData = null;
-            delayUpdate();
+        if (!Application.isHeadless()) {
+            if (extender.add(handler)) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        menuData = null;
+                    }
+                };
+                delayUpdate();
+            }
         }
     }
 
@@ -443,12 +445,17 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void unregisterExtender(MenuExtenderHandler handler) {
-        if (Application.isHeadless()) {
-            return;
-        }
-        if (extender.remove(handler)) {
-            menuData = null;
-            delayUpdate();
+        if (!Application.isHeadless()) {
+            if (extender.remove(handler)) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        menuData = null;
+                    }
+                };
+                delayUpdate();
+            }
         }
     }
 

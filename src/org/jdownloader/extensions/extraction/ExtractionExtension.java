@@ -887,13 +887,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-
         if (manager instanceof MenuManagerMainToolbar) {
             return updateMainToolbar(mr);
         } else if (manager instanceof MenuManagerMainmenu) {
             return updateMainMenu(mr);
         } else if (manager instanceof MenuManagerLinkgrabberTableContext) {
-            int addonLinkIndex = 0;
+            int addonLinkIndex = -1;
             for (int i = 0; i < mr.getItems().size(); i++) {
                 if (mr.getItems().get(i) instanceof LinkGrabberMoreSubMenu) {
                     addonLinkIndex = i;
@@ -901,19 +900,24 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 }
             }
 
-            ArchivesSubMenu root;
-            mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
+            final ArchivesSubMenu root = new ArchivesSubMenu();
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
             root.add(new SeparatorData());
             root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
-            CleanupSubMenu cleanup = new CleanupSubMenu();
-            root.add(cleanup);
+
+            final CleanupSubMenu cleanup = new CleanupSubMenu();
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
-            return null;
 
+            root.add(cleanup);
+            if (addonLinkIndex != -1) {
+                mr.getItems().add(addonLinkIndex, root);
+            } else {
+                mr.getItems().add(root);
+            }
+            return null;
         } else if (manager instanceof MenuManagerDownloadTableContext) {
             int addonLinkIndex = 0;
             for (int i = 0; i < mr.getItems().size(); i++) {
@@ -922,21 +926,25 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     break;
                 }
             }
-
-            ArchivesSubMenu root;
-            mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
+            final ArchivesSubMenu root = new ArchivesSubMenu();
             root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
             root.add(new MenuItemData(new ActionData(ShowExtractionResultAction.class)));
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
-
             root.add(new SeparatorData());
             root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
-            CleanupSubMenu cleanup = new CleanupSubMenu();
-            root.add(cleanup);
+
+            final CleanupSubMenu cleanup = new CleanupSubMenu();
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
+
+            root.add(cleanup);
+            if (addonLinkIndex != -1) {
+                mr.getItems().add(addonLinkIndex, root);
+            } else {
+                mr.getItems().add(root);
+            }
             return null;
         }
         return null;

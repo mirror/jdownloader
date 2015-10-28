@@ -110,12 +110,10 @@ public abstract class ChallengeSolver<T> {
 
     public void kill(SolverJob<T> job) {
         synchronized (map) {
-            JobRunnable<T> jr = map.remove(job);
-
+            final JobRunnable<T> jr = map.remove(job);
             if (jr != null) {
                 job.getLogger().info("Cancel " + jr);
                 jr.cancel();
-
             } else {
                 job.getLogger().info("Could not kill " + job + " in " + this);
             }

@@ -29,9 +29,9 @@ import org.jdownloader.translate._JDT;
 
 public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> implements IfFileExistsDialogInterface, FocusListener {
 
-    private String             path;
+    private final String       path;
     private IfFileExistsAction result;
-    private String             packagename;
+    private final String       packagename;
 
     @Override
     public boolean isRemoteAPIEnabled() {
@@ -46,11 +46,11 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         return packageID;
     }
 
-    private JRadioButton skip;
-    private JRadioButton overwrite;
-    private JRadioButton rename;
-    private String       packageID;
-    private DownloadLink downloadLink;
+    private JRadioButton       skip;
+    private JRadioButton       overwrite;
+    private JRadioButton       rename;
+    private final String       packageID;
+    private final DownloadLink downloadLink;
 
     public IfFileExistsDialog(DownloadLink downloadLink) {
         super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, _JDT._.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
@@ -178,7 +178,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     }
 
     public IfFileExistsDialogInterface show() {
-
         return UIOManager.I().show(IfFileExistsDialogInterface.class, this);
     }
 
