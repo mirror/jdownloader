@@ -93,7 +93,7 @@ public class CopiapopEs extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://copiapop.es/action/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
+            br.postPage("http://copiapop.es/action/DownloadFile", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
             if (dllink == null) {
                 dllink = br.getRegex("\"DownloadUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
             }
