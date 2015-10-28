@@ -10,6 +10,11 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.swing.JComponent;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -26,6 +31,8 @@ import jd.plugins.Account;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
@@ -333,6 +340,11 @@ public class GoogleHelper {
                     handle2FactorAuthSmsNew(form);
                     continue;
                 }
+                form = br.getFormByInputFieldKeyValue("Pin", null);
+                if (form != null && form.getAction().startsWith("/signin/challenge/")) {
+                    handle2FactorAuthSmsNew2(form);
+                    continue;
+                }
                 if (StringUtils.isNotEmpty(error)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
@@ -434,6 +446,82 @@ public class GoogleHelper {
         handleIntersitial();
     }
 
+    private void handle2FactorAuthSmsNew2(Form form) throws Exception {
+        // //*[@id="verifyText"]
+        StatsManager.I().track("activecheck/googlehelper/handle2FactorAuthSmsNew2");
+        if (br.containsHTML("idv-delivery-error-container")) {
+            // <div class="infobanner">
+            // <p class="error-msg infobanner-content"
+            // id="idv-delivery-error-container">
+            // You seem to be having trouble getting your verification code.
+            // Please try again later.
+            // </p>
+            // </div>
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
+        }
+        String number = br.getRegex("<b dir=\"ltr\">(.*?)</b>").getMatch(0);
+        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
+            @Override
+            protected void initFocus(JComponent focus) {
+                // super.initFocus(focus);
+            }
+
+            @Override
+            protected TextComponentInterface getSmallInputComponent() {
+                final ExtTextField ttx = new ExtTextField();
+                final String TEXT_NOT_TO_TOUCH = "G-";
+                ttx.addKeyListener(this);
+                ttx.addMouseListener(this);
+                ttx.setText(TEXT_NOT_TO_TOUCH);
+                ((AbstractDocument) ttx.getDocument()).setDocumentFilter(new DocumentFilter() {
+                    @Override
+                    public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                        if (offset < TEXT_NOT_TO_TOUCH.length()) {
+                            return;
+                        }
+                        super.insertString(fb, offset, string, attr);
+                    }
+
+                    @Override
+                    public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                        if (offset < TEXT_NOT_TO_TOUCH.length()) {
+                            length = Math.max(0, length - TEXT_NOT_TO_TOUCH.length());
+                            offset = TEXT_NOT_TO_TOUCH.length();
+                        }
+                        super.replace(fb, offset, length, text, attrs);
+                    }
+
+                    @Override
+                    public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                        if (offset < TEXT_NOT_TO_TOUCH.length()) {
+                            length = Math.max(0, length + offset - TEXT_NOT_TO_TOUCH.length());
+                            offset = TEXT_NOT_TO_TOUCH.length();
+                        }
+                        if (length > 0) {
+                            super.remove(fb, offset, length);
+                        }
+                    }
+                });
+                return ttx;
+            }
+        };
+        InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
+        handler.throwCloseExceptions();
+        InputField smsUserPin = form.getInputFieldByName("Pin");
+        String txt = handler.getText();
+        if (txt.startsWith("G-")) {
+            txt = txt.substring(2);
+        }
+        smsUserPin.setValue(Encoding.urlEncode(txt));
+        InputField persistentCookie = form.getInputFieldByName("TrustDevice");
+        persistentCookie.setValue(Encoding.urlEncode("on"));
+        form.remove("smsSend");
+        form.remove("retry");
+        submitForm(br, form);
+
+        handleIntersitial();
+    }
+
     private void handle2FactorAuthSmsNew(Form form) throws Exception {
         // //*[@id="verifyText"]
         StatsManager.I().track("activecheck/googlehelper/handle2FactorAuthSmsNew");
@@ -448,11 +536,59 @@ public class GoogleHelper {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
         }
         String number = br.getRegex("<b dir=\"ltr\">(.*?)</b>").getMatch(0);
-        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
+        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
+            @Override
+            protected void initFocus(JComponent focus) {
+                // super.initFocus(focus);
+            }
+
+            @Override
+            protected TextComponentInterface getSmallInputComponent() {
+                final ExtTextField ttx = new ExtTextField();
+                final String TEXT_NOT_TO_TOUCH = "G-";
+                ttx.addKeyListener(this);
+                ttx.addMouseListener(this);
+                ttx.setText(TEXT_NOT_TO_TOUCH);
+                ((AbstractDocument) ttx.getDocument()).setDocumentFilter(new DocumentFilter() {
+                    @Override
+                    public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                        if (offset < TEXT_NOT_TO_TOUCH.length()) {
+                            return;
+                        }
+                        super.insertString(fb, offset, string, attr);
+                    }
+
+                    @Override
+                    public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                        if (offset < TEXT_NOT_TO_TOUCH.length()) {
+                            length = Math.max(0, length - TEXT_NOT_TO_TOUCH.length());
+                            offset = TEXT_NOT_TO_TOUCH.length();
+                        }
+                        super.replace(fb, offset, length, text, attrs);
+                    }
+
+                    @Override
+                    public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                        if (offset < TEXT_NOT_TO_TOUCH.length()) {
+                            length = Math.max(0, length + offset - TEXT_NOT_TO_TOUCH.length());
+                            offset = TEXT_NOT_TO_TOUCH.length();
+                        }
+                        if (length > 0) {
+                            super.remove(fb, offset, length);
+                        }
+                    }
+                });
+                return ttx;
+            }
+        };
         InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
         handler.throwCloseExceptions();
         InputField smsUserPin = form.getInputFieldByName("Pin");
-        smsUserPin.setValue(Encoding.urlEncode(handler.getText()));
+        String txt = handler.getText();
+        if (txt.startsWith("G-")) {
+            txt = txt.substring(2);
+        }
+        smsUserPin.setValue(Encoding.urlEncode(txt));
         InputField persistentCookie = form.getInputFieldByName("TrustDevice");
         persistentCookie.setValue(Encoding.urlEncode("on"));
         form.remove("smsSend");
