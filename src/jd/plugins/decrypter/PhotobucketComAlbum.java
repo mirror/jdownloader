@@ -63,10 +63,10 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         /* Not really needed */
         this.br.getHeaders().put("X-NewRelic-ID", "");
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        /* Tested to 1000 - we use max 200. */
-        final long max_entries_per_page = 200;
+        /* Don't try more than 24 per page - it won't work - state 2015-10-28 */
+        final long max_entries_per_page = 24;
         long image_count_total = 0;
-        int page = 0;
+        int page = 1;
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");

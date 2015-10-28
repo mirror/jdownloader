@@ -35,6 +35,7 @@ public class Ntfldrn extends PluginForDecrypt {
 
     static private final String patternSupported_1 = "http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}";
     static private final String patternSupported_2 = "http://[\\w\\.]*?netfolder\\.in/[a-zA-Z0-9]{7}/.*?";
+    final boolean               undermaintenance   = true;
 
     public Ntfldrn(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,9 +46,14 @@ public class Ntfldrn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
+        if (undermaintenance) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
         br.getPage(parameter);
         if (br.containsHTML(">Folder not found\\.")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (new Regex(parameter, Pattern.compile(patternSupported_2, Pattern.CASE_INSENSITIVE)).matches()) {
