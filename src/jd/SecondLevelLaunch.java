@@ -420,7 +420,7 @@ public class SecondLevelLaunch {
         String revision = JDUtilities.getRevision();
         if (!jared) {
             /* always enable debug and cache refresh in developer version */
-            SecondLevelLaunch.LOG.info("Not Jared Version(" + revision + "): RefreshCache=true");
+            SecondLevelLaunch.LOG.info("Non Jared Version(" + revision + "): RefreshCache=true");
         } else {
             SecondLevelLaunch.LOG.info("Jared Version(" + revision + ")");
         }
