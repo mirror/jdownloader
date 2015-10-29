@@ -24,7 +24,6 @@ public class ShowLetterDB {
      * @param args
      */
     public static void main(String[] args) {
-        Application.ensureFrameWorkInit();
         Application.setApplication(".jd_home");
         String hoster = "ucms";
         JAntiCaptcha jac = new JAntiCaptcha(hoster);

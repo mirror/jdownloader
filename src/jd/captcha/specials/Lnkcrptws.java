@@ -37,7 +37,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 public class Lnkcrptws {
 
     public static void main(String[] args) throws Exception {
-        Application.ensureFrameWorkInit();
         Application.setApplication(".jd_home");
         JAntiCaptcha jac = new JAntiCaptcha("lnkcrptwsCircles");
         File file = new File("C:\\Users\\Thomas\\.jd_home\\captchas\\linkcrypt.ws_13.06.2014_17.01.28.384.jpg");
