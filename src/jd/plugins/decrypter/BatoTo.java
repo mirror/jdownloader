@@ -20,22 +20,26 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "batoto.net" }, urls = { "http://bato\\.to/reader#[a-z0-9]+" }, flags = { 0 })
-public class BtoNt extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "http://bato\\.to/reader#[a-z0-9]+" }, flags = { 0 })
+public class BatoTo extends PluginForDecrypt {
 
     /**
      * @author raztoki
      */
-    public BtoNt(PluginWrapper wrapper) {
+    public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -43,11 +47,23 @@ public class BtoNt extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String url = "http://bato.to/areader?id=" + new Regex(parameter.toString(), "([a-z0-9]+)$").getMatch(0) + "&p=";
+        /* Login if possible */
+        final PluginForHost host_plugin = JDUtilities.getPluginForHost("bato.to");
+        final Account acc = AccountController.getInstance().getValidAccount(host_plugin);
+        if (acc != null) {
+            try {
+                jd.plugins.hoster.BatoTo.login(this.br, acc, false);
+            } catch (final Throwable e) {
+            }
+        }
+
+        final String id = new Regex(parameter.toString(), "([a-z0-9]+)$").getMatch(0);
+        final String url = "http://bato.to/areader?id=" + id + "&p=";
         // // enforcing one img per page because you can't always get all images displayed on one page.
         // br.setCookie("bato.to", "supress_webtoon", "t");
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -97,41 +113,16 @@ public class BtoNt extends PluginForDecrypt {
 
             // We load each page and retrieve the URL of the picture
             fp.setName(title);
-            int skippedPics = 0;
             for (int i = 1; i <= numberOfPages; i++) {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
                 }
-                if (i != 1) {
-                    this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    this.br.getHeaders().put("Referer", "http://bato.to/reader");
-                    br.getPage(url + i);
-                }
-                String pageNumber = df_page.format(i);
-                // /comics/2014/02/02/1/read52ee48ff90491/img000001.jpg /comics/date/date/date/first[0-z]charof title/read+hash/img\\d+
-                String[] unformattedSource = br.getRegex("src=\"(https?://img\\.(?:batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z0-9]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
-                if (unformattedSource == null) {
-                    // <img
-                    // src="http://arc.bato.to/comics/t/toloverudarkness/0.5/cxc-scans/English/read4d69e24fa5247/%5BToLoveRuDarkness%5D-ch00_004d69e250dd8a4.jpg"
-                    unformattedSource = br.getRegex("<img[^>]+src=\"(https?://\\w+\\.(?:batoto\\.net|bato\\.to)/comics/(?:[^/]+/){1,}read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
-                }
-                if (unformattedSource == null || unformattedSource.length == 0) {
-                    skippedPics++;
-                    if (skippedPics > 5) {
-                        logger.info("Too many links were skipped, stopping...");
-                        break;
-                    }
-                    continue;
-                }
-                final String source = unformattedSource[0];
-                final String extension = unformattedSource[1];
-                final DownloadLink link = createDownloadlink("directhttp://" + source);
-                link.setFinalFileName(title + " - Page " + pageNumber + extension);
+                final String pageNumber = df_page.format(i);
+                final DownloadLink link = createDownloadlink("http://bato.to/areader?id=" + id + "&p=" + pageNumber);
+                final String fname_without_ext = title + " - Page " + pageNumber;
+                link.setProperty("fname_without_ext", fname_without_ext);
+                link.setName(fname_without_ext + ".png");
                 link.setAvailable(true);
                 fp.add(link);
                 distribute(link);

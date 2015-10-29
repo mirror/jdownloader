@@ -50,8 +50,8 @@ import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
 
-@HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "ezfile.ch" }, urls = { "https?://(www\\.)?ezfile\\.ch/[a-z0-9]{7,9}" }, flags = { 2 })
-public class EzFileCh extends PluginForHost {
+@HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "filecloud.io", "ezfile.ch" }, urls = { "https?://(?:www\\.)?(?:filecloud\\.io|ezfile\\.ch)/[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
+public class FilecloudIo extends PluginForHost {
 
     private final String         useragent                    = "JDownloader";
 
@@ -68,22 +68,22 @@ public class EzFileCh extends PluginForHost {
 
     private static final String  NOCHUNKS                     = "NOCHUNKS";
     private static final String  NORESUME                     = "NORESUME";
-    public static final String   MAINPAGE                     = "https://ezfile.ch";
+    public static final String   MAINPAGE                     = "https://filecloud.io";
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static AtomicBoolean UNDERMAINTENANCE             = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT     = "The site is under maintenance!";
 
     private static final String  API_ERROR_NO_PERMISSION      = "No permission granted for this apikey to perform this api call";
 
-    /* API doc: https://ezfile.ch/?m=apidoc */
-    // private static final String NICE_HOST = "ezfile.ch";
+    /* API doc: https://filecloud.io/?m=apidoc */
+    // private static final String NICE_HOST = "filecloud.io";
     private static final boolean useFilecheckAPI              = true;
 
     private String               dllink                       = null;
     private boolean              isPrivateFile                = false;
 
     @SuppressWarnings("deprecation")
-    public EzFileCh(final PluginWrapper wrapper) {
+    public FilecloudIo(final PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         this.enablePremium(MAINPAGE + "/user-register.html");
@@ -106,6 +106,13 @@ public class EzFileCh extends PluginForHost {
         return MAINPAGE + "/?m=help&a=tos";
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(DownloadLink link) {
+        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        link.setUrlDownload("https://filecloud.io/" + fid);
+        link.setLinkID(fid);
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -118,7 +125,7 @@ public class EzFileCh extends PluginForHost {
         String filesize = null;
         downloadLink.setLinkID(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         if (useFilecheckAPI) {
-            br.getPage("https://ezfile.ch/?m=api&a=check_file&fkey=" + downloadLink.getLinkID());
+            br.getPage(MAINPAGE + "/?m=api&a=check_file&fkey=" + downloadLink.getLinkID());
             if (!br.containsHTML("HTTP 404 > no such module or action<")) {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final Object filesizeo = entries.get("fsize");
@@ -315,14 +322,14 @@ public class EzFileCh extends PluginForHost {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         prepBrowser(br);
-        accessAPI("https://ezfile.ch/?m=api&a=fetch_account_info&akey=" + Encoding.urlEncode(account.getPass()));
+        accessAPI(MAINPAGE + "/?m=api&a=fetch_account_info&akey=" + Encoding.urlEncode(account.getPass()));
         final String message = getJson("message");
         if (message != null) {
             if (message.equals(API_ERROR_NO_PERMISSION)) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Account info fetch'.\r\nHier kannst du diese aktivieren: ezfile.ch/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Account info fetch'.\r\nHier kannst du diese aktivieren: filecloud.io/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour APIKey is missing the permission 'Allow Account info fetch'.\r\nYou can activate it here: ezfile.ch/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour APIKey is missing the permission 'Allow Account info fetch'.\r\nYou can activate it here: filecloud.io/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -346,31 +353,25 @@ public class EzFileCh extends PluginForHost {
             throw e;
         }
         long traffic_left_long = 0;
-        final String traffic_left = getJson("bandwidth");
-        traffic_left_long = SizeFormatter.getSize(traffic_left);
+        final String traffic_left_str = getJson("bandwidth");
+        if (traffic_left_str != null) {
+            traffic_left_long = SizeFormatter.getSize(traffic_left_str);
+        }
         if (traffic_left_long == 0) {
             ai.setStatus("Registered (free) account");
-            account.setProperty("free", true);
-            try {
-                account.setType(AccountType.FREE);
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-                /* free accounts can still have captcha. */
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
+            account.setType(AccountType.FREE);
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            /* free accounts can still have captcha. */
+            account.setConcurrentUsePossible(false);
             /* No premium traffic means unlimited free traffic */
             ai.setUnlimitedTraffic();
         } else {
             ai.setStatus("Premium account");
-            account.setProperty("free", false);
-            try {
-                account.setType(AccountType.PREMIUM);
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            account.setType(AccountType.PREMIUM);
+            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
             ai.setTrafficLeft(traffic_left_long);
         }
         return ai;
@@ -382,14 +383,14 @@ public class EzFileCh extends PluginForHost {
         if (UNDERMAINTENANCE.get()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         }
-        if (!account.getBooleanProperty("free", false)) {
-            accessAPI("https://ezfile.ch/?m=api&a=download&akey=" + Encoding.urlEncode(account.getPass()) + "&fkey=" + link.getLinkID());
+        if (account.getType() == AccountType.PREMIUM) {
+            accessAPI(MAINPAGE + "/?m=api&a=download&akey=" + Encoding.urlEncode(account.getPass()) + "&fkey=" + link.getLinkID());
             final String message = getJson("message");
             if (API_ERROR_NO_PERMISSION.equals(message)) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Downloading'.\r\nAktiviere diese hier und versuche es erneut: ezfile.ch/?m=apidoc");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Downloading'.\r\nAktiviere diese hier und versuche es erneut: filecloud.io/?m=apidoc");
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "\r\nYour APIKey is missing the permission 'Allow Downloading'.\r\nActivate it here and try again: ezfile.ch/?m=apidoc");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "\r\nYour APIKey is missing the permission 'Allow Downloading'.\r\nActivate it here and try again: filecloud.io/?m=apidoc");
                 }
             }
             final String finallink = getJson("download_ticket_url");
@@ -486,7 +487,7 @@ public class EzFileCh extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -502,20 +503,6 @@ public class EzFileCh extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     /**
@@ -539,7 +526,7 @@ public class EzFileCh extends PluginForHost {
         }
         br.getHeaders().put("User-Agent", useragent);
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.setCookie("http://ezfile.ch/", "lang", "en");
+        br.setCookie(MAINPAGE, "lang", "en");
         return br;
     }
 
@@ -561,7 +548,7 @@ public class EzFileCh extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (Boolean.TRUE.equals(acc.getType() == AccountType.FREE)) {
             /* free accounts also have captchas */
             return true;
         }
@@ -596,7 +583,7 @@ public class EzFileCh extends PluginForHost {
             public EzFileChPanel() {
                 super("ins 0, wrap 2", "[][grow,fill]", "");
                 add(new JLabel("Instructions / Anleitung:"));
-                add(new JLink("https://ezfile.ch/?m=help&a=jdownloader"));
+                add(new JLink(MAINPAGE + "/?m=help&a=jdownloader"));
 
                 add(new JLabel("APIKey:"));
                 add(this.pass = new ExtPasswordField() {

@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trillhd.com" }, urls = { "http://(www\\.)?trillhd\\.com/(video|embed)/\\d{4}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trillhd.com" }, urls = { "https?://(www\\.)?trillhd\\.com/(?:video|embed)/\\d{4}" }, flags = { 0 })
 public class TrillHDCom extends PluginForHost {
 
     public TrillHDCom(PluginWrapper wrapper) {
@@ -47,6 +47,7 @@ public class TrillHDCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/video/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -69,15 +70,15 @@ public class TrillHDCom extends PluginForHost {
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        DLLINK = br.getRegex("\"720p\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\"720p\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"480p\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("\"480p\":\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"480p\": \\[\"(http://[^<>\"]*?)\"\\]").getMatch(0);
+            DLLINK = br.getRegex("\"480p\": \\[\"(http[^<>\"]*?)\"\\]").getMatch(0);
         }
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://stream\\d+\\.trillhd\\.com/trill/[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("\"(https?://stream\\d+\\.trillhd\\.com/trill/[^<>\"]*?)\"").getMatch(0);
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -94,7 +95,7 @@ public class TrillHDCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
