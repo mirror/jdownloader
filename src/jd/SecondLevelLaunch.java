@@ -522,7 +522,7 @@ public class SecondLevelLaunch {
                     File file = getInfoPlistPath();
                     if (file != null && file.exists()) {
 
-                        String str = IO.readFileToString(file);
+                        String str = IO.readFileToTrimmedString(file);
                         boolean writeChanges = false;
                         if (Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
                             /* in 1.7 update 5, Xms does not work, we need to specify Xmx */
