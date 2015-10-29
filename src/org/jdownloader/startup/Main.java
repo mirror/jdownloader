@@ -53,12 +53,13 @@ public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
 
     static {
-        Application.ensureFrameWorkInit();
         // only use ipv4, because debian changed default stack to ipv6
         /*
          * we have to make sure that this property gets set before any network stuff gets loaded!!
          */
         System.setProperty("java.net.preferIPv4Stack", "true");
+        org.appwork.utils.Application.setApplication(".jd_home");
+        org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
 
         /**
          * The sorting algorithm used by java.util.Arrays.sort and (indirectly) by java.util.Collections.sort has been replaced. The new
@@ -80,8 +81,6 @@ public class Main {
             java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
         } catch (final Throwable e) {
         }
-        org.appwork.utils.Application.setApplication(".jd_home");
-        org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
         try {
             copySVNtoHome();
         } catch (Throwable e) {

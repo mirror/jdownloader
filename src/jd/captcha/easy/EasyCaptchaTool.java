@@ -386,7 +386,6 @@ public class EasyCaptchaTool {
     }
 
     public static void main(String[] args) throws IOException {
-        Application.ensureFrameWorkInit();
         Application.setApplication(".jd_home");
 
         JSonStorage.setMapper(new JacksonMapper());
