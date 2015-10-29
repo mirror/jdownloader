@@ -67,6 +67,10 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\&variant=[a-z\\_0-9]+)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\?variant=[a-z_0.9]+)?" }, flags = { 0, 0, 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
+    private static final int DDOS_WAIT_MAX        = 1000;
+
+    private static final int DDOS_INCREASE_FACTOR = 15;
+
     public TbCmV2(PluginWrapper wrapper) {
         super(wrapper);
     };
@@ -307,15 +311,49 @@ public class TbCmV2 extends PluginForDecrypt {
         }
         ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
         try {
+            boolean userWorkaround = false;
+            boolean channelWorkaround = false;
+            if (StringUtils.isNotEmpty(userID) && StringUtils.isEmpty(playlistID)) {
 
-            videoIdsToAdd.addAll(parsePlaylist(playlistID));
+                // the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
+                // instead
+                br.getPage("https://www.youtube.com/user/" + userID + "/");
+
+                playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\".+?play-all-icon-btn").getMatch(0);
+                userWorkaround = StringUtils.isNotEmpty(playlistID);
+            } else if (StringUtils.isNotEmpty(channelID) && StringUtils.isEmpty(playlistID)) {
+
+                // the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
+                // instead
+                br.getPage("https://www.youtube.com/channel/" + channelID);
+
+                playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\".+?play-all-icon-btn").getMatch(0);
+                channelWorkaround = StringUtils.isNotEmpty(playlistID);
+            }
+
+            ArrayList<YoutubeClipData> playlist;
+            videoIdsToAdd.addAll(playlist = parsePlaylist(playlistID));
+            if (channelWorkaround && playlist.size() == 0) {
+
+                // failed
+                channelWorkaround = false;
+            }
+            if (userWorkaround && playlist.size() == 0) {
+                // failed
+                userWorkaround = false;
+            }
+            if (!channelWorkaround) {
+                videoIdsToAdd.addAll(parseChannelgrid(channelID));
+            }
+            if (!userWorkaround) {
+                videoIdsToAdd.addAll(parseUsergrid(userID));
+            }
             // some unknown playlist type?
             if (videoIdsToAdd.size() == 0 && StringUtils.isNotEmpty(playlistID)) {
                 videoIdsToAdd.addAll(parseGeneric(cleanedurl));
             }
             videoIdsToAdd.addAll(parseVideoIds(watch_videos));
-            videoIdsToAdd.addAll(parseUsergrid(userID));
-            videoIdsToAdd.addAll(parseChannelgrid(channelID));
+
             if (StringUtils.isNotEmpty(videoID) && dupeCheckSet.add(videoID)) {
                 videoIdsToAdd.add(new jd.plugins.components.YoutubeClipData(videoID));
             }
@@ -758,37 +796,37 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 }
 
-                if (extra != null && extra.length > 0) {
-                    main: for (VariantInfo v : allVariants.values()) {
-                        for (String s : extra) {
-                            if (v.variant.getTypeId().equals(s)) {
+            if (extra != null && extra.length > 0) {
+                main: for (VariantInfo v : allVariants.values()) {
+                    for (String s : extra) {
+                        if (v.variant.getTypeId().equals(s)) {
 
-                                String groupID = getGroupID(v.variant);
+                            String groupID = getGroupID(v.variant);
 
-                                List<VariantInfo> fromGroup = groups.get(groupID);
+                            List<VariantInfo> fromGroup = groups.get(groupID);
 
-                                decryptedLinks.add(createLink(v, fromGroup));
-                                continue main;
+                            decryptedLinks.add(createLink(v, fromGroup));
+                            continue main;
 
-                            }
-                        }
-                    }
-
-                }
-
-                ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
-                if (extraSubtitles != null) {
-                    for (String v : extraSubtitles) {
-                        if (v != null) {
-                            for (VariantInfo vi : allSubtitles) {
-                                if (vi.getIdentifier().equalsIgnoreCase(v)) {
-                                    decryptedLinks.add(createLink(vi, allSubtitles));
-                                }
-
-                            }
                         }
                     }
                 }
+
+            }
+
+            ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
+            if (extraSubtitles != null) {
+                for (String v : extraSubtitles) {
+                    if (v != null) {
+                        for (VariantInfo vi : allSubtitles) {
+                            if (vi.getIdentifier().equalsIgnoreCase(v)) {
+                                decryptedLinks.add(createLink(vi, allSubtitles));
+                            }
+
+                        }
+                    }
+                }
+            }
 
             }
         }
@@ -1017,6 +1055,7 @@ public class TbCmV2 extends PluginForDecrypt {
     public ArrayList<YoutubeClipData> parsePlaylist(String playlistID) throws IOException, InterruptedException {
         // this returns the html5 player
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
+
         if (StringUtils.isNotEmpty(playlistID)) {
             Browser pbr = new Browser();
             /* we first have to load the plugin, before we can reference it */
@@ -1030,13 +1069,17 @@ public class TbCmV2 extends PluginForDecrypt {
             final String yt_page_ts = br.getRegex("'PAGE_BUILD_TIMESTAMP': \"(.*?)\"").getMatch(0);
             pbr = br.cloneBrowser();
             int counter = 1;
+            int round = 0;
             while (true) {
+
+                System.out.println(ret.size());
                 if (this.isAbort()) {
                     throw new InterruptedException();
                 }
 
                 checkErrors(pbr);
                 String[] videos = pbr.getRegex("href=(\"|')(/watch\\?v=[A-Za-z0-9\\-_]+.*?)\\1").getColumn(1);
+                int before = dupeCheckSet.size();
                 if (videos != null) {
                     for (String relativeUrl : videos) {
                         if (relativeUrl.contains("list=" + playlistID)) {
@@ -1046,6 +1089,10 @@ public class TbCmV2 extends PluginForDecrypt {
                             }
                         }
                     }
+                }
+                if (dupeCheckSet.size() == before) {
+                    // no videos in the last round. we are probably done here
+                    break;
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
                 String jsonPage = pbr.getRegex("/browse_ajax\\?action_continuation=\\d+&amp;continuation=[a-zA-Z0-9%]+").getMatch(-1);
@@ -1060,7 +1107,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         pbr.getHeaders().put("X-YouTube-Page-Timestamp", yt_page_ts);
                     }
                     // anti ddos
-                    Thread.sleep(1000);
+                    round = antiDdosSleep(round);
                     pbr.getPage(jsonPage);
                     String output = pbr.toString().replace("\\n", " ");
                     output = jd.plugins.hoster.Youtube.unescape(output);
@@ -1069,8 +1116,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 } else if (nextPage != null) {
                     // OLD! doesn't always present. Depends on server playlist backend code.!
                     nextPage = HTMLEntities.unhtmlentities(nextPage);
-                    // anti ddos
-                    Thread.sleep(1000);
+                    round = antiDdosSleep(round);
                     pbr.getPage(nextPage);
                 } else {
                     break;
@@ -1081,15 +1127,27 @@ public class TbCmV2 extends PluginForDecrypt {
         return ret;
     }
 
+    /**
+     * @param round
+     * @return
+     * @throws InterruptedException
+     */
+    protected int antiDdosSleep(int round) throws InterruptedException {
+        Thread.sleep((DDOS_WAIT_MAX * (Math.min(DDOS_INCREASE_FACTOR, round++))) / DDOS_INCREASE_FACTOR);
+        return round;
+    }
+
     public ArrayList<YoutubeClipData> parseChannelgrid(String channelID) throws IOException, InterruptedException {
         // http://www.youtube.com/user/Gronkh/videos
         // channel: http://www.youtube.com/channel/UCYJ61XIK64sp6ZFFS8sctxw
         Browser li = br.cloneBrowser();
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         int counter = 1;
+        int round = 0;
         if (StringUtils.isNotEmpty(channelID)) {
             String pageUrl = null;
             while (true) {
+                round++;
                 if (this.isAbort()) {
                     throw new InterruptedException();
                 }
@@ -1118,11 +1176,11 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
                 String nextPage = Encoding.htmlDecode(new Regex(content, "data-uix-load-more-href=\"(/[^<>\"]*?)\"").getMatch(0));
-
+                System.out.println(ret.size());
                 if (nextPage != null) {
                     pageUrl = getBase() + nextPage;
                     // anti ddos
-                    Thread.sleep(1000);
+                    round = antiDdosSleep(round);
                 } else {
                     break;
                 }
@@ -1153,6 +1211,7 @@ public class TbCmV2 extends PluginForDecrypt {
         int counter = 1;
         if (StringUtils.isNotEmpty(userID)) {
             String pageUrl = null;
+            int round = 0;
             while (true) {
                 if (this.isAbort()) {
                     throw new InterruptedException();
@@ -1192,11 +1251,10 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
                 String nextPage = Encoding.htmlDecode(new Regex(content, "data-uix-load-more-href=\"(/[^<>\"]+)\"").getMatch(0));
-
+                System.out.println(ret.size());
                 if (nextPage != null) {
                     pageUrl = getBase() + nextPage;
-                    // anti ddos
-                    Thread.sleep(1000);
+                    round = antiDdosSleep(round);
                 } else {
                     break;
                 }
