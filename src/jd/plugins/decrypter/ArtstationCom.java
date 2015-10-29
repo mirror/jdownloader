@@ -28,10 +28,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "http://(?:www\\.)?drawcrowd\\.com/(?!projects/)[^/]+" }, flags = { 0 })
-public class DrawcrowdCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/artist/[^/]+" }, flags = { 0 })
+public class ArtstationCom extends PluginForDecrypt {
 
-    public DrawcrowdCom(PluginWrapper wrapper) {
+    public ArtstationCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,38 +45,46 @@ public class DrawcrowdCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String username = parameter.substring(parameter.lastIndexOf("/"));
-        jd.plugins.hoster.DrawcrowdCom.setHeaders(this.br);
-        this.br.getPage("http://drawcrowd.com/users/" + username);
+        jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
+        this.br.getPage("https://www.artstation.com/users/" + username + ".json");
         LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        json = (LinkedHashMap<String, Object>) json.get("user");
-        final String full_name = (String) json.get("full_name");
-        final short entries_per_page = 200;
-        int entries_total = (int) DummyScriptEnginePlugin.toLong(json.get("project_count"), 0);
+        String full_name = (String) json.get("full_name");
+        final short entries_per_page = 50;
+        int entries_total = (int) DummyScriptEnginePlugin.toLong(json.get("projects_count"), 0);
         int offset = 0;
+        int page = 1;
 
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(full_name);
 
         do {
-            this.br.getPage("/" + username + "/projects?sort=newest&offset=" + offset + "&limit=" + entries_per_page);
+            this.br.getPage("/users/" + username + "/projects.json?randomize=false&page=" + page);
             json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList) json.get("projects");
+            final ArrayList<Object> ressourcelist = (ArrayList) json.get("data");
             for (final Object resource : ressourcelist) {
                 json = (LinkedHashMap<String, Object>) resource;
-                final String id = (String) json.get("slug");
+                final String title = (String) json.get("title");
+                final String id = (String) json.get("hash_id");
                 final String description = (String) json.get("description");
                 if (inValidate(id)) {
                     return null;
                 }
-                final String url_content = "http://drawcrowd.com/projects/" + id;
+                final String url_content = "https://artstation.com/artwork/" + id;
                 final DownloadLink dl = createDownloadlink(url_content);
+                String filename;
+                if (!inValidate(title)) {
+                    filename = full_name + "_" + id + "_" + title + ".jpg";
+                } else {
+                    filename = full_name + "_" + id + ".jpg";
+                }
+                filename = encodeUnicode(filename);
                 dl.setContentUrl(url_content);
                 if (description != null) {
                     dl.setComment(description);
                 }
                 dl._setFilePackage(fp);
                 dl.setLinkID(id);
-                dl.setName(full_name + "_" + id + ".jpg");
+                dl.setName(filename);
                 dl.setProperty("full_name", full_name);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
@@ -88,6 +96,8 @@ public class DrawcrowdCom extends PluginForDecrypt {
                 /* Fail safe */
                 break;
             }
+
+            page++;
 
         } while (decryptedLinks.size() < entries_total);
 
@@ -108,5 +118,21 @@ public class DrawcrowdCom extends PluginForDecrypt {
         } else {
             return false;
         }
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 }
