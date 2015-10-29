@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -11,6 +12,7 @@ import jd.config.ConfigEntry;
 import jd.http.BrowserSettingsThread;
 import jd.http.NoGateWayException;
 import jd.http.ProxySelectorInterface;
+import jd.http.SocketConnectionFactory;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -20,14 +22,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UsenetFile;
 import jd.plugins.components.UsenetFileSegment;
-import jd.plugins.download.usenet.InvalidAuthException;
-import jd.plugins.download.usenet.MessageBodyNotFoundException;
-import jd.plugins.download.usenet.SimpleUseNet;
 import jd.plugins.download.usenet.SimpleUseNetDownloadInterface;
-import jd.plugins.download.usenet.UnrecognizedCommandException;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
+import org.appwork.utils.net.usenet.SimpleUseNet;
+import org.appwork.utils.net.usenet.UnrecognizedCommandException;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class UseNet extends PluginForHost {
@@ -174,7 +176,14 @@ public class UseNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final List<HTTPProxy> proxies = selectProxies();
-        final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger());
+        final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger()) {
+
+            @Override
+            protected Socket createSocket() {
+                return SocketConnectionFactory.createSocket(getProxy());
+            }
+
+        };
         this.client.set(client);
         try {
             final String username = getUsername(account);
