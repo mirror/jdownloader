@@ -41,6 +41,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.locale.AWUTranslation;
 import org.appwork.utils.logging2.sendlogs.LogSenderTranslation;
+import org.appwork.utils.svn.LocaleRunnable;
 import org.appwork.utils.svn.Subversion;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -795,40 +796,47 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public SVNCommitPacket upload() throws SVNException {
         synchronized (this) {
+            return new LocaleRunnable<SVNCommitPacket, SVNException>() {
 
-            Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
-            try {
-                try {
-                    s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
-                } catch (SVNException e) {
-                    logger.log(e);
-                    s.cleanUp(Application.getResource("translations/custom"), true);
-                    s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
-                }
-                s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
-                s.getWCClient().doAdd(Application.getResource("translations/custom"), true, false, true, SVNDepth.INFINITY, false, false);
-                logger.finer("Create CommitPacket");
-                final SVNCommitPacket packet = s.getCommitClient().doCollectCommitItems(new File[] { Application.getResource("translations/custom") }, false, false, SVNDepth.INFINITY, null);
-                for (SVNCommitItem ci : packet.getCommitItems()) {
-                    File file = ci.getFile();
-                    if (file.getName().matches(".*\\.r\\d$")) {
-                        throw new WTFException("Unresolved Conflicts!");
+                @Override
+                protected SVNCommitPacket run() throws SVNException {
+                    Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
+                    try {
+                        try {
+                            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+                        } catch (SVNException e) {
+                            logger.log(e);
+                            s.cleanUp(Application.getResource("translations/custom"), true);
+                            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+                        }
+                        s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
+                        s.getWCClient().doAdd(Application.getResource("translations/custom"), true, false, true, SVNDepth.INFINITY, false, false);
+                        logger.finer("Create CommitPacket");
+                        final SVNCommitPacket packet = s.getCommitClient().doCollectCommitItems(new File[] { Application.getResource("translations/custom") }, false, false, SVNDepth.INFINITY, null);
+                        for (SVNCommitItem ci : packet.getCommitItems()) {
+                            File file = ci.getFile();
+                            if (file.getName().matches(".*\\.r\\d$")) {
+                                throw new WTFException("Unresolved Conflicts!");
+                            }
+                            if (file.isFile() && !file.getName().endsWith("." + getLoadedLocale().getId() + ".lng") && !file.getName().endsWith(getLoadedLocale().getId() + ".json")) {
+                                logger.info("Skip: " + file);
+                                packet.setCommitItemSkipped(ci, true);
+                                continue;
+                            }
+                            logger.info("Commit: " + file);
+
+                        }
+                        logger.finer("Transfer Package");
+                        s.getCommitClient().doCommit(packet, true, false, "Updated " + loaded.getLocale().getDisplayName() + " Translation", null);
+
+                        return packet;
+                    } finally {
+                        s.dispose();
                     }
-                    if (file.isFile() && !file.getName().endsWith("." + getLoadedLocale().getId() + ".lng") && !file.getName().endsWith(getLoadedLocale().getId() + ".json")) {
-                        logger.info("Skip: " + file);
-                        packet.setCommitItemSkipped(ci, true);
-                        continue;
-                    }
-                    logger.info("Commit: " + file);
-
                 }
-                logger.finer("Transfer Package");
-                s.getCommitClient().doCommit(packet, true, false, "Updated " + loaded.getLocale().getDisplayName() + " Translation", null);
 
-                return packet;
-            } finally {
-                s.dispose();
-            }
+            }.runEnglish();
+
         }
 
     }
