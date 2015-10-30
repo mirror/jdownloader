@@ -58,6 +58,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -67,7 +68,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\&variant=[a-z\\_0-9]+)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\?variant=[a-z_0.9]+)?" }, flags = { 0, 0, 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
-    private static final int DDOS_WAIT_MAX        = 1000;
+    private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
 
     private static final int DDOS_INCREASE_FACTOR = 15;
 
@@ -317,17 +318,23 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 // the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
                 // instead
-                br.getPage("https://www.youtube.com/user/" + userID + "/");
+                br.getPage("https://www.youtube.com/user/" + userID + "/featured");
 
-                playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\".+?play-all-icon-btn").getMatch(0);
+                playlistID = br.getRegex(">Uploads</span>.*?list=([A-Za-z0-9\\-_]+)\".+?play-all-icon-btn").getMatch(0);
                 userWorkaround = StringUtils.isNotEmpty(playlistID);
-            } else if (StringUtils.isNotEmpty(channelID) && StringUtils.isEmpty(playlistID)) {
+            }
+            if (StringUtils.isNotEmpty(channelID) && StringUtils.isEmpty(playlistID)) {
 
                 // the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
                 // instead
                 br.getPage("https://www.youtube.com/channel/" + channelID);
 
                 playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\".+?play-all-icon-btn").getMatch(0);
+                if (StringUtils.isEmpty(playlistID) && channelID.startsWith("UC")) {
+                    // channel has no play all button.
+                    // like https://www.youtube.com/channel/UCbmRs17gtQxFXQyvIo5k6Ag/feed
+                    playlistID = "UU" + channelID.substring(2);
+                }
                 channelWorkaround = StringUtils.isNotEmpty(playlistID);
             }
 
