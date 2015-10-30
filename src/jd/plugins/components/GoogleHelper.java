@@ -194,7 +194,7 @@ public class GoogleHelper {
             // delete all cookies
             this.br.clearCookies("google.com");
             this.br.clearCookies("youtube.com");
-            br.setCookie("http://google.com", "PREF", "hl=en-GB");
+            this.br.setCookie("http://google.com", "PREF", "hl=en-GB");
             //
             if (isCacheEnabled() && account.getProperty(COOKIES2) != null) {
 
@@ -331,7 +331,13 @@ public class GoogleHelper {
                     }
                 }
 
-                Form form = br.getFormBySubmitvalue("Verify");
+                Form form = this.br.getFormBySubmitvalue("Verify");
+                if (form == null) {
+                    form = this.br.getFormByInputFieldKeyValue("SendMethod", "SMS");
+                }
+                if (form == null) {
+                    form = this.br.getFormbyKey("Pin");
+                }
 
                 if (form != null && "SecondFactor".equals(form.getAction())) {
                     handle2FactorAuthSmsDeprecated(form);
@@ -459,8 +465,8 @@ public class GoogleHelper {
             // </div>
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
         }
-        String number = br.getRegex("<b dir=\"ltr\">(.*?)</b>").getMatch(0);
-        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
+        final String number = getPhonenumberCensored();
+        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
             @Override
             protected void initFocus(JComponent focus) {
                 // super.initFocus(focus);
@@ -535,8 +541,8 @@ public class GoogleHelper {
             // </div>
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
         }
-        String number = br.getRegex("<b dir=\"ltr\">(.*?)</b>").getMatch(0);
-        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
+        final String number = getPhonenumberCensored();
+        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
             @Override
             protected void initFocus(JComponent focus) {
                 // super.initFocus(focus);
@@ -583,19 +589,34 @@ public class GoogleHelper {
         };
         InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
         handler.throwCloseExceptions();
-        InputField smsUserPin = form.getInputFieldByName("Pin");
         String txt = handler.getText();
         if (txt.startsWith("G-")) {
             txt = txt.substring(2);
         }
-        smsUserPin.setValue(Encoding.urlEncode(txt));
-        InputField persistentCookie = form.getInputFieldByName("TrustDevice");
-        persistentCookie.setValue(Encoding.urlEncode("on"));
+        form.remove("pin");
+        form.put("pin", Encoding.urlEncode(txt));
+        final InputField persistentCookie = form.getInputFieldByName("TrustDevice");
+        if (persistentCookie != null) {
+            persistentCookie.setValue(Encoding.urlEncode("on"));
+        } else {
+            form.put("TrustDevice", "on");
+        }
         form.remove("smsSend");
         form.remove("retry");
         submitForm(br, form);
 
         handleIntersitial();
+    }
+
+    private String getPhonenumberCensored() {
+        String number = br.getRegex("<b dir=\"ltr\">(.*?)</b>").getMatch(0);
+        if (number == null) {
+            number = this.br.getRegex("<b dir=\"ltr\" class=\"[^<>\"]+\">([^<>\"]*?)</b>").getMatch(0);
+        }
+        if (number != null) {
+            number = number.trim();
+        }
+        return number;
     }
 
     protected void handleIntersitial() throws Exception {

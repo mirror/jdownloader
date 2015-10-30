@@ -395,8 +395,15 @@ public class SaveTv extends PluginForHost {
         return filename;
     }
 
+    /** Their json is crazy regarding data types thus we have a lot of type conversions here ... */
     public static void parseFilenameInformation_site(final DownloadLink dl, final LinkedHashMap<String, Object> sourcemap) throws PluginException {
-        final String site_title = (String) sourcemap.get("STITLE");
+        final String site_title;
+        final Object site_title_o = sourcemap.get("STITLE");
+        if (site_title_o instanceof Double) {
+            site_title = Integer.toString((int) ((Double) site_title_o).doubleValue());
+        } else {
+            site_title = (String) site_title_o;
+        }
         long datemilliseconds = 0;
 
         /* For series only */
