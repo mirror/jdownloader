@@ -23,7 +23,6 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -43,7 +42,7 @@ import jd.utils.locale.JDL;
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: http://api.imgur.com/models/image
  * (scroll down to "Image thumbnails"
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }, flags = { 2 })
 public class ImgUrCom extends PluginForHost {
 
     public ImgUrCom(PluginWrapper wrapper) {
@@ -63,21 +62,22 @@ public class ImgUrCom extends PluginForHost {
     }
 
     /* User settings */
-    private static final String SETTING_WEBM                   = "SETTING_WEBM";
-    private static final String SETTING_CLIENTID               = "SETTING_CLIENTID";
-    private static final String SETTING_USE_API                = "SETTING_USE_API";
-    private static final String SETTING_GRAB_SOURCE_URL_VIDEO  = "SETTING_GRAB_SOURCE_URL_VIDEO";
-    private static final String SETTING_CUSTOM_FILENAME        = "SETTING_CUSTOM_FILENAME";
-    private static final String SETTING_CUSTOM_PACKAGENAME     = "SETTING_CUSTOM_PACKAGENAME";
+    private static final String SETTING_WEBM                    = "SETTING_WEBM";
+    private static final String SETTING_CLIENTID                = "SETTING_CLIENTID";
+    private static final String SETTING_USE_API                 = "SETTING_USE_API";
+    private static final String SETTING_GRAB_SOURCE_URL_VIDEO   = "SETTING_GRAB_SOURCE_URL_VIDEO";
+    private static final String SETTING_CUSTOM_FILENAME         = "SETTING_CUSTOM_FILENAME";
+    private static final String SETTING_CUSTOM_PACKAGENAME      = "SETTING_CUSTOM_PACKAGENAME";
 
     /* Constants */
-    public static final long    view_filesizelimit             = 20447232l;
+    public static final long    view_filesizelimit              = 20447232l;
+    public static final int     responsecode_website_overloaded = 502;
 
     /* Variables */
-    private String              dllink                         = null;
-    private boolean             dl_IMPOSSIBLE_APILIMIT_REACHED = false;
-    private String              imgUID                         = null;
-    private boolean             start_DL                       = false;
+    private String              dllink                          = null;
+    private boolean             dl_IMPOSSIBLE_APILIMIT_REACHED  = false;
+    private String              imgUID                          = null;
+    private boolean             start_DL                        = false;
 
     /**
      * TODO: 1. Maybe add a setting to download albums as .zip (if possible via site). 2. Maybe add a setting to add numbers in front of the
@@ -89,25 +89,25 @@ public class ImgUrCom extends PluginForHost {
         imgUID = getImgUID(link);
         final String filetype = getFiletype(link);
         final String finalfilename = link.getStringProperty("decryptedfinalfilename", null);
-        final long filesize = getLongProperty(link, "decryptedfilesize", -1);
+        final long filesize = link.getLongProperty("decryptedfilesize", -1);
         dllink = link.getStringProperty("directlink", null);
 
         br.setFollowRedirects(true);
         /* Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API! */
         if (dllink == null || filesize == -1 || finalfilename == null || filetype == null) {
+            prepBRAPI(this.br);
             boolean api_failed = false;
             if (!this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
                 api_failed = true;
             } else {
                 br.getHeaders().put("Authorization", getAuthorization());
                 try {
-                    br.getPage("https://api.imgur.com/3/image/" + imgUID);
-                } catch (final BrowserException e) {
-                    if (br.getHttpConnection().getResponseCode() == 429) {
+                    getPage(this.br, "https://api.imgur.com/3/image/" + imgUID);
+                    if (this.br.getHttpConnection().getResponseCode() == 429) {
                         api_failed = true;
-                    } else {
-                        throw e;
                     }
+                } catch (final BrowserException e) {
+                    throw e;
                 }
             }
             if (!api_failed) {
@@ -132,10 +132,8 @@ public class ImgUrCom extends PluginForHost {
                  * Workaround for API limit reached or in case user disabled API - second way does return 503 response in case API limit is
                  * reached: http://imgur.com/download/ + imgUID. This code should never be reached!
                  */
-                br.clearCookies("http://imgur.com/");
-                br.getHeaders().put("Referer", null);
-                br.getHeaders().put("Authorization", null);
-                br.getPage("http://imgur.com/" + imgUID);
+                this.br = prepBRWebsite(this.br);
+                getPage(this.br, "http://imgur.com/" + imgUID);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -169,12 +167,14 @@ public class ImgUrCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 try {
-                    con = openConnection(this.br, this.dllink);
+                    con = this.br.openHeadConnection(this.dllink);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (con.getResponseCode() == responsecode_website_overloaded) {
+                    websiteOverloaded();
                 } else if (con.getContentType().contains("html")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -201,16 +201,27 @@ public class ImgUrCom extends PluginForHost {
         /* Disable chunks as servers are fast and we usually only download small files. */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) {
+            final int responsecode = dl.getConnection().getResponseCode();
+            if (responsecode == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (dl.getConnection().getResponseCode() == 503) {
+            } else if (responsecode == responsecode_website_overloaded) {
+                websiteOverloaded();
+            } else if (responsecode == 503) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 60 * 1000l);
             }
             logger.warning("Finallink leads to HTML code --> Following connection");
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
+    }
+
+    private String getPage(final Browser br, final String url) throws IOException, PluginException {
+        br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == responsecode_website_overloaded) {
+            websiteOverloaded();
+        }
+        return br.toString();
     }
 
     /**
@@ -263,12 +274,7 @@ public class ImgUrCom extends PluginForHost {
 
     /** Returns a link for the user to open in browser. */
     public static final String getURLContent(final String imgUID) {
-        String url_content;
-        if (isJDStable()) {
-            url_content = "http://imgur.com/" + imgUID;
-        } else {
-            url_content = "https://imgur.com/" + imgUID;
-        }
+        final String url_content = "https://imgur.com/" + imgUID;
         return url_content;
     }
 
@@ -347,38 +353,25 @@ public class ImgUrCom extends PluginForHost {
         return authorization;
     }
 
-    /* Stable workaround */
-    public static long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
-        }
+    public static Browser prepBRWebsite(final Browser br) {
+        prepBRGeneral(br);
+        return br;
     }
 
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
+    public static Browser prepBRAPI(final Browser br) {
+        br.setAllowedResponseCodes(429);
+        prepBRGeneral(br);
+        return br;
     }
 
-    public static boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+    public static Browser prepBRGeneral(final Browser br) {
+        /* 502 == website overloadeds */
+        br.setAllowedResponseCodes(responsecode_website_overloaded);
+        return br;
+    }
+
+    private void websiteOverloaded() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "502: 'Imgur over capacity'", 5 * 60 * 1000l);
     }
 
     @Override
