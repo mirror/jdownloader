@@ -1,7 +1,10 @@
 package jd.gui.swing.jdgui.views.settings.panels.advanced;
 
+import java.awt.event.MouseEvent;
 import java.util.Iterator;
 import java.util.Locale;
+
+import jd.controlling.ClipboardMonitoring;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -70,6 +73,12 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
 
             @Override
             public boolean isEditable(AdvancedConfigEntry obj) {
+                return false;
+            }
+
+            @Override
+            public boolean onDoubleClick(MouseEvent e, AdvancedConfigEntry obj) {
+                ClipboardMonitoring.getINSTANCE().setCurrentContent(obj.getKey());
                 return true;
             }
 
@@ -94,6 +103,12 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
             @Override
             public String getStringValue(AdvancedConfigEntry value) {
                 return value.getDescription();
+            }
+
+            @Override
+            public boolean onDoubleClick(MouseEvent e, AdvancedConfigEntry obj) {
+                ClipboardMonitoring.getINSTANCE().setCurrentContent(obj.getDescription());
+                return true;
             }
 
             @Override
