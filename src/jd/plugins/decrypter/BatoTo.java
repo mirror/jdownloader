@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -80,19 +81,22 @@ public class BatoTo extends PluginForDecrypt {
         }
 
         // We get the title
-        String tag_title = br.getRegex("<title>.*?</title>").getMatch(-1);
+        String tag_title = this.br.getRegex("value=\"https?://bato\\.to/reader#[a-z0-9]+\" selected=\"selected\">([^<>\"]*?)</option>").getMatch(0);
+        // if (tag_title == null) {
+        // tag_title = br.getRegex("document\\.title = \\'([^<>\"]*?) Page \\d+ \\| Batoto\\!';").getMatch(0);
+        // }
+        // if (tag_title == null) {
+        // tag_title = this.br.getRegex("<title>.*?</title>").getMatch(-1);
+        // }
         if (tag_title == null) {
-            tag_title = this.br.getRegex("document\\.title = \\'([^<>\"]*?) Page \\d+ \\| Batoto\\!';").getMatch(0);
+            /* Fallback if everything else fails! */
+            tag_title = id;
         }
-        if (tag_title != null) {
-            // cleanup bad html entity
-            tag_title = tag_title.replaceAll("&amp;?", "&");
-        }
+
+        tag_title = Encoding.htmlDecode(tag_title);
         final FilePackage fp = FilePackage.getInstance();
         // may as well set this globally. it used to belong inside 2 of the formatting if statements
         fp.setProperty("CLEANUP_NAME", false);
-
-        final String title = tag_title;
 
         String pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
         if (pages == null) {
@@ -112,7 +116,7 @@ public class BatoTo extends PluginForDecrypt {
             }
 
             // We load each page and retrieve the URL of the picture
-            fp.setName(title);
+            fp.setName(tag_title);
             for (int i = 1; i <= numberOfPages; i++) {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user: " + parameter);
@@ -120,10 +124,11 @@ public class BatoTo extends PluginForDecrypt {
                 }
                 final String pageNumber = df_page.format(i);
                 final DownloadLink link = createDownloadlink("http://bato.to/areader?id=" + id + "&p=" + pageNumber);
-                final String fname_without_ext = title + " - Page " + pageNumber;
+                final String fname_without_ext = tag_title + " - Page " + pageNumber;
                 link.setProperty("fname_without_ext", fname_without_ext);
                 link.setName(fname_without_ext + ".png");
                 link.setAvailable(true);
+                link.setContentUrl("http://bato.to/reader#" + id + "_" + pageNumber);
                 fp.add(link);
                 distribute(link);
                 decryptedLinks.add(link);

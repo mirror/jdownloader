@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(?:pan|yun)\\.baidu\\.com/(share|wap)/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?\\&dir.+)?|http://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(?:pan|yun)\\.baidu\\.com/(share|wap)/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?\\&dir.+)?|http://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -70,10 +70,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {
             logger.info("Link offline: " + parameter);
             final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            try {
-                dl.setContentUrl(parameter);
-            } catch (Throwable e) {
-            }
+            dl.setContentUrl(parameter);
             dl.setProperty("offline", true);
             dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dl);
@@ -135,13 +132,10 @@ public class PanBaiduCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            try {
-                fina.setContentUrl(parameter);
-                if (parameter.contains("fid=")) {
-                    fina.setContainerUrl(parameter.replaceAll("\\&fid=\\d+", ""));
+            fina.setContentUrl(parameter);
+            if (parameter.contains("fid=")) {
+                fina.setContainerUrl(parameter.replaceAll("\\&fid=\\d+", ""));
 
-                }
-            } catch (Throwable e) {
             }
             fina.setProperty("important_fsid", fsid);
             fina.setProperty("origurl_uk", uk);
@@ -222,10 +216,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             // Folder empty
             if (br.containsHTML("\"errno\":2")) {
                 final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                try {
-                    dl.setContentUrl(parameter);
-                } catch (Throwable e) {
-                }
+                dl.setContentUrl(parameter);
                 dl.setProperty("offline", true);
                 dl.setFinalFileName(Encoding.htmlDecode(dirName));
                 decryptedLinks.add(dl);
@@ -247,16 +238,9 @@ public class PanBaiduCom extends PluginForDecrypt {
                     }
                     if (links[0].contains("\"md5\"")) {
                         final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null, null);
-                        try {
-                            dl.setContainerUrl(parameter);
-                        } catch (Throwable e) {
-                        }
+                        dl.setContainerUrl(parameter);
                         fp.add(dl);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            /* does not exist in 09581 */
-                        }
+                        distribute(dl);
                         decryptedLinks.add(dl);
                     }
                 }
@@ -356,10 +340,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             dl.setProperty("important_link_password_cookie", link_password_cookie);
             dl.setProperty("important_fsid", fsid);
 
-            try {
-                dl.setContentUrl(parameter + "&fid=" + fsid);
-            } catch (Throwable e) {
-            }
+            dl.setContentUrl(parameter + "&fid=" + fsid);
             dl.setProperty("origurl_uk", uk);
             dl.setProperty("origurl_shareid", shareid);
             dl.setAvailable(true);

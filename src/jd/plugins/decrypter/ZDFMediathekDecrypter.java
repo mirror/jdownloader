@@ -186,7 +186,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             String extension = ".mp4";
             subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
             if (subtitleInfo != null) {
-                subtitleURL = new Regex(subtitleInfo, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
+                subtitleURL = new Regex(subtitleInfo, "<url>(https?://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
             }
             if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                 extension = ".mp3";

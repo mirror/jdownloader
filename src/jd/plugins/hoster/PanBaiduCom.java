@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //All links come from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidudecrypted\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidudecrypted\\.com/\\d+" }, flags = { 0 })
 public class PanBaiduCom extends PluginForHost {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -140,7 +140,7 @@ public class PanBaiduCom extends PluginForHost {
                 tsamp = br.getRegex("yunData\\.TIMESTAMP = \"(\\d+)\"").getMatch(0);
             }
             if (sign == null || tsamp == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "File only downloadable via account or only via the pan.baidu.com App/Downloadmanager");
             }
             Browser br2 = prepAjax(br.cloneBrowser());
             try {
