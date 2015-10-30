@@ -167,6 +167,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         if (existing == null) {
             existing = new LinkInfo();
             existing.bytesTotal = linkSize;
+            tmp.linkInfos.put(name, existing);
         } else if (linkSize > existing.bytesTotal) {
             existing.bytesTotal = linkSize;
         }
