@@ -32,7 +32,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/([a-zA-Z0-9]+/[^<>\"/]+|[a-zA-Z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/([a-zA-Z0-9]+/[^<>\"/]+|[a-zA-Z0-9]+)" }, flags = { 2 })
 public class EuroShareEu extends PluginForHost {
 
     /** API documentation: http://euroshare.eu/euroshare-api/ */
@@ -45,6 +45,7 @@ public class EuroShareEu extends PluginForHost {
         this.enablePremium("http://euroshare.eu/premium-accounts");
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("euroshare.sk", "euroshare.eu"));
     }
@@ -54,6 +55,7 @@ public class EuroShareEu extends PluginForHost {
         return "http://euroshare.eu/terms";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -76,10 +78,6 @@ public class EuroShareEu extends PluginForHost {
             }
             if (br.containsHTML(containsPassword)) {
                 downloadLink.getLinkStatus().setStatusText("Pre-download password protection. Please set password!");
-                try {
-                    downloadLink.setComment("Pre-download password protection. Please set password!");
-                } catch (final Throwable e) {
-                }
                 filename = new Regex(downloadLink.getDownloadURL(), "/([^/]+)$").getMatch(0);
                 if (filename != null) {
                     Encoding.urlDecode(filename, true);
@@ -92,11 +90,8 @@ public class EuroShareEu extends PluginForHost {
 
         filename = getJson("file_name");
         final String description = getJson("file_description");
-        if (description != null) {
-            try {
-                downloadLink.setComment(description);
-            } catch (final Throwable e) {
-            }
+        if (description != null && downloadLink.getComment() == null) {
+            downloadLink.setComment(description);
         }
         final String filesize = getJson("file_size");
         final String md5 = getJson("md5_hash");
@@ -116,12 +111,8 @@ public class EuroShareEu extends PluginForHost {
                 downloadLink.setProperty("pass", "");
                 handlePassword(downloadLink);
             } else {
-                // password isn't wrong
+                // password is correct
                 downloadLink.getLinkStatus().setStatusText(null);
-                try {
-                    downloadLink.setComment(null);
-                } catch (final Throwable e) {
-                }
             }
         } else {
             pass = Plugin.getUserInput(downloadLink.getName() + " is password protected!", downloadLink);
@@ -152,12 +143,9 @@ public class EuroShareEu extends PluginForHost {
         final String availableTraffic = getJson("credit");
         if (expire.equals("0") && availableTraffic.equals("0")) {
             ai.setStatus("Registered User");
-            try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
+            maxPrem.set(1);
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
             account.setProperty("FREE", true);
             ai.setUnlimitedTraffic();
         } else {
@@ -176,12 +164,9 @@ public class EuroShareEu extends PluginForHost {
                 ai.setStatus("Premium User (Credit)");
                 ai.setTrafficLeft(Long.parseLong(availableTraffic));
             }
-            try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            maxPrem.set(-1);
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
             account.setProperty("FREE", false);
         }
         return ai;
@@ -241,6 +226,7 @@ public class EuroShareEu extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -275,20 +261,14 @@ public class EuroShareEu extends PluginForHost {
         }
     }
 
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
-    }
-
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
