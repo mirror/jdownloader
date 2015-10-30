@@ -95,6 +95,7 @@ public class BatoTo extends PluginForDecrypt {
         }
 
         tag_title = Encoding.htmlDecode(tag_title);
+        tag_title = tag_title.replace(": ", " - ");
         final FilePackage fp = FilePackage.getInstance();
         // may as well set this globally. it used to belong inside 2 of the formatting if statements
         fp.setProperty("CLEANUP_NAME", false);
