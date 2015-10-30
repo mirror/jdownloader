@@ -80,6 +80,7 @@ public class BatoTo extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        String title_comic = this.br.getRegex("<li style=\"display: inline-block; margin-right: \\d+px;\"><a href=\"http://bato\\.to/comic/[^<>\"]+\">([^<>\"]*?)</a>").getMatch(0);
         // We get the title
         String tag_title = this.br.getRegex("value=\"https?://bato\\.to/reader#[a-z0-9]+\" selected=\"selected\">([^<>\"]*?)</option>").getMatch(0);
         // if (tag_title == null) {
@@ -97,6 +98,12 @@ public class BatoTo extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         // may as well set this globally. it used to belong inside 2 of the formatting if statements
         fp.setProperty("CLEANUP_NAME", false);
+        if (title_comic != null) {
+            title_comic = Encoding.htmlDecode(title_comic).trim();
+            fp.setName(title_comic + " - " + tag_title);
+        } else {
+            fp.setName(tag_title);
+        }
 
         String pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
         if (pages == null) {
@@ -106,36 +113,38 @@ public class BatoTo extends PluginForDecrypt {
             br.getPage("?supress_webtoon=t");
             pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
         }
-        if (pages != null) {
-            int numberOfPages = Integer.parseInt(pages);
-            DecimalFormat df_page = new DecimalFormat("00");
-            if (numberOfPages > 999) {
-                df_page = new DecimalFormat("0000");
-            } else if (numberOfPages > 99) {
-                df_page = new DecimalFormat("000");
-            }
-
-            // We load each page and retrieve the URL of the picture
-            fp.setName(tag_title);
-            for (int i = 1; i <= numberOfPages; i++) {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return decryptedLinks;
-                }
-                final String pageNumber = df_page.format(i);
-                final DownloadLink link = createDownloadlink("http://bato.to/areader?id=" + id + "&p=" + pageNumber);
-                final String fname_without_ext = tag_title + " - Page " + pageNumber;
-                link.setProperty("fname_without_ext", fname_without_ext);
-                link.setName(fname_without_ext + ".png");
-                link.setAvailable(true);
-                link.setContentUrl("http://bato.to/reader#" + id + "_" + pageNumber);
-                fp.add(link);
-                distribute(link);
-                decryptedLinks.add(link);
-            }
-        } else {
+        if (pages == null) {
             logger.warning("Decrypter broken for: " + parameter + " @ pages");
             return null;
+        }
+        int numberOfPages = Integer.parseInt(pages);
+        DecimalFormat df_page = new DecimalFormat("00");
+        if (numberOfPages > 999) {
+            df_page = new DecimalFormat("0000");
+        } else if (numberOfPages > 99) {
+            df_page = new DecimalFormat("000");
+        }
+
+        for (int i = 1; i <= numberOfPages; i++) {
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return decryptedLinks;
+            }
+            final String pageNumber = df_page.format(i);
+            final DownloadLink link = createDownloadlink("http://bato.to/areader?id=" + id + "&p=" + pageNumber);
+            final String fname_without_ext;
+            if (title_comic != null) {
+                fname_without_ext = title_comic + " - " + tag_title + " - Page " + pageNumber;
+            } else {
+                fname_without_ext = tag_title + " - Page " + pageNumber;
+            }
+            link.setProperty("fname_without_ext", fname_without_ext);
+            link.setName(fname_without_ext + ".png");
+            link.setAvailable(true);
+            link.setContentUrl("http://bato.to/reader#" + id + "_" + pageNumber);
+            fp.add(link);
+            distribute(link);
+            decryptedLinks.add(link);
         }
 
         return decryptedLinks;
