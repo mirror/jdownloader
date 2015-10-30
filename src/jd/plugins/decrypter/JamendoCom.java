@@ -29,9 +29,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+|list/a\\d+)" }, flags = { 0 })
-public class MndCm extends PluginForDecrypt {
+public class JamendoCom extends PluginForDecrypt {
 
-    public MndCm(PluginWrapper wrapper) {
+    public JamendoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
