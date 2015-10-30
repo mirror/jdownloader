@@ -37,7 +37,7 @@ import jd.plugins.hoster.ImgUrCom;
 import jd.utils.JDUtilities;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://(?:www\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://(?:www\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }, flags = { 0 })
 public class ImgurCom extends PluginForDecrypt {
 
     public ImgurCom(PluginWrapper wrapper) {
@@ -146,11 +146,7 @@ public class ImgurCom extends PluginForDecrypt {
                     if (!e.getMessage().equals(API_FAILED)) {
                         throw e;
                     }
-                    try {
-                        br.setLoadLimit(br.getLoadLimit() * 2);
-                    } catch (final Throwable eFUstable) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
+                    br.setLoadLimit(br.getLoadLimit() * 2);
                     try {
                         br.getPage(PARAMETER);
                     } catch (final BrowserException ebr) {
@@ -270,13 +266,7 @@ public class ImgurCom extends PluginForDecrypt {
             dl.setFinalFileName(filename);
             dl.setDownloadSize(filesize);
             /* No need to hide directlinks */
-            try {
-                /* JD2 only */
-                dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
-            } catch (Throwable e) {
-                /* Stable */
-                dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
-            }
+            dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
             if (VIDEOSOURCE != null && grabVideoSource) {
                 decryptedLinks.add(this.createDownloadlink(VIDEOSOURCE));
             }
@@ -350,13 +340,7 @@ public class ImgurCom extends PluginForDecrypt {
             final String filename = jd.plugins.hoster.ImgUrCom.getFormattedFilename(dl);
             dl.setFinalFileName(filename);
             /* No need to hide directlinks */
-            try {
-                /* JD2 only */
-                dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
-            } catch (Throwable e) {
-                /* Stable */
-                dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
-            }
+            dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
             if (VIDEOSOURCE != null && grabVideoSource) {
                 decryptedLinks.add(this.createDownloadlink(VIDEOSOURCE));
             }
