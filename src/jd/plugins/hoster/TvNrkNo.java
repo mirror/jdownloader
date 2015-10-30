@@ -98,7 +98,7 @@ public class TvNrkNo extends PluginForHost {
         downloadLink.setFinalFileName(filename);
 
         if (!isAvailable) {
-            downloadLink.getLinkStatus().setStatusText("Content is not (yet) downloadable (has not yet aired)");
+            downloadLink.getLinkStatus().setStatusText("Content is not downloadable or has not aired yet");
         }
 
         return AvailableStatus.TRUE;
@@ -109,7 +109,7 @@ public class TvNrkNo extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (!isAvailable) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content is not (yet) downloadable (has not yet aired)");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content is not downloadable or has not aired yet");
         }
         String url_hls = null;
         String url_hds = getJson("mediaUrl");
