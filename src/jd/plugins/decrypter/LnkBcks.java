@@ -91,7 +91,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // urls containing /link/ are no longer valid, but uid seems to be transferable.
         String parameter = param.toString().replace("/link/", "");
         if (agent.get() == null) {
@@ -144,93 +144,108 @@ public class LnkBcks extends antiDDoSForDecrypt {
         if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("id=\"content\" src=\"([^\"]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
-        if (inValidate(link)) {
-            // thx FRD, slightly adapted to JD
-            // scan for js, they repeat, usually last wins (in browser...)
-            String[] jss = br.getRegex("(<script type=\"text/javascript\">[^<]+</script>)").getColumn(0);
-            if (jss == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            String js = null;
-            for (String j : jss) {
-                // cleanup
-                j = j.replaceAll("[\r\n\\s]+\\/\\/\\s*[^\r\n]+", "");
-                if (new Regex(j, "\\s*var\\s*f\\s*=\\s*window\\['init'\\s*\\+\\s*'Lb'\\s*\\+\\s*'js'\\s*\\+\\s*''\\];[\r\n\\s]+").matches()) {
-                    js = j;
+        int count = 0;
+        goAgain: for (int i = 0; i <= 1; i++) {
+            if (inValidate(link)) {
+                // thx FRD, slightly adapted to JD
+                // scan for js, they repeat, usually last wins (in browser...)
+                String[] jss = br.getRegex("(<script type=\"text/javascript\">[^<]+</script>)").getColumn(0);
+                if (jss == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
-            }
-            if (js == null) {
-                // not always an error.. see http://www.linkbucks.com/Cdx4H
-                if (br.getHttpConnection().getContentLength() < 1024) {
-                    return decryptedLinks;
+                String js = null;
+                for (String j : jss) {
+                    // cleanup
+                    j = j.replaceAll("[\r\n\\s]+\\/\\/\\s*[^\r\n]+", "");
+                    if (new Regex(j, "\\s*var\\s*f\\s*=\\s*window\\['init'\\s*\\+\\s*'Lb'\\s*\\+\\s*'js'\\s*\\+\\s*''\\];[\r\n\\s]+").matches()) {
+                        js = j;
+                    }
                 }
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            String token = new Regex(js, "Token\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
-            if (token == null) {
-                token = new Regex(js, "\\?t=([a-f0-9]{40})").getMatch(0);
-            }
-            final String authKeyMatchStr = "A(?:'\\s*\\+\\s*')?u(?:'\\s*\\+\\s*')?t(?:'\\s*\\+\\s*')?h(?:'\\s*\\+\\s*')?K(?:'\\s*\\+\\s*')?e(?:'\\s*\\+\\s*')?y";
-            final String l1 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s*(\\d+?);").getMatch(0);
-            final String l2 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s?params\\['" + authKeyMatchStr + "'\\]\\s*\\+\\s*(\\d+?);").getMatch(0);
-            if (l1 == null || l2 == null || token == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            // for uid/url/hash links, seem to be the only ones encoded, but for now we will use the JS to determine it as its more likely
-            // to be correct longer -- raztoki 20150425
-            final String urlEncoded = new Regex(js, "UrlEncoded\\s*:\\s*(true|false|null)").getMatch(0);
-            // if (parameter.contains("/url/")) {
-            if ("true".equalsIgnoreCase(urlEncoded)) {
-                final String tt = new Regex(js, "TargetUrl:\\s*'([a-f0-9]+)'").getMatch(0);
-                final String x = this.convertFromHex(tt);
-                final String y = this.encode(x);
-                if (y != null) {
-                    link = y;
+                if (js == null) {
+                    // not always an error.. see http://www.linkbucks.com/Cdx4H
+                    if (br.getHttpConnection().getContentLength() < 1024) {
+                        return decryptedLinks;
+                    }
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
-            } else {
-                final long authKey = Long.parseLong(l1) + Long.parseLong(l2);
-                final Browser br2 = br.cloneBrowser();
-                // swf
-                final String swf = new Regex(js, "SwfUrl\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
-                if (swf != null) {
-                    URLConnectionAdapter con = null;
-                    try {
-                        con = br2.openGetConnection(swf);
-                    } catch (final Throwable t) {
-                    } finally {
+                String token = new Regex(js, "Token\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
+                if (token == null) {
+                    token = new Regex(js, "\\?t=([a-f0-9]{40})").getMatch(0);
+                }
+                final String authKeyMatchStr = "A(?:'\\s*\\+\\s*')?u(?:'\\s*\\+\\s*')?t(?:'\\s*\\+\\s*')?h(?:'\\s*\\+\\s*')?K(?:'\\s*\\+\\s*')?e(?:'\\s*\\+\\s*')?y";
+                final String l1 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s*(\\d+?);").getMatch(0);
+                final String l2 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s?params\\['" + authKeyMatchStr + "'\\]\\s*\\+\\s*(\\d+?);").getMatch(0);
+                if (l1 == null || l2 == null || token == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                // for uid/url/hash links, seem to be the only ones encoded, but for now we will use the JS to determine it as its more
+                // likely to be correct longer -- raztoki 20150425
+                final String urlEncoded = new Regex(js, "UrlEncoded\\s*:\\s*(true|false|null)").getMatch(0);
+                // if (parameter.contains("/url/")) {
+                if ("true".equalsIgnoreCase(urlEncoded)) {
+                    final String tt = new Regex(js, "TargetUrl:\\s*'([a-f0-9]+)'").getMatch(0);
+                    final String x = this.convertFromHex(tt);
+                    final String y = this.encode(x);
+                    if (y != null) {
+                        link = y;
+                    }
+                } else {
+                    final long authKey = Long.parseLong(l1) + Long.parseLong(l2);
+                    final Browser br2 = br.cloneBrowser();
+                    // swf
+                    final String swf = new Regex(js, "SwfUrl\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
+                    if (swf != null) {
+                        URLConnectionAdapter con = null;
                         try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
+                            con = br2.openGetConnection(swf);
+                        } catch (final Throwable t) {
+                        } finally {
+                            try {
+                                con.disconnect();
+                            } catch (final Throwable e) {
+                            }
                         }
                     }
-                }
-                final String adurl = new Regex(js, "AdUrl\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
-                if (adurl != null) {
-                    final Browser ads = br.cloneBrowser();
-                    try {
-                        ads.getPage(adurl);
-                    } catch (final Throwable t) {
+                    final String adurl = new Regex(js, "AdUrl\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
+                    if (adurl != null) {
+                        final Browser ads = br.cloneBrowser();
+                        try {
+                            ads.getPage(adurl);
+                        } catch (final Throwable t) {
+                        }
+                    }
+                    final long timeLeft = 5033 - (System.currentTimeMillis() - firstGet);
+                    if (timeLeft > 0) {
+                        sleep(timeLeft, param);
+                    }
+                    final Browser br3 = br.cloneBrowser();
+                    br3.getHeaders().put("Accept", "*/*");
+                    br3.getHeaders().put("Cache-Control", null);
+                    br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey + "&a_b=false");
+                    link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);
+                    if ("awe".equalsIgnoreCase(link)) {
+                        // more steps y0!
+                        br.getPage("/awe");
+                        firstGet = System.currentTimeMillis();
+                        link = null;
+                        count++;
+                        // prevent inf loop.
+                        if (count > 4) {
+                            logger.warning("Decrypter broken for link: " + parameter + " Count == " + count);
+                        }
+                        continue goAgain;
                     }
                 }
-                final long timeLeft = 5033 - (System.currentTimeMillis() - firstGet);
-                if (timeLeft > 0) {
-                    sleep(timeLeft, param);
-                }
-                final Browser br3 = br.cloneBrowser();
-                br3.getHeaders().put("Accept", "*/*");
-                br3.getHeaders().put("Cache-Control", null);
-                br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey + "&a_b=false");
-                link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);
+                break;
             }
         }
         if (inValidate(link)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        System.out.println(link);
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
