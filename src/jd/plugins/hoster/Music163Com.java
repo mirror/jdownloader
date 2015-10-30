@@ -67,7 +67,8 @@ public class Music163Com extends PluginForHost {
     private static final String           TYPE_VIDEO              = "http://(www\\.)?music\\.163\\.com/(?:#/)?mv\\?id=\\d+";
     private static final String           TYPE_COVER              = "decrypted://music\\.163\\.comcover\\d+";
 
-    private static final String           dlurl_format            = "http://m1.music.126.net/%s/%s.mp3";
+    /** TODO 2015-10-30: server seem to have changed from m1.music.126.net to m2.music.126.net but it is (still) down. */
+    private static final String           dlurl_format            = "http://m2.music.126.net/%s/%s.mp3";
 
     /* Qualities from highest to lowest in KB/s: 320, 160, 96 hMusic is officially only available for logged-in users! */
     public static final String[]          audio_qualities         = { "hMusic", "mMusic", "lMusic", "bMusic" };
