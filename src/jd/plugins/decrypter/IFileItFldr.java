@@ -18,10 +18,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -30,8 +31,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io" }, urls = { "https?://(www\\.)?(ifile\\.it|filecloud\\.io)/_[a-z0-9]+" }, flags = { 0 })
 public class IFileItFldr extends PluginForDecrypt {
@@ -50,6 +49,9 @@ public class IFileItFldr extends PluginForDecrypt {
     // TODO: Implement API: http://code.google.com/p/filecloud/wiki/FetchTagDetails
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (true) {
+            return decryptedLinks;
+        }
         String parameter = param.toString().replace("ifile.it/", "filecloud.io/").replace("http://", "https://");
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("filecloud.io");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
@@ -62,8 +64,9 @@ public class IFileItFldr extends PluginForDecrypt {
         }
         // Id we have an account we can use the API, if not we have to do it over the site
         if (aa != null) {
-            final String akey = ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, br);
-            br.postPage(jd.plugins.hoster.IFileIt.MAINPAGE + "/api-fetch_tag_details.api", "akey=" + akey + "&tkey=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+            // final String akey = ((jd.plugins.hoster.FilecloudIo) hostPlugin).getUrlEncodedAPIkey(aa, br);
+            // br.postPage(jd.plugins.hoster.FilecloudIo.MAINPAGE + "/api-fetch_tag_details.api", "akey=" + akey + "&tkey=" + new
+            // Regex(parameter, "([a-z0-9]+)$").getMatch(0));
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             final String[][] linkinformation = br.getRegex("\"size\":\"(\\d+)\",\"name\":\"([^<>\"]*?)\",\"ukey\":\"([^<>\"]*?)\"").getMatches();
             if (linkinformation == null || linkinformation.length == 0) {
@@ -71,7 +74,7 @@ public class IFileItFldr extends PluginForDecrypt {
                 return null;
             }
             for (final String[] info : linkinformation) {
-                final DownloadLink dl = createDownloadlink(jd.plugins.hoster.IFileIt.MAINPAGE + "/" + info[2]);
+                final DownloadLink dl = createDownloadlink(jd.plugins.hoster.FilecloudIo.MAINPAGE + "/" + info[2]);
                 dl.setAvailable(true);
                 dl.setDownloadSize(SizeFormatter.getSize(info[0].trim()));
                 dl.setName(info[1].trim());
@@ -100,9 +103,9 @@ public class IFileItFldr extends PluginForDecrypt {
             }
             for (final String[] info : linkinformation) {
                 if (fail) {
-                    decryptedLinks.add(createDownloadlink(jd.plugins.hoster.IFileIt.MAINPAGE + "/" + info[0]));
+                    decryptedLinks.add(createDownloadlink(jd.plugins.hoster.FilecloudIo.MAINPAGE + "/" + info[0]));
                 } else {
-                    final DownloadLink dl = createDownloadlink(jd.plugins.hoster.IFileIt.MAINPAGE + "/" + info[2]);
+                    final DownloadLink dl = createDownloadlink(jd.plugins.hoster.FilecloudIo.MAINPAGE + "/" + info[2]);
                     dl.setAvailable(true);
                     dl.setDownloadSize(SizeFormatter.getSize(info[0].trim()));
                     dl.setName(info[1].trim());
