@@ -58,7 +58,9 @@ public class AsscompactDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        isOffline(this.br, link.getDownloadURL());
+        if (isOffline(this.br, link.getDownloadURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String date = br.getRegex("class=\"showDate\">([^<>\"]*?)<").getMatch(0);
         String filename = getFilename(this.br, link.getDownloadURL());
         if (filename == null) {
