@@ -22,10 +22,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,6 +35,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -43,8 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to", "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014", "NEVERUSETHISSUPERDUBERREGEXATALL2015" }, flags = { 2, 0, 0, 0 })
 public class NowVideoEu extends PluginForHost {
@@ -174,9 +174,9 @@ public class NowVideoEu extends PluginForHost {
             link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv");
             return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("<div class=\"video_details radius\\d+\" style=\"height:125px;position:relative;\">[\t\n\r ]+<h4>([^<>\"]*?)</h4>").getMatch(0);
+        String filename = br.getRegex("<title>Watch (.*?) online \\|").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("\\&title=([^<>\"]*?)\"").getMatch(0);
+            filename = br.getRegex("<meta name=\"title\" content=\"Watch (.*?) online \\|").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -198,6 +198,14 @@ public class NowVideoEu extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         if (br.containsHTML(ISBEINGCONVERTED)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
+        }
+        {
+            for (final Form form : br.getForms()) {
+                if (form.containsHTML(">Continue to the video</button>")) {
+                    br.submitForm(form);
+                    break;
+                }
+            }
         }
         String cid1 = br.getRegex("flashvars\\.cid=\"(\\d+)\";").getMatch(0);
         String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
@@ -274,7 +282,7 @@ public class NowVideoEu extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;
