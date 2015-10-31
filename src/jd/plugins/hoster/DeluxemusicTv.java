@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -74,6 +75,7 @@ public class DeluxemusicTv extends PluginForHost {
     }
 
     public static AvailableStatus parseTrackInfo(final DownloadLink link, final String xml_all, final String[] xml_array) throws IOException, PluginException {
+        final DecimalFormat df = new DecimalFormat("0000");
         final String playlist_id = getPlaylistid(link);
         final String xml_source = xml_array[getArrayid(link)];
 
@@ -100,7 +102,7 @@ public class DeluxemusicTv extends PluginForHost {
             filename = date_formatted + "_";
         }
 
-        filename += "deluxemusictv_playlist_" + playlist_id + "_";
+        filename += "deluxemusictv_playlist_" + df.format(Integer.parseInt(playlist_id)) + "_";
         filename += title + ".mp4";
 
         filename = Encoding.htmlDecode(filename).trim();
