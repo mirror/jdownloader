@@ -503,6 +503,7 @@ public class FilesMonsterCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
@@ -534,7 +535,8 @@ public class FilesMonsterCom extends PluginForHost {
         }
         String premlink = br.getRegex("\"(http://filesmonster\\.com/get/.*?)\"").getMatch(0);
         if (premlink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("Failed to find premium downloadlink");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find premium downloadlink. Check if you can download this file via browser, if so, please report this as a bug.");
         }
         br.getPage(premlink);
         if (br.containsHTML("<div id=\"error\">Today you have already downloaded")) {

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serveporn.com" }, urls = { "https?://(www\\.)?(serveporn\\.com|serviporno\\.com|pornodingue\\.com|chickiporno\\.com|)/videos/[a-z0-9\\-_]+/|https?://(www\\.)?seansporno\\.com/filmy/[a-z0-9\\-_]+/|https?://(www\\.)?einfachporno\\.com/filme/[a-z0-9\\-_]+/|https?://(www\\.)?pornoglu\\.com/videolari/[a-z0-9\\-_]+/|https?://(www\\.)?pornozot\\.com/films/[a-z0-9\\-_]+/|https?://(www\\.)?voglioporno\\.com/video/[a-z0-9\\-_]+/|https?://(www\\.)?pornodoido\\.com/video/[a-z0-9\\-_]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serveporn.com" }, urls = { "https?://(?:www\\.)?(?:serveporn\\.com|serviporno\\.com|pornodingue\\.com|chickiporno\\.com|)/videos/[a-z0-9\\-_]+/|https?://(?:www\\.)?seansporno\\.com/filmy/[a-z0-9\\-_]+/|https?://(?:www\\.)?einfachporno\\.com/filme/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornoglu\\.com/videolari/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornozot\\.com/films/[a-z0-9\\-_]+/|https?://(?:www\\.)?voglioporno\\.com/video/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornodoido\\.com/video/[a-z0-9\\-_]+/" }, flags = { 0 })
 public class ServePornCom extends PluginForHost {
 
     public ServePornCom(PluginWrapper wrapper) {
@@ -44,9 +44,11 @@ public class ServePornCom extends PluginForHost {
         return "http://www.serveporn.com/disclamer/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "/videos/(.+)/").getMatch(0) + ".flv");
+        final String url_filename = new Regex(downloadLink.getDownloadURL(), "/videos/(.+)/").getMatch(0);
+        downloadLink.setName(url_filename + ".flv");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -54,7 +56,13 @@ public class ServePornCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("content=\\'([^<>\"]*?)\\' property=\\'og:title\\'/>").getMatch(0);
-        DLLINK = br.getRegex("url: \\'(https?://[a-z0-9]+\\.[a-z0-9]+\\.com/[^<>\"\\']*?\\.(flv|mp4))\\'").getMatch(0);
+        if (filename == null) {
+            filename = url_filename;
+        }
+        DLLINK = br.getRegex("url: \\'(https?://[^/]+/[^<>\"\\']*?\\.(?:flv|mp4)\\?key=[^<>\"/]*?)\\'").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("url: \\'(https?://[^/]+/[^<>\"\\']*?\\.(?:flv|mp4)[^<>\"/]*?)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

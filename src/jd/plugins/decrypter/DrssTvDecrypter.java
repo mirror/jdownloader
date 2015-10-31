@@ -73,7 +73,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("drss.tv");
         final boolean allow_gallery = cfg.getBooleanProperty(ALLOW_GALLERY, false);
         parameter = param.toString();
-        DownloadLink main = createDownloadlink(parameter.replace("drss.tv/", "drssdecrypted.tv/") + "?video=1");
+        DownloadLink main = createHosterPluginDownloadlink(parameter + "?video=1");
         if (parameter.matches(invalidlinks)) {
             main = createDownloadlink("directhttp://" + parameter);
             main.setFinalFileName(new Regex(parameter, "drss\\.tv/(.+)/?").getMatch(0));
@@ -147,7 +147,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
 
     private void decryptEpisode() throws DecrypterException, IOException {
         final String url_content = this.parameter + "?video=" + this.counter_real;
-        final DownloadLink main = createDownloadlink(url_content.replace("drss.tv/", "drssdecrypted.tv/"));
+        final DownloadLink main = createHosterPluginDownloadlink(url_content);
         main.setContentUrl(url_content);
         title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (title == null) {
@@ -193,12 +193,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                 /* Add special quality if available */
                 final String specialVimeoFULL_HDLink = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(https?://player\\.vimeo.com/external/\\d+\\.hd\\.mp4[^<>\"]*?)\"").getMatch(0);
                 if (specialVimeoFULL_HDLink != null) {
-                    /*
-                     * In theory this is a bad workaround but it's the best solution here as we do not easily get a http link to this
-                     * quality via the vimeo "API" so it's easier to just grab this one as it's plain in the html code and download it via
-                     * hostplugin.
-                     */
-                    main.setProperty("special_vimeo", true);
+                    enableVimeoSpecial(main);
                     decryptedlinks.add(main);
                 } else if (externID != null) {
                     externID = externID + "&forced_referer=" + Encoding.Base64Encode(this.br.getURL());
@@ -215,12 +210,12 @@ public class DrssTvDecrypter extends PluginForDecrypt {
             } else {
                 /*
                  * 2015-10-22
-                 *
+                 * 
                  * Trust our code - in very very rare cases the video is officially not there but chances are high that the trailer == the
                  * full episode e.g.:
-                 *
+                 * 
                  * http://www.drss.tv/sendung/27-08-2015/
-                 *
+                 * 
                  * --> Force trailer download
                  */
                 /* Loop continues - force trailer download */
@@ -347,8 +342,30 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                             logger.warning("Failed to find trailer!");
                             throw new DecrypterException("Decrypter broken for link: " + parameter);
                         }
-                        trailer_externlink += "&forced_referer=" + Encoding.Base64Encode(this.br.getURL());
-                        decryptedlinks.add(createDownloadlink(trailer_externlink));
+                        if (trailer_externlink.contains("vimeo.com/external/")) {
+                            /* External vimeo directlink */
+                            final String url_content = this.parameter + "?video=" + this.counter_real;
+                            final DownloadLink main = createHosterPluginDownloadlink(url_content);
+                            main.setProperty("trailer", true);
+                            enableVimeoSpecial(main);
+                            decryptedlinks.add(main);
+                        } else if (trailer_externlink.matches(jd.plugins.decrypter.VimeoComDecrypter.type_player)) {
+                            /* Private vimeo url --> Special case: handle this in plugin */
+                            final String url_content = this.parameter + "?video=" + this.counter_real;
+                            final DownloadLink main = createHosterPluginDownloadlink(url_content);
+                            if (!force_trailer) {
+                                /*
+                                 * Do NOT se this to true if we forced the trailer download because then this is probably not a trailer but
+                                 * a real episode!
+                                 */
+                                main.setProperty("trailer", true);
+                            }
+                            main.setProperty("vimeo_direct", trailer_externlink);
+                            decryptedlinks.add(main);
+                        } else {
+                            /* Direct- or YouTube URL */
+                            decryptedlinks.add(createDownloadlink(trailer_externlink));
+                        }
                     }
                 } else {
                     /*
@@ -402,6 +419,19 @@ public class DrssTvDecrypter extends PluginForDecrypt {
         }
         final DownloadLink fina = this.createDownloadlink(finallink);
         return fina;
+    }
+
+    private DownloadLink createHosterPluginDownloadlink(final String url_content) {
+        final DownloadLink main = createDownloadlink(url_content.replace("drss.tv/", "drssdecrypted.tv/"));
+        return main;
+    }
+
+    private void enableVimeoSpecial(final DownloadLink dl) {
+        /*
+         * In theory this is a bad workaround but it's the best solution here as we do not easily get a http link to this quality via the
+         * vimeo "API" so it's easier to just grab this one as it's plain in the html code and download it via hostplugin.
+         */
+        dl.setProperty("special_vimeo", true);
     }
 
 }

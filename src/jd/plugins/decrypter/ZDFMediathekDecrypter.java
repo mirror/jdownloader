@@ -33,7 +33,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -47,11 +46,13 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     private static final String Q_HIGH             = "Q_HIGH";
     private static final String Q_VERYHIGH         = "Q_VERYHIGH";
     private static final String Q_HD               = "Q_HD";
+    private static final String FASTLINKCHECK      = "FASTLINKCHECK";
     private boolean             BEST               = false;
 
     ArrayList<DownloadLink>     decryptedLinks     = new ArrayList<DownloadLink>();
     private String              PARAMETER          = null;
     private String              PARAMETER_ORIGINAL = null;
+    boolean                     fastlinkcheck      = false;
 
     private static final String TYPE_PHOENIX       = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
     private static final String TYPE_PHOENIX_RSS   = "http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml";
@@ -69,6 +70,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("zdf.de");
         PARAMETER_ORIGINAL = param.toString();
         PARAMETER = PARAMETER_ORIGINAL.replace("ZDFmediathek#/", "ZDFmediathek/");
+        this.fastlinkcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
         // Check for invalid links
         if (PARAMETER.contains("/live/")) {
             decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
@@ -128,7 +130,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             dl.setProperty("date", date);
             dl.setFinalFileName(final_filename);
             dl.setDownloadSize(Long.parseLong(filesize));
-            dl.setAvailable(true);
+            if (this.fastlinkcheck) {
+                dl.setAvailable(true);
+            }
             this.decryptedLinks.add(dl);
         }
         fp.addLinks(decryptedLinks);
@@ -210,8 +214,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     if (streams[0].contains("mp4_http") && !new Regex(streams[1], ("<facet>(progressive|restriction_useragent|podcast)</")).matches()) {
                         continue;
                     }
-                    /* only http stream for the old stable */
-                    if (streams[0].contains("mp4_rtmp_zdfmeta") && isStableEnviroment()) {
+                    if (streams[0].contains("mp4_rtmp_zdfmeta")) {
                         continue;
                     }
                     if (stream[1].endsWith(".meta") && stream[1].contains("streaming") && stream[1].startsWith("http")) {
@@ -252,9 +255,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 continue;
                             } else {
                                 if (streams[0].contains("mp4_rtmp")) {
-                                    if (isStableEnviroment()) {
-                                        continue;
-                                    }
                                     if (url.startsWith("http://")) {
                                         Browser rtmp = new Browser();
                                         rtmp.getPage(stream[1]);
@@ -272,7 +272,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     final String fmtUPPR = fmt.toUpperCase(Locale.ENGLISH);
                     final String name = date_formatted + "_zdf_" + show + " - " + title + "@" + fmtUPPR + extension;
                     final DownloadLink link = createDownloadlink(String.format(decrypterurl, fmt));
-                    link.setAvailable(true);
+                    if (this.fastlinkcheck) {
+                        link.setAvailable(true);
+                    }
                     link.setFinalFileName(name);
                     try {
                         /* JD2 only */
@@ -338,14 +340,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 subtitle.setProperty("directName", name);
                 subtitle.setProperty("streamingType", "subtitle");
                 subtitle.setProperty("starttime", startTime);
-                try {
-                    /* JD2 only */
-                    subtitle.setContentUrl(PARAMETER_ORIGINAL);
-                    subtitle.setLinkID(name);
-                } catch (Throwable e) {
-                    /* Stable */
-                    subtitle.setBrowserUrl(PARAMETER_ORIGINAL);
-                }
+                subtitle.setContentUrl(PARAMETER_ORIGINAL);
+                subtitle.setLinkID(name);
                 decryptedLinks.add(subtitle);
             }
             decryptedLinks.add(dl);
@@ -403,20 +399,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private String getXML(final String parameter) {
         return getXML(this.br.toString(), parameter);
-    }
-
-    private boolean isStableEnviroment() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        final int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
     }
 
     private String formatDateZDF(final String input) {

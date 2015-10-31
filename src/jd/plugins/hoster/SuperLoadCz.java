@@ -169,6 +169,7 @@ public class SuperLoadCz extends antiDDoSForHost {
         return 0;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         showMessage(downloadLink, "Task 1: Check URL validity!");
@@ -261,14 +262,14 @@ public class SuperLoadCz extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (StringUtils.equalsIgnoreCase(error, "invalidLink")) {
                     logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
-                    tempUnavailableHoster(null, link, 60 * 60 * 1000l, "Invalid Link");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Invalid Link");
                 } else if (StringUtils.equalsIgnoreCase(error, "temporarilyUnsupportedServer")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
                 } else if (StringUtils.equalsIgnoreCase(error, "fileNotFound")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (StringUtils.equalsIgnoreCase(error, "unsupportedServer")) {
-                    logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
-                    tempUnavailableHoster(null, link, 60 * 60 * 1000l, "Unsuported Server");
+                    logger.info("Superload.cz says 'unsupported server', disabling real host");
+                    tempUnavailableHoster(account, link, 5 * 60 * 1000l, "Unsuported Server");
                 } else if (StringUtils.equalsIgnoreCase(error, "Lack of credits")) {
                     logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -278,11 +279,15 @@ public class SuperLoadCz extends antiDDoSForHost {
                     ai.setTrafficLeft(0);
                     account.setAccountInfo(ai);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if (StringUtils.equalsIgnoreCase(error, "User deleted")) {
+                    /* WTF what does this error mean?? */
+                    logger.info("Superload.cz says 'User deleted'");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Invalid Link");
                 } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
-                    handleErrorRetries(null, link, "Unable to download file", 10, 15 * 60 * 1000l);
+                    handleErrorRetries(account, link, "Unable to download file", 10, 10 * 60 * 1000l);
                 } else if (dllink == null) {
                     // this will allow statserv to pick up these errors, and we can improve the plugin.
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled Error Type");
+                    handleErrorRetries(account, link, "Unknown download error", 50, 10 * 60 * 1000l);
                 }
             }
             showMessage(link, "Task 2: Download begins!");

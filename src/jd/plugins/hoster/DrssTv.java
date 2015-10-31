@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,6 +24,7 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -72,7 +72,7 @@ public class DrssTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String date_formatted;
         String title;
         if (link.getBooleanProperty("offline", false)) {
@@ -85,6 +85,8 @@ public class DrssTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final DecimalFormat df = new DecimalFormat("00");
+        final boolean is_trailer = link.getBooleanProperty("trailer", false);
+        final String vimeo_direct = link.getStringProperty("vimeo_direct", null);
         final short part = Short.parseShort(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         String date = br.getRegex("class=\"subline\">Sendung vom (\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
         if (date == null) {
@@ -98,6 +100,14 @@ public class DrssTv extends PluginForHost {
         if (link.getBooleanProperty("special_vimeo", false)) {
             /* Sometimes we got special vimeo 1080p URLs! */
             DLLINK = br.getRegex("data\\-url=\"(https?://player\\.vimeo\\.com/external/\\d+\\.hd\\.mp4[^<>\"]*?)\"").getMatch(0);
+        } else if (vimeo_direct != null) {
+            /* Special case: http://www.drss.tv/sendung/27-08-2015/ */
+            final String vimeo_id = new Regex(vimeo_direct, "(\\d+)$").getMatch(0);
+            final Browser br2 = new Browser();
+            br2.getHeaders().put("Referer", link.getDownloadURL());
+            br2.getPage(vimeo_direct);
+            final String[][] qualities = jd.plugins.hoster.VimeoCom.getQualities(br2, vimeo_id);
+            DLLINK = qualities[1][0];
         } else {
             DLLINK = br.getRegex("\"(http://[^<>\"]*?(\\.mp4|\\.flv|/flv))\"").getMatch(0);
         }
@@ -115,12 +125,16 @@ public class DrssTv extends PluginForHost {
         if (season_str != null && episode_str != null) {
             String series_id = "S" + df.format(Short.parseShort(season_str)) + "E" + df.format(Short.parseShort(episode_str));
             if (series_id.equals("S03E17") && "Jenny Sternchen".equals(name_actress)) {
-                /* Workaround for one serverside wrong episode number :) */
+                /* Workaround for one serverside wrong episode number: http://www.drss.tv/sendung/17-07-2015/ */
                 series_id = "S03E18";
             }
             filename += series_id + "_";
         }
-        filename += "part_" + df.format(part) + "_";
+        if (is_trailer) {
+            filename += "trailer_";
+        } else {
+            filename += "part_" + df.format(part) + "_";
+        }
         if (!inValidate(name_actress)) {
             filename += name_actress;
         } else {

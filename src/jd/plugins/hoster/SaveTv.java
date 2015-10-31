@@ -397,29 +397,24 @@ public class SaveTv extends PluginForHost {
 
     /** Their json is crazy regarding data types thus we have a lot of type conversions here ... */
     public static void parseFilenameInformation_site(final DownloadLink dl, final LinkedHashMap<String, Object> sourcemap) throws PluginException {
-        final String site_title;
+        /*
+         * Caution with data types - if e.g. a movie is named "1987" they will actually use a double- or long value - this is totally crazy
+         * as everything can happen here. Imagine a movie is named "true" ...
+         */
         final Object site_title_o = sourcemap.get("STITLE");
-        if (site_title_o instanceof Double) {
-            site_title = Integer.toString((int) ((Double) site_title_o).doubleValue());
-        } else {
-            site_title = (String) site_title_o;
-        }
+        final String site_title = jsonobject_to_string(site_title_o);
+
         long datemilliseconds = 0;
 
         /* For series only */
         String episodenumber;
-        final String episodename;
         final Object episodenumber_o = sourcemap.get("SFOLGE");
         final Object episodename_o = sourcemap.get("SSUBTITLE");
+        final String episodename = jsonobject_to_string(episodename_o);
         if (episodenumber_o != null && episodenumber_o instanceof Double) {
             episodenumber = Double.toString(((Double) episodenumber_o).doubleValue());
         } else {
             episodenumber = (String) episodenumber_o;
-        }
-        if (episodename_o != null && episodename_o instanceof Double) {
-            episodename = Double.toString(((Double) episodename_o).doubleValue());
-        } else {
-            episodename = (String) episodename_o;
         }
 
         /* General */
@@ -1821,6 +1816,22 @@ public class SaveTv extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    public static String jsonobject_to_string(final Object jsonobject) {
+        final String result;
+        if (jsonobject == null) {
+            result = null;
+        } else if (jsonobject instanceof Double) {
+            result = Integer.toString((int) ((Double) jsonobject).doubleValue());
+        } else if (jsonobject instanceof Long) {
+            result = Long.toString(((Long) jsonobject).longValue());
+        } else if (jsonobject instanceof Boolean) {
+            result = Boolean.toString(((Boolean) jsonobject).booleanValue());
+        } else {
+            result = (String) jsonobject;
+        }
+        return result;
     }
 
     @Override

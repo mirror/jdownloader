@@ -39,12 +39,13 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://(www\\.)?phoenix\\.de/content/\\d+\\&quality=\\w+" }, flags = { 2, 2 })
 public class ZdfDeMediathek extends PluginForHost {
 
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_LOW       = "Q_LOW";
-    private static final String Q_HIGH      = "Q_HIGH";
-    private static final String Q_VERYHIGH  = "Q_VERYHIGH";
-    private static final String Q_HD        = "Q_HD";
+    private static final String Q_SUBTITLES   = "Q_SUBTITLES";
+    private static final String Q_BEST        = "Q_BEST";
+    private static final String Q_LOW         = "Q_LOW";
+    private static final String Q_HIGH        = "Q_HIGH";
+    private static final String Q_VERYHIGH    = "Q_VERYHIGH";
+    private static final String Q_HD          = "Q_HD";
+    private static final String FASTLINKCHECK = "FASTLINKCHECK";
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -322,7 +323,7 @@ public class ZdfDeMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.zdf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.zdf.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.zdf.fastlinkcheck", "Aktiviere schnellen Linkcheck?\r\nFalls aktiv: Dateigrößen sind erst beim Downloadstart sichtbar!")).setDefaultValue(false));
     }
 
 }
