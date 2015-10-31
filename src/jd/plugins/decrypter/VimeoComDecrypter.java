@@ -50,7 +50,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private static final String type_player_private_external = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
     private static final String type_player_private          = "https?://player\\.vimeo.com/video/\\d+\\&forced_referer=[A-Za-z0-9=]+";
-    private static final String type_player                  = "https?://player\\.vimeo.com/video/\\d+";
+    public static final String  type_player                  = "https?://player\\.vimeo.com/video/\\d+";
     private static final String Q_MOBILE                     = "Q_MOBILE";
     private static final String Q_ORIGINAL                   = "Q_ORIGINAL";
     private static final String Q_HD                         = "Q_HD";
@@ -338,7 +338,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     link.setDownloadSize(SizeFormatter.getSize(quality[5].trim()));
                 }
                 link.setAvailable(true);
-                DownloadLink best = bestMap.get(fmt);
+                final DownloadLink best = bestMap.get(fmt);
                 if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
                     bestMap.put(fmt, link);
                 }
@@ -441,9 +441,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     private PluginForHost vimeo_hostPlugin = null;
 
-    private String[][] getQualities(Browser ibr, String ID) throws Exception {
+    private String[][] getQualities(final Browser ibr, final String ID) throws Exception {
         pluginLoaded();
-        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getQualities(ibr, ID);
+        return jd.plugins.hoster.VimeoCom.getQualities(ibr, ID);
     }
 
     private String getXsrft(final Browser br) throws Exception {

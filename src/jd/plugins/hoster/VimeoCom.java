@@ -98,7 +98,7 @@ public class VimeoCom extends PluginForHost {
     private static final AtomicReference<String> userAgent = new AtomicReference<String>("Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.111 Safari/537.36");
 
     public Browser prepBrGeneral(final DownloadLink dl, final Browser prepBr) {
-        final String vimeo_forced_referer = dl != null ? dl.getStringProperty("vimeo_forced_referer", null) : null;
+        final String vimeo_forced_referer = dl != null ? getForcedReferer(dl) : null;
         if (vimeo_forced_referer != null) {
             prepBr.getHeaders().put("Referer", vimeo_forced_referer);
         }
@@ -113,7 +113,7 @@ public class VimeoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        prepBrGeneral(downloadLink, br);
+        prepBrGeneral(downloadLink, this.br);
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -135,7 +135,7 @@ public class VimeoCom extends PluginForHost {
                     return AvailableStatus.TRUE;
                 } else {
                     /* durectURL no longer valid */
-                    downloadLink.setProperty("directURL", null);
+                    downloadLink.setProperty("directURL", Property.NULL);
                 }
             } finally {
                 try {
@@ -148,11 +148,10 @@ public class VimeoCom extends PluginForHost {
         if (ID == null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Run decrypter again!");
         }
-        br = new Browser();
         setBrowserExclusive();
-        br.setFollowRedirects(true);
-        prepBrGeneral(downloadLink, br);
-        if (isPrivateLink(downloadLink)) {
+        this.br = prepBrGeneral(downloadLink, new Browser());
+        this.br.setFollowRedirects(true);
+        if (usePrivateHandling(downloadLink)) {
             br.getPage("http://player.vimeo.com/video/" + ID);
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(getJson("message"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -212,8 +211,11 @@ public class VimeoCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean isPrivateLink(final DownloadLink dl) {
-        return dl.getBooleanProperty("private_player_link", false);
+    private boolean usePrivateHandling(final DownloadLink dl) {
+        final boolean is_private_link = dl.getBooleanProperty("private_player_link", false);
+        final boolean has_forced_referer = getForcedReferer(dl) != null;
+        final boolean use_private_handling = (is_private_link || has_forced_referer);
+        return use_private_handling;
     }
 
     @SuppressWarnings("deprecation")
@@ -227,11 +229,12 @@ public class VimeoCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        final boolean isPrivateLink = isPrivateLink(link);
+        final boolean isPrivateLink = usePrivateHandling(link);
         if (!isPrivateLink) {
             br.getPage(link.getDownloadURL());
         }
         if (isPrivateLink || br.containsHTML("\">Sorry, not available for download")) {
+            /* Premium / account users cannot download private URLs. */
             logger.info("No download available for link: " + link.getDownloadURL() + " , downloading as unregistered user...");
             doFree(link);
             return;
@@ -389,7 +392,7 @@ public class VimeoCom extends PluginForHost {
     public static final int quality_info_length = 7;
 
     @SuppressWarnings({ "unchecked", "unused" })
-    public String[][] getQualities(final Browser ibr, final String ID) throws Exception {
+    public static String[][] getQualities(final Browser ibr, final String ID) throws Exception {
         /*
          * little pause needed so the next call does not return trash
          */
@@ -677,6 +680,10 @@ public class VimeoCom extends PluginForHost {
      * */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(this.br, key);
+    }
+
+    private String getForcedReferer(final DownloadLink dl) {
+        return dl.getStringProperty("vimeo_forced_referer", null);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

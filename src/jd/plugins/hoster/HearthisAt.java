@@ -43,13 +43,13 @@ public class HearthisAt extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp3";
+    private static final String default_Extension = ".mp3";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
+    private boolean             free_resume       = false;
+    private int                 free_maxchunks    = 1;
+    private static final int    free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String              DLLINK            = null;
 
     @Override
     public String getAGBLink() {
@@ -63,12 +63,31 @@ public class HearthisAt extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"page\\-top track\\-detail track_") || this.br.getURL().contains("/search/")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("track\\-detail track_") || this.br.getURL().contains("/search/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("data\\-playlist\\-title=\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = br.getRegex("data\\-mp3=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String downloadlink_stream = br.getRegex("data\\-mp3=\"(http[^<>\"]*?)\"").getMatch(0);
+        this.br.setFollowRedirects(false);
+        this.br.getPage(downloadLink.getDownloadURL() + "/download/");
+        DLLINK = this.br.getRedirectLocation();
+        if (DLLINK == null) {
+            DLLINK = this.br.getRegex("\"(https?://download\\.hearthis\\.at/\\?track=[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = this.br.getRegex("\"(https?://[^<>\"]*?)\">click here to download</a>").getMatch(0);
+        }
+        if (DLLINK == null) {
+            /* We failed to get a 'real' downloadlink --> Fallback to stream (lower quality) */
+            /* Stream urls can be downloaded with multiple connections and resume is possible! */
+            free_resume = true;
+            free_maxchunks = 0;
+            DLLINK = downloadlink_stream;
+        }
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -90,7 +109,8 @@ public class HearthisAt extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                /* Do NOT use HEAD request here! */
+                con = br2.openGetConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

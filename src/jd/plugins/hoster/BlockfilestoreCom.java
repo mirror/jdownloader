@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/down/[a-z0-9\\-]+|https?://www\\.blockfilestoredecrypted\\.com/folder/([a-z0-9\\-]+)/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/down/[a-f0-9]{8}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{12}|https?://www\\.blockfilestoredecrypted\\.com/folder/([a-z0-9\\-]+)/\\d+" }, flags = { 0 })
 public class BlockfilestoreCom extends PluginForHost {
 
     public BlockfilestoreCom(PluginWrapper wrapper) {
@@ -48,25 +48,31 @@ public class BlockfilestoreCom extends PluginForHost {
 
     private boolean isFolder = false;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         if (isFolder) {
             return AvailableStatus.TRUE;
         }
         this.setBrowserExclusive();
+        this.br.setFollowRedirects(true);
+        this.br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        this.br.setAllowedResponseCodes(500);
+        this.br.getPage(link.getDownloadURL());
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setName(new Regex(link.getDownloadURL(), "blockfilestore\\.com/down/([a-z0-9\\-]+)").getMatch(0));
-        return AvailableStatus.UNCHECKABLE;
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        correctDownloadLink(downloadLink);
+        this.requestFileInformation(downloadLink);
         if (downloadLink.getStringProperty("folderUID", null) != null) {
             isFolder = true;
         }
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
-        br.getPage(downloadLink.getPluginPatternMatcher());
         if (isFolder) {
             final Form f = br.getFormbyAction(downloadLink.getStringProperty("folderUID", ""));
             if (f == null) {
@@ -92,6 +98,14 @@ public class BlockfilestoreCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 1 * 60 * 60 * 1000l);
             }
             br.followConnection();
+            if (this.br.containsHTML("id=\"ContentPlaceHolder1_lblWait\"")) {
+                final String minutes = this.br.getRegex("Tiempo restante hasta la próxima descarga (\\d+) minutos<").getMatch(0);
+                if (minutes != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                }
+            }
             if (br.containsHTML("<title>Error") || br.getURL().contains("blockfilestore.com/404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -107,7 +121,7 @@ public class BlockfilestoreCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

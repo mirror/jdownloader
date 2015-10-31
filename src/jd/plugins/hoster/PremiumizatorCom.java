@@ -73,6 +73,7 @@ public class PremiumizatorCom extends PluginForHost {
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS  = 20;
     private static final int                               defaultMAXCHUNKS     = 0;
+    private static final int                               fallbackMAXCHUNKS    = -3;
     private static final boolean                           defaultRESUME        = true;
 
     private static Object                                  CTRLLOCK             = new Object();
@@ -183,6 +184,10 @@ public class PremiumizatorCom extends PluginForHost {
         }
         if (link.getBooleanProperty(NICE_HOSTproperty + PremiumizatorCom.NOCHUNKS, false)) {
             maxChunks = 1;
+        }
+        if (maxChunks < -3 || maxChunks == 0) {
+            /* We were told y some users that this is the most stable max chunks number for this multihost service. */
+            maxChunks = fallbackMAXCHUNKS;
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);

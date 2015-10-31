@@ -174,7 +174,9 @@ public class SlideShareNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!"false".equals(br.getCookie(MAINPAGE, "is_pro"))) {
+                final String is_pro = br.getCookie(MAINPAGE, "is_pro");
+                if (is_pro != null && !is_pro.equals("false")) {
+                    /* Do not accept unsupported accounts! */
                     logger.info("Premium accounts are not (yet) supported, please contact us in our supportforum!");
                     final AccountInfo ai = new AccountInfo();
                     ai.setStatus("Premium accounts are not (yet) supported, please contact us in our supportforum!");
