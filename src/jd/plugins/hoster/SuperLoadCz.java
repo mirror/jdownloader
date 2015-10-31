@@ -23,6 +23,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -39,9 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superload.cz" }, urls = { "http://\\w+\\.superload\\.eu/download\\.php\\?a=[a-z0-9]+" }, flags = { 2 })
 public class SuperLoadCz extends antiDDoSForHost {
@@ -262,14 +262,14 @@ public class SuperLoadCz extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (StringUtils.equalsIgnoreCase(error, "invalidLink")) {
                     logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Invalid Link");
+                    tempUnavailableHoster(null, link, 60 * 60 * 1000l, "Invalid Link");
                 } else if (StringUtils.equalsIgnoreCase(error, "temporarilyUnsupportedServer")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
                 } else if (StringUtils.equalsIgnoreCase(error, "fileNotFound")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (StringUtils.equalsIgnoreCase(error, "unsupportedServer")) {
                     logger.info("Superload.cz says 'unsupported server', disabling real host");
-                    tempUnavailableHoster(account, link, 5 * 60 * 1000l, "Unsuported Server");
+                    tempUnavailableHoster(null, link, 5 * 60 * 1000l, "Unsuported Server");
                 } else if (StringUtils.equalsIgnoreCase(error, "Lack of credits")) {
                     logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -282,12 +282,13 @@ public class SuperLoadCz extends antiDDoSForHost {
                 } else if (StringUtils.equalsIgnoreCase(error, "User deleted")) {
                     /* WTF what does this error mean?? */
                     logger.info("Superload.cz says 'User deleted'");
+                    // to me this means disable user account! -raz
                     tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Invalid Link");
                 } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
-                    handleErrorRetries(account, link, "Unable to download file", 10, 10 * 60 * 1000l);
+                    handleErrorRetries(null, link, "Unable to download file", 10, 10 * 60 * 1000l);
                 } else if (dllink == null) {
                     // this will allow statserv to pick up these errors, and we can improve the plugin.
-                    handleErrorRetries(account, link, "Unknown download error", 50, 10 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled Error Type");
                 }
             }
             showMessage(link, "Task 2: Download begins!");
