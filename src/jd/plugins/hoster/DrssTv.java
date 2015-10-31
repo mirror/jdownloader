@@ -107,6 +107,10 @@ public class DrssTv extends PluginForHost {
             br2.getHeaders().put("Referer", link.getDownloadURL());
             br2.getPage(vimeo_direct);
             final String[][] qualities = jd.plugins.hoster.VimeoCom.getQualities(br2, vimeo_id);
+            /*
+             * Pick the highest quality - we know they got 3 qualities and it is in the middle - so this is not done very good but should be
+             * okay for this plugin!
+             */
             DLLINK = qualities[1][0];
         } else {
             DLLINK = br.getRegex("\"(http://[^<>\"]*?(\\.mp4|\\.flv|/flv))\"").getMatch(0);

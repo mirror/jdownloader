@@ -139,6 +139,10 @@ public class DeluxemusicTv extends PluginForHost {
         rtmp.setPageUrl(this.br.getURL());
         rtmp.setSwfVfy("http://static.deluxemusic.tv.dl1.ipercast.net/theme/deluxemusic.tv/flash/player.swf");
         rtmp.setFlashVer("WIN 16,0,0,305");
+
+        /* Important! */
+        rtmp.setLive(true);
+
         rtmp.setApp(rtmp_app);
         rtmp.setUrl(url_rtmp);
         rtmp.setResume(false);
