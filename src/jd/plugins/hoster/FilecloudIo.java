@@ -24,6 +24,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -41,14 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "filecloud.io", "ezfile.ch" }, urls = { "https?://(?:www\\.)?(?:filecloud\\.io|ezfile\\.ch)/[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
 public class FilecloudIo extends PluginForHost {
@@ -133,20 +133,21 @@ public class FilecloudIo extends PluginForHost {
                 final String message = (String) entries.get("message");
                 final String ftype = (String) entries.get("ftype");
                 filename = (String) entries.get("fname");
-                if (message != null && message.equals("private file")) {
+                if ("private file".equals(message)) {
                     /* We cannot get filename/size for this case but we know that the file is online. */
                     isPrivateFile = true;
                     downloadLink.getLinkStatus().setStatusText("This is a private file which can only be downloaded by its owner");
                     return AvailableStatus.TRUE;
                 } else if (!"ok".equals(status)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (filename == null || filesizeo == null || ftype == null) {
+                } else if (filename == null || filesizeo == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 downloadLink.setFinalFileName(filename);
                 downloadLink.setDownloadSize(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(filesizeo, -1));
                 /* 0=normal, 2=directdownload */
-                if (ftype.equals("2")) {
+                // not always shown, we assume when null it equals 2.
+                if ("2".equals(ftype) || ftype == null) {
                     dllink = downloadLink.getDownloadURL();
                 }
                 return AvailableStatus.TRUE;
@@ -510,7 +511,7 @@ public class FilecloudIo extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
