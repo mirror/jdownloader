@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -26,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -71,6 +73,12 @@ public class XHamsterCom extends PluginForHost {
             user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_BEST", JDL.L("plugins.hoster.PornCom.checkbest", "Only grab the best available resolution")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "240p", JDL.L("plugins.hoster.PornCom.check240p", "Choose 240p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "480p", JDL.L("plugins.hoster.PornCom.check480p", "Choose 480p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "720p", JDL.L("plugins.hoster.PornCom.check720p", "Choose 720p?")).setDefaultValue(true));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -91,6 +99,7 @@ public class XHamsterCom extends PluginForHost {
     private static final String TYPE_EMBED  = "^https?://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+$";
     private static final String NORESUME    = "NORESUME";
     private String              DLLINK      = null;
+    private String              vq          = null;
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -119,6 +128,36 @@ public class XHamsterCom extends PluginForHost {
      * */
     public String getDllink() throws IOException, PluginException {
         String dllink = null;
+
+        final SubConfiguration cfg = getPluginConfig();
+        boolean q240 = cfg.getBooleanProperty("240p", true);
+        boolean q480 = cfg.getBooleanProperty("480p", true);
+        boolean q720 = cfg.getBooleanProperty("720p", true);
+        if (cfg.getBooleanProperty("ALLOW_BEST", true)) {
+            q720 = true;
+            q480 = true;
+        }
+        final LinkedHashMap<String, Boolean> fq = new LinkedHashMap<String, Boolean>();
+        fq.put("720p", q720);
+        fq.put("480p", q480);
+        fq.put("240p", true); // Default
+        String video = br.getRegex("(video: \\{.*?\\}\\))").getMatch(0);
+        // logger.info("video: " + video);
+        for (String key : fq.keySet()) {
+            logger.info(key + ":\t" + fq.get(key));
+            if (fq.get(key)) {
+                dllink = new Regex(video, key + "\":\"(http:[^\"]+)\"").getMatch(0);
+                if (dllink != null) {
+                    vq = key;
+                    dllink = dllink.replace("\\/", "/");
+                    logger.info("vq: " + vq + ", dllink: " + dllink);
+                    return dllink;
+                    // break;
+                }
+            }
+        }
+        logger.info("Video quality selection failed.");
+
         int urlmodeint = 0;
         final String urlmode = br.getRegex("url_mode=(\\d+)").getMatch(0);
         if (urlmode != null) {
@@ -231,7 +270,7 @@ public class XHamsterCom extends PluginForHost {
         final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
         if (onlyfor != null) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
-            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "movies/[0-9]+/(.*?)\\.html").getMatch(0) + ".flv");
+            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "movies/[0-9]+/(.*?)\\.html").getMatch(0) + ".mp4");
             return AvailableStatus.TRUE;
         } else if (br.containsHTML(HTML_PASSWORD_PROTECTED)) {
             downloadLink.getLinkStatus().setStatusText("This video is password protected");
@@ -288,12 +327,16 @@ public class XHamsterCom extends PluginForHost {
         if (DLLINK != null) {
             ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             if (ext == null || ext.length() > 5) {
-                ext = ".flv";
+                ext = ".mp4";
             }
         } else {
             ext = ".flv";
         }
-        filename = Encoding.htmlDecode(filename.trim() + ext);
+        if (vq != null) {
+            filename = Encoding.htmlDecode(filename.trim() + "." + vq + ext);
+        } else {
+            filename = Encoding.htmlDecode(filename.trim() + ext);
+        }
         return filename;
     }
 
