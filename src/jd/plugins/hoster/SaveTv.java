@@ -136,7 +136,7 @@ public class SaveTv extends PluginForHost {
     private final String          USERTEXT_ADSFREEAVAILABLE                 = "Video ist werbefrei verfügbar";
     private final String          USERTEXT_ADSFREEANOTVAILABLE              = "Video ist nicht werbefrei verfügbar";
     private final static String   USERTEXT_NOCUTAVAILABLE                   = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
-    /* The list of server values displayed to the user */
+    /* The list of qualities/formats displayed to the user */
     private static final String[] FORMATS                                   = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
 
     /* Crawler settings */

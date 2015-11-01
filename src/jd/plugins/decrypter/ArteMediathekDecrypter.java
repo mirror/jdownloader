@@ -515,7 +515,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     /* Collection of possible values */
-    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]", "VI", "VO-STE[ANG]", "VO-STE[ESP]", "VO-STE[ITA]", "VO-STE[POL]" };
+    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]", "VI", "VO-STE[ANG]", "VO-STE[ESP]", "VO-STE[ITA]", "VO-STE[POL]", "VOA-STE[ESP]", "VOA-STE[ANG]" };
+    /* Can also be "-" */
     private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOA", "VOF", "VOSTF", "VE[ANG]", "VI", "OmU-ANG", "OmU-ESP", "OmU-ITA", "OmU-POL" };
 
     /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
@@ -536,7 +537,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]") || versionCode.equals("VI") || "VOA-STA".equals(versionCode) || "VO-STE[ANG]".equals(versionCode) || versionCode.equals("VO-STE[ITA]")) {
+        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]") || versionCode.equals("VI") || "VOA-STA".equals(versionCode) || "VO-STE[ANG]".equals(versionCode) || versionCode.equals("VO-STE[ITA]") || versionCode.equals("VOA-STE[ESP]") || versionCode.equals("VOA-STE[ANG]")) {
             /* VE Actually means English but there is no specified selection for this. */
             /* Without language --> So it simply is our current language */
             lint = languageVersion;

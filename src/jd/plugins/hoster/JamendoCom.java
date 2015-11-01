@@ -51,6 +51,7 @@ public class JamendoCom extends PluginForHost {
         return 1;
     }
 
+    /** TODO: Consider implementing their API in the future: https://developer.jamendo.com/v3.0 */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
