@@ -58,12 +58,15 @@ public class XHamsterCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
-    private static final boolean default_allow_multihoster_usage = false;
+    private static final String   ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
+    private static final boolean  default_allow_multihoster_usage = false;
 
-    private static final String  HTML_PASSWORD_PROTECTED         = "id=\\'videoPass\\'";
-    private static final String  HTML_PAID_VIDEO                 = "class=\"buy_tips\"";
-    private static final String  DOMAIN_CURRENT                  = "xhamster.com";
+    private static final String   HTML_PASSWORD_PROTECTED         = "id=\\'videoPass\\'";
+    private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"";
+    private static final String   DOMAIN_CURRENT                  = "xhamster.com";
+    final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
+    /* The list of qualities/formats displayed to the user */
+    private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p" };
 
     private void setConfigElements() {
         String user_text;
@@ -74,11 +77,7 @@ public class XHamsterCom extends PluginForHost {
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_BEST", JDL.L("plugins.hoster.PornCom.checkbest", "Only grab the best available resolution")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "240p", JDL.L("plugins.hoster.PornCom.check240p", "Choose 240p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "480p", JDL.L("plugins.hoster.PornCom.check480p", "Choose 480p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "720p", JDL.L("plugins.hoster.PornCom.check720p", "Choose 720p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, JDL.L("plugins.hoster.SaveTv.prefer_format", "Bevorzugtes Format")).setDefaultValue(0));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -126,16 +125,34 @@ public class XHamsterCom extends PluginForHost {
     /**
      * NOTE: They also have .mp4 version of the videos in the html code -> For mobile devices Those are a bit smaller in size
      * */
+    @SuppressWarnings("deprecation")
     public String getDllink() throws IOException, PluginException {
         String dllink = null;
 
         final SubConfiguration cfg = getPluginConfig();
-        boolean q240 = cfg.getBooleanProperty("240p", true);
-        boolean q480 = cfg.getBooleanProperty("480p", true);
-        boolean q720 = cfg.getBooleanProperty("720p", true);
-        if (cfg.getBooleanProperty("ALLOW_BEST", true)) {
+        final int selected_format = cfg.getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        boolean q240 = false;
+        boolean q480 = false;
+        boolean q720 = false;
+        switch (selected_format) {
+        case 0:
             q720 = true;
             q480 = true;
+            break;
+        case 1:
+            q240 = true;
+            break;
+        case 2:
+            q480 = true;
+            break;
+        case 3:
+            q720 = true;
+            break;
+        default:
+            q720 = true;
+            q480 = true;
+            break;
+
         }
         final LinkedHashMap<String, Boolean> fq = new LinkedHashMap<String, Boolean>();
         fq.put("720p", q720);
@@ -511,7 +528,7 @@ public class XHamsterCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         /*
          * logic to manipulate full login. Useful for sites that show captcha when you login too many times in a given time period. Or sites
          * that present captcha to users all the time!
