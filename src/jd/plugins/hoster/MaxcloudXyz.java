@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -49,20 +49,20 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "steepafiles.com" }, urls = { "https?://(www\\.)?steepafiles\\.com/[A-Za-z0-9]+" }, flags = { 2 })
-public class SteepafilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxcloud.xyz" }, urls = { "https?://(?:www\\.)?maxcloud\\.xyz/[A-Za-z0-9]+" }, flags = { 2 })
+public class MaxcloudXyz extends PluginForHost {
 
-    public SteepafilesCom(PluginWrapper wrapper) {
+    public MaxcloudXyz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.5.8-psp
+    // YetiShareBasic Version 0.5.9-psp
     // mods:
-    // limit-info: all account modes untested, set FREE limits
-    // protocol: no https
-    // captchatype: null
+    // limit-info:
+    // protocol: https
+    // captchatype: reCaptchaV2
     // other:
 
     @Override
@@ -71,14 +71,14 @@ public class SteepafilesCom extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String         mainpage                                     = "http://steepafiles.com";
-    private final String         domains                                      = "(steepafiles\\.com)";
+    private final String         mainpage                                     = "http://maxcloud.xyz";
+    private final String         domains                                      = "(maxcloud\\.xyz)";
     private final String         type                                         = "html";
     private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     additional_WAIT_SECONDS                      = 3;
     private static final int     directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean supportshttps                                = false;
-    private static final boolean supportshttps_FORCED                         = false;
+    private static final boolean supportshttps                                = true;
+    private static final boolean supportshttps_FORCED                         = true;
     /* In case there is no information when accessing the main link */
     private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
     private static final boolean useOldLoginMethod                            = false;
@@ -86,7 +86,9 @@ public class SteepafilesCom extends PluginForHost {
     private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
     private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
-    private static final String  url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
+    /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
+    /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
+    private static final String  url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to";
     /* Texts for the known errors */
     private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
     private static final String  errortext_ERROR_SERVER                       = "Server error";
@@ -102,7 +104,7 @@ public class SteepafilesCom extends PluginForHost {
     private static final int     account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean account_PREMIUM_RESUME                       = true;
     private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
-    private static final int     account_PREMIUM_MAXDOWNLOADS                 = -1;
+    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
 
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
@@ -128,12 +130,12 @@ public class SteepafilesCom extends PluginForHost {
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("Filename:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            filename = br.getRegex("(?:Filename|Dateiname):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
-            filesize = br.getRegex("Filesize:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            filesize = br.getRegex("(?:Filesize|Dateigröße):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
         } else {
             br.getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
@@ -235,7 +237,6 @@ public class SteepafilesCom extends PluginForHost {
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
-
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
                             sm.setSecure(true);
