@@ -108,10 +108,17 @@ public class NowtvDe extends PluginForHost {
         if (!link.getDownloadURL().matches(TYPE_GENERAL_ALRIGHT)) {
             /* We have no supported url --> Fix eventually existing issues */
             String url_source = link.getDownloadURL();
-            final String rubbish = new Regex(link.getDownloadURL(), "(/(?:preview|player)(?:.+)?)").getMatch(0);
+
+            /* First let's remove rubbish we don't need ... */
+            String rubbish = new Regex(link.getDownloadURL(), "(/(?:preview|player)(?:.+)?)").getMatch(0);
             if (rubbish != null) {
                 url_source = url_source.replace(rubbish, "");
             }
+            rubbish = new Regex(link.getDownloadURL(), "(\\?.+)").getMatch(0);
+            if (rubbish != null) {
+                url_source = url_source.replace(rubbish, "");
+            }
+
             final Regex sourceregex = new Regex(url_source, "nowtv\\.(?:de|ch)/([^/]+)/([a-z0-9\\-]+)");
             final String name_tvstation = sourceregex.getMatch(0);
             final String name_series = sourceregex.getMatch(1);
@@ -235,7 +242,8 @@ public class NowtvDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setConstants(null, downloadLink);
         setBrowserExclusive();
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
+        /* 400-bad request for invalid API requests */
+        this.br.setAllowedResponseCodes(400);
         String filename = "";
         final String addedlink = downloadLink.getDownloadURL();
         final String urlpart = getURLPart(downloadLink);
@@ -243,7 +251,7 @@ public class NowtvDe extends PluginForHost {
         downloadLink.setLinkID(urlpart);
         final String apiurl = "https://api.nowtv.de/v3/movies/" + urlpart + "?fields=*,format,files,breakpoints,paymentPaytypes,trailers,pictures,isDrm";
         br.getPage(apiurl);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());

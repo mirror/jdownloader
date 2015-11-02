@@ -92,7 +92,6 @@ public class BitsterCz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         passwordprotected = false;
-        password = link.getStringProperty("pass", null);
         currDownloadlink = link;
         String filename = null;
         long filesize = -1;
@@ -162,7 +161,7 @@ public class BitsterCz extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = getDllink();
+            dllink = getDllink(false);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -178,17 +177,43 @@ public class BitsterCz extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getDllink() throws Exception {
-        if (this.passwordprotected) {
-            this.password = getUserInput("Password?", this.currDownloadlink);
+    private String getDllink(final boolean premium) throws Exception {
+        String dllink = null;
+        String download_get_data = "?param=" + this.fid;
+        if (premium) {
+            /* If file is password protected && owner tries to download it --> Password is not needed! */
+            download_get_data += "&premium=true";
+            if (this.passwordprotected) {
+                this.br.getPage("/api/file_download" + download_get_data);
+                if (!this.br.containsHTML(HTML_ERROR_LOCKED)) {
+                    /*
+                     * File owner tried to download his own password protected file --> Password not needed --> Check for further errors and
+                     * set final download url
+                     */
+                    apiHandleErrors();
+                    dllink = this.br.toString().replace("\"", "");
+                }
+            }
+        }
+        if (this.passwordprotected && dllink == null) {
+            this.password = this.currDownloadlink.getStringProperty("pass", null);
+            if (this.password == null) {
+                this.password = getUserInput("Password?", this.currDownloadlink);
+            }
             this.requestFileInformation(this.currDownloadlink);
             /* Wrong password entered? Will be caught here! */
             apiHandleErrors();
             /* Password seems to be correct --> Save it */
             this.currDownloadlink.setProperty("pass", this.password);
+            if (this.password != null) {
+                download_get_data += "&pw=" + Encoding.urlEncode(this.password);
+            }
         }
-        getPage("/api/file_download?param=" + this.fid);
-        final String dllink = this.br.toString().replace("\"", "");
+        if (dllink == null) {
+            /* E.g. free download or url which is not password protected. */
+            getPage("/api/file_download" + download_get_data);
+            dllink = this.br.toString().replace("\"", "");
+        }
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -318,7 +343,7 @@ public class BitsterCz extends PluginForHost {
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
-                dllink = getDllink();
+                dllink = getDllink(true);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
