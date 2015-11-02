@@ -21,6 +21,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,10 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadable.ch" }, urls = { "https?://(?:www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
@@ -313,8 +313,8 @@ public class UploadableCh extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-                    loginform.put("userName", account.getUser());
-                    loginform.put("userPassword", account.getPass());
+                    loginform.put("userName", Encoding.urlEncode(account.getUser()));
+                    loginform.put("userPassword", Encoding.urlEncode(account.getPass()));
                     loginform.remove("autoLogin");
                     loginform.put("autoLogin", "on");
                     if (loginform.hasInputFieldByName("recaptcha_response_field")) {
@@ -325,8 +325,8 @@ public class UploadableCh extends PluginForHost {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                        loginform.put("recaptcha_response_field", c);
-                        loginform.put("recaptcha_challenge_field", rc.getChallenge());
+                        loginform.put("recaptcha_response_field", Encoding.urlEncode(c));
+                        loginform.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
                     }
                     this.br.submitForm(loginform);
                     if (isNotLoggedIn(br, account)) {
@@ -348,7 +348,7 @@ public class UploadableCh extends PluginForHost {
                     account.setMaxSimultanDownloads(1);
                     account.setConcurrentUsePossible(false);
                     account.setType(AccountType.FREE);
-                    ai.setStatus("Registered (free) account");
+                    ai.setStatus("Free Account");
                 } else {
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "dd MMM yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
                     account.setMaxSimultanDownloads(20);
@@ -372,6 +372,9 @@ public class UploadableCh extends PluginForHost {
     }
 
     private void doesPasswordNeedChanging(final Browser br, final Account account) throws IOException, PluginException {
+        if (account == null) {
+            return;
+        }
         // test to confirm that user password doesn't need changing
         if (StringUtils.endsWithCaseInsensitive(br.getRedirectLocation(), "/account.php")) {
             br.getPage(br.getRedirectLocation());
