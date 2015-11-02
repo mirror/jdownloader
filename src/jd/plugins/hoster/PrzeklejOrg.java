@@ -45,13 +45,14 @@ public class PrzeklejOrg extends PluginForHost {
         return "http://przeklej.org/regulamin";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Wygląda na to, że wybrany plik został skasowany")) {
+        if (br.containsHTML("Wygląda na to, że wybrany plik został skasowany") || !this.br.containsHTML("class=\"fileData\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String jsredirect = br.getRegex("<script>location\\.href=\"(https?://(www\\.)?przeklej\\.org/file/[^<>\"]*?)\"</script>").getMatch(0);
@@ -59,12 +60,14 @@ public class PrzeklejOrg extends PluginForHost {
             br.getPage(jsredirect);
         }
         final String filename = br.getRegex("<title>([^<>\"]*?) \\- Przeklej\\.org</title>").getMatch(0);
-        final String filesize = br.getRegex(">Rozmiar:</div><div class=\"right\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) {
+        String filesize = br.getRegex(">Rozmiar[\t\n\r ]*?:</div>[\t\n\r ]*?<div class=\"right\">([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -80,19 +83,29 @@ public class PrzeklejOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            for (int i = 1; i <= 3; i++) {
-                final String code = this.getCaptchaCode("http://przeklej.org/application/library/token.php?url=" + fid + "_code", downloadLink);
-                br.postPage("http://przeklej.org/file/captachaValidate", "captacha=" + Encoding.urlEncode(code) + "&downloadKey=" + downloadkey + "&shortUrl=" + fid + "_code");
-                if (br.toString().equals("err")) {
-                    continue;
+            final boolean captcha_needed = false;
+            if (captcha_needed) {
+                for (int i = 1; i <= 3; i++) {
+                    final String code = this.getCaptchaCode("http://przeklej.org/application/library/token.php?url=" + fid + "_code", downloadLink);
+                    br.postPage("http://przeklej.org/file/captachaValidate", "captacha=" + Encoding.urlEncode(code) + "&downloadKey=" + downloadkey + "&shortUrl=" + fid + "_code");
+                    if (br.toString().equals("err")) {
+                        continue;
+                    }
+                    failed = false;
+                    break;
                 }
-                failed = false;
-                break;
+                if (failed) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            } else {
+                br.postPage("http://przeklej.org/file/captachaValidate", "&downloadKey=" + downloadkey + "&shortUrl=" + fid + "_code");
             }
-            if (failed) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            final String ad_url = this.br.getRegex("Kliknij <a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (ad_url != null) {
+                this.br.getHeaders().put("Referer", ad_url);
+                this.br.getPage("/file/download/" + downloadkey);
             }
-            if (br.containsHTML("Przykro nam, ale wygląda na to, że plik nie jest")) {
+            if (br.containsHTML("Przykro nam, ale wygląda na to, że plik nie jest|Wygląda na to, że wybrany plik został skasowany z naszych serwerów")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dllink = br.getRegex("<script>location\\.href=\"(http[^<>\"]*?)\"</script>").getMatch(0);

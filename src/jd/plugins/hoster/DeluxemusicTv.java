@@ -36,7 +36,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-/*Similar websites: bca-onlive.de, asscompact.de*/
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "http://deluxemusic\\.tvdecrypted/\\d+_\\d+" }, flags = { 0 })
 public class DeluxemusicTv extends PluginForHost {
 
@@ -46,12 +45,7 @@ public class DeluxemusicTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.asscompact.de/node/95";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("asscompactdecrypted.de/", "asscompact.de/"));
+        return "http://www.deluxemusic.tv/impressum.html";
     }
 
     private String xml_source = null;

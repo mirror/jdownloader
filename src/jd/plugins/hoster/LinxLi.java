@@ -49,6 +49,7 @@ public class LinxLi extends PluginForHost {
     private static final String INVALIDLINKS = "https?://(www\\.)?linx\\.li/(paste|meta)[^<>\"/]*?";
 
     /* Uses API: https://linx.li/meta/API */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
@@ -63,15 +64,15 @@ public class LinxLi extends PluginForHost {
         }
         final String filename = getJson("filename");
         final String filesize = getJson("size");
-        final String md5 = getJson("md5sum");
-        if (filename == null || filesize == null || md5 == null) {
+        final String sha256 = getJson("sha256sum");
+        if (filename == null || filesize == null || sha256 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final long fsize = Long.parseLong(filesize);
-        link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
+        link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
         link.setDownloadSize(fsize);
         link.setProperty("VERIFIEDFILESIZE", fsize);
-        link.setMD5Hash(md5);
+        link.setSha256Hash(sha256);
         return AvailableStatus.TRUE;
     }
 
@@ -82,10 +83,11 @@ public class LinxLi extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = getJson("raw_url");
-            if (dllink == null) {
+            final String filename = getJson("filename");
+            if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dllink = "https://linx.li/selif/" + filename;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
         if (dl.getConnection().getContentType().contains("html")) {

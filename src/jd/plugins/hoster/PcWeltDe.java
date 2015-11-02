@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -53,9 +54,18 @@ public class PcWeltDe extends PluginForHost {
         String filename = br.getRegex("<h1 class=\"headline\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<div class=\"boxed\">[\t\n\r ]+<div class=\"left\">(.*?)</div>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"]+) \\- Download \\-").getMatch(0);
-            }
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]+) \\- Download \\-").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(link.getDownloadURL(), "/([^/]*?)\\.html$").getMatch(0);
         }
         String filesize = br.getRegex(">Dateigr&ouml;\\&szlig;e:</th>[\t\n\r ]+<td class=\"col\\-\\d+\">(.*?)</td>").getMatch(0);
         if (filesize == null) {
@@ -75,8 +85,14 @@ public class PcWeltDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String undefined_downloadlink = br.getRegex("itemprop=\"url\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        final String undefined_downloadlink = br.getRegex("itemprop=\"url\"(?: rel=\"nofollow\")? href=\"(http[^<>\"]*?)\"").getMatch(0);
         String dllink = br.getRegex("\"(https?://(www\\.)?download\\.pcwelt\\.de/[^<>\"]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = this.br.getRegex("(download_file\\&#x3F;bid\\&#x3D;\\d+)\"").getMatch(0);
+            if (dllink != null) {
+                dllink = "http://www.pcwelt.de/" + Encoding.htmlDecode(dllink);
+            }
+        }
         if (dllink == null && undefined_downloadlink != null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Nicht downloadbar: externe Downloadquelle");
         }
