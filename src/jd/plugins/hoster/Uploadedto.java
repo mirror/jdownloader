@@ -864,7 +864,7 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             generalFreeErrorhandling(account);
-            if (br.containsHTML("limit-parallel")) {
+            if (br.containsHTML("limit\\-parallel")) {
                 freeDownloadlimitReached("You're already downloading");
             }
             dllink = br.getRegex("url:'(http.*?)'").getMatch(0);
@@ -899,6 +899,7 @@ public class Uploadedto extends PluginForHost {
             ((RAFDownload) dl).getRequest().setReadTimeout(60000);
         } catch (final Throwable ee) {
         }
+        handleGeneralServerErrors();
         if (!dl.getConnection().isContentDisposition()) {
             try {
                 br.followConnection();
@@ -906,44 +907,33 @@ public class Uploadedto extends PluginForHost {
                 logger.severe(e.getMessage());
             }
             logger.info(br.toString());
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
             generalFreeErrorhandling(account);
             if (br.containsHTML("please try again in an hour or purchase one of our")) {
                 freeDownloadlimitReached(null);
             }
-            if (dl.getConnection().getResponseCode() == 508) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
-            }
-            if (br.containsHTML("try again later")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            }
-            if (br.containsHTML("All of our free-download capacities are")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All of our free-download capacities are exhausted currently", 10 * 60 * 1000l);
-            }
-            if (br.containsHTML("File not found!")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.getURL().contains("view=error")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            }
+            checkGeneralErrors();
             if ("No htmlCode read".equalsIgnoreCase(br.toString())) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.getConnection().getResponseCode() == 404) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         dl.startDownload();
     }
 
-    private void generalFreeErrorhandling(final Account account) throws PluginException {
-        if (br.containsHTML("No connection to database")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+    /** Handles error-responsecodes coming from the connection of our DownloadInterface. */
+    private void handleGeneralServerErrors() throws PluginException {
+        final int responsecode = dl.getConnection().getResponseCode();
+        if (responsecode == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+        } else if (responsecode == 404) {
+            /* We used to throw FILE_NOT_FOUND here in the past. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        } else if (responsecode == 508) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 508", 30 * 60 * 1000l);
         }
+    }
+
+    private void generalFreeErrorhandling(final Account account) throws PluginException {
         /* "err" strings: */
         if (br.containsHTML("\"err\":\"This file exceeds the max")) {
             try {
@@ -967,7 +957,7 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Internal error'", 5 * 60 * 1000l);
         }
         /* "err" strings end */
-        if (br.containsHTML("You have reached the max\\. number of possible free downloads|err\":\"limit-dl\"")) {
+        if (br.containsHTML("You have reached the max\\. number of possible free downloads|err\":\"limit\\-dl\"")) {
             if (account == null) {
                 logger.info("Limit reached, throwing reconnect exception");
                 freeDownloadlimitReached(null);
@@ -978,7 +968,6 @@ public class Uploadedto extends PluginForHost {
             }
         }
         checkGeneralErrors();
-
     }
 
     /** API error handling **/
@@ -1036,6 +1025,7 @@ public class Uploadedto extends PluginForHost {
             case 20:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 404:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error 404", 30 * 60 * 1000l);
             case 410:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 500:
@@ -1067,10 +1057,6 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        if (br.containsHTML("No connection to database")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
-        }
-        //
         checkGeneralErrors();
         if (throwPluginDefect) {
             logger.info("ErrorCode: unknown\r\n" + br);
@@ -1086,6 +1072,21 @@ public class Uploadedto extends PluginForHost {
     private void checkGeneralErrors() throws PluginException {
         if (br.containsHTML(HTML_MAINTENANCE)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
+        }
+        if (br.containsHTML("try again later")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+        }
+        if (br.containsHTML("File not found\\!")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("No connection to database")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'No connection to database'", 10 * 60 * 1000l);
+        }
+        if ((br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) || br.containsHTML("download this file due to technical issues at the moment")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Download not possible at the moment'", 30 * 60 * 1000l);
+        }
+        if (br.getURL().contains("view=error")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
         }
     }
 
@@ -1299,7 +1300,7 @@ public class Uploadedto extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         if (usePremiumAPI.get() && preferAPI(account) && !downloadLink.getBooleanProperty("preDlPass", false)) {
             api_handle_Premium(downloadLink, account);
             return;
@@ -1356,11 +1357,11 @@ public class Uploadedto extends PluginForHost {
                 }
                 if (br.containsHTML(">Download Blocked \\(ip\\)<") || br.containsHTML("Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k\\&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt")) {
                     logger.info("Download blocked (IP), disabling account...");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (br.containsHTML("You used too many different IPs, Downloads have been blocked for today\\.")) {
                     // shown in html of the download server, 'You used too many different IPs, Downloads have been blocked for today.'
                     logger.warning("Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 int chunks = 0;
                 boolean resume = true;
@@ -1409,33 +1410,15 @@ public class Uploadedto extends PluginForHost {
                 } catch (final Throwable ee) {
                 }
 
+                handleGeneralServerErrors();
+
                 if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
                     try {
                         br.followConnection();
                     } catch (final Throwable e) {
                         logger.severe(e.getMessage());
                     }
-                    if (dl.getConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (dl.getConnection().getResponseCode() == 508) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
-                    }
-                    if (br.containsHTML("try again later")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-                    }
-                    if (br.containsHTML("File not found!")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (br.containsHTML("No connection to database")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-                    }
-                    if ((br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) || br.containsHTML("download this file due to technical issues at the moment")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-                    }
-                    if (br.getURL().contains("view=error")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-                    }
+                    checkGeneralErrors();
                     try {
                         logger.info(br.toString());
                     } catch (final Throwable e) {
@@ -1542,6 +1525,7 @@ public class Uploadedto extends PluginForHost {
             ((RAFDownload) dl).getRequest().setReadTimeout(60000);
         } catch (final Throwable ee) {
         }
+        handleGeneralServerErrors();
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
             try {
                 br.followConnection();
@@ -1549,30 +1533,7 @@ public class Uploadedto extends PluginForHost {
                 logger.severe(e.getMessage());
             }
             handleErrorCode(br, account, token, false);
-            if (dl.getConnection().getResponseCode() == 404) {
-                // this does not mean that the file is offline. This is most likly a server error. try again. if the file is really offline,
-                // the linkcheck will set the corrects status
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(404)", 1 * 60 * 1000l);
-
-            }
-            if (dl.getConnection().getResponseCode() == 508) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
-            }
-            if (br.containsHTML("try again later")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            }
-            if (br.containsHTML("File not found!")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.containsHTML("No connection to database")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            }
-            if ((br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) || br.containsHTML("download this file due to technical issues at the moment")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            }
-            if (br.getURL().contains("view=error")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            }
+            checkGeneralErrors();
             try {
                 logger.info(br.toString());
             } catch (final Throwable e) {
@@ -1868,24 +1829,24 @@ public class Uploadedto extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
-                                                      put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
-                                                      put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
-                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
-                                                      put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
-                                                  }
-                                              };
+        {
+            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
+            put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
+            put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
+            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
+            put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
+        }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
-                                                      put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
-                                                      put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
-                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
-                                                      put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
-                                                  }
-                                              };
+        {
+            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
+            put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
+            put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
+            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
+            put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
