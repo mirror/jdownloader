@@ -46,6 +46,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pobierz.biz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PobierzBiz extends PluginForHost {
 
+    /* Tags: pobierz.biz, rapidtraffic.pl */
     private String                                         MAINPAGE           = "http://pobierz.biz/";
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -259,7 +260,7 @@ public class PobierzBiz extends PluginForHost {
         sleep(1 * 1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, 0);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
+            // error
         {
             br.followConnection();
             // not tested!
@@ -381,37 +382,37 @@ public class PobierzBiz extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-                                                      put("LOGIN_ERROR", "Pobierz.biz: Login Error");
-                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-                                                      put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
-                                                      put("HOST_UNAVAILABLE", "Host is temporarily unavailable via ");
-                                                      put("RETRY", "Retry in few secs");
-                                                      put("NO_TRAFFIC", "No traffic left");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-                                                      put("PREMIUM", "Premium User");
-                                                      put("TRAFFIC_LEFT", "Traffic Left");
-                                                      put("PREMIUM_EXPIRED", "Premium expired");
-                                                      put("ACCOUNT_TYPE", "Account type");
-                                                  }
-                                              };
+        {
+            put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+            put("LOGIN_ERROR", "Pobierz.biz: Login Error");
+            put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
+            put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
+            put("HOST_UNAVAILABLE", "Host is temporarily unavailable via ");
+            put("RETRY", "Retry in few secs");
+            put("NO_TRAFFIC", "No traffic left");
+            put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+            put("PREMIUM", "Premium User");
+            put("TRAFFIC_LEFT", "Traffic Left");
+            put("PREMIUM_EXPIRED", "Premium expired");
+            put("ACCOUNT_TYPE", "Account type");
+        }
+    };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-                                                      put("LOGIN_ERROR", "Pobierz.biz: Błąd logowania");
-                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-                                                      put("PLUGIN_BROKEN", "\r\nBłąd wtyczki, skontaktuj się z działem wsparcia JDownloadera!");
-                                                      put("HOST_UNAVAILABLE", "Pobieranie z tego serwisu jest tymczasowo niedostępne w ");
-                                                      put("RETRY", "Ponowna próba za kilka sekund");
-                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-                                                      put("PREMIUM", "Użytkownik Premium");
-                                                      put("TRAFFIC_LEFT", "Pozostały transfer");
-                                                      put("PREMIUM_EXPIRED", "Konto Premium wygasło");
-                                                      put("ACCOUNT_TYPE", "Typ konta");
-                                                  }
-                                              };
+        {
+            put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+            put("LOGIN_ERROR", "Pobierz.biz: Błąd logowania");
+            put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
+            put("PLUGIN_BROKEN", "\r\nBłąd wtyczki, skontaktuj się z działem wsparcia JDownloadera!");
+            put("HOST_UNAVAILABLE", "Pobieranie z tego serwisu jest tymczasowo niedostępne w ");
+            put("RETRY", "Ponowna próba za kilka sekund");
+            put("NO_TRAFFIC", "Brak dostępnego transferu");
+            put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+            put("PREMIUM", "Użytkownik Premium");
+            put("TRAFFIC_LEFT", "Pozostały transfer");
+            put("PREMIUM_EXPIRED", "Konto Premium wygasło");
+            put("ACCOUNT_TYPE", "Typ konta");
+        }
+    };
 
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and

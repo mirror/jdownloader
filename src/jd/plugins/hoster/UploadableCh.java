@@ -19,20 +19,18 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -65,6 +63,7 @@ public class UploadableCh extends PluginForHost {
 
     private static final long   FREE_SIZELIMIT          = 2 * 1073741824l;
     private static final String PREMIUM_UNLIMITEDCHUNKS = "PREMIUM_UNLIMITEDCHUNKS";
+    private static final String recaptchaid             = "6LdlJuwSAAAAAPJbPIoUhyqOJd7-yrah5Nhim5S3";
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -131,8 +130,9 @@ public class UploadableCh extends PluginForHost {
         return true;
     }
 
-    private void prepBr(final Browser br) {
+    private Browser prepBr(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
+        return br;
     }
 
     /** Don't use mass-linkchecker here as it may return wrong/outdated information. */
@@ -197,7 +197,7 @@ public class UploadableCh extends PluginForHost {
             boolean captchaFailed = true;
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId("6LdlJuwSAAAAAPJbPIoUhyqOJd7-yrah5Nhim5S3");
+            rc.setId(recaptchaid);
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -275,7 +275,7 @@ public class UploadableCh extends PluginForHost {
     private static final String MAINPAGE = "http://uploadable.ch";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings({ "deprecation", "static-access" })
     private AccountInfo login(final Account account, final boolean force, final AccountInfo ac) throws Exception {
         synchronized (LOCK) {
             final AccountInfo ai = ac != null ? ac : new AccountInfo();
@@ -283,35 +283,58 @@ public class UploadableCh extends PluginForHost {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 prepBr(this.br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        // lets do a check!
-                        final Browser test = br.cloneBrowser();
-                        test.setFollowRedirects(false);
-                        test.getPage("/");
-                        if (!isNotLoggedIn(test, account)) {
-                            return ai;
-                        }
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                boolean loggedin = false;
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    // lets do a check - this will also avoid unnerving login captchas!
+                    this.br.getPage("https://www.uploadable.ch/indexboard.php");
+                    if (!isNotLoggedIn(this.br, account)) {
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        loggedin = true;
+                    } else {
+                        loggedin = false;
                     }
                 }
-                br.setFollowRedirects(false);
-                br.postPage(getProtocol() + "www.uploadable.ch/login.php", "autoLogin=on&action__login=normalLogin&userName=" + Encoding.urlEncode(account.getUser()) + "&userPassword=" + Encoding.urlEncode(account.getPass()));
-                if (isNotLoggedIn(br, account)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!loggedin) {
+                    /* Forced https! */
+                    this.br.getPage("https://www.uploadable.ch/login.php");
+                    Form loginform = this.br.getFormbyProperty("id", "loginForm");
+                    if (loginform == null) {
+                        loginform = this.br.getForm(0);
+                    }
+                    if (loginform == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    loginform.put("userName", account.getUser());
+                    loginform.put("userPassword", account.getPass());
+                    loginform.remove("autoLogin");
+                    loginform.put("autoLogin", "on");
+                    if (loginform.hasInputFieldByName("recaptcha_response_field")) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "uploadable.ch", "https://uploadable.ch", true);
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setId(recaptchaid);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String c = getCaptchaCode("recaptcha", cf, dummyLink);
+                        loginform.put("recaptcha_response_field", c);
+                        loginform.put("recaptcha_challenge_field", rc.getChallenge());
+                    }
+                    this.br.submitForm(loginform);
+                    if (isNotLoggedIn(br, account)) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 br.getPage("/indexboard.php");
@@ -325,7 +348,7 @@ public class UploadableCh extends PluginForHost {
                     account.setMaxSimultanDownloads(1);
                     account.setConcurrentUsePossible(false);
                     account.setType(AccountType.FREE);
-                    ai.setStatus("Free Account");
+                    ai.setStatus("Registered (free) account");
                 } else {
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "dd MMM yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
                     account.setMaxSimultanDownloads(20);
@@ -336,21 +359,13 @@ public class UploadableCh extends PluginForHost {
                 ai.setUnlimitedTraffic();
                 account.setValid(true);
 
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
                 if (ac == null) {
                     account.setAccountInfo(ai);
                 }
                 return ai;
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
