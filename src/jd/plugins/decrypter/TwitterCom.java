@@ -65,6 +65,7 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
+            finallink = new Regex(finallink, "(.*?)($|#)").getMatch(0);
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }
