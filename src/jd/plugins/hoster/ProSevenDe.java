@@ -16,12 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,9 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "http://(?:www\\.)?prosieben\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://www\\.prosiebenmaxx\\.de/[^<>\"\\']*?videos?/[\\w\\-]+", "http://(?:www\\.)?the\\-voice\\-of\\-germany\\.de/video/[\\w\\-]+", "http://(?:www\\.)?kabeleins\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sat1\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sat1gold\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sixx\\.de/tv/.+", "http://(?:www\\.)?7tv\\.de/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7tv.de" }, urls = { "http://7tvdecrypted\\.de/\\d+" }, flags = { 32 })
 public class ProSevenDe extends PluginForHost {
 
     /** Other domains: proxieben.at (redirects to .de) */
@@ -79,104 +72,52 @@ public class ProSevenDe extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         prepareBrowser();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        final String decrypter_filename = downloadLink.getStringProperty("decrypter_filename", null);
+        final String mainlink = downloadLink.getStringProperty("mainlink", null);
+        if (mainlink == null || decrypter_filename == null) {
+            /* E.g. for old links! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage(mainlink);
+        if (isOffline(this.br)) {
             /* Page offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (this.br.containsHTML(">Das Video ist nicht mehr verfügbar|Leider ist das Video nicht mehr verfügbar")) {
-            /* Video offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!this.br.containsHTML("SIMAD\\.ContentType\\.VIDEO") && !this.br.containsHTML("contentType[\t\n\r ]*?:[\t\n\r ]*?\"video\"")) {
-            /* Content is not a (downloadable) video */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /* Possible API (needs video-ID) http://hbbtv.sat1.de/video_center?action=action.get.clip&clip_id=<videoid>&category_id=123&order=1 */
-        final String date = br.getRegex("property=\"og:published_time\" content=\"([^<>\"]*?)\"").getMatch(0);
-
-        json = br.getRegex("SIMAD_CONFIG = \\{(.*?)</script>").getMatch(0);
-        if (json == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String brand = getJson(json, "brand");
-        final String channel = getJson(json, "channel");
-        final String title = getJson(json, "subchannel1");
-        final String subtitle = getJson(json, "subchannel3");
-        if (channel == null || title == null || subtitle == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (brand == null) {
-            /* Brand not given via json - simply extract it from the url the user added. */
-            brand = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?([^<>\"/]*?)\\.de/").getMatch(0);
-        }
-        if (date == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String date_formatted = formatDate(date);
-
-        String ext = null;
-        ext = ext == null ? ".mp4" : ext;
-        downloadLink.setFinalFileName(date_formatted + "_" + brand + "_" + title + " - " + subtitle + ext);
+        downloadLink.setFinalFileName(decrypter_filename);
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
-    private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
-        final String protocol = new Regex(this.json, "^(rtmp(?:e|t)?://)").getMatch(0);
-        String app;
-        if (protocol.equals("rtmpe://")) {
-            app = "psdvodrtmpdrm";
-            /*
-             * We can still get rtmpe urls via the old API but they won't work anyways as they use handshake type 9 which (our) rtmpdump
-             * does not support.
-             */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
-        } else {
-            app = "psdvodrtmp";
+    public static boolean isOffline(final Browser br) {
+        boolean offline = false;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            /* Page offline */
+            offline = true;
         }
-        // app = "psdvodrtmpdrm";
-        String url = protocol + app + ".fplive.net:1935/" + app;
-        // url = "rtmpe://psdvodrtmpdrm.fplive.net:1935/psdvodrtmp";
-        final String playpath = new Regex(this.json, "(mp4:.+)").getMatch(0);
-        if (playpath == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(">Das Video ist nicht mehr verfügbar|Leider ist das Video nicht mehr verfügbar")) {
+            /* Video offline */
+            offline = true;
         }
-        // playpath = playpath.replace("?start_time=", "?country=DE&start_time=");
-        dl = new RTMPDownload(this, downloadLink, json);
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        /* Setup connection */
-        rtmp.setApp(app);
-        rtmp.setUrl(url);
-        rtmp.setPlayPath(playpath);
-        rtmp.setFlashVer("WIN 17,0,0,169");
-        rtmp.setSwfVfy("http://is.myvideo.de/player/GP/4.3.6/player.swf");
-        rtmp.setPageUrl(downloadLink.getDownloadURL());
-        rtmp.setResume(true);
-        ((RTMPDownload) dl).startDownload();
+        return offline;
     }
 
     /*
      * Explanation of the parameter "method" when getting downloadlink: 1=http, 2=rtmp(e)[Depends on video, usually rtmp], 3=rtmpt, 4=HLS
      * (Crypted/uncrypted depends on video)
      */
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        br.setFollowRedirects(false);
         /* Let's find the downloadlink */
-        String clipID = getJson(json, "clip_id");
-        if (clipID == null || clipID.equals("")) {
-            clipID = br.getRegex("legacyVideoData[\t\n\r ]*?=[\t\n\r ]*?\\{\"(\\d+)\"").getMatch(0);
-        }
+        final String clipID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         if (clipID == null) {
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* TODO: Maybe implement the current version of this request though this old one still works great. */
@@ -229,7 +170,7 @@ public class ProSevenDe extends PluginForHost {
              * TODO: Instead of just trying all qualities, consider to use the f4mgenerator XML file to find the existing qualities:
              * http://vas.sim-technik.de/f4mgenerator.f4m?cid=3868276&ttl=604800&access_token=kabeleins&cdn=akamai&token=
              * a3c706238cec19617b8e70b64480fa20aacc2a162a3bbd21294a8ddaf0209699&g=TGENNQIQUMYD&hdcore=3.7.0&plugin=aasp-3.7.0.39.44
-             * 
+             *
              * ... but it might happen that not all are listed so maybe trying all possible qualities makes more sense especially if one of
              * them is down e.g. because of server issues.
              */
@@ -259,6 +200,41 @@ public class ProSevenDe extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
+        final String protocol = new Regex(this.json, "^(rtmp(?:e|t)?://)").getMatch(0);
+        String app;
+        if (protocol.equals("rtmpe://")) {
+            app = "psdvodrtmpdrm";
+            /*
+             * We can still get rtmpe urls via the old API but they won't work anyways as they use handshake type 9 which (our) rtmpdump
+             * does not support.
+             */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
+        } else {
+            app = "psdvodrtmp";
+        }
+        // app = "psdvodrtmpdrm";
+        String url = protocol + app + ".fplive.net:1935/" + app;
+        // url = "rtmpe://psdvodrtmpdrm.fplive.net:1935/psdvodrtmp";
+        final String playpath = new Regex(this.json, "(mp4:.+)").getMatch(0);
+        if (playpath == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // playpath = playpath.replace("?start_time=", "?country=DE&start_time=");
+        dl = new RTMPDownload(this, downloadLink, json);
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        /* Setup connection */
+        rtmp.setApp(app);
+        rtmp.setUrl(url);
+        rtmp.setPlayPath(playpath);
+        rtmp.setFlashVer("WIN 17,0,0,169");
+        rtmp.setSwfVfy("http://is.myvideo.de/player/GP/4.3.6/player.swf");
+        rtmp.setPageUrl(downloadLink.getDownloadURL());
+        rtmp.setResume(true);
+        ((RTMPDownload) dl).startDownload();
     }
 
     private boolean checkDirectLink(final String directurl) {
@@ -291,16 +267,6 @@ public class ProSevenDe extends PluginForHost {
         return dllink;
     }
 
-    public String decodeUnicode(final String s) {
-        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        final Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
-        }
-        return res;
-    }
-
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
@@ -309,23 +275,6 @@ public class ProSevenDe extends PluginForHost {
      * */
     private String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    private String formatDate(String input) {
-        /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
-        input = input.substring(0, input.lastIndexOf(":")) + "00";
-        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ssZ", Locale.GERMAN);
-        String formattedDate = null;
-        final String targetFormat = "yyyy-MM-dd";
-        Date theDate = new Date(date);
-        try {
-            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-            formattedDate = formatter.format(theDate);
-        } catch (Exception e) {
-            /* prevent input error killing plugin */
-            formattedDate = input;
-        }
-        return formattedDate;
     }
 
     @Override
