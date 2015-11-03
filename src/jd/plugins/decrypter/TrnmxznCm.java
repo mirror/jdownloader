@@ -47,12 +47,12 @@ public class TrnmxznCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         try {
             String[] posts = br.getRegex("<!-- start: postbit -->(.*?)<!-- end: postbit -->").getColumn(0);
-
+            boolean saidThanks = false;
             for (String post : posts) {
                 if (post.contains("alerta_thx message")) {
                     // need top say thanks
                     String pid = new Regex(post, "pid(\\d+)").getMatch(0);
-
+                    saidThanks = true;
                     if (parameter.contains("?pid=")) {
                         br.getPage(parameter + "&action=thank");
                     } else {
@@ -61,8 +61,11 @@ public class TrnmxznCm extends PluginForDecrypt {
 
                 }
             }
-
+            if (saidThanks) {
+                br.getPage(parameter);
+            }
             for (String link : HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getBaseURL())) {
+                System.out.println(link);
                 if (link.contains("http://trinimixzone.com/")) {
                     continue;
                 }
