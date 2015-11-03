@@ -42,7 +42,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString() + "/";
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("instagram.com");
         boolean logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
