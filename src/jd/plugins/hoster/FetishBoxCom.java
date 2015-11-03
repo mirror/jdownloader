@@ -38,6 +38,9 @@ public class FetishBoxCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     @Override
     public String getAGBLink() {
         return "http://www.fetishbox.com/2257.php";

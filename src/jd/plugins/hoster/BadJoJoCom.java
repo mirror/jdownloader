@@ -32,6 +32,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badjojo.com" }, urls = { "http://(www\\.)?decryptedbadjojo\\.com/\\d+/.{1}" }, flags = { 0 })
 public class BadJoJoCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     private String DLLINK = null;
 
     public BadJoJoCom(PluginWrapper wrapper) {

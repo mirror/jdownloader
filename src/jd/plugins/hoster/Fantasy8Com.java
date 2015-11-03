@@ -39,6 +39,8 @@ public class Fantasy8Com extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     /* Porn_static_terms_script V0.1 */
     /* Tags: Script, template */
     /* Extension which will be used if no correct extension is found */

@@ -23,6 +23,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
      * PornEmbedParser 0.3.2
      *
      *
+     * porn_plugin
+     *
+     *
      * This method is designed to find embedded porn urls in html code.
      *
      * @param br

@@ -33,7 +33,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(?:www\\.)?4tube\\.com/(?:embed|videos)/(\\d+)/?([\\w-]+)?" }, flags = { 32 })
 public class FourTubeCom extends PluginForHost {
 
-    // DEV NOTES
+    /* DEV NOTES */
+    /* Porn_plugin */
     // /embed/UID are not transferable to /videos/UID -raztoki
 
     public FourTubeCom(PluginWrapper wrapper) {

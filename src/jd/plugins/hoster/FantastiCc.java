@@ -40,7 +40,7 @@ public class FantastiCc extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_plugin
+    /* Porn_plugin */
     // Tags:
     // protocol: no https
     // other:

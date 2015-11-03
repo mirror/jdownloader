@@ -33,6 +33,9 @@ public class TubeSssComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -43,9 +46,13 @@ public class TubeSssComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             final DownloadLink dl = createDownloadlink(parameter.replace("tubesss.com/", "tubesssdecrypted.com/"));
-            if (!br.getURL().contains("tubesss.com") || br.containsHTML("<title> at Tubesss\\.com  \\- Free Videos Adult Sex Tube</title>") || br.getURL().equals("http://www.tubesss.com/404.php")) dl.setAvailable(false);
+            if (!br.getURL().contains("tubesss.com") || br.containsHTML("<title> at Tubesss\\.com  \\- Free Videos Adult Sex Tube</title>") || br.getURL().equals("http://www.tubesss.com/404.php")) {
+                dl.setAvailable(false);
+            }
             String filename = br.getRegex("<title>([^<>\"]*?) at TubeSSS</title>").getMatch(0);
-            if (filename != null) dl.setName(Encoding.htmlDecode(filename.trim()));
+            if (filename != null) {
+                dl.setName(Encoding.htmlDecode(filename.trim()));
+            }
             decryptedLinks.add(dl);
         }
 

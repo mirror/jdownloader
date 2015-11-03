@@ -33,6 +33,9 @@ public class AmateurGaloreNet extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private static final String NEWLINK = "http://(www\\.)?amateurgalore\\.net/[a-z]+/\\d+/[A-Za-z0-9\\-]+\\.html";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -54,7 +57,9 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             }
         }
         filename = br.getRegex("<meta name=\"DC\\.title\" content=\"([^<>\"]*?) \\- Amateur Porn \\- AmateurGalore \\- Free Amateur Porn\"").getMatch(0);
-        if (filename != null) filename = Encoding.htmlDecode(filename.trim());
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename.trim());
+        }
         externID = br.getRegex("\"http://videobam\\.com/widget/(.*?)/custom").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://videobam.com/videos/download/" + externID);
@@ -85,7 +90,9 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
@@ -101,7 +108,9 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);

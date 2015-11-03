@@ -32,6 +32,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemoviestube.com" }, urls = { "http://(www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class HomeMoviesTubeCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 

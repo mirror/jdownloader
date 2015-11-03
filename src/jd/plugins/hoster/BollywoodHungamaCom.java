@@ -37,6 +37,9 @@ public class BollywoodHungamaCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     @Override
@@ -49,23 +52,35 @@ public class BollywoodHungamaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.bollywoodhungama.com//xml/videos/content/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".xml");
-        if (br.containsHTML(">We\\'re sorry, the page you requested cannot be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">We\\'re sorry, the page you requested cannot be found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Order = Size, checked via JD
         final String[] qualities = { "539", "241", "206", "538", "536", "537", "590", "589" };
         for (final String quality : qualities) {
             DLLINK = getXML("file_" + quality);
-            if (DLLINK != null) break;
+            if (DLLINK != null) {
+                break;
+            }
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("name=\"title\" content=\"([^<>\"]*?)\\| Bollywood Videos").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\| Bollywood Videos \\- Bollywood Hungama</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\| Bollywood Videos \\- Bollywood Hungama</title>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -73,10 +88,11 @@ public class BollywoodHungamaCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
