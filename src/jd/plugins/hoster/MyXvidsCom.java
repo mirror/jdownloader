@@ -33,6 +33,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myxvids.com" }, urls = { "http://(www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)" }, flags = { 0 })
 public class MyXvidsCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public MyXvidsCom(PluginWrapper wrapper) {
@@ -51,7 +54,9 @@ public class MyXvidsCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         final String embedID = new Regex(link.getDownloadURL(), "embed/(\\d+)$").getMatch(0);
-        if (embedID != null) link.setUrlDownload("http://www.myxvids.com/videos/" + embedID + "/" + System.currentTimeMillis() + "/");
+        if (embedID != null) {
+            link.setUrlDownload("http://www.myxvids.com/videos/" + embedID + "/" + System.currentTimeMillis() + "/");
+        }
     }
 
     @Override
@@ -59,10 +64,14 @@ public class MyXvidsCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.myxvids.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.myxvids.com/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- myXvids\\.com</title>").getMatch(0);
         DLLINK = br.getRegex("video_url: \\'(http://.*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
@@ -72,10 +81,11 @@ public class MyXvidsCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

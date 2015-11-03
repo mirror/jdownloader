@@ -37,6 +37,9 @@ public class YourLustCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     @Override

@@ -33,6 +33,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me" }, urls = { "http://(www\\.)?pornupdecrypted\\.me/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
 public class PornUpMe extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public PornUpMe(PluginWrapper wrapper) {

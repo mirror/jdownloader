@@ -32,6 +32,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornyeah.com" }, urls = { "http://(www\\.)?pornyeah\\.com/videos/.*?\\-\\d+\\.html" }, flags = { 0 })
 public class PornYeahCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 

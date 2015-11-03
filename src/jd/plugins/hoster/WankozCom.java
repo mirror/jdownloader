@@ -62,6 +62,8 @@ public class WankozCom extends PluginForHost {
         link.setUrlDownload("http://www.wankoz.com/videos/" + new Regex(link.getDownloadURL(), "wankoz\\.com/videos/(.+)").getMatch(0));
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     // Porn_get_file_/videos/_basic Version 0.X
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;

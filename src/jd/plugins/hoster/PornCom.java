@@ -42,6 +42,9 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(\\.html)?" }, flags = { 2 })
 public class PornCom extends antiDDoSForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;

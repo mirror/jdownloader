@@ -32,6 +32,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubesss.com" }, urls = { "http://(www\\.)?tubesssdecrypted\\.com/videos/\\d+/.*?\\.html" }, flags = { 0 })
 public class TubeSssCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 

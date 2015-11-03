@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -33,12 +31,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldsex.com" }, urls = { "http://(www\\.)?(worldsex\\.com/videos/[a-z0-9\\-]+\\d+\\.html|movies\\.worldsex\\.com/playerConfig\\.php\\?[a-z0-9]+\\.flv)" }, flags = { 0 })
 public class WorldSexCom extends PluginForHost {
 
     public WorldSexCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    /* DEV NOTES */
+    /* Porn_plugin */
 
     private String DLLINK = null;
 

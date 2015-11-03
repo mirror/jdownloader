@@ -58,6 +58,9 @@ public class XHamsterCom extends PluginForHost {
         setConfigElements();
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private static final String   ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean  default_allow_multihoster_usage = false;
 

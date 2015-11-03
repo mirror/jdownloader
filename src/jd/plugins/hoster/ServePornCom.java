@@ -37,6 +37,9 @@ public class ServePornCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     @Override

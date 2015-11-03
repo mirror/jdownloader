@@ -32,6 +32,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xogogo.com" }, urls = { "http://(www\\.)?xogogo\\.com/videos/\\d+/.*?\\.html" }, flags = { 0 })
 public class XoGoGoCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public XoGoGoCom(PluginWrapper wrapper) {
@@ -64,16 +67,26 @@ public class XoGoGoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://xogogo.com/") || br.containsHTML("(<title>XOgogo\\.com \\- Teen Porn</title>|\">Had enough of the Webcam)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://xogogo.com/") || br.containsHTML("(<title>XOgogo\\.com \\- Teen Porn</title>|\">Had enough of the Webcam)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>XOgogo\\.com \\- (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        }
         DLLINK = br.getRegex("file: \"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\d+\\.flv\\.xogogo\\.com/.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://cdn\\d+\\.flv\\.xogogo\\.com/.*?)\"").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -81,10 +94,11 @@ public class XoGoGoCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

@@ -32,6 +32,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submityourtapes.com" }, urls = { "http://(www\\.)?submityourtapes\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class SubmitYourTapesCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     private String DLLINK = null;
 
     public SubmitYourTapesCom(PluginWrapper wrapper) {

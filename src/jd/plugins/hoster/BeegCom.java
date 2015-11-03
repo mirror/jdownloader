@@ -33,6 +33,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "http://(www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" }, flags = { 0 })
 public class BeegCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public BeegCom(PluginWrapper wrapper) {
