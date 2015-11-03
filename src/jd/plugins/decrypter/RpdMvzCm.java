@@ -27,24 +27,19 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez|rmz\\.rezavn)\\.com/release/[a-z0-9\\-]+" }, flags = { 0 })
-public class RpdMvzCm extends PluginForDecrypt {
+public class RpdMvzCm extends antiDDoSForDecrypt {
 
     public RpdMvzCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private Browser prepBrowser(Browser prepBr) {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         // define custom browser headers and language settings.
-        JDUtilities.getPluginForHost("mediafire.com");
-        prepBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Cache-Control", null);
-        prepBr.getHeaders().put("Pragma", null);
         return prepBr;
     }
 
@@ -53,9 +48,7 @@ public class RpdMvzCm extends PluginForDecrypt {
         // no https
         String parameter = param.toString().replace("https://", "http://").replace("rmz.rezavn.com/", "rapidmoviez.com/");
 
-        prepBrowser(br);
-
-        br.getPage(parameter);
+        getPage(parameter);
 
         if (br.containsHTML("<title>404 Page Not Found</title>")) {
             logger.info("Incorrect URL: " + parameter);
@@ -80,7 +73,7 @@ public class RpdMvzCm extends PluginForDecrypt {
             }
 
             br.getHeaders().put("Accept", "*/*");
-            br.getPage(js);
+            getPage(js);
 
             filter = br.getRegex("\\(([\\d,]+)\\)").getMatch(0);
             if (filter == null) {
