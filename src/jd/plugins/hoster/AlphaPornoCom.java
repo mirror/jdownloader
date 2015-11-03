@@ -37,6 +37,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/((de|ru)/)?videos/[\\w\\-]+/" }, flags = { 0 })
 public class AlphaPornoCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     /* All similar: TubeWolfCom, AlphaPornoCom */
     // Porn_get_file_/videos/_basic Version 0.X
     private String               DLLINK               = null;

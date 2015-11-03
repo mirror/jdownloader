@@ -28,6 +28,9 @@ public class PornCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
         this.setBrowserExclusive();

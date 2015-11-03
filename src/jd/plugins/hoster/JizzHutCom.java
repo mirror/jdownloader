@@ -34,6 +34,9 @@ public class JizzHutCom extends PluginForHost {
 
     private String dllink = null;
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     public JizzHutCom(PluginWrapper wrapper) {
         super(wrapper);
     }

@@ -39,6 +39,9 @@ public class BurningCamelCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     @Override
     public String getAGBLink() {
         return "http://www.burningcamel.com/dmca";

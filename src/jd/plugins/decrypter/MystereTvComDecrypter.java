@@ -33,6 +33,9 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     // This decrypter finds out of there are embedded videos and creates the
     // links, if not it passes the mystere-tv.com link to the hosterplugin
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

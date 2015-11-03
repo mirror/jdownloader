@@ -33,6 +33,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/(view\\.php\\?id=\\d+|videos/.*?\\-\\d+\\.html)|https?://(?:www\\.)?empflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+|https?://player\\.empflix\\.com/video/\\d+" }, flags = { 0 })
 public class EmpFlixCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String              DLLINK                = null;
 
     private static final String TYPE_NORMAL           = "https?://(?:www\\.)?empflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";

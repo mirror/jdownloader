@@ -43,6 +43,7 @@ public class FoxytubeCom extends PluginForHost {
     private static final String  TYPE_EMBED        = "^http://(www\\.)?foxytube\\.com/embedded/\\d+$";
 
     /* DEV NOTES */
+    /* Porn_plugin */
     // Tags:
     // protocol: no https
     // other:

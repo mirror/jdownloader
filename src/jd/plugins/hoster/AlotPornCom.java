@@ -35,7 +35,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/(?:\\d+(/[A-Za-z0-9\\-_]+/)?|(?:embed\\.php\\?id=|embed/)\\d+)" }, flags = { 0 })
 public class AlotPornCom extends PluginForHost {
 
-    // DEV NOTES
+    /* DEV NOTES */
+    /* Porn_plugin */
     // only need UID for a valid link!
     // Porn_get_file_/videos/_basic Version 0.X
 

@@ -33,6 +33,8 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 

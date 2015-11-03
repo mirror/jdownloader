@@ -44,6 +44,9 @@ public class EroProfileCom extends PluginForHost {
         this.enablePremium();
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     @Override

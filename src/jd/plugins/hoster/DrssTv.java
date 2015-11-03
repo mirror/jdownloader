@@ -47,6 +47,9 @@ public class DrssTv extends PluginForHost {
         setConfigElements();
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     @Override
     public String getAGBLink() {
         return "http://www.drss.tv/index/agb/";
