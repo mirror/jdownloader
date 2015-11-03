@@ -44,13 +44,19 @@ public class TwitterCom extends PornEmbedParser {
     private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+.*?";
     private static final String TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
 
+    protected DownloadLink createDownloadlink(final String link, final String tweetid) {
+        final DownloadLink ret = super.createDownloadlink(link);
+        ret.setProperty("tweetid", tweetid);
+        return ret;
+    }
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
         final String urlfilename = getUrlFname(parameter);
         final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
-        String status_id = null;
+        String tweet_id = null;
 
         if (parameter.matches(TYPE_REDIRECT)) {
             this.br.setFollowRedirects(false);
@@ -65,7 +71,6 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-            finallink = new Regex(finallink, "(.*?)($|#)").getMatch(0);
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }
@@ -91,7 +96,7 @@ public class TwitterCom extends PornEmbedParser {
             return decryptedLinks;
         }
         if (parameter.matches(TYPE_CARD)) {
-            status_id = new Regex(parameter, "(\\d+)$").getMatch(0);
+            tweet_id = new Regex(parameter, "(\\d+)$").getMatch(0);
             /* First check for external urls */
             decryptedLinks.addAll(this.findEmbedUrls(null));
             String externID = this.br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
@@ -108,8 +113,8 @@ public class TwitterCom extends PornEmbedParser {
                     return null;
                 }
                 dllink = dllink.replace("\\", "");
-                final String filename = status_id + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
-                final DownloadLink dl = this.createDownloadlink(dllink);
+                final String filename = tweet_id + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
+                final DownloadLink dl = this.createDownloadlink(dllink, tweet_id);
                 dl.setProperty("decryptedfilename", filename);
                 dl.setName(filename);
                 dl.setAvailable(true);
@@ -134,92 +139,97 @@ public class TwitterCom extends PornEmbedParser {
                 if (reloadNumber > 1) {
                     maxid = br.getRegex("\"min_position\":\"(\\d+)").getMatch(0);
                 }
-                if (maxid == null) {
-                    logger.info("Either there is nothing to decrypt or the decrypter is broken: " + parameter);
-                    return decryptedLinks;
-                }
                 int addedlinks_all = 0;
-                final String[] embedurl_regexes = new String[] { "\"(https?://(?:www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://(?:www\\.)?vine\\.co/v/[A-Za-z0-9]+)\"" };
-                for (final String regex : embedurl_regexes) {
-                    final String[] embed_links = br.getRegex(regex).getColumn(0);
-                    if (embed_links != null) {
-                        for (final String single_embed_ink : embed_links) {
-                            final DownloadLink dl = createDownloadlink(single_embed_ink);
-                            fp.add(dl);
-                            distribute(dl);
-                            decryptedLinks.add(dl);
-                            addedlinks_all++;
-                        }
+                final String[] source_tweets = this.br.getRegex("li class=\"js-stream-item stream-item stream-item expanding-stream-item(.*?)ProfileTweet\\-actionCount").getColumn(0);
+                for (final String tweetsource : source_tweets) {
+                    tweet_id = new Regex(tweetsource, "id=\"stream\\-item\\-tweet\\-(\\d+)\"").getMatch(0);
+                    if (tweet_id == null) {
+                        return null;
                     }
-                }
-
-                final String[] directlink_regexes = new String[] { "data-url=(?:\\&quot;|\")(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)", "data-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"", "data-img-src=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
-                for (final String regex : directlink_regexes) {
-                    final String[] piclinks = br.getRegex(regex).getColumn(0);
-                    if (piclinks != null) {
-                        for (String singleLink : piclinks) {
-                            final String remove = new Regex(singleLink, "(:[a-z0-9]+)").getMatch(0);
-                            if (remove != null) {
-                                singleLink = singleLink.replace(remove, "");
+                    final String[] embedurl_regexes = new String[] { "\"(https?://(?:www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://(?:www\\.)?vine\\.co/v/[A-Za-z0-9]+)\"" };
+                    for (final String regex : embedurl_regexes) {
+                        final String[] embed_links = new Regex(tweetsource, regex).getColumn(0);
+                        if (embed_links != null) {
+                            for (final String single_embed_ink : embed_links) {
+                                final DownloadLink dl = createDownloadlink(single_embed_ink, tweet_id);
+                                fp.add(dl);
+                                distribute(dl);
+                                decryptedLinks.add(dl);
+                                addedlinks_all++;
                             }
-                            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(singleLink.trim()));
+                        }
+                    }
+
+                    final String[] directlink_regexes = new String[] { "data-url=(?:\\&quot;|\")(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)", "\"(https://amp\\.twimg\\.com/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap)\"", "data-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"", "data-img-src=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
+                    for (final String regex : directlink_regexes) {
+                        final String[] piclinks = new Regex(tweetsource, regex).getColumn(0);
+                        if (piclinks != null) {
+                            for (String singleLink : piclinks) {
+                                final String remove = new Regex(singleLink, "(:[a-z0-9]+)").getMatch(0);
+                                if (remove != null) {
+                                    singleLink = singleLink.replace(remove, "");
+                                }
+                                singleLink = Encoding.htmlDecode(singleLink.trim());
+                                final DownloadLink dl = createDownloadlink(singleLink, tweet_id);
+                                fp.add(dl);
+                                dl.setAvailable(true);
+                                distribute(dl);
+                                decryptedLinks.add(dl);
+                                addedlinks_all++;
+                            }
+                        }
+                    }
+                    final String[] stream_ids = br.getRegex("data\\-autoplay\\-src=\"/i/cards/tfw/v1/(\\d+)\\?cardname=__entity_video").getColumn(0);
+                    if (stream_ids != null) {
+                        for (String stream_id : stream_ids) {
+                            final DownloadLink dl = createDownloadlink(createVideourl(stream_id), tweet_id);
                             fp.add(dl);
-                            dl.setAvailable(true);
                             distribute(dl);
                             decryptedLinks.add(dl);
                             addedlinks_all++;
                         }
                     }
-                }
-                final String[] stream_ids = br.getRegex("data\\-autoplay\\-src=\"/i/cards/tfw/v1/(\\d+)\\?cardname=__entity_video").getColumn(0);
-                if (stream_ids != null) {
-                    for (String stream_id : stream_ids) {
-                        final DownloadLink dl = createDownloadlink(createVideourl(stream_id));
+                    final String[] vinfos = new Regex(tweetsource, "(video data-media-id=\"[0-9]+\".*?source video-src=\"[^\"]+\")").getColumn(0);
+                    for (String vinfo : vinfos) {
+                        logger.info("vinfo: " + vinfo);
+                        String vid = new Regex(vinfo, "video data-media-id=\"([0-9]+)\".*?source video-src=\"([^\"]+)\"").getMatch(0);
+                        String vsrc = new Regex(vinfo, "video data-media-id=\"([0-9]+)\".*?source video-src=\"([^\"]+)\"").getMatch(1);
+                        final DownloadLink dl = createDownloadlink(vsrc, tweet_id);
                         fp.add(dl);
+                        dl.setContentUrl(vsrc);
+                        dl.setLinkID(vid);
+                        dl.setName(vid + ".mp4");
+                        dl.setAvailable(true);
                         distribute(dl);
                         decryptedLinks.add(dl);
                         addedlinks_all++;
                     }
                 }
-                final String[] vinfos = br.getRegex("(video data-media-id=\"[0-9]+\".*?source video-src=\"[^\"]+\")").getColumn(0);
-                for (String vinfo : vinfos) {
-                    logger.info("vinfo: " + vinfo);
-                    String vid = new Regex(vinfo, "video data-media-id=\"([0-9]+)\".*?source video-src=\"([^\"]+)\"").getMatch(0);
-                    String vsrc = new Regex(vinfo, "video data-media-id=\"([0-9]+)\".*?source video-src=\"([^\"]+)\"").getMatch(1);
-                    final DownloadLink dl = createDownloadlink(vsrc);
-                    fp.add(dl);
-                    dl.setContentUrl(vsrc);
-                    dl.setLinkID(vid);
-                    dl.setName(vid + ".mp4");
-                    dl.setAvailable(true);
-                    distribute(dl);
-                    decryptedLinks.add(dl);
-                    addedlinks_all++;
-                }
-                if (addedlinks_all == 0) {
+                if (addedlinks_all == 0 || maxid == null) {
                     break;
                 }
-                br.getPage("https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_position=" + maxid);
+                br.getPage("https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_position=" + maxid + "&reset_error_state=false");
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 reloadNumber++;
             } while (br.containsHTML("\"has_more_items\":true"));
             System.out.println(reloadNumber);
         } else {
-            status_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
+            tweet_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
             if (br.containsHTML("data-autoplay-src=")) {
-                final DownloadLink dl = createDownloadlink(createVideourl(status_id));
+                final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
                 decryptedLinks.add(dl);
             } else {
                 final String[] regexes = { "property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"", "<source video\\-src=\"(https?://[^<>\"]*?)\"" };
                 for (final String regex : regexes) {
                     final String[] alllinks = br.getRegex(regex).getColumn(0);
                     if (alllinks != null && alllinks.length > 0) {
-                        for (final String alink : alllinks) {
+                        for (String alink : alllinks) {
                             final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/[^/]+/([A-Za-z0-9\\-_]+)\\.([a-z0-9]+)(?::large)?$");
                             final String servername = fin_al.getMatch(0);
                             final String ending = fin_al.getMatch(1);
-                            final String final_filename = status_id + "_" + servername + "." + ending;
-                            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(alink.trim()));
+                            final String final_filename = tweet_id + "_" + servername + "." + ending;
+                            alink = Encoding.htmlDecode(alink.trim());
+                            final DownloadLink dl = createDownloadlink(alink, tweet_id);
                             dl.setAvailable(true);
                             dl.setProperty("decryptedfilename", final_filename);
                             dl.setName(final_filename);
