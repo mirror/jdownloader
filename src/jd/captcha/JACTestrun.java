@@ -28,6 +28,7 @@ import org.appwork.utils.Application;
 public class JACTestrun {
 
     public static void main(String args[]) throws InterruptedException {
+
         Application.setApplication(".jd_home");
         JACTestrun main = new JACTestrun();
         main.go();
