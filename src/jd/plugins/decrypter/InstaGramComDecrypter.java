@@ -42,7 +42,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString() + "/";
+        final String parameter = param.toString();
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("instagram.com");
         boolean logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
@@ -54,7 +54,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
-
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("user\\?username=.+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
