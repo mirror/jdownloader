@@ -47,11 +47,13 @@ public class ZaycevNet extends PluginForHost {
     private static final String CAPTCHATEXT = "/captcha/";
     private String              finallink   = null;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.101 Safari/537.36");
+        this.br.setAllowedResponseCodes(410);
         br.setFollowRedirects(false);
         if (link.getDownloadURL().matches(".+dl\\.zaycev\\.net/.+")) {
             finallink = link.getDownloadURL();
@@ -59,7 +61,8 @@ public class ZaycevNet extends PluginForHost {
         }
         br.setCookie(this.getHost(), "mm_cookie", "1");
         br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null || br.containsHTML("http\\-equiv=\"Refresh\"|>Данная композиция заблокирована, приносим извинения")) {
+        final int responsecode = this.br.getHttpConnection().getResponseCode();
+        if (br.getRedirectLocation() != null || br.containsHTML("http\\-equiv=\"Refresh\"|>Данная композиция заблокирована, приносим извинения") || responsecode == 404 || responsecode == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<span itemprop=\"name\">(.*?)\\s*<link").getMatch(0);

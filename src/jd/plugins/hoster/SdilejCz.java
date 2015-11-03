@@ -314,7 +314,7 @@ public class SdilejCz extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCustomCharset("utf-8");
-        br.setLoadLimit(br.getLoadLimit() * 3);
+        br.setLoadLimit(br.getLoadLimit() * 5);
         return br;
     }
 
