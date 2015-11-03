@@ -54,6 +54,7 @@ public class TwitterCom extends PluginForHost {
 
     private static final String  TYPE_DIRECT               = "https?://[a-z0-9]+\\.twimg\\.com/.+";
     private static final String  TYPE_VIDEO                = "https?://amp\\.twimg\\.com/v/.+";
+    private static final String  TYPE_VIDEO_VMAP           = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
 
     /* Connection stuff - don't allow chunks as we only download small pictures */
     private static final boolean FREE_RESUME               = true;
@@ -67,32 +68,44 @@ public class TwitterCom extends PluginForHost {
     private static AtomicInteger maxPrem                   = new AtomicInteger(1);
 
     private String               dllink                    = null;
+    private String               tweetid                   = null;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
+        tweetid = link.getStringProperty("tweetid", null);
         URLConnectionAdapter con = null;
         this.setBrowserExclusive();
         /* Most times twitter-image/videolinks will come from the decrypter. */
         String filename = link.getStringProperty("decryptedfilename", null);
-        if (link.getDownloadURL().matches(TYPE_VIDEO)) {
+        if (link.getDownloadURL().matches(TYPE_VIDEO) || link.getDownloadURL().matches(TYPE_VIDEO_VMAP)) {
             this.br.getPage(link.getDownloadURL());
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dllink = this.br.getRegex("name=\"twitter:amplify:teaser_segments_stream\" content=\"(https?://[^<>\"]*?\\.mp4)\"").getMatch(0);
-            if (dllink == null) {
-                final String vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
-                if (vmap_url == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String vmap_url = null;
+            if (link.getDownloadURL().matches(TYPE_VIDEO_VMAP)) {
+                /* Direct vmap url was added by user- or decrypter. */
+                vmap_url = link.getDownloadURL();
+            } else {
+                /* Videolink was added by user or decrypter. */
+                dllink = this.br.getRegex("name=\"twitter:amplify:teaser_segments_stream\" content=\"(https?://[^<>\"]*?\\.mp4)\"").getMatch(0);
+                if (dllink == null) {
+                    vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
+                    if (vmap_url == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
+            }
+            if (this.dllink == null) {
                 this.br.getPage(vmap_url);
                 dllink = this.br.getRegex("<MediaFile>[\t\n\r ]+<\\!\\[CDATA\\[(http[^<>\"]*?)\\]\\]>[\t\n\r ]+</MediaFile>").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
+
         } else {
             dllink = link.getDownloadURL();
         }
@@ -115,6 +128,9 @@ public class TwitterCom extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 if (filename == null) {
                     filename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                }
+                if (tweetid != null) {
+                    filename = tweetid + "_" + filename;
                 }
                 link.setFinalFileName(filename);
                 link.setDownloadSize(filesize);
