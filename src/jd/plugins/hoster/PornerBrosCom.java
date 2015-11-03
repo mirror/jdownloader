@@ -33,6 +33,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "http://(www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+" }, flags = { 0 })
 public class PornerBrosCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public PornerBrosCom(PluginWrapper wrapper) {

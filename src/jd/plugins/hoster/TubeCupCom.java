@@ -38,6 +38,8 @@ public class TubeCupCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     // Porn_get_file_/videos/_basic Version 0.X
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension = ".mp4";

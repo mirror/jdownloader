@@ -32,6 +32,8 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "voyeurhit.com" }, urls = { "http://(www\\.)?voyeurhit\\.com/videos/[^/]+" }, flags = { 0 })
 public class VoyeurHitCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     // Porn_get_file_/videos/_basic Version 0.X
     private String dllink = null;
 

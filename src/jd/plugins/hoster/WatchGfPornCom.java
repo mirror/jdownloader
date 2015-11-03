@@ -32,6 +32,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchgfporn.com" }, urls = { "http://(www\\.)?watchgfporn\\.com/videos/.*?\\-\\d+\\.html" }, flags = { 0 })
 public class WatchGfPornCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 

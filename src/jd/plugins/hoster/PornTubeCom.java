@@ -33,6 +33,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porntube.com" }, urls = { "http://(www\\.)?(porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)" }, flags = { 0 })
 public class PornTubeCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public PornTubeCom(PluginWrapper wrapper) {

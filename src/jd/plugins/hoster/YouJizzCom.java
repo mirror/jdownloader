@@ -36,6 +36,9 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "http://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" }, flags = { 2 })
 public class YouJizzCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public YouJizzCom(PluginWrapper wrapper) {

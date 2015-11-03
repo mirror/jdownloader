@@ -38,6 +38,9 @@ public class MovieSandCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String              DLLINK      = null;
     private static final String TYPE_NORMAL = "http://(www\\.)?moviesand\\.com/videos/\\d+/[a-z0-9\\-_]+\\.html";
     private static final String TYPE_EMBED  = "http://(www\\.)?moviesand\\.com/embedded/\\d+";

@@ -51,6 +51,9 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.com/(?!(cat|latest)/)[^/]+/[^/]+/([^/]+/)?[0-9]+" }, flags = { 2 })
 public class Tube8Com extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private boolean              setEx                           = true;
     private String               dllink                          = null;
     private static final String  mobile                          = "mobile";

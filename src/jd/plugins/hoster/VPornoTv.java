@@ -32,6 +32,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporno.tv" }, urls = { "http://(www\\.)?vporno\\.tv/\\d+/.{1}" }, flags = { 0 })
 public class VPornoTv extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public VPornoTv(PluginWrapper wrapper) {
@@ -67,11 +70,17 @@ public class VPornoTv extends PluginForHost {
         String fileID = new Regex(downloadLink.getDownloadURL(), "vporno\\.tv/(\\d+)").getMatch(0);
         br.getPage(downloadLink.getDownloadURL());
         br.getPage("http://api.vporno.tv/playerConfig/?id=" + fileID);
-        if (br.containsHTML("<file>no authorised\\!</file>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<file>no authorised\\!</file>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("title>(.*?)</title>").getMatch(0);
         DLLINK = br.getRegex("<file>(http://.*?\\.flv)</file>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("(http://v\\d+\\.vmedia\\.tv/videos/[a-z0-9]+/[a-z0-9]+/vporno/\\d+\\.flv)").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(http://v\\d+\\.vmedia\\.tv/videos/[a-z0-9]+/[a-z0-9]+/vporno/\\d+\\.flv)").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
         Browser br2 = br.cloneBrowser();
@@ -80,10 +89,11 @@ public class VPornoTv extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

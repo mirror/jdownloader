@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "http://(www\\.)?tube\\.rampant\\.tv/videos/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:www\\.)?tube\\.rampant\\.tv/videos/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class TubeRampantTv extends PluginForHost {
 
     public TubeRampantTv(PluginWrapper wrapper) {

@@ -33,6 +33,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "http://(www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" }, flags = { 0 })
 public class SunPornoCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String DLLINK = null;
 
     public SunPornoCom(PluginWrapper wrapper) {
@@ -58,13 +61,23 @@ public class SunPornoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("sunporno.com/404.php") || br.containsHTML("(>The file you have requested was not found on this server|<title>404</title>|This video has been deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("sunporno.com/404.php") || br.containsHTML("(>The file you have requested was not found on this server|<title>404</title>|This video has been deleted)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"block-headline-right\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
         DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?)\\'\\)").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/v/[a-z0-9]+/.*?)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://vstreamcdn\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/v/[a-z0-9]+/.*?)\\'").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://vstreamcdn\\.com/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
@@ -74,10 +87,11 @@ public class SunPornoCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

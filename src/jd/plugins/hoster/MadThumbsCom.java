@@ -34,6 +34,9 @@ import jd.utils.JDHexUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madthumbs.com" }, urls = { "http://(www\\.)?madthumbs\\.com/videos/[\\w-]+/[\\w-]+/\\d+" }, flags = { 0 })
 public class MadThumbsCom extends PluginForHost {
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     private String       DLLINK = null;
     private final String KEY    = "ZGJmOGE5ZWZlMDkxMzBlMDJkODYyOGQ1MDE5ZGI4ODI=";
 
@@ -68,12 +71,16 @@ public class MadThumbsCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://www.madthumbs.com/", "language", "en");
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("mt_main\\.player_page\\.init")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!br.containsHTML("mt_main\\.player_page\\.init")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("title: \"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- MadThumbs\\&trade;</title>").getMatch(0);
         }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String[] param = null;
         try {
             param = br.getRegex("flowplayer\\((.*?)\\)\\;").getMatch(0).replaceAll("\n|\\s|'", "").split(",");
@@ -82,14 +89,18 @@ public class MadThumbsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        if (param == null || param.length == 0 || param.length < 4 || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (param == null || param.length == 0 || param.length < 4 || filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Generate hashvalue
         String hash = null;
         try {
             hash = JDCrypt.decrypt(JDHexUtils.getByteArray(param[3]), JDHexUtils.getByteArray(Encoding.Base64Decode(KEY)), JDHexUtils.getByteArray(param[2]));
         } catch (final Throwable e) {
         }
-        if (hash == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (hash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(param[1]) + "&hash=" + hash.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         final Browser br2 = br.cloneBrowser();
