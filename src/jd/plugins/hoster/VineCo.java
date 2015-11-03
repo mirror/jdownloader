@@ -48,8 +48,10 @@ public class VineCo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br.setAllowedResponseCodes(410);
         br.getPage(downloadLink.getDownloadURL().replace("http://", "https://"));
-        if (br.containsHTML(">Page not found")) {
+        final int responsecode = this.br.getHttpConnection().getResponseCode();
+        if (br.containsHTML(">Page not found") || responsecode == 404 || responsecode == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);

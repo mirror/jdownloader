@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -65,53 +64,49 @@ public class MinUs extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* First check if we got a direct url ... */
         dllink = null;
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         setBrowserExclusive();
-        if (link.getDownloadURL().matches(TYPE_DIRECT)) {
-            dllink = link.getDownloadURL();
-            URLConnectionAdapter con = null;
+        URLConnectionAdapter con = null;
+        try {
+            con = this.br.openGetConnection(link.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(getFileNameFromHeader(con));
+                dllink = link.getDownloadURL();
+                return AvailableStatus.TRUE;
+            } else {
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                br.followConnection();
+            }
+        } finally {
             try {
-                try {
-                    con = this.br.openHeadConnection(dllink);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setFinalFileName(getFileNameFromHeader(con));
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+                con.disconnect();
+            } catch (final Throwable e) {
             }
-        } else {
-            br.setFollowRedirects(false);
-            br.getPage(link.getDownloadURL());
-            // Decrypter marks it as offline
-            if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)") || br.containsHTML("\"items\": \\[\\]") || br.containsHTML("class=\"guesthomepage_cisi_h1\">Upload and share your files instantly") || br.containsHTML(">The folder you requested has been deleted or has expired") || br.containsHTML(">You're invited to join Minus") || this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.getRedirectLocation() != null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String filename = br.getRegex("'name': '([^<>\"]*?)'").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?) - Minus\"").getMatch(0);
-            }
-            final String filesize = br.getRegex("<div class=\"item-actions-right\">[\t\n\r ]+<a title=\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
+        // Decrypter marks it as offline
+        if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)") || br.containsHTML("\"items\": \\[\\]") || br.containsHTML("class=\"guesthomepage_cisi_h1\">Upload and share your files instantly") || br.containsHTML(">The folder you requested has been deleted or has expired") || br.containsHTML(">You're invited to join Minus")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getRedirectLocation() != null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("'name': '([^<>\"]*?)'").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?) - Minus\"").getMatch(0);
+        }
+        final String filesize = br.getRegex("<div class=\"item-actions-right\">[\t\n\r ]+<a title=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

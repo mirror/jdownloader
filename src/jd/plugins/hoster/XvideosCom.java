@@ -84,9 +84,11 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        parameter.setName(new Regex(parameter.getDownloadURL(), "xvideos\\.com/(.+)").getMatch(0));
         br.setFollowRedirects(false);
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getPage(parameter.getDownloadURL());
@@ -104,7 +106,7 @@ public class XvideosCom extends PluginForHost {
             parameter.setUrlDownload(br.getRedirectLocation());
             br.getPage(parameter.getDownloadURL());
         }
-        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted)")) {
+        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
