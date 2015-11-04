@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -54,36 +55,31 @@ public class RggwrldcrwNet extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(link));
             }
         }
-        // try {
-        /*
-         * No reason to press thank you buttons. all links are in the keywords If this does not work any more some day, the workaround below
-         * clicks the thanks button and parses links from the single posts.
-         */
-        // String[] posts =
-        // br.getRegex("<li[^>]+class=\"[^\"]*postcontainer[^\"]*\"[^>]*>(.*?<div[^>]+class=\"postfoot\"[^>]*>.*?)</li>").getColumn(0);
-        // boolean saidThanks = false;
-        // for (String post : posts) {
-        //
-        // if (post.contains("/images/misc/locked-htnx.gif")) {
-        // // need top say thanks
-        // String pid = new Regex(post, "\"post(\\d+)\"").getMatch(0);
-        // saidThanks = true;
-        //
-        // br.getPage("showthread.php?thanks_mode=add&postid=" + pid);
-        //
-        // }
-        // }
-        // if (saidThanks) {
-        // br.getPage(parameter);
-        // }
-        // String[] redirects = br.getRegex("redirector.php\\?url=([^\"]+)").getColumn(0);
-        // for (String s : redirects) {
-        // decryptedLinks.add(createDownloadlink(Encoding.urlDecode(Encoding.htmlDecode(s), true)));
-        // }
+        try {
+            String[] posts = br.getRegex("<li[^>]+class=\"[^\"]*postcontainer[^\"]*\"[^>]*>(.*?<div[^>]+class=\"postfoot\"[^>]*>.*?)</li>").getColumn(0);
+            boolean saidThanks = false;
+            for (String post : posts) {
 
-        // } catch (Throwable e) {
-        // e.printStackTrace();
-        // }
+                if (post.contains("/images/misc/locked-htnx.gif")) {
+                    // need top say thanks
+                    String pid = new Regex(post, "\"post(\\d+)\"").getMatch(0);
+                    saidThanks = true;
+
+                    br.getPage("showthread.php?thanks_mode=add&postid=" + pid);
+
+                }
+            }
+            if (saidThanks) {
+                br.getPage(parameter);
+            }
+            String[] redirects = br.getRegex("redirector.php\\?url=([^\"]+)").getColumn(0);
+            for (String s : redirects) {
+                decryptedLinks.add(createDownloadlink(Encoding.urlDecode(Encoding.htmlDecode(s), true)));
+            }
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(decryptedLinks);
