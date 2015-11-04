@@ -600,4 +600,12 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isMyJDownloaderCaptchaSolverEnabled();
 
     void setMyJDownloaderCaptchaSolverEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("Enable shared memory state info.")
+    boolean isSharedMemoryEnabled();
+
+    void setSharedMemoryEnabled(boolean b);
 }

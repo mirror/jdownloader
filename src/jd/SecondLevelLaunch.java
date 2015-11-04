@@ -54,6 +54,7 @@ import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
@@ -1000,6 +1001,16 @@ public class SecondLevelLaunch {
                                     }
                                 }
                             });
+
+                            /* Start shared memory state update */
+                            if (JsonConfig.create(GeneralSettings.class).isSharedMemoryEnabled()) {
+                                SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        SharedMemoryState.getInstance().startUpdates();
+                                    }
+                                });
+                            }
 
                         } catch (Throwable e) {
                             SecondLevelLaunch.LOG.log(e);
