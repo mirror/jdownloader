@@ -44,7 +44,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" }, flags = { 2 })
 public class MinhatecaComBr extends PluginForHost {
 
     public MinhatecaComBr(PluginWrapper wrapper) {
@@ -119,7 +119,7 @@ public class MinhatecaComBr extends PluginForHost {
             }
             if (dllink == null) {
                 if (br.containsHTML("payment_window")) {
-                    /* User needs to use an account & buy traffic to download this file */
+                    /* User needs to use an account and/or buy traffic for his existing account to download this file. */
                     try {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                     } catch (final Throwable e) {
@@ -191,7 +191,6 @@ public class MinhatecaComBr extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
                 br.getPage(MAINPAGE + "/");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 String req_token = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -225,6 +224,7 @@ public class MinhatecaComBr extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -237,26 +237,20 @@ public class MinhatecaComBr extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
+        this.br.getPage("/action/payments");
         /* Only premium accounts are supported so far */
-        if (account.getBooleanProperty("free", false)) {
+        /* Browser contains message like "If you want to download files bigger than X MB buy premium" --> We have a free account */
+        if (this.br.containsHTML("você vai precisar de créditos de download")) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium User");
         }
         account.setValid(true);
@@ -267,9 +261,12 @@ public class MinhatecaComBr extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
         br.getPage(link.getStringProperty("mainlink", null));
-        if (account.getBooleanProperty("free", false)) {
+        if (this.br.getURL().contains("/action/Tutorial")) {
+            /* No traffic left and/or user tries to download oversized file via free account! */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\t\nNo traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             doFree(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_premium_directlink");
