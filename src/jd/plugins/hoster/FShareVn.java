@@ -176,7 +176,7 @@ public class FShareVn extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void doFree(final DownloadLink downloadLink, final Account acc) throws Exception {
         if (dllink != null) {
             // these are effectively premium links?
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -188,69 +188,79 @@ public class FShareVn extends PluginForHost {
                 dllink = null;
             }
         }
-        simulateBrowser();
+        final String directlinkproperty;
+        if (acc != null) {
+            directlinkproperty = "account_free_directlink";
+        } else {
+            directlinkproperty = "directlink";
+        }
+        dllink = this.checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            if (br.containsHTML(IPBLOCKED)) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
-            }
-            // we want fs_csrf token
-            final String csrf = br.getRegex("fs_csrf\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
-            final Browser ajax = br.cloneBrowser();
-            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            ajax.postPage("/download/get", "fs_csrf=" + csrf + "&DownloadForm%5Bpwd%5D=&ajax=download-form&undefined=");
-            if (StringUtils.containsIgnoreCase(getJson(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(getJson(ajax, "msg"), "please try again later")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            }
-            dllink = getJson(ajax, "url");
-            if (dllink != null && br.containsHTML(IPBLOCKED) || ajax.containsHTML(IPBLOCKED)) {
-                final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
-                logger.info("Next download: " + nextDl);
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
-            }
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.parse();
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                rc.setCode(c);
-                if (br.containsHTML("frm_download")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-            }
+            simulateBrowser();
             if (dllink == null) {
-                dllink = br.getRegex("window\\.location='(.*?)'").getMatch(0);
+                if (br.containsHTML(IPBLOCKED)) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+                }
+                // we want fs_csrf token
+                final String csrf = br.getRegex("fs_csrf\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
+                final Browser ajax = br.cloneBrowser();
+                ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                final String postdata = "fs_csrf=" + csrf + "&DownloadForm%5Bpwd%5D=&DownloadForm%5Blinkcode%5D=" + getUID(downloadLink) + "&ajax=download-form&undefined=undefined";
+                ajax.postPage("/download/get", postdata);
+                if (StringUtils.containsIgnoreCase(getJson(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(getJson(ajax, "msg"), "please try again later")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                }
+                dllink = getJson(ajax, "url");
+                if (dllink != null && br.containsHTML(IPBLOCKED) || ajax.containsHTML(IPBLOCKED)) {
+                    final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
+                    logger.info("Next download: " + nextDl);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+                }
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.parse();
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    rc.setCode(c);
+                    if (br.containsHTML("frm_download")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                }
                 if (dllink == null) {
-                    dllink = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location='(http://.*?)'\"").getMatch(0);
+                    dllink = br.getRegex("window\\.location='(.*?)'").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("<form action=\"(http://download[^\\.]+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
+                        dllink = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location='(http://.*?)'\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br.getRegex("<form action=\"(http://download[^\\.]+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
+                        }
                     }
                 }
-            }
-            logger.info("downloadURL = " + dllink);
-            // Waittime
-            String wait = getJson(ajax, "wait_time");
-            if (wait == null) {
-                br.getRegex("var count = \"(\\d+)\";").getMatch(0);
+                logger.info("downloadURL = " + dllink);
+                // Waittime
+                String wait = getJson(ajax, "wait_time");
                 if (wait == null) {
-                    wait = br.getRegex("var count = (\\d+);").getMatch(0);
+                    br.getRegex("var count = \"(\\d+)\";").getMatch(0);
                     if (wait == null) {
-                        wait = "35";
-                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        wait = br.getRegex("var count = (\\d+);").getMatch(0);
+                        if (wait == null) {
+                            wait = "35";
+                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 }
+                // No downloadlink shown, host is buggy
+                if (dllink == null && "0".equals(wait)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                }
+                if (wait == null || dllink == null || !dllink.contains("fshare.vn")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                sleep(Long.parseLong(wait) * 1001l, downloadLink);
             }
-            // No downloadlink shown, host is buggy
-            if (dllink == null && "0".equals(wait)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            }
-            if (wait == null || dllink == null || !dllink.contains("fshare.vn")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            sleep(Long.parseLong(wait) * 1001l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -260,6 +270,7 @@ public class FShareVn extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -293,12 +304,12 @@ public class FShareVn extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         // this should set English here...
         requestFileInformation(link);
         if (account.getType() == AccountType.FREE) {
@@ -308,46 +319,50 @@ public class FShareVn extends PluginForHost {
                 br.getPage(link.getDownloadURL());
                 dllink = br.getRedirectLocation();
             }
-            doFree(link);
+            doFree(link, account);
         } else {
+            final String directlinkproperty = "directlink_account";
             // English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login.
             login(account, true);
-            // we get page again, because we do not take directlink from requestfileinfo.
-            br.getPage(link.getDownloadURL());
-            dllink = br.getRedirectLocation();
-            final String uid = getUID(link);
-            if (dllink != null && dllink.endsWith("/file/" + uid)) {
-                br.getPage(dllink);
-                if (br.containsHTML("Your account is being used from another device")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Account is being used in another device");
-                }
-                dllink = br.getRedirectLocation();
-            }
+            dllink = this.checkDirectLink(link, directlinkproperty);
             if (dllink == null) {
-                if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // we get page again, because we do not take directlink from requestfileinfo.
+                br.getPage(link.getDownloadURL());
+                dllink = br.getRedirectLocation();
+                final String uid = getUID(link);
+                if (dllink != null && dllink.endsWith("/file/" + uid)) {
+                    br.getPage(dllink);
+                    if (br.containsHTML("Your account is being used from another device")) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Account is being used in another device");
+                    }
+                    dllink = br.getRedirectLocation();
                 }
-                dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    final String page = getDllink();
-                    dllink = getJson(page, "url");
+                    if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
-                        final String msg = getJson(page, "msg");
-                        if (StringUtils.containsIgnoreCase(msg, "try again")) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
+                        final String page = getDllink();
+                        dllink = getJson(page, "url");
+                        if (dllink == null) {
+                            final String msg = getJson(page, "msg");
+                            if (StringUtils.containsIgnoreCase(msg, "try again")) {
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
+                            }
+                        } else {
+                            dllink = dllink.replace("\\", "");
                         }
-                    } else {
-                        dllink = dllink.replace("\\", "");
+                    }
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (StringUtils.containsIgnoreCase(dllink, "Server error") && StringUtils.containsIgnoreCase(dllink, "please try again later")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                } else if (dllink.contains("logout")) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
                 }
-            }
-            if (StringUtils.containsIgnoreCase(dllink, "Server error") && StringUtils.containsIgnoreCase(dllink, "please try again later")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            } else if (dllink.contains("logout")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -658,6 +673,30 @@ public class FShareVn extends PluginForHost {
             Thread.sleep(1000);
         }
 
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
 }

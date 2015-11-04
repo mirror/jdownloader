@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "primejailbait.com" }, urls = { "https?://(?:www\\.)?primejailbait\\.com/(id/\\d+|profile/[A-Za-z0-9\\-_]+(?:/fav/\\d+)?)/?$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "primejailbait.com" }, urls = { "https?://(?:www\\.)?primejailbait\\.com/(id/\\d+|profile/[A-Za-z0-9\\-_]+(?:/fav/\\d+)?|setview/\\d+)/?$" }, flags = { 0 })
 public class PrimeJailBaitCom extends PluginForDecrypt {
 
     public PrimeJailBaitCom(PluginWrapper wrapper) {
@@ -39,6 +39,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
     }
 
     private final String TYPE_SINGLE       = "^https?://(?:www\\.)?primejailbait\\.com/id/\\d+/?$";
+    private final String TYPE_SETVIEW      = "^https?://(?:www\\.)?primejailbait\\.com/setview/\\d+/?$";
     private final String TYPE_PROFILE_FAVS = "^https?://(?:www\\.)?primejailbait\\.com/profile/([A-Za-z0-9\\-_]+)/fav/(\\d+)/?$";
     private final String TYPE_PROFILE_ALL  = "^https?://(?:www\\.)?primejailbait\\.com/profile/([A-Za-z0-9\\-_]+)/?$";
 
@@ -52,7 +53,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (parameter.matches(TYPE_PROFILE_FAVS) || parameter.matches(TYPE_PROFILE_ALL)) {
+        if (parameter.matches(TYPE_PROFILE_FAVS) || parameter.matches(TYPE_PROFILE_ALL) || parameter.matches(TYPE_SETVIEW)) {
             String getpage = null;
 
             // String next = null;
@@ -71,7 +72,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                     final String username = urlinfo.getMatch(0);
                     final String lid = urlinfo.getMatch(1);
                     getpage = "/profile_inf.php?user=" + username + "&list=" + lid + "&page=";
-                } else {
+                } else if (parameter.matches(TYPE_PROFILE_ALL)) {
                     final String username = new Regex(parameter, TYPE_PROFILE_ALL).getMatch(0);
                     final String lastseen_id = br.getRegex("class=\\'thumb\\' id=\\'(\\d+)\\'").getMatch(0);
                     if (lastseen_id == null) {
@@ -80,21 +81,23 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                     }
                     /* If lastseen_id is not from the last page --> We will always get the same results! */
                     getpage = "/profile_inf.php?user=" + username + "&t=uploads&lastseen=" + lastseen_id + "&page=";
+                } else {
+                    /* To be defined - maybe needed for future linktypes */
                 }
                 if (currentPage > 1) {
                     br.getPage(getpage + currentPage);
                 }
                 thumbinfo = br.getRegex("<div class=\\'thumb\\' (id=\\'\\d+\\'>.*?)<span>By:").getColumn(0);
                 if (thumbinfo == null || thumbinfo.length == 0) {
+                    /* E.g. needed for TYPE_SETVIEW */
+                    thumbinfo = br.getRegex("(<a[^>]+href=\"/id/\\d+/?\" id=\"thumb_\\d+\".*?)style=\"").getColumn(0);
+                }
+                if (thumbinfo == null || thumbinfo.length == 0) {
                     return null;
                 }
                 for (final String thumb : thumbinfo) {
-                    final String ID = new Regex(thumb, "/id/(\\d+)").getMatch(0);
-                    String thumb_url = new Regex(thumb, "(https?://[a-z0-9\\-\\.]+/pics/bigthumbs/[^<>\"]*?)\\'").getMatch(0);
-                    if (thumb_url == null && decryptedLinks.size() > 1) {
-                        logger.info("Probably reached end of the page");
-                        break;
-                    }
+                    final String id = new Regex(thumb, "/id/(\\d+)").getMatch(0);
+                    String thumb_url = new Regex(thumb, "(https?://[a-z0-9\\-\\.]+/pics/(?:bigthumbs|original)/[^<>\"\\']+)").getMatch(0);
                     if (thumb_url == null) {
                         return null;
                     }
@@ -102,19 +105,24 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                     thumb_url = thumb_url.replace("/bigthumbs/", "/original/");
                     final DownloadLink dl = createDownloadlink("directhttp://" + thumb_url);
                     dl.setAvailable(true);
-                    if (ID != null) {
-                        dl.setContentUrl("https://www.primejailbait.com/id/" + ID);
+                    if (id != null) {
+                        dl.setContentUrl("https://www.primejailbait.com/id/" + id);
                         String ext = Files.getExtension(thumb_url);
                         if (!StringUtils.contains(ext, "png") && !StringUtils.contains(ext, "gif") && !StringUtils.contains(ext, "jpg")) {
                             ext = "jpg";
                         }
-                        dl.setFinalFileName(ID + "." + ext);
+                        dl.setFinalFileName(id + "." + ext);
                     }
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }
                 currentPage++;
-            } while (true);
+            } while (getpage != null);
+
+            if (decryptedLinks.size() == 0) {
+                return null;
+            }
+
         } else {
             final String ID = new Regex(parameter, "/id/(\\d+)").getMatch(0);
             String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img border=0 src=\\'(https?://[^<>\"]*?)\\'").getMatch(0);

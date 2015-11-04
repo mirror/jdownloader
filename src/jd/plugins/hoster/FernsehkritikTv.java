@@ -153,7 +153,7 @@ public class FernsehkritikTv extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             /* Prefer download, highest quality (usually not available for free users) */
-            DLLINK = br.getRegex("\"(/dl/[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("\"(/dl/[^<>\"]*?\\.mp4[^<>\"/]*?)\"").getMatch(0);
             if (DLLINK != null) {
                 filesize_string = this.br.getRegex(DLLINK + ".*?class=\"label\">~(\\d+(?:\\.\\d+)? (?:MB|GB))<").getMatch(0);
                 DLLINK = "http://massengeschmack.tv" + DLLINK;
@@ -169,7 +169,7 @@ public class FernsehkritikTv extends PluginForHost {
             String channel = br.getRegex("<li><a href=\"/u/\\d+\">([^<>\"]*?)</a> <span class=\"divider\"").getMatch(0);
             String episodename = br.getRegex("<li class=\"active\">([^<>]*?)<").getMatch(0);
             /* Get date without time */
-            final String date = br.getRegex("<p class=\"muted\">([^<>\"]*?) / (\\d{2}:\\d{2}:\\d{2}|[A-Za-z0-9\\-_ ]+)</p>").getMatch(0);
+            final String date = br.getRegex("<p class=\"muted\">([^<>\"]*?) /[^<]+</p>").getMatch(0);
             if (channel == null || episodename == null || date == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -348,13 +348,11 @@ public class FernsehkritikTv extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
-        // if (link.getDownloadURL().matches("http://fernsehkritik\\.tv/folge-.*")) {
-        // /* TODO */
-        // String folge = new Regex(link.getDownloadURL(), "http://fernsehkritik\\.tv/folge-(.*?)").getMatch(0);
-        // link.setUrlDownload("http://couch.fernsehkritik.tv/fernsehkritik" + folge + ".mp4");
-        // br.setFollowRedirects(true);
-        // dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 1);
-        // }
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

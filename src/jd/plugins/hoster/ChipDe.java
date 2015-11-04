@@ -195,7 +195,7 @@ public class ChipDe extends PluginForHost {
                 DLLINK = br.getRegex("If not, please click <a href=\"(http[^<>\"]*?)\"").getMatch(0);
             } else {
                 /* chip.de */
-                String step1 = br.getRegex("\"http://x\\.chip\\.de/intern/dl/\\?url=(http[^<>\"]*?)\"").getMatch(0);
+                String step1 = br.getRegex("\"https?://x\\.chip\\.de/intern/dl/\\?url=(http[^<>\"]*?)\"").getMatch(0);
                 if (step1 == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -203,6 +203,7 @@ public class ChipDe extends PluginForHost {
                 br.getPage(step1);
                 String step2 = br.getRegex("\"(https?://(www\\.)?chip\\.de/downloads/c1_downloads_hs_getfile[^<>\"]*?)\"").getMatch(0);
                 if (step2 != null) {
+                    step2 = Encoding.htmlDecode(step2);
                     br.getPage(step2);
                 }
                 DLLINK = getDllink();
@@ -224,12 +225,15 @@ public class ChipDe extends PluginForHost {
         String dllink = br.getRegex("Falls der Download nicht beginnt,\\&nbsp;<a class=\"b\" href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("</span></a></div><a href=\"(http.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("\"(http://dl\\.cdn\\.chip\\.de/downloads/\\d+/.*?)\"").getMatch(0);
-                }
-            }
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("</span></a></div><a href=\"(http.*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("var adtech_dl_url = \\'(https?://[^<>\"]*?)\\';").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("(?:\"|\\')(https?://dl\\.cdn\\.chip\\.de/downloads/\\d+/.*?)(?:\"|\\')").getMatch(0);
         }
         return dllink;
     }

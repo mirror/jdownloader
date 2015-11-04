@@ -34,6 +34,8 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -103,12 +105,32 @@ public class PremiumizeMe extends UseNet {
         return new PremiumizeMeAccountFactory();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else {
-            return AvailableStatus.UNCHECKABLE;
+            /* We can check premium generated directlinks even without account! */
+            URLConnectionAdapter con = null;
+            try {
+                try {
+                    con = br.openHeadConnection(link.getDownloadURL());
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+            return AvailableStatus.TRUE;
         }
     }
 
@@ -465,13 +487,13 @@ public class PremiumizeMe extends UseNet {
                 }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
                 break;
-                /* DB cnnection problem */
-                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-                // /* Retried enough times --> Temporarily disable account! */
-                // globalDB.compareAndSet(5, 0);
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                // }
-                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+            /* DB cnnection problem */
+            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+            // /* Retried enough times --> Temporarily disable account! */
+            // globalDB.compareAndSet(5, 0);
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            // }
+            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");

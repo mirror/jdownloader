@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+" }, flags = { 2 })
 public class TwitterCom extends PluginForHost {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -90,12 +90,9 @@ public class TwitterCom extends PluginForHost {
                 vmap_url = link.getDownloadURL();
             } else {
                 /* Videolink was added by user or decrypter. */
-                dllink = this.br.getRegex("name=\"twitter:amplify:teaser_segments_stream\" content=\"(https?://[^<>\"]*?\\.mp4)\"").getMatch(0);
-                if (dllink == null) {
-                    vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
-                    if (vmap_url == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
+                if (vmap_url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             if (this.dllink == null) {
@@ -111,12 +108,7 @@ public class TwitterCom extends PluginForHost {
         }
         try {
             try {
-                if (isJDStable()) {
-                    con = br.openGetConnection(dllink);
-                } else {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(dllink);
-                }
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -159,10 +151,6 @@ public class TwitterCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
@@ -244,13 +232,9 @@ public class TwitterCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-        try {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setConcurrentUsePossible(true);
         ai.setStatus("Registered (free) user");
         account.setValid(true);
         return ai;

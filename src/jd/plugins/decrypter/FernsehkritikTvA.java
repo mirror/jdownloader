@@ -51,6 +51,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
     private PluginForHost       HOSTPLUGIN         = null;
     private String              DATE               = null;
     private String              EPISODENUMBER      = null;
+    private short               episodenumber_short;
 
     public FernsehkritikTvA(final PluginWrapper wrapper) {
         super(wrapper);
@@ -66,6 +67,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         FilePackage fp;
         final String parameter = param.toString();
         EPISODENUMBER = new Regex(parameter, "folge\\-(\\d+)").getMatch(0);
+        episodenumber_short = Short.parseShort(EPISODENUMBER);
         if (CFG.getBooleanProperty(FASTLINKCHECK, false)) {
             FASTCHECKENABLED = true;
         }
@@ -89,6 +91,11 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         if (CFG.getBooleanProperty(GRAB_POSTECKE, false)) {
             /* Check for external links */
             String posteckelink = br.getRegex("<a href=\"([^<>\"]*?)\" class=\"btn btn\\-default\"><i class=\"fa fa\\-play\\-circle\"></i> Feedback <span").getMatch(0);
+            if (posteckelink == null && episodenumber_short >= 139) {
+                /* 139 or higher == new massengeschmack Postecke ("Massengeschmack Direkt") starting from 139 == 1 */
+                final short massengeschmack_direct_episodenumber = (short) (episodenumber_short - 138);
+                posteckelink = "http://massengeschmack.tv/play/0/direkt-" + massengeschmack_direct_episodenumber;
+            }
             /* Check if we got a new massengeschmack link - simply add it. */
             if (posteckelink != null && posteckelink.matches("http://massengeschmack\\.tv/play/.+")) {
                 decryptedLinks.add(createDownloadlink(posteckelink));
