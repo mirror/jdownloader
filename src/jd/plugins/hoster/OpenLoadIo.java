@@ -74,7 +74,7 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     /* Constants */
     /* Status 2015-09-08: free API working again, site-handling remains broken! */
-    private static final boolean          enable_api_free              = false;
+    private static final boolean          enable_api_free              = true;
     private static final boolean          enable_api_login             = true;
     private static final String           api_base                     = "https://api.openload.co/1";
     private static final long             api_responsecode_private     = 403;
@@ -542,7 +542,7 @@ public class OpenLoadIo extends antiDDoSForHost {
         case 405:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case 509:
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API error 509 'bandwidth usage too high (peak hours). out of capacity for non-browser downloads.'", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API error 509 'bandwidth usage too high (peak hours). out of capacity for non-browser downloads.'", 30 * 60 * 1000l);
         default:
             throw new PluginException(LinkStatus.ERROR_FATAL, "API error " + status);
 
