@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.logging.Level;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -31,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec" }, urls = { "https?://(?:www\\.)?cloudy\\.ec/(?:v/|embed\\.php\\?id=)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgg.to", "cloudy.ec", "onevideo.to" }, urls = { "https?://(?:www\\.)?cloudy\\.ec/(?:v/|embed\\.php\\?id=|video)[a-z0-9]+", "https?://(?:www\\.)?onevideo\\.to/(?:v/|embed\\.php\\?id=)[a-z0-9]+" }, flags = { 0, 0 })
 public class CloudyEc extends PluginForHost {
 
     private static final String DOMAIN = "cloudy.ec";
@@ -52,9 +50,9 @@ public class CloudyEc extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
+        final String host = link.getHost();
         final String vid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        link.setLinkID(vid);
-        link.setUrlDownload("http://www.cloudy.ec/v/" + vid);
+        link.setUrlDownload("http://www." + host + "/v/" + vid);
     }
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, VidGg, CloudyEc */
@@ -96,8 +94,9 @@ public class CloudyEc extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        final String host = downloadLink.getHost();
         final String fid = new Regex(downloadLink.getDownloadURL(), "/v/(.+)$").getMatch(0);
         this.br.getPage("/embed.php?id=" + fid + "&autoplay=1");
         String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
@@ -119,9 +118,9 @@ public class CloudyEc extends PluginForHost {
         boolean success = false;
         for (int i = 0; i <= 3; i++) {
             if (i > 0) {
-                br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+                br.getPage("http://www." + host + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
             } else {
-                br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+                br.getPage("http://www." + host + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
             }
             String dllink = br.getRegex("url=(http(?:://|%3A%2F%2).*?)\\&title").getMatch(0);
             if (dllink == null) {
@@ -177,7 +176,7 @@ public class CloudyEc extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;
