@@ -325,6 +325,9 @@ public class PixaBayCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (this.br.containsHTML("\"fdiv_recaptcha\"|google\\.com/recaptcha/help")) {
+                /* If a user downloads too much, he might get asked to enter captchas in premium mode --> Wait to get around this problem. */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Captcha needed - wait some time until you can download again", 10 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
