@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serveporn.com" }, urls = { "https?://(?:www\\.)?(?:serveporn\\.com|serviporno\\.com|pornodingue\\.com|chickiporno\\.com|)/videos/[a-z0-9\\-_]+/|https?://(?:www\\.)?seansporno\\.com/filmy/[a-z0-9\\-_]+/|https?://(?:www\\.)?einfachporno\\.com/filme/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornoglu\\.com/videolari/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornozot\\.com/films/[a-z0-9\\-_]+/|https?://(?:www\\.)?voglioporno\\.com/video/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornodoido\\.com/video/[a-z0-9\\-_]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serveporn.com" }, urls = { "https?://(?:www\\.)?(?:serveporn\\.com|serviporno\\.com|pornodingue\\.com|chikiporno\\.com)/videos/[a-z0-9\\-_]+/|https?://(?:www\\.)?seansporno\\.com/filmy/[a-z0-9\\-_]+/|https?://(?:www\\.)?einfachporno\\.com/filme/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornoglu\\.com/videolari/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornozot\\.com/films/[a-z0-9\\-_]+/|https?://(?:www\\.)?voglioporno\\.com/video/[a-z0-9\\-_]+/|https?://(?:www\\.)?pornodoido\\.com/video/[a-z0-9\\-_]+/" }, flags = { 0 })
 public class ServePornCom extends PluginForHost {
 
     public ServePornCom(PluginWrapper wrapper) {
