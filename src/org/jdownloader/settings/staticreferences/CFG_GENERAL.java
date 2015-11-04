@@ -288,4 +288,10 @@ public class CFG_GENERAL {
      * Penaltytime before a retry if JDownloader lost connection
      **/
     public static final IntegerKeyHandler               WAITTIME_ON_CONNECTION_LOSS                                      = SH.getKeyHandler("WaittimeOnConnectionLoss", IntegerKeyHandler.class);
+
+    /**
+     * Enable shared memory state.
+     **/
+    public static final BooleanKeyHandler               SHARED_MEMORY_STATE_ENABLED                                      = SH.getKeyHandler("SharedMemoryEnabled", BooleanKeyHandler.class);
+
 }
