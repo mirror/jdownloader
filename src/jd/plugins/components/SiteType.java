@@ -78,6 +78,12 @@ public class SiteType {
          * the template that supports mirror stack type sites.. Not sure what to call this script.
          */
         Unknown_MirrorStack,
+        /** Script used e.g. for <a href="http:/dansmovies.com/">dansmovies.com</a> */
+        UnknownPornScript1,
+        /** Script used e.g. for <a href="http:/pornmaki.com/">pornmaki.com</a> */
+        UnknownPornScript2,
+        /** Script used e.g. for <a href="http:/fantasy8.com/">fantasy8.com</a> */
+        UnknownPornScript3,
         /**
          * Script used by some video hosting sites. <a href="http:/cloudy.ec/">cloudy.ec</a>. Not sure what to call this script.
          */
