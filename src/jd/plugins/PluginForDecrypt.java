@@ -91,7 +91,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     @Override
     public LogInterface getLogger() {
-        return (LogSource) super.getLogger();
+        return super.getLogger();
     }
 
     @Override
