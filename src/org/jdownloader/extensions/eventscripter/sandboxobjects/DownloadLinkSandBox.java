@@ -97,7 +97,7 @@ public class DownloadLinkSandBox {
         if (link != null) {
             synchronized (SESSIONPROPERTIES) {
                 HashMap<String, Object> properties = SESSIONPROPERTIES.get(link);
-                if (properties != null) {
+                if (properties == null) {
                     properties = new HashMap<String, Object>();
                     SESSIONPROPERTIES.put(link, properties);
                 }
