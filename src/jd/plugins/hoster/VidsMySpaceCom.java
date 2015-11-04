@@ -30,7 +30,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "https?://(www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)" }, flags = { 0 })
 public class VidsMySpaceCom extends PluginForHost {
 
-    private static final String SONGURL = "https?://(www\\.)?myspace\\.com/[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+";
+    private static final String  SONGURL         = "https?://(www\\.)?myspace\\.com/[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+";
+    private static final boolean rtmpe_supported = false;
+    private static final boolean rtmpe_needed    = true;
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -101,6 +103,7 @@ public class VidsMySpaceCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -126,12 +129,40 @@ public class VidsMySpaceCom extends PluginForHost {
         if (dlurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlurl.startsWith("rtmp")) {
+            if (!rtmpe_supported && !rtmpe_needed) {
+                dlurl = dlurl.replace("rtmpe://", "rtmp://");
+            }
+            final String playpath = new Regex(dlurl, "(mp4:.+)").getMatch(0);
+            final String app = "";
+            if (playpath == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dlurl = dlurl.replace(playpath, "");
+            dlurl = dlurl.replace(";", "");
+            try {
+                dl = new RTMPDownload(this, link, dlurl);
+            } catch (final NoClassDefFoundError e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+            }
+            /* Setup rtmp connection */
+            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            rtmp.setPageUrl(link.getDownloadURL());
+            rtmp.setUrl(dlurl);
+            rtmp.setPlayPath(playpath);
+            rtmp.setApp(app);
+            rtmp.setFlashVer("WIN 19,0,0,226");
+            rtmp.setSwfUrl("https://x.myspacecdn.com/new/common/swf/APIPlayer.2.18.0.444.9317f83448dca0e92ef6fa227003994b.swf");
+            rtmp.setResume(false);
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override

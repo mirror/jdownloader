@@ -41,7 +41,7 @@ public class Fantasy8Com extends PluginForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
-    /* Porn_static_terms_script V0.1 */
+    /* V0.5 */
     /* Tags: Script, template */
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension = ".flv";
