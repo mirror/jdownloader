@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangafox.me" }, urls = { "http://[\\w\\.]*?mangafox\\.(com|me|mobi)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "http://[\\w\\.]*?mangafox\\.(com|me|mobi)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" }, flags = { 0 })
 public class Mangafox extends PluginForDecrypt {
 
     public Mangafox(PluginWrapper wrapper) {
@@ -36,7 +36,7 @@ public class Mangafox extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String url = parameter.toString().replaceAll("://[\\w\\.]*?mangafox\\.(com|me|mobi)/", "://mangafox.me/");
         if (url.endsWith("/")) {
@@ -73,9 +73,11 @@ public class Mangafox extends PluginForDecrypt {
         fp.setName(title);
         int skippedPics = 0;
         for (int i = 1; i <= numberOfPages; i++) {
-            if (i != 1) br.getPage(url + "/" + i + ".html");
+            if (i != 1) {
+                br.getPage(url + "/" + i + ".html");
+            }
             String pageNumber = String.format(format, i);
-            final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\"><img src=\"(http://[^\"]+(\\.[a-z]+))\"").getRow(0);
+            final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img src=\"(http://[^\"]+(\\.[a-z]+))\"").getRow(0);
             if (unformattedSource == null || unformattedSource.length == 0) {
                 skippedPics++;
                 if (skippedPics > 5) {
@@ -89,11 +91,7 @@ public class Mangafox extends PluginForDecrypt {
             final DownloadLink link = createDownloadlink("directhttp://" + source);
             link.setFinalFileName(title + " – page " + pageNumber + extension);
             fp.add(link);
-            try {
-                distribute(link);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
+            distribute(link);
             decryptedLinks.add(link);
         }
 
