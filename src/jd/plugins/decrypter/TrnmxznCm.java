@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -43,7 +44,7 @@ public class TrnmxznCm extends PluginForDecrypt {
 
         TrinimixzoneCom.login(br);
         br.getPage(parameter);
-        String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String title = Encoding.htmlDecode(br.getRegex("<title>(.*?)</title>").getMatch(0));
         br.setFollowRedirects(false);
         try {
             String[] posts = br.getRegex("<!-- start: postbit -->(.*?)<!-- end: postbit -->").getColumn(0);
