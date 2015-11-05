@@ -28,24 +28,6 @@ import java.util.zip.GZIPOutputStream;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.Property;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
@@ -57,6 +39,23 @@ import org.appwork.utils.net.Base64OutputStream;
 import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Property;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" }, flags = { 2 })
 public class PremiumizeMe extends UseNet {
@@ -105,45 +104,43 @@ public class PremiumizeMe extends UseNet {
         return new PremiumizeMeAccountFactory();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else {
-            /* We can check premium generated directlinks even without account! */
+            br = newBrowser();
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br.openHeadConnection(link.getDownloadURL());
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                con = br.openHeadConnection(link.getDownloadURL());
+                if (con.isOK()) {
+                    if (link.getFinalFileName() == null) {
+                        link.setFinalFileName(getFileNameFromHeader(con));
+                    }
+                    link.setVerifiedFileSize(con.getLongContentLength());
+                    link.setAvailable(true);
+                    return AvailableStatus.TRUE;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+            } catch (final Throwable e) {
+                return AvailableStatus.UNCHECKABLE;
             } finally {
                 try {
+                    /* make sure we close connection */
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
-            return AvailableStatus.TRUE;
         }
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (account == null) {
-            /* without account its not possible to download the link */
-            return false;
-        }
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         return true;
     }
 
-    private Object getConnectionSettingsValue(String host, Account account, String key) {
+    private Object getConnectionSettingsValue(final String host, final Account account, final String key) {
         Map<String, Object> connection_settings = null;
         AccountInfo ai = null;
         if (account != null && (ai = account.getAccountInfo()) != null && (connection_settings = (Map<String, Object>) ai.getProperty("connection_settings")) != null) {
@@ -156,7 +153,7 @@ public class PremiumizeMe extends UseNet {
     }
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         if (isUsenetLink(link)) {
             return 10;
         } else if (link != null && account != null) {
@@ -169,17 +166,18 @@ public class PremiumizeMe extends UseNet {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        handlePremium(downloadLink, null);
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return getMaxSimultanPremiumDownloadNum();
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         if (!dl.getConnection().isOK() || dl.getConnection().getLongContentLength() == -1) {
@@ -188,7 +186,7 @@ public class PremiumizeMe extends UseNet {
         dl.startDownload();
     }
 
-    private void handleDL(Account account, DownloadLink link, String dllink) throws Exception {
+    private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         int maxConnections = 0;
