@@ -18,12 +18,20 @@ package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Area;
+import java.util.ArrayList;
 
 import jd.gui.swing.jdgui.JDGui;
 
@@ -41,16 +49,43 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     private MouseEvent                      lastEvent;
     private Component                       dummy;
     private LogSource                       logger;
+    private TrayIcon                        trayIcon;
+    private ArrayList<Area>                 possibleLocations;
     private static int                      TOOLTIP_DELAY         = 1000;
 
     public TrayMouseAdapter(TrayExtension lightTray, TrayIcon trayIcon) {
         deligate = lightTray;
-        // this.trayIcon = trayIcon;
+        this.trayIcon = trayIcon;
         dummy = new Component() {
             private static final long serialVersionUID = 1L;
         };
         size = trayIcon.getSize();
         logger = JDGui.getInstance().getLogger();
+
+        GraphicsDevice device = null;
+
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice lstGDs[] = ge.getScreenDevices();
+
+        ArrayList<GraphicsDevice> lstDevices = new ArrayList<GraphicsDevice>(lstGDs.length);
+        possibleLocations = new ArrayList<Area>();
+        for (GraphicsDevice gd : lstGDs) {
+
+            GraphicsConfiguration gc = gd.getDefaultConfiguration();
+            Rectangle screenBounds = gc.getBounds();
+            Rectangle safeArea = new Rectangle(screenBounds);
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
+
+            safeArea.x += insets.left;
+            safeArea.y += insets.top;
+            safeArea.width -= (insets.left + insets.right);
+            safeArea.height -= (insets.top + insets.bottom);
+            Area possibleArea = new Area(screenBounds);
+            possibleArea.subtract(new Area(safeArea));
+            possibleLocations.add(possibleArea);
+
+        }
+
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -59,7 +94,13 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     }
 
     public void mouseEntered(MouseEvent e) {
-        if (mouseLocationObserver.get() != null) return;
+        if (!validateLocation(e.getPoint())) {
+            return;
+        }
+        if (mouseLocationObserver.get() != null) {
+            return;
+        }
+
         Thread localmouseLocationObserver = new Thread() {
             boolean    mouseStay = false;
             final long enterTime = System.currentTimeMillis();
@@ -107,6 +148,23 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
         deligate.mouseEntered(e);
     }
 
+    /**
+     * under java 1.8 windows 10, we get invalid points and events after creating the tray icon. This results in a tooltip although we are
+     * not hovering the tray icon. This methods validates if a point may be above the tray icon
+     *
+     * @param point
+     * @return
+     */
+    private boolean validateLocation(Point point) {
+        for (Area a : possibleLocations) {
+
+            if (a.contains(point)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void mouseExited(MouseEvent e) {
         abortMouseLocationObserver();
         min = max = null;
@@ -115,7 +173,9 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
     public void abortMouseLocationObserver() {
         Thread localmouseLocationObserver = mouseLocationObserver.getAndSet(null);
-        if (localmouseLocationObserver != null) localmouseLocationObserver.interrupt();
+        if (localmouseLocationObserver != null) {
+            localmouseLocationObserver.interrupt();
+        }
     }
 
     public void mousePressed(MouseEvent e) {
@@ -133,7 +193,9 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     }
 
     public void mouseMoved(MouseEvent e) {
-        if (e == null || e.getPoint() == null) return;
+        if (e == null || e.getPoint() == null) {
+            return;
+        }
         Point point = e.getPoint();
 
         lastEvent = e;
@@ -171,12 +233,14 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
     /**
      * Passt die iconsize in die festgestellte geschätzte position ein. und prüft ob point darin ist
-     * 
+     *
      * @param point
      * @return
      */
     protected boolean isOver(Point point) {
-        if (max == null || min == null || size == null) { return false; }
+        if (max == null || min == null || size == null) {
+            return false;
+        }
         int midx = (max.x + min.x) / 2;
         int midy = (max.y + min.y) / 2;
         // int width = Math.min(size.width, max.x - min.x);
@@ -191,7 +255,9 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
         int maxy = midy + height / 2;
         // java.awt.Point[x=1274,y=1175] - java.awt.Point[x=1309,y=1185]
         if (point.x >= minx && point.x <= maxx) {
-            if (point.y >= miny && point.y <= maxy) { return true; }
+            if (point.y >= miny && point.y <= maxy) {
+                return true;
+            }
 
         }
         return false;

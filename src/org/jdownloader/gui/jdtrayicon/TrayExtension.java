@@ -55,7 +55,6 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
-
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.DesktopSupportLinux;
 import org.appwork.utils.swing.EDTHelper;
@@ -305,9 +304,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                             trayIcon.setImageAutoSize(true);
                             trayIcon.addActionListener(TrayExtension.this);
+
                             ma = new TrayMouseAdapter(TrayExtension.this, trayIcon);
-                            trayIcon.addMouseListener(ma);
-                            trayIcon.addMouseMotionListener(ma);
+
                             trayIconTooltip = new TrayIconTooltip();
                             LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
                             if (guiFrame == null) {
@@ -372,17 +371,19 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             if (!getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled() || !guiFrame.isVisible()) {
 
                                 systemTray.add(trayIcon);
+                                trayIcon.addMouseListener(ma);
+                                trayIcon.addMouseMotionListener(ma);
                             }
 
                         } catch (Throwable e) {
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             * 
+                             *
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             * 
+                             *
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             * 
+                             *
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
