@@ -18,13 +18,13 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video|embed)/[\\w\\-]+" }, flags = { 0 })
 public class KeezMoviesComDecrypter extends PornEmbedParser {
@@ -32,9 +32,6 @@ public class KeezMoviesComDecrypter extends PornEmbedParser {
     public KeezMoviesComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    /* Using playerConfig script */
-    /* Tags: playerConfig.php */
 
     @Override
     protected boolean useRUA() {

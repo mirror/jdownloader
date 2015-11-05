@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:www\\.)?tube\\.rampant\\.tv/videos/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class TubeRampantTv extends PluginForHost {
@@ -235,6 +236,11 @@ public class TubeRampantTv extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.UnknownPornScript4;
     }
 
     @Override

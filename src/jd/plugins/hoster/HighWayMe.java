@@ -255,9 +255,6 @@ public class HighWayMe extends UseNet {
                     /* Seems like the password is valid --> Save it */
                     link.setProperty("pass", passCode);
                 }
-                if (this.statuscode == 9) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-                }
                 dllink = getJson("download");
                 if (dllink == null) {
                     logger.warning("Final downloadlink is null");
@@ -656,9 +653,9 @@ public class HighWayMe extends UseNet {
                 statusMessage = "Temporary error";
                 tempUnavailableHoster(1 * 60 * 1000l);
             case 9:
-                /* No account found -> Disable host for 30 minutes */
-                statusMessage = "File not found";
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /* No account found -> Disable link for 10 minutes */
+                statusMessage = "No account found";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             case 10:
                 /* Host offline or invalid url -> Remove host from array of supported hosts */
                 statusMessage = "Invalid link --> Probably unsupported host";

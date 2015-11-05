@@ -33,6 +33,9 @@ public class MuchaCarneCom extends PornEmbedParser {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String externID = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

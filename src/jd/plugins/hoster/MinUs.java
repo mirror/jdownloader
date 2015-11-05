@@ -69,6 +69,7 @@ public class MinUs extends PluginForHost {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        this.br.setFollowRedirects(true);
         setBrowserExclusive();
         URLConnectionAdapter con = null;
         try {

@@ -35,13 +35,13 @@ public class SexCom extends PornEmbedParser {
         super(wrapper);
     }
 
-    /* Using playerConfig script */
-    /* Tags: playerConfig.php */
+    /* DEV NOTES */
+    /* Porn_plugin */
 
-    private static final String TYPE_VIDEO = "http://(www\\.)?sex\\.com/video/\\d+.*?";
+    private static final String TYPE_VIDEO     = "http://(www\\.)?sex\\.com/video/\\d+.*?";
 
-    ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-    private String          PARAMETER      = null;
+    ArrayList<DownloadLink>     decryptedLinks = new ArrayList<DownloadLink>();
+    private String              PARAMETER      = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         PARAMETER = param.toString().replace("/pin/", "/picture/");

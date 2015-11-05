@@ -33,13 +33,18 @@ public class FilthDumpCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
         String filename = br.getRegex("<title>(.*?) :: Amateur Porn </title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        }
         if (filename == null) {
             logger.warning("Couldn't decrypt link: " + parameter);
             return null;

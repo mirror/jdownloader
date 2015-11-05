@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "pornmaki.com", "amalandtube.com", "recordedcams.com", "trannyx.com", "429tube.com", "nakedtube.com", "shockingmovies.com", "fapbox.com", "preggoporn.tv", "rookiepornvideos.com", "chickswithdicks.video", "amateurgaymovies.com", "watchtwinks.com", "sextube.desi", "chopsticktube.com", "tubechica.com", "blacktubeporn.net", "bisexualmantube.com", "gaybearflix.com", "realthaisluts.com", "realteenmovies.com", "voyeurtubevideos.com", "ridemycocktube.com", "habibiporn.com", "xlactating.com", "tubeenema.com", "straponfuckvideos.com", "3dtube.xxx", "bigblackcocktube.com", "fishnetfucking.com", "milf.dk", "sluttywifelovers.com", "kingsizetits.com", "cumloadedgirls.com", "skeetporntube.com", "acuptube.com", "chubbycut.com", "nopixeljaps.com", "pinaysmut.com", "sexyfeet.tv", "dirtypantyporn.com", "xxxuniformporn.com",
         "smartgirlstube.com", "facialcumtube.com", "throatfucktube.com", "freeyogaporn.com", "domsubtube.com", "bdsmpornflix.com", "machinefucked.me", "toyspornmovies.com", "tastypussytube.com", "mylesbianporn.com", "inkedgirlsporn.com", "freedptube.com", "tinydicktube.com", "buttsextube.com", "gropingtube.com", "naughtyhighschoolporn.com", "realityxxxtube.com", "onlyhairyporn.com" }, urls = { "http://(?:www\\.)?pornmaki\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?amalandtube\\.com/free/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?recordedcams\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?trannyx\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?429tube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?nakedtube\\.com/video/[A-Za-z0-9\\-]+\\-\\d+\\.html",
@@ -46,15 +47,16 @@ public class UnknownPornScript2 extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Tags: For porn sites using the flowplayer videoplayer
+    /* Porn_plugin */
+    /* V0.1 */
     // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
 
-    private static final String  type_1            = "http://(?:www\\.)?[^/]+/(?:video|free)/[A-Za-z0-9\\-]+\\-\\d+\\.html";
+    private static final String  type_1            = "^http://(?:www\\.)?[^/]+/(?:video|free)/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
     /* E.g. chopsticktube.com */
-    private static final String  type_2            = "http://(?:www\\.)?[^/]+/video/\\d+/[A-Za-z0-9\\-]+\\-\\d+\\.html";
+    private static final String  type_2            = "^http://(?:www\\.)?[^/]+/video/\\d+/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
 
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */
@@ -66,7 +68,7 @@ public class UnknownPornScript2 extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.dansmovies.com/tos/";
+        return "http://pornmaki.com/static/terms";
     }
 
     @SuppressWarnings("deprecation")
@@ -174,6 +176,11 @@ public class UnknownPornScript2 extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.UnknownPornScript2;
     }
 
     @Override

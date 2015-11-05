@@ -36,12 +36,17 @@ public class FapGyCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DEV NOTES */
+    /* Porn_plugin */
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().contains("fapgay.com/404") || br.containsHTML("(> Snap\\! The page you were looking for isn\\'t here anymore\\. <|<title>Page Not Found \\- fapgay</title>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.getURL().contains("fapgay.com/404") || br.containsHTML("(> Snap\\! The page you were looking for isn\\'t here anymore\\. <|<title>Page Not Found \\- fapgay</title>)")) {
+            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        }
         // Fox xtube.com
         String tempID = new Regex(Encoding.htmlDecode(br.toString()), "value=\"(http://(www\\.)?xtube\\.com/watch\\.php\\?v=[A-Za-z0-9_\\-]+)\"").getMatch(0);
         if (tempID != null) {

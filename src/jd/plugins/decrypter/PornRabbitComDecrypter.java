@@ -32,8 +32,8 @@ public class PornRabbitComDecrypter extends PornEmbedParser {
         super(wrapper);
     }
 
-    /* Using playerConfig script */
-    /* Tags: playerConfig.php */
+    /* DEV NOTES */
+    /* Porn_plugin */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
