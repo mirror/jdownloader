@@ -281,7 +281,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         this.postPageSafe(aa, link, getBaseURL() + "/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
@@ -974,6 +974,9 @@ public class VKontakteRuHoster extends PluginForHost {
         return "JDownloader's Vk Plugin helps downloading all sorts of media from vk.com.";
     }
 
+    public static final String   SLEEP_PAGINATION_GENERAL                      = "SLEEP_PAGINATION_GENERAL";
+    public static final String   SLEEP_PAGINATION_COMMUNITY_VIDEO              = "SLEEP_PAGINATION_COMMUNITY_VIDEO";
+    public static final String   SLEEP_TOO_MANY_REQUESTS                       = "SLEEP_TOO_MANY_REQUESTS";
     /* Default values... */
     private static final boolean default_fastlinkcheck_FASTLINKCHECK           = true;
     private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK    = true;
@@ -995,6 +998,9 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_VKAUDIO_USEIDASPACKAGENAME            = false;
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS           = false;
     public static final String   default_user_agent                            = "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0";
+    public static final long     defaultSLEEP_PAGINATION_GENERAL               = 1000;
+    public static final long     defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO = 1000;
+    public static final long     defaultSLEEP_TOO_MANY_REQUESTS                = 3000;
 
     public void setConfigElements() {
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "General settings:"));
@@ -1037,6 +1043,9 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, JDL.L("plugins.hoster.vkontakteruhoster.customUserAgent", "User-Agent: ")).setDefaultValue(default_user_agent));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationCommunityVideos", "Define sleep time for community videos pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, JDL.L("plugins.hoster.vkontakteruhoster.sleep.tooManyRequests", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_TOO_MANY_REQUESTS));
     }
 
 }
