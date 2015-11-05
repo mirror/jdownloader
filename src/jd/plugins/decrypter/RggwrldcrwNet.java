@@ -20,6 +20,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -27,6 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ReggaeWorldCrewNet;
 
 @DecrypterPlugin(revision = "$Revision: 31871 $", interfaceVersion = 3, names = { "reggaeworldcrew.net" }, urls = { "https?://(www\\.)?reggaeworldcrew\\.net/foro/.*" }, flags = { 0 })
@@ -37,21 +41,19 @@ public class RggwrldcrwNet extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
 
         ReggaeWorldCrewNet.login(br);
         br.getPage(parameter);
 
         // String befoire = br.toString();
-        String title = Encoding.htmlDecode(br.getRegex("<title>(.*?)</title>").getMatch(0));
+        final String title = Encoding.htmlDecode(br.getRegex("<title>(.*?)</title>").getMatch(0));
         br.setFollowRedirects(false);
-
-        String keywords = br.getRegex("<meta\\s+name=\"keywords\"\\s+content=\"([^\"]+)").getMatch(0);
+        final String keywords = br.getRegex("<meta\\s+name=\"keywords\"\\s+content=\"([^\"]+)").getMatch(0);
         for (String link : keywords.split("\\s*,\\s*")) {
-            if (link.startsWith("http") && !link.contains(br.getHost())) {
+            if (link.startsWith("http") && !link.contains(getHost())) {
                 link = Encoding.htmlDecode(link);
-                System.out.println(link);
                 decryptedLinks.add(createDownloadlink(link));
             }
         }
@@ -80,15 +82,36 @@ public class RggwrldcrwNet extends PluginForDecrypt {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
-        fp.addLinks(decryptedLinks);
+        if (title != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    @Override
+    public LinkCrawler getCustomNextCrawler() {
+        final LinkCrawler lc = new LinkCrawler();
+        lc.setFilter(new LinkCrawlerFilter() {
+
+            @Override
+            public boolean dropByUrl(final CrawledLink link) {
+                final PluginForHost plugin = link.gethPlugin();
+                if (plugin != null) {
+                    if (("ftp".equalsIgnoreCase(plugin.getHost()) || "http links".equalsIgnoreCase(plugin.getHost()))) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public boolean dropByFileProperties(CrawledLink link) {
+                return false;
+            }
+        });
+        return lc;
     }
 
 }

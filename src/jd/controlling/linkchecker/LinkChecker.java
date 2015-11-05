@@ -106,15 +106,18 @@ public class LinkChecker<E extends CheckableLink> {
     public void stopChecking() {
         checkerGeneration.incrementAndGet();
         if (linksRequested.get() == 0) {
-            final boolean event;
+            final boolean stopEvent;
             synchronized (CHECKER) {
                 if (linksRequested.get() == 0 && runningState.compareAndSet(true, false)) {
-                    event = CHECKER.decrementAndGet() == 0;
+                    stopEvent = true;
+                    if (CHECKER.get() > 0) {
+                        CHECKER.decrementAndGet();
+                    }
                 } else {
-                    event = false;
+                    stopEvent = false;
                 }
             }
-            if (event) {
+            if (stopEvent) {
                 EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
             }
         }
@@ -123,17 +126,19 @@ public class LinkChecker<E extends CheckableLink> {
     @SuppressWarnings("unchecked")
     protected void linkChecked(InternCheckableLink link) {
         if (link != null) {
-            final boolean event;
+            final boolean stopEvent;
             if (linksRequested.decrementAndGet() == 0) {
                 synchronized (CHECKER) {
                     if (linksRequested.get() == 0 && runningState.compareAndSet(true, false)) {
-                        event = CHECKER.decrementAndGet() == 0;
+                        stopEvent = true;
+                        if (CHECKER.get() > 0) {
+                            CHECKER.decrementAndGet();
+                        }
                     } else {
-                        event = false;
+                        stopEvent = false;
                     }
                 }
-                if (event) {
-                    CHECKER.decrementAndGet();
+                if (stopEvent) {
                     EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
                 }
             }

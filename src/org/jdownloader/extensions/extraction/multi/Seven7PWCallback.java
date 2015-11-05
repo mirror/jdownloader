@@ -14,6 +14,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 
 import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.FileSignatures;
 
 public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetTextPassword {
@@ -22,10 +23,9 @@ public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetText
     private final ISevenZipInArchive         inArchive;
     private final String                     password;
     private final SignatureCheckingOutStream signatureOutStream;
-    private boolean                          optimized;
     protected final static long              SLOWDOWNWORKAROUNDTIMEOUT = 150;
 
-    public Seven7PWCallback(ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
+    public Seven7PWCallback(final ExtractionController ctrl, ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
         this.passwordfound = passwordfound;
         this.inArchive = inArchive;
         if (StringUtils.isEmpty(password)) {
@@ -33,9 +33,8 @@ public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetText
         } else {
             this.password = password;
         }
-        this.optimized = optimized;
         if (ArchiveFormat.SEVEN_ZIP == inArchive.getArchiveFormat()) {
-            signatureOutStream = new SignatureCheckingOutStream(passwordfound, filesignatures, buffer, maxPWCheckSize, optimized) {
+            signatureOutStream = new SignatureCheckingOutStream(ctrl, passwordfound, filesignatures, buffer, maxPWCheckSize, optimized) {
                 @Override
                 public int write(byte[] data) throws SevenZipException {
                     synchronized (this) {
@@ -49,9 +48,8 @@ public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetText
                 }
             };
         } else {
-            signatureOutStream = new SignatureCheckingOutStream(passwordfound, filesignatures, buffer, maxPWCheckSize, optimized);
+            signatureOutStream = new SignatureCheckingOutStream(ctrl, passwordfound, filesignatures, buffer, maxPWCheckSize, optimized);
         }
-
     }
 
     Boolean skipExtraction = null;

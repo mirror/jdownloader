@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -29,8 +28,11 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.logging2.LogInterface;
 
 @HostPlugin(revision = "$Revision: 30971 $", interfaceVersion = 3, names = { "reggaeworldcrew.net" }, urls = { "" }, flags = { 0 })
 public class ReggaeWorldCrewNet extends PluginForHost {
@@ -42,33 +44,24 @@ public class ReggaeWorldCrewNet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-
         final AccountInfo ai = new AccountInfo();
-        try {
-            if (!login(br, account)) {
-                account.setValid(false);
-                return ai;
-            }
-
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
+        if (!login(br, account)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        //
         ai.setStatus("Account is OK");
         ai.setValidUntil(-1);
-        account.setValid(true);
         return ai;
-
     }
 
     public static boolean login(Browser br, Account account) throws Exception {
         br.setCookiesExclusive(true);
         br.clearCookies("http://www.reggaeworldcrew.net/foro/login.php?do=login");
-
         br.postPage("http://www.reggaeworldcrew.net/foro/login.php?do=login", "cookieuser=1&s=&securitytoken=guest&do=login&vb_login_password_hint=Contrase%C3%B1a&vb_login_md5password=&vb_login_md5password_utf=&vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&vb_login_password=" + Encoding.urlEncode(account.getPass()));
-
-        return br.getCookie(br.getHost(), "bb_sessionhash") != null;
+        final boolean ret = br.getCookie(br.getHost(), "bb_sessionhash") != null;
+        if (!ret) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        return ret;
 
     }
 
@@ -77,15 +70,14 @@ public class ReggaeWorldCrewNet extends PluginForHost {
         return "http://reggaeworldcrew.net/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        return null;
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -101,25 +93,19 @@ public class ReggaeWorldCrewNet extends PluginForHost {
     }
 
     public static boolean login(Browser br) {
-        ArrayList<Account> accounts = AccountController.getInstance().list("reggaeworldcrew.net");
+        final ArrayList<Account> accounts = AccountController.getInstance().list("reggaeworldcrew.net");
         if (accounts != null && accounts.size() != 0) {
-            final Iterator<Account> it = accounts.iterator();
-            while (it.hasNext()) {
-                final Account n = it.next();
-                if (n.isEnabled() && n.isValid()) {
-
-                    try {
-
-                        if (login(br, n)) {
-                            return true;
-                        }
-
-                    } catch (final Exception e) {
-
-                        n.setValid(false);
-
+            final LogInterface logger = br.getLogger();
+            for (final Account account : accounts) {
+                try {
+                    if (login(br, account)) {
+                        return true;
                     }
-
+                } catch (final PluginException e) {
+                    logger.log(e);
+                    account.setValid(false);
+                } catch (final Exception e) {
+                    logger.log(e);
                 }
             }
         }

@@ -120,10 +120,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         }
         ISequentialOutStream ret = outStreams[index];
         if (ret == null) {
-            if (extractaskmode != ExtractAskMode.EXTRACT) {
-                /* null is only permitted in non extract mode */
-                return null;
-            }
             final Integer attributes = (Integer) inArchive.getProperty(index, PropID.ATTRIBUTES);
             final Boolean isFolder = (Boolean) inArchive.getProperty(index, PropID.IS_FOLDER);
             final String path = (String) inArchive.getProperty(index, PropID.PATH);
@@ -236,15 +232,15 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             };
             items[index] = item;
             try {
-                if (Boolean.TRUE.equals(isFolder)) {
+                if (Boolean.TRUE.equals(isFolder) || extractaskmode != ExtractAskMode.EXTRACT) {
                     /* we need dummy outstream, null may crash java */
-                    ret = getNullOutputStream();
+                    ret = getNullOutputStream(false);
                 } else {
-                    AtomicBoolean skipped = new AtomicBoolean(false);
-                    final File extractTo = multi.getExtractFilePath(item, ctrl, skipped);
+                    final AtomicBoolean skippedFlag = new AtomicBoolean(false);
+                    final File extractTo = multi.getExtractFilePath(item, ctrl, skippedFlag);
                     ctrl.setCurrentActiveItem(new Item(path, item.getSize(), extractTo));
-                    if (skipped.get()) {
-                        ret = getNullOutputStream();
+                    if (skippedFlag.get()) {
+                        ret = getNullOutputStream(true);
                     } else {
                         if (extractTo == null) {
                             throw new SevenZipException("Extraction error, extractTo == null");
@@ -295,7 +291,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         return ret;
     }
 
-    protected ISequentialOutStream getNullOutputStream() {
+    protected ISequentialOutStream getNullOutputStream(final boolean countBytesAsProcessed) {
         if (slowDownWorkaroundNeeded) {
             return new ISequentialOutStream() {
                 @Override
@@ -310,7 +306,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     if (ctrl.gotKilled()) {
                         throw new SevenZipException("Extraction has been aborted");
                     }
-                    ctrl.addAndGetProcessedBytes(data.length);
+                    if (countBytesAsProcessed) {
+                        ctrl.addAndGetProcessedBytes(data.length);
+                    }
                     return data.length;
                 }
             };
@@ -321,7 +319,9 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     if (ctrl.gotKilled()) {
                         throw new SevenZipException("Extraction has been aborted");
                     }
-                    ctrl.addAndGetProcessedBytes(data.length);
+                    if (countBytesAsProcessed) {
+                        ctrl.addAndGetProcessedBytes(data.length);
+                    }
                     return data.length;
                 }
             };

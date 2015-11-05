@@ -55,6 +55,8 @@ public class MyJDownloaderDirectServer extends Thread {
         this.connectThread = connectThread;
         this.connectMode = connectMode;
         logger = connectThread.getLogger();
+        setName("MyJDownloaderDirectServer");
+        setDaemon(true);
     }
 
     private ServerSocket createServerSocket(int wished) throws IOException {
@@ -66,22 +68,22 @@ public class MyJDownloaderDirectServer extends Thread {
             lastPort = wished;
         }
         try {
-            ServerSocket currentServerSocket = new ServerSocket(lastPort);
+            final ServerSocket currentServerSocket = new ServerSocket(lastPort);
             CFG_MYJD.CFG.setLastLocalPort(currentServerSocket.getLocalPort());
             return currentServerSocket;
         } catch (final Throwable e) {
             logger.log(e);
         }
-        ServerSocket currentServerSocket = new ServerSocket(0);
+        final ServerSocket currentServerSocket = new ServerSocket(0);
         CFG_MYJD.CFG.setLastLocalPort(currentServerSocket.getLocalPort());
         return currentServerSocket;
     }
 
     public static boolean sameNetwork(String ip1, InetAddress ip2, InetAddress netMask) {
         try {
-            byte[] ip1Bytes = InetAddress.getByName(ip1).getAddress();
-            byte[] ip2Bytes = ip2.getAddress();
-            byte[] maskBytes = netMask.getAddress();
+            final byte[] ip1Bytes = InetAddress.getByName(ip1).getAddress();
+            final byte[] ip2Bytes = ip2.getAddress();
+            final byte[] maskBytes = netMask.getAddress();
             for (int i = 0; i < ip1Bytes.length; i++) {
                 if ((ip1Bytes[i] & maskBytes[i]) != (ip2Bytes[i] & maskBytes[i])) {
                     return false;
@@ -95,8 +97,8 @@ public class MyJDownloaderDirectServer extends Thread {
     }
 
     private static int randomPort() {
-        int min = 1025;
-        int max = 65000;
+        final int min = 1025;
+        final int max = 65000;
         return new Random().nextInt((max - min) + 1) + min;
     }
 

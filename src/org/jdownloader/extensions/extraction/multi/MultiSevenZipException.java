@@ -11,6 +11,11 @@ public class MultiSevenZipException extends SevenZipException {
         this.code = exitCode;
     }
 
+    public MultiSevenZipException(String msg, int exitCode) {
+        super(msg);
+        this.code = exitCode;
+    }
+
     /**
      * @return the code
      */

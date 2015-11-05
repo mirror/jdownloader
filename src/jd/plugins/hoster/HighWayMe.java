@@ -255,6 +255,9 @@ public class HighWayMe extends UseNet {
                     /* Seems like the password is valid --> Save it */
                     link.setProperty("pass", passCode);
                 }
+                if (this.statuscode == 9) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+                }
                 dllink = getJson("download");
                 if (dllink == null) {
                     logger.warning("Final downloadlink is null");

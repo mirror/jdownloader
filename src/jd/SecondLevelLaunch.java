@@ -912,7 +912,7 @@ public class SecondLevelLaunch {
                             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
                                 @Override
                                 public void run() {
-                                    new Thread("Init ChallengeResponseController") {
+                                    new Thread("ExecuteWhenGuiReachedThread: Init Clipboard and ChallengeResponseController") {
                                         public void run() {
                                             /* init clipboardMonitoring stuff */
                                             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSkipClipboardMonitorFirstRound()) {
@@ -938,7 +938,6 @@ public class SecondLevelLaunch {
                                                 }
                                             });
                                             ChallengeResponseController.getInstance().init();
-
                                         };
                                     }.start();
                                 }
@@ -1001,17 +1000,20 @@ public class SecondLevelLaunch {
                                     }
                                 }
                             });
-
                             /* Start shared memory state update */
-                            if (JsonConfig.create(GeneralSettings.class).isSharedMemoryEnabled()) {
+                            if (CrossSystem.isWindows() && JsonConfig.create(GeneralSettings.class).isSharedMemoryEnabled()) {
                                 SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
                                     @Override
                                     public void run() {
-                                        SharedMemoryState.getInstance().startUpdates();
+                                        new Thread("ExecuteWhenGuiReachedThread: Init SharedMemoryState") {
+                                            public void run() {
+                                                /* init clipboardMonitoring stuff */
+                                                SharedMemoryState.getInstance().startUpdates();
+                                            };
+                                        }.start();
                                     }
                                 });
                             }
-
                         } catch (Throwable e) {
                             SecondLevelLaunch.LOG.log(e);
                             if (Application.isHeadless()) {

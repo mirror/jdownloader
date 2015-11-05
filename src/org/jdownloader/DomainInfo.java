@@ -58,12 +58,13 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
             if (hardcodedFavIcon != null) {
                 icon = NewTheme.I().getIcon(hardcodedFavIcon, -1);
             } else {
-                icon = FavIcons.getFavIcon(tld, null);
+                icon = FavIcons.getFavIcon(tld, this);
             }
             if (icon != null) {
                 icon = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(icon)));
                 icon = IconIO.getScaledInstance(icon, WIDTH, HEIGHT, Interpolation.BICUBIC);
             }
+            hosterIcon = icon;
         }
         return icon;
     }

@@ -28,24 +28,13 @@ import java.util.zip.GZIPOutputStream;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Application;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -55,7 +44,21 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" }, flags = { 2 })
 public class PremiumizeMe extends UseNet {
@@ -112,13 +115,16 @@ public class PremiumizeMe extends UseNet {
             br = newBrowser();
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(link.getDownloadURL());
-                if (con.isOK()) {
+                try {
+                    con = br.openHeadConnection(link.getDownloadURL());
+                } catch (final BrowserException e) {
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                if (!con.getContentType().contains("html") && con.isOK()) {
                     if (link.getFinalFileName() == null) {
-                        link.setFinalFileName(getFileNameFromHeader(con));
+                        link.setFinalFileName(Plugin.getFileNameFromHeader(con));
                     }
                     link.setVerifiedFileSize(con.getLongContentLength());
-                    link.setAvailable(true);
                     return AvailableStatus.TRUE;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,8 +142,12 @@ public class PremiumizeMe extends UseNet {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
-        return true;
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (StringUtils.equals(getHost(), downloadLink.getHost()) && account == null) {
+            // generated links do not require an account
+            return true;
+        }
+        return account != null;
     }
 
     private Object getConnectionSettingsValue(final String host, final Account account, final String key) {
@@ -154,15 +164,27 @@ public class PremiumizeMe extends UseNet {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        if (isUsenetLink(link)) {
-            return 10;
-        } else if (link != null && account != null) {
-            Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_hoster");
-            if (ret != null && ret instanceof Integer) {
-                return (Integer) ret;
+        if (account != null && link != null) {
+            if (isUsenetLink(link)) {
+                return 10;
+            } else {
+                final Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_hoster");
+                if (ret != null && ret instanceof Integer) {
+                    return (Integer) ret;
+                }
             }
         }
-        return super.getMaxSimultanDownload(link, account);
+        if (link != null && account == null) {
+            if (StringUtils.equals(getHost(), link.getHost())) {
+                // generated links do not require an account
+                return Integer.MAX_VALUE;
+            } else {
+                // multihost requires an account
+                return 0;
+            }
+        }
+        // needed to signal free downloads are possible
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -172,15 +194,17 @@ public class PremiumizeMe extends UseNet {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return getMaxSimultanPremiumDownloadNum();
+        return 0;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        requestFileInformation(link);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
-        if (!dl.getConnection().isOK() || dl.getConnection().getLongContentLength() == -1) {
+        if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isOK()) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
