@@ -31,8 +31,6 @@ public class LbTubeCom extends PornEmbedParser {
         super(wrapper);
     }
 
-    /* Using playerConfig script */
-    /* Tags: playerConfig.php */
     /* DEV NOTES */
     /* Porn_plugin */
 

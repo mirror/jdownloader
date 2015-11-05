@@ -35,8 +35,6 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
 
     /* DEV NOTES */
     /* Porn_plugin */
-    /* Using playerConfig script */
-    /* Tags: playerConfig.php */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

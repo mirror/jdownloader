@@ -37,8 +37,8 @@ public class XxxBunkerCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    /* Using playerConfig script */
-    /* Tags: playerConfig.php */
+    /* DEV NOTES */
+    /* Porn_plugin */
 
     private static final String INVALIDLINKS = "http://(www\\.)?xxxbunker\\.com/(search|javascript|tos|flash|footer|display|videoList|embedcode_|categories|newest|toprated|mostviewed|pornstars|forgotpassword|ourfavorites|signup|contactus|community|tags)";
 

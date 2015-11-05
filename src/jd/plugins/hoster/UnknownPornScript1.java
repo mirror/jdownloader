@@ -31,6 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xtwisted.com", "dansmovies.com" }, urls = { "https?://(?:www\\.)?xtwisted\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https://(?:www\\.)?dansmovies\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0, 0 })
 public class UnknownPornScript1 extends PluginForHost {
@@ -40,6 +41,8 @@ public class UnknownPornScript1 extends PluginForHost {
     }
 
     /* DEV NOTES */
+    /* Porn_plugin */
+    /* V0.1 */
     // Tags: For porn sites using the flowplayer videoplayer
     // protocol: no https
     // other:
@@ -162,6 +165,11 @@ public class UnknownPornScript1 extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.UnknownPornScript1;
     }
 
     @Override

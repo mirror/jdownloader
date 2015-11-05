@@ -74,7 +74,7 @@ public class PornhdCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         final String fid = getFID(downloadLink);
         String url_filename = new Regex(downloadLink.getDownloadURL(), "/\\d+/([^/]+)$").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"player-container no-video\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (url_filename == null) {

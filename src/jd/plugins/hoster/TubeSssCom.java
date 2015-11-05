@@ -28,14 +28,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubesss.com" }, urls = { "http://(www\\.)?tubesssdecrypted\\.com/videos/\\d+/.*?\\.html" }, flags = { 0 })
 public class TubeSssCom extends PluginForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
-    /* Using playerConfig script */
-    /* Tags: playerConfig.php */
 
     private String DLLINK = null;
 
@@ -111,6 +110,11 @@ public class TubeSssCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.UnknownPornScript4;
     }
 
     @Override

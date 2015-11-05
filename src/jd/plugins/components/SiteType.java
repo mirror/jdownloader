@@ -84,6 +84,8 @@ public class SiteType {
         UnknownPornScript2,
         /** Script used e.g. for <a href="http:/fantasy8.com/">fantasy8.com</a> */
         UnknownPornScript3,
+        /** Script used e.g. for <a href="http:/pornyeah.com/">pornyeah.com</a> */
+        UnknownPornScript4,
         /**
          * Script used by some video hosting sites. <a href="http:/cloudy.ec/">cloudy.ec</a>. Not sure what to call this script.
          */

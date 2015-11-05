@@ -52,6 +52,7 @@ public class KeezMoviesCom extends antiDDoSForHost {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("keezmoviesdecrypted.com/", "keezmovies.com/"));
     }
