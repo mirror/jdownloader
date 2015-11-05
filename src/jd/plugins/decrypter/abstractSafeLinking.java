@@ -48,9 +48,9 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    protected String parameter = null;
-    protected String cType     = "notDetected";
-    protected String uid       = null;
+    protected String                               parameter = null;
+    protected String                               cType     = "notDetected";
+    protected String                               uid       = null;
 
     protected final static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
@@ -101,7 +101,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         }
         br.getPage(parameter);
         // /d/ should redirect, but now apparently it stays on the short url link..
-        if (parameter.matches(".*?/d/[a-f0-9]{10}")) {
+        if (parameter.matches(".*?/d/([a-f0-9]{10}|" + regexBase58() + ")")) {
             final String link = br.getRedirectLocation();
             if (link != null) {
                 decryptedLinks.add(createDownloadlink(link));
@@ -140,11 +140,14 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                     }
                     if (JSonUtils.parseBoolean(useCaptcha)) {
                         // captchas:[
-                        // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
+                        // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function
+                        // t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
                         // {name:"Recaptcha",id:1,isDefaultBackup:!0,enabled:!0,publicKey:"6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk",init:function(e){window.renderRecaptchaCB=function(){grecaptcha.render(document.getElementById("recaptcha"),{sitekey:e.publicKey})},$.getScript("https://www.google.com/recaptcha/api.js?onload=renderRecaptchaCB&render=explicit",function(){})},getModel:function(e){return{answer:grecaptcha.getResponse(),challengeId:e.captcha2.publicKey}},refresh:function(){grecaptcha.reset()}},
                         // {name:"Basic captcha",id:2},
                         // {name:"3D captcha",id:3},
-                        // {name:"Fancy captcha",id:4,enabled:!0,init:function(){$.getScript("/assets/components/plugins/fancy_captcha/jquery.captcha.js",function(){$("#fancy").fancy_captcha({captchaDir:"/",url:baseUrl+"/fancy_captcha",imagesDir:"/assets/images/fancycaptcha"})})},getModel:function(e){return window.fancyCaptcha?{answer:window.fancyCaptcha.answer}:null},refresh:function(){}},
+                        // {name:"Fancy
+                        // captcha",id:4,enabled:!0,init:function(){$.getScript("/assets/components/plugins/fancy_captcha/jquery.captcha.js",function(){$("#fancy").fancy_captcha({captchaDir:"/",url:baseUrl+"/fancy_captcha",imagesDir:"/assets/images/fancycaptcha"})})},getModel:function(e){return
+                        // window.fancyCaptcha?{answer:window.fancyCaptcha.answer}:null},refresh:function(){}},
                         // {name:"QapTcha",id:5,enabled:!0,init:function(e){e.enableQaptcha=!0},getModel:function(e){return{answer:e.security.qaptcha?e.security.captcha2.key:"",challengeId:e.security.captcha2.key}}},
                         // {name:"Simple Captcha",id:6},
                         // {name:"Dotty Captcha",id:7},
