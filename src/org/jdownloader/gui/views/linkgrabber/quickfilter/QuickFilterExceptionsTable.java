@@ -138,7 +138,6 @@ public class QuickFilterExceptionsTable extends FilterTable {
                         if (((ExceptionFilter) filter).isFiltered(link)) {
                             usedFilters.add(filter);
                             it.remove();
-                            break;
                         }
                     }
                 }

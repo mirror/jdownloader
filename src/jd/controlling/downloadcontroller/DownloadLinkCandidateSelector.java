@@ -154,6 +154,14 @@ public class DownloadLinkCandidateSelector {
         final String candidatePlugin = cachedAccount.getPlugin().getHost();
         final Account candidateAccount = cachedAccount.getAccount();
         int maxPluginConcurrentAccount = cachedAccount.getPlugin().getMaxSimultanDownload(null, candidateAccount);
+        if (maxPluginConcurrentAccount == 0) {
+            final String plugin = cachedAccount.getPlugin().getLazyP().getClassName();
+            if (candidateAccount == null) {
+                throw new WTFException(plugin + ".getMaxSimultanDownload(null,null) returned 0!");
+            } else {
+                throw new WTFException(plugin + ".getMaxSimultanDownload(null," + candidateAccount.getUser() + ") returned 0!");
+            }
+        }
         int maxPluginConcurrentHost = cachedAccount.getPlugin().getMaxSimultanDownload(candidateLink, candidateAccount);
         int maxConcurrentHost = session.getMaxConcurrentDownloadsPerHost();
         int maxDownloads = Math.max(1, CFG_GENERAL.CFG.getMaxSimultaneDownloads());
@@ -169,9 +177,9 @@ public class DownloadLinkCandidateSelector {
             /**
              * not a forced candidate and no special rules and already reached max concurrent downloads
              */
-            if (DownloadWatchDog.getInstance().checkForAdditionalDownloadSlots(session)) {
-                return DownloadLinkCandidatePermission.OK_SPEED_EXTENSION;
-            }
+             if (DownloadWatchDog.getInstance().checkForAdditionalDownloadSlots(session)) {
+                 return DownloadLinkCandidatePermission.OK_SPEED_EXTENSION;
+             }
             return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
         }
         int forcedDownloads = 0;

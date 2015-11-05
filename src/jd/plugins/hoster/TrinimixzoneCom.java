@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -32,10 +31,13 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 30971 $", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "http://.trinimixzone\\.com/DO_DOT_MATCH_PREMIUM_ACC_SUPPLY_ONLY" }, flags = { 0 })
+import org.appwork.utils.logging2.LogInterface;
+
+@HostPlugin(revision = "$Revision: 30971 $", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "" }, flags = { 0 })
 public class TrinimixzoneCom extends PluginForHost {
 
     public TrinimixzoneCom(PluginWrapper wrapper) {
@@ -45,30 +47,19 @@ public class TrinimixzoneCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-
         final AccountInfo ai = new AccountInfo();
-        try {
-            if (!login(br, account)) {
-                account.setValid(false);
-                return ai;
-            }
-
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
+        if (!login(br, account)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        //
         ai.setStatus("Account is OK");
         ai.setValidUntil(-1);
-        account.setValid(true);
         return ai;
-
     }
 
     public static boolean login(Browser br, Account account) throws Exception {
         br.setCookiesExclusive(true);
         br.clearCookies("http://trinimixzone.com/forum/member.php");
-        Form form = new Form();
+        final Form form = new Form();
         form.setAction("http://trinimixzone.com/forum/member.php");
         form.setEncoding("application/x-www-form-urlencoded");
         form.setMethod(MethodType.POST);
@@ -79,9 +70,11 @@ public class TrinimixzoneCom extends PluginForHost {
         form.addInputField(new InputField("quick_remember", "yes"));
         form.addInputField(new InputField("submit", "Login"));
         br.submitForm(form);
-
-        return br.getCookie(br.getHost(), "mybbuser") != null;
-
+        final boolean ret = br.getCookie(br.getHost(), "mybbuser") != null;
+        if (!ret) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        return ret;
     }
 
     @Override
@@ -89,15 +82,14 @@ public class TrinimixzoneCom extends PluginForHost {
         return "http://trinimixzone.com/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        return null;
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -112,26 +104,20 @@ public class TrinimixzoneCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    public static boolean login(Browser br) {
-        ArrayList<Account> accounts = AccountController.getInstance().list("trinimixzone.com");
+    public static boolean login(final Browser br) {
+        final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts("trinimixzone.com");
         if (accounts != null && accounts.size() != 0) {
-            final Iterator<Account> it = accounts.iterator();
-            while (it.hasNext()) {
-                final Account n = it.next();
-                if (n.isEnabled() && n.isValid()) {
-
-                    try {
-
-                        if (login(br, n)) {
-                            return true;
-                        }
-
-                    } catch (final Exception e) {
-
-                        n.setValid(false);
-
+            final LogInterface logger = br.getLogger();
+            for (final Account account : accounts) {
+                try {
+                    if (login(br, account)) {
+                        return true;
                     }
-
+                } catch (final PluginException e) {
+                    logger.log(e);
+                    account.setValid(false);
+                } catch (final Exception e) {
+                    logger.log(e);
                 }
             }
         }

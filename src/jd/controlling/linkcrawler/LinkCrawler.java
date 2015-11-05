@@ -332,7 +332,7 @@ public class LinkCrawler {
         setFilter(defaultFilterFactory());
         if (connectParentCrawler && Thread.currentThread() instanceof LinkCrawlerThread) {
             /* forward crawlerGeneration from parent to this child */
-            LinkCrawlerThread thread = (LinkCrawlerThread) Thread.currentThread();
+            final LinkCrawlerThread thread = (LinkCrawlerThread) Thread.currentThread();
             parentCrawler = thread.getCurrentLinkCrawler();
             classLoader = parentCrawler.getPluginClassLoaderChild();
             this.unsortedLazyHostPlugins = parentCrawler.unsortedLazyHostPlugins;
@@ -487,7 +487,7 @@ public class LinkCrawler {
                                 @Override
                                 void crawling() {
                                     java.util.List<CrawledLink> links = find(text, url, allowDeep, true);
-                                    crawl(getGeneration(), links);
+                                    crawl(generation, links);
                                 }
                             });
                         }
@@ -564,7 +564,7 @@ public class LinkCrawler {
         crawl(this.getCrawlerGeneration(true), possibleCryptedLinks);
     }
 
-    protected void crawl(int generation, final List<CrawledLink> possibleCryptedLinks) {
+    protected void crawl(final int generation, final List<CrawledLink> possibleCryptedLinks) {
         if (possibleCryptedLinks != null && possibleCryptedLinks.size() > 0) {
             if (checkStartNotify(generation)) {
                 try {
@@ -591,7 +591,7 @@ public class LinkCrawler {
 
                                 @Override
                                 void crawling() {
-                                    distribute(getGeneration(), possibleCryptedLinks);
+                                    distribute(generation, possibleCryptedLinks);
                                 }
                             });
                         }
@@ -955,7 +955,7 @@ public class LinkCrawler {
 
                             @Override
                             void crawling() {
-                                processHostPlugin(getGeneration(), pluginForHost, link);
+                                processHostPlugin(generation, pluginForHost, link);
                             }
                         });
                     } else {
@@ -1037,7 +1037,7 @@ public class LinkCrawler {
 
                                         @Override
                                         void crawling() {
-                                            crawl(getGeneration(), pDecrypt, decryptThis);
+                                            crawl(generation, pDecrypt, decryptThis);
                                         }
                                     });
                                 } else {
@@ -1114,7 +1114,7 @@ public class LinkCrawler {
 
                                     @Override
                                     void crawling() {
-                                        container(getGeneration(), pluginC, decryptThis);
+                                        container(generation, pluginC, decryptThis);
                                     }
                                 });
                             } else {
@@ -2117,7 +2117,7 @@ public class LinkCrawler {
         return CRAWLER.get() > 0;
     }
 
-    protected void container(int generation, PluginsC oplg, final CrawledLink cryptedLink) {
+    protected void container(final int generation, PluginsC oplg, final CrawledLink cryptedLink) {
         final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         cryptedLink.setCustomCrawledLinkModifier(null);
         cryptedLink.setBrokenCrawlerHandler(null);
@@ -2201,7 +2201,7 @@ public class LinkCrawler {
 
                                         @Override
                                         void crawling() {
-                                            LinkCrawler.this.distribute(getGeneration(), decryptedPossibleLinks);
+                                            LinkCrawler.this.distribute(generation, decryptedPossibleLinks);
                                         }
                                     });
                                 }
@@ -2252,6 +2252,7 @@ public class LinkCrawler {
                     LogController.CL().log(e1);
                     return;
                 }
+                final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
                 wplg.setBrowser(new Browser());
                 LogInterface logger = null;
                 LogInterface oldLogger = null;
@@ -2314,7 +2315,7 @@ public class LinkCrawler {
                                         @Override
                                         void crawling() {
                                             final List<CrawledLink> distributeThis = new ArrayList<CrawledLink>(linksToDistributeFinal);
-                                            LinkCrawler.this.distribute(getGeneration(), distributeThis);
+                                            nextLinkCrawler.get().distribute(generation, distributeThis);
                                         }
                                     });
                                 }
@@ -2408,7 +2409,7 @@ public class LinkCrawler {
 
                                         @Override
                                         void crawling() {
-                                            LinkCrawler.this.distribute(getGeneration(), possibleCryptedLinks);
+                                            nextLinkCrawler.get().distribute(generation, possibleCryptedLinks);
                                         }
                                     });
                                 }
@@ -2434,6 +2435,10 @@ public class LinkCrawler {
                     try {
                         wplg.setCrawler(this);
                         wplg.setLinkCrawlerAbort(new LinkCrawlerAbort(generation, this));
+                        final LinkCrawler pluginNextLinkCrawler = wplg.getCustomNextCrawler();
+                        if (pluginNextLinkCrawler != null) {
+                            nextLinkCrawler.set(pluginNextLinkCrawler);
+                        }
                         decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
                         /* remove distributer from plugin to process remaining/returned links */
                         wplg.setDistributer(null);

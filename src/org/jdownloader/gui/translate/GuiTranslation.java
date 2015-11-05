@@ -677,8 +677,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Linkgrabber Activity" })
     String StatusBarImpl_initGUI_linkgrabber();
 
+    @Default(lngs = { "en" }, values = { "Linkchecker Activity" })
+    String StatusBarImpl_initGUI_linkchecker();
+
+    @Default(lngs = { "en" }, values = { "Abort Linkchecker" })
+    String StatusBarImpl_initGUI_abort_linkchecker();
+
     @Default(lngs = { "en" }, values = { "Abort Linkgrabber" })
     String StatusBarImpl_initGUI_abort_linkgrabber();
+
+    @Default(lngs = { "en" }, values = { "Onlinecheck..." })
+    String StatusBarImpl_initGUI_linkchecker_left();
 
     @Default(lngs = { "en" }, values = { "Extraction Activity" })
     String StatusBarImpl_initGUI_extract();

@@ -19,17 +19,21 @@ package jd.nutils.zip;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.extensions.extraction.ExtractionProgress;
+import org.jdownloader.logging.LogController;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
@@ -41,7 +45,7 @@ import com.sun.jna.platform.win32.WinNT.HANDLE;
  * Creates a shared memory area that holds the current JDownloader state, like B/s, ETA, ...
  *
  * Shared memory name: JDownloader Update interval: 1000 ms
- * 
+ *
  * Content (1024 bytes): version (currently 1) - integer (4 bytes) bps in bytes/s - long (8 bytes) total bytes - long (8 bytes) loaded bytes
  * - long (8 bytes) remaining bytes - long (8 bytes) eta in seconds - long (8 bytes) running downloads - long (8 bytes) open connections -
  * long (8 bytes) running packages - long (8 bytes)
@@ -49,18 +53,38 @@ import com.sun.jna.platform.win32.WinNT.HANDLE;
  */
 public class SharedMemoryState {
     // singleton
-    private static SharedMemoryState INSTANCE     = new SharedMemoryState();
+    private final static SharedMemoryState INSTANCE     = new SharedMemoryState();
     // shared memory version
-    private static final int         VERSION      = 1;
+    private static final int               VERSION      = 1;
     // update time to fill shared memory (ms)
-    private static final int         SLEEP_TIME   = 1000;
+    private static final int               SLEEP_TIME   = 1000;
     // shared memory name
-    private String                   sharedName   = "JDownloader";
-    // native handlers
-    private HANDLE                   sharedFile   = null;
-    private Pointer                  sharedMemory = null;
+    private static final String            sharedName   = "JDownloader";
+
     // update thread
-    private volatile Thread          updateThread = null;
+    private final AtomicReference<Thread>  updateThread = new AtomicReference<Thread>(null);
+    private final LogSource                logger;
+
+    private SharedMemoryState() {
+        logger = LogController.CL(false);
+        // register shutdown handler to stop thread and clear shared memory
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            @Override
+            public void setHookPriority(int priority) {
+                super.setHookPriority(Integer.MAX_VALUE);
+            }
+
+            @Override
+            public String toString() {
+                return "ShutdownEvent: SharedMemoryState";
+            }
+
+            @Override
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
+                SharedMemoryState.getInstance().stopUpdates();
+            }
+        });
+    }
 
     // returns the one and only instance
     public static SharedMemoryState getInstance() {
@@ -69,106 +93,84 @@ public class SharedMemoryState {
 
     // create shared memory segment and update thread, only available in Windows OS
     public synchronized void startUpdates() {
-        if (!CrossSystem.isWindows() || (sharedFile != null)) {
-            return;
-        }
+        if (CrossSystem.isWindows()) {
+            HANDLE sharedFile = null;
+            try {
+                // create shared memory segment
+                sharedFile = Kernel32.INSTANCE.CreateFileMapping(WinBase.INVALID_HANDLE_VALUE, null, WinNT.PAGE_READWRITE, 0, 1024, sharedName);
+                final HANDLE finalSharedFile = sharedFile;
+                final Pointer finalSharedMemory = Kernel32.INSTANCE.MapViewOfFile(sharedFile, WinNT.SECTION_MAP_WRITE, 0, 0, 1024);
+                finalSharedMemory.setInt(0, VERSION);
 
-        try {
-            // create shared memory segment
-            sharedFile = Kernel32.INSTANCE.CreateFileMapping(WinBase.INVALID_HANDLE_VALUE, null, WinNT.PAGE_READWRITE, 0, 1024, sharedName);
-            sharedMemory = Kernel32.INSTANCE.MapViewOfFile(sharedFile, WinNT.SECTION_MAP_WRITE, 0, 0, 1024);
-            sharedMemory.setInt(0, VERSION);
-
-            // start periodically update thread
-            updateThread = new Thread() {
-                @Override
-                public void run() {
-                    while (Thread.currentThread() == updateThread) {
+                // start periodically update thread
+                final Thread thread = new Thread() {
+                    @Override
+                    public void run() {
                         try {
-                            sleep(SLEEP_TIME);
-                            SharedMemoryState.getInstance().updateState();
-                        } catch (Throwable e) {
-                            // e.printStackTrace();
+                            final ByteBuffer byteBuffer = ByteBuffer.allocate(128);
+                            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+                            while (Thread.currentThread() == updateThread.get()) {
+                                try {
+                                    sleep(SLEEP_TIME);
+                                    SharedMemoryState.getInstance().updateState(finalSharedMemory, byteBuffer);
+                                } catch (Throwable th) {
+                                    logger.log(th);
+                                }
+                            }
+                        } finally {
+                            updateThread.compareAndSet(Thread.currentThread(), null);
+                            closeSharedFile(finalSharedFile, finalSharedMemory);
                         }
                     }
-                }
-            };
+                };
+                thread.setName("SharedMemoryStateThread");
+                thread.setDaemon(true);
+                updateThread.set(thread);
+                thread.start();
+            } catch (Throwable th) {
+                logger.log(th);
+                closeSharedFile(sharedFile, null);
+            }
+        }
+    }
 
-            updateThread.setName("SharedMemoryStateThread");
-            updateThread.setDaemon(true);
-            updateThread.start();
-
-            // register shutdown handler to stop thread and clear shared memory
-            ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-                @Override
-                public void setHookPriority(int priority) {
-                    super.setHookPriority(Integer.MAX_VALUE);
+    protected void closeSharedFile(final HANDLE sharedFile, final Pointer sharedMemory) {
+        try {
+            if ((sharedFile != null) && !WinBase.INVALID_HANDLE_VALUE.equals(sharedFile)) {
+                if (sharedMemory != null) {
+                    sharedMemory.setMemory(4, 1024, (byte) 0); // clear memory
                 }
-
-                @Override
-                public String toString() {
-                    return "ShutdownEvent: SharedMemoryState";
-                }
-
-                @Override
-                public void onShutdown(final ShutdownRequest shutdownRequest) {
-                    SharedMemoryState.getInstance().stopUpdates();
-                }
-            });
+                Kernel32.INSTANCE.CloseHandle(sharedFile);
+            }
         } catch (Throwable th) {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(th);
+            logger.log(th);
         }
     }
 
     // stop thread and clear shared memory segment (if hold open by other process)
-    public synchronized void stopUpdates() {
-        if (updateThread != null) {
-            Thread th = updateThread;
-            updateThread = null;
-            th.interrupt();
-        }
-
-        try {
-            if ((sharedFile != null) && !WinBase.INVALID_HANDLE_VALUE.equals(sharedFile)) {
-                sharedMemory.setMemory(4, 1024, (byte) 0); // clear memory
-                Kernel32.INSTANCE.CloseHandle(sharedFile);
-            }
-        } catch (Throwable th) {
-            // th.printStackTrace();
+    public void stopUpdates() {
+        final Thread thread = updateThread.getAndSet(null);
+        if (thread != null) {
+            thread.interrupt();
         }
     }
 
     // write current state into shared memory
-    public synchronized void updateState() {
-        if (sharedFile == null) {
-            return;
-        }
+    protected void updateState(Pointer sharedMemory, ByteBuffer buf) {
+        final int bps = Math.max(0, DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed());
+        final DownloadLinkAggregator dla = new DownloadLinkAggregator(DownloadController.getInstance().getSelectionInfo());
+        final long totalDl = dla.getTotalBytes();
+        final long curDl = dla.getBytesLoaded();
+        final long remain = Math.max(0, totalDl - curDl);
+        long eta = Math.max(0, dla.getEta());
 
-        ByteBuffer buf = ByteBuffer.allocate(128);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-
-        int bps = Math.max(0, DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed());
-        long eta = 0;
-        long totalDl = 0;
-        long curDl = 0;
-        long remain = 0;
-
-        if (DownloadsTable.getInstance() != null) {
-            DownloadLinkAggregator dla = new DownloadLinkAggregator(DownloadsTable.getInstance().getSelectionInfo(false, false));
-
-            totalDl = dla.getTotalBytes();
-            curDl = dla.getBytesLoaded();
-            remain = Math.max(0, totalDl - curDl);
-            eta = Math.max(0, dla.getEta());
-        }
-
-        List<ExtractionController> jobs = ExtractionExtension.getInstance().getJobQueue().getJobs();
+        final List<ExtractionController> jobs = ExtractionExtension.getInstance().getJobQueue().getJobs();
         for (final ExtractionController controller : jobs) {
-            if (controller.getExtractionProgress() != null) {
-                eta = Math.max(eta, controller.getExtractionProgress().getETA());
+            final ExtractionProgress progress = controller.getExtractionProgress();
+            if (progress != null) {
+                eta = Math.max(eta, progress.getETA());
             }
         }
-
         buf.putInt(VERSION);
         buf.putLong(bps);
         buf.putLong(totalDl);
@@ -178,7 +180,6 @@ public class SharedMemoryState {
         buf.putLong(DownloadWatchDog.getInstance().getActiveDownloads());
         buf.putLong(DownloadWatchDog.getInstance().getDownloadSpeedManager().connections());
         buf.putLong(DownloadWatchDog.getInstance().getRunningFilePackages().size());
-
         sharedMemory.write(0, buf.array(), 0, 128);
     }
 }

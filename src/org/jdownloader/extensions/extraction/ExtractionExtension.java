@@ -455,34 +455,39 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             public void run() {
                 try {
                     FileCreationManager.getInstance().mkdir(Application.getResource("logs/extracting/open"));
-                    File[] files = Application.getResource("logs/extracting/open").listFiles();
+                    final File[] files = Application.getResource("logs/extracting/open").listFiles();
                     if (files != null) {
                         String latestLog = null;
-                        for (File f : files) {
+                        for (final File f : files) {
                             if (f.getName().matches("\\w+\\.txt")) {
                                 getLogger().log(new Exception("Extraction Crashlog found! " + f.getName()));
                                 int i = 1;
                                 File renamedTo = new File(f.getParentFile().getParentFile(), "crashed_" + i + "_" + f.getName());
-
                                 while (renamedTo.exists()) {
                                     i++;
                                     renamedTo = new File(f.getParentFile().getParentFile(), "crashed_" + i + "_" + f.getName());
                                 }
                                 f.renameTo(renamedTo);
-                                byte[] bytes = IO.readFile(renamedTo, 512 * 1024);
+                                final byte[] bytes = IO.readFile(renamedTo, 512 * 1024);
                                 latestLog = new String(bytes, "UTF-8");
-                                bytes = null;
                                 getLogger().info(latestLog);
                             }
                         }
                         if (!org.appwork.utils.Application.isHeadless()) {
                             /* currently disabled as headless does not support log upload */
                             if (StringUtils.isNotEmpty(latestLog)) {
-                                ExceptionDialog ed = new ExceptionDialog(0, T._.crash_title(), T._.crash_message(), null, null, null);
+                                final ExceptionDialog ed = new ExceptionDialog(0, T._.crash_title(), T._.crash_message(), null, null, null);
                                 ed.setMore(latestLog);
-                                UIOManager.I().show(ExceptionDialogInterface.class, ed);
-                                LogAction la = new LogAction();
-                                la.actionPerformed(null);
+                                final ExceptionDialogInterface dialog = UIOManager.I().show(ExceptionDialogInterface.class, ed);
+                                dialog.throwCloseExceptions();
+                                new EDTRunner() {
+
+                                    @Override
+                                    protected void runInEDT() {
+                                        final LogAction la = new LogAction();
+                                        la.actionPerformed(null);
+                                    }
+                                };
                             }
                         }
                     }

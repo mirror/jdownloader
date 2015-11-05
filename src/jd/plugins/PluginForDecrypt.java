@@ -578,4 +578,8 @@ public abstract class PluginForDecrypt extends Plugin {
         return super.getCrawler();
     }
 
+    public LinkCrawler getCustomNextCrawler() {
+        return null;
+    }
+
 }

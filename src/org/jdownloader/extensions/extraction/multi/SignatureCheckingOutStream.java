@@ -7,6 +7,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStream;
+import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.Signature;
 
@@ -19,18 +20,23 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
     private final long                          maxPWCheckSize;
     private String                              itemName;
     private long                                itemSize           = -1;
-    private boolean                             optimized;
+    private final boolean                       optimized;
     private boolean                             ignoreWrite        = false;
+    private final ExtractionController          ctrl;
 
-    public SignatureCheckingOutStream(AtomicBoolean passwordfound, FileSignatures filesignatures, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, boolean optimized) {
+    public SignatureCheckingOutStream(final ExtractionController ctrl, AtomicBoolean passwordfound, FileSignatures filesignatures, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, boolean optimized) {
         this.passwordfound = passwordfound;
         this.filesignatures = filesignatures;
         this.buffer = buffer;
         this.maxPWCheckSize = maxPWCheckSize;
         this.optimized = optimized;
+        this.ctrl = ctrl;
     }
 
     public int write(byte[] data) throws SevenZipException {
+        if (ctrl.gotKilled()) {
+            throw new SevenZipException("Extraction has been aborted");
+        }
         if (ignoreWrite == false) {
             int toWrite = Math.min(buffer.free(), data.length);
             if (toWrite > 0) {

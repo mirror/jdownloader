@@ -26,6 +26,7 @@ import jd.config.Property;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -112,11 +113,20 @@ public class MegaConz extends PluginForHost {
         }
         br.getHeaders().put("APPID", "JDownloader");
         try {
-            if (publicFile) {
-                br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+            final PostRequest request;
+            final String parentNode = link.getStringProperty("pn", null);
+            if (parentNode != null) {
+                request = new PostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + parentNode);
             } else {
-                br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
+                request = new PostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet());
             }
+            request.setContentType("text/plain; charset=UTF-8");
+            if (publicFile) {
+                request.setPostDataString("[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+            } else {
+                request.setPostDataString("[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
+            }
+            br.getPage(request);
         } catch (IOException e) {
             // java.io.IOException: 500 Server Too Busy
             if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) {
@@ -218,11 +228,21 @@ public class MegaConz extends PluginForHost {
                 if (fileID == null || keyString == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (publicFile) {
-                    br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+                final PostRequest request;
+                final String parentNode = link.getStringProperty("pn", null);
+                if (parentNode != null) {
+                    request = new PostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + parentNode);
                 } else {
-                    br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
+                    request = new PostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet());
                 }
+                request.setContentType("text/plain; charset=UTF-8");
+                request.setContentType("text/plain; charset=UTF-8");
+                if (publicFile) {
+                    request.setPostDataString("[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+                } else {
+                    request.setPostDataString("[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
+                }
+                br.getPage(request);
                 String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
                 if (downloadURL == null) {
                     String error = getError(br);
@@ -601,6 +621,9 @@ public class MegaConz extends PluginForHost {
             if (!StringUtils.equals((String) downloadLink.getProperty("usedPlugin", plugin.getHost()), plugin.getHost())) {
                 return false;
             }
+        }
+        if (downloadLink != null && downloadLink.getStringProperty("pn") != null) {
+            return StringUtils.equals(getHost(), plugin.getHost());
         }
         return true;
     }

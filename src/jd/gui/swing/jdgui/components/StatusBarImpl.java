@@ -33,6 +33,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
@@ -152,8 +153,8 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
                     popup.add(new AppAction() {
                         /**
-                     * 
-                     */
+                         *
+                         */
                         private static final long serialVersionUID = -968768342263254431L;
 
                         {
@@ -193,8 +194,18 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         });
         LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
 
-            public void onLinkCheckerEvent(LinkCheckerEvent event) {
-                updateLinkGrabberIndicator();
+            public void onLinkCheckerEvent(final LinkCheckerEvent event) {
+                if (event.getCaller() == LinkCollector.getInstance().getLinkChecker()) {
+                    updateLinkGrabberIndicator();
+                } else if (LinkCheckerEvent.Type.STARTED.equals(event.getType())) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            new LinkCheckerIndicator(StatusBarImpl.this, event.getCaller());
+                        }
+                    };
+                }
             }
 
         });
@@ -264,7 +275,11 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     public void addProcessIndicator(JComponent icon) {
         if (processIndicators.add(icon)) {
-            updateDelayer.resetAndStart();
+            if (SwingUtilities.isEventDispatchThread()) {
+                redoLayout();
+            } else {
+                updateDelayer.resetAndStart();
+            }
         }
     }
 
@@ -289,19 +304,19 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     private final AtomicBoolean   linkgrabberIndicatorEnabled = new AtomicBoolean(false);
     private final DelayedRunnable linkgrabberIndicatorUpdater = new DelayedRunnable(ToolTipController.EXECUTER, 500, 2000) {
-                                                                  @Override
-                                                                  public String getID() {
-                                                                      return "StatusBar:LinkGrabberIndicatorUpdater";
-                                                                  }
+        @Override
+        public String getID() {
+            return "StatusBar:LinkGrabberIndicatorUpdater";
+        }
 
-                                                                  @Override
-                                                                  public void delayedrun() {
-                                                                      updateLinkGrabberIndicator();
-                                                                  }
-                                                              };
+        @Override
+        public void delayedrun() {
+            updateLinkGrabberIndicator();
+        }
+    };
 
     private void updateLinkGrabberIndicator() {
-        final boolean enabled = LinkChecker.isChecking() || LinkCrawler.isCrawling() || LinkCollector.getInstance().isCollecting();
+        final boolean enabled = LinkCrawler.isCrawling() || LinkCollector.getInstance().isCollecting();
         if (enabled) {
             linkgrabberIndicatorUpdater.resetAndStart();
         }

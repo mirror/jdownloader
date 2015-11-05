@@ -117,19 +117,23 @@ public class MegaConz extends PluginForDecrypt {
 
             } else if ("0".equals(nodeType)) {
                 /* file */
-                String nodeParentID = getField("p", node);
-                MegaFolder folder = folders.get(nodeParentID);
+                final String nodeParentID = getField("p", node);
+                final MegaFolder folder = folders.get(nodeParentID);
 
-                FilePackage fp = FilePackage.getInstance();
-                String path = getRelPath(folder, folders);
+                final FilePackage fp = FilePackage.getInstance();
+                final String path = getRelPath(folder, folders);
                 fp.setName(path.substring(1));
                 fp.setProperty("ALLOW_MERGE", true);
                 String nodeSize = getField("s", node);
                 if (nodeSize == null) {
                     continue;
                 }
-                String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
-                DownloadLink link = createDownloadlink("http://mega.co.nz/#N!" + nodeID + "!" + safeNodeKey);
+                final String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
+                final DownloadLink link = createDownloadlink("http://mega.co.nz/#N!" + nodeID + "!" + safeNodeKey);
+                if (folderID != null) {
+                    // folder nodes can only be downloaded with knowledge of the folderNodeID
+                    link.setProperty("pn", folderID);
+                }
                 link.setContainerUrl(containerURL);
                 link.setFinalFileName(nodeName);
                 link.setProperty("REL_PATH", path);

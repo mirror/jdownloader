@@ -20,6 +20,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -27,11 +30,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TrinimixzoneCom;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision: 31871 $", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "http://(www\\.)?trinimixzone\\.com/forum/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 31871 $", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "https?://(www\\.)?trinimixzone\\.com/forum/.*" }, flags = { 0 })
 public class TrnmxznCm extends PluginForDecrypt {
 
     public TrnmxznCm(PluginWrapper wrapper) {
@@ -39,17 +43,16 @@ public class TrnmxznCm extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         TrinimixzoneCom.login(br);
         br.getPage(parameter);
-        String title = Encoding.htmlDecode(br.getRegex("<title>(.*?)</title>").getMatch(0));
+        final String title = Encoding.htmlDecode(br.getRegex("<title>(.*?)</title>").getMatch(0));
         br.setFollowRedirects(false);
         try {
-            String[] posts = br.getRegex("<!-- start: postbit -->(.*?)<!-- end: postbit -->").getColumn(0);
+            final String[] posts = br.getRegex("<!-- start: postbit -->(.*?)<!-- end: postbit -->").getColumn(0);
             boolean saidThanks = false;
-            for (String post : posts) {
+            for (final String post : posts) {
                 if (post.contains("alerta_thx message")) {
                     // need top say thanks
                     String pid = new Regex(post, "pid(\\d+)").getMatch(0);
@@ -59,32 +62,50 @@ public class TrnmxznCm extends PluginForDecrypt {
                     } else {
                         br.getPage(parameter + "?pid=" + pid + "&action=thank");
                     }
-
                 }
             }
             if (saidThanks) {
                 br.getPage(parameter);
             }
-            for (String link : HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getBaseURL())) {
-                System.out.println(link);
-                if (link.contains("http://trinimixzone.com/")) {
+            for (final String link : HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getBaseURL())) {
+                if (link.contains("trinimixzone.com")) {
                     continue;
                 }
                 decryptedLinks.add(createDownloadlink(link));
             }
-
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.log(e);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
-        fp.addLinks(decryptedLinks);
+        if (title != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    @Override
+    public LinkCrawler getCustomNextCrawler() {
+        final LinkCrawler lc = new LinkCrawler();
+        lc.setFilter(new LinkCrawlerFilter() {
+
+            @Override
+            public boolean dropByUrl(final CrawledLink link) {
+                final PluginForHost plugin = link.gethPlugin();
+                if (plugin != null) {
+                    if (("ftp".equalsIgnoreCase(plugin.getHost()) || "http links".equalsIgnoreCase(plugin.getHost()))) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public boolean dropByFileProperties(CrawledLink link) {
+                return false;
+            }
+        });
+        return lc;
     }
 
 }

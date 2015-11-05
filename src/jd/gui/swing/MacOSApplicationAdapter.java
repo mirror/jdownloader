@@ -38,9 +38,6 @@ import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -99,11 +96,6 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                     LogController.GL.info("MacOS FullScreen Support activated");
                 } catch (Throwable e) {
                     LogController.GL.log(e);
-                }
-                if (adapter.openURIlinks != null) {
-                    LogController.GL.info("Distribute links: " + adapter.openURIlinks);
-                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.START_PARAMETER, null), adapter.openURIlinks));
-                    adapter.openURIlinks = null;
                 }
             }
 
@@ -285,35 +277,39 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         }
     }
 
-    private QuitResponse quitResponse = null;
-    private String       openURIlinks;
-
     private MacOSApplicationAdapter() {
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+    }
 
+    public void handleQuitRequestWith(QuitEvent e, final QuitResponse response) {
+        RestartController.getInstance().exitAsynch(new SmartRlyExitRequest() {
             @Override
-            public void onShutdown(final ShutdownRequest shutdownRequest) {
+            public void onShutdown() {
                 new Thread() {
                     public void run() {
                         /*
                          * own thread because else it will block, performQuit calls exit again
                          */
-                        if (quitResponse != null) {
-                            quitResponse.performQuit();
-                        }
+                        response.performQuit();
+
+                    };
+                }.start();
+            }
+
+            @Override
+            public void onShutdownVeto() {
+                new Thread() {
+                    public void run() {
+                        /*
+                         * own thread because else it will block, performQuit calls exit again
+                         */
+                        response.cancelQuit();
                     };
                 }.start();
             }
         });
     }
 
-    public void handleQuitRequestWith(QuitEvent e, final QuitResponse response) {
-        quitResponse = response;
-        RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
-    }
-
     public void handlePreferences(PreferencesEvent e) {
-
         appReOpened(null);
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
@@ -327,41 +323,48 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     }
 
     public void appReOpened(AppReOpenedEvent e) {
-
         final JDGui swingGui = JDGui.getInstance();
         if (swingGui == null || swingGui.getMainFrame() == null) {
             return;
         }
         final JFrame mainFrame = swingGui.getMainFrame();
-
         if (!mainFrame.isVisible()) {
-
             WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
         }
     }
 
-    public void openFiles(OpenFilesEvent e) {
+    public void openFiles(final OpenFilesEvent e) {
         appReOpened(null);
         LogController.GL.info("Handle open files from Dock " + e.getFiles().toString());
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (final File file : e.getFiles()) {
             if (sb.length() > 0) {
                 sb.append("\r\n");
             }
             sb.append(file.toURI().toString());
         }
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), sb.toString()));
+        final String links = sb.toString();
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                LogController.GL.info("Distribute links: " + links);
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), links));
+            }
+        });
     }
 
-    public void openURI(AppEvent.OpenURIEvent e) {
+    public void openURI(final AppEvent.OpenURIEvent e) {
         appReOpened(null);
         LogController.GL.info("Handle open uri from Dock " + e.getURI().toString());
-        String links = e.getURI().toString();
-        if (SecondLevelLaunch.GUI_COMPLETE.isReached()) {
-            LogController.GL.info("Distribute links: " + links);
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), links));
-        } else {
-            openURIlinks = links;
-        }
+        final String links = e.getURI().toString();
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                LogController.GL.info("Distribute links: " + links);
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), links));
+            }
+        });
     }
 }

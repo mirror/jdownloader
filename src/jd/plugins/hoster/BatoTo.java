@@ -43,7 +43,7 @@ public class BatoTo extends PluginForHost {
     public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://bato.to/forums/index.php?app=core&module=global&section=register");
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
     }
 
     @Override

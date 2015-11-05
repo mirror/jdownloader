@@ -233,7 +233,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     }
 
     public IfFileExistsDialogInterface show() {
-
         return UIOManager.I().show(IfFileExistsDialogInterface.class, this);
     }
 
