@@ -684,7 +684,10 @@ public class SaleFilesCom extends PluginForHost {
         // these errors imply (Premium Required) from the outset.
         final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<)";
         // let the fun begin!
-        if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
+        if (cbr.containsHTML(an)) {
+            /* Modded 2015-11-05 */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file reached max free downloads wait before you can download it", 30 * 60 * 1000l);
+        } else if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
             String msg = null;
             String fileSizeLimit = cbr.getRegex("You can download files up to(.*?)only").getMatch(0);
             if (!inValidate(fileSizeLimit)) {
