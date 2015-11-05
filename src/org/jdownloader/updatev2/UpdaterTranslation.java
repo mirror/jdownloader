@@ -230,4 +230,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Panel visible" })
     String installonexitframe_panel_visible();
 
+    @Default(lngs = { "en" }, values = { "Installation done. Exit in %s1" })
+    String update_done_close_in_TIME(String formatMilliSeconds);
+
 }

@@ -99,4 +99,10 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setInstallUpdatesOnExitPanelVisible(boolean b);
 
+    @DefaultLongValue(10000)
+    @DescriptionForConfigEntry("After Installing Updates on Exit, JDownloader Shows a bubble at the bottom right. Define its close countdown here")
+    long getCountdownForInstallUpdatesOnExitBubble();
+
+    void setCountdownForInstallUpdatesOnExitBubble(long bubble);
+
 }
