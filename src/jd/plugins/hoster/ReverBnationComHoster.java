@@ -162,7 +162,7 @@ public class ReverBnationComHoster extends PluginForHost {
             br.getPage("/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + song_id);
             finallink = br.getRedirectLocation();
             if (finallink == null) {
-                finallink = br.getRegex("location\\.href = ('|\")(http://[^<>\"]*?)\\1").getMatch(1);
+                finallink = br.getRegex("location\\.href\\s*=\\s*('|\")(https?://[^<>\"]*?)\\1").getMatch(1);
             }
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -259,7 +259,7 @@ public class ReverBnationComHoster extends PluginForHost {
                                                   {
                                                       put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content: reverbnation.com/username\r\n*title* = Title of the song\r\n*artist* = Artist of the song\r\n*songid* = Internal ReverbNation id of the song e.g. '12345678'\r\n*artistid* = Internal ReverbNation id of the artist e.g. '12345678'\r\n*ext* = Extension of the file, usually '.mp3'");
                                                       put("LABEL_FILENAME", "Define custom filename:");
-        }
+                                                  }
                                               };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
