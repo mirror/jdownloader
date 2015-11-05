@@ -62,7 +62,7 @@ public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
         try {
-            Browser.setRequestIntervalLimitGlobal("vk.com", 50, 18, 1500);
+            Browser.setRequestIntervalLimitGlobal("vk.com", 50, 20, 2000);
         } catch (final Throwable e) {
         }
     }
@@ -443,7 +443,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -617,7 +617,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API, TODO: Return host-plugin links here to improve the overall stability.
-     * 
+     *
      * @throws Exception
      */
     private void decryptAudioPage() throws Exception {
@@ -1040,7 +1040,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     private void decryptCommunityVideoAlbum() throws Exception {
@@ -1355,7 +1355,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -1457,7 +1457,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Decrypter " + decryptedData.size() + "entries...");
                 break;
             }
-            Thread.sleep(1000);
+            Thread.sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL));
             logger.info("Parsing page " + i + " of " + maxLoops);
         }
 
@@ -1526,7 +1526,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Decrypter " + decryptedData.size() + "entries...");
                 break;
             }
-            Thread.sleep(1000);
+            Thread.sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO));
             logger.info("Parsing page " + i + " of " + maxLoops);
         }
         if (decryptedData == null || decryptedData.size() == 0) {
@@ -1570,18 +1570,24 @@ public class VKontakteRu extends PluginForDecrypt {
                 break;
             }
         }
+        int counter = 1;
+        while (this.br.containsHTML(TEMPORARILYBLOCKED) && counter <= 10) {
+            logger.info("Trying to avoid block " + counter + " / 10");
+            Thread.sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_TOO_MANY_REQUESTS));
+            getPage(br, parameter);
+        }
         siteGeneralErrorhandling();
     }
 
     private void postPageSafe(final String page, final String postData) throws Exception {
         boolean failed = true;
         boolean failed_once = false;
-        for (int i = 1; i <= 10; i++) {
+        for (int counter = 1; counter <= 10; counter++) {
             br.postPage(page, postData);
             if (br.containsHTML(TEMPORARILYBLOCKED)) {
                 failed_once = true;
-                logger.info("Trying to avoid block " + i + " / 10");
-                this.sleep(3000, CRYPTEDLINK);
+                logger.info("Trying to avoid block " + counter + " / 10");
+                Thread.sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_TOO_MANY_REQUESTS));
                 continue;
             }
             failed = false;
@@ -1593,18 +1599,6 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (!failed && failed_once) {
             logger.info("Successfully avoided block!");
         }
-    }
-
-    /**
-     * Returns the ownerID which belongs to a name e.g. vk.com/some_name
-     * 
-     * @throws Exception
-     */
-    private String resolveScreenNameAPI(final String screenname) throws Exception {
-        getPage(br, "https://api.vk.com/method/resolveScreenName?screen_name=" + screenname);
-        String ownerID = br.getRegex("\"object_id\":(\\d+)").getMatch(0);
-
-        return ownerID;
     }
 
     private void apiGetPageSafe(final String parameter) throws Exception {
@@ -1627,7 +1621,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Handles these error-codes: https://vk.com/dev/errors
-     * 
+     *
      * @return true = ready to retry, false = problem - failed!
      */
     private boolean apiHandleErrors() throws Exception {
@@ -1779,30 +1773,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
 
             }
-            if (br.containsHTML("You tried to load the same page more than once in one second")) {
-                if (counter == 0) {
-                    logger.info("You tried to load the same page more than once in one second, sleep 3 seconds");
-                    Thread.sleep(3000);
-                } else if (counter == 1) {
-                    logger.info("You tried to load the same page more than once in one second, sleep 6 seconds");
-                    Thread.sleep(6000);
-                } else if (counter == 2) {
-                    logger.info("You tried to load the same page more than once in one second, sleep 9 seconds");
-                    Thread.sleep(9000);
-                } else if (counter == 3) {
-                    logger.info("You tried to load the same page more than once in one second, sleep 15 seconds");
-                    Thread.sleep(15000);
-                } else if (counter == 4) {
-                    logger.info("You tried to load the same page more than once in one second, sleep 30 seconds");
-                    Thread.sleep(30000);
-                } else if (counter == 5) {
-                    logger.info("You tried to load the same page more than once in one second, sleep 60 seconds");
-                    Thread.sleep(60000);
-                }
-                continue;
-            } else {
-                break;
-            }
 
         }
         apiHandleErrors();
@@ -1842,6 +1812,17 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         logger.info("Logged in successfully");
         return true;
+    }
+
+    /**
+     * Returns the ownerID which belongs to a name e.g. vk.com/some_name
+     *
+     * @throws Exception
+     */
+    private String resolveScreenNameAPI(final String screenname) throws Exception {
+        getPage(br, "https://api.vk.com/method/resolveScreenName?screen_name=" + screenname);
+        final String ownerID = br.getRegex("\"object_id\":(\\d+)").getMatch(0);
+        return ownerID;
     }
 
     @SuppressWarnings("deprecation")

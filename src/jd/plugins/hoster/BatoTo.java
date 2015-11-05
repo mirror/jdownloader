@@ -71,9 +71,19 @@ public class BatoTo extends PluginForHost {
         this.setBrowserExclusive();
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         this.br.getHeaders().put("Referer", "http://bato.to/reader");
+        this.br.setAllowedResponseCodes(503);
         br.getPage(link.getDownloadURL());
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            try {
+                login(this.br, aa, false);
+            } catch (final Throwable e) {
+            }
+        }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getHttpConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 1 * 60 * 1000l);
         }
         /* First try to get filename from decrypter - should fit 99,99% of all cases! */
         String fname_without_ext = link.getStringProperty("fname_without_ext", null);
@@ -84,13 +94,6 @@ public class BatoTo extends PluginForHost {
             /* Dont fail just because we couldnt find nice filenames! */
             final Regex linkinfo = new Regex(link.getDownloadURL(), "/areader\\?id=([a-z0-9]+)\\&p=(\\d+)");
             fname_without_ext = linkinfo.getMatch(0) + "_" + linkinfo.getMatch(1);
-        }
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            try {
-                login(this.br, aa, false);
-            } catch (final Throwable e) {
-            }
         }
         String[] unformattedSource = br.getRegex("src=\"(https?://img\\.(?:batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z0-9]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
         if (unformattedSource == null) {
