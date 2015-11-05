@@ -3,8 +3,6 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.utils.JDUtilities;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -25,6 +23,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.utils.JDUtilities;
 
 public interface GeneralSettings extends ConfigInterface {
     class DefaultBrowserCommand extends AbstractDefaultFactory<String[]> {
@@ -189,7 +189,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("http://jdownloader.org/knowledge/wiki/glossary/chunkload")
-    @SpinnerValidator(min = 1, max = 20)
+    @SpinnerValidator(min = 1, max = 100)
     @DefaultIntValue(1)
     int getMaxChunksPerFile();
 
@@ -433,10 +433,8 @@ public interface GeneralSettings extends ConfigInterface {
     void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
 
     public static enum CreateFolderTrigger {
-        @EnumLabel("When the actual Download starts")
-        ON_DOWNLOAD_START,
-        @EnumLabel("When the links are added to the Downloadlist")
-        ON_LINKS_ADDED,
+        @EnumLabel("When the actual Download starts") ON_DOWNLOAD_START,
+        @EnumLabel("When the links are added to the Downloadlist") ON_LINKS_ADDED,
 
     }
 
@@ -535,7 +533,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     * 
+     *
      * @return
      */
     @Deprecated
@@ -543,7 +541,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     * 
+     *
      * @return
      */
     @Deprecated
@@ -602,7 +600,7 @@ public interface GeneralSettings extends ConfigInterface {
     void setMyJDownloaderCaptchaSolverEnabled(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("Enable shared memory state info.")
     boolean isSharedMemoryEnabled();
