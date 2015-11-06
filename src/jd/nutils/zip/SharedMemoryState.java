@@ -171,6 +171,7 @@ public class SharedMemoryState {
                 eta = Math.max(eta, progress.getETA());
             }
         }
+        buf.clear();
         buf.putInt(VERSION);
         buf.putLong(bps);
         buf.putLong(totalDl);
