@@ -605,5 +605,5 @@ public interface GeneralSettings extends ConfigInterface {
     @DescriptionForConfigEntry("Enable shared memory state info.")
     boolean isSharedMemoryStateEnabled();
 
-    void setSharedMemoryEnabled(boolean b);
+    void setSharedMemoryStateEnabled(boolean b);
 }
