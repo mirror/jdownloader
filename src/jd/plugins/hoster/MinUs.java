@@ -73,6 +73,12 @@ public class MinUs extends PluginForHost {
         setBrowserExclusive();
         URLConnectionAdapter con = null;
         try {
+            /*
+             * Some offline direct urls will just time out: i.minus.com/iWQplxdpm5kjI.gif
+             *
+             * We can either add a check for that or leave it as it is --> Timeout --> Uncheckable --> A timeout does not necessarily mean
+             * that out file is offline!
+             */
             con = this.br.openGetConnection(link.getDownloadURL());
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());

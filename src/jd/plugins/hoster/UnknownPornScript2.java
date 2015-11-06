@@ -49,7 +49,6 @@ public class UnknownPornScript2 extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
     /* V0.1 */
-    // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
