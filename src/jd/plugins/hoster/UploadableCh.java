@@ -21,10 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,6 +42,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadable.ch" }, urls = { "https?://(?:www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
@@ -406,12 +406,14 @@ public class UploadableCh extends PluginForHost {
         requestFileInformation(link);
         login(account, false, null);
         if (account.getType() == AccountType.FREE) {
+            this.br.getPage(link.getDownloadURL());
             doFree(link, account);
         } else {
             br.setFollowRedirects(false);
             /* This way we don't have to care about the users' "instant download" setting */
             String postlink = link.getDownloadURL();
             if (!postlink.contains("http://www.")) {
+                /* TODO: Check if this is still needed! */
                 postlink = postlink.replace("http://", getProtocol() + "www.");
             }
             br.postPage(postlink, "download=premium");
