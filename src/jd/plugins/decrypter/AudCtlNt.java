@@ -23,24 +23,23 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?audiocastle\\.(?:net|co|me)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" }, flags = { 0 })
-public class AudCtlNt extends PluginForDecrypt {
+/**
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?audiocastle\\.(?:net|co|me|is)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" }, flags = { 0 })
+public class AudCtlNt extends antiDDoSForDecrypt {
 
-    /**
-     * @author raztoki
-     *
-     */
     public AudCtlNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceFirst("://(?:www\\.)?(audiocastle\\.)(?:co|net)", "://www.$1me");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replaceFirst("://(?:www\\.)?(audiocastle\\.)(?:co|net|me)", "://www.$1is");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         String dl = null;
         if (dl == null && parameter.contains("/videos/")) {
             dl = br.getRegex("<source[^>]+src=\"([^\"]+)\"").getMatch(0);
