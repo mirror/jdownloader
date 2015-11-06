@@ -42,10 +42,7 @@ public class BatoTo extends PluginForDecrypt {
      */
     public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
     }
 
     @SuppressWarnings("deprecation")
