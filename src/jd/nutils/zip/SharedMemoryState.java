@@ -21,9 +21,15 @@ import java.nio.ByteOrder;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.DownloadLinkAggregator;
@@ -31,15 +37,13 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinNT.HANDLE;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 /**
  * Creates a shared memory area that holds the current JDownloader state, like B/s, ETA, ...
@@ -52,7 +56,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
  *
  * @author jadevwin
  */
-public class SharedMemoryState {
+public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
     // singleton
     private final static SharedMemoryState INSTANCE     = new SharedMemoryState();
     // shared memory version
@@ -85,6 +89,7 @@ public class SharedMemoryState {
                 SharedMemoryState.getInstance().stopUpdates();
             }
         });
+        CFG_GENERAL.SHARED_MEMORY_STATE_ENABLED.getEventSender().addListener(this);
     }
 
     // returns the one and only instance
@@ -94,7 +99,8 @@ public class SharedMemoryState {
 
     // create shared memory segment and update thread, only available in Windows OS
     public synchronized void startUpdates() {
-        if (CrossSystem.isWindows()) {
+        final Thread currentThread = updateThread.get();
+        if (CrossSystem.isWindows() && (currentThread == null || !currentThread.isAlive())) {
             HANDLE sharedFile = null;
             try {
                 // create shared memory segment
@@ -114,13 +120,15 @@ public class SharedMemoryState {
                                 try {
                                     sleep(SLEEP_TIME);
                                     SharedMemoryState.getInstance().updateState(finalSharedMemory, byteBuffer);
-                                } catch (Throwable th) {
-                                    logger.log(th);
+                                } catch (InterruptedException th) {
+                                    break;
                                 }
                             }
+                        } catch (final Throwable th) {
+                            logger.log(th);
                         } finally {
-                            updateThread.compareAndSet(Thread.currentThread(), null);
                             closeSharedFile(finalSharedFile, finalSharedMemory);
+                            updateThread.compareAndSet(Thread.currentThread(), null);
                         }
                     }
                 };
@@ -183,5 +191,18 @@ public class SharedMemoryState {
         buf.putLong(DownloadWatchDog.getInstance().getDownloadSpeedManager().connections());
         buf.putLong(DownloadWatchDog.getInstance().getRunningFilePackages().size());
         sharedMemory.write(0, buf.array(), 0, 128);
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        if (Boolean.TRUE.equals(newValue)) {
+            startUpdates();
+        } else {
+            stopUpdates();
+        }
     }
 }
