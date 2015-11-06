@@ -229,6 +229,9 @@ public class DebridItaliaCom extends antiDDoSForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
+            if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<p>For some reason the download not started\\. Please reload the page or click the button below\\.</p>")) {
+                handleErrorRetries("Download not started", maxRetriesOnDownloadError, 15 * 60 * 1000l);
+            }
             if (br.containsHTML("No htmlCode read")) {
                 logger.info("debriditalia.com: Unknown download error");
                 handleErrorRetries("unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
