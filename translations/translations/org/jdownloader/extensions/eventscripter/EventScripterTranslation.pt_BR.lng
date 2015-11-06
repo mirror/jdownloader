@@ -43,6 +43,7 @@ emptyScript=// Adicione seu script aqui. Sinta-se a vontade para usar as proprie
 event_trigger=Disparador
 example_infoFile=Criar arquivo INFO na pasta de downloads com informações detalhadas
 example_play_sound=Tocar um arquivo WAV
+example_play_sound_when_inactive=Reproduzir som (WAV) ao concluir downloads e extração
 example_script_name=Exemplo
 interval_settings=Intervalo de chamadas em ms
 loading_editor_title=Carregando editor...
