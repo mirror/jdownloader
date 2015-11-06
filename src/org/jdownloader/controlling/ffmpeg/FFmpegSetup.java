@@ -5,14 +5,17 @@ import java.util.HashMap;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 
 public interface FFmpegSetup extends ConfigInterface {
     @AboutConfig
+    @DescriptionForConfigEntry("full path (including binary filename) to ffmpeg")
     String getBinaryPath();
 
     void setBinaryPath(String path);
 
     @AboutConfig
+    @DescriptionForConfigEntry("full path (including binary filename) to ffprobe")
     String getBinaryPathProbe();
 
     void setBinaryPathProbe(String path);
