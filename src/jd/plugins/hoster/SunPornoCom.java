@@ -115,7 +115,7 @@ public class SunPornoCom extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return SiteTemplate.UnknownPornScript5;
+        return null; // SiteTemplate.UnknownPornScript5;
     }
 
     @Override
