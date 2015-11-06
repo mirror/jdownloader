@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -41,13 +43,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/pin/\\d+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/pin/\\d+/" }, flags = { 2 })
 public class PinterestCom extends PluginForHost {
 
     public PinterestCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.pinterest.com/");
+        setConfigElements();
     }
 
     @Override
@@ -72,6 +76,7 @@ public class PinterestCom extends PluginForHost {
 
     /* Site constants */
     public static final String   x_app_version             = "e9885e7";
+    public static final String   default_extension         = ".jpg";
 
     /* don't touch the following! */
     private static AtomicInteger maxPrem                   = new AtomicInteger(1);
@@ -80,6 +85,7 @@ public class PinterestCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        String filename = null;
         final String pin_id = new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0);
         /* Display ids for offline links */
         link.setName(pin_id);
@@ -91,13 +97,13 @@ public class PinterestCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = null;
+        String site_title = null;
         dllink = checkDirectLink(link, "free_directlink");
         if (dllink != null) {
             /* Avoid unnecessary site requests. */
-            filename = link.getFinalFileName();
-            if (filename == null) {
-                filename = pin_id;
+            site_title = link.getFinalFileName();
+            if (site_title == null) {
+                site_title = pin_id;
             }
         } else {
             final String source_url = link.getStringProperty("source_url", null);
@@ -120,7 +126,7 @@ public class PinterestCom extends PluginForHost {
                 final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("page_info");
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("resource_data_cache");
                 dllink = getDirectlinkFromJson(ressourcelist, pin_id);
-                filename = (String) page_info.get("title");
+                site_title = (String) page_info.get("title");
                 /* We don't have to be logged in to perform downloads so better log out to avoid account bans. */
                 br.clearCookies(MAINPAGE);
             } else {
@@ -142,9 +148,9 @@ public class PinterestCom extends PluginForHost {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("resourceDataCache");
                 dllink = getDirectlinkFromJson(ressourcelist, pin_id);
-                filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+                site_title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             }
-            if (filename == null || dllink == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty("free_directlink", dllink);
@@ -153,13 +159,17 @@ public class PinterestCom extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = Encoding.htmlDecode(filename).trim();
-            filename = pin_id + "_" + filename;
+            site_title = Encoding.htmlDecode(site_title).trim();
+            site_title = pin_id + "_" + site_title;
+        }
+        if (site_title != null && link.getComment() == null) {
+            link.setComment(site_title);
         }
         String ext = dllink.substring(dllink.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
-            ext = ".jpg";
+            ext = default_extension;
         }
+        filename = pin_id;
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -366,6 +376,18 @@ public class PinterestCom extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's Pornhub plugin helps downloading pictures from pinterest.com.";
+    }
+
+    public static final String  ENABLE_DESCRIPTION_IN_FILENAMES        = "ENABLE_DESCRIPTION_IN_FILENAMES";
+    public static final boolean defaultENABLE_DESCRIPTION_IN_FILENAMES = false;
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_DESCRIPTION_IN_FILENAMES, JDL.L("plugins.hoster.PinterestCom.enableDescriptionInFilenames", "Add pind-escription to filenames?\r\nNOTE: If enabled, Filenames might get very long!")).setDefaultValue(defaultENABLE_DESCRIPTION_IN_FILENAMES));
     }
 
     @Override

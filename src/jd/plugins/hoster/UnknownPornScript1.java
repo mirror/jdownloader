@@ -44,7 +44,6 @@ public class UnknownPornScript1 extends PluginForHost {
     /* Porn_plugin */
     /* V0.1 */
     // Tags: For porn sites using the flowplayer videoplayer
-    // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */

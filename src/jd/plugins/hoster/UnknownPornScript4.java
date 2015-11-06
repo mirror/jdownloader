@@ -42,13 +42,12 @@ public class UnknownPornScript4 extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
     /* V0.1 */
-    // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
 
     private static final String  type_1            = "^https?://(?:www\\.)?[^/]+/videos/[a-z0-9\\-]+\\-\\d+\\.html$";
-    // /* E.g. homemoviestube.com */
+    /* E.g. homemoviestube.com */
     private static final String  type_2            = "^http://(?:www\\.)?[^/]+/videos/\\d+/[a-z0-9\\-]+\\.html$";
 
     private static final String  default_Extension = ".mp4";
@@ -83,14 +82,6 @@ public class UnknownPornScript4 extends PluginForHost {
             /* E.g. http://www.watchgfporn.com/videos/she-fucked-just-about-all-of-us-that-night-9332.html */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("searchgate\\.php\"")) {
-            // UnknownPornScript4
-            /* E.g. pornyeah.com, homemoviestube.com */
-            /*
-             * Usually their urls look like this: "^https?://(?:www\\.)?[^/]+/videos/[a-z0-9\\-]+\\-\\d+\\.html$" (BE AWARE many porn sites
-             * have this URL structure - also sites using other scripts!!!
-             */
-        }
         String url_filename = null;
         if (downloadLink.getDownloadURL().matches(type_1)) {
             /* Fits for 99% e.g. pornyeah.com */
@@ -99,7 +90,7 @@ public class UnknownPornScript4 extends PluginForHost {
             /* E.g. homemoviestube.com */
             url_filename = new Regex(downloadLink.getDownloadURL(), "/videos/\\d+/([a-z0-9\\-]+)\\.html$").getMatch(0).replace("-", " ");
         }
-        String filename = regexStandardTitleWithHost(downloadLink.getHost());
+        String filename = regexStandardTitleWithHost(host);
         if (filename == null) {
             filename = url_filename;
         }
@@ -129,8 +120,9 @@ public class UnknownPornScript4 extends PluginForHost {
             /* Set final filename! */
             downloadLink.setFinalFileName(filename + ext);
             URLConnectionAdapter con = null;
+            br2.setFollowRedirects(true);
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {

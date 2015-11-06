@@ -195,6 +195,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        prepBRAPI(this.br);
         if (api_responsecode == api_responsecode_private) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private files can only be downloaded by their owner/uploader");
         }
@@ -211,7 +212,7 @@ public class OpenLoadIo extends antiDDoSForHost {
             int waittime_int;
             boolean captcha = false;
             String captcha_response = "null";
-            if (enable_api_free || (account != null && isAPIAccount(account))) {
+            if ((account == null && enable_api_free) || (account != null && isAPIAccount(account))) {
                 getPageAPI(api_base + "/file/dlticket?file=" + fid + "&" + getAPILoginString(account));
                 final long timestampBeforeCaptcha = System.currentTimeMillis();
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
@@ -242,6 +243,10 @@ public class OpenLoadIo extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
+                if (true) {
+                    /** TODO: Fix that!! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.addAllowedResponseCodes(500);
                 br.setFollowRedirects(true);
                 getPage(downloadLink.getDownloadURL());
@@ -324,6 +329,7 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     private void loginAPI(final Account account) throws Exception {
         synchronized (LOCK) {
+            prepBRAPI(this.br);
             getPageAPI(api_base + "/account/info?" + getAPILoginString(account));
         }
     }
@@ -519,6 +525,9 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     private void getPageAPI(final String url) throws Exception {
         super.getPage(url);
+        if (super.br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
+        }
         this.updatestatuscode();
         final String status = getJson("status");
         switch (api_responsecode) {
@@ -578,6 +587,11 @@ public class OpenLoadIo extends antiDDoSForHost {
         if (wait > 0) {
             sleep(wait * 1000l, downloadLink);
         }
+    }
+
+    private Browser prepBRAPI(final Browser br) {
+        br.setAllowedResponseCodes(500);
+        return br;
     }
 
     public static class OpenLoadIoAccountFactory extends AccountFactory {
