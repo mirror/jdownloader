@@ -603,7 +603,7 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultBooleanValue(false)
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("Enable shared memory state info.")
-    boolean isSharedMemoryEnabled();
+    boolean isSharedMemoryStateEnabled();
 
     void setSharedMemoryEnabled(boolean b);
 }
