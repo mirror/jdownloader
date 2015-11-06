@@ -292,6 +292,6 @@ public class CFG_GENERAL {
     /**
      * Enable shared memory state.
      **/
-    public static final BooleanKeyHandler               SHARED_MEMORY_STATE_ENABLED                                      = SH.getKeyHandler("SharedMemoryEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler               SHARED_MEMORY_STATE_ENABLED                                      = SH.getKeyHandler("SharedMemoryStateEnabled", BooleanKeyHandler.class);
 
 }

@@ -21,9 +21,6 @@ import java.nio.ByteOrder;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -41,6 +38,9 @@ import com.sun.jna.platform.win32.WinBase;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.platform.win32.WinNT.HANDLE;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+
 /**
  * Creates a shared memory area that holds the current JDownloader state, like B/s, ETA, ...
  *
@@ -50,6 +50,7 @@ import com.sun.jna.platform.win32.WinNT.HANDLE;
  * - long (8 bytes) remaining bytes - long (8 bytes) eta in seconds - long (8 bytes) running downloads - long (8 bytes) open connections -
  * long (8 bytes) running packages - long (8 bytes)
  *
+ * @author jadevwin
  */
 public class SharedMemoryState {
     // singleton
