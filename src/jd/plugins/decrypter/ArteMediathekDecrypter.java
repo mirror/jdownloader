@@ -20,7 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
@@ -42,40 +41,47 @@ import org.appwork.utils.formatter.TimeFormatter;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
-    private static final String     EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
+    private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
 
-    private static final String     TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
-    private static final String     TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/.+";
-    private static final String     TYPE_FUTURE                = "http://(www\\.)?future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String     TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+";
-    private static final String     TYPE_CINEMA                = "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String     TYPE_CONCERT                                = "http://(www\\.)?concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
+    private static final String     TYPE_CREATIVE                               = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/.+";
+    private static final String     TYPE_FUTURE                                 = "http://(www\\.)?future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String     TYPE_GUIDE                                  = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+";
+    private static final String     TYPE_CINEMA                                 = "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
 
-    private static final String     API_TYPE_GUIDE             = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/(?:F|D)/.+\\.json$";
-    private static final String     API_TYPE_CINEMA            = "^https?://api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)\\?vector=.+";
+    private static final String     API_TYPE_GUIDE                              = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/(?:F|D)/.+\\.json$";
+    private static final String     API_TYPE_CINEMA                             = "^https?://api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)\\?vector=.+";
 
-    private static final String     V_NORMAL                   = "V_NORMAL";
-    private static final String     V_SUBTITLED                = "V_SUBTITLED";
-    private static final String     V_SUBTITLE_DISABLED_PEOPLE = "V_SUBTITLE_DISABLED_PEOPLE";
-    private static final String     V_AUDIO_DESCRIPTION        = "V_AUDIO_DESCRIPTION";
-    private static final String     http_300                   = "http_300";
-    private static final String     http_800                   = "http_800";
-    private static final String     http_1500                  = "http_1500";
-    private static final String     http_2200                  = "http_2200";
-    private static final String     LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
-    private static final String     LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
-    private static final String     LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
-    private static final String     THUMBNAIL                  = "THUMBNAIL";
-    private static final String     FAST_LINKCHECK             = "FAST_LINKCHECK";
+    private static final String     V_NORMAL                                    = "V_NORMAL";
+    private static final String     V_SUBTITLED                                 = "V_SUBTITLED";
+    private static final String     V_SUBTITLE_DISABLED_PEOPLE                  = "V_SUBTITLE_DISABLED_PEOPLE";
+    private static final String     V_AUDIO_DESCRIPTION                         = "V_AUDIO_DESCRIPTION";
+    private static final String     http_300                                    = "http_300";
+    private static final String     http_800                                    = "http_800";
+    private static final String     http_1500                                   = "http_1500";
+    private static final String     http_2200                                   = "http_2200";
+    private static final String     LOAD_LANGUAGE_URL                           = "LOAD_LANGUAGE_URL";
+    private static final String     LOAD_LANGUAGE_GERMAN                        = "LOAD_LANGUAGE_GERMAN";
+    private static final String     LOAD_LANGUAGE_FRENCH                        = "LOAD_LANGUAGE_FRENCH";
+    private static final String     THUMBNAIL                                   = "THUMBNAIL";
+    private static final String     FAST_LINKCHECK                              = "FAST_LINKCHECK";
 
-    final String[]                  formats                    = { http_300, http_800, http_1500, http_2200 };
+    private static final short      format_intern_german                        = 1;
+    private static final short      format_intern_french                        = 2;
+    private static final short      format_intern_subtitled                     = 3;
+    private static final short      format_intern_subtitled_for_disabled_people = 4;
+    private static final short      format_intern_audio_description             = 5;
+    private static final short      format_intern_unknown                       = 6;
 
-    private static final String     LANG_DE                    = "de";
-    private static final String     LANG_FR                    = "fr";
+    final String[]                  formats                                     = { http_300, http_800, http_1500, http_2200 };
 
-    private int                     languageVersion            = 1;
+    private static final String     LANG_DE                                     = "de";
+    private static final String     LANG_FR                                     = "fr";
+
+    private short                   languageVersion                             = 1;
     private String                  parameter;
-    private ArrayList<DownloadLink> decryptedLinks             = new ArrayList<DownloadLink>();
-    private String                  example_arte_vp_url        = null;
+    private ArrayList<DownloadLink> decryptedLinks                              = new ArrayList<DownloadLink>();
+    private String                  example_arte_vp_url                         = null;
 
     @SuppressWarnings("deprecation")
     public ArteMediathekDecrypter(final PluginWrapper wrapper) {
@@ -96,9 +102,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         int foundFormatsNum = 0;
         parameter = param.toString();
         this.example_arte_vp_url = null;
-        ArrayList<String> selectedFormats = new ArrayList<String>();
         ArrayList<String> selectedLanguages = new ArrayList<String>();
-        HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
         String title = getUrlFilename();
         String fid = null;
         String thumbnailUrl = null;
@@ -287,11 +291,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (errormessage != null) {
                     final DownloadLink offline = createofflineDownloadLink(parameter);
                     offline.setFinalFileName(title + errormessage);
-                    try {
-                        offline.setComment(description);
-                    } catch (final Throwable e) {
-                        /* Not available in 0.9.581 Stable */
-                    }
+                    offline.setComment(description);
                     ret.add(offline);
                     return ret;
                 }
@@ -315,11 +315,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     }
                     if (expired_message != null) {
                         final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                        try {
-                            link.setComment(description);
-                        } catch (final Throwable e) {
-                            /* Not available in 0.9.581 Stable */
-                        }
+                        link.setComment(description);
                         link.setProperty("offline", true);
                         link.setFinalFileName(expired_message + "_" + title);
                         decryptedLinks.add(link);
@@ -357,30 +353,42 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
                     final String url = (String) qualitymap.get("url");
 
-                    final int format_code = getFormatCode(versionShortLibelle, versionCode);
-                    final String short_lang_current = get_short_lang_from_format_code(format_code);
-                    final String quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(format_code) + "_" + protocol + "_" + videoBitrate;
-                    final String linkid = fid + "_" + quality_intern;
-                    final String filename = date_formatted + "_arte_" + title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(format_code) + "_" + videoresolution + "_" + videoBitrate + ".mp4";
+                    final short format_code = getFormatCode(versionShortLibelle, versionCode);
+                    final String quality_intern = protocol + "_" + videoBitrate;
+                    final String filename = date_formatted + "_arte_" + title + "_" + get_user_language_from_format_code(format_code) + "_" + get_user_format_from_format_code(format_code) + "_" + versionCode + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
+
+                    /* Lets check if we can add this link / if user wants it. */
                     /* Ignore HLS/RTMP versions */
                     if (!url.startsWith("http") || url.contains(".m3u8")) {
                         logger.info("Skipping " + filename + " because it is not a supported streaming format");
                         continue;
                     }
-                    if (!short_lang_current.equals(selectedLanguage)) {
-                        logger.info("Skipping " + filename + " because it is not the selected language");
+                    if (!cfg.getBooleanProperty(V_NORMAL, true) && (format_code == format_intern_german || format_code == format_intern_french)) {
+                        /* User does not want the non-subtitled version */
                         continue;
                     }
+                    if (!cfg.getBooleanProperty(V_SUBTITLED, true) && format_code == format_intern_subtitled) {
+                        /* User does not want the subtitled version */
+                        continue;
+                    }
+                    if (!cfg.getBooleanProperty(V_SUBTITLE_DISABLED_PEOPLE, true) && format_code == format_intern_subtitled_for_disabled_people) {
+                        /* User does not want the subtitled-for-.disabled-people version */
+                        continue;
+                    }
+                    if (!cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, true) && format_code == format_intern_audio_description) {
+                        /* User does not want the audio-description version */
+                        continue;
+                    }
+                    if (!cfg.getBooleanProperty(quality_intern, true)) {
+                        /* User does not want this bitrate --> Skip it */
+                        logger.info("Skipping " + quality_intern);
+                        continue;
+                    }
+
                     final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
 
                     link.setFinalFileName(filename);
-                    try {
-                        /* JD2 only */
-                        link.setContentUrl(parameter);
-                    } catch (Throwable e) {
-                        /* Stable */
-                        link.setBrowserUrl(parameter);
-                    }
+                    link.setContentUrl(parameter);
                     link._setFilePackage(fp);
                     link.setProperty("directURL", url);
                     link.setProperty("directName", filename);
@@ -392,62 +400,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         link.setProperty("VRA", convertDateFormat(vra));
                         link.setProperty("VRU", convertDateFormat(vru));
                     }
-                    try {
-                        try {
-                            link.setComment(description);
-                        } catch (final Throwable e) {
-                            /* Not available in 0.9.581 Stable */
-                        }
-                        link.setContentUrl(parameter);
-                        link.setLinkID(linkid);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                        link.setBrowserUrl(parameter);
-                        link.setProperty("LINKDUPEID", linkid);
-                    }
+                    link.setComment(description);
+                    link.setContentUrl(parameter);
+                    /* Use filename as linkid as it is unique! */
+                    link.setLinkID(filename);
                     if (fastLinkcheck) {
                         link.setAvailable(true);
                     }
-                    bestMap.put(quality_intern, link);
-                }
-
-                /* Build a list of selected formats */
-                for (final String format : formats) {
-                    if (cfg.getBooleanProperty(format, true)) {
-                        if (cfg.getBooleanProperty(V_NORMAL, true)) {
-                            selectedFormats.add(selectedLanguage + "_1_" + format);
-                        }
-                        /* 1 = German, 2 = French, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
-                        if (cfg.getBooleanProperty(V_SUBTITLED, true)) {
-                            selectedFormats.add(selectedLanguage + "_3_" + format);
-                        }
-                        if (cfg.getBooleanProperty(V_SUBTITLE_DISABLED_PEOPLE, true)) {
-                            selectedFormats.add(selectedLanguage + "_4_" + format);
-                        }
-                        if (cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, true)) {
-                            selectedFormats.add(selectedLanguage + "_5_" + format);
-                        }
-
-                    }
-                }
-            }
-
-            /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
-            if (bestMap.isEmpty() && foundFormatsNum > 0) {
-                title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            }
-            /* We should always have 3 links (their basic qualities) or more! */
-            if (bestMap.isEmpty()) {
-                logger.warning("Decrypter broken");
-                return null;
-            }
-
-            /* Add selected & existing formats */
-            for (final String selectedFormat : selectedFormats) {
-                final DownloadLink thisformat = bestMap.get(selectedFormat);
-                if (thisformat != null) {
-                    decryptedLinks.add(thisformat);
+                    decryptedLinks.add(link);
                 }
             }
 
@@ -519,62 +479,68 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     /* Can also be "-" */
     private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOA", "VOF", "VOSTF", "VE[ANG]", "VI", "OmU-ANG", "OmU-ESP", "OmU-ITA", "OmU-POL" };
 
-    /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
-    private int getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
+    /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions, 6 = unknown */
+    private short getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
         /* versionShortLibelle: What is UTH?? */
         /* versionCode: VO is not necessarily french */
         if (versionShortLibelle == null || versionCode == null) {
             throw new DecrypterException("Decrypter broken");
         }
-        int lint;
+        short lint;
         if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
             /* Special case - no different versions available --> We already got the version we want */
             lint = languageVersion;
         } else if ("VOF-STA".equalsIgnoreCase(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
-            /* Definitly NOT subtitled: VF-STMF */
-            lint = 3;
+            lint = format_intern_subtitled;
         } else if (versionCode.equals("VOA-STMA")) {
-            lint = 4;
+            lint = format_intern_subtitled_for_disabled_people;
         } else if (versionCode.equals("VAAUD")) {
-            lint = 5;
+            lint = format_intern_audio_description;
         } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]") || versionCode.equals("VI") || "VOA-STA".equals(versionCode) || "VO-STE[ANG]".equals(versionCode) || versionCode.equals("VO-STE[ITA]") || versionCode.equals("VOA-STE[ESP]") || versionCode.equals("VOA-STE[ANG]")) {
             /* VE Actually means English but there is no specified selection for this. */
             /* Without language --> So it simply is our current language */
             lint = languageVersion;
         } else if (versionShortLibelle.equals("DE") || versionShortLibelle.equals("VA") || versionCode.equals("VO-STA") || versionShortLibelle.equals("VOSTA")) {
-            /* German */
-            lint = 1;
-        } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VF-STMF") || versionCode.equals("VO-STE[ESP]") || versionCode.equals("VO-STE[POL]")) {
-            /* French */
-            lint = 2;
+            lint = format_intern_german;
+        } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VF-STMF")) {
+            lint = format_intern_french;
         } else {
-            /* Unknown - use language inside the link */
-            /* Unknown language Strings so far: VOA */
-            /* This should never happen... */
-            lint = languageVersion;
-            throw new DecrypterException("Decrypter broken");
+            /* Unknown */
+            lint = format_intern_unknown;
         }
         return lint;
     }
 
     /* 1 = No subtitle, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
-    private String get_user_format_from_format_code(final int version) {
+    public static String get_user_format_from_format_code(final short version) {
         switch (version) {
-        case 1:
-            /* German */
+        case format_intern_german:
             return "no_subtitle";
-        case 2:
-            /* French */
+        case format_intern_french:
             return "no_subtitle";
-        case 3:
+        case format_intern_subtitled:
             return "subtitled";
-        case 4:
+        case format_intern_subtitled_for_disabled_people:
             return "subtitled_handicapped";
-        case 5:
+        case format_intern_audio_description:
             return "audio_description";
+        case format_intern_unknown:
+            return "no_subtitle";
         default:
             /* Obviously this should never happen */
             return "WTF_PLUGIN_FAILED";
+        }
+    }
+
+    /* 1 = No subtitle, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
+    public static String get_user_language_from_format_code(final short version) {
+        switch (version) {
+        case format_intern_german:
+            return "german";
+        case format_intern_french:
+            return "french";
+        default:
+            return "french";
         }
     }
 
@@ -583,36 +549,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
      * 'no subtitle' information which has the code 1.
      */
     private int get_intern_format_code_from_format_code(final int formatCode) {
-        if (formatCode == 1 || formatCode == 2) {
+        if (formatCode == format_intern_german || formatCode == format_intern_french) {
             return 1;
         } else {
             return formatCode;
         }
     }
 
-    /* 1 = No subtitle, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
-    private String get_short_lang_from_format_code(final int version) {
-        switch (version) {
-        case 1:
-            /* German */
-            return "de";
-        case 2:
-            /* French */
-            return "fr";
-        case 3:
-            /* We assume that a subtitled version is always german too */
-            return "de";
-        default:
-            /* Obviously this should never happen */
-            return "WTF_PLUGIN_FAILED";
-        }
-    }
-
     private void setSelectedLang_format_code(final String short_lang) {
         if ("de".equals(short_lang)) {
-            this.languageVersion = 1;
+            this.languageVersion = format_intern_german;
         } else {
-            this.languageVersion = 2;
+            this.languageVersion = format_intern_french;
         }
     }
 
@@ -647,16 +595,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         String urlfilename;
         urlfilename = new Regex(parameter, "([A-Za-z0-9\\-]+)$").getMatch(0);
         return urlfilename;
-    }
-
-    private String getLongLanguage(final String shortLanguage) {
-        String long_language;
-        if (shortLanguage.equals("de")) {
-            long_language = "german";
-        } else {
-            long_language = "french";
-        }
-        return long_language;
     }
 
     private DownloadLink createofflineDownloadLink(final String parameter) {
