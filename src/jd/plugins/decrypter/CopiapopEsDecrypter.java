@@ -108,7 +108,7 @@ public class CopiapopEsDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("class=\"scrollTop\">([^<>\"]*?)</a></h1>").getMatch(0);
-            final String[] linkinfo = br.getRegex("(<li data\\-file\\-id=\"\\d+\">.*?</li>)").getColumn(0);
+            final String[] linkinfo = br.getRegex("(<li data\\-file\\-id=\"\\d+\".*?</li>)").getColumn(0);
             if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
