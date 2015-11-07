@@ -23,6 +23,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -215,6 +216,7 @@ public class TwitterCom extends PornEmbedParser {
             System.out.println(reloadNumber);
         } else {
             tweet_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
+            final String twitter_text = this.br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (br.containsHTML("data-autoplay-src=")) {
                 final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
                 decryptedLinks.add(dl);
@@ -234,6 +236,15 @@ public class TwitterCom extends PornEmbedParser {
                             dl.setProperty("decryptedfilename", final_filename);
                             dl.setName(final_filename);
                             decryptedLinks.add(dl);
+                        }
+                    }
+                }
+                if (decryptedLinks.size() == 0 && twitter_text != null) {
+                    /* Maybe the tweet only consists of text which maybe contains URLs which maybe lead to content. */
+                    final String[] urls_in_text = HTMLParser.getHttpLinks(twitter_text, "");
+                    if (urls_in_text != null) {
+                        for (final String url : urls_in_text) {
+                            decryptedLinks.add(createDownloadlink(url));
                         }
                     }
                 }
