@@ -148,7 +148,7 @@ public class UnknownPornScript5 extends PluginForHost {
             }
             if (inValidateDLLINK()) {
                 /* E.g. clipcake.com */
-                DLLINK = new Regex(jwplayer_source, "var videoFile=\"(http[^<>\"]*?)\";").getMatch(0);
+                DLLINK = br.getRegex("var videoFile=\"(http[^<>\"]*?)\";").getMatch(0);
             }
             if (inValidateDLLINK()) {
                 /* E.g. porndoe.com */
@@ -182,7 +182,7 @@ public class UnknownPornScript5 extends PluginForHost {
         if (jwplayer_source == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             *
+             * 
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
