@@ -69,5 +69,6 @@ update_dialog_news_button=Değişiklik Günlüğünü Aç
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Güncelleme(ler) mevcut
 update_dialog_yes=Evet (önerilir)
+update_done_close_in_TIME=Kurulum bitti. %s1 içinde çıkılıyor
 update_in_next_session=İptal et ve sonraki yeniden başlatmaya kadar bana tekrar sorma
 updatedplugins=Eklentiler güncellendi.\nŞu anda en son JDownloader sürümünü çalıştırıyorsunuz.
