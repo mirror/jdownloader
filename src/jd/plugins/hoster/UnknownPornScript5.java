@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "nudez.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws" }, urls = { "http://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://[a-z]{2}\\.nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "http://[a-z]{2}\\.porndoe\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "nudez.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws" }, urls = { "http://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "http://[a-z]{2}\\.porndoe\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class UnknownPornScript5 extends PluginForHost {
 
@@ -47,25 +47,27 @@ public class UnknownPornScript5 extends PluginForHost {
 
     /* Extension which will be used if no correct extension is found */
 
-    private static final String  type_1            = "^https?://(?:www\\.)?[^/]+/videos/\\d+/([a-z0-9\\-]+)/$";
+    private static final String  type_1                       = "^https?://(?:www\\.)?[^/]+/videos/\\d+/([a-z0-9\\-]+)/$";
     /* E.g. worldsex.com */
-    private static final String  type_2            = "^http://(?:www\\.)?[^/]+/videos/([a-z0-9\\-]+)\\-\\d+\\.html$";
+    private static final String  type_2                       = "^http://(?:www\\.)?[^/]+/videos/([a-z0-9\\-]+)\\-\\d+\\.html$";
     /* E.g. nudez.com */
-    private static final String  type_3            = "^http://[a-z]{2}\\.[^/]+/video/([a-z0-9\\-]+)\\-\\d+\\.html$";
+    private static final String  type_3                       = "^http://[a-z]{2}\\.[^/]+/video/([a-z0-9\\-]+)\\-\\d+\\.html$";
     /* E.g. porndoe.com */
-    private static final String  type_4            = "^http://[a-z]{2}\\.[^/]+/video/\\d+/([a-z0-9\\-]+)$";
+    private static final String  type_4                       = "^http://[a-z]{2}\\.[^/]+/video/\\d+/([a-z0-9\\-]+)$";
     /* E.g. bigcamtube.com */
-    private static final String  type_5            = "^http://(?:www\\.)?[^/]+/videos/([a-z0-9\\-]+)/$";
+    private static final String  type_5                       = "^http://(?:www\\.)?[^/]+/videos/([a-z0-9\\-]+)/$";
     /* E.g. xogogo.com, bigass.ws */
-    private static final String  type_6            = "^http://(?:www\\.)?[^/]+/videos/\\d+/([a-z0-9\\-]+)\\.html$";
+    private static final String  type_6                       = "^http://(?:www\\.)?[^/]+/videos/\\d+/([a-z0-9\\-]+)\\.html$";
 
-    private static final String  default_Extension = ".mp4";
+    private static final String  type_allow_title_as_filename = "https?://(?:www\\.)?ah\\-me\\.com/videos/\\d+";
+
+    private static final String  default_Extension            = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
+    private static final boolean free_resume                  = true;
+    private static final int     free_maxchunks               = 0;
+    private static final int     free_maxdownloads            = -1;
 
-    private String               DLLINK            = null;
+    private String               DLLINK                       = null;
 
     @Override
     public String getAGBLink() {
@@ -125,6 +127,9 @@ public class UnknownPornScript5 extends PluginForHost {
             /* Works e.g. for: boyfriendtv.com, ashemaletube.com, pornoxo.com */
             filename = this.br.getRegex("<div id=\"maincolumn2\">[\t\n\r ]*?<h1>([^<>]*?)</h1>").getMatch(0);
         }
+        if (filename == null && downloadLink.getDownloadURL().matches(type_allow_title_as_filename)) {
+            filename = this.br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+        }
         if (filename == null) {
             filename = url_filename;
         }
@@ -134,50 +139,56 @@ public class UnknownPornScript5 extends PluginForHost {
         downloadLink.setName(filename + default_Extension);
         /* Find the (js) source of our player - important! */
         String jwplayer_source = this.br.getRegex("jwplayer\\(\"[^<>\"]+\"\\)(.*?)</script>").getMatch(0);
-        if (jwplayer_source == null) {
+        if (jwplayer_source != null) {
+            /* Source #1 */
+            DLLINK = new Regex(jwplayer_source, "(?:\\'|\")file(?:\\'|\"):[\t\n\r ]*?(?:\\'|\")(http[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
+            if (inValidateDLLINK()) {
+                /* E.g. worldsex.com */
+                DLLINK = new Regex(jwplayer_source, "file[\t\n\r ]*?:[\t\n\r ]*?(?:\\'|\")(http[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
+            }
+            if (inValidateDLLINK()) {
+                /* E.g. clipcake.com */
+                DLLINK = new Regex(jwplayer_source, "var videoFile=\"(http[^<>\"]*?)\";").getMatch(0);
+            }
+            if (inValidateDLLINK()) {
+                /* E.g. porndoe.com */
+                /* Check for multiple videoqualities --> Find highest quality */
+                int maxquality = 0;
+                String sources_source = new Regex(jwplayer_source, "sources:[\t\n\r ]*?\\[(.*?)\\]").getMatch(0);
+                if (sources_source != null) {
+                    sources_source = sources_source.replace("\\", "");
+                    final String[] qualities = new Regex(sources_source, "(file: \".*?)\n").getColumn(0);
+                    for (final String quality_info : qualities) {
+                        final String p = new Regex(quality_info, "label:\"(\\d+)p").getMatch(0);
+                        int pint = 0;
+                        if (p != null) {
+                            pint = Integer.parseInt(p);
+                        }
+                        if (pint > maxquality) {
+                            maxquality = pint;
+                            DLLINK = new Regex(quality_info, "file: \"(http[^<>\"]*?)\"").getMatch(0);
+                        }
+                    }
+                }
+            }
+        } else {
+            /* Source #2 */
             /* E.g. ah-me.com, sunporno.com */
             jwplayer_source = this.br.getRegex("<script type=\"text/javascript\" src=\"http[^<>\"]*?/lib/jwplayer[^<>\"]*?\\.js\"></script>[\t\n\r ]*?<script type=\"text/javascript\" src=\"http[^<>\"]*?/js/common\\.js\"></script>[\t\n\r ]*?<script type=\"text/javascript\">(.*?)</script>").getMatch(0);
+            if (jwplayer_source != null) {
+                DLLINK = new Regex(jwplayer_source, "<video src=\"(http[^<>\"]*?)\"").getMatch(0);
+            }
         }
         if (jwplayer_source == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             * 
+             *
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        DLLINK = new Regex(jwplayer_source, "(?:\\'|\")file(?:\\'|\"):[\t\n\r ]*?(?:\\'|\")(http[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
-        if (inValidateDLLINK()) {
-            /* E.g. worldsex.com */
-            DLLINK = new Regex(jwplayer_source, "file[\t\n\r ]*?:[\t\n\r ]*?(?:\\'|\")(http[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
-        }
-        if (inValidateDLLINK()) {
-            /* E.g. clipcake.com */
-            DLLINK = new Regex(jwplayer_source, "var videoFile=\"(http[^<>\"]*?)\";").getMatch(0);
-        }
-        if (inValidateDLLINK()) {
-            /* E.g. porndoe.com */
-            /* Check for multiple videoqualities --> Find highest quality */
-            int maxquality = 0;
-            String sources_source = new Regex(jwplayer_source, "sources:[\t\n\r ]*?\\[(.*?)\\]").getMatch(0);
-            if (sources_source != null) {
-                sources_source = sources_source.replace("\\", "");
-                final String[] qualities = new Regex(sources_source, "(file: \".*?)\n").getColumn(0);
-                for (final String quality_info : qualities) {
-                    final String p = new Regex(quality_info, "label:\"(\\d+)p").getMatch(0);
-                    int pint = 0;
-                    if (p != null) {
-                        pint = Integer.parseInt(p);
-                    }
-                    if (pint > maxquality) {
-                        maxquality = pint;
-                        DLLINK = new Regex(quality_info, "file: \"(http[^<>\"]*?)\"").getMatch(0);
-                    }
-                }
-            }
-        }
         String ext = default_Extension;
         if (!inValidateDLLINK()) {
             DLLINK = Encoding.htmlDecode(DLLINK);

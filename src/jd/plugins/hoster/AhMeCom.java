@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "http://((www\\.)?ah-me\\.com/videos/\\d+|embeds\\.ah\\-me\\.com/embed/\\s+)" }, flags = { 0 })
 public class AhMeCom extends PluginForHost {
@@ -108,6 +109,11 @@ public class AhMeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null; // SiteTemplate.UnknownPornScript5;
     }
 
     @Override

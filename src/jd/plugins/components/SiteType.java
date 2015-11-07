@@ -78,16 +78,61 @@ public class SiteType {
          * the template that supports mirror stack type sites.. Not sure what to call this script.
          */
         Unknown_MirrorStack,
-        /** Script used e.g. for <a href="http:/dansmovies.com/">dansmovies.com</a> */
+        /**
+         * <b>Minimum requirements:</b> Usage of "flowplayer" <br />
+         * <b>Additional requirements to be added to main class:</b> NO account support<br />
+         * <b>Main host class:</b> UnknownPornScript1<br />
+         * <b>Example that suits main host class:</b> <a href="http:/dansmovies.com/">dansmovies.com</a><br />
+         * <b>Example that does NOT suit main host class (needs separate class):</b> -<br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         * */
         UnknownPornScript1,
-        /** Script used e.g. for <a href="http:/pornmaki.com/">pornmaki.com</a> */
+        /**
+         * <b>Minimum requirements:</b> Website has to belong to that specified porn network/company <br />
+         * <b>Additional requirements to be added to main class:</b> NO account support<br />
+         * <b>Main host class:</b> UnknownPornScript2<br />
+         * <b>Example that suits main host class:</b> <a href="http:/pornmaki.com/">pornmaki.com</a><br />
+         * <b>Example that does NOT suit main host class (needs separate class):</b> -<br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         * */
         UnknownPornScript2,
-        /** Script used e.g. for <a href="http:/fantasy8.com/">fantasy8.com</a> */
+        /**
+         * <b>Minimum requirements:</b> Website has to fit script <br />
+         * <b>Additional requirements to be added to main class:</b> NO account support<br />
+         * <b>Main host class:</b> UnknownPornScript3<br />
+         * <b>Example that suits main host class:</b> <a href="http:/xxxkinky.com/">xxxkinky.com</a><br />
+         * <b>Example that does NOT suit main host class (needs separate class):</b> -<br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         * */
         UnknownPornScript3,
-        /** Script used e.g. for <a href="http:/pornyeah.com/">pornyeah.com</a> */
+        /**
+         * <b>Minimum requirements:</b> Website has to fit script <br />
+         * <b>Additional requirements to be added to main class:</b> NO account support<br />
+         * <b>Main host class:</b> UnknownPornScript4<br />
+         * <b>Example that suits main host class:</b> <a href="http:/pornyeah.com/">pornyeah.com</a><br />
+         * <b>Example that does NOT suit main host class (needs separate class):</b> <a href="http:/eroxia.com/">eroxia.com</a><br />
+         * <b>Example that needs a decrypter class :</b> <a href="http:/eroxia.com/">eroxia.com</a><br />
+         * */
         UnknownPornScript4,
-        /** Script used e.g. for <a href="http:/boyfriendtv.com/">boyfriendtv.com</a> */
+        /**
+         * <b>Minimum requirements:</b> Usage of "jwplayer" <br />
+         * <b>Additional requirements to be added to main class:</b> Usage of "jwplayer" - one of the 2 basic jwplayer js/html sources, NO
+         * account support<br />
+         * <b>Main host class:</b> UnknownPornScript5<br />
+         * <b>Example that suits main host class:</b> <a href="http:/boyfriendtv.com/">boyfriendtv.com</a><br />
+         * <b>Example that does NOT suit main host class [needs separate class]:</b> <a href="http:/pornhd.com/">pornhd.com</a><br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         * */
         UnknownPornScript5,
+        /**
+         * <b>Minimum requirements:</b> Website has to fit script <br />
+         * <b>Additional requirements to be added to main class:</b> NO account support<br />
+         * <b>Main host class:</b> -<br />
+         * <b>Example that suits main host class:</b> -<br />
+         * <b>Example that does NOT suit main host class [needs separate class]:</b> <a href="http:/fux.com/">fux.com</a><br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         * */
+        UnknownPornScript6,
         /**
          * Script used by some video hosting sites. <a href="http:/cloudy.ec/">cloudy.ec</a>. Not sure what to call this script.
          */

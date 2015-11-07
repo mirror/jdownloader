@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "http://(www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+" }, flags = { 0 })
 public class PornerBrosCom extends PluginForHost {
@@ -181,6 +182,11 @@ public class PornerBrosCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null; // SiteTemplate.UnknownPornScript6;
     }
 
     @Override

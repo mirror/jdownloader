@@ -23,7 +23,6 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,18 +31,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxytube.com" }, urls = { "http://(?:www\\.)?foxytube\\.com/(?:videos/\\d+/[a-z0-9\\-]+\\.html|embedded/\\d+)" }, flags = { 0 })
-public class FoxytubeCom extends PluginForHost {
+import org.appwork.utils.Regex;
 
-    public FoxytubeCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornomovies.com" }, urls = { "http://(?:www\\.)?pornomovies\\.com/\\d+\\-[a-z0-9\\-]+\\.html" }, flags = { 0 })
+public class PornomoviesCom extends PluginForHost {
+
+    public PornomoviesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String  TYPE_NORMAL       = "^http://(www\\.)?foxytube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html$";
-    private static final String  TYPE_EMBED        = "^http://(www\\.)?foxytube\\.com/embedded/\\d+$";
-
     /* DEV NOTES */
-    /* Porn_plugin */
     // Tags:
     // protocol: no https
     // other:
@@ -59,37 +56,23 @@ public class FoxytubeCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.foxytube.com/terms/";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fid;
-        if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-            link.setUrlDownload("http://www.foxytube.com/videos/" + fid + "/xyz.html");
-        } else {
-            fid = new Regex(link.getDownloadURL(), "(videos/(\\d+)/").getMatch(0);
-        }
-        link.setLinkID(fid);
+        return "http://www.pornomovies.com/terms";
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"mainhdr\">([^<>\"]*?)<").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "pornomovies\\.com/\\d+\\-([a-z0-9\\-]+)\\.html").getMatch(0).replace("-", " ");
+        String filename = br.getRegex("itemprop=\"name\" style=\"color: #000;\">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- FoxyTube</title>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "foxytube\\.com/videos/\\d+/([^<>\"]*?)\\.html$").getMatch(0);
+            filename = url_filename;
         }
         DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (DLLINK == null) {
@@ -100,6 +83,9 @@ public class FoxytubeCom extends PluginForHost {
         }
         if (DLLINK == null) {
             DLLINK = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(https?://[^<>\"]+\\.mp4[^<>\"]+\\&nva=[^<>\"]+)").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -116,7 +102,7 @@ public class FoxytubeCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -128,11 +114,11 @@ public class FoxytubeCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            link.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -162,15 +148,15 @@ public class FoxytubeCom extends PluginForHost {
         dl.startDownload();
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
+    /** Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");

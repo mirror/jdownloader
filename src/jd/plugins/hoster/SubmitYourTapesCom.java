@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submityourtapes.com" }, urls = { "http://(www\\.)?submityourtapes\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class SubmitYourTapesCom extends PluginForHost {
@@ -108,6 +109,11 @@ public class SubmitYourTapesCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null; // SiteTemplate.UnknownPornScript7;
     }
 
     @Override

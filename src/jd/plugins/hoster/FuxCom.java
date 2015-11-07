@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "http://(www\\.)?fux\\.com/(video|embed)/\\d+" }, flags = { 0 })
 public class FuxCom extends PluginForHost {
@@ -163,6 +164,11 @@ public class FuxCom extends PluginForHost {
             }
         }
         return directlink;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null; // SiteTemplate.UnknownPornScript6;
     }
 
     @Override

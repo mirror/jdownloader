@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madthumbs.com" }, urls = { "http://(www\\.)?madthumbs\\.com/videos/[\\w-]+/[\\w-]+/\\d+" }, flags = { 0 })
@@ -121,6 +122,11 @@ public class MadThumbsCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null; // SiteTemplate.UnknownPornScript7;
     }
 
     @Override

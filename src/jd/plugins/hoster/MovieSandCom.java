@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviesand.com" }, urls = { "http://(www\\.)?moviesand\\.com/(videos/\\d+/[a-z0-9\\-_]+\\.html|embedded/\\d+)" }, flags = { 0 })
 public class MovieSandCom extends PluginForHost {
@@ -130,6 +131,11 @@ public class MovieSandCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null; // SiteTemplate.UnknownPornScript7;
     }
 
     @Override
