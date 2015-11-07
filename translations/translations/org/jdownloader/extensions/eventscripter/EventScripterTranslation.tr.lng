@@ -43,6 +43,7 @@ emptyScript=// Betiğinizi buraya ekleyin. Mevcut API özelliklerini ve yönteml
 event_trigger=Tetikleyici
 example_infoFile=Ayrıntılı bilgilerle İndirme Klasörüne bir Bilgi Dosyası oluştur
 example_play_sound=Bir Wav Dosyası Çal
+example_play_sound_when_inactive=İndirmeler ve çıkartma durduğunda bir Ses (Wav) çal
 example_script_name=Örnek
 interval_settings=Ms olarak çağrı aralığı
 loading_editor_title=Düzenleyici yükleniyor...
