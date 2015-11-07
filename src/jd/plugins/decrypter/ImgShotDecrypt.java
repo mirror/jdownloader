@@ -25,11 +25,10 @@ import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
-public class ImgShotDecrypt extends PluginForDecrypt {
+public class ImgShotDecrypt extends antiDDoSForDecrypt {
 
     /**
      * Returns the annotations flags array
@@ -48,7 +47,7 @@ public class ImgShotDecrypt extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "imgtube.net", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org" };
+        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "imgtube.net", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "erimge.com", "imgspot.org", "imgserve.net" };
     }
 
     /**
@@ -85,7 +84,7 @@ public class ImgShotDecrypt extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* general|imgtube.net */
-        if (this.br.containsHTML("imgContinue") || this.br.containsHTML("continue_to_image")) {
+        if (br.containsHTML("imgContinue") || br.containsHTML("continue_to_image")) {
             br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
         }
         final String finallink = br.getRegex("(\\'|\")(http://(www\\.)?" + Pattern.quote(Browser.getHost(parameter)) + "(/upload/big/|/uploads/images/)[^<>\"]*?)\\1").getMatch(1);
