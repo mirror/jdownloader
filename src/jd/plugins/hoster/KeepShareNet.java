@@ -108,8 +108,8 @@ public class KeepShareNet extends PluginForHost {
     // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
-    // captchatype: 4dignum
-    // other:
+    // captchatype: reCaptchaV1
+    // other: 2015-11-07: reCaptchav1 pre-download-waittime cannot be skipped anymore!
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
@@ -472,7 +472,7 @@ public class KeepShareNet extends PluginForHost {
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /* wait time is usually skippable for reCaptcha handling */
-                    skipWaittime = true;
+                    skipWaittime = false;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
 

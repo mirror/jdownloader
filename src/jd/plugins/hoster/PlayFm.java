@@ -16,12 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,11 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "play.fm" }, urls = { "http://(www\\.)?play\\.fm/(recording/\\w+|(recordings)?#play_\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play.fm" }, urls = { "https?://(?:www\\.)?play\\.fm/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
 public class PlayFm extends PluginForHost {
 
-    private String       DLLINK   = null;
-    private final String MAINPAGE = "http://www.play.fm";
+    private String DLLINK = null;
 
     public PlayFm(final PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +40,7 @@ public class PlayFm extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.play.fm/terms";
+        return "https://www.play.fm/static/terms";
     }
 
     @Override
@@ -50,10 +48,67 @@ public class PlayFm extends PluginForHost {
         return -1;
     }
 
+    /** Using API: https://v2api.play.fm/ */
+    @SuppressWarnings({ "deprecation", "unchecked" })
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        this.br.setAllowedResponseCodes(410);
+        br.setFollowRedirects(true);
+
+        final String linkpart = new Regex(downloadLink.getDownloadURL(), "play\\.fm/(.+)").getMatch(0);
+        this.br.getPage("https://v2api.play.fm/recordings/slug/" + linkpart);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+
+        final String title = (String) entries.get("title");
+        final String description = (String) entries.get("description");
+        DLLINK = (String) entries.get("audio");
+
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        String filename;
+        if (title != null) {
+            filename = title;
+        } else {
+            filename = linkpart;
+        }
+        filename += ".mp3";
+        filename = encodeUnicode(filename);
+
+        if (description != null && downloadLink.getComment() == null) {
+            downloadLink.setComment(description);
+        }
+
+        downloadLink.setFinalFileName(filename);
+
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openHeadConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -61,71 +116,20 @@ public class PlayFm extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        String id = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(-1);
-        if (id == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-
-        try {
-            br.getPage(MAINPAGE + "/flexRead/recording?rec%5Fid=" + id);
-        } catch (final Throwable e) {
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 410) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<error><\\!\\[CDATA\\[\\]\\]></error>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("Sorry, we are down for maintenance")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Sorry, we are down for maintenance", 5 * 60 * 1000l);
-        }
-        if (br.containsHTML("<error>")) {
-            br.getPage(downloadLink.getDownloadURL());
-            id = br.getRegex("<a class=\"playlink btn btn_play btn_light\".*?href=\"#play_(\\d+)\">").getMatch(0);
-            br.getPage(MAINPAGE + "/flexRead/recording?rec%5Fid=" + id);
-        }
-
-        if (br.containsHTML("var vid_title = \"\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("<error>")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String filename = br.getRegex("<title><!\\[CDATA\\[(.*?)\\]\\]></title>").getMatch(0);
-        final String highBitrate = br.getRegex("<file_id>(.*?)</file_id>").getMatch(0);
-        final String fileId1 = br.getRegex("<file_id>(.*?)</file_id>").getMatch(0, 1);
-        final String url = br.getRegex("<url>(.*?)</url>").getMatch(0);
-        final String uuid = br.getRegex("<uuid>(.*?)</uuid>").getMatch(0);
-
-        if (filename == null || highBitrate == null || fileId1 == null || url == null || uuid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-
-        DLLINK = "http://" + url + "/public/" + highBitrate + "/offset/0/sh/" + uuid + "/rec/" + id + "/jingle/" + fileId1 + "/loc/";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".wav");
-
-        final Browser br2 = br.cloneBrowser();
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
