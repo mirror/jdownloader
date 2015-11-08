@@ -13,11 +13,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://redirector\\.googlevideo\\.com/videoplayback\\?.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+" }, flags = { 0 })
 public class VideoGoogle extends PluginForHost {
 
     private String       dllink = null;
-    private final String embed  = "https?://redirector\\.googlevideo\\.com/videoplayback\\?.+";
+    private final String embed  = "https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+";
 
     public VideoGoogle(PluginWrapper wrapper) {
         super(wrapper);
