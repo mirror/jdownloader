@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,8 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.artejd_decrypted_jd\\.tv/\\d+", "http://concert\\.artejd_decrypted_jd\\.tv/\\d+", "http://creative\\.artejd_decrypted_jd\\.tv/\\d+", "http://future\\.artejd_decrypted_jd\\.tv/\\d+", "http://cinema\\.artejd_decrypted_jd\\.tv/\\d+" }, flags = { 2, 2, 2, 2, 2 })
 public class ArteTv extends PluginForHost {
@@ -236,9 +236,9 @@ public class ArteTv extends PluginForHost {
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        if (quality_intern.contains("_rtmp_")) {
+        if (quality_intern.startsWith("rtmp_")) {
             downloadRTMP(downloadLink);
-        } else if (quality_intern.contains("_http_")) {
+        } else if (quality_intern.startsWith("http_")) {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -251,7 +251,7 @@ public class ArteTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
-        } else if (quality_intern.contains("_hls_")) {
+        } else if (quality_intern.startsWith("hls_")) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, dllink);
             dl.startDownload();
