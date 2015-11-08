@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -36,9 +38,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
@@ -46,10 +46,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     TYPE_CONCERT                                = "http://(www\\.)?concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
     private static final String     TYPE_CREATIVE                               = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/.+";
     private static final String     TYPE_FUTURE                                 = "http://(www\\.)?future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String     TYPE_GUIDE                                  = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+";
+    private static final String     TYPE_GUIDE                                  = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+";
     private static final String     TYPE_CINEMA                                 = "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
 
-    private static final String     API_TYPE_GUIDE                              = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/(?:F|D)/.+\\.json$";
+    private static final String     API_TYPE_GUIDE                              = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/[ADF]/.+\\.json$";
     private static final String     API_TYPE_CINEMA                             = "^https?://api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)\\?vector=.+";
 
     private static final String     V_NORMAL                                    = "V_NORMAL";
@@ -89,7 +89,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "deprecation" })
-    /**TODO: Re-Write parts of this - remove the bad language handling!*/
+    /** TODO: Re-Write parts of this - remove the bad language handling! */
     /*
      * E.g. smil (rtmp) url:
      * http://www.arte.tv/player/v2/webservices/smil.smil?json_url=http%3A%2F%2Farte.tv%2Fpapi%2Ftvguide%2Fvideos%2Fstream
