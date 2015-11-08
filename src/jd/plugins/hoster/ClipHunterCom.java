@@ -151,8 +151,8 @@ public class ClipHunterCom extends PluginForHost {
      */
     private LinkedHashMap<String, String> findAvailableVideoQualities() throws IOException {
         // parse decryptalgo
-        final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player[_a-z]+\\.js)\"").getMatch(0);
-        final String[] encryptedUrls = br.getRegex("var pl_fiji(_p|_i)? = \\'(.*?)\\'").getColumn(1);
+        final String jsUrl = br.getRegex("<script.*src=\"(http://.*?gexo.*?player[_a-z\\d]+\\.js)\"").getMatch(0);
+        final String[] encryptedUrls = br.getRegex("\"url\":\"([^<>\"]*?)\"").getColumn(0);
         if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) {
             return null;
         }
