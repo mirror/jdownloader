@@ -57,6 +57,8 @@ public class TwitterCom extends PornEmbedParser {
         final String parameter = param.toString().replace("http://", "https://");
         final String urlfilename = getUrlFname(parameter);
         final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(user);
         String tweet_id = null;
 
         if (parameter.matches(TYPE_REDIRECT)) {
@@ -64,7 +66,7 @@ public class TwitterCom extends PornEmbedParser {
             br.getPage(parameter);
             String finallink = this.br.getRedirectLocation();
             if (finallink == null) {
-                finallink = this.br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]*?)\"").getMatch(0);
+                finallink = this.br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(https?[^<>\"]*?)(#_=_)?\"").getMatch(0);
             }
             if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404 || finallink == null) {
                 final DownloadLink offline = this.createOfflinelink(parameter);
@@ -116,6 +118,7 @@ public class TwitterCom extends PornEmbedParser {
                 dllink = dllink.replace("\\", "");
                 final String filename = tweet_id + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
                 final DownloadLink dl = this.createDownloadlink(dllink, tweet_id);
+                fp.add(dl);
                 dl.setProperty("decryptedfilename", filename);
                 dl.setName(filename);
                 dl.setAvailable(true);
@@ -123,8 +126,6 @@ public class TwitterCom extends PornEmbedParser {
             }
         } else if (parameter.matches(TYPE_USER_ALL)) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(user);
             int reloadNumber = 1;
             String maxid = br.getRegex("data-min-position=\"(\\d+)\"").getMatch(0);
             do {
