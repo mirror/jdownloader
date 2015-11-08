@@ -19,23 +19,16 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -58,9 +51,14 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(www\\.)?uploadboy\\.com/(vidembed\\-)?[a-z0-9]{12}(\\.html)?(\\?ref=[a-zA-Z0-9\\%\\.]+)?$" }, flags = { 2 })
 public class UploadBoyCom extends antiDDoSForHost {
 
+    public static final long     trust_cookie_age             = 30000l;
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -84,7 +82,7 @@ public class UploadBoyCom extends antiDDoSForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.5
-    // mods: Added XFS3 login captcha support && antiDDoSForHost
+    // mods: heavily modified, do NOT upgrade!
     // non account: 2 * 2
     // free account: 2 * 2
     // premium account: untested, set standard limits
@@ -793,8 +791,8 @@ public class UploadBoyCom extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        if (!br.getURL().contains("/?op=my_account")) {
-            getPage("/?op=my_account");
+        if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
+            getPage("http://" + this.getHost() + "/?op=my_account");
         }
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
@@ -846,27 +844,28 @@ public class UploadBoyCom extends antiDDoSForHost {
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
                         return;
                     }
+                    /* Check cookies */
+                    br.getPage(COOKIE_HOST);
+                    if (br.containsHTML("\\?op=logout\"")) {
+                        /* Refresh timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
+                    }
+                    /* Delete cookies / Headers to perform a full login */
+                    this.br = new Browser();
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
@@ -893,17 +892,9 @@ public class UploadBoyCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }

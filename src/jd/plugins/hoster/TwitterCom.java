@@ -121,7 +121,7 @@ public class TwitterCom extends PluginForHost {
                 if (filename == null) {
                     filename = Encoding.htmlDecode(getFileNameFromHeader(con));
                 }
-                if (tweetid != null) {
+                if (tweetid != null && !filename.contains(tweetid)) {
                     filename = tweetid + "_" + filename;
                 }
                 link.setFinalFileName(filename);

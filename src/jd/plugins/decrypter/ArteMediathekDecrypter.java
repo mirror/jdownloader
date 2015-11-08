@@ -24,8 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -37,6 +35,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
@@ -115,7 +115,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
 
         setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(503);
         br.getPage(parameter);
         try {
@@ -148,22 +148,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 fid = br.getRegex("\"http://creative\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
                 hybridAPIUrl = "http://creative.arte.tv/%s/player/%s";
             } else if (parameter.matches(TYPE_GUIDE)) {
-                if (br.getRedirectLocation() != null) {
-                    br.getPage(br.getRedirectLocation());
-                }
                 int status = br.getHttpConnection().getResponseCode();
                 if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
                     decryptedLinks.add(createofflineDownloadLink(parameter));
                     return decryptedLinks;
                 }
                 /* new arte+7 handling */
-                if (status == 301 || status == 302) {
-                    br.setFollowRedirects(true);
-                    if (br.getRedirectLocation() != null) {
-                        parameter = br.getRedirectLocation();
-                        br.getPage(parameter);
-                    }
-                } else if (status != 200) {
+                if (status != 200) {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
