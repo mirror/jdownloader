@@ -21,7 +21,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
@@ -70,7 +69,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
 
     final String[]                        formats                                     = { http_extern_1000, hls_extern_250, hls_extern_500, hls_extern_1000, hls_extern_2000, hls_extern_4000 };
 
-    private HashMap<String, DownloadLink> bestMap                                     = new HashMap<String, DownloadLink>();
+    private final ArrayList<DownloadLink> decryptedLinks                              = new ArrayList<DownloadLink>();
     private String                        parameter;
     private String                        plain_domain_decrypter                      = null;
     private String                        title                                       = null;
@@ -95,7 +94,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         /* Load host plugin to access some static methods later */
         JDUtilities.getPluginForHost("arte.tv");
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         int foundFormatsNum = 0;
         parameter = param.toString();
         ArrayList<String> selectedFormats = new ArrayList<String>();
@@ -206,25 +204,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
             }
 
             /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
-            if (bestMap.isEmpty() && foundFormatsNum > 0) {
-                title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            }
-            /* We should always have 3 links (their basic qualities) or more! */
-            if (bestMap.isEmpty()) {
-                logger.warning("Decrypter broken");
-                return null;
-            }
-
-            /* Add selected & existing formats */
-            for (final String selectedFormat : selectedFormats) {
-                final DownloadLink thisformat = bestMap.get(selectedFormat);
-                if (thisformat != null) {
-                    decryptedLinks.add(thisformat);
-                }
-            }
-
-            /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
             if (decryptedLinks.isEmpty() && foundFormatsNum > 0) {
                 title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -322,7 +301,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
             if (fastLinkcheck) {
                 link.setAvailable(true);
             }
-            bestMap.put(quality_intern, link);
+            decryptedLinks.add(link);
         }
     }
 
@@ -383,7 +362,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         if (fastLinkcheck) {
             link.setAvailable(true);
         }
-        bestMap.put(quality_intern, link);
+        decryptedLinks.add(link);
     }
 
     /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */

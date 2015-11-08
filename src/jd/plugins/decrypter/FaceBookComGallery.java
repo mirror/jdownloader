@@ -65,8 +65,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(?:www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
     private static final String     TYPE_SINGLE_VIDEO_EMBED         = "https?://(?:www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
     private static final String     TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(?:www\\.)?facebook\\.com/.+/videos.*?/\\d+.*?";
-    private static final String     TYPE_SET_LINK_PHOTO             = "http(s)?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
-    private static final String     TYPE_SET_LINK_VIDEO             = "https?://(?:www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+.*?";
+    private static final String     TYPE_SET_LINK_PHOTO             = "http(s)?://.+/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
+    private static final String     TYPE_SET_LINK_VIDEO             = "https?://.+(/media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
     private static final String     TYPE_ALBUMS_LINK                = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
     private static final String     TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
     private static final String     TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
@@ -88,7 +88,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private static final String     CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                  PARAMETER                       = null;
-    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;                                                ;
+    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;                                     ;
     private boolean                 logged_in                       = false;
     private ArrayList<DownloadLink> decryptedLinks                  = null;
 
@@ -247,7 +247,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotoAlbumsPagelet?data=%7B%22profile_id%22%3A" + profileID + "%2C%22tab_key%22%3A%22photos_albums%22%2C%22sk%22%3A%22photos_albums%22%2C%22page_index%22%3A" + i + "%2C%22last_album_id%22%3A%22" + currentLastAlbumid + "%22%7D&__user=" + user + "&__a=1&__dyn=&__req=a";
                 br.getPage(loadLink);
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=a\\.[0-9\\.]+)\\&amp;type=\\d+\"").getColumn(0);
+                links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=(?:a|vb)\\.[0-9\\.]+)\\&amp;type=\\d+\"").getColumn(0);
                 currentMaxPicCount = 12;
                 dynamicLoadAlreadyDecrypted = true;
             } else {
@@ -723,14 +723,17 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)videos }}| Facebook</title>").getMatch(0);
 
-        final String[] links = br.getRegex("uiVideoLinkMedium\" href=\"(https?://(www\\.)?facebook\\.com/(photo|video)\\.php\\?v=\\d+)").getColumn(0);
-        for (final String link : links) {
-            final DownloadLink dl = createDownloadlink(link.replace("facebook.com/", CRYPTLINK));
-            try {
-                dl.setContentUrl(link);
-            } catch (final Throwable e) {
-                dl.setBrowserUrl(link);
-            }
+        String[] links = br.getRegex("uiVideoLinkMedium\" href=\"https?://(?:www\\.)?facebook\\.com/(?:photo|video)\\.php\\?v=(\\d+)").getColumn(0);
+        if (links == null || links.length == 0) {
+            links = br.getRegex("ajaxify=\"/[^/]+/videos/vb\\.\\d+/(\\d+)/").getColumn(0);
+        }
+        for (final String videoid : links) {
+            final String videolink = "http://facebookdecrypted.com/video.php?v=" + videoid;
+            final DownloadLink dl = createDownloadlink(videolink);
+            dl.setContentUrl(videoid);
+            dl.setLinkID(videoid);
+            dl.setName(videoid + ".mp4");
+            dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
 

@@ -54,6 +54,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
+        br.setAllowedResponseCodes(439);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("user\\?username=.+")) {
@@ -104,6 +105,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     this.br.getHeaders().put("Referer", "https://instagram.com/falllawayboy/?max_id=" + maxid);
                 }
                 this.br.postPage("https://instagram.com/query/", "q=ig_user(" + id_owner + ")+%7B+media.after(" + nextid + "%2C+12)+%7B%0A++count%2C%0A++nodes+%7B%0A++++caption%2C%0A++++code%2C%0A++++comments+%7B%0A++++++count%0A++++%7D%2C%0A++++date%2C%0A++++display_src%2C%0A++++id%2C%0A++++is_video%2C%0A++++likes+%7B%0A++++++count%0A++++%7D%2C%0A++++owner+%7B%0A++++++id%0A++++%7D%0A++%7D%2C%0A++page_info%0A%7D%0A+%7D&ref=users%3A%3Ashow");
+                if (this.br.getHttpConnection().getResponseCode() == 439) {
+                    logger.info("Seems like user is using an unverified account - cannot grab more items");
+                    break;
+                }
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
                 resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "media/nodes");
                 nextid = (String) DummyScriptEnginePlugin.walkJson(entries, "media/page_info/end_cursor");
