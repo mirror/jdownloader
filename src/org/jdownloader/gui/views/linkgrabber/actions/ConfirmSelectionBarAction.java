@@ -14,6 +14,7 @@ import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
@@ -24,34 +25,46 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
 
     private DelayedRunnable delayer;
 
-    @Override
+    /**
+     * @return
+     */
     protected String getTextForForcedAll() {
-        return super.getTextForForcedAll();
+        return _GUI._.ConfirmSelectionBarAction_main_button_add_and_force_all();
     }
 
-    @Override
+    /**
+     * @return
+     */
     protected String getTextForForcedSelectionOnly() {
-        return super.getTextForForcedSelectionOnly();
+        return _GUI._.ConfirmSelectionBarAction_main_button_add_and_force_selection();
     }
 
-    @Override
+    /**
+     * @return
+     */
     protected String getTextForNoAutoStartAll() {
-        return super.getTextForNoAutoStartAll();
+        return _GUI._.ConfirmSelectionBarAction_main_button_add_all();
     }
 
-    @Override
+    /**
+     * @return
+     */
     protected String getTextForNoAutoStartSelectionOnly() {
-        return super.getTextForNoAutoStartSelectionOnly();
+        return _GUI._.ConfirmSelectionBarAction_main_button_add_selection();
     }
 
-    @Override
+    /**
+     * @return
+     */
     protected String getTextForAutoStartAll() {
-        return super.getTextForAutoStartAll();
+        return _GUI._.ConfirmSelectionBarAction_main_button_add_and_start_all();
     }
 
-    @Override
+    /**
+     * @return
+     */
     protected String getTextForAutoStartSelectionOnly() {
-        return super.getTextForAutoStartSelectionOnly();
+        return _GUI._.ConfirmSelectionBarAction_main_button_add_and_start_selection();
     }
 
     public ConfirmSelectionBarAction() {

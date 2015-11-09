@@ -8,6 +8,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmSelectionBarAction;
 public class ConfirmButtonMenuItem extends MenuItemData implements SelfLayoutInterface {
     public ConfirmButtonMenuItem() {
         super(new ActionData(ConfirmSelectionBarAction.class).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
+
     }
 
     @Override
