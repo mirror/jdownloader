@@ -144,6 +144,11 @@ public class Renderer implements TreeCellRenderer {
         if (tt.length() > 0) {
             name += " (Description: " + tt + ")";
         }
+
+        if (mid != null && mid.getActionData() != null && StringUtils.isNotEmpty(mid.getActionData().getClazzName()) && mid.getActionData().getClazzName().contains("eventscripter")) {
+            name = "EventTrigger -> " + name;
+        }
+
         if (StringUtils.isNotEmpty(type)) {
             if (StringUtils.equals(_GUI._.InfoPanel_update_action(), type)) {
                 renderer.setText(name);

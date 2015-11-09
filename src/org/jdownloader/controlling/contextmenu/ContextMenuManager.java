@@ -189,6 +189,11 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     // }
 
     public MenuContainerRoot getMenuData() {
+        if (!SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
+            // the menus will get refreshed anyway after the extensioncontroller has been loaded.
+
+            return new MenuContainerRoot();
+        }
         return new EDTHelper<MenuContainerRoot>() {
 
             @Override

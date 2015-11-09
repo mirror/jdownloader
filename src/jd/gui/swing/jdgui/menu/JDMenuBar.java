@@ -13,6 +13,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.KeyStroke;
 
+import jd.SecondLevelLaunch;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -32,7 +34,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
     /**
      * get the only existing instance of JDMenuBar. This is a singleton
-     * 
+     *
      * @return
      */
     public static JDMenuBar getInstance() {
@@ -61,7 +63,9 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
     }
 
     public void updateLayout() {
-
+        if (!SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
+            return;
+        }
         removeAll();
 
         new MenuBuilder(MenuManagerMainmenu.getInstance(), this, MenuManagerMainmenu.getInstance().getMenuData()) {
@@ -132,7 +136,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                         action.requestUpdate(JDMenuBar.this);
 
                         if (action instanceof DonateAction && index == size - 1 && !CrossSystem.isMac()) {// only if the donation button is
-                                                                                                          // the very right in the
+                            // the very right in the
                             // menu bar
                             ret = new ExtDonateMenuButton(action);
                         } else {
