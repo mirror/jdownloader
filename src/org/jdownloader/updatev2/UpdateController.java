@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -29,7 +28,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
@@ -535,7 +533,13 @@ public class UpdateController implements UpdateCallbackInterface {
     public Process runExeAsynch(List<String> call, File root) throws IOException {
 
         if (DEBUG_SELFTEST_PORT > 0) {
+            // -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=8000,suspend=y
+
             call.addAll(RestartController.getInstance().getFilteredRestartParameters());
+
+            call.add(1, "-Xdebug");
+            call.add(2, "-Xrunjdwp:transport=dt_socket,server=y,address=" + DEBUG_SELFTEST_PORT + ",suspend=y");
+
             logger.info("Call: " + call + " in " + root);
             if (CrossSystem.isWindows()) {
                 StringBuilder sb = new StringBuilder();
