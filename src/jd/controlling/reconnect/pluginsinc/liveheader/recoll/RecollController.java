@@ -29,7 +29,7 @@ public class RecollController {
 
     /**
      * get the only existing instance of RecollController. This is a singleton
-     * 
+     *
      * @return
      */
     public static RecollController getInstance() {

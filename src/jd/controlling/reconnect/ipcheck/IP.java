@@ -8,6 +8,7 @@ import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.RouterUtils;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.logging.LogController;
 
 public class IP {
@@ -110,6 +111,9 @@ public class IP {
     }
 
     public static boolean isValidRouterIP(String gatewayIP) {
+        if (StringUtils.isEmpty(gatewayIP)) {
+            return false;
+        }
         boolean localip = isLocalIP(gatewayIP);
         if (!localip) {
             try {

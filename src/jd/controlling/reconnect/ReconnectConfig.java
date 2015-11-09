@@ -41,14 +41,12 @@ public interface ReconnectConfig extends ConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(300)
-    @SpinnerValidator(min = 0, max = 600)
     int getSecondsToWaitForIPChange();
 
     void setSecondsToWaitForIPChange(int i);
 
     @AboutConfig
     @DefaultIntValue(60)
-    @SpinnerValidator(min = 0, max = 300)
     int getSecondsToWaitForOffline();
 
     void setSecondsToWaitForOffline(int i);
@@ -61,7 +59,6 @@ public interface ReconnectConfig extends ConfigInterface {
 
     @DefaultIntValue(5)
     @AboutConfig
-    @SpinnerValidator(min = 0, max = 300)
     int getSecondsBeforeFirstIPCheck();
 
     void setSecondsBeforeFirstIPCheck(int seconds);
