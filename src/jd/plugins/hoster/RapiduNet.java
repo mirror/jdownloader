@@ -26,6 +26,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,8 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" }, flags = { 2 })
 public class RapiduNet extends PluginForHost {
@@ -261,12 +261,19 @@ public class RapiduNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, MAXCHUNKSFORFREE);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            handleDownloadServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    void setLoginData(final Account account) throws Exception {
+    private final void handleDownloadServerErrors() throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    private void setLoginData(final Account account) throws Exception {
         br.getPage("http://rapidu.net/");
         br.setCookiesExclusive(true);
         final Object ret = account.getProperty("cookies", null);
@@ -399,9 +406,9 @@ public class RapiduNet extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, MAXCHUNKSFORPREMIUM);
         if (dl.getConnection().getContentType().contains("html")) {
-
-            logger.warning("The final dllink seems not to be a file!" + "Response: " + dl.getConnection().getResponseMessage() + ", code: " + dl.getConnection().getResponseCode() + "\n" + dl.getConnection().getContentType());
             br.followConnection();
+            logger.warning("The final dllink seems not to be a file!" + "Response: " + dl.getConnection().getResponseMessage() + ", code: " + dl.getConnection().getResponseCode() + "\n" + dl.getConnection().getContentType());
+            handleDownloadServerErrors();
             logger.warning("br returns:" + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -519,7 +526,7 @@ public class RapiduNet extends PluginForHost {
                 date = dateFormat.parse(userPremiumDateEnd);
                 ai.setValidUntil(date.getTime());
             } catch (final Exception e) {
-                logger.log( e);
+                logger.log(e);
             }
             // set max simult. downloads using API method
             account.setMaxSimultanDownloads(checkMaxSimultanPremiumDowloadNum());
@@ -637,7 +644,7 @@ public class RapiduNet extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     * 
+     *
      * @param key
      * @return
      */
