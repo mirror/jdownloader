@@ -69,5 +69,6 @@ update_dialog_news_button=更新ログを開く
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=更新が利用可能
 update_dialog_yes=はい(推奨)
+update_done_close_in_TIME=インストールが完了しました。\n%s1 後に終了します
 update_in_next_session=キャンセルして次の再起動時まで後回しにする
 updatedplugins=プラグインが更新されました。\n現在は最新バージョンのJDownloaderを実行中です。

@@ -43,6 +43,7 @@ emptyScript=//Add your script here. Feel free to use the available api propertie
 event_trigger=引金(トリガー)
 example_infoFile=ダウンロードフォルダに詳細情報をinfoファイルとして記録する
 example_play_sound=WAVファイルを再生する
+example_play_sound_when_inactive=ダウンロード又は解凍停止時に音(Wav)を鳴らす
 example_script_name=例
 interval_settings=呼出し間隔(㍉秒)
 loading_editor_title=エディタを読込中...
