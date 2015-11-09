@@ -5939,4 +5939,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "2160p" })
     String YoutubeVariant_filenametag_MP4_ORIGINAL();
 
+    @Default(lngs = { "en" }, values = { "...move to Downloadlist" })
+    String LINKGRABBER_BOTTOM_MENU_CONFIRM_ALL();
+
+    @Default(lngs = { "en" }, values = { "...move to Downloadlist & start Downloads" })
+    String LINKGRABBER_BOTTOM_MENU_CONFIRM_AND_START_ALL();
+
+    @Default(lngs = { "en" }, values = { "...move to Downloadlist" })
+    String LINKGRABBER_BOTTOM_MENU_CONFIRM_SELECTED();
+
+    @Default(lngs = { "en" }, values = { "...move to Downloadlist & start Downloads" })
+    String LINKGRABBER_BOTTOM_MENU_CONFIRM_AND_START_SELECTED();
+
+    @Default(lngs = { "en" }, values = { "Add all to Downloadlist" })
+    String LINKGRABBER_BOTTOM_MENU_CONFIRM_ALL_MAIN_BUTTON();
+
 }

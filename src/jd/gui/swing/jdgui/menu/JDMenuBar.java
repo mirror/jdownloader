@@ -18,6 +18,7 @@ import jd.SecondLevelLaunch;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -49,7 +50,20 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
      */
     private JDMenuBar() {
         super();
-        updateLayout();
+        SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        updateLayout();
+                    }
+                };
+            }
+        });
+
         // MenuManagerMainmenu.getInstance().refresh();
 
         this.addMouseListener(this);
@@ -63,9 +77,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
     }
 
     public void updateLayout() {
-        if (!SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
-            return;
-        }
+
         removeAll();
 
         new MenuBuilder(MenuManagerMainmenu.getInstance(), this, MenuManagerMainmenu.getInstance().getMenuData()) {

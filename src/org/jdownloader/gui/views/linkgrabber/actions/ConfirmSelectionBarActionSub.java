@@ -20,7 +20,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
-public class ConfirmSelectionBarAction extends ConfirmLinksContextAction implements ActionContext, ExtTableListener, ExtTableModelListener, GenericConfigEventListener<Boolean> {
+public class ConfirmSelectionBarActionSub extends ConfirmLinksContextAction implements ActionContext, ExtTableListener, ExtTableModelListener, GenericConfigEventListener<Boolean> {
 
     private DelayedRunnable delayer;
 
@@ -54,7 +54,7 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
         return super.getTextForAutoStartSelectionOnly();
     }
 
-    public ConfirmSelectionBarAction() {
+    public ConfirmSelectionBarActionSub() {
         super();
         delayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 1000) {
 

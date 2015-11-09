@@ -247,6 +247,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             protected MenuContainerRoot prepare(MenuContainerRoot menuData) {
                 MenuContainerRoot ret = new MenuContainerRoot();
+                menuData._setOwner(MenuManagerLinkgrabberTabBottombar.getInstance());
                 boolean foundSeparator = false;
                 for (MenuItemData mi : menuData.getItems()) {
                     if (mi instanceof LeftRightDividerItem) {
@@ -276,6 +277,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             protected MenuContainerRoot prepare(MenuContainerRoot menuData) {
                 MenuContainerRoot ret = new MenuContainerRoot();
+                ret._setOwner(MenuManagerLinkgrabberTabBottombar.getInstance());
                 for (MenuItemData mi : menuData.getItems()) {
                     if (mi instanceof LeftRightDividerItem) {
                         break;

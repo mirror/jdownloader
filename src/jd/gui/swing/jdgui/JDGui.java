@@ -563,13 +563,15 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     }
 
                 };
+                SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
 
-                new Thread("Load Context Menus") {
+                    @Override
                     public void run() {
                         MenuManagerDownloadTableContext.getInstance().getMenuData();
                         MenuManagerLinkgrabberTableContext.getInstance().getMenuData();
                     }
-                }.start();
+                });
+
             }
 
         });

@@ -38,6 +38,16 @@ public abstract class CustomizableAppAction extends AppAction {
         return null;
     }
 
+    protected ContextMenuManager _getOwner() {
+        if (getMenuItemData() == null) {
+            return null;
+        }
+        if (getMenuItemData()._getRoot() == null) {
+            return null;
+        }
+        return getMenuItemData()._getRoot()._getOwner();
+    }
+
     protected static ImageIcon getCheckBoxedIcon(String string, boolean selected, boolean enabled) {
         return new ImageIcon(ImageProvider.merge(NewTheme.I().getIcon(string, 18), new CheckBoxIcon(selected, enabled), -2, -2, 6, 6, null, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f)));
     }
