@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -38,9 +41,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 /**
  * TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen
@@ -408,8 +408,8 @@ public class MegasharesCom extends PluginForHost {
                 if (pw.length() > 32) {
                     pw = pw.substring(0, 32);
                 }
-                br.getPage("http://d01.megashares.com/");
-                br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login");
+                br.getPage("https://d01.megashares.com/myms_login.php");
+                br.postPage("https://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login&httpref=");
             }
             if (br.getCookie("http://megashares.com", "myms") == null) {
                 /* invalid account */
