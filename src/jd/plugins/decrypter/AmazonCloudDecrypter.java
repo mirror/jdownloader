@@ -28,9 +28,12 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "https?://(www\\.)?amazon\\.(de|es|com|com\\.au|co\\.uk|fr)/clouddrive/share/.+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" }, flags = { 0 })
+import org.jdownloader.controlling.packagizer.PackagizerController;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|com|com\\.au|co\\.uk|fr)/clouddrive/share/.+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" }, flags = { 0 })
 public class AmazonCloudDecrypter extends PluginForDecrypt {
 
     public AmazonCloudDecrypter(PluginWrapper wrapper) {
@@ -63,11 +66,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             main.setProperty("plain_folder_id", plain_folder_id);
             main.setProperty("mainlink", parameter);
             main.setProperty("plain_domain", plain_domain);
-            try {
-                main.setContentUrl(" https://www." + plain_domain + "/clouddrive/share?s=" + plain_folder_id);
-            } catch (Throwable e) {
-
-            }
+            main.setContentUrl(" https://www." + plain_domain + "/clouddrive/share?s=" + plain_folder_id);
 
             decryptedLinks.add(main);
         }
@@ -81,7 +80,12 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
         LinkedHashMap<String, Object> entries = null;
         prepBR();
         ArrayList<Object> resource_data_list = null;
-        final String subfolder_id = new Regex(parameter, "/folder/([^/]+)").getMatch(0);
+        String path_decrypted = "";
+        final String path_b64 = new Regex(parameter, "&subfolderpath=(.+)").getMatch(0);
+        if (path_b64 != null) {
+            path_decrypted = Encoding.Base64Decode(path_b64);
+        }
+        final String subfolder_id = new Regex(parameter, "/folder/([^/\\&]+)").getMatch(0);
         if (subfolder_id != null) {
             /* Subfolders-/files */
             br.setAllowedResponseCodes(400);
@@ -117,45 +121,70 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             }
         }
         for (final Object o : resource_data_list) {
-            decryptedLinks.add(crawlSingleObject(o));
+            decryptedLinks.add(crawlSingleObject(o, path_decrypted));
         }
 
         return decryptedLinks;
     }
 
     @SuppressWarnings("unchecked")
-    private DownloadLink crawlSingleObject(final Object o) throws IOException {
+    private DownloadLink crawlSingleObject(final Object o, String path_decrypted) throws IOException {
+        final String path_encrypted;
         final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) o;
         final LinkedHashMap<String, Object> contentProperties = (LinkedHashMap<String, Object>) nodeInfo.get("contentProperties");
         final String kind = (String) nodeInfo.get("kind");
         final String id = (String) nodeInfo.get("id");
+        String name = (String) nodeInfo.get("name");
         final DownloadLink dl;
         if (kind.equals("FILE")) {
             dl = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            String filename = (String) nodeInfo.get("name");
             final String finallink = (String) nodeInfo.get("tempLink");
             final long filesize = ((Number) contentProperties.get("size")).longValue();
             final String md5 = (String) contentProperties.get("md5");
-            filename = Encoding.htmlDecode(filename).trim();
-            final String fid = filename + "_" + md5;
+            name = Encoding.htmlDecode(name).trim();
+            final String fid = name + "_" + md5;
 
             dl.setDownloadSize(filesize);
-            dl.setFinalFileName(filename);
-            dl.setProperty("plain_name", filename);
+            dl.setFinalFileName(name);
+            dl.setProperty("plain_name", name);
             dl.setProperty("plain_size", filesize);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("plain_directlink", finallink);
             dl.setProperty("plain_folder_id", plain_folder_id);
             dl.setProperty("plain_domain", plain_domain);
+            dl.setProperty(PackagizerController.SUBFOLDERBYPLUGIN, path_decrypted);
             dl.setAvailable(true);
             dl.setContentUrl(parameter);
             dl.setContainerUrl("https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id);
             dl.setLinkID(fid);
+            if (!inValidate(path_decrypted)) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(path_decrypted.replace("/", "_"));
+                dl._setFilePackage(fp);
+            }
         } else {
-            /* Add url to crawl subfolders/files */
-            dl = createDownloadlink("https://www.amazon.com/clouddrive/share/" + plain_folder_id + "/folder/" + id);
+            path_decrypted += "/" + name;
+            path_encrypted = Encoding.Base64Encode(path_decrypted);
+            /* Add url to crawl subfolders/files - save subfolderpath inside url as their API won't give us that :) */
+            dl = createDownloadlink("https://www.amazon.com/clouddrive/share/" + plain_folder_id + "/folder/" + id + "&subfolderpath=" + path_encrypted);
         }
         return dl;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     */
+    protected boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void prepBR() {

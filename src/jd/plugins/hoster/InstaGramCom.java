@@ -176,6 +176,7 @@ public class InstaGramCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                br.setCookie(MAINPAGE, "ig_pr", "1");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {

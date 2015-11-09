@@ -24,6 +24,8 @@ import java.util.Date;
 import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,14 +35,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "http://deluxemusic\\.tvdecrypted/\\d+_\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "http://deluxemusic\\.tvdecrypted/\\d+_\\d+" }, flags = { 2 })
 public class DeluxemusicTv extends PluginForHost {
 
     public DeluxemusicTv(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -48,24 +53,31 @@ public class DeluxemusicTv extends PluginForHost {
         return "http://www.deluxemusic.tv/impressum.html";
     }
 
-    private String xml_source = null;
+    public static final String   ENABLE_TEST_FEATURES        = "ENABLE_TEST_FEATURES";
+    public static final boolean  defaultENABLE_TEST_FEATURES = false;
+
+    private static final boolean download_method_prefer_hls  = false;
+
+    private String               xml_source                  = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        final AvailableStatus status;
         br.setFollowRedirects(true);
         final String playlist_url = link.getStringProperty("playlist_url", null);
-        if (playlist_url == null) {
-            /* This should never happen! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (playlist_url != null) {
+            this.br.getPage(playlist_url);
+            if (isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String[] xml_array = jd.plugins.decrypter.DeluxemusicTv.getTrackArray(this.br);
+            this.xml_source = xml_array[getArrayid(link)];
+            status = parseTrackInfo(link, this.br.toString(), xml_array);
+        } else {
+            status = AvailableStatus.TRUE;
         }
-        this.br.getPage(playlist_url);
-        if (isOffline(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String[] xml_array = jd.plugins.decrypter.DeluxemusicTv.getTrackArray(this.br);
-        this.xml_source = xml_array[getArrayid(link)];
-        return parseTrackInfo(link, this.br.toString(), xml_array);
+        return status;
     }
 
     public static AvailableStatus parseTrackInfo(final DownloadLink link, final String xml_all, final String[] xml_array) throws IOException, PluginException {
@@ -117,32 +129,69 @@ public class DeluxemusicTv extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
 
-        final String streamer = new Regex(xml_source, "rel=\"streamer\">(rtmp://[^<>\"]*?)</meta>").getMatch(0);
-        final String location = getXML(xml_source, "location");
+        String streamer = new Regex(xml_source, "rel=\"streamer\">(rtmp://[^<>\"]*?)</meta>").getMatch(0);
+        String location = getXML(xml_source, "location");
+        if (streamer == null) {
+            streamer = downloadLink.getStringProperty("streamer", null);
+        }
+        if (location == null) {
+            location = downloadLink.getStringProperty("location", null);
+        }
 
         if (streamer == null || location == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        final String url_playpath = "mp4:" + location;
+        if (download_method_prefer_hls) {
+            final String hls_Server = streamer.replaceAll("rtmpe?://", "http://");
+            final String url_hls_playlist = hls_Server + location + "/playlist.m3u8";
+            this.br.getPage(url_hls_playlist);
+            final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
+            if (medias == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Find highest quality */
+            /* 2015-11-09: Their servers seem to be configured to always only return the best quality - that is very good for us! */
+            String url_hlsdownload = null;
+            long bandwidth_highest = 0;
+            for (final String media : medias) {
+                // name = quality
+                // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
+                final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
+                final long bandwidth_temp = Long.parseLong(bw);
+                if (bandwidth_temp > bandwidth_highest) {
+                    bandwidth_highest = bandwidth_temp;
+                    url_hlsdownload = new Regex(media, "(chunklist_[^<>\"/]*?\\.m3u8)").getMatch(0);
+                }
+            }
+            if (url_hlsdownload == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            url_hlsdownload = hls_Server + location + "/" + url_hlsdownload;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hlsdownload);
+            dl.startDownload();
+        } else {
+            final String url_playpath = "mp4:" + location;
+            final String rtmp_app = "deluxemusic.tv/_definst_/";
+            final String url_rtmp = streamer;
+            dl = new RTMPDownload(this, downloadLink, url_rtmp);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-        final String rtmp_app = "deluxemusic.tv/_definst_/";
-        final String url_rtmp = streamer;
-        dl = new RTMPDownload(this, downloadLink, url_rtmp);
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            rtmp.setPlayPath(url_playpath);
+            rtmp.setPageUrl(this.br.getURL());
+            rtmp.setSwfVfy("http://static.deluxemusic.tv.dl1.ipercast.net/theme/deluxemusic.tv/flash/player.swf");
+            rtmp.setFlashVer("WIN 16,0,0,305");
 
-        rtmp.setPlayPath(url_playpath);
-        rtmp.setPageUrl(this.br.getURL());
-        rtmp.setSwfVfy("http://static.deluxemusic.tv.dl1.ipercast.net/theme/deluxemusic.tv/flash/player.swf");
-        rtmp.setFlashVer("WIN 16,0,0,305");
+            /* Important! */
+            rtmp.setLive(true);
 
-        /* Important! */
-        rtmp.setLive(true);
+            rtmp.setApp(rtmp_app);
+            rtmp.setUrl(url_rtmp);
+            rtmp.setResume(false);
+            dl.startDownload();
+        }
 
-        rtmp.setApp(rtmp_app);
-        rtmp.setUrl(url_rtmp);
-        rtmp.setResume(false);
-        dl.startDownload();
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
@@ -219,6 +268,15 @@ public class DeluxemusicTv extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's Deluxemusic plugin helps downloading videos from deluxemusic.tv.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_TEST_FEATURES, JDL.L("plugins.hoster.DeluxemusicTv.enableTestMode", "Enable test mode?\r\nONLY ENABLE THIS IF YOU KNOW WHAT YOU'RE DOING!!")).setDefaultValue(defaultENABLE_TEST_FEATURES));
     }
 
     @Override
