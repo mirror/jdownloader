@@ -212,6 +212,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                         ret = defaultMenu;
 
                     } else {
+                        ret._setOwner(ContextMenuManager.this);
                         ret.validate();
 
                         List<MenuItemData> allItemsInMenu = ret.list();
@@ -309,6 +310,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                         }
 
                     }
+                    ret._setOwner(ContextMenuManager.this);
                     ret.validate();
 
                     menuData = ret;
@@ -323,6 +325,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                     } catch (Exception e1) {
                         logger.log(e1);
                         menuData = new MenuContainerRoot();
+                        menuData._setOwner(ContextMenuManager.this);
                         menuData.validate();
                         return menuData;
                     }
@@ -349,6 +352,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     public MenuContainerRoot setupDefaultStructure() {
         MenuContainerRoot ret = createDefaultStructure();
+        ret._setOwner(this);
         for (MenuExtenderHandler exHandler : extender) {
             try {
                 MenuItemData r = exHandler.updateMenuModel(this, ret);

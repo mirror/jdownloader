@@ -64,7 +64,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         super("ins 0 0 1 0", "[]1[]1[]1[]", "[]");
         manager = bottomBarMenuManager;
         manager.addLink(this);
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
@@ -81,7 +81,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     public void updateGui() {
-        if (!SecondLevelLaunch.GUI_COMPLETE.isReached()) {
+        if (!SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
             return;
         }
         removeAll();

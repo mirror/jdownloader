@@ -13,6 +13,15 @@ import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.logging.LogController;
 
 public class MenuContainerRoot extends MenuContainer implements Storable {
+    private ContextMenuManager owner = null;
+
+    public ContextMenuManager _getOwner() {
+        return owner;
+    }
+
+    public void _setOwner(ContextMenuManager owner) {
+        this.owner = owner;
+    }
 
     public MenuContainerRoot(/* Storable */) {
 
@@ -42,6 +51,9 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
      * @param full
      */
     private boolean validate(MenuItemData container, boolean full) {
+        if (container instanceof MenuContainerRoot && ((MenuContainerRoot) container)._getOwner() == null) {
+            return false;
+        }
         container._setValidated(true);
         boolean ret = true;
         container._setRoot(_getRoot());
@@ -55,6 +67,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                 MenuItemData last = null;
                 for (int i = 0; i < container.getItems().size(); i++) {
                     MenuItemData mid = container.getItems().get(i);
+                    mid._setRoot(_getRoot());
                     if (!mid.isVisible() && !full) {
                         continue;
                     }
@@ -119,6 +132,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
                 for (int i = 0; i < container.getItems().size(); i++) {
                     MenuItemData mid = container.getItems().get(i);
+                    mid._setRoot(_getRoot());
                     MenuItemData rep = replaceMap.remove(mid);
                     if (rep != null) {
                         container.getItems().set(i, rep);

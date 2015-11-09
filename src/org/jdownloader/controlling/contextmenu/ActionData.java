@@ -85,6 +85,7 @@ public class ActionData extends AbstractJsonData {
 
     public void setName(String name) {
         this.name = name;
+
     }
 
     public String getName() {

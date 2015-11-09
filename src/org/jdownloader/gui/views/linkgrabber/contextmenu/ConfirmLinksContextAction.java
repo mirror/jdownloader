@@ -30,7 +30,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
-
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
@@ -803,9 +802,9 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     protected void updateLabelAndIcon() {
         if (isForceDownloads()) {
             if (isSelectionOnly()) {
-                setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_force());
+                setName(getTextForForcedSelectionOnly());
             } else {
-                setName(_GUI._.ConfirmAllContextmenuAction_context_add_and_force());
+                setName(getTextForForcedAll());
             }
 
             Image add = NewTheme.I().getImage("media-playback-start", 20);
@@ -814,9 +813,9 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             setIconKey(null);
         } else if (doAutostart()) {
             if (isSelectionOnly()) {
-                setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
+                setName(getTextForAutoStartSelectionOnly());
             } else {
-                setName(_GUI._.ConfirmAllContextmenuAction_context_add_and_start());
+                setName(getTextForAutoStartAll());
             }
 
             Image add = NewTheme.I().getImage("media-playback-start", 16);
@@ -824,14 +823,58 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 6, 6)));
             setIconKey(null);
         } else {
+            // ContextMenuManager owner = _getOwner();
             if (isSelectionOnly()) {
-                setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
+                setName(getTextForNoAutoStartSelectionOnly());
             } else {
-                setName(_GUI._.ConfirmAllContextmenuAction_context_add());
+                setName(getTextForNoAutoStartAll());
             }
+
             setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_GO_NEXT, 20));
         }
 
+    }
+
+    /**
+     * @return
+     */
+    protected String getTextForForcedAll() {
+        return _GUI._.ConfirmAllContextmenuAction_context_add_and_force();
+    }
+
+    /**
+     * @return
+     */
+    protected String getTextForForcedSelectionOnly() {
+        return _GUI._.ConfirmAction_ConfirmAction_context_add_and_force();
+    }
+
+    /**
+     * @return
+     */
+    protected String getTextForNoAutoStartAll() {
+        return _GUI._.ConfirmAllContextmenuAction_context_add();
+    }
+
+    /**
+     * @return
+     */
+    protected String getTextForNoAutoStartSelectionOnly() {
+        return _GUI._.ConfirmAction_ConfirmAction_context_add();
+    }
+
+    /**
+     * @return
+     */
+    protected String getTextForAutoStartAll() {
+        return _GUI._.ConfirmAllContextmenuAction_context_add_and_start();
+    }
+
+    /**
+     * @return
+     */
+    protected String getTextForAutoStartSelectionOnly() {
+        return _GUI._.ConfirmAction_ConfirmAction_context_add_and_start();
     }
 
 }

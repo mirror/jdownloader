@@ -183,6 +183,7 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
 
         MenuItemData ret = createInstance(this);
         ret._setValidated(true);
+        ret._setRoot(_getRoot());
         return ret;
 
     }

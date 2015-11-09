@@ -35,7 +35,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.io.J7FileList;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -633,6 +632,7 @@ public class ExtensionController implements MenuExtenderHandler {
     private MenuItemData updateMainMenu(List<LazyExtension> pluginsOptional, MenuContainerRoot mr) {
 
         MenuContainerRoot root = new MenuContainerRoot();
+        root._setOwner(MenuManagerMainmenu.getInstance());
         ExtensionsMenuContainer container = new ExtensionsMenuContainer();
 
         OptionalContainer opt = new OptionalContainer(false);
