@@ -88,7 +88,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private static final String     CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                  PARAMETER                       = null;
-    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;                                     ;
+    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;;
     private boolean                 logged_in                       = false;
     private ArrayList<DownloadLink> decryptedLinks                  = null;
 
@@ -716,7 +716,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptVideoSet() throws IOException, DecrypterException {
-        getpagefirsttime(PARAMETER);
+        // already grabbed
+        // getpagefirsttime(PARAMETER);
         if (br.containsHTML(CONTENTUNAVAILABLE)) {
             logger.info("Link offline: " + PARAMETER);
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -725,7 +726,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
         String[] links = br.getRegex("uiVideoLinkMedium\" href=\"https?://(?:www\\.)?facebook\\.com/(?:photo|video)\\.php\\?v=(\\d+)").getColumn(0);
         if (links == null || links.length == 0) {
-            links = br.getRegex("ajaxify=\"/[^/]+/videos/vb\\.\\d+/(\\d+)/").getColumn(0);
+            links = br.getRegex("ajaxify=\"(?:[^\"]+/videos/vb\\.\\d+/|[^\"]+/video\\.php\\?v=)(\\d+)").getColumn(0);
         }
         for (final String videoid : links) {
             final String videolink = "http://facebookdecrypted.com/video.php?v=" + videoid;
@@ -1242,7 +1243,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
