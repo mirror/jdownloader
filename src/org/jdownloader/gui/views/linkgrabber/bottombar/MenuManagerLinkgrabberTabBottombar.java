@@ -92,20 +92,14 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         //
         MenuContainer all = new MenuContainer(_GUI._.ConfirmOptionsAction_actionPerformed_all(), "confirmAll");
         MenuContainer selected = new MenuContainer(_GUI._.ConfirmOptionsAction_actionPerformed_selected(), "confirmSelectedLinks");
-        ActionData ad;
-        all.add(ad = new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.DISABLED.toString()).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
-        // ad.setName(_GUI._.LINKGRABBER_BOTTOM_MENU_CONFIRM_ALL());
-        // ad.setData(ConfirmSelectionBarAction.LINKGRABBER_BOTTOM_MENU_CONFIRM_ALL);
-        all.add(ad = new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.ENABLED.toString()).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
-        // ad.setName(_GUI._.LINKGRABBER_BOTTOM_MENU_CONFIRM_AND_START_ALL());
-        // ad.setData(ConfirmSelectionBarAction.LINKGRABBER_BOTTOM_MENU_CONFIRM_AND_START_ALL);
-        // KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK)
-        selected.add(ad = new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.DISABLED.toString()));
-        // ad.setName(_GUI._.LINKGRABBER_BOTTOM_MENU_CONFIRM_SELECTED());
-        // ad.setData(ConfirmSelectionBarAction.LINKGRABBER_BOTTOM_MENU_CONFIRM_SELECTED);
-        selected.add(ad = new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.ENABLED.toString()));
-        // ad.setName(_GUI._.LINKGRABBER_BOTTOM_MENU_CONFIRM_AND_START_SELECTED());
-        // ad.setData(ConfirmSelectionBarAction.LINKGRABBER_BOTTOM_MENU_CONFIRM_AND_START_SELECTED);
+
+        all.add(new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.DISABLED.toString()).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
+        all.add(new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.ENABLED.toString()).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
+        all.add(new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.ENABLED.toString()).putSetup(ConfirmSelectionBarAction.FORCE_START, true).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
+
+        selected.add(new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.DISABLED.toString()));
+        selected.add(new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.ENABLED.toString()));
+        selected.add(new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.ENABLED.toString()).putSetup(ConfirmSelectionBarAction.FORCE_START, true));
 
         MenuContainer popup = new MenuContainer("", null);
         popup.add(all);

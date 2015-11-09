@@ -5939,19 +5939,39 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "2160p" })
     String YoutubeVariant_filenametag_MP4_ORIGINAL();
 
-    @Default(lngs = { "en" }, values = { "...move to Downloadlist" })
-    String LINKGRABBER_BOTTOM_MENU_CONFIRM_ALL();
+    @Default(lngs = { "en" }, values = { "Start Downloads" })
+    String ConfirmSelectionBarAction_main_button_add_and_start_selection();
 
-    @Default(lngs = { "en" }, values = { "...move to Downloadlist & start Downloads" })
-    String LINKGRABBER_BOTTOM_MENU_CONFIRM_AND_START_ALL();
+    @Default(lngs = { "en" }, values = { "Add to Download List" })
+    String ConfirmSelectionBarAction_main_button_add_selection();
 
-    @Default(lngs = { "en" }, values = { "...move to Downloadlist" })
-    String LINKGRABBER_BOTTOM_MENU_CONFIRM_SELECTED();
+    @Default(lngs = { "en" }, values = { "Start all Downloads" })
+    String ConfirmSelectionBarAction_main_button_add_and_start_all();
 
-    @Default(lngs = { "en" }, values = { "...move to Downloadlist & start Downloads" })
-    String LINKGRABBER_BOTTOM_MENU_CONFIRM_AND_START_SELECTED();
+    @Default(lngs = { "en" }, values = { "Add all to Download List" })
+    String ConfirmSelectionBarAction_main_button_add_all();
 
-    @Default(lngs = { "en" }, values = { "Add all to Downloadlist" })
-    String LINKGRABBER_BOTTOM_MENU_CONFIRM_ALL_MAIN_BUTTON();
+    @Default(lngs = { "en" }, values = { "Force Downloads' Start" })
+    String ConfirmSelectionBarAction_main_button_add_and_force_selection();
 
+    @Default(lngs = { "en" }, values = { "Force all Downloads' Start" })
+    String ConfirmSelectionBarAction_main_button_add_and_force_all();
+
+    @Default(lngs = { "en" }, values = { "... start Downloads" })
+    String ConfirmSelectionBarAction_sub_button_add_and_start_selection();
+
+    @Default(lngs = { "en" }, values = { "... add to Download List" })
+    String ConfirmSelectionBarAction_sub_button_add_selection();
+
+    @Default(lngs = { "en" }, values = { "... start Downloads" })
+    String ConfirmSelectionBarAction_sub_button_add_and_start_all();
+
+    @Default(lngs = { "en" }, values = { "... add to Download List" })
+    String ConfirmSelectionBarAction_sub_button_add_all();
+
+    @Default(lngs = { "en" }, values = { "... Force Start" })
+    String ConfirmSelectionBarAction_sub_button_add_and_force_selection();
+
+    @Default(lngs = { "en" }, values = { "... Force Start" })
+    String ConfirmSelectionBarAction_sub_button_add_and_force_all();
 }

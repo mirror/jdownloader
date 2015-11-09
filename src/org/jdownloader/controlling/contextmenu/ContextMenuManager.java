@@ -371,6 +371,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         final String orgDefString = JSonStorage.serializeToJson(setupDefaultStructure());
         final MenuContainerRoot def = JSonStorage.restoreFromString(orgDefString, new TypeRef<MenuContainerRoot>() {
         });
+        def._setRoot(root);
+        def._setOwner(root._getOwner());
         def.validate();
         final String defaultString = JSonStorage.serializeToJson(def);
         if (rootString.equals(defaultString)) {

@@ -8,6 +8,7 @@ import java.util.List;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.logging.LogController;
@@ -40,6 +41,8 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
         String str = JSonStorage.serializeToJson(this);
         final MenuContainerRoot menuContainerRoot2 = JSonStorage.restoreFromString(str, new TypeRef<MenuContainerRoot>() {
         });
+        menuContainerRoot2._setRoot(_getRoot());
+        menuContainerRoot2._setOwner(_getOwner());
         menuContainerRoot2.validateFull();
         return menuContainerRoot2;
     }
@@ -52,7 +55,10 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
      */
     private boolean validate(MenuItemData container, boolean full) {
         if (container instanceof MenuContainerRoot && ((MenuContainerRoot) container)._getOwner() == null) {
-            return false;
+            if (!Application.isJared(null)) {
+                // let's do this in svn version only until we can be sure that root and owner are set correctly everywhere
+                return false;
+            }
         }
         container._setValidated(true);
         boolean ret = true;

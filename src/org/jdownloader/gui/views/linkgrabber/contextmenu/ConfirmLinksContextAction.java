@@ -242,6 +242,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.piority = piority;
     }
 
+    public static final String FORCE_START      = "forceDownloads";
+
     public static final String AUTO_START       = "autoStart";
 
     /**
