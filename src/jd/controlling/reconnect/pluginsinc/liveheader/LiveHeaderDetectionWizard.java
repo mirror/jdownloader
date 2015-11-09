@@ -49,7 +49,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.locale._AWU;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
@@ -394,6 +393,13 @@ public class LiveHeaderDetectionWizard {
                         if (answer.isDontShowAgainSelected()) {
                             processCallBack.setMethodConfirmEnabled(false);
                         }
+                    } else if (answer.getCloseReason() == CloseReason.CLOSE) {
+                        break;
+                    } else if (answer.getCloseReason() == CloseReason.CANCEL) {
+
+                        if (answer.isDontShowAgainSelected()) {
+                            break;
+                        }
                     } else {
                         continue;
                     }
@@ -693,9 +699,9 @@ public class LiveHeaderDetectionWizard {
 
         java.util.List<RouterData> scripts = RecollController.getInstance().findRouter(rd);
 
-        final java.util.List<RouterData> unique = toUnique(scripts);
+        // final java.util.List<RouterData> unique = toUnique(scripts);
 
-        return unique;
+        return scripts;
 
     }
 
