@@ -202,6 +202,20 @@ public class OpenLoadIo extends antiDDoSForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink", null);
     }
 
+    @Override
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        if (acc != null && AccountType.PREMIUM.equals(acc.getType())) {
+            return false;
+        }
+        if (acc == null && enable_api_free) {
+            return true;
+        }
+        if (acc != null && isAPIAccount(acc)) {
+            return true;
+        }
+        return false;
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty, final Account account) throws Exception, PluginException {
         final String fid = getFID(downloadLink);

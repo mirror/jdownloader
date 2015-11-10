@@ -17,7 +17,6 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -136,7 +135,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 map.put(localFile.getName(), localFile);
             } else if (archiveFile instanceof DownloadLinkArchiveFile) {
                 final DownloadLinkArchiveFile af = (DownloadLinkArchiveFile) archiveFile;
-                af.setFileArchiveFileExists(true);
+                af.setFileArchiveFileExists(localFile.exists());
             }
         }
         return new ArrayList<ArchiveFile>(map.values());

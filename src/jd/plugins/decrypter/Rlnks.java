@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -43,6 +41,7 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}" }, flags = { 0 })
 public class Rlnks extends PluginForDecrypt {
@@ -296,12 +295,9 @@ public class Rlnks extends PluginForDecrypt {
                     }
                     final File captchaFile = this.getLocalCaptchaFile();
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.relink.us/" + captchaLink));
-                    final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "relink.us | " + String.valueOf(i + 1) + "/5", null);
-                    if (p == null) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
-                    ALLFORM.put("button.x", String.valueOf(p.x));
-                    ALLFORM.put("button.y", String.valueOf(p.y));
+                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, "relink.us | " + String.valueOf(i + 1) + "/5", null);
+                    ALLFORM.put("button.x", String.valueOf(cp.getX()));
+                    ALLFORM.put("button.y", String.valueOf(cp.getY()));
                 }
                 br.submitForm(ALLFORM);
                 if (br.getURL().contains("error.php")) {

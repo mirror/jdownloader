@@ -33,7 +33,6 @@ import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -54,6 +53,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
@@ -518,24 +518,25 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                                 final File file = this.getLocalCaptchaFile();
                                 br.cloneBrowser().getDownload(file, url);
                                 // remove black bars
-                                Point p = null;
+                                final Point p;
                                 final byte[] bytes = IO.readFile(file);
                                 if (br.containsHTML("CaptX") && attempts < 2) {
                                     // try autosolve
                                     p = CaptXSolver.solveCaptXCaptcha(bytes);
+                                } else {
+                                    p = null;
                                 }
                                 if (p == null) {
-
                                     // solve by user
                                     BufferedImage image = CaptXSolver.toBufferedImage(new ByteArrayInputStream(bytes));
                                     ImageIO.write(image, "png", file);
-                                    p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
+                                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
+                                    captcha.put("x", cp.getX() + "");
+                                    captcha.put("y", cp.getY() + "");
+                                } else {
+                                    captcha.put("x", p.x + "");
+                                    captcha.put("y", p.y + "");
                                 }
-                                if (p == null) {
-                                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                                }
-                                captcha.put("x", p.x + "");
-                                captcha.put("y", p.y + "");
                                 submitForm(captcha);
                                 if (!br.containsHTML("(Our system could not identify you as human beings\\!|Your choice was wrong\\! Please wait some seconds and try it again\\.)")) {
                                     valid = true;

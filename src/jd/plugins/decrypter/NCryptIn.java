@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +23,6 @@ import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -41,6 +39,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
@@ -198,18 +198,15 @@ public class NCryptIn extends PluginForDecrypt {
                     captcha = true;
                     for (int i = 0; i <= 3; i++) {
                         final File captchaFile = this.getLocalCaptchaFile(".png");
-                        Point p = null;
+                        ClickedPoint cp = null;
                         try {
                             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in/classes/captcha/circlecaptcha.php"));
-                            p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "Click on the open circle", null);
-                            if (p == null) {
-                                throw new DecrypterException(DecrypterException.CAPTCHA);
-                            }
+                            cp = getCaptchaClickedPoint(getHost(), captchaFile, param, null, "Click on the open circle");
                         } finally {
                             captchaFile.delete();
                         }
-                        allForm.put("circle.x", String.valueOf(p.x));
-                        allForm.put("circle.y", String.valueOf(p.y));
+                        allForm.put("circle.x", String.valueOf(cp.getX()));
+                        allForm.put("circle.y", String.valueOf(cp.getY()));
                         if (allForm.containsHTML(PASSWORDTEXT)) {
                             final String passCode = getPassword(param);
                             allForm.put(PASSWORDTEXT, passCode);
