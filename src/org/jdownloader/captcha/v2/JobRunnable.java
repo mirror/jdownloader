@@ -136,7 +136,7 @@ public class JobRunnable<T> implements Runnable {
                         }
                     }
                 }
-
+                job.getLogger().info("Solver Start: " + solver);
                 solver.solve(job);
 
             } catch (SkipException e) {

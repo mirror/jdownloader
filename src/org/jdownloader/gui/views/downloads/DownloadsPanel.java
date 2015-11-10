@@ -59,7 +59,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener, GenericConfigEventListener<Boolean>, ExtractionListener {
 
     /**
-     * 
+     *
      */
     private static final long                         serialVersionUID  = -2610465878903778445L;
     private DownloadsTable                            table;
@@ -201,6 +201,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     protected void runInEDT() {
                         removeAll();
                         layoutComponents(true);
+
                     }
                 };
             }
@@ -387,7 +388,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         ret.setColumnHeaderView(new DownloadOverViewHeader(overView) {
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -523,6 +524,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     @Override
     protected void onHide() {
+        Point point = this.tableScrollPane.getViewport().getViewRect().getLocation();
+        CFG_GUI.CFG.setDownloadListScrollPosition(new int[] { table.getRowIndexByPoint(point), point.x });
         synchronized (this) {
             if (timer != null) {
                 timer.cancel(false);

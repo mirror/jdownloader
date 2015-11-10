@@ -1278,4 +1278,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     String getDonationNotifyID();
 
     void setDonationNotifyID(String id);
+
+    void setDownloadListScrollPosition(int[] is);
+
+    int[] getDownloadListScrollPosition();
+
+    void setLinkgrabberListScrollPosition(int[] is);
+
+    int[] getLinkgrabberListScrollPosition();
 }

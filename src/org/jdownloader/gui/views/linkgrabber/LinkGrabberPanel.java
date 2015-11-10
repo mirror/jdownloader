@@ -673,6 +673,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     @Override
     protected void onHide() {
         LinkCollector.getInstance().getEventsender().removeListener(this);
+
+        Point point = this.tableScrollPane.getViewport().getViewRect().getLocation();
+        CFG_GUI.CFG.setLinkgrabberListScrollPosition(new int[] { table.getRowIndexByPoint(point), point.x });
     }
 
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
