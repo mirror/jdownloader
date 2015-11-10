@@ -19,6 +19,7 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -32,7 +33,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
@@ -43,14 +44,16 @@ import sun.awt.datatransfer.SunClipboard;
 public class ClipboardMonitoring {
 
     private static class WindowsClipboardHack {
-        Method          openClipboard    = null;
-        Method          closeClipboard   = null;
-        Method          getClipboardData = null;
-        long            cf_html          = -1;
-        final Clipboard clipboard;
+        Method                  openClipboard    = null;
+        Method                  closeClipboard   = null;
+        Method                  getClipboardData = null;
+        long                    cf_html          = -1;
+        final Clipboard         clipboard;
+        private final LogSource logger;
 
-        private WindowsClipboardHack(Clipboard clipboard) throws Exception {
+        private WindowsClipboardHack(Clipboard clipboard, final LogSource logger) throws Exception {
             this.clipboard = clipboard;
+            this.logger = logger;
             try {
                 final Field cf_html_field = Class.forName("sun.awt.windows.WDataTransferer").getDeclaredField("CF_HTML");
                 if (cf_html_field != null) {
@@ -80,9 +83,50 @@ public class ClipboardMonitoring {
                     closeClipboard.invoke(clipboard, new Object[] {});
                 }
             } catch (final Throwable e) {
-                LogController.CL().log(e);
+                logger.log(e);
             }
             return null;
+        }
+    }
+
+    protected static class ClipboardChangeDetector {
+
+        protected final int           minWaitTimeout = 200;
+        protected final int           maxWaitTimeout = 1000;
+        protected int                 waitTimeout    = minWaitTimeout;
+        protected final AtomicBoolean skipChangeFlag;
+
+        protected ClipboardChangeDetector(final AtomicBoolean skipChangeFlag) {
+            this.skipChangeFlag = skipChangeFlag;
+        }
+
+        protected void waitForClipboardChanges() throws InterruptedException {
+            while (true) {
+                synchronized (this) {
+                    this.wait(waitTimeout);
+                }
+                if (hasChanges()) {
+                    return;
+                }
+            }
+        }
+
+        protected boolean hasChanges() {
+            if (skipChangeFlag.get()) {
+                waitTimeout = maxWaitTimeout;
+                return false;
+            } else {
+                waitTimeout = Math.min(waitTimeout + 200, maxWaitTimeout);
+                return true;
+            }
+        }
+
+        protected void slowDown() {
+            waitTimeout = 5000;
+        }
+
+        protected void restart() {
+            waitTimeout = minWaitTimeout;
         }
     }
 
@@ -108,11 +152,13 @@ public class ClipboardMonitoring {
     private static DataFlavor                URLFLAVOR           = null;
     private static DataFlavor                URILISTFLAVOR       = null;
     private volatile Thread                  monitoringThread    = null;
-    protected final Clipboard                clipboard;
-    private volatile boolean                 skipChangeDetection = false;
-    protected final WindowsClipboardHack     CLIPBOARDHACK;
+    private final Clipboard                  clipboard;
+    private final AtomicBoolean              skipChangeDetection = new AtomicBoolean(false);
+    private final WindowsClipboardHack       windowsClipboardHack;
     private static boolean                   FIRSTROUNDDONE      = true;
     private static volatile boolean          HTMLFLAVORALLOWED   = true;
+    private final ClipboardChangeDetector    clipboardChangeDetector;
+    private final LogSource                  logger;
 
     public static boolean isHtmlFlavorAllowed() {
         return HTMLFLAVORALLOWED;
@@ -163,25 +209,15 @@ public class ClipboardMonitoring {
 
                 @Override
                 public void run() {
-                    final int minWaitTimeout = 200;
-                    final int maxWaitTimeout = 1000;
-                    int waitTimeout = minWaitTimeout;
                     while (Thread.currentThread() == monitoringThread) {
                         try {
-                            synchronized (this) {
-                                this.wait(waitTimeout);
-                            }
+                            clipboardChangeDetector.waitForClipboardChanges();
                             if (Thread.currentThread() != monitoringThread) {
                                 return;
                             }
                         } catch (InterruptedException e) {
-                            LogController.CL().finer("Interrupted ClipBoard Monitoring Thread");
+                            logger.finer("Interrupted ClipBoard Monitoring Thread");
                             return;
-                        }
-                        waitTimeout = Math.min(waitTimeout + 200, maxWaitTimeout);
-                        if (skipChangeDetection) {
-                            waitTimeout = maxWaitTimeout;
-                            continue;
                         }
                         try {
                             lastBrowserUrl = null;
@@ -278,7 +314,7 @@ public class ClipboardMonitoring {
                             }
                             if (!StringUtils.isEmpty(handleThisRound)) {
                                 if (FIRSTROUNDDONE) {
-                                    waitTimeout = minWaitTimeout;
+                                    clipboardChangeDetector.restart();
                                     LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CLIPBOARD, null), handleThisRound);
                                     final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
                                     if (pws != null && pws.size() > 0) {
@@ -300,10 +336,10 @@ public class ClipboardMonitoring {
                                 setCurrentContent(handleThisRound);
                             }
                         } catch (final Throwable e) {
-                            waitTimeout = 5000;
+                            clipboardChangeDetector.slowDown();
                             final String message = e.getMessage();
                             if (!StringUtils.containsIgnoreCase(message, "Owner failed to convert data") && !StringUtils.containsIgnoreCase(message, "Owner timed out") && !StringUtils.containsIgnoreCase(message, "system clipboard data unavailable")) {
-                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                                logger.log(e);
                             }
                         }
                     }
@@ -367,12 +403,12 @@ public class ClipboardMonitoring {
                 clipboard.setContents(new StringSelection(string), new ClipboardOwner() {
 
                     public void lostOwnership(Clipboard clipboard, Transferable contents) {
-                        skipChangeDetection = false;
+                        skipChangeDetection.set(false);
                     }
                 });
-                skipChangeDetection = true;
+                skipChangeDetection.set(true);
             } catch (final Throwable e) {
-                skipChangeDetection = false;
+                skipChangeDetection.set(false);
             }
         }
     }
@@ -383,12 +419,12 @@ public class ClipboardMonitoring {
                 clipboard.setContents(object, new ClipboardOwner() {
 
                     public void lostOwnership(Clipboard clipboard, Transferable contents) {
-                        skipChangeDetection = false;
+                        skipChangeDetection.set(false);
                     }
                 });
-                skipChangeDetection = true;
+                skipChangeDetection.set(true);
             } catch (final Throwable e) {
-                skipChangeDetection = false;
+                skipChangeDetection.set(false);
             }
         }
     }
@@ -422,27 +458,40 @@ public class ClipboardMonitoring {
     }
 
     public ClipboardMonitoring() {
+        logger = LogController.CL(ClipboardMonitoring.class);
         Clipboard lclipboard = null;
         WindowsClipboardHack lclipboardHack = null;
+        ClipboardChangeDetector clipboardChangeDetector = null;
         try {
             if (!GraphicsEnvironment.isHeadless()) {
                 lclipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                 if (lclipboard != null && CrossSystem.isWindows()) {
                     try {
-                        lclipboardHack = new WindowsClipboardHack(lclipboard);
-                    } catch (final Throwable e) {
-                        LogController.CL().log(e);
+                        lclipboardHack = new WindowsClipboardHack(lclipboard, logger);
+                    } catch (final Throwable th) {
+                        logger.log(th);
+                    }
+                    try {
+                        clipboardChangeDetector = new WindowsClipboardChangeDetector(skipChangeDetection);
+                    } catch (final Throwable th) {
+                        logger.log(th);
                     }
                 }
             }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-            lclipboard = null;
-            lclipboardHack = null;
+        } catch (final Throwable th) {
+            logger.log(th);
         }
         clipboard = lclipboard;
-        CLIPBOARDHACK = lclipboardHack;
-
+        windowsClipboardHack = lclipboardHack;
+        if (clipboard != null) {
+            if (clipboardChangeDetector == null) {
+                this.clipboardChangeDetector = new ClipboardChangeDetector(skipChangeDetection);
+            } else {
+                this.clipboardChangeDetector = clipboardChangeDetector;
+            }
+        } else {
+            this.clipboardChangeDetector = null;
+        }
     }
 
     static {
@@ -591,7 +640,7 @@ public class ClipboardMonitoring {
 
     public static String getStringTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-            Object ret = transferable.getTransferData(DataFlavor.stringFlavor);
+            final Object ret = transferable.getTransferData(DataFlavor.stringFlavor);
             if (ret == null) {
                 return null;
             }
@@ -606,7 +655,7 @@ public class ClipboardMonitoring {
             if (ret == null) {
                 return null;
             }
-            URL url = (URL) ret;
+            final URL url = (URL) ret;
             if (StringUtils.isEmpty(url.getFile())) {
                 return null;
             }
@@ -708,8 +757,8 @@ public class ClipboardMonitoring {
     }
 
     public static String getCurrentBrowserURL(final Transferable transferable, final String htmlFlavor) throws UnsupportedFlavorException, IOException {
-        if (ClipboardMonitoring.getINSTANCE().CLIPBOARDHACK != null) {
-            final String ret = ClipboardMonitoring.getINSTANCE().CLIPBOARDHACK.getURLFromCF_HTML();
+        if (ClipboardMonitoring.getINSTANCE().windowsClipboardHack != null) {
+            final String ret = ClipboardMonitoring.getINSTANCE().windowsClipboardHack.getURLFromCF_HTML();
             if (!StringUtils.isEmpty(ret) && HTMLParser.getProtocol(ret) != null) {
                 return ret;
             }
