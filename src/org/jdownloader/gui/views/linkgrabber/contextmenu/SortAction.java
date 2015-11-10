@@ -22,6 +22,7 @@ import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
@@ -86,44 +87,53 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                         for (PackageView<PackageType, ChildrenType> node : selection.getPackageViews()) {
 
                             if (comparator == null) {
-                                final PackageControllerComparator currentSorter = node.getPackage().getCurrentSorter();
+                                PackageControllerComparator currentSorter = node.getPackage().getCurrentSorter();
                                 final String currentID = column.getModel().getModelID() + ".Column." + column.getID();
                                 final ExtDefaultRowSorter<AbstractNode> sorter = column.getRowSorter();
-                                if (currentSorter == null || !currentSorter.getID().equals(currentID) || currentSorter.isAsc()) {
+                                PackageControllerComparator<AbstractNode> desc = new PackageControllerComparator<AbstractNode>() {
 
-                                    comparator = new PackageControllerComparator<AbstractNode>() {
+                                    public int compare(AbstractNode o1, AbstractNode o2) {
+                                        return sorter.compare(o1, o2);
+                                    }
 
-                                        public int compare(AbstractNode o1, AbstractNode o2) {
-                                            return sorter.compare(o1, o2);
-                                        }
+                                    @Override
+                                    public String getID() {
+                                        return currentID;
+                                    }
 
-                                        @Override
-                                        public String getID() {
-                                            return currentID;
-                                        }
+                                    @Override
+                                    public boolean isAsc() {
+                                        return false;
+                                    }
+                                };
+                                PackageControllerComparator<AbstractNode> asc = new PackageControllerComparator<AbstractNode>() {
 
-                                        @Override
-                                        public boolean isAsc() {
-                                            return false;
-                                        }
-                                    };
+                                    public int compare(AbstractNode o1, AbstractNode o2) {
+                                        return sorter.compare(o2, o1);
+                                    }
+
+                                    @Override
+                                    public String getID() {
+                                        return currentID;
+                                    }
+
+                                    @Override
+                                    public boolean isAsc() {
+                                        return true;
+                                    }
+                                };
+                                if (currentSorter == null || !currentSorter.getID().equals(currentID)) {
+                                    if (CFG_GUI.CFG.isPrimaryTableSorterDesc()) {
+                                        currentSorter = asc;
+                                    } else {
+                                        currentSorter = desc;
+                                    }
+                                }
+                                if (currentSorter.isAsc()) {
+
+                                    comparator = desc;
                                 } else {
-                                    comparator = new PackageControllerComparator<AbstractNode>() {
-
-                                        public int compare(AbstractNode o1, AbstractNode o2) {
-                                            return sorter.compare(o2, o1);
-                                        }
-
-                                        @Override
-                                        public String getID() {
-                                            return currentID;
-                                        }
-
-                                        @Override
-                                        public boolean isAsc() {
-                                            return true;
-                                        }
-                                    };
+                                    comparator = asc;
 
                                 }
                             }

@@ -751,7 +751,7 @@ public class ScriptEnvironment {
                         continue;
                     }
                     AccountCheckJob job = AccountChecker.getInstance().check(acc, force);
-                    if (job != null) {
+                    if (job != null && wait) {
                         while (!job.isChecked()) {
 
                             Thread.sleep(100);

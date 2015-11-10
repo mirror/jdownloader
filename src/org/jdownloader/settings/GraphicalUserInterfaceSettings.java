@@ -1293,4 +1293,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setLinkgrabberListScrollPosition(int[] is);
 
     int[] getLinkgrabberListScrollPosition();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Set to false to invert the sort Order for the Download & Linkgrabber Tables.")
+    boolean isPrimaryTableSorterDesc();
+
+    void setPrimaryTableSorterDesc(boolean b);
 }
