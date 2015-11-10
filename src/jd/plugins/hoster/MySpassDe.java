@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myspass.de", "tvtotal.prosieben.de" }, urls = { "http://(?:www\\.)?myspass\\.de/(?:myspass/)?shows/(?:tv|web)shows/[a-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+", "http://tvtotal\\.prosieben\\.de/videos/.*?/\\d+/" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de", "tvtotal.prosieben.de" }, urls = { "http://(?:www\\.)?myspassdecrypted\\.de/.+\\d+/?$", "http://tvtotal\\.prosieben\\.de/videos/.*?/\\d+/" }, flags = { 0, 0 })
 public class MySpassDe extends PluginForHost {
 
     public MySpassDe(PluginWrapper wrapper) {
@@ -61,8 +61,17 @@ public class MySpassDe extends PluginForHost {
         if (br.containsHTML("<url_flv><\\!\\[CDATA\\[\\]\\]></url_flv>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+
+        /* Build our filename */
+        /* Links added via decrypter can have this set to FALSE as it is not needed for all filenames e.g. stock car crash challenge. */
+        final boolean needs_series_filename = downloadLink.getBooleanProperty("needs_series_filename", true);
         final DecimalFormat df = new DecimalFormat("00");
-        String filename = getXML("format") + " - S" + df.format(Integer.parseInt(getXML("season"))) + "E" + df.format(Integer.parseInt(getXML("episode"))) + " - " + getXML("title");
+        String filename = getXML("format") + " - ";
+        if (needs_series_filename) {
+            filename += "S" + df.format(Integer.parseInt(getXML("season"))) + "E" + df.format(Integer.parseInt(getXML("episode"))) + " - ";
+        }
+        filename += getXML("title");
+
         DLLINK = getXML("url_flv");
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -74,12 +83,10 @@ public class MySpassDe extends PluginForHost {
             ext = ".mp4";
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        final Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
-            con = openConnection(br2, DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -109,20 +116,6 @@ public class MySpassDe extends PluginForHost {
 
     private String getXML(final String parameter) {
         return br.getRegex("<" + parameter + "><\\!\\[CDATA\\[(.*?)\\]\\]></" + parameter + ">").getMatch(0);
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

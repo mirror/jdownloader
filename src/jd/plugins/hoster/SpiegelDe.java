@@ -169,13 +169,7 @@ public class SpiegelDe extends PluginForHost {
             }
             URLConnectionAdapter urlConnection = null;
             try {
-                try {
-                    /* @since JD2 */
-                    urlConnection = br.openHeadConnection(DLLINK);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    urlConnection = br.openGetConnection(DLLINK);
-                }
+                urlConnection = br.openHeadConnection(DLLINK);
                 if (!urlConnection.isOK()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -265,7 +259,7 @@ public class SpiegelDe extends PluginForHost {
              * Also possible: "http://sptv-vod.dcp.adaptive.level3.net/" + playpath + ".m3u8" (usually the'schneevonmorgen.com' URLs
              * redirect to such URLs)
              */
-            String url_hls = "http://m3u8.schneevonmorgen.com/schnee_vod/_definst_/" + playpath + "/playlist.m3u8";
+            final String url_hls = "http://m3u8.schneevonmorgen.com/schnee_vod/_definst_/" + playpath + "/playlist.m3u8";
             if (prefer_hls) {
                 /* Needed as .m3u8 URL redirects to other server / other .m3u8 URL */
                 this.br.setFollowRedirects(true);
