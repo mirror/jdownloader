@@ -113,6 +113,7 @@ public class AccountChecker {
     public AccountCheckJob check(Account account, boolean force) {
         AccountCheckJob ret = null;
         boolean started = false;
+        Thread thread = null;
         synchronized (AccountChecker.this) {
             /* get joblist for same host */
             final String hoster = account.getHoster();
@@ -129,7 +130,7 @@ public class AccountChecker {
             jobsRequested.incrementAndGet();
             list.add(ret);
             /* get thread to check this hoster */
-            Thread thread = checkThreads.get(hoster);
+            thread = checkThreads.get(hoster);
             if (thread == null || !thread.isAlive()) {
                 started = checkThreads.isEmpty();
                 thread = new AccountCheckerThread() {
@@ -182,6 +183,7 @@ public class AccountChecker {
         if (started) {
             this.eventSender.fireEvent(new AccountCheckerEvent(this, AccountCheckerEvent.Types.CHECK_STARTED, null));
         }
+
         return ret;
     }
 

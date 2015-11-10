@@ -56,7 +56,6 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
 
     private DownloadsTableModel() {
         super(DownloadController.getInstance(), "downloadstable3");
-
     }
 
     @Override
@@ -124,6 +123,12 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         if (priorityColumn != null) {
             this.setColumnVisible(priorityColumn, b);
         }
+    }
+
+    @Override
+    protected int[] getScrollPositionFromConfig() {
+        return CFG_GUI.CFG.getDownloadListScrollPosition();
+
     }
 
 }

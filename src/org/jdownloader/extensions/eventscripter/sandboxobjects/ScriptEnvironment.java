@@ -26,11 +26,16 @@ import javax.sound.sampled.LineEvent.Type;
 import javax.sound.sampled.LineListener;
 import javax.swing.JTextPane;
 
+import jd.controlling.AccountController;
+import jd.controlling.TaskQueue;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
+import jd.plugins.Account;
 import jd.plugins.FilePackage;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
@@ -47,6 +52,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OSFamily;
@@ -730,6 +736,43 @@ public class ScriptEnvironment {
         } catch (InterruptedException e) {
             throw new EnvironmentException(e);
         }
+    }
+
+    @ScriptAPI(description = "Refresh all premium accounts", parameters = { "true|false (Wait for account checks)", "true|false (Force Check)" }, example = "refreshAccounts(true,true);")
+    public static void refreshAccounts(final boolean wait, final boolean force) throws EnvironmentException {
+
+        QueueAction<Void, InterruptedException> action = new QueueAction<Void, InterruptedException>() {
+
+            @Override
+            protected Void run() throws InterruptedException {
+
+                for (Account acc : AccountController.getInstance().list()) {
+                    if (acc == null || acc.isEnabled() == false || acc.isValid() == false || acc.isTempDisabled()) {
+                        continue;
+                    }
+                    AccountCheckJob job = AccountChecker.getInstance().check(acc, force);
+                    if (job != null) {
+                        while (!job.isChecked()) {
+
+                            Thread.sleep(100);
+
+                        }
+                    }
+                }
+
+                return null;
+            }
+        };
+        try {
+            if (wait) {
+                TaskQueue.getQueue().addWait(action);
+            } else {
+                TaskQueue.getQueue().add(action);
+            }
+        } catch (InterruptedException e) {
+            throw new EnvironmentException(e);
+        }
+
     }
 
     @ScriptAPI(description = "Perform a reconnect and wait for it", parameters = {}, example = "var success= doReconnect();")

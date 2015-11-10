@@ -10,7 +10,6 @@ import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
-
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
@@ -32,6 +31,7 @@ import org.jdownloader.gui.views.linkgrabber.columns.PartColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackage, CrawledLink> {
 
@@ -59,6 +59,12 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
                 sortColumn = null;
             }
         }
+    }
+
+    @Override
+    protected int[] getScrollPositionFromConfig() {
+        return CFG_GUI.CFG.getLinkgrabberListScrollPosition();
+
     }
 
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {
