@@ -1036,21 +1036,45 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
      @Override
      public String getNextSortIdentifier(String sortOrderIdentifier) {
+         if (sortOrderIdentifier == null) {
+
+             if (CFG_GUI.CFG.isPrimaryTableSorterDesc()) {
+                 sortOrderIdentifier = ExtColumn.SORT_ASC;
+             } else {
+                 sortOrderIdentifier = ExtColumn.SORT_DESC;
+             }
+
+         }
          if (!isTristateSorterEnabled()) {
-             if (sortOrderIdentifier == null || sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
+             if (sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
                  return ExtColumn.SORT_DESC;
              } else {
                  return ExtColumn.SORT_ASC;
              }
          } else {
-             if (sortOrderIdentifier == null || sortOrderIdentifier.equals(SORT_ORIGINAL)) {
-                 return ExtColumn.SORT_DESC;
 
-             } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
-                 return ExtColumn.SORT_ASC;
+             if (CFG_GUI.CFG.isPrimaryTableSorterDesc()) {
+
+                 if (sortOrderIdentifier.equals(SORT_ORIGINAL)) {
+                     return ExtColumn.SORT_DESC;
+
+                 } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
+                     return ExtColumn.SORT_ASC;
+                 } else {
+                     return SORT_ORIGINAL;
+                 }
              } else {
-                 return SORT_ORIGINAL;
+
+                 if (sortOrderIdentifier.equals(SORT_ORIGINAL)) {
+                     return ExtColumn.SORT_ASC;
+
+                 } else if (sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
+                     return ExtColumn.SORT_DESC;
+                 } else {
+                     return SORT_ORIGINAL;
+                 }
              }
+
          }
      }
 
