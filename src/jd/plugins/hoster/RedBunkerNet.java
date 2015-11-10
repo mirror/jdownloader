@@ -798,7 +798,7 @@ public class RedBunkerNet extends PluginForHost {
                 account.setValid(false);
                 return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
                 try {
                     maxPrem.set(20);
                     account.setMaxSimultanDownloads(maxPrem.get());
