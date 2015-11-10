@@ -29,6 +29,7 @@ import javax.swing.JTextPane;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.plugins.FilePackage;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
@@ -46,7 +47,6 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OSFamily;
@@ -727,6 +727,15 @@ public class ScriptEnvironment {
     public static void requestReconnect() throws EnvironmentException {
         try {
             DownloadWatchDog.getInstance().requestReconnect(false);
+        } catch (InterruptedException e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @ScriptAPI(description = "Perform a reconnect and wait for it", parameters = {}, example = "var success= doReconnect();")
+    public static boolean doReconnect() throws EnvironmentException {
+        try {
+            return DownloadWatchDog.getInstance().requestReconnect(false) == Reconnecter.ReconnectResult.SUCCESSFUL;
         } catch (InterruptedException e) {
             throw new EnvironmentException(e);
         }
