@@ -99,7 +99,7 @@ public class ReconnectPluginController {
             }
 
         }
-        if (scripts.size() > 1) {
+        if (scripts.size() > 0) {
             HashMap<String, String> map = new HashMap<String, String>();
             map.put("plg", scripts.get(0).getInvoker().getPlugin().getID());
             StatsManager.I().track("reconnectAutoFind/success", map);
