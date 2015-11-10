@@ -134,6 +134,15 @@ public class SiteType {
          * */
         UnknownPornScript6,
         /**
+         * <b>Minimum requirements:</b> Website has to fit script <br />
+         * <b>Additional requirements to be added to main class:</b> -<br />
+         * <b>Main host class:</b> -<br />
+         * <b>Example that suits main host class:</b> -<br />
+         * <b>Example that does NOT suit main host class [needs separate class]:</b> <a href="http:/foxytube.com/">foxytube.com</a><br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         * */
+        UnknownPornScript7,
+        /**
          * Script used by some video hosting sites. <a href="http:/cloudy.ec/">cloudy.ec</a>. Not sure what to call this script.
          */
         Unknown_VideoHosting,
