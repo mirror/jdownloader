@@ -332,24 +332,28 @@ public class GoogleHelper {
                 }
 
                 Form form = this.br.getFormBySubmitvalue("Verify");
+
                 if (form == null) {
-                    form = this.br.getFormByInputFieldKeyValue("SendMethod", "SMS");
-                }
-                if (form == null) {
-                    form = this.br.getFormbyKey("Pin");
+
+                    for (Form f : forms) {
+                        if (f.getAction().startsWith("/signin/challenge")) {
+                            form = f;
+                        }
+                    }
+
                 }
 
-                if (form != null && "SecondFactor".equals(form.getAction())) {
-                    handle2FactorAuthSmsDeprecated(form);
-                    continue;
-                } else if (form != null && "/signin/challenge".equals(form.getAction())) {
-                    handle2FactorAuthSmsNew(form);
-                    continue;
-                }
-                form = br.getFormByInputFieldKeyValue("Pin", null);
-                if (form != null && form.getAction().startsWith("/signin/challenge/")) {
-                    handle2FactorAuthSmsNew2(form);
-                    continue;
+                if (form != null) {
+                    if ("SecondFactor".equals(form.getAction())) {
+                        handle2FactorAuthSmsDeprecated(form);
+                        continue;
+                    } else if ("/signin/challenge".equals(form.getAction())) {
+                        handle2FactorAuthSmsNew(form);
+                        continue;
+                    } else if (form.getAction().startsWith("/signin/challenge/")) {
+                        handle2FactorAuthSmsNew2(form);
+                        continue;
+                    }
                 }
                 if (StringUtils.isNotEmpty(error)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
