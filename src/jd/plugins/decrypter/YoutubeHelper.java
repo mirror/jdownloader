@@ -23,6 +23,24 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
+
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
@@ -63,24 +81,6 @@ import jd.plugins.components.youtube.VideoResolution;
 import jd.plugins.hoster.YoutubeDashV2.SubtitleVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.MinTimeWeakReference;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
-
 public class YoutubeHelper implements YoutubeHelperInterface {
     static {
         YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -91,6 +91,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         AudioCodec.AAC_M4A.setRating(cfg.getRatingContainerM4A() / 10000d);
         AudioCodec.MP3.setRating(cfg.getRatingContainerMP3() / 10000d);
     }
+
     public static final String    PAID_VIDEO        = "Paid Video:";
 
     protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
@@ -127,8 +128,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return variantsMap;
     }
 
-    public static LogSource             LOGGER             = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
-    public static List<YoutubeReplacer> REPLACER           = new ArrayList<YoutubeReplacer>();
+    public static LogSource             LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+
     static {
         REPLACER.add(new YoutubeReplacer("group") {
 
@@ -575,18 +577,19 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         });
     }
-    public static final String          YT_EXT             = "YT_EXT";
-    public static final String          YT_TITLE           = "YT_TITLE";
-    public static final String          YT_PLAYLIST_INT    = "YT_PLAYLIST_INT";
-    public static final String          YT_ID              = "YT_ID";
-    public static final String          YT_AGE_GATE        = "YT_AGE_GATE";
-    public static final String          YT_CHANNEL         = "YT_CHANNEL";
-    public static final String          YT_USER            = "YT_USER";
-    public static final String          YT_DATE            = "YT_DATE";
-    public static final String          YT_VARIANTS        = "YT_VARIANTS";
-    public static final String          YT_VARIANT         = "YT_VARIANT";
-    public static final String          YT_STREAMURL_VIDEO = "YT_STREAMURL_VIDEO";
-    public static final String          YT_STREAMURL_AUDIO = "YT_STREAMURL_AUDIO";
+
+    public static final String YT_EXT             = "YT_EXT";
+    public static final String YT_TITLE           = "YT_TITLE";
+    public static final String YT_PLAYLIST_INT    = "YT_PLAYLIST_INT";
+    public static final String YT_ID              = "YT_ID";
+    public static final String YT_AGE_GATE        = "YT_AGE_GATE";
+    public static final String YT_CHANNEL         = "YT_CHANNEL";
+    public static final String YT_USER            = "YT_USER";
+    public static final String YT_DATE            = "YT_DATE";
+    public static final String YT_VARIANTS        = "YT_VARIANTS";
+    public static final String YT_VARIANT         = "YT_VARIANT";
+    public static final String YT_STREAMURL_VIDEO = "YT_STREAMURL_VIDEO";
+    public static final String YT_STREAMURL_AUDIO = "YT_STREAMURL_AUDIO";
 
     private static String handleRule(String s, final String line) throws PluginException {
 
@@ -715,6 +718,19 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             final String func = "function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
             des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
             all = new Regex(jsContent, Pattern.compile("function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?")).getMatch(-1);
+            if (all == null) {
+                all = new Regex(jsContent, Pattern.compile("var " + Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?")).getMatch(-1);
+                // pleaseee...
+                if (all != null) {
+                    final String[] a = new Regex(all, "var (" + Pattern.quote(descrambler) + ")=function(.+)").getRow(0);
+                    if (a != null) {
+                        all = "function " + a[0] + a[1];
+                    }
+                }
+                if (des == null) {
+                    des = all;
+                }
+            }
         }
         while (true) {
             try {
