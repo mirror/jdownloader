@@ -35,6 +35,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
@@ -472,7 +473,9 @@ public class ClipboardMonitoring {
                         logger.log(th);
                     }
                     try {
-                        clipboardChangeDetector = new WindowsClipboardChangeDetector(skipChangeDetection);
+                        if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_XP)) {
+                            clipboardChangeDetector = new WindowsClipboardChangeDetector(skipChangeDetection);
+                        }
                     } catch (final Throwable th) {
                         logger.log(th);
                     }

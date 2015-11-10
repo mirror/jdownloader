@@ -3,7 +3,9 @@ package jd.controlling;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.WinDef.HWND;
+import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.win32.StdCallLibrary;
 
 public class WindowsClipboardChangeDetector extends ClipboardMonitoring.ClipboardChangeDetector {
@@ -15,28 +17,55 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms649041%28v=vs.85%29.aspx
         HWND GetClipboardOwner();
 
-        // https://msdn.microsoft.com/en-us/library/ms633520%28VS.85%29.aspx
-        int GetWindowTextA(HWND hWnd, byte[] lpString, int nMaxCount);
+        // https://msdn.microsoft.com/de-de/library/windows/desktop/ms633522%28v=vs.85%29.aspx
+        int GetWindowThreadProcessId(HWND hwnd, IntByReference pid);
     }
 
-    private final User32 user32;
-    private int          lastClipboardSequenceNumber = -1;
+    private interface Kernel32 extends StdCallLibrary {
+        public Pointer OpenProcess(int dwDesiredAccess, boolean bInheritHandle, int dwProcessId);
+
+        boolean CloseHandle(Pointer handle);
+    };
+
+    private interface psapi extends StdCallLibrary {
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683198%28v=vs.85%29.aspx
+        int GetModuleFileNameExA(Pointer process, Pointer hModule, byte[] lpString, int nMaxCount);
+    };
+
+    private final User32   user32;
+    private int            lastClipboardSequenceNumber = -1;
+    private final psapi    psapi;
+    private final Kernel32 kernel32;
 
     protected WindowsClipboardChangeDetector(final AtomicBoolean skipChangeFlag) {
         super(skipChangeFlag);
         user32 = (User32) com.sun.jna.Native.loadLibrary("user32", User32.class);
+        psapi = (psapi) Native.loadLibrary("psapi", psapi.class);
+        kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
     }
 
+    // http://stackoverflow.com/questions/7521693/converting-c-sharp-to-java-jna-getmodulefilename-from-hwnd
     protected String getClipboardOwnerWindowText() {
-        final byte[] windowText = new byte[512];
-        HWND hWnd = user32.GetClipboardOwner();
-        user32.GetWindowTextA(hWnd, windowText, 512);
-        final String ret = Native.toString(windowText);
-        if (ret != null) {
-            return ret.trim();
-        } else {
-            return null;
+        final HWND hWnd = user32.GetClipboardOwner();
+        if (hWnd != null) {
+            final IntByReference pid = new IntByReference();
+            user32.GetWindowThreadProcessId(hWnd, pid);
+            final Pointer process = kernel32.OpenProcess(1040, false, pid.getValue());
+            if (process != null) {
+                try {
+                    final Pointer zero = new Pointer(0);
+                    final byte[] exePathname = new byte[1024];
+                    final int result = psapi.GetModuleFileNameExA(process, zero, exePathname, 512);
+                    final String ret = Native.toString(exePathname).substring(0, result);
+                    if (ret != null) {
+                        return ret.trim();
+                    }
+                } finally {
+                    kernel32.CloseHandle(process);
+                }
+            }
         }
+        return null;
     }
 
     @Override
@@ -48,7 +77,6 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
                 System.out.println("Clipboard Change Detected:" + getClipboardOwnerWindowText());
                 return true;
             } else {
-                System.out.println("Clipboard Unchanged");
                 return false;
             }
         }
