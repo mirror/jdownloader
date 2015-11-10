@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
@@ -81,14 +82,11 @@ public class ReconnectPluginController {
                 try {
 
                     feedback.setStatus(plg, null);
-                    StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/start");
+
                     java.util.List<ReconnectResult> founds = plg.runDetectionWizard(feedback);
 
                     if (founds != null) {
-                        StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/found/" + scripts.size());
                         scripts.addAll(founds);
-                    } else {
-                        StatsManager.I().track("reconnectAutoFind/" + plg.getID() + "/found/0");
                     }
                     if (scripts.size() > 0) {
                         break;
@@ -102,7 +100,9 @@ public class ReconnectPluginController {
 
         }
         if (scripts.size() > 1) {
-            StatsManager.I().track("reconnectAutoFind/success");
+            HashMap<String, String> map = new HashMap<String, String>();
+            map.put("plg", scripts.get(0).getInvoker().getPlugin().getID());
+            StatsManager.I().track("reconnectAutoFind/success", map);
         } else {
             StatsManager.I().track("reconnectAutoFind/failed");
         }

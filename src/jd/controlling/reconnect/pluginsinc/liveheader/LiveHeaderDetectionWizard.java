@@ -399,6 +399,8 @@ public class LiveHeaderDetectionWizard {
 
                         if (answer.isDontShowAgainSelected()) {
                             break;
+                        } else {
+                            continue;
                         }
                     } else {
                         continue;
