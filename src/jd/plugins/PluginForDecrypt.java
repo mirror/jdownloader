@@ -22,7 +22,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.easy.load.LoadImage;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.SkipException;
@@ -49,8 +48,11 @@ import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -371,10 +373,6 @@ public abstract class PluginForDecrypt extends Plugin {
         return getCaptchaCode(getHost(), captchaAddress, param);
     }
 
-    protected String getCaptchaCode(LoadImage li, CryptedLink param) throws Exception {
-        return getCaptchaCode(getHost(), li.file, param);
-    }
-
     protected String getCaptchaCode(String method, String captchaAddress, CryptedLink param) throws Exception {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");
@@ -398,8 +396,22 @@ public abstract class PluginForDecrypt extends Plugin {
         return getCaptchaCode(getHost(), captchaFile, param);
     }
 
-    protected String getCaptchaCode(String methodname, File captchaFile, CryptedLink param) throws Exception {
-        return getCaptchaCode(methodname, captchaFile, 0, param, null, null);
+    protected ClickedPoint getCaptchaClickedPoint(File captchaFile, CryptedLink param) throws Exception {
+        return getCaptchaClickedPoint(getHost(), captchaFile, param, null, null);
+    }
+
+    protected String getCaptchaCode(String method, File file, CryptedLink param) throws Exception {
+        final File copy = copyCaptcha(method, file);
+        final BasicCaptchaChallenge c = createChallenge(method, copy, 0, null, null);
+        return handleCaptchaChallenge(c);
+    }
+
+    private File copyCaptcha(String method, File file) throws Exception {
+        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+        copy.delete();
+        copy.getParentFile().mkdirs();
+        IO.copyFile(file, copy);
+        return copy;
     }
 
     public void invalidateLastChallengeResponse() {
@@ -432,36 +444,17 @@ public abstract class PluginForDecrypt extends Plugin {
         return lastSolverJob != null;
     }
 
-    /**
-     *
-     * @param method
-     *            Method name (name of the captcha method)
-     * @param file
-     *            (imagefile)
-     * @param flag
-     *            (Flag of UserIO.FLAGS
-     * @param link
-     *            (CryptedlinkO)
-     * @param defaultValue
-     *            (suggest this code)
-     * @param explain
-     *            (Special captcha? needs explaination? then use this parameter)
-     * @return
-     * @throws DecrypterException
-     */
-    protected String getCaptchaCode(String method, File file, int flag, final CryptedLink link, String defaultValue, String explain) throws Exception {
-        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-        copy.delete();
-        cleanUpCaptchaFiles.add(copy);
-        copy.getParentFile().mkdirs();
-        IO.copyFile(file, copy);
-        file = copy;
-        final BasicCaptchaChallenge c = createChallenge(method, file, flag, defaultValue, explain);
+    protected ClickedPoint getCaptchaClickedPoint(String method, File file, final CryptedLink link, String defaultValue, String explain) throws Exception {
+        final File copy = copyCaptcha(method, file);
+        final ClickCaptchaChallenge c = new ClickCaptchaChallenge(copy, explain, this);
         return handleCaptchaChallenge(c);
-
     }
 
-    public <ReturnType> ReturnType handleCaptchaChallenge(Challenge<ReturnType> c) throws CaptchaException, InterruptedException, DecrypterException {
+    protected <ReturnType> ReturnType handleCaptchaChallenge(Challenge<ReturnType> c) throws CaptchaException, InterruptedException, DecrypterException {
+        if (c instanceof ImageCaptchaChallenge) {
+            final File captchaFile = ((ImageCaptchaChallenge) c).getImageFile();
+            cleanUpCaptchaFiles.add(captchaFile);
+        }
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
         }

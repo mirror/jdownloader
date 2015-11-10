@@ -105,6 +105,7 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
@@ -149,14 +150,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[]   PATTERNS       = new Pattern[] {
 
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+                                                    /**
+                                                     * these patterns should split filename and fileextension (extension must include the
+                                                     * point)
+                                                     */
+                                                    // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin           lazyP          = null;
     /**
@@ -303,28 +304,37 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws Exception {
-        if (Thread.currentThread() instanceof LinkCrawlerThread) {
-            logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
-        }
         final String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
         if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
             file = new File(orgCaptchaImage);
         }
-        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-        copy.delete();
-        cleanUpCaptchaFiles.add(copy);
-        copy.getParentFile().mkdirs();
-        IO.copyFile(file, copy);
-        file = copy;
+        final File copy = copyCaptcha(method, file);
         if (this.getDownloadLink() == null) {
             this.setDownloadLink(link);
         }
-        final BasicCaptchaChallenge c = createChallenge(method, file, flag, link, defaultValue, explain);
-        c.setTimeout(getCaptchaTimeout());
+        final BasicCaptchaChallenge c = createChallenge(method, copy, flag, link, defaultValue, explain);
         return handleCaptchaChallenge(link, c);
     }
 
+    private File copyCaptcha(String method, File file) throws Exception {
+        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+        copy.delete();
+        copy.getParentFile().mkdirs();
+        IO.copyFile(file, copy);
+        return copy;
+    }
+
     protected <T> T handleCaptchaChallenge(final DownloadLink link, Challenge<T> c) throws CaptchaException, PluginException, InterruptedException {
+        if (c instanceof ImageCaptchaChallenge) {
+            final File captchaFile = ((ImageCaptchaChallenge) c).getImageFile();
+            cleanUpCaptchaFiles.add(captchaFile);
+        }
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
+        }
+        final int ct = getCaptchaTimeout();
+        c.setTimeout(ct);
+        invalidateLastChallengeResponse();
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
@@ -342,7 +352,6 @@ public abstract class PluginForHost extends Plugin {
                     setHasCaptcha(link, controller.getAccount(), true);
                 }
             }
-            invalidateLastChallengeResponse();
             final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
             if (blackListEntry != null) {
                 logger.warning("Cancel. Blacklist Matching");
@@ -412,8 +421,7 @@ public abstract class PluginForHost extends Plugin {
         if ("recaptcha".equalsIgnoreCase(method)) {
             return new RecaptchaV1CaptchaChallenge(file, defaultValue, explain, this, flag);
         }
-        final BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag);
-        return c;
+        return new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag);
     }
 
     protected volatile DownloadInterface dl                                           = null;
@@ -884,16 +892,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);

@@ -16,7 +16,6 @@
 
 package jd.gui;
 
-import java.awt.Point;
 import java.io.File;
 
 import javax.swing.Icon;
@@ -24,14 +23,8 @@ import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.nutils.JDFlags;
-import jd.plugins.CaptchaException;
-import jd.plugins.PluginForDecrypt;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.ComboBoxDialogInterface;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -41,8 +34,6 @@ import org.appwork.uio.MultiSelectionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.uio.UserIODefinition;
 import org.appwork.utils.BinaryLogic;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -52,11 +43,6 @@ import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.InputDialog;
-import org.jdownloader.captcha.blacklist.BlacklistEntry;
-import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
-import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -276,63 +262,6 @@ public class UserIO {
         default:
             return NewTheme.I().getIcon("info", 32);
         }
-    }
-
-    public Point requestClickPositionDialog(final File imagefile, final String titleTemplate, final String explain) throws Exception {
-        Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof LinkCrawlerThread) {
-            /* Crawler */
-            final PluginForDecrypt plugin = (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
-            LogInterface logger = plugin.getLogger();
-            String title = titleTemplate;
-            if (title == null) {
-                title = explain;
-            } else if (explain != null) {
-                title = title + " - " + explain;
-            }
-
-            ClickCaptchaChallenge c = new ClickCaptchaChallenge(imagefile, title, plugin);
-            c.setTimeout(plugin.getCaptchaTimeout());
-            plugin.invalidateLastChallengeResponse();
-            final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
-            if (blackListEntry != null) {
-                plugin.getLogger().warning("Cancel. Blacklist Matching");
-                throw new CaptchaException(blackListEntry);
-            }
-            try {
-                ChallengeResponseController.getInstance().handle(c);
-            } catch (InterruptedException ie) {
-                LogSource.exception(logger, ie);
-                throw ie;
-            } catch (SkipException e) {
-                LogSource.exception(logger, e);
-                switch (e.getSkipRequest()) {
-                case BLOCK_ALL_CAPTCHAS:
-                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
-                    break;
-                case BLOCK_HOSTER:
-                case BLOCK_PACKAGE:
-                case SINGLE:
-                case TIMEOUT:
-                    break;
-                case REFRESH:
-                    // refresh is not supported from the pluginsystem right now.
-                    return null;
-                case STOP_CURRENT_ACTION:
-                    LinkCollector.getInstance().abort();
-                    // Just to be sure
-                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
-                }
-                throw new CaptchaException(e.getSkipRequest());
-            }
-            if (!c.isSolved()) {
-                return null;
-            }
-            return new Point(c.getResult().getValue().getX(), c.getResult().getValue().getY());
-        } else {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new WTFException("DO NOT USE OUTSIDE DECRYPTER"));
-        }
-        return null;
     }
 
     /**

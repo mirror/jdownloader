@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
@@ -49,6 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.ScriptableObject;
@@ -200,21 +199,15 @@ public class ShrLnksBz extends PluginForDecrypt {
                 temp.getDownload(file, "http://share-links.biz" + Captchamap);
                 String nexturl = null;
                 if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000 || !auto) {
-                    final Point p = UserIO.getInstance().requestClickPositionDialog(file, "share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                    if (p == null) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
-                    nexturl = getNextUrl(p.x, p.y);
+                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                    nexturl = getNextUrl(cp.getX(), cp.getY());
                 } else {
                     try {
                         final String[] code = this.getCaptchaCode(file, param).split(":");
                         nexturl = getNextUrl(Integer.parseInt(code[0]), Integer.parseInt(code[1]));
                     } catch (final Exception e) {
-                        final Point p = UserIO.getInstance().requestClickPositionDialog(file, "share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                        if (p == null) {
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
-                        }
-                        nexturl = getNextUrl(p.x, p.y);
+                        final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                        nexturl = getNextUrl(cp.getX(), cp.getY());
                     }
                 }
                 if (nexturl == null) {

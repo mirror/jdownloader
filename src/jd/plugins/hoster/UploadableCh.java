@@ -313,6 +313,9 @@ public class UploadableCh extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
+                    if (StringUtils.contains(account.getUser(), "@")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "You cannot login via e-mail. Please use your username!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     loginform.put("userName", Encoding.urlEncode(account.getUser()));
                     loginform.put("userPassword", Encoding.urlEncode(account.getPass()));
                     loginform.remove("autoLogin");

@@ -106,7 +106,7 @@ public class SolidFilesCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
+        final long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) {
@@ -118,23 +118,25 @@ public class SolidFilesCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) {
+                    if (this.dl.externalDownloadStop()) {
                         return;
                     }
                 } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(SolidFilesCom.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(SolidFilesCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    // not stable compatible
                 }
             }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(SolidFilesCom.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(SolidFilesCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                throw e;
+            }
+            if (downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
+                if (downloadLink.getDownloadCurrent() > downloadCurrentRaw + (1024 * 1024l)) {
+                    throw e;
+                } else {
+                    /* disable multiple chunks => use only 1 chunk and retry */
+                    downloadLink.setProperty(NOCHUNKS, Boolean.TRUE);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
             throw e;
         }

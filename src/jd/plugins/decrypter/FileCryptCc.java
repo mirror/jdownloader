@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -46,6 +44,7 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
@@ -134,12 +133,9 @@ public class FileCryptCc extends PluginForDecrypt {
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
                 br.cloneBrowser().getDownload(file, captcha);
-                final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Click on the open circle", null);
-                if (p == null) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-                captchaForm.put("button.x", String.valueOf(p.x));
-                captchaForm.put("button.y", String.valueOf(p.y));
+                final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
+                captchaForm.put("button.x", String.valueOf(cp.getX()));
+                captchaForm.put("button.y", String.valueOf(cp.getY()));
                 captchaForm.remove("button");
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {

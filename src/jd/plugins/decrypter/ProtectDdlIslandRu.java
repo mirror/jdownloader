@@ -16,14 +16,12 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,6 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect.ddl-island.ru", "protect.emule-island.ru" }, urls = { "http://(?:www\\.)?protect\\.ddl\\-island\\.(?:ru|su)/(?:other\\?id=)?([A-Za-z0-9]+)", "http://(?:www\\.)?protect\\.emule-island\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)" }, flags = { 0, 0 })
@@ -78,11 +77,8 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
             for (int i = 1; i <= 3; i++) {
                 final File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/img.php?get_captcha=true"));
-                final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, getHost() + " | " + String.valueOf(i + 1) + "/3", null);
-                if (p == null) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-                br.postPage(br.getURL(), "position%5B%5D.x=" + String.valueOf(p.x) + "&position%5B%5D.y=" + String.valueOf(p.y));
+                final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/3", null);
+                br.postPage(br.getURL(), "position%5B%5D.x=" + String.valueOf(cp.getX()) + "&position%5B%5D.y=" + String.valueOf(cp.getY()));
                 if (br.containsHTML("img\\.php\\?get_captcha=true")) {
                     continue;
                 }

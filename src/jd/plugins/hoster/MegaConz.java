@@ -10,6 +10,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -41,8 +42,9 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.FileStateManager;
+import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
@@ -97,6 +99,10 @@ public class MegaConz extends PluginForHost {
         return super.canHandle(downloadLink, account);
     }
 
+    private String getFolderID(final String url) {
+        return new Regex(url, "#F\\!([a-zA-Z0-9]+)\\!").getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         setBrowserExclusive();
@@ -114,7 +120,11 @@ public class MegaConz extends PluginForHost {
         br.getHeaders().put("APPID", "JDownloader");
         try {
             final PostRequest request;
-            final String parentNode = link.getStringProperty("pn", null);
+            String parentNode = link.getStringProperty("pn", null);
+            if (parentNode == null && getFolderID(link.getContainerUrl()) != null) {
+                parentNode = getFolderID(link.getContainerUrl());
+                link.setProperty("pn", parentNode);
+            }
             if (parentNode != null) {
                 request = new PostRequest("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + parentNode);
             } else {
@@ -408,6 +418,8 @@ public class MegaConz extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
     }
 
+    private static Object DECRYPTLOCK = new Object();
+
     private void decrypt(AtomicLong encryptionDone, DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
@@ -445,110 +457,115 @@ public class MegaConz extends PluginForHost {
         FileInputStream fis = null;
         FileOutputStream fos = null;
         boolean deleteDst = true;
-        PluginProgress progress = null;
+        final long total = src.length();
+        final AtomicReference<String> message = new AtomicReference<String>();
+        final PluginProgress progress = new PluginProgress(0, total, null) {
+            long lastCurrent    = -1;
+            long startTimeStamp = -1;
+
+            public String getMessage(Object requestor) {
+                return message.get();
+            }
+
+            @Override
+            public PluginTaskID getID() {
+                return PluginTaskID.DECRYPTING;
+            }
+
+            @Override
+            public void updateValues(long current, long total) {
+                super.updateValues(current, total);
+                if (lastCurrent == -1 || lastCurrent > current) {
+                    lastCurrent = current;
+                    startTimeStamp = System.currentTimeMillis();
+                    this.setETA(-1);
+                    return;
+                }
+                long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                if (currentTimeDifference <= 0) {
+                    return;
+                }
+                long speed = (current * 10000) / currentTimeDifference;
+                if (speed == 0) {
+                    return;
+                }
+                long eta = ((total - current) * 10000) / speed;
+                this.setETA(eta);
+            }
+
+        };
+        progress.setProgressSource(this);
+        progress.setIcon(NewTheme.I().getIcon("lock", 16));
+        final File outputFile;
+        if (tmp != null) {
+            outputFile = tmp;
+        } else {
+            outputFile = dst;
+        }
         try {
-            long total = src.length();
-            progress = new PluginProgress(0, total, null) {
-                long lastCurrent    = -1;
-                long startTimeStamp = -1;
-
-                public String getMessage(Object requestor) {
-                    return "Decrypting";
-                }
-
-                @Override
-                public PluginTaskID getID() {
-                    return PluginTaskID.DECRYPTING;
-                }
-
-                @Override
-                public void updateValues(long current, long total) {
-                    super.updateValues(current, total);
-                    if (lastCurrent == -1 || lastCurrent > current) {
-                        lastCurrent = current;
-                        startTimeStamp = System.currentTimeMillis();
-                        this.setETA(-1);
-                        return;
+            try {
+                message.set("Queued for decryption");
+                link.addPluginProgress(progress);
+                synchronized (DECRYPTLOCK) {
+                    message.set("Decrypting");
+                    fis = new FileInputStream(src);
+                    FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
+                    fos = new FileOutputStream(outputFile);
+                    Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
+                    cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
+                    final CipherOutputStream cos = new CipherOutputStream(fos, cipher);
+                    int read = 0;
+                    final byte[] buffer = new byte[32767];
+                    while ((read = fis.read(buffer)) != -1) {
+                        if (read > 0) {
+                            progress.updateValues(progress.getCurrent() + read, total);
+                            cos.write(buffer, 0, read);
+                            encryptionDone.addAndGet(-read);
+                        }
                     }
-                    long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
-                    if (currentTimeDifference <= 0) {
-                        return;
+                    cos.close();
+                    try {
+                        fos.close();
+                    } catch (final Throwable e) {
                     }
-                    long speed = (current * 10000) / currentTimeDifference;
-                    if (speed == 0) {
-                        return;
+                    try {
+                        fis.close();
+                    } catch (final Throwable e) {
                     }
-                    long eta = ((total - current) * 10000) / speed;
-                    this.setETA(eta);
+                    deleteDst = false;
+                    link.getLinkStatus().setStatusText("Finished");
+                    try {
+                        link.setInternalTmpFilenameAppend(null);
+                        link.setInternalTmpFilename(null);
+                    } catch (final Throwable e) {
+                    }
+                    if (tmp == null) {
+                        src.delete();
+                    } else {
+                        src.delete();
+                        tmp.renameTo(dst);
+                    }
                 }
-
-            };
-            progress.setProgressSource(this);
-            try {
-                progress.setIcon(NewTheme.I().getIcon("lock", 16));
-            } catch (Throwable e) {
-                logger.warning(Exceptions.getStackTrace(e));
-            }
-            link.addPluginProgress(progress);
-            fis = new FileInputStream(src);
-            if (tmp != null) {
-                fos = new FileOutputStream(tmp);
-            } else {
-                fos = new FileOutputStream(dst);
-            }
-
-            Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
-            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-            final CipherOutputStream cos = new CipherOutputStream(fos, cipher);
-            int read = 0;
-            final byte[] buffer = new byte[32767];
-            while ((read = fis.read(buffer)) != -1) {
-                if (read > 0) {
-                    progress.updateValues(progress.getCurrent() + read, total);
-                    cos.write(buffer, 0, read);
-                    encryptionDone.addAndGet(-read);
+            } finally {
+                try {
+                    fis.close();
+                } catch (final Throwable e) {
                 }
-            }
-            cos.close();
-            try {
-                fos.close();
-            } catch (final Throwable e) {
-            }
-            try {
-                fis.close();
-            } catch (final Throwable e) {
-            }
-            deleteDst = false;
-            link.getLinkStatus().setStatusText("Finished");
-            try {
-
-                link.setInternalTmpFilenameAppend(null);
-                link.setInternalTmpFilename(null);
-            } catch (final Throwable e) {
-            }
-            if (tmp == null) {
-                src.delete();
-            } else {
-                src.delete();
-                tmp.renameTo(dst);
+                try {
+                    fos.close();
+                } catch (final Throwable e) {
+                }
+                link.removePluginProgress(progress);
+                if (deleteDst) {
+                    if (tmp != null) {
+                        tmp.delete();
+                    } else {
+                        dst.delete();
+                    }
+                }
             }
         } finally {
-            try {
-                fis.close();
-            } catch (final Throwable e) {
-            }
-            try {
-                fos.close();
-            } catch (final Throwable e) {
-            }
-            link.removePluginProgress(progress);
-            if (deleteDst) {
-                if (tmp != null) {
-                    tmp.delete();
-                } else {
-                    dst.delete();
-                }
-            }
+            FileStateManager.getInstance().releaseFileState(outputFile, this);
         }
 
     }
@@ -613,6 +630,11 @@ public class MegaConz extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        return false;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

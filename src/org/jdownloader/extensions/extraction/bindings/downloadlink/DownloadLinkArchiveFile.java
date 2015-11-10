@@ -20,6 +20,8 @@ import jd.plugins.PluginProgress;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
+import org.jdownloader.controlling.FileStateManager;
+import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -324,6 +326,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean exists() {
+        if (FileStateManager.getInstance().hasFileState(new File(getFilePath()), FILESTATE.WRITE_EXCLUSIVE)) {
+            return false;
+        }
         Boolean ret = exists.get();
         if (ret == null) {
             ret = new File(getFilePath()).exists();

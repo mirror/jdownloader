@@ -304,6 +304,11 @@ public class ToutBoxFr extends PluginForHost {
     }
 
     @Override
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        return false;
+    }
+
+    @Override
     public void reset() {
     }
 
