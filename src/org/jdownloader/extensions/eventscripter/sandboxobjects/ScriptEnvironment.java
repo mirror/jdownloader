@@ -6,10 +6,12 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -740,26 +742,24 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Refresh all premium accounts", parameters = { "true|false (Wait for account checks)", "true|false (Force Check)" }, example = "refreshAccounts(true,true);")
     public static void refreshAccounts(final boolean wait, final boolean force) throws EnvironmentException {
-
-        QueueAction<Void, InterruptedException> action = new QueueAction<Void, InterruptedException>() {
+        final QueueAction<Void, InterruptedException> action = new QueueAction<Void, InterruptedException>() {
 
             @Override
             protected Void run() throws InterruptedException {
-
-                for (Account acc : AccountController.getInstance().list()) {
-                    if (acc == null || acc.isEnabled() == false || acc.isValid() == false || acc.isTempDisabled()) {
-                        continue;
-                    }
-                    AccountCheckJob job = AccountChecker.getInstance().check(acc, force);
-                    if (job != null && wait) {
-                        while (!job.isChecked()) {
-
-                            Thread.sleep(100);
-
+                final List<AccountCheckJob> jobs = new ArrayList<AccountCheckJob>();
+                for (final Account acc : AccountController.getInstance().list()) {
+                    if (acc.getPlugin() != null && acc.isEnabled() && acc.isValid()) {
+                        final AccountCheckJob job = AccountChecker.getInstance().check(acc, force);
+                        if (wait && job != null) {
+                            jobs.add(job);
                         }
                     }
                 }
-
+                for (final AccountCheckJob job : jobs) {
+                    while (!job.isChecked()) {
+                        Thread.sleep(100);
+                    }
+                }
                 return null;
             }
         };
@@ -772,7 +772,6 @@ public class ScriptEnvironment {
         } catch (InterruptedException e) {
             throw new EnvironmentException(e);
         }
-
     }
 
     @ScriptAPI(description = "Perform a reconnect and wait for it", parameters = {}, example = "var success= doReconnect();")
