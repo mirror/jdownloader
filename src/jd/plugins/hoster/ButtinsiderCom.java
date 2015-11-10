@@ -168,7 +168,7 @@ public class ButtinsiderCom extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return null; // SiteTemplate.UnknownPornScript5;
+        return SiteTemplate.UnknownPornScript5;
     }
 
     @Override

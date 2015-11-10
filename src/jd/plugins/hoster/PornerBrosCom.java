@@ -186,7 +186,7 @@ public class PornerBrosCom extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return null; // SiteTemplate.UnknownPornScript6;
+        return SiteTemplate.UnknownPornScript6;
     }
 
     @Override
