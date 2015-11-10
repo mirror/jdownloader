@@ -474,7 +474,7 @@ public class ClipboardMonitoring {
                     }
                     try {
                         if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_XP)) {
-                            clipboardChangeDetector = new WindowsClipboardChangeDetector(skipChangeDetection);
+                            clipboardChangeDetector = new WindowsClipboardChangeDetector(skipChangeDetection, logger);
                         }
                     } catch (final Throwable th) {
                         logger.log(th);

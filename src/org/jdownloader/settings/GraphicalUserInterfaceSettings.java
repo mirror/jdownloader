@@ -156,6 +156,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setClipboardMonitorProcessHTMLFlavor(boolean b);
 
     @AboutConfig
+    @DescriptionForConfigEntry("Blacklist(regex) of processes to ignore Clipboard monitoring")
+    @RequiresRestart("A JDownloader Restart is Required")
+    String[] getClipboardProcessBlacklist();
+
+    void setClipboardProcessBlacklist(String[] blackList);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If disabled, The Hostercolumn will show gray disabled icons if the link is disabled")
     boolean isColoredIconsForDisabledHosterColumnEnabled();
