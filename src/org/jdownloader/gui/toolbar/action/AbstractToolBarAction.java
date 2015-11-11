@@ -1,6 +1,7 @@
 package org.jdownloader.gui.toolbar.action;
 
 import javax.swing.AbstractButton;
+import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -108,10 +109,10 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction implem
 
     public Object getValue(String key) {
         if (LARGE_ICON_KEY == (key)) {
-            return NewTheme.I().getIcon(getIconKey(), 24);
+            return getLargeIconForToolbar();
         }
         if (SMALL_ICON == (key)) {
-            return NewTheme.I().getIcon(getIconKey(), 18);
+            return getSmallIconForToolbar();
         }
         if (MNEMONIC_KEY == key || DISPLAYED_MNEMONIC_INDEX_KEY == key) {
             Object ret = super.getValue(key);
@@ -127,6 +128,20 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction implem
             return createTooltip();
         }
         return super.getValue(key);
+    }
+
+    /**
+     * @return
+     */
+    protected Icon getSmallIconForToolbar() {
+        return NewTheme.I().getIcon(getIconKey(), 18);
+    }
+
+    /**
+     * @return
+     */
+    protected Icon getLargeIconForToolbar() {
+        return NewTheme.I().getIcon(getIconKey(), 24);
     }
 
     protected abstract String createTooltip();
