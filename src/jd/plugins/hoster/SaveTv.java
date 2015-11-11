@@ -420,7 +420,15 @@ public class SaveTv extends PluginForHost {
         /* General */
         final String genre = (String) sourcemap.get("SCHAR");
         final String producecountry = (String) sourcemap.get("SCOUNTRY");
-        final String produceyear = Long.toString(DummyScriptEnginePlugin.toLong(sourcemap.get("SPRODUCTIONYEAR"), 0));
+        final Object produceyear_o = sourcemap.get("SPRODUCTIONYEAR");
+        final String produceyear;
+        if (produceyear_o instanceof Double) {
+            /* Yes - they acrtually return a YEAR as double value */
+            produceyear = Long.toString((long) ((Double) produceyear_o).doubleValue());
+        } else {
+            /* In case they correct their horrible json we might as well get a long value --> Handle this too :) */
+            produceyear = Long.toString(DummyScriptEnginePlugin.toLong(produceyear_o, 0));
+        }
 
         String category = Long.toString(DummyScriptEnginePlugin.toLong(sourcemap.get("TVCATEGORYID"), -1));
         /* Happens in decrypter - errorhandling! */

@@ -18,31 +18,51 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https?://(www\\.)?fakku\\.net/((viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https?://(?:www\\.)?fakku\\.net/(?:(?:viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" }, flags = { 0 })
 public class FakkuNet extends PluginForDecrypt {
 
     public FakkuNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced HTTPS */
         String parameter = param.toString().replace("http://", "https://");
         final String url_filename = new Regex(parameter, "fakku\\.net/manga/([^<>\"]*?)/read").getMatch(0);
+
+        boolean loggedin = false;
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("fakku.net");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa != null) {
+            try {
+                jd.plugins.hoster.FakkuNet.login(this.br, aa, false);
+                loggedin = true;
+            } catch (final Throwable e) {
+                logger.info("Login failed - continuing without login");
+            }
+        }
+
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(410);
         br.getPage(parameter);
@@ -54,34 +74,66 @@ public class FakkuNet extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final DecimalFormat df = new DecimalFormat("000");
+        int counter = 1;
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String json_array = br.getRegex("window\\.params\\.thumbs = (\\[.*?\\]);").getMatch(0);
         String main_part = br.getRegex("('|\")((?:https?:)?//t\\.fakku\\.net/images/[^<>\"]+/images/)\\1").getMatch(1);
-        if (json_array == null || main_part == null || fpName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (json_array == null && main_part == null) {
+            if (!loggedin) {
+                logger.info("Cannot decrypt this subscription-only gallery without account");
+                return decryptedLinks;
+            }
+            /* Handling for subscription URLs */
+            this.br.getPage("https://books.fakku.net/manga/" + url_filename + "/read");
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            if (fpName == null) {
+                fpName = (String) DummyScriptEnginePlugin.walkJson(entries, "content/content_name");
+            }
+            long content_pages = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "content/content_pages"), 0);
+            entries = (LinkedHashMap<String, Object>) entries.get("pages");
+
+            if (fpName == null || content_pages == 0 || entries == null) {
+                return null;
+            }
+
+            for (counter = 1; counter <= content_pages; counter++) {
+                LinkedHashMap<String, Object> entries_temp = (LinkedHashMap<String, Object>) entries.get(Long.toString(counter));
+                final String directlink = (String) entries_temp.get("image");
+                final DownloadLink dl = createDownloadlink(directlink);
+                final String final_filename = fpName + " - " + df.format(counter) + ".jpg";
+                dl.setFinalFileName(final_filename);
+                dl.setAvailable(true);
+                dl.setContentUrl(parameter);
+                dl.setProperty("mainlink", "https://www.fakku.net/manga/" + url_filename + "/read");
+                dl.setProperty("decrypterfilename", final_filename);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            if (fpName == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            main_part = Request.getLocation(main_part, br.getRequest());
+            fpName = Encoding.htmlDecode(fpName.trim());
+            final String allThumbs[] = JSonUtils.getJsonResultsFromArray(json_array);
+            if (allThumbs == null || allThumbs.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String thumb : allThumbs) {
+                thumb = JSonUtils.unescape(thumb);
+                final String thumb_number = new Regex(thumb, "/thumbs/(\\d+)\\.thumb\\.jpg").getMatch(0);
+                final DownloadLink dl = createDownloadlink("directhttp://" + main_part + thumb_number + ".jpg");
+                dl.setFinalFileName(fpName + " - " + df.format(counter) + ".jpg");
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                counter++;
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         }
-        main_part = Request.getLocation(main_part, br.getRequest());
-        fpName = Encoding.htmlDecode(fpName.trim());
-        final DecimalFormat df = new DecimalFormat("000");
-        final String allThumbs[] = JSonUtils.getJsonResultsFromArray(json_array);
-        if (allThumbs == null || allThumbs.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        int counter = 1;
-        for (String thumb : allThumbs) {
-            thumb = JSonUtils.unescape(thumb);
-            final String thumb_number = new Regex(thumb, "/thumbs/(\\d+)\\.thumb\\.jpg").getMatch(0);
-            final DownloadLink dl = createDownloadlink("directhttp://" + main_part + thumb_number + ".jpg");
-            dl.setFinalFileName(fpName + " - " + df.format(counter) + ".jpg");
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            counter++;
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }
