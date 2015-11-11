@@ -50,6 +50,7 @@ public class BatoTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
         /* Login if possible */
         final PluginForHost host_plugin = JDUtilities.getPluginForHost("bato.to");
         final Account acc = AccountController.getInstance().getValidAccount(host_plugin);
@@ -59,7 +60,7 @@ public class BatoTo extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
-
+        br.getPage(parameter.toString());// needed, sets cookie
         final String id = new Regex(parameter.toString(), "([a-z0-9]+)$").getMatch(0);
         final String url = "http://bato.to/areader?id=" + id + "&p=";
         // // enforcing one img per page because you can't always get all images displayed on one page.

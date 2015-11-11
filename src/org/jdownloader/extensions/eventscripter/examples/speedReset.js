@@ -8,7 +8,9 @@ if (isDownloadControllerRunning() && !isDownloadControllerStopping()) {
             //check if the current speed is below 50kb/s
             if (running[i].getSpeed() < 50* 1024) {
                 //reset the download
-                running[i].reset();
+                //running[i].reset();
+                //stop the download and restart it
+                running[i].abort();
             }
 
         }
