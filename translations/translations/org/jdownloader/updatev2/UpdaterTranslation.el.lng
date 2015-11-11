@@ -69,5 +69,6 @@ update_dialog_news_button=Άνοιγμα Αρχείου Αλλαγών
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Διαθέσιμες Ενημερώσεις
 update_dialog_yes=Ναι (προτείνεται)
+update_done_close_in_TIME=Η Εγκατάσταση ολοκληρώθηκε. Έξοδος σε %s1
 update_in_next_session=Να μην γίνει ερώτηση μέχρι την επόμενη Επανεκκίνηση
 updatedplugins=Τα Πρόσθετα έχουν ενημερωθεί.\r\nΈχετε την τελευταία έκδοση του JDownloader τώρα.
