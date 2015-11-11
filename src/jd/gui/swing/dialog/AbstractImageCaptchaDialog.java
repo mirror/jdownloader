@@ -30,7 +30,6 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.URLStream;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
-
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractCaptchaDialog;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -200,6 +199,8 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
         }
         JComponent b = createInputComponent();
         if (b != null) {
+            b.addMouseListener(this);
+            b.addMouseMotionListener(this);
             ret.add(b);
         }
         return ret;
