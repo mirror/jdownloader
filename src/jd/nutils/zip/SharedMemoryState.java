@@ -16,6 +16,7 @@
 
 package jd.nutils.zip;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -193,9 +194,15 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         buf.putLong(DownloadWatchDog.getInstance().getRunningFilePackages().size());
 
         // formatted eta string
-        byte[] etas = Formatter.formatSeconds(dla.getEta()).getBytes();
-        buf.putInt(etas.length);
-        buf.put(etas);
+        byte[] etas;
+        try {
+            etas = Formatter.formatSeconds(dla.getEta()).getBytes("ISO-8859-1"); // use standard charset
+            buf.putInt(etas.length);
+            buf.put(etas);
+        } catch (UnsupportedEncodingException e) {
+            logger.log(e);
+            buf.putInt(0);
+        }
 
         sharedMemory.write(0, buf.array(), 0, 128);
     }
