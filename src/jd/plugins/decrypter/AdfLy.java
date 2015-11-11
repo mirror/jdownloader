@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
+import org.jdownloader.logging.LogController;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -33,8 +35,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.logging.LogController;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -52,7 +52,7 @@ public class AdfLy extends PluginForDecrypt {
     // belongs to adfly group
     private static final String adfDomains   = "adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy";
     // belongs to other people who use subdomains and use adf.ly service
-    private static final String subDomains   = "(?:dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org|sostieni\\.ilwebmaster21\\.com";
+    private static final String subDomains   = "(?:dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com";
     // builds final String for method calling (no need to edit).
     private static final String HOSTS        = adfPre + "(?:" + adfDomains + "|" + subDomains + ")";
     private static final String INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
@@ -96,8 +96,12 @@ public class AdfLy extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.setReadTimeout(3 * 60 * 1000);
 
-            if (parameter.matches(hosts + "/\\d+/(http|ftp).+")) {
+            if (parameter.matches(hosts + "/\\d+/(http|ftp)?.+")) {
                 String linkInsideLink = new Regex(parameter, hosts + "/\\d+/(.+)").getMatch(0);
+                if (!linkInsideLink.matches("^(?-i)(?:https?|ftp)://.+$")) {
+                    // we assume they are http
+                    linkInsideLink = "http://" + linkInsideLink;
+                }
                 if (!linkInsideLink.matches(hosts + "/.+")) {
                     decryptedLinks.add(linkInsideLink);
                     return decryptedLinks;
@@ -287,7 +291,7 @@ public class AdfLy extends PluginForDecrypt {
          *
          * @return default request protocol
          * @author raztoki
-         * */
+         */
         private String getDefaultProtocol() {
             if (true) {
                 return "https://";
