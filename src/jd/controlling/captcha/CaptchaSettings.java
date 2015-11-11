@@ -91,7 +91,7 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCancelDialogCountdownOnHateCaptchaClick(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     boolean isCancelDialogCountdownOnMouseMove();
 
     void setCancelDialogCountdownOnMouseMove(boolean b);

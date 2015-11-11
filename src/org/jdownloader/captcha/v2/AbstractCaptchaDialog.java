@@ -77,6 +77,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
 
     private LocationStorage config;
     protected boolean       hideCaptchasForHost = false;
+    private Point           lastMouse;
 
     @Override
     protected FrameState getWindowStateOnVisible() {
@@ -93,8 +94,12 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
     @Override
     public void mouseMoved(MouseEvent e) {
         if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseMove()) {
-            cancel();
+            if (lastMouse != null && !lastMouse.equals(e.getPoint())) {
+                cancel();
+            }
         }
+        lastMouse = e.getPoint();
+
     }
 
     @Override
@@ -120,9 +125,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
 
     @Override
     public void mouseEntered(MouseEvent e) {
-        if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseMove()) {
-            cancel();
-        }
+        // no cancel here. this would cancel the timeout if the dialog appears under the mouse - even if it does not move
     }
 
     @Override
