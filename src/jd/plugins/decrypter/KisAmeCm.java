@@ -19,12 +19,14 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -52,6 +54,13 @@ public class KisAmeCm extends antiDDoSForDecrypt {
         if (br.containsHTML("Page Not Found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        }
+        final Form ruh = br.getFormbyAction("/Special/AreYouHuman");
+        // recaptchav2 event can happen here
+        if (br.containsHTML("<title>\\s*Are You Human\\s*</title>") || ruh != null) {
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            ruh.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(ruh);
         }
         String title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
         if (title == null) {
@@ -84,6 +93,10 @@ public class KisAmeCm extends antiDDoSForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 
     /* NO OVERRIDE!! */
