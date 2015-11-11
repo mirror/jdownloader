@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.nutils.Formatter;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -50,9 +51,9 @@ import com.sun.jna.platform.win32.WinNT.HANDLE;
  *
  * Shared memory name: JDownloader Update interval: 1000 ms
  *
- * Content (1024 bytes): version (currently 1) - integer (4 bytes) bps in bytes/s - long (8 bytes) total bytes - long (8 bytes) loaded bytes
+ * Content (1024 bytes): version (currently 2) - integer (4 bytes) bps in bytes/s - long (8 bytes) total bytes - long (8 bytes) loaded bytes
  * - long (8 bytes) remaining bytes - long (8 bytes) eta in seconds - long (8 bytes) running downloads - long (8 bytes) open connections -
- * long (8 bytes) running packages - long (8 bytes)
+ * long (8 bytes) running packages - long (8 bytes) length of eta string - integer (4 bytes) eta string - variable length (not 0 terminated)
  *
  * @author jadevwin
  */
@@ -60,7 +61,7 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
     // singleton
     private final static SharedMemoryState INSTANCE     = new SharedMemoryState();
     // shared memory version
-    private static final int               VERSION      = 1;
+    private static final int               VERSION      = 2;
     // update time to fill shared memory (ms)
     private static final int               SLEEP_TIME   = 1000;
     // shared memory name
@@ -190,6 +191,12 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         buf.putLong(DownloadWatchDog.getInstance().getActiveDownloads());
         buf.putLong(DownloadWatchDog.getInstance().getDownloadSpeedManager().connections());
         buf.putLong(DownloadWatchDog.getInstance().getRunningFilePackages().size());
+
+        // formatted eta string
+        byte[] etas = Formatter.formatSeconds(dla.getEta()).getBytes();
+        buf.putInt(etas.length);
+        buf.put(etas);
+
         sharedMemory.write(0, buf.array(), 0, 128);
     }
 
