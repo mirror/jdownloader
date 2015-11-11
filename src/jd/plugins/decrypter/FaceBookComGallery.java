@@ -88,7 +88,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private static final String     CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                  PARAMETER                       = null;
-    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;;
+    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;                                     ;
     private boolean                 logged_in                       = false;
     private ArrayList<DownloadLink> decryptedLinks                  = null;
 
@@ -99,8 +99,42 @@ public class FaceBookComGallery extends PluginForDecrypt {
      */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        /* Code below = prevents Eclipse from freezing as it removes the log output of this thread! */
+        // LogInterface logger = new LogInterface() {
+        //
+        // @Override
+        // public void warning(String msg) {
+        // }
+        //
+        // @Override
+        // public void severe(String msg) {
+        // }
+        //
+        // @Override
+        // public void log(Throwable e) {
+        // }
+        //
+        // @Override
+        // public void info(String msg) {
+        // }
+        //
+        // @Override
+        // public void finest(String msg) {
+        // }
+        //
+        // @Override
+        // public void finer(String msg) {
+        // }
+        //
+        // @Override
+        // public void fine(String msg) {
+        // }
+        // };
+        // this.setLogger(logger);
+        // ((LinkCrawlerThread) Thread.currentThread()).setLogger(logger);
         br = new Browser();
         this.br.setAllowedResponseCodes(400);
+
         decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("#!/", "");
         PARAMETER = parameter;
@@ -226,25 +260,43 @@ public class FaceBookComGallery extends PluginForDecrypt {
         boolean dynamicLoadAlreadyDecrypted = false;
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
+            if (this.isAbort()) {
+                logger.info("User aborted decryption");
+                break;
+            }
             int currentMaxPicCount = 18;
 
             String[] links;
             if (i > 1) {
-                String currentLastAlbumid = br.getRegex("\"last_album_id\":\"(\\d+)\"").getMatch(0);
-                if (currentLastAlbumid == null) {
-                    currentLastAlbumid = br.getRegex("\"last_album_id\":(\\d+)").getMatch(0);
+                String cursor = this.br.getRegex("\\{\"__m\":\"__elem_559218ec_0_0\"\\},\"([^<>\"]*?)\"\\]").getMatch(0);
+                if (cursor == null) {
+                    cursor = this.br.getRegex("\"cursor\":\"([^<>\"]*?)\"").getMatch(0);
                 }
+                String collection_token = this.br.getRegex("\"pagelet_timeline_app_collection_([^<>\"/]*?)\"").getMatch(0);
+                if (collection_token == null) {
+                    /* E.g. from json */
+                    collection_token = this.br.getRegex("\"collection_token\":\"([^<>\"]*?)\"").getMatch(0);
+                }
+                // String currentLastAlbumid = br.getRegex("\"last_album_id\":\"(\\d+)\"").getMatch(0);
+                // if (currentLastAlbumid == null) {
+                // currentLastAlbumid = br.getRegex("\"last_album_id\":(\\d+)").getMatch(0);
+                // }
                 // If we have exactly currentMaxPicCount pictures then we reload one
                 // time and got all, 2nd time will then be 0 more links
                 // -> Stop
-                if (currentLastAlbumid == null && dynamicLoadAlreadyDecrypted) {
+                if (collection_token == null && dynamicLoadAlreadyDecrypted) {
                     break;
-                } else if (currentLastAlbumid == null) {
+                } else if (collection_token == null) {
                     logger.warning("Decrypter maybe broken for link: " + PARAMETER);
                     logger.info("Returning already decrypted links anyways...");
                     break;
                 }
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotoAlbumsPagelet?data=%7B%22profile_id%22%3A" + profileID + "%2C%22tab_key%22%3A%22photos_albums%22%2C%22sk%22%3A%22photos_albums%22%2C%22page_index%22%3A" + i + "%2C%22last_album_id%22%3A%22" + currentLastAlbumid + "%22%7D&__user=" + user + "&__a=1&__dyn=&__req=a";
+                if (true) {
+                    /* TODO: !!! */
+                    break;
+                }
+                final String data = "{\"collection_token\":\"" + collection_token + "\",\"cursor\":\"" + cursor + "\",\"tab_key\":\"photos_albums\",\"profile_id\":" + profileID + ",\"overview\":false,\"ftid\":null,\"order\":null,\"sk\":\"photos\",\"importer_state\":null}";
+                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotoAlbumsPagelet?data=" + Encoding.urlEncode(data) + "&__user=" + user + "&dyn=" + getDyn() + "&__a=1&__dyn=&__req=a&__adt=" + i;
                 br.getPage(loadLink);
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=(?:a|vb)\\.[0-9\\.]+)\\&amp;type=\\d+\"").getColumn(0);
@@ -260,7 +312,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
             logger.info("Decrypting page " + i + " of ??");
             for (String link : links) {
                 link = Encoding.htmlDecode(link);
-                decryptedLinks.add(createDownloadlink(link));
+                final DownloadLink dl = createDownloadlink(link);
+                decryptedLinks.add(dl);
+                distribute(dl);
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount || profileID == null) {
