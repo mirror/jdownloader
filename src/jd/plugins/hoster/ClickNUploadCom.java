@@ -47,16 +47,15 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clicknupload.com" }, urls = { "https?://(www\\.)?clicknupload\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clicknupload.me", "clicknupload.com" }, urls = { "https?://(?:www\\.)?clicknupload\\.(?:com|me)/(?:vidembed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0 })
 public class ClickNUploadCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://clicknupload.com";
+    private static final String            COOKIE_HOST                  = "http://clicknupload.me";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -73,7 +72,7 @@ public class ClickNUploadCom extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -1;
+    private static final int               FREE_MAXCHUNKS               = -2;
     private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
@@ -97,6 +96,7 @@ public class ClickNUploadCom extends PluginForHost {
     // captchatype: solvemedia
     // other:
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing */
@@ -110,6 +110,16 @@ public class ClickNUploadCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("clicknupload.com".equals(getHost())) {
+            if (host == null || "clicknupload.com".equals(host)) {
+                return "clicknupload.me";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     public ClickNUploadCom(PluginWrapper wrapper) {
@@ -364,7 +374,7 @@ public class ClickNUploadCom extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(),new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -877,9 +887,9 @@ public class ClickNUploadCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }
