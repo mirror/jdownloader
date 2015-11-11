@@ -3,7 +3,6 @@ package org.jdownloader.controlling.filter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.translate._GUI;
 
@@ -297,7 +296,8 @@ public class CompiledFiletypeFilter {
         TIFF,
         RAW,
         SVG,
-        ICO;
+        ICO,
+        WEBP;
 
         private final Pattern  pattern;
         private static Pattern allPattern;

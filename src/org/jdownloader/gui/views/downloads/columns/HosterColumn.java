@@ -100,7 +100,6 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             }
             sb.append("[18!]");
             panel.add(labels[i]);
-
         }
         moreIcon = NewTheme.I().getIcon("more", -1);
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[fill,grow]"));
@@ -109,7 +108,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
             /*
              * (non-Javadoc)
-             *
+             * 
              * @see org.appwork.swing.exttable.ExtDefaultRowSorter#compare(java.lang .Object, java.lang.Object)
              */
             @Override

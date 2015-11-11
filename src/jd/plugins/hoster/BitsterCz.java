@@ -55,14 +55,14 @@ public class BitsterCz extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final int     FREE_MAXCHUNKS               = 1;                    // asked by hoster, they have server issues
+    private static final int     FREE_MAXDOWNLOADS            = 1;                    // asked by hoster, they have server issues
     private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;                    // asked by hoster, they have server issues
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;                    // asked by hoster, they have server issues
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 4;                    // asked by hoster, they have server issues
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;                   // asked by hoster, they have server issues
 
     private static final String  HTML_ERROR_DELETED           = "\"DELETED\"";
     private static final String  HTML_ERROR_NOTFOUND          = "\"NOTFOUND\"";
