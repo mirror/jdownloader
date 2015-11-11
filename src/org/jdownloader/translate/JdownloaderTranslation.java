@@ -981,4 +981,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "A problem occured during the Google signup:\r\n%s1" })
     String google_error(String error);
 
+    @Default(lngs = { "en" }, values = { "Start ALL Downloads (clear forced flag)" })
+    String StartDownloadsAction_forced_createTooltip_();
+
 }

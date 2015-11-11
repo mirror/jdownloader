@@ -2284,6 +2284,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             public void execute(DownloadSession currentSession) {
+
                 if (DownloadWatchDog.this.stateMachine.isFinal()) {
                     /* downloadwatchdog was in stopped state, so reset it */
                     DownloadWatchDog.this.stateMachine.reset(false);
