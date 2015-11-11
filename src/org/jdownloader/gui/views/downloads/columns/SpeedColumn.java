@@ -1,7 +1,9 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
@@ -25,6 +27,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -40,30 +43,44 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
     /**
-     * 
+     *
      */
-    private static final long serialVersionUID = 1L;
-    private boolean           warningEnabled;
+    private static final long   serialVersionUID    = 1L;
+    private final AtomicBoolean warningEnabled      = new AtomicBoolean(false);
+    private final Icon          warningIcon;
+    private final AtomicBoolean speedLimiterEnabled = new AtomicBoolean(false);
+    private final Color         defaultColor;
 
     public SpeedColumn() {
         super(_GUI._.SpeedColumn_SpeedColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
-        warningEnabled = CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.isEnabled();
+        warningEnabled.set(CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.isEnabled());
         CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                warningEnabled = CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.isEnabled();
+                warningEnabled.set(Boolean.TRUE.equals(newValue));
             }
 
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
+        warningIcon = NewTheme.I().getIcon("warning", 16);
+        defaultColor = rendererField.getForeground();
+        speedLimiterEnabled.set(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                speedLimiterEnabled.set(Boolean.TRUE.equals(newValue));
+            }
+        }, false);
     }
 
     public JPopupMenu createHeaderPopup() {
-
         final JPopupMenu ret = new JPopupMenu();
         LockColumnWidthAction action;
         ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(this)));
@@ -82,7 +99,16 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         }));
         ret.add(new JSeparator());
         return ret;
+    }
 
+    @Override
+    public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
+        super.configureRendererComponent(value, isSelected, hasFocus, row, column);
+        if (speedLimiterEnabled.get()) {
+            rendererField.setForeground(Color.RED);
+        } else {
+            rendererField.setForeground(defaultColor);
+        }
     }
 
     @Override
@@ -102,16 +128,19 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-        if (isSpeedWarning(value)) { return NewTheme.I().getIcon("warning", 16); }
+        if (isSpeedWarning(value)) {
+            return warningIcon;
+        }
         return null;
     }
 
     private boolean isSpeedWarning(AbstractNode value) {
-        if (warningEnabled == false) return false;
-        if (value instanceof DownloadLink) {
-            DownloadLink dl = (DownloadLink) value;
-            SingleDownloadController dlc = dl.getDownloadLinkController();
-            if (dlc == null || dlc.getAccount() != null) return false;
+        if (warningEnabled.get() && value instanceof DownloadLink) {
+            final DownloadLink dl = (DownloadLink) value;
+            final SingleDownloadController dlc = dl.getDownloadLinkController();
+            if (dlc == null || dlc.getAccount() != null) {
+                return false;
+            }
             PluginForHost plugin = dl.getDefaultPlugin();
             if (plugin == null || !plugin.isPremiumEnabled()) {
                 /* no account support yet for this plugin */
@@ -124,15 +153,26 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
             }
             DownloadInterface dli = dlc.getDownloadInstance();
             if (dli != null && ((DownloadLink) value).getView().getBytesLoaded() > 100 * 1024) {
-                if (((DownloadLink) value).getView().getSpeedBps() < 50 * 1024) { return true; }
+                if (((DownloadLink) value).getView().getSpeedBps() < 50 * 1024) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
+    @Override
+    protected String getTooltipText(AbstractNode obj) {
+        final String ret = super.getTooltipText(obj);
+        if (speedLimiterEnabled.get()) {
+            final String limit = _GUI._.SpeedMeterPanel_getString_limited(SizeFormatter.formatBytes(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue()));
+            return limit + "\r\n" + ret;
+        }
+        return ret;
+    }
+
     public boolean onSingleClick(final MouseEvent e, final AbstractNode obj) {
         if (isSpeedWarning(obj)) {
-
             try {
                 Dialog.getInstance().showDialog(new PremiumInfoDialog((((DownloadLink) obj).getDomainInfo()), _GUI._.SpeedColumn_onSingleClick_object_(((DownloadLink) obj).getHost()), "SpeedColumn") {
                     protected String getDescription(DomainInfo info2) {
@@ -152,14 +192,18 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
-            PluginProgress pluginProgress = ((DownloadLink) value).getPluginProgress();
+            final PluginProgress pluginProgress = ((DownloadLink) value).getPluginProgress();
             if (pluginProgress instanceof DownloadPluginProgress) {
                 long speed = ((DownloadPluginProgress) pluginProgress).getSpeed();
-                if (speed > 0) { return Formatter.formatReadable(speed) + "/s"; }
+                if (speed > 0) {
+                    return Formatter.formatReadable(speed) + "/s";
+                }
             }
         } else if (value instanceof FilePackage) {
-            long speed = DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage((FilePackage) value);
-            if (speed >= 0) { return Formatter.formatReadable(speed) + "/s"; }
+            final long speed = DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage((FilePackage) value);
+            if (speed >= 0) {
+                return Formatter.formatReadable(speed) + "/s";
+            }
         }
         return null;
     }
