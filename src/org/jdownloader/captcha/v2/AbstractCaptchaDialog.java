@@ -9,8 +9,9 @@ import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,7 +48,6 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
-
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
@@ -69,10 +69,11 @@ import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.SoundSettings;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> {
+public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> implements MouseListener, MouseMotionListener {
 
     private LocationStorage config;
     protected boolean       hideCaptchasForHost = false;
@@ -80,6 +81,60 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> {
     @Override
     protected FrameState getWindowStateOnVisible() {
         return AbstractCaptchaDialog.getWindowState();
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseMove()) {
+            cancel();
+        }
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseMove()) {
+            cancel();
+        }
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseClick()) {
+            cancel();
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseClick()) {
+            cancel();
+        }
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseClick()) {
+            cancel();
+        }
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+        if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseMove()) {
+            cancel();
+        }
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+        if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnMouseMove()) {
+            cancel();
+        }
+    }
+
+    @Override
+    protected T createReturnValue() {
+        return null;
     }
 
     void createPopup() {
@@ -453,7 +508,9 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> {
             }
 
             public void actionPerformed(ActionEvent e) {
-                cancel();
+                if (CFG_CAPTCHA.CFG.isCancelDialogCountdownOnHateCaptchaClick()) {
+                    cancel();
+                }
                 PremiumInfoDialog d = new PremiumInfoDialog(hosterInfo, _GUI._.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "CaptchaDialog");
                 try {
                     Dialog.getInstance().showDialog(d);
@@ -734,13 +791,8 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> {
         SwingUtils.setOpaque(iconPanel, false);
 
         // iconPanel.add(refreshBtn, "alignx right,aligny bottom");
-        iconPanel.addMouseMotionListener(new MouseAdapter() {
-
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                cancel();
-            }
-        });
+        iconPanel.addMouseMotionListener(this);
+        iconPanel.addMouseListener(this);
         field.add(iconPanel);
 
         sp = createHeaderScrollPane(field);
@@ -782,24 +834,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> {
 
     public void setRefresh(boolean refresh) {
         this.refresh = refresh;
-    }
-
-    public void mouseClicked(final MouseEvent e) {
-        this.cancel();
-    }
-
-    public void mouseEntered(final MouseEvent e) {
-    }
-
-    public void mouseExited(final MouseEvent e) {
-    }
-
-    public void mousePressed(final MouseEvent e) {
-        this.cancel();
-    }
-
-    public void mouseReleased(final MouseEvent e) {
-        this.cancel();
     }
 
     public List<? extends Image> getIconList() {

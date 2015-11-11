@@ -20,7 +20,6 @@ import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 
@@ -35,7 +34,7 @@ import org.jdownloader.gui.translate._GUI;
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
-public class CaptchaDialog extends AbstractImageCaptchaDialog implements ActionListener, MouseListener {
+public class CaptchaDialog extends AbstractImageCaptchaDialog implements ActionListener {
 
     private ExtTextField textField;
     private String       suggest;
@@ -83,7 +82,7 @@ public class CaptchaDialog extends AbstractImageCaptchaDialog implements ActionL
         this.textField = new ExtTextField() {
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 

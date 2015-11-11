@@ -84,4 +84,22 @@ public interface CaptchaSettings extends ConfigInterface {
 
     void setCaptchaExchangeChanceToSkipBubbleTimeout(int ms);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isCancelDialogCountdownOnHateCaptchaClick();
+
+    void setCancelDialogCountdownOnHateCaptchaClick(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isCancelDialogCountdownOnMouseMove();
+
+    void setCancelDialogCountdownOnMouseMove(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isCancelDialogCountdownOnMouseClick();
+
+    void setCancelDialogCountdownOnMouseClick(boolean b);
+
 }
