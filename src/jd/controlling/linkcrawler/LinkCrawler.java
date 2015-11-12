@@ -931,10 +931,10 @@ public class LinkCrawler {
 
     protected DISTRIBUTE distributePluginForHost(final LazyHostPlugin pluginForHost, final int generation, final String url, final CrawledLink link) {
         try {
-            if (isBlacklisted(pluginForHost)) {
-                return DISTRIBUTE.NEXT;
-            }
             if (canHandle(pluginForHost, url, link)) {
+                if (isBlacklisted(pluginForHost)) {
+                    return DISTRIBUTE.NEXT;
+                }
                 if (insideCrawlerPlugin()) {
                     if (!checkAllowStart(generation)) {
                         /* LinkCrawler got aborted! */
@@ -990,10 +990,10 @@ public class LinkCrawler {
 
     protected DISTRIBUTE distributePluginForDecrypt(final LazyCrawlerPlugin pDecrypt, final int generation, final String url, final CrawledLink link) {
         try {
-            if (isBlacklisted(pDecrypt)) {
-                return DISTRIBUTE.NEXT;
-            }
             if (canHandle(pDecrypt, url, link)) {
+                if (isBlacklisted(pDecrypt)) {
+                    return DISTRIBUTE.NEXT;
+                }
                 if (!breakPluginForDecryptLoop(pDecrypt, link)) {
                     final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), link, link.getCustomCrawledLinkModifier());
                     if (allPossibleCryptedLinks != null) {
