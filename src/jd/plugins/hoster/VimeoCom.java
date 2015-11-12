@@ -465,23 +465,33 @@ public class VimeoCom extends PluginForHost {
                 if (files.containsKey("progressive")) {
                     final ArrayList<Object> progressive = (ArrayList<Object>) files.get("progressive");
                     // atm they only have one object in array [] and then wrapped in {}
+                    qualities = new String[progressive.size()][quality_info_length];
                     for (final Object obj : progressive) {
                         // todo some code to map...
-                        //
-                        // final String url = (String) qualitymap.get("url");
-                        // Integer.toString(((Number) abc.get("height")).intValue());
-                        // final String height = Integer.toString(((Number) abc.get("height")).intValue());
-                        // final String width = Integer.toString(((Number) abc.get("width")).intValue());
-                        // String bitrate = null;
-                        // final Object o_bitrate = abc.get("bitrate");
-                        // if (o_bitrate != null) {
-                        // /* Bitrate is 'null' for vp6 codec */
-                        // bitrate = Integer.toString(((Number) o_bitrate).intValue());
-                        // }
-                        // String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?token2=").getMatch(0);
-                        // if (ext == null) {
-                        // ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
-                        // }
+                        final LinkedHashMap<String, Object> abc = (LinkedHashMap<String, Object>) progressive.get(foundqualities);
+                        final String url = (String) abc.get("url");
+                        Integer.toString(((Number) abc.get("height")).intValue());
+                        final String height = Integer.toString(((Number) abc.get("height")).intValue());
+                        final String width = Integer.toString(((Number) abc.get("width")).intValue());
+                        String bitrate = null;
+                        final Object o_bitrate = abc.get("bitrate");
+                        if (o_bitrate != null) {
+                            /* Bitrate is 'null' for vp6 codec */
+                            bitrate = Integer.toString(((Number) o_bitrate).intValue());
+                        }
+                        String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?").getMatch(0);
+                        if (ext == null) {
+                            ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+                        }
+                        qualities[foundqualities][0] = url;
+                        qualities[foundqualities][1] = ext;
+                        qualities[foundqualities][2] = Integer.parseInt(height) >= 720 ? "hd" : "sd";
+                        qualities[foundqualities][3] = (height == null || width == null ? null : width + "x" + height);
+                        qualities[foundqualities][4] = bitrate;
+                        /* No filesize given */
+                        qualities[foundqualities][5] = null;
+                        qualities[foundqualities][6] = ".mp4".equalsIgnoreCase(ext) ? "h264" : "vp5";
+                        foundqualities++;
                     }
                 }
                 /*
