@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -418,7 +419,7 @@ public class VimeoCom extends PluginForHost {
             gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             gq.getPage("http://vimeo.com/" + ID + "?action=download");
             /* german accept language will effect the language of this response, Datei instead of file. */
-            String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(Mobile(?: ?(?:SD|HD))?|MP4|SD|HD)[^>]*</a>\\s*<span>\\((\\d+x\\d+) / (\\d+MB)\\)</span>").getMatches();
+            String[][] q = gq.getRegex("<a href=\"(https?://[^<>\"]*?)\" download=\"([^<>\"]*?)\" rel=\"nofollow\">(Mobile(?: ?(?:SD|HD))?|MP4|SD|HD)[^>]*</a>\\s*<span>\\((\\d+x\\d+) / ((?:\\d+\\.)?\\d+MB)\\)</span>").getMatches();
             if (q != null) {
                 qualities = new String[q.length][quality_info_length];
                 for (int i = 0; i < q.length; i++) {
@@ -460,6 +461,29 @@ public class VimeoCom extends PluginForHost {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
                 final LinkedHashMap<String, Object> request = (LinkedHashMap<String, Object>) entries.get("request");
                 final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) request.get("files");
+                // progressive = web, hls = hls
+                if (files.containsKey("progressive")) {
+                    final ArrayList<Object> progressive = (ArrayList<Object>) files.get("progressive");
+                    // atm they only have one object in array [] and then wrapped in {}
+                    for (final Object obj : progressive) {
+                        // todo some code to map...
+                        //
+                        // final String url = (String) qualitymap.get("url");
+                        // Integer.toString(((Number) abc.get("height")).intValue());
+                        // final String height = Integer.toString(((Number) abc.get("height")).intValue());
+                        // final String width = Integer.toString(((Number) abc.get("width")).intValue());
+                        // String bitrate = null;
+                        // final Object o_bitrate = abc.get("bitrate");
+                        // if (o_bitrate != null) {
+                        // /* Bitrate is 'null' for vp6 codec */
+                        // bitrate = Integer.toString(((Number) o_bitrate).intValue());
+                        // }
+                        // String ext = new Regex(url, "(\\.[a-z0-9]{3,4})\\?token2=").getMatch(0);
+                        // if (ext == null) {
+                        // ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
+                        // }
+                    }
+                }
                 /*
                  * h264 with sd, mobile and sometimes hd is available most times. vp6 is only available if a download button is available
                  * (as far as we know) and thus should never be decrypted.
@@ -677,7 +701,7 @@ public class VimeoCom extends PluginForHost {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(this.br, key);
     }
