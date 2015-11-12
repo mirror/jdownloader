@@ -22,9 +22,9 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
 
     protected Timer       timer;
     private JToggleButton bt;
-    private Icon          iconNormal;
-    private Icon          iconHighlight;
-    private Icon          iconSelected;
+    private final Icon    iconNormal;
+    private final Icon    iconHighlight;
+    private final Icon    iconSelected;
 
     public GlobalPremiumSwitchToggleAction() {
         super(org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS);
@@ -32,7 +32,6 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
         iconNormal = NewTheme.I().getCheckBoxImage(getIconKey(), false, 24);
         iconHighlight = NewTheme.I().getCheckBoxImage(getIconKey(), false, 24, new Color(0xFF9393));
         iconSelected = NewTheme.I().getCheckBoxImage(this.getIconKey(), true, 24);
-        // iconHighlight = new AbstractIcon("help", 20);
 
         if (Boolean.FALSE.equals(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue()) && CFG_GUI.CFG.isPremiumDisabledWarningFlashEnabled()) {
             JDGui.getInstance().getFlashController().register(GlobalPremiumSwitchToggleAction.this);
@@ -89,17 +88,11 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
             return bt;
         }
         bt = new JToggleButton(this);
-
-        Icon icon;
-
         bt.setIcon(iconNormal);
         bt.setRolloverIcon(iconNormal);
-
         bt.setSelectedIcon(iconSelected);
         bt.setRolloverSelectedIcon(iconSelected);
-
         bt.setHideActionText(true);
-
         return bt;
     }
 
@@ -124,7 +117,6 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
 
     @Override
     public Object getValue(String key) {
-        System.out.println(key);
         return super.getValue(key);
     }
 
@@ -138,14 +130,12 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
         if (bt == null || !bt.isVisible() || !bt.isDisplayable() || !CFG_GUI.CFG.isPremiumDisabledWarningFlashEnabled()) {
             return false;
         }
-
         if (l % 2 != 0) {
             bt.setIcon(iconHighlight);
             bt.setRolloverIcon(iconHighlight);
         } else {
             bt.setIcon(iconNormal);
             bt.setRolloverIcon(iconNormal);
-
         }
         return true;
     }

@@ -7,11 +7,9 @@ import javax.swing.Icon;
 
 import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
 
 import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
@@ -23,7 +21,6 @@ import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderAction extends AbstractToolBarAction {
@@ -39,9 +36,7 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ConfigurationView.getInstance().setSelectedSubPanel(MyJDownloaderSettingsPanel.class);
-        JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-        JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+        JDGui.getInstance().setContent(MyJDownloaderView.getInstance(), true);
     }
 
     @Override
