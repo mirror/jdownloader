@@ -99,12 +99,13 @@ public class UpdateAction extends AbstractToolBarAction {
         }
 
         @Override
-        public void onFlashRegister() {
+        public void onFlashRegister(long counter) {
             setToolTipText(_GUI._.UpdateAction_runInEDT_updates_pendings());
+            onFlash(counter);
         }
 
         @Override
-        public void onFlashUnRegister() {
+        public void onFlashUnRegister(long counter) {
             setToolTipText(_GUI._.UpdateAction_runInEDT_no_updates_pendings());
             Button.this.setIcon(NewTheme.I().getIcon(getIconKey(), 24));
         }

@@ -32,7 +32,7 @@ public class FlashController implements ActionListener {
             return;
         }
         list.add(button);
-        button.onFlashRegister();
+        button.onFlashRegister(counter);
 
         if (timer == null) {
             timer = new Timer(1000, this);
@@ -55,7 +55,7 @@ public class FlashController implements ActionListener {
             timer.stop();
             timer = null;
         }
-        button.onFlashUnRegister();
+        button.onFlashUnRegister(counter);
     }
 
     @Override
