@@ -25,6 +25,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -52,9 +53,13 @@ public class LinkChecker<E extends CheckableLink> {
         public boolean linkCheckAllowed() {
             if (link instanceof CrawledLink) {
                 final CrawledLink cl = (CrawledLink) link;
-                final CrawledPackage pn = cl.getParentNode();
-                if (pn == null || pn.getControlledBy() == null) {
-                    return false;
+                final UniqueAlltimeID pn = cl.getPreviousParentNodeID();
+                if (pn != null) {
+                    // we need at least previousParentNode, that will be set after changing the parentNode
+                    final CrawledPackage cn = cl.getParentNode();
+                    if (cn == null || cn.getControlledBy() == null) {
+                        return false;
+                    }
                 }
             } else {
                 final DownloadLink dlLink = link.getDownloadLink();
@@ -432,18 +437,18 @@ public class LinkChecker<E extends CheckableLink> {
 
     /* start new linkCheckThreads until max is reached or no left to start */
     private static void startNewThreads() {
+        final ArrayList<InternCheckableLink> removeList = new ArrayList<InternCheckableLink>();
         synchronized (LOCK) {
-            Set<String> removeHosts = new HashSet<String>();
-            Set<Entry<String, List<InternCheckableLink>>> allTodos = LINKCHECKER.entrySet();
-            for (Entry<String, List<InternCheckableLink>> set : allTodos) {
-                String host = set.getKey();
-                Thread thread = CHECK_THREADS.get(host);
+            final Set<String> removeHosts = new HashSet<String>();
+            final Set<Entry<String, List<InternCheckableLink>>> allTodos = LINKCHECKER.entrySet();
+            for (final Entry<String, List<InternCheckableLink>> set : allTodos) {
+                final String host = set.getKey();
+                final Thread thread = CHECK_THREADS.get(host);
                 if (thread == null || !thread.isAlive()) {
                     CHECK_THREADS.remove(host);
-                    List<InternCheckableLink> hosterTodos = set.getValue();
+                    final List<InternCheckableLink> hosterTodos = set.getValue();
                     if (hosterTodos != null) {
-                        ArrayList<InternCheckableLink> removeList = new ArrayList<InternCheckableLink>();
-                        for (InternCheckableLink hosterTodo : hosterTodos) {
+                        for (final InternCheckableLink hosterTodo : hosterTodos) {
                             if (hosterTodo.linkCheckAllowed() == false) {
                                 removeList.add(hosterTodo);
                             }
@@ -459,9 +464,12 @@ public class LinkChecker<E extends CheckableLink> {
                     }
                 }
             }
-            for (String host : removeHosts) {
+            for (final String host : removeHosts) {
                 LINKCHECKER.remove(host);
             }
+        }
+        for (final InternCheckableLink removedLink : removeList) {
+            removedLink.getLinkChecker().linkChecked(removedLink);
         }
     }
 
