@@ -438,11 +438,16 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         CustomizableAppAction action;
         try {
             if (mid.getActionData() != null && !(mid instanceof MenuLink)) {
-                shortcutLabel.setVisible(true);
-                shortcut.setVisible(true);
+                if (shortcutLabel != null) {
+                    shortcutLabel.setVisible(true);
+                }
+                if (shortcut != null) {
+                    shortcut.setVisible(true);
+                }
                 if (shortCutReset != null) {
                     shortCutReset.setVisible(true);
                 }
+
                 action = mid.createAction();
                 name.setText(action.getName());
                 if (StringUtils.isEmpty(action.getName())) {

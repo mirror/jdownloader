@@ -160,7 +160,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
                     value = sc;
 
                     setName(getLabel(integer.get(), sc));
-                    setSmallIcon(getIcon(integer.get(), sc));
+                    setSmallIcon(PseudoMultiCombo.this.getIcon(integer.get(), sc));
                     setSelected(isItemSelected(sc));
                     integer.incrementAndGet();
                 }

@@ -1262,8 +1262,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                         tray.dispose();
                         JDGui.this.mainTabbedPane.onClose();
-
-                        JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
+                        FrameStatus framestatus = FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus());
+                        JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(framestatus);
 
                         WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
                         // Do not dispose. On Windows shutdown, windows kills the jvm as soon as the window get's disposed.
@@ -1638,15 +1638,16 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 /* set visible state */
 
                 if (!minimize) {
-
                     int estate = getMainFrame().getExtendedState();
-                    if ((estate & JFrame.ICONIFIED) != 0) {
-                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
-                    }
                     if (!getMainFrame().isVisible()) {
                         WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
                     }
 
+                    if ((estate & JFrame.ICONIFIED) != 0) {
+                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
+                    } else {
+                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.get(estate));
+                    }
                     if (trayIconChecker != null) {
                         trayIconChecker.interrupt();
                         trayIconChecker = null;

@@ -5983,4 +5983,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Premium Account usage disabled!. JDownloader will not use ANY accounts to download." })
     String Premium_enabled_button_tooltip_not_selected();
+
+    @Default(lngs = { "en" }, values = { "Stop all running downloads" })
+    String StopDownloadsAction();
 }

@@ -4,11 +4,15 @@ import java.awt.Toolkit;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.KeyStroke;
 
 import org.appwork.swing.action.BasicAction;
+import org.appwork.utils.images.IconIO;
 import org.jdownloader.actions.event.AppActionEvent;
 import org.jdownloader.actions.event.AppActionEventSender;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -109,4 +113,23 @@ public abstract class AppAction extends BasicAction {
         firePropertyChange("visible", Boolean.valueOf(oldValue), Boolean.valueOf(newValue));
     }
 
+    public Icon getIcon(int size) {
+
+        Icon actionIcon = null;
+        String iconKey = getIconKey();
+        if (NewTheme.I().hasIcon(iconKey)) {
+            actionIcon = (new AbstractIcon(iconKey, size));
+        } else {
+            Icon icon = (Icon) getValue(Action.LARGE_ICON_KEY);
+            if (icon == null) {
+                icon = getSmallIcon();
+
+                if (icon != null) {
+                    actionIcon = (IconIO.getScaledInstance(icon, size, size));
+                }
+            }
+        }
+        return actionIcon;
+
+    }
 }
