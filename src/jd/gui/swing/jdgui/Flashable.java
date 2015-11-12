@@ -2,9 +2,9 @@ package jd.gui.swing.jdgui;
 
 public interface Flashable {
 
-    void onFlashRegister();
+    void onFlashRegister(long counter);
 
-    void onFlashUnRegister();
+    void onFlashUnRegister(long counter);
 
     boolean onFlash(long l);
 

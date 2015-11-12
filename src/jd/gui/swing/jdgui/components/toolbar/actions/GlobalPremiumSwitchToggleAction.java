@@ -104,11 +104,17 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
     }
 
     @Override
-    public void onFlashRegister() {
+    public void onFlashRegister(long c) {
+        onFlash(c);
+
     }
 
     @Override
-    public void onFlashUnRegister() {
+    public void onFlashUnRegister(long c) {
+        if (bt != null) {
+            bt.setIcon(iconNormal);
+            bt.setRolloverIcon(iconNormal);
+        }
     }
 
     @Override
