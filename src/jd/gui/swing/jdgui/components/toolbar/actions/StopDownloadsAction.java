@@ -30,7 +30,7 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
-
+        setName(_GUI._.StopDownloadsAction());
         setAccelerator(KeyEvent.VK_S);
 
     }

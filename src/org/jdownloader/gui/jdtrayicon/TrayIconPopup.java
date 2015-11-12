@@ -402,6 +402,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
             });
 
             Icon icon;
+
             bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, ICON_SIZE));
             bt.setRolloverIcon(icon);
             bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, ICON_SIZE));
@@ -426,7 +427,11 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     TrayIconPopup.this.dispose();
                 }
             });
-            bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), ICON_SIZE));
+
+            Icon actionIcon = action.getIcon(ICON_SIZE);
+            if (actionIcon != null) {
+                bt.setIcon(actionIcon);
+            }
             bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             bt.setFocusPainted(false);
             bt.setHorizontalAlignment(JButton.LEFT);
@@ -455,7 +460,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
     /**
      * When we perform a tray action, we need a away to ask in the silentmode controller (JDGui) is the action has been invoked from the
      * tray
-     * 
+     *
      * @return
      */
     public boolean hasBeenRecentlyActive() {

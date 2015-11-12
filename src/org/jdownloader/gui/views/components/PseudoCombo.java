@@ -11,7 +11,6 @@ import javax.swing.JButton;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.NewTheme;
@@ -41,7 +40,9 @@ public class PseudoCombo<Type> extends JButton {
     public void setValues(Type[] values) {
         this.values = values;
         Insets m = getMargin();
-        if (m == null) m = new Insets(0, 0, 0, 0);
+        if (m == null) {
+            m = new Insets(0, 0, 0, 0);
+        }
         m.right = getPopIcon(true).getIconWidth() + 5;
         setMargin(m);
         int width = 0;
@@ -103,7 +104,9 @@ public class PseudoCombo<Type> extends JButton {
 
             @Override
             public void setVisible(boolean b) {
-                if (!b) lastHide = System.currentTimeMillis();
+                if (!b) {
+                    lastHide = System.currentTimeMillis();
+                }
                 super.setVisible(b);
                 closed = true;
                 PseudoCombo.this.repaint();
@@ -112,13 +115,15 @@ public class PseudoCombo<Type> extends JButton {
         };
 
         for (final Type sc : values) {
-            if (sc == selectedItem && isHideSelf()) continue;
+            if (sc == selectedItem && isHideSelf()) {
+                continue;
+            }
             popup.add(new AppAction() {
                 private Type value;
                 {
                     value = sc;
                     setName(getLabel(sc, false));
-                    setSmallIcon(getIcon(sc, false));
+                    setSmallIcon(PseudoCombo.this.getIcon(sc, false));
                 }
 
                 public void actionPerformed(ActionEvent e) {
@@ -152,7 +157,7 @@ public class PseudoCombo<Type> extends JButton {
         super.paintComponent(g);
         Icon icon = getPopIcon(closed);
         if (!isEnabled()) {
-            icon =   org.jdownloader.images.NewTheme.I().getDisabledIcon(icon);
+            icon = org.jdownloader.images.NewTheme.I().getDisabledIcon(icon);
         }
         icon.paintIcon(this, g, getWidth() - icon.getIconWidth() - 5, (getHeight() - icon.getIconHeight()) / 2);
 
