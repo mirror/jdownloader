@@ -634,6 +634,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                             bt.setIcon(icon = NewTheme.I().getCheckBoxImage(validateIconKey(action.getIconKey()), false, 24));
                             bt.setRolloverIcon(icon);
+
                             bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
                             bt.setRolloverSelectedIcon(icon);
                             add(bt, "width 32!,height 32!,hidemode 3");
@@ -690,7 +691,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     }
 
-    protected String validateIconKey(String key) {
+    public String validateIconKey(String key) {
 
         if (StringUtils.isEmpty(key) || !NewTheme.I().hasIcon(key)) {
             return IconKey.ICON_QUESTION;

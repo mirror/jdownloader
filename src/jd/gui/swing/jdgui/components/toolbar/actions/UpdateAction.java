@@ -2,19 +2,19 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.Point;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
-import javax.swing.Timer;
+
+import jd.gui.swing.jdgui.Flashable;
+import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
@@ -22,7 +22,7 @@ import org.jdownloader.updatev2.UpdaterListener;
 public class UpdateAction extends AbstractToolBarAction {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -51,9 +51,7 @@ public class UpdateAction extends AbstractToolBarAction {
         return _GUI._.action_start_update_tooltip();
     }
 
-    public class Button extends ExtButton implements UpdaterListener {
-        protected Timer   timer;
-        protected boolean trigger;
+    public class Button extends ExtButton implements UpdaterListener, Flashable {
 
         public Button() {
             super(UpdateAction.this);
@@ -62,10 +60,7 @@ public class UpdateAction extends AbstractToolBarAction {
             UpdateController.getInstance().getEventSender().addListener(this, true);
 
             if (UpdateController.getInstance().hasPendingUpdates()) {
-                setFlashing(true);
-                // setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK));
-            } else {
-                setFlashing(false);
+                JDGui.getInstance().getFlashController().register(this);
             }
         }
 
@@ -76,59 +71,57 @@ public class UpdateAction extends AbstractToolBarAction {
 
         @Override
         public int getTooltipDelay(Point mousePositionOnScreen) {
-            return timer != null ? 100 : -1;
+            return JDGui.getInstance().getFlashController().isRegistered(this) ? 100 : -1;
         }
 
-        public void setFlashing(final boolean b) {
-
+        @Override
+        public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
             new EDTRunner() {
 
                 @Override
                 protected void runInEDT() {
-                    if (timer != null) {
-                        timer.stop();
-                    }
-                    if (b) {
-
-                        if (CFG_GUI.CFG.isUpdateButtonFlashingEnabled()) {
-                            setToolTipText(_GUI._.UpdateAction_runInEDT_updates_pendings());
-                            trigger = true;
-                            timer = new Timer(1000, new ActionListener() {
-
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    trigger = !trigger;
-                                    if (trigger) {
-                                        Button.this.setIcon(NewTheme.I().getIcon("update_b", 24));
-                                    } else {
-                                        Button.this.setIcon(NewTheme.I().getIcon(getIconKey(), 24));
-                                    }
-                                }
-                            });
-                            timer.setRepeats(true);
-                            timer.start();
-                        }
+                    if (UpdateController.getInstance().hasPendingUpdates()) {
+                        JDGui.getInstance().getFlashController().register(Button.this);
+                        // setFlashing(true);
+                        // setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK));
                     } else {
-                        setToolTipText(_GUI._.UpdateAction_runInEDT_no_updates_pendings());
-                        Button.this.setIcon(NewTheme.I().getIcon(getIconKey(), 24));
+                        JDGui.getInstance().getFlashController().unregister(Button.this);
+                        // setFlashing(false);
                     }
+
                 }
             };
 
         }
 
         @Override
-        public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
-            if (UpdateController.getInstance().hasPendingUpdates()) {
-                setFlashing(true);
-                // setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK));
-            } else {
-                setFlashing(false);
-            }
+        public void onUpdaterStatusUpdate(String label, Icon icon, double progress) {
         }
 
         @Override
-        public void onUpdaterStatusUpdate(String label, Icon icon, double progress) {
+        public void onFlashRegister() {
+            setToolTipText(_GUI._.UpdateAction_runInEDT_updates_pendings());
+        }
+
+        @Override
+        public void onFlashUnRegister() {
+            setToolTipText(_GUI._.UpdateAction_runInEDT_no_updates_pendings());
+            Button.this.setIcon(NewTheme.I().getIcon(getIconKey(), 24));
+        }
+
+        @Override
+        public boolean onFlash(long l) {
+            if (!this.isVisible() || !this.isDisplayable()) {
+                // cleanup
+                return false;
+            }
+            if (l % 2 == 0) {
+                Button.this.setIcon(NewTheme.I().getIcon("update_b", 24));
+            } else {
+                Button.this.setIcon(NewTheme.I().getIcon(getIconKey(), 24));
+            }
+
+            return true;
         }
     }
 
