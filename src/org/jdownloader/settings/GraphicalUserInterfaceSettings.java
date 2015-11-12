@@ -1300,4 +1300,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isPrimaryTableSorterDesc();
 
     void setPrimaryTableSorterDesc(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isPremiumDisabledWarningFlashEnabled();
+
+    void setPremiumDisabledWarningFlashEnabled(boolean b);
 }

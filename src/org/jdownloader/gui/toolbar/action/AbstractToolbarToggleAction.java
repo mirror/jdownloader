@@ -47,7 +47,9 @@ public abstract class AbstractToolbarToggleAction extends AbstractToolBarAction 
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        setSelected(newValue);
+        if (keyHandler == this.keyHandler) {
+            setSelected(newValue);
+        }
     }
 
 }
