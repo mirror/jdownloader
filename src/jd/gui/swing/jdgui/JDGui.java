@@ -1917,7 +1917,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(runnable);
     }
 
-    private FlashController flashController = new FlashController();
+    private final FlashController flashController = new FlashController();
 
     public FlashController getFlashController() {
         return flashController;

@@ -11,10 +11,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
@@ -47,6 +50,19 @@ public class LinkChecker<E extends CheckableLink> {
         }
 
         public boolean linkCheckAllowed() {
+            if (link instanceof CrawledLink) {
+                final CrawledLink cl = (CrawledLink) link;
+                final CrawledPackage pn = cl.getParentNode();
+                if (pn == null || pn.getControlledBy() == null) {
+                    return false;
+                }
+            } else {
+                final DownloadLink dlLink = link.getDownloadLink();
+                final FilePackage fp = dlLink.getFilePackage();
+                if (FilePackage.isDefaultFilePackage(fp) || fp.getControlledBy() == null) {
+                    return false;
+                }
+            }
             return this.linkCheckerGeneration == checker.checkerGeneration.get();
         }
 
