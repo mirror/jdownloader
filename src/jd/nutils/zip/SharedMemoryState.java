@@ -196,7 +196,7 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         // formatted eta string
         byte[] etas;
         try {
-            etas = Formatter.formatSeconds(dla.getEta()).getBytes("ISO-8859-1"); // use standard charset
+            etas = Formatter.formatSeconds(dla.getEta()).replace(":", " ").getBytes("ISO-8859-1"); // use standard charset
             buf.putInt(etas.length);
             buf.put(etas);
         } catch (UnsupportedEncodingException e) {
