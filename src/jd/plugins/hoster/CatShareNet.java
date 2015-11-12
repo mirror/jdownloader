@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -406,6 +407,18 @@ public class CatShareNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (br.containsHTML("Plik chwilowo niedostępny z powodu awarii")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("LINK_BROKEN"), 60 * 60 * 1000l);
+            } else if (br.containsHTML("<h2>System wykrył naruszenie regulaminu w zakresie dostępu do konta.</h2>")) {
+                UserIO.getInstance().requestMessageDialog(0, getPhrase("PREMIUM_ERROR"), getPhrase("ACCOUNT_SHARED") + "\r\n" + getPhrase("PREMIUM_DISABLED"));
+                String[][] blockDateTime = new Regex(br, "konto zostało tymczasowo zablokowane i zostanie odblokowane (\\d{2}-\\d{2}-\\d{4}) o godzinie (\\d{2}:\\d{2})</h3>").getMatches();
+                if (blockDateTime.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ACCOUNT_SHARED"), 2 * 60 * 60 * 1000l);
+                } else {
+
+                    final DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
+                    final Date waitUntil = df.parse(blockDateTime[0][0] + " " + blockDateTime[0][1] + ":00");
+                    final long difference = waitUntil.getTime() - (new Date()).getTime();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ACCOUNT_SHARED"), difference);
+                }
             } else {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("REGEX_ERROR"));
@@ -465,47 +478,49 @@ public class CatShareNet extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("WAITTIME", "Waittime detected");
-            put("PREMIUM_ERROR", "CatShare.net Premium Error");
-            put("DAILY_LIMIT", "Daily Limit exceeded!");
-            put("SERVER_ERROR", "Server error");
-            put("PREMIUM_DISABLED", "Premium disabled, will continue downloads as anonymous user");
-            put("LINK_BROKEN", "Link is broken at the server side");
-            put("NO_RECAPTCHA_FORM", "no reCaptcha form!");
-            put("UNKNOWN_RECAPTCHA", "Unknown ReCaptcha method!");
-            put("RECAPTCHA_ERROR", "reCaptcha error or server doesn't accept reCaptcha challenges");
-            put("REGEX_ERROR", "Regex didn't match - no final link found");
-            put("FINAL_LINK_ERROR", "The final dllink seems not to be a file!");
-            put("NO_LINK_DATA", "filename or filesize not found!");
-            put("LOGIN_ERROR", "Login Error");
-            put("LOGIN_FAILED", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct?\r\nSome hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-            put("PREMIUM", "Premium User");
-            put("FREE", "Free User");
-            put("NO_LOGIN_FORM", "no login form");
+                                                  {
+                                                      put("WAITTIME", "Waittime detected");
+                                                      put("PREMIUM_ERROR", "CatShare.net Premium Error");
+                                                      put("DAILY_LIMIT", "Daily Limit exceeded!");
+                                                      put("SERVER_ERROR", "Server error");
+                                                      put("PREMIUM_DISABLED", "Premium disabled, will continue downloads as anonymous user");
+                                                      put("LINK_BROKEN", "Link is broken at the server side");
+                                                      put("NO_RECAPTCHA_FORM", "no reCaptcha form!");
+                                                      put("UNKNOWN_RECAPTCHA", "Unknown ReCaptcha method!");
+                                                      put("RECAPTCHA_ERROR", "reCaptcha error or server doesn't accept reCaptcha challenges");
+                                                      put("REGEX_ERROR", "Regex didn't match - no final link found");
+                                                      put("FINAL_LINK_ERROR", "The final dllink seems not to be a file!");
+                                                      put("NO_LINK_DATA", "filename or filesize not found!");
+                                                      put("LOGIN_ERROR", "Login Error");
+                                                      put("LOGIN_FAILED", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct?\r\nSome hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                      put("PREMIUM", "Premium User");
+                                                      put("FREE", "Free User");
+                                                      put("NO_LOGIN_FORM", "no login form");
+                                                      put("ACCOUNT_SHARED", "System detected account violation - account is shared.");
                                                   }
-    };
+                                              };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("WAITTIME", "Wykryto czas oczekiwania");
-            put("PREMIUM_ERROR", "CatShare.net Błąd Konta Premium");
-            put("DAILY_LIMIT", "Wyczerpano dzienny limit!");
-            put("SERVER_ERROR", "Błąd serwera");
-            put("PREMIUM_DISABLED", "Konto Premium zostanie wyłączone, pobierania będą kontynuowane jako anonimowe");
-            put("LINK_BROKEN", "Plik jest uszkodzony na serwerze");
-            put("NO_RECAPTCHA_FORM", "brak formularza reCaptcha!");
-            put("UNKNOWN_RECAPTCHA", "Nieznany typ ReCaptcha!");
-            put("RECAPTCHA_ERROR", "błąd reCaptcha lub serwer nie akceptuje prób wprowadzenia kodu reCaptcha");
-            put("REGEX_ERROR", "Wyrażenie regularne nie znalazło finalnego linku");
-            put("FINAL_LINK_ERROR", "Finałowy link jest nieprawidłowy");
-            put("NO_LINK_DATA", "Brak nazwy i rozmiaru pliku!");
-            put("LOGIN_ERROR", "Błąd logowania");
-            put("LOGIN_FAILED", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło?\r\nSugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-            put("PREMIUM", "Użytkownik Premium");
-            put("FREE", "Użytkownik darmowy");
-            put("NO_LOGIN_FORM", "brak formularza logowania");
-        }
-    };
+                                                  {
+                                                      put("WAITTIME", "Wykryto czas oczekiwania");
+                                                      put("PREMIUM_ERROR", "CatShare.net Błąd Konta Premium");
+                                                      put("DAILY_LIMIT", "Wyczerpano dzienny limit!");
+                                                      put("SERVER_ERROR", "Błąd serwera");
+                                                      put("PREMIUM_DISABLED", "Konto Premium zostanie wyłączone, pobierania będą kontynuowane jako anonimowe");
+                                                      put("LINK_BROKEN", "Plik jest uszkodzony na serwerze");
+                                                      put("NO_RECAPTCHA_FORM", "brak formularza reCaptcha!");
+                                                      put("UNKNOWN_RECAPTCHA", "Nieznany typ ReCaptcha!");
+                                                      put("RECAPTCHA_ERROR", "błąd reCaptcha lub serwer nie akceptuje prób wprowadzenia kodu reCaptcha");
+                                                      put("REGEX_ERROR", "Wyrażenie regularne nie znalazło finalnego linku");
+                                                      put("FINAL_LINK_ERROR", "Finałowy link jest nieprawidłowy");
+                                                      put("NO_LINK_DATA", "Brak nazwy i rozmiaru pliku!");
+                                                      put("LOGIN_ERROR", "Błąd logowania");
+                                                      put("LOGIN_FAILED", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło?\r\nSugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+                                                      put("PREMIUM", "Użytkownik Premium");
+                                                      put("FREE", "Użytkownik darmowy");
+                                                      put("NO_LOGIN_FORM", "brak formularza logowania");
+                                                      put("ACCOUNT_SHARED", "System wykrył naruszenie regulaminu w zakresie dostępu do konta.");
+                                                  }
+                                              };
 
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
