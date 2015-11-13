@@ -30,12 +30,21 @@ public class SiteType {
          */
         ImageHosting_ImgShot,
         /**
+         * Script for link anonymizers.<br />
          * <b>Example that suits main decrypter class:</b> <a href="http:/l.moapi.net/">l.moapi.net</a><br />
-         * Script for link anonymizers. <b>Main decrypter class:</b> GeneralLinkAnonymizer<br />
+         * <b>Main decrypter class:</b> GeneralLinkAnonymizer<br />
          * <b>Requirements to be added to main class:</b> CryptedLink must NOT be accessed - final links can be build using the information
          * we have in the urls which the user added.<br />
          */
         GeneralLinkAnonymizer,
+        /**
+         * Script for URLs containing base64 strings which lead to downloadlinks.<br />
+         * <b>Example that suits main decrypter class:</b> <a href="http:/free.downloader.my/">free.downloader.my</a><br />
+         * <b>Main decrypter class:</b> GenericBase64Decrypter<br />
+         * <b>Requirements to be added to main class:</b> CryptedLink must NOT be accessed - final links can be build using the information
+         * we have in the urls which the user added.<br />
+         */
+        GenericBase64Decrypter,
         /**
          * Script used by some video/porn hosting sites.<br />
          * Can be bought e.g. from here: <a href="http://www.kernel-video-sharing.com/en/"</a> >kernel-video-sharing.com</a>.<br />
