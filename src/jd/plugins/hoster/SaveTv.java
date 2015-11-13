@@ -235,7 +235,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override
@@ -1848,6 +1848,15 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        if (account == null) {
+            /* without account its not possible to download any link for this host */
+            return false;
+        }
+        return true;
     }
 
     @Override
