@@ -16,19 +16,20 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -37,10 +38,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class FoxLeechCom extends antiDDoSForHost {
@@ -66,7 +63,7 @@ public class FoxLeechCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
-        if (this.useAPI()) {
+        if (false && this.useAPI()) {
             ac = api_fetchAccountInfo(account);
         } else {
             ac = site_fetchAccountInfo(account);
@@ -105,7 +102,7 @@ public class FoxLeechCom extends antiDDoSForHost {
 
         String dllink = checkDirectLink(link, NICE_HOST + "directlink");
         if (dllink == null) {
-            if (this.useAPI()) {
+            if (false && this.useAPI()) {
                 dllink = api_get_dllink(link, account);
             } else {
                 dllink = site_get_dllink(link, account);
@@ -193,7 +190,7 @@ public class FoxLeechCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password (and captcha) you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        br.getPage("http://www.foxleech.com/account");
+        getPage("http://www.foxleech.com/account");
         /* No downloads possible throuh free accounts --> Supporting them makes no sense! */
         if (br.containsHTML(">Free Member <span>")) {
             logger.info("Free accounts are not supported!");
@@ -246,7 +243,7 @@ public class FoxLeechCom extends antiDDoSForHost {
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("Premium User");
+        ac.setStatus("Premium Account");
         return ac;
     }
 
@@ -271,7 +268,7 @@ public class FoxLeechCom extends antiDDoSForHost {
                         }
                         /* Avoid login captcha on forced login */
                         if (force) {
-                            br.getPage("http://www.foxleech.com/downloader");
+                            getPage("http://www.foxleech.com/downloader");
                             if (br.containsHTML("foxleech\\.com/logout\">Logout</a>")) {
                                 return true;
                             } else {
@@ -285,37 +282,36 @@ public class FoxLeechCom extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.foxleech.com/login");
-                String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                br.postPage("http://www.foxleech.com/login", postData);
-                /* Even if the user entrs valid username/password, captcha may occur... */
-                if (br.getCookie(MAINPAGE, "auth") == null && br.containsHTML("google\\.com/recaptcha/api")) {
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
-                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
-                    br.postPage("http://www.foxleech.com/login", postData);
+                getPage("http://www.foxleech.com/login");
+                // ALWAYS USE FORMS!
+                final Form login = br.getFormbyProperty("name", "login-form");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                // now if recaptcha is shown here FIRST we should support! not after a failed attempt!
+                final String recaptchav2 = "<div class=\"g-recaptcha\"";
+                if (login.containsHTML(recaptchav2)) {
+                    if (this.getDownloadLink() == null) {
+                        // login wont contain downloadlink
+                        this.setDownloadLink(new DownloadLink(this, "Account Login!", this.getHost(), this.getHost(), true));
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                submitForm(login);
                 if (br.getCookie(MAINPAGE, "auth") == null) {
+                    // if recaptcha is shown here it should mean user:pass is wrong.
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort (und Captcha) stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password (and captcha) you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(this.getHost()));
                 return true;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
@@ -332,11 +328,11 @@ public class FoxLeechCom extends antiDDoSForHost {
         site_login(acc, false);
         if (api_url != null) {
             /* Actually there is no reason to use this but whatever ... */
-            br.postPage(api_url, "link=" + url);
+            postPage(api_url, "link=" + url);
         } else {
-            br.getPage("http://www.foxleech.com/Generate.php?link=" + url);
+            getPage("http://www.foxleech.com/Generate.php?link=" + url);
         }
-        final String error = br.getRegex("\"error\":\"([^<>\"]*?)\"").getMatch(0);
+        final String error = getJson("error");
         if (error != null) {
             if (error.contains("You have reached the daily limit for")) {
                 /* Daily limit of a single host is reached */
@@ -346,11 +342,10 @@ public class FoxLeechCom extends antiDDoSForHost {
             }
             handlePluginBroken(acc, link, "error_unknown", 10);
         }
-        dllink = br.getRegex("\"link\":\"(http[^<>\"]*?)\"").getMatch(0);
+        dllink = getJson("link");
         if (dllink == null) {
             handlePluginBroken(acc, link, "dllink_null", 10);
         }
-        dllink = dllink.replace("\\", "");
         return dllink;
     }
 
