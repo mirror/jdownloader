@@ -25,11 +25,22 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -48,15 +59,6 @@ import jd.plugins.Plugin;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
@@ -145,6 +147,8 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
     }
 
     private ArrayList<DownloadLink> doThis(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String containerId) throws Exception {
+        // debug yo!
+        map.clear();
         URLConnectionAdapter con;
         // check for a password. Store latest password in DB
         Form password = br.getForm(0);
@@ -193,6 +197,12 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
             if (row == null) {
                 row = new Regex(decryptedJS, "(https?://linkcrypt\\.ws/container/[^\"]+)\".*?https?://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0); // fallback
             }
+            // supports cnl when in js document write
+            if (row == null && decryptedJS.contains("127.0.0.1:9666/flash/")) {
+                row = new String[2];
+                row[1] = "cnl";
+                row[0] = decryptedJS.replaceAll("\\'", "'");
+            }
             if (row != null) {
                 if ("cnl".equalsIgnoreCase(row[1])) {
                     row[1] = "cnl";
@@ -201,6 +211,23 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 if (!map.containsKey(row[1])) {
                     map.put(row[1], row[0]);
                 }
+            }
+            if (row == null) {
+                // containers can have unknown file extensions in URL, but ID which is referenced in HTML. to combat that we need todo the
+                // following
+                final String unknown[] = new Regex(decryptedJS, "\\$\\((\"|')#(.*?)\\1.*?(\"|')(https?://.*?linkcrypt.ws/container/.*?)\\3").getRow(0);
+                // unknown[1] and [3] will contain the info we need
+                // find the container type
+                if (unknown != null && unknown.length == 4) {
+                    final String ctype = br.getRegex("<[\\w+][^>]+id=(\"|')(" + unknown[1] + ")\\1>(.*?)<").getMatch(2);
+                    if (ctype != null) {
+                        map.put(ctype.toLowerCase(Locale.ENGLISH), unknown[3]);
+                    } else {
+                        // when ctype is null,, container type isn't really _needed_. we can randomise yo.
+                        map.put(new Random().nextInt(1000) + "", unknown[3]);
+                    }
+                }
+
             }
         }
 
