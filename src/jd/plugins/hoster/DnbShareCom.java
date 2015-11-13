@@ -21,7 +21,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
+import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,6 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+/**
+ * @author raztoki
+ *
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dnbshare.com" }, urls = { "^http://[\\w\\.]*?dnbshare\\.com/download/[^<>\"/]*?(?:\\.mp3|\\.html)$" }, flags = { 2 })
 public class DnbShareCom extends PluginForHost {
 
@@ -75,28 +79,28 @@ public class DnbShareCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
-        final String payload = br.getRegex("name=\"payload\" value=\"(.*?)\"").getMatch(0);
-        if (file == null || payload == null) {
+        String dllink = null;
+        // look for download page?
+        final Form download = br.getFormbyProperty("id", "dlform");
+        if (download != null) {
+            // cleanup required
+            for (final InputField i : download.getInputFields()) {
+                i.setKey(i.getKey().replaceFirst("^dlform-", ""));
+            }
+            int wait = 10;
+            final String waittime = br.getRegex("var c = (\\d+);").getMatch(0);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
+            sleep(wait * 1001l, link);
+            br.setFollowRedirects(false);
+            br.submitForm(download);
+            dllink = br.getRedirectLocation();
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        int wait = 10;
-        final String waittime = br.getRegex("var c = (\\d+);").getMatch(0);
-        if (waittime != null) {
-            wait = Integer.parseInt(waittime);
-        }
-        sleep(wait * 1001l, link);
-        final Form dlform = new Form();
-        dlform.setAction(link.getDownloadURL());
-        dlform.setMethod(MethodType.POST);
-        dlform.put("file", file);
-        dlform.put("payload", payload);
-        br.setFollowRedirects(false);
-        br.submitForm(dlform);
-        if (br.getRedirectLocation() == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 2 * 60 * 1000l);
