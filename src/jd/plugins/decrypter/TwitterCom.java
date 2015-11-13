@@ -33,16 +33,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+.*?)|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+.*?)|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" }, flags = { 0, 0 })
 public class TwitterCom extends PornEmbedParser {
 
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_CARD      = "https://twitter\\.com/i/cards/tfw/v1/\\d+";
-    private static final String TYPE_USER_ALL  = "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/media";
-    private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+.*?";
+    private static final String TYPE_CARD      = "https?://(?:www\\.)?twitter\\.com/i/cards/tfw/v1/\\d+";
+    private static final String TYPE_USER_ALL  = "https?://(?:www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/media";
+    private static final String TYPE_USER_POST = "https?://(?:www\\.)?twitter\\.com/status/\\d+.*?";
     private static final String TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
@@ -54,7 +54,7 @@ public class TwitterCom extends PornEmbedParser {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://", "https://");
+        final String parameter = param.toString().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://www.twitter.com/");
         final String urlfilename = getUrlFname(parameter);
         final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
@@ -162,7 +162,7 @@ public class TwitterCom extends PornEmbedParser {
                         }
                     }
 
-                    final String[] directlink_regexes = new String[] { "data-url=(?:\\&quot;|\")(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)", "\"(https://amp\\.twimg\\.com/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap)\"", "data-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"", "data-img-src=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
+                    final String[] directlink_regexes = new String[] { "data-url=(?:\\&quot;|\")(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(?:jpg|png|gif):large)", "\"(https://amp\\.twimg\\.com/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap)\"", "data-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"", "(?:data\\-img\\-src=|img src=)\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
                     for (final String regex : directlink_regexes) {
                         final String[] piclinks = new Regex(tweetsource, regex).getColumn(0);
                         if (piclinks != null) {
@@ -216,7 +216,6 @@ public class TwitterCom extends PornEmbedParser {
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 reloadNumber++;
             } while (br.containsHTML("\"has_more_items\":true"));
-            System.out.println(reloadNumber);
         } else {
             tweet_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
             final String twitter_text = this.br.getRegex("<title>(.*?)</title>").getMatch(0);
