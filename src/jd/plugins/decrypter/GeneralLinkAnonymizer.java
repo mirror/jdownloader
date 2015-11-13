@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "2ch.io", "l.moapi.net" }, urls = { "https?://(?:www\\.)?2ch\\.io/.+", "https?://(?:www\\.)?l\\.moapi\\.net/.+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "2ch.io" }, urls = { "https?://(?:www\\.)?2ch\\.io/.+" }, flags = { 0 })
 public class GeneralLinkAnonymizer extends PluginForDecrypt {
 
     public GeneralLinkAnonymizer(PluginWrapper wrapper) {
