@@ -22,7 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -48,7 +47,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec|li)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 0 })
 public class NowDownloadEu extends PluginForHost {
 
     private static AtomicReference<String> MAINPAGE                = new AtomicReference<String>("http://www.nowdownload.sx");
@@ -59,10 +58,10 @@ public class NowDownloadEu extends PluginForHost {
     private static Object                  LOCK                    = new Object();
     private final String                   TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
     private final String                   TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
-    private final String                   domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at|ec|li)";
+    private final String                   domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)";
 
     private String validateHost() {
-        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag", "at", "ec", "li" };
+        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag", "at", "ec", "li", "to" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
             String domain = ccTLDs[i];
@@ -276,7 +275,7 @@ public class NowDownloadEu extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;
