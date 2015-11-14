@@ -174,6 +174,7 @@ SplitPackagesByHost_getTranslationForAskForNewDownloadFolderAndPackageName=パ�
 SplitPackagesByHost_getTranslationForLocation=パッケージ追加先
 SplitPackagesByHost_getTranslationForMergePackages=分割前にパッケージを統合しますか?
 StartDownloadsAction_createTooltip_=ダウンロードを開始
+StartDownloadsAction_forced_createTooltip_=全てのダウンロードを開始します(強制フラグをクリア)
 StartDownloadsAction_getHideIfDownloadsAreRunningTranslation_=ダウンロード中は非表示
 TableContext_getTranslationItemVisibleForEmptySelection=空選択用にアイテムを表示
 TableContext_getTranslationItemVisibleForSelections_=選択したリンク用にアイテムを表示
