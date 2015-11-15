@@ -40,9 +40,11 @@ public class DeluxemusicTv extends PluginForDecrypt {
     }
 
     /* 2015-11-09: Was not able to find any playlist_id higher than 165 */
-    private static final short  playlist_id_max                   = 200;
-    private static final long   production_video_ids_tester_range = 299;
-    private static final String playlist_id_dummy                 = "999";
+    private static final short  playlist_id_max          = 200;
+    /* 2015-11-15: More test values - please do not touch this - pspzockerscene */
+    private static final long   production_video_ids_min = 0;
+    private static final long   production_video_ids_max = 1000000;
+    private static final String playlist_id_dummy        = "999";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -119,10 +121,9 @@ public class DeluxemusicTv extends PluginForDecrypt {
         /* Do test-mode stuff #2 */
         if (testmode && production_video_ids.size() > 0) {
             fpName = "deluxemusic_testmode_" + playlist_id_dummy;
-            final long production_video_id_example = Long.parseLong(production_video_ids.get(0));
-            final long production_video_id_min = production_video_id_example - production_video_ids_tester_range;
-            final long production_video_id_max = production_video_id_example + production_video_ids_tester_range;
-            for (long l = production_video_id_min; l <= production_video_id_max; l++) {
+            final String production_video_id_example = production_video_ids.get(0);
+            logger.info("Example production video ID: " + production_video_id_example);
+            for (long l = production_video_ids_min; l <= production_video_ids_max; l++) {
                 final String production_video_id_str_temp = Long.toString(l);
                 if (production_video_ids.contains(production_video_id_str_temp)) {
                     /* Do not decrypt IDs which we already decrypted above via the "normal" decrypter path. */

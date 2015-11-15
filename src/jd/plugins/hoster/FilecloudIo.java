@@ -24,14 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-import org.jdownloader.plugins.accounts.Notifier;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -49,6 +41,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "filecloud.io", "ezfile.ch" }, urls = { "https?://(?:www\\.)?(?:filecloud\\.io|ezfile\\.ch)/[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
 public class FilecloudIo extends PluginForHost {
@@ -126,7 +126,7 @@ public class FilecloudIo extends PluginForHost {
         downloadLink.setLinkID(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         if (useFilecheckAPI) {
             br.getPage(MAINPAGE + "/?m=api&a=check_file&fkey=" + downloadLink.getLinkID());
-            if (!br.containsHTML("HTTP 404 > no such module or action<")) {
+            if (!this.br.containsHTML("HTTP 404 > no such module or action<") && this.br.getHttpConnection().getResponseCode() != 404) {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final Object filesizeo = entries.get("fsize");
                 final String status = (String) entries.get("status");
@@ -171,12 +171,7 @@ public class FilecloudIo extends PluginForHost {
                 br.followConnection();
             } else {
                 downloadLink.setName(getFileNameFromHeader(con));
-                try {
-                    // @since JD2
-                    downloadLink.setVerifiedFileSize(con.getLongContentLength());
-                } catch (final Throwable t) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                }
+                downloadLink.setVerifiedFileSize(con.getLongContentLength());
                 // lets also set dllink
                 dllink = br.getURL();
                 // set constants so we can save link, no point wasting this link!
@@ -214,7 +209,15 @@ public class FilecloudIo extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, boolean viaAccount) throws Exception, PluginException {
         br.setFollowRedirects(true);
         final String fid = getFid(downloadLink);
-        if (dllink == null) {
+        /*
+         * Failover for API which sometimes tells us that we have a direct url which we can download without captcha --> That information is
+         * not always correct ;)
+         */
+        if (!isDownloadableFile(this.dllink)) {
+            /*
+             * Although their directurls do not last a long time it makes sense to try to re-use saved directurls as we can skip the captcha
+             * then.
+             */
             dllink = checkDirectLink(downloadLink, "free_directlink");
         }
         if (dllink == null) {
@@ -231,23 +234,9 @@ public class FilecloudIo extends PluginForHost {
                 br.getPage(downloadLink.getDownloadURL());
             }
             if (br.containsHTML("You do not have enough traffic to continue<")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (br.containsHTML("Sign\\-in now with any of the options on the left if you wish to download this file")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
             final String f1 = br.getRegex("\\'f1\\':[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
             final String f2 = br.getRegex("\\'f2\\':[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
@@ -484,26 +473,35 @@ public class FilecloudIo extends PluginForHost {
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+        if (!isDownloadableFile(dllink)) {
+            downloadLink.setProperty(property, Property.NULL);
+            dllink = null;
         }
         return dllink;
+    }
+
+    private boolean isDownloadableFile(final String directlink) {
+        if (directlink == null) {
+            return false;
+        }
+        URLConnectionAdapter con = null;
+        try {
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            /* Do NOT use HEAD requests here as their servers will respond with wrong information! */
+            con = br2.openGetConnection(directlink);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                return false;
+            }
+        } catch (final Exception e) {
+            return false;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return true;
     }
 
     /**
