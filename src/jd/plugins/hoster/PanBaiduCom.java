@@ -49,6 +49,8 @@ public class PanBaiduCom extends PluginForHost {
     private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
     private static final String NOCHUNKS                                   = "NOCHUNKS";
     private static final String USER_AGENT                                 = "netdisk;4.8.3.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
+    // private static final String USER_AGENT =
+    // "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
     private static final String APPID                                      = "250528";
 
     private static final String NICE_HOST                                  = "pan.baidu.com";
@@ -103,6 +105,8 @@ public class PanBaiduCom extends PluginForHost {
             if (link_password_cookie != null) {
                 br.setCookie("http://pan.baidu.com/", "BDCLND", link_password_cookie);
             }
+            /* Access mainpage before or we might get random 403- and 404's !!! */
+            this.br.getPage("http://pan.baidu.com/");
             getPage(this.br, original_url);
             /* Re-check here for offline because if we always used the directlink before, we cannot know if the link is still online. */
             if (br.containsHTML("id=\"share_nofound_des\"")) {
@@ -135,9 +139,15 @@ public class PanBaiduCom extends PluginForHost {
             if (sign == null) {
                 sign = br.getRegex("yunData\\.SIGN = \"([a-z0-9]+)\"").getMatch(0);
             }
+            if (sign == null) {
+                sign = br.getRegex("\"sign\":\"([^<>\"]*?)\"").getMatch(0);
+            }
             tsamp = br.getRegex("FileUtils\\.share_timestamp=\"(\\d+)\"").getMatch(0);
             if (tsamp == null) {
                 tsamp = br.getRegex("yunData\\.TIMESTAMP = \"(\\d+)\"").getMatch(0);
+            }
+            if (tsamp == null) {
+                tsamp = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             }
             if (sign == null || tsamp == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "File only downloadable via account or only via the pan.baidu.com App/Downloadmanager");
