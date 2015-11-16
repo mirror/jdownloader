@@ -12,6 +12,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -26,12 +30,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.confidentcaptcha.CaptchaHelperCrawlerPluginConfidentCaptcha;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -175,7 +175,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         }
                         case 1: {
                             // recaptcha2 !!!
-                            final String code = new CaptchaHelperCrawlerPluginConfidentCaptcha(this, br, "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk").getToken();
+                            final String code = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk").getToken();
                             /* Sometimes that field already exists containing the value "manuel_challenge" */
                             nextPost = ammendJson(nextPost, "answer", code);
                             nextPost = ammendJson(nextPost, "challengeId", "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk");
