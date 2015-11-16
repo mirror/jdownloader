@@ -60,7 +60,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
 
     /**
@@ -248,7 +248,8 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         }
 
         /* CNL --> Container --> Webdecryption */
-        boolean webDecryption = br.containsHTML("BlueHeadLine.*?>Weblinks<");
+        final Form[] webDecryptForms = br.getFormsByActionRegex(".*linkcrypt\\.ws/out\\.html");
+        boolean webDecryption = webDecryptForms != null ? true : false;
         boolean isCnlAvailable = map.containsKey("cnl");
 
         // CNL
@@ -323,12 +324,9 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
 
         // Webdecryption
         if (webDecryption) {
-            // shouldn't we already be at this url?
-            getPage("http://linkcrypt.ws/dir/" + containerId);
-            logger.info("Trying webdecryption...");
-            final Form[] forms = br.getForms();
-            progress.setRange(forms.length - 8);
-            for (final Form form : forms) {
+            // new 20152216
+            progress.setRange(webDecryptForms.length);
+            for (final Form form : webDecryptForms) {
                 Browser clone;
                 if (form.getInputField("file") != null && form.getInputField("file").getValue() != null && form.getInputField("file").getValue().length() > 0) {
                     progress.increase(1);
@@ -375,24 +373,20 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                         }
                     }
                     // 23.7.14
-                    String link = clone.getRegex("'window.location = \"([^\"]+)").getMatch(0);
+                    String link = clone.getRegex("'window\\.location = \"([^\"]+)").getMatch(0);
+                    if (link == null) {
+                        // 20151116
+                        link = clone.getRegex("var url = ('|\")(.*?)\\1").getMatch(1);
+                    }
                     if (link != null) {
                         final DownloadLink dl = createDownloadlink(link);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            /* does not exist in 09581 */
-                        }
+                        distribute(dl);
                         decryptedLinks.add(dl);
                     } else {
                         link = clone.getRedirectLocation();
                         if (link != null) {
                             final DownloadLink dl = createDownloadlink(link);
-                            try {
-                                distribute(dl);
-                            } catch (final Throwable e) {
-                                /* does not exist in 09581 */
-                            }
+                            distribute(dl);
                             decryptedLinks.add(dl);
                         }
                     }
@@ -428,7 +422,9 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private static Object LOCK = new Object();
+    private final String  captchaTypeKeyCaptcha = "<!-- KeyCAPTCHA code|<input [^>]*name=(\"|')capcode\\1";
+
+    private static Object LOCK                  = new Object();
 
     public boolean loadAndSolveCaptcha(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String containerId) throws IOException, InterruptedException, Exception, DecrypterException {
         synchronized (LOCK) {
@@ -459,7 +455,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
             }
             System.out.println("TextX " + br.containsHTML("TextX"));
             System.out.println("CaptX " + br.containsHTML("CaptX"));
-            System.out.println("KeyCAPTCHA " + br.containsHTML("KeyCAPTCHA"));
+            System.out.println("KeyCAPTCHA " + br.containsHTML(captchaTypeKeyCaptcha));
             if (br.containsHTML("<title>Linkcrypt\\.ws // Error 404</title>")) {
                 final String msg = "This link might be offline!";
                 final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
@@ -491,7 +487,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
             }
 
             // Different captcha types
-            if (br.containsHTML("<!-- KeyCAPTCHA code")) {
+            if (br.containsHTML(captchaTypeKeyCaptcha)) {
                 boolean done = false;
                 KeyCaptcha kc;
 
@@ -502,7 +498,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
 
                     postPage(parameter, "capcode=" + Encoding.urlEncode(result));
-                    if (!br.containsHTML("<!-- KeyCAPTCHA code")) {
+                    if (!br.containsHTML(captchaTypeKeyCaptcha)) {
                         done = true;
                         break;
                     }
@@ -518,11 +514,11 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                             throw new DecrypterException(DecrypterException.CAPTCHA);
                         }
                         postPage(parameter, "capcode=" + Encoding.urlEncode(result));
-                        if (!br.containsHTML("<!-- KeyCAPTCHA code")) {
+                        if (!br.containsHTML(captchaTypeKeyCaptcha)) {
                             break;
                         }
                     }
-                    if (br.containsHTML("<!-- KeyCAPTCHA code")) {
+                    if (br.containsHTML(captchaTypeKeyCaptcha)) {
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
                 }
