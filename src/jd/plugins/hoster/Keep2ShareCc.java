@@ -264,7 +264,7 @@ public class Keep2ShareCc extends K2SApi {
                     if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                         logger.info("Detected captcha method \"Re Captcha\" for this host");
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                         if (id == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -414,7 +414,7 @@ public class Keep2ShareCc extends K2SApi {
                     if (br.containsHTML("recaptcha/api/challenge") || br.containsHTML("Recaptcha.create")) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         String challenge = br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
                         if (challenge == null) {
                             challenge = br.getRegex("Recaptcha.create\\('(.*?)'").getMatch(0);

@@ -75,7 +75,7 @@ public class LsnTo extends PluginForDecrypt {
         if (br.containsHTML(RECAPTCHA)) {
             for (int i = 0; i <= 5; i++) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.parse();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

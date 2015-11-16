@@ -1467,7 +1467,7 @@ public class ExLoadCom extends PluginForHost {
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha, this);
             final String id = form.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             if (inValidate(id)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -147,7 +147,7 @@ public class FilerNet extends PluginForHost {
             int tries = 0;
             while (tries < maxCaptchaTries) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 if (recapID == null) {
                     recapID = getJson("recaptcha_challange", br.toString());
                 }

@@ -463,7 +463,7 @@ public class SoundcloudCom extends PluginForHost {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login function broken, please contact our support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                             }
                             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                             rc.setId(rcID);
                             rc.load();
                             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

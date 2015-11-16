@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui;
 
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ComponentEvent;
@@ -12,6 +13,7 @@ import javax.swing.JFrame;
 
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -22,6 +24,8 @@ import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.FrameStatus;
+import org.jdownloader.settings.FrameStatus.ExtendedState;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class JDownloaderMainFrame extends ExtJFrame {
@@ -29,7 +33,9 @@ public class JDownloaderMainFrame extends ExtJFrame {
     private LogSource       logger;
     private DelayedRunnable delayedStateSaver;
 
-    public JDownloaderMainFrame(String string, LogSource logger) {
+    protected ExtendedState lastKnownVisibleExtendedState;
+
+    public JDownloaderMainFrame(String string, final LogSource logger) {
         super(string);
         this.logger = logger;
         delayedStateSaver = new DelayedRunnable(500, 10000l) {
@@ -42,6 +48,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
             @Override
             public void delayedrun() {
                 FrameStatus newState = FrameStatus.create(JDownloaderMainFrame.this, latestFrameStatus);
+
                 if (newState.isLocationSet()) {
                     latestFrameStatus = newState;
                     // System.out.println("new State " + JSonStorage.toString(latestFrameStatus));
@@ -53,11 +60,17 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void componentShown(ComponentEvent e) {
-                // System.out.println(e);
+                ExtendedState ext = ExtendedState.get(JDownloaderMainFrame.this);
+                if (ext != null && ext != ExtendedState.ICONIFIED) {
+                    System.out.println("Extended " + ext);
+                    lastKnownVisibleExtendedState = ext;
+                }
             }
 
             @Override
             public void componentResized(ComponentEvent e) {
+                System.out.println(e);
+
                 delayedStateSaver.resetAndStart();
             }
 
@@ -68,21 +81,70 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void componentHidden(ComponentEvent e) {
-                // System.out.println(e);
+                // delayedStateSaver.resetAndStart();
             }
         });
         addWindowStateListener(new WindowStateListener() {
 
+            private boolean firstTime = true;
+
             @Override
             public void windowStateChanged(WindowEvent e) {
                 delayedStateSaver.resetAndStart();
+                ExtendedState ext = ExtendedState.get(JDownloaderMainFrame.this);
+                if (ext != null && ext != ExtendedState.ICONIFIED) {
+                    System.out.println("Extended " + ext);
+                    lastKnownVisibleExtendedState = ext;
+                }
+
+                // workaround. When JDownloader starts maximized the first normalize call will not restore the correct size.
+                // the following code fixes this
+                if (lastKnownVisibleExtendedState == ExtendedState.NORMAL && firstTime) {
+                    firstTime = false;
+                    FrameStatus lfs = latestFrameStatus;
+                    if (lfs == null) {
+                        lfs = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
+                    }
+
+                    if (lfs != null) {
+                        // without the visible switch, the frame will resize and move on screen (under windows 10)
+
+                        JDownloaderMainFrame.this.setVisible(false);
+
+                        JDGui.internalInitLocationAndDimension(JDownloaderMainFrame.this, logger, lfs, false, false);
+
+                        JDownloaderMainFrame.this.setVisible(true);
+
+                        firstTime = false;
+                    }
+                }
             }
         });
     }
 
+    @Override
+    public void setSize(Dimension d) {
+        super.setSize(d);
+    }
+
+    @Override
+    public void setSize(int width, int height) {
+        super.setSize(width, height);
+    }
+
+    @Override
+    public void setPreferredSize(Dimension preferredSize) {
+
+        super.setPreferredSize(preferredSize);
+    }
+
+    public ExtendedState getLastKnownVisibleExtendedState() {
+        return lastKnownVisibleExtendedState;
+    }
+
     /**
-         * 
-         */
+     *
+     */
     private static final long serialVersionUID = -4218493713632551975L;
 
     public void dispose() {
@@ -106,7 +168,9 @@ public class JDownloaderMainFrame extends ExtJFrame {
         if (b && !isVisible()) {
             if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
                 String password;
-                if (dialogShowing) return;
+                if (dialogShowing) {
+                    return;
+                }
                 try {
 
                     dialogShowing = true;
@@ -153,7 +217,9 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
     public void toFront() {
 
-        if (!isVisible()) return;
+        if (!isVisible()) {
+            return;
+        }
         super.toFront();
         //
 

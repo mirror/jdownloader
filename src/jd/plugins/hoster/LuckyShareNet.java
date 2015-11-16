@@ -201,7 +201,7 @@ public class LuckyShareNet extends PluginForHost {
         sleep(getWaitTime(ajax) * 1001l, downloadLink);
 
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
         rc.setId(rcID);
 
         for (int i = 0; i <= 5; i++) {

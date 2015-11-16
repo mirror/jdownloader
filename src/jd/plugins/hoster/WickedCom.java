@@ -172,7 +172,7 @@ public class WickedCom extends PluginForHost {
                 if (br.containsHTML("for=\"recaptcha_response_field\"")) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "wicked.com", MAINPAGE, true);
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                     rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

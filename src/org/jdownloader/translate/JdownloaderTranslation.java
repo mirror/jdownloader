@@ -984,4 +984,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Start ALL Downloads (clear forced flag)" })
     String StartDownloadsAction_forced_createTooltip_();
 
+    @Default(lngs = { "en" }, values = { "Wait for %s1: %s2" })
+    String WaitForTrackerSlotPluginProcess(String message, String formatSeconds);
+
 }

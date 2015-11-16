@@ -379,11 +379,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             *
+                             * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             *
+                             * 
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             *
+                             * 
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -585,7 +585,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             case TO_TRAY:
                 // let's hope that this does not flicker. works fine for win7
                 JDGui.getInstance().setWindowToTray(true);
-                JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
+                // JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
 
             }
             // Frame was not iconified

@@ -66,7 +66,7 @@ public class ProtegeDdlCom extends PluginForDecrypt {
             boolean failed = true;
             for (int i = 0; i <= 4; i++) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.findID();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

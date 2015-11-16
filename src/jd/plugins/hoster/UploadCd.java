@@ -185,7 +185,7 @@ public class UploadCd extends PluginForHost {
 
             br.postPage("http://upload.cd/download/url", "fileid=" + fid + "&usid=" + sid + "&referer=&premium_dl=0");
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.findID();
             rc.load();
             for (int i = 1; i <= 5; i++) {

@@ -14,13 +14,14 @@ import jd.gui.swing.jdgui.JDownloaderMainFrame;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.swing.EDTHelper;
 
 public class FrameStatus implements Storable {
     public static enum ExtendedState {
         /**
          * Frame is in the "normal" state. This symbolic constant names a frame state with all state bits cleared.
-         * 
+         *
          * @see #setExtendedState(int)
          * @see #getExtendedState
          */
@@ -28,7 +29,7 @@ public class FrameStatus implements Storable {
 
         /**
          * This state bit indicates that frame is iconified.
-         * 
+         *
          * @see #setExtendedState(int)
          * @see #getExtendedState
          */
@@ -36,7 +37,7 @@ public class FrameStatus implements Storable {
 
         /**
          * This state bit indicates that frame is maximized in the horizontal direction.
-         * 
+         *
          * @see #setExtendedState(int)
          * @see #getExtendedState
          * @since 1.4
@@ -45,7 +46,7 @@ public class FrameStatus implements Storable {
 
         /**
          * This state bit indicates that frame is maximized in the vertical direction.
-         * 
+         *
          * @see #setExtendedState(int)
          * @see #getExtendedState
          * @since 1.4
@@ -53,23 +54,23 @@ public class FrameStatus implements Storable {
         MAXIMIZED_VERT(Frame.MAXIMIZED_VERT),
 
         /**
-         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience alias for
-         * <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
-         * 
+         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience
+         * alias for <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
+         *
          * <p>
          * Note that the correct test for frame being fully maximized is
-         * 
+         *
          * <pre>
          * (state &amp; Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH
          * </pre>
-         * 
+         *
          * <p>
          * To test is frame is maximized in <em>some</em> direction use
-         * 
+         *
          * <pre>
          * (state &amp; Frame.MAXIMIZED_BOTH) != 0
          * </pre>
-         * 
+         *
          * @see #setExtendedState(int)
          * @see #getExtendedState
          * @since 1.4
@@ -85,16 +86,29 @@ public class FrameStatus implements Storable {
         public int getId() {
             return id;
         }
+
+        public static ExtendedState get(JFrame mainFrame) {
+            for (ExtendedState es : ExtendedState.values()) {
+                if (es.getId() == mainFrame.getExtendedState()) {
+                    return es;
+                }
+            }
+            return null;
+        }
     }
 
-    private ExtendedState extendedState  = ExtendedState.NORMAL;
-    private int           width          = -1;
-    private int           height         = -1;
-    private int           x              = -1;
-    private boolean       visible        = true;
-    private int           y              = -1;
-    private boolean       silentShutdown = false;
-    private String        screenID       = null;
+    public static final TypeRef<FrameStatus> TYPE_REF       = new TypeRef<FrameStatus>() {
+
+    };
+
+    private ExtendedState                    extendedState  = ExtendedState.NORMAL;
+    private int                              width          = -1;
+    private int                              height         = -1;
+    private int                              x              = -1;
+    private boolean                          visible        = true;
+    private int                              y              = -1;
+    private boolean                          silentShutdown = false;
+    private String                           screenID       = null;
 
     public ExtendedState getExtendedState() {
         return extendedState;
@@ -178,15 +192,22 @@ public class FrameStatus implements Storable {
         this.active = active;
     }
 
-    private boolean focus  = true;
-    private boolean active = false;
+    private boolean focus      = true;
+    private boolean active     = false;
+    private long    createTime = 0l;
+
+    public long _getCreateTime() {
+        return createTime;
+    }
 
     public FrameStatus(/* storable */) {
-
+        createTime = System.currentTimeMillis();
     }
 
     public static FrameStatus create(JFrame mainFrame, FrameStatus ret) {
-        if (ret == null) ret = new FrameStatus();
+        if (ret == null) {
+            ret = new FrameStatus();
+        }
 
         try {
             ret.setScreenID(mainFrame.getGraphicsConfiguration().getDevice().getIDstring());
@@ -195,7 +216,9 @@ public class FrameStatus implements Storable {
         }
 
         Rectangle jdBounds = fetchBoundsFromEDT(mainFrame);
-        if (jdBounds == null) return null;
+        if (jdBounds == null) {
+            return null;
+        }
         final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         final GraphicsDevice[] screens = ge.getScreenDevices();
         Rectangle jdRectange = new Rectangle(jdBounds);
@@ -224,8 +247,12 @@ public class FrameStatus implements Storable {
 
         if (isok) {
 
-            if (jdBounds.width > 100 || ret.width < 100) ret.width = jdBounds.width;
-            if (jdBounds.height > 100 || ret.height < 100) ret.height = jdBounds.height;
+            if (jdBounds.width > 100 || ret.width < 100) {
+                ret.width = jdBounds.width;
+            }
+            if (jdBounds.height > 100 || ret.height < 100) {
+                ret.height = jdBounds.height;
+            }
             ret.x = jdBounds.x;
             ret.y = jdBounds.y;
             ret.locationSet = true;
@@ -237,11 +264,9 @@ public class FrameStatus implements Storable {
         ret.focus = mainFrame.hasFocus();
         ret.active = mainFrame.isActive();
 
-        for (ExtendedState es : ExtendedState.values()) {
-            if (es.getId() == mainFrame.getExtendedState()) {
-                ret.extendedState = es;
-                break;
-            }
+        ExtendedState ext = ExtendedState.get(mainFrame);
+        if (ext != null) {
+            ret.extendedState = ext;
         }
 
         return ret;

@@ -84,7 +84,7 @@ public class FilePiCom extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         br2.getPage("http://static.filepi.com/js/file.js?15");
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2, this);
         rc.findID();
         rc.load();
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

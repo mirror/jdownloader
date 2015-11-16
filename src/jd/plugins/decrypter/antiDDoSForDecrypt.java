@@ -395,7 +395,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             }
                         }
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr, this);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -602,7 +602,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
                         }
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr, this);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

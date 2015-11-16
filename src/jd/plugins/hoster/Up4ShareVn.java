@@ -133,7 +133,7 @@ public class Up4ShareVn extends PluginForHost {
         // }
         // sleep(wait * 1001l, downloadLink);
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
         rc.findID();
         for (int i = 0; i <= 3; i++) {
             rc.load();

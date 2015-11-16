@@ -363,7 +363,7 @@ public class SimplyPremiumCom extends PluginForHost {
         if (br.containsHTML("<error>captcha_required</error>")) {
             final DownloadLink dummyLink = new DownloadLink(this, "Account", "simply-premium.com", "http://simply-premium.com", true);
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             final String rcID = getXML("captcha");
             rc.setId(rcID);
             rc.load();

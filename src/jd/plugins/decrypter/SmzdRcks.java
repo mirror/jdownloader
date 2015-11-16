@@ -130,7 +130,7 @@ public class SmzdRcks extends antiDDoSForDecrypt {
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);
         if (rcID != null) {
             // Form[] forms = br.getForms();
-            final DirectHTTP.Recaptcha rc = DirectHTTP.getReCaptcha(br.cloneBrowser());
+            final DirectHTTP.Recaptcha rc = DirectHTTP.getReCaptcha(br.cloneBrowser(), this);
             rc.setId(rcID);
             rc.load();
             String secretKey = null;

@@ -123,7 +123,7 @@ public class LoadTo extends PluginForHost {
             for (int i = 1; i <= 5; i++) {
                 /* Captcha */
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.findID();
                 rc.load();
                 linkurl = getLinkurl();

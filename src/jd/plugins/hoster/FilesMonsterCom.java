@@ -274,7 +274,7 @@ public class FilesMonsterCom extends PluginForHost {
         /* now we have the data page, check for wait time and data id */
         // Captcha handling
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
         rc.parse();
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -380,7 +380,7 @@ public class FilesMonsterCom extends PluginForHost {
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     DownloadLink dummyLink = new DownloadLink(this, "Account", "http://filesmonster.com", "http://filesmonster.com", true);
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                     final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     if (id == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -59,7 +59,7 @@ public class CheLns extends PluginForDecrypt {
                 return null;
             }
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
             rc.parse();
             rc.load();
             f1.put("recaptcha_challenge_field", rc.getChallenge());

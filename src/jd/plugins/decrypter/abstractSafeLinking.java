@@ -558,7 +558,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                     }
                 case 2: {
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
                     rc.parse();
                     rc.load();
                     File cfRe = rc.downloadCaptcha(getLocalCaptchaFile());

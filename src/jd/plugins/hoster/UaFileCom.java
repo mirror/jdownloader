@@ -84,7 +84,7 @@ public class UaFileCom extends PluginForHost {
         final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
         if (rcID != null) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());

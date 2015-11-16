@@ -58,7 +58,7 @@ public class R8LinkCom extends PluginForDecrypt {
         for (int i = 1; i <= repeat; i++) {
             if (br.containsHTML(reCaptcha)) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.parse();
                 final String[] v = br.getRegex("(\\w)\\.name\\s*=\\s*(\"|')(\\w+)\";\\s*\\1\\.value\\s*=\\s*(\"|')([a-f0-9]+)\\4").getRow(0);
                 if (v == null) {

@@ -484,7 +484,9 @@ public class LiveHeaderDetectionWizard {
             scanRemoteInfo();
             specials();
             java.util.List<RouterData> list = downloadRouterDatasByAutoDetectValues();
-
+            HashMap<String, String> map = new HashMap<String, String>();
+            map.put("amount", list.size() + "");
+            StatsManager.I().track("reconnectAutoFind/LH/found", map);
             return runTests(list, processCallBack);
 
         } catch (DialogNoAnswerException e) {

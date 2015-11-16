@@ -99,7 +99,7 @@ public class LnkLdpNt extends antiDDoSForDecrypt {
             if (br2.containsHTML("google\\.com/recaptcha")) {
                 // recaptcha v1
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2, this);
                 rc.findID();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

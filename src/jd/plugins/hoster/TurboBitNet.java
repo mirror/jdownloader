@@ -403,7 +403,7 @@ public class TurboBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br, this);
             rc.setId(theId);
             rc.setForm(captchaform);
             rc.load();
@@ -941,7 +941,7 @@ public class TurboBitNet extends PluginForHost {
                         br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bcaptcha_response%5D=" + Encoding.urlEncode(code) + "&user%5Bcaptcha_type%5D=securimg&user%5Bcaptcha_subtype%5D=" + captchaSubtype + "&user%5Bsubmit%5D=Sign+in");
                     } else {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                         if (id == null) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin failed, please contact our support!\r\nLogin fehlgeschlagen, bitte kontaktiere unseren Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);

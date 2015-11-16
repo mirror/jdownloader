@@ -78,7 +78,7 @@ public class Files123Net extends PluginForHost {
             br.getPage(continuelink);
             br.setFollowRedirects(false);
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.findID();
             rc.load();
             for (int i = 1; i <= 5; i++) {

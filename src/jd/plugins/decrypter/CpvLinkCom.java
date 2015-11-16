@@ -65,7 +65,7 @@ public class CpvLinkCom extends PluginForDecrypt {
         if (rcid != null) {
             final String lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.setId(rcid);
             rc.load();
             for (int i = 1; i <= 5; i++) {

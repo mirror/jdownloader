@@ -35,6 +35,7 @@ import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
+import org.appwork.timetracker.TimeTracker;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
@@ -46,6 +47,7 @@ import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.CaptchaTrackerJob;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
@@ -573,6 +575,15 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public LinkCrawler getCustomNextCrawler() {
         return null;
+    }
+
+    public void runCaptchaDDosProtection(String id) throws InterruptedException {
+
+        TimeTracker tracker = ChallengeResponseController.getInstance().getTracker(id);
+
+        CaptchaTrackerJob trackerJob = new CaptchaTrackerJob(id, null);
+        tracker.wait(trackerJob);
+
     }
 
 }

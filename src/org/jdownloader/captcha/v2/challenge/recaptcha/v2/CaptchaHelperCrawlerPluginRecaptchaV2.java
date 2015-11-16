@@ -33,6 +33,8 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
     }
 
     public String getToken() throws PluginException, InterruptedException, DecrypterException {
+
+        runDdosPrevention();
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
         }

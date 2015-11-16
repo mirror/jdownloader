@@ -135,7 +135,7 @@ public class XboxIsoZoneCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
         Form rcForm = new Form();
         rcForm.setMethod(MethodType.POST);
         rcForm.put("verify_code", "");

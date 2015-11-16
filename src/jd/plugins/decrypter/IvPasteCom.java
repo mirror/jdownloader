@@ -94,7 +94,7 @@ public class IvPasteCom extends PluginForDecrypt {
                 br.submitForm(form);
             } else if (form.containsHTML("api\\.recaptcha\\.net") || form.containsHTML("google\\.com/recaptcha/api/")) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
                 String apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                 if (apiKey == null) {
                     apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);

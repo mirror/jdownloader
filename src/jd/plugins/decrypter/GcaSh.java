@@ -57,7 +57,7 @@ public class GcaSh extends PluginForDecrypt {
         }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             /* ID 22.04.25: 6LcQedQSAAAAAH_O6lQcp-X-lrMa77g8TrNfxN-d */
             /* Params when reCaptcha is in use: last_key=9,i=fallback,captcha=captchaad,submit=Daten absenden */
             rc.findID();

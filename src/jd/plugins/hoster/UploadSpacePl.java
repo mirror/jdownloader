@@ -91,7 +91,7 @@ public class UploadSpacePl extends PluginForHost {
             }
             captchaForm.put("hash", hash);
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.setForm(captchaForm);
             rc.setId(id);
             rc.load();

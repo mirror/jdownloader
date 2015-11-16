@@ -273,7 +273,7 @@ public class RareFileNet extends PluginForHost {
             } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                 logger.info("Detected captcha method \"Re Captcha\" for this host");
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.setForm(dlForm);
                 String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                 rc.setId(id);

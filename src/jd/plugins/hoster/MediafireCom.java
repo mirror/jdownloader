@@ -315,7 +315,7 @@ public class MediafireCom extends PluginForHost {
                         logger.info("Detected captcha method \"Re Captcha\" for this host");
                         handleExtraReconnectSettingOnCaptcha(account);
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br, this);
                         String id = new Regex(freeArea, "challenge\\?k=(.+?)\"").getMatch(0);
                         if (id != null) {
                             logger.info("CaptchaID found, Form found " + (form != null));

@@ -212,7 +212,7 @@ public class Publish2Me extends K2SApi {
                 for (int i = 1; i <= repeat; i++) {
                     if (br.containsHTML(reCaptcha)) {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.findID();
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

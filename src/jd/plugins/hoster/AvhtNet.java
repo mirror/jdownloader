@@ -225,7 +225,7 @@ public class AvhtNet extends PluginForHost {
                         captcha = true;
                         success = false;
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.setId(rcID);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

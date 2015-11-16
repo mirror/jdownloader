@@ -389,7 +389,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         }
                         final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr, this);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -490,7 +490,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         }
                         final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr, this);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -698,7 +698,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         }
                         final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Incapsula' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr, this);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

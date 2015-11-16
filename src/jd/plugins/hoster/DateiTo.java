@@ -245,7 +245,7 @@ public class DateiTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.setId(reCaptchaId);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -319,7 +319,7 @@ public class DateiTo extends PluginForHost {
             for (int i = 1; i <= 5; i++) {
                 br.postPage("http://datei.to/response/download", "Step=2&ID=" + dlid);
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.setId("6LdBbL8SAAAAAI0vKUo58XRwDd5Tu_Ze1DA7qTao");
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

@@ -428,7 +428,7 @@ public class FilePostCom extends PluginForHost {
             form.setEncoding("application/octet-stream;");
             if (captchaNeeded) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 String cid = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
                 rc.setId(cid);
                 rc.load();
@@ -687,7 +687,7 @@ public class FilePostCom extends PluginForHost {
                     } else {
                         br.getPage("/");
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         String id = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
                         rc.setId(id);
                         rc.load();
