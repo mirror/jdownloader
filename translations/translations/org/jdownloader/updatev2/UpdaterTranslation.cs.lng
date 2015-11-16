@@ -69,5 +69,6 @@ update_dialog_news_button=Otevřít seznam změn
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Jsou dostupné aktualizace
 update_dialog_yes=Ano (doporučeno)
+update_done_close_in_TIME=Instalace dokončena. Ukončit za %s1
 update_in_next_session=Zrušit a neptat se mě znovu do dalšího restartu!
 updatedplugins=Doplňky byly aktualizovány.\nNyní používáte nejnovější verzi JDownloaderu.
