@@ -37,10 +37,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodload.com", "gupload.biz" }, urls = { "http://(www\\.)?(gupload\\.biz|hoodload\\.com)/[a-z0-9]+", "jnbg90p345uzj0ß4trjnhetpohnmDELETE_MErz67tzr5nd" }, flags = { 2, 0 })
 public class GuploadBiz extends PluginForHost {
@@ -129,8 +129,7 @@ public class GuploadBiz extends PluginForHost {
             if (rcID == null || captchaAction == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             for (int i = 0; i <= 5; i++) {
@@ -286,10 +285,10 @@ public class GuploadBiz extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.MFScripts_YetiShare;
-	}
 
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
+    }
 
 }

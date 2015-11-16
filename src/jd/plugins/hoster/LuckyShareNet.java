@@ -48,6 +48,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckyshare.net" }, urls = { "http://(www\\.)?luckyshare\\.net/\\d+" }, flags = { 2 })
 public class LuckyShareNet extends PluginForHost {
@@ -200,8 +201,7 @@ public class LuckyShareNet extends PluginForHost {
         String hash = getHash(ajax, dllink);
         sleep(getWaitTime(ajax) * 1001l, downloadLink);
 
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+        final Recaptcha rc = new Recaptcha(br, this);
         rc.setId(rcID);
 
         for (int i = 0; i <= 5; i++) {

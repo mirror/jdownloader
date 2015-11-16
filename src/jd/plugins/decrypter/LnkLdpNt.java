@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,9 +33,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
  * @captcha recaptchav1
@@ -98,8 +96,7 @@ public class LnkLdpNt extends antiDDoSForDecrypt {
             }
             if (br2.containsHTML("google\\.com/recaptcha")) {
                 // recaptcha v1
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2, this);
+                final Recaptcha rc = new Recaptcha(br2, this);
                 rc.findID();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

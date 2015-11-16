@@ -38,11 +38,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -70,9 +65,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vodlocker.com" }, urls = { "https?://(www\\.)?vodlocker\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -80,24 +81,24 @@ public class VodLockerCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String  COOKIE_HOST                = "http://vodlocker.com";
+    private final String               COOKIE_HOST                  = "http://vodlocker.com";
     // domain names used within download links.
-    private final String  DOMAINS                    = "(vodlocker\\.com)";
-    private final String  PASSWORDTEXT               = "<br><b>Passwor(d|t):</b> <input";
-    private final String  MAINTENANCE                = ">This server is in maintenance mode";
-    private final String  dllinkRegex                = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean supportsHTTPS              = false;
-    private final boolean enforcesHTTPS              = false;
-    private final boolean useRUA                     = true;
-    private final boolean useAltLinkCheck            = false;
-    private final boolean useVidEmbed                = false;
-    private final boolean useAltEmbed                = true;
-    private final boolean useAltExpire               = true;
-    private final long    useLoginIndividual         = 6 * 3480000l;
-    private final boolean waitTimeSkipableReCaptcha  = true;
-    private final boolean waitTimeSkipableSolveMedia = false;
-    private final boolean waitTimeSkipableKeyCaptcha = false;
-    private final boolean captchaSkipableSolveMedia  = false;
+    private final String               DOMAINS                      = "(vodlocker\\.com)";
+    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final boolean              supportsHTTPS                = false;
+    private final boolean              enforcesHTTPS                = false;
+    private final boolean              useRUA                       = true;
+    private final boolean              useAltLinkCheck              = false;
+    private final boolean              useVidEmbed                  = false;
+    private final boolean              useAltEmbed                  = true;
+    private final boolean              useAltExpire                 = true;
+    private final long                 useLoginIndividual           = 6 * 3480000l;
+    private final boolean              waitTimeSkipableReCaptcha    = true;
+    private final boolean              waitTimeSkipableSolveMedia   = false;
+    private final boolean              waitTimeSkipableKeyCaptcha   = false;
+    private final boolean              captchaSkipableSolveMedia    = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
@@ -1035,39 +1036,39 @@ public class VodLockerCom extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser cbr = new Browser();
+    private Browser                                           cbr                    = new Browser();
 
-    private String acctype            = null;
-    private String directlinkproperty = null;
-    private String dllink             = null;
-    private String fuid               = null;
-    private String passCode           = null;
-    private String usedHost           = null;
+    private String                                            acctype                = null;
+    private String                                            directlinkproperty     = null;
+    private String                                            dllink                 = null;
+    private String                                            fuid                   = null;
+    private String                                            passCode               = null;
+    private String                                            usedHost               = null;
 
-    private int chunks = 1;
+    private int                                               chunks                 = 1;
 
-    private boolean resumes      = false;
-    private boolean skipWaitTime = false;
+    private boolean                                           resumes                = false;
+    private boolean                                           skipWaitTime           = false;
 
-    private final String language            = System.getProperty("user.language");
-    private final String preferHTTPS         = "preferHTTPS";
-    private final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      language               = System.getProperty("user.language");
+    private final String                                      preferHTTPS            = "preferHTTPS";
+    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicInteger maxFree                = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                = new AtomicInteger(1);
+    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
+    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger maxNonAccSimDlPerHost  = new AtomicInteger(20);
-    private static AtomicInteger maxFreeAccSimDlPerHost = new AtomicInteger(20);
-    private static AtomicInteger maxPremAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
 
-    private static HashMap<String, String>                    cloudflareCookies = new HashMap<String, String>();
-    private static HashMap<Account, HashMap<String, Integer>> hostMap           = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object ACCLOCK  = new Object();
-    private static Object CTRLLOCK = new Object();
+    private static Object                                     ACCLOCK                = new Object();
+    private static Object                                     CTRLLOCK               = new Object();
 
     /**
      * Rules to prevent new downloads from commencing
@@ -1473,8 +1474,7 @@ public class VodLockerCom extends PluginForHost {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha, this);
+            final Recaptcha rc = new Recaptcha(captcha, this);
             final String id = form.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             if (inValidate(id)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

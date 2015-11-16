@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -1520,8 +1522,7 @@ public abstract class K2SApi extends PluginForHost {
                             }
                         }
                         final DownloadLink dllink = new DownloadLink(null, "antiDDoS Provider 'Clouldflare' requires Captcha", getDomain(), getProtocol() + getDomain(), true);
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr, this);
+                        final Recaptcha rc = new Recaptcha(ibr, this);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

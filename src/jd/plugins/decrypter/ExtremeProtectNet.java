@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,9 +31,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.net" }, urls = { "http://(?:www\\.)?extreme\\-protect\\.net/([a-z0-9\\-_]+)" }, flags = { 0 })
 public class ExtremeProtectNet extends PluginForDecrypt {
@@ -88,8 +87,7 @@ public class ExtremeProtectNet extends PluginForDecrypt {
                 if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(RECAPTCHATEXT2)) {
                     boolean failed = true;
                     for (int i = 0; i <= 5; i++) {
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         rc.parse();
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,9 +29,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "guard-links.com" }, urls = { "http://(www\\.)?guard\\-links\\.com/[A-Z0-9]+" }, flags = { 0 })
 public class GuardLinksCom extends PluginForDecrypt {
@@ -46,8 +45,7 @@ public class GuardLinksCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+        final Recaptcha rc = new Recaptcha(br, this);
         rc.findID();
         rc.load();
         for (int i = 1; i <= 5; i++) {
@@ -60,14 +58,19 @@ public class GuardLinksCom extends PluginForDecrypt {
             }
             break;
         }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         final String[] links = br.getRegex("<td width=\\'60%\\'><a href=([^<>\"]*?)>").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links)
-            if (!singleLink.contains("guard-links.com/")) decryptedLinks.add(createDownloadlink(singleLink));
+        for (final String singleLink : links) {
+            if (!singleLink.contains("guard-links.com/")) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
+        }
 
         return decryptedLinks;
     }

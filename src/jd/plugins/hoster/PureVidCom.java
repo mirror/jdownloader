@@ -39,9 +39,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "purevid.com" }, urls = { "http://(www\\.)?purevid\\.com/(\\?m=embed&id=[a-z0-9]+|v/[a-z0-9]+/)" }, flags = { 2 })
 public class PureVidCom extends PluginForHost {
@@ -329,8 +329,7 @@ public class PureVidCom extends PluginForHost {
         } else {
             boolean captcha = false;
             String dllink = this.checkDirectLink(link, "premium_directlink");
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             for (int i = 0; i <= 5; i++) {
                 final String return_url = "http://www.purevid.com/?m=video_info_embed_dev&id=" + getFID(link);
                 if (dllink == null) {

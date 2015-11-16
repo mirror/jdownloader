@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision: 23948 $", interfaceVersion = 2, names = { "cacheliens.com" }, urls = { "http://(www\\.)?cacheliens\\.com/(mylink|linkcheck|linkidwoc)\\.php\\?linkid=[a-z0-9]+" }, flags = { 0 })
 public class CheLns extends PluginForDecrypt {
@@ -58,8 +58,7 @@ public class CheLns extends PluginForDecrypt {
                 logger.warning("Plugin Defect: " + parameter);
                 return null;
             }
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.parse();
             rc.load();
             f1.put("recaptcha_challenge_field", rc.getChallenge());
@@ -73,9 +72,11 @@ public class CheLns extends PluginForDecrypt {
             }
             br.submitForm(f1);
             if (br.containsHTML("(The security code is <font color=\\'red\\'>incorrect</font>|The CAPTCHA wasn\\'t entered correctly)")) {
-                if (i == 3)
+                if (i == 3) {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
-                else if (noCaptcha && i == 1) noCaptcha = false;
+                } else if (noCaptcha && i == 1) {
+                    noCaptcha = false;
+                }
                 br = obr.cloneBrowser();
                 continue;
             }
@@ -96,11 +97,14 @@ public class CheLns extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String dl : links)
+            for (String dl : links) {
                 decryptedLinks.add(createDownloadlink(dl));
-            if (!decryptedLinks.isEmpty())
+            }
+            if (!decryptedLinks.isEmpty()) {
                 break;
-            else if (i == 3) return null;
+            } else if (i == 3) {
+                return null;
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

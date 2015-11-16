@@ -40,10 +40,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to" }, urls = { "http://(www\\.)?datei\\.to/(datei/[A-Za-z0-9]+\\.html|\\?[A-Za-z0-9]+)" }, flags = { 2 })
 public class DateiTo extends PluginForHost {
@@ -244,8 +244,7 @@ public class DateiTo extends PluginForHost {
                 logger.warning("reCaptchaId is null...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(reCaptchaId);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -318,8 +317,7 @@ public class DateiTo extends PluginForHost {
             this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
             for (int i = 1; i <= 5; i++) {
                 br.postPage("http://datei.to/response/download", "Step=2&ID=" + dlid);
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.setId("6LdBbL8SAAAAAI0vKUo58XRwDd5Tu_Ze1DA7qTao");
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

@@ -12,9 +12,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.confidentcaptcha.CaptchaHelperCrawlerPluginConfidentCaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,9 +26,12 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.confidentcaptcha.CaptchaHelperCrawlerPluginConfidentCaptcha;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -557,8 +557,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         break;
                     }
                 case 2: {
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.parse();
                     rc.load();
                     File cfRe = rc.downloadCaptcha(getLocalCaptchaFile());

@@ -58,6 +58,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends antiDDoSForHost {
@@ -778,7 +779,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         if (captcha) {
 
             /* recaptcha handling */
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = jd.plugins.hoster.DirectHTTP.getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.setId("6LdatrsSAAAAAHZrB70txiV5p-8Iv8BtVxlTtjKX");
 
             rc.load();

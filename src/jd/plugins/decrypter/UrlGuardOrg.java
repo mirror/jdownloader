@@ -29,8 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlguard.org" }, urls = { "http://(www\\.)?urlguard\\.org/[a-z0-9]+" }, flags = { 0 })
 public class UrlGuardOrg extends PluginForDecrypt {
@@ -56,8 +55,7 @@ public class UrlGuardOrg extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             rc.setId(id);
             if (id == null) {
@@ -75,7 +73,9 @@ public class UrlGuardOrg extends PluginForDecrypt {
                 }
                 break;
             }
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         }
         final String singleLinkframe = br.getRegex("\"(/frame\\.php\\?\\d+)\"").getMatch(0);
         if (singleLinkframe != null) {
@@ -98,8 +98,9 @@ public class UrlGuardOrg extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : links)
+            for (String singleLink : links) {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(singleLink)));
+            }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));

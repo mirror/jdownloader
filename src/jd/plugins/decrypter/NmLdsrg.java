@@ -20,6 +20,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,7 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime\\-loads\\.org/(redirect/\\d+/[a-z0-9]+|media/\\d+)" }, flags = { 0 })
@@ -74,7 +75,9 @@ public class NmLdsrg extends PluginForDecrypt {
                 return decryptedLinks;
             }
             fpName = br.getRegex(":: (.*?)</span></h2>").getMatch(0);
-            if (fpName == null) fpName = "No Title";
+            if (fpName == null) {
+                fpName = "No Title";
+            }
             String[] continueLinks = br.getRegex("\"(http://(www\\.)?anime\\-loads\\.org/redirect/\\d+/[a-z0-9]+)\"").getColumn(0);
             if (continueLinks == null || continueLinks.length == 0) {
                 if (br.containsHTML("<th width=\"30\">DL</th>")) {
@@ -124,7 +127,9 @@ public class NmLdsrg extends PluginForDecrypt {
             // they check if you hit up this step or not!!
             // <iframe id="ad" scrolling="auto" src="http://www.anime-loads.org/redirect/animemanga/69e398ca6a4cfb2fa46771f6b75ac3f6"
             String ad_redirect = br2.getRegex("<iframe id=\"[A-Za-z0-9]+\" scrolling=\"auto\" src=\"(http://(www\\.)?anime\\-loads\\.org/redirect/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
-            if (ad_redirect == null) ad_redirect = br2.getRegex("scrolling=\"auto\" src=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (ad_redirect == null) {
+                ad_redirect = br2.getRegex("scrolling=\"auto\" src=\"(http[^<>\"]*?)\"").getMatch(0);
+            }
             if (ad_redirect == null) {
                 logger.warning("Could not find 'ad_redirect' : " + br.getURL());
             } else {
@@ -168,8 +173,7 @@ public class NmLdsrg extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             for (int i = 0; i <= 3; i++) {
@@ -198,7 +202,9 @@ public class NmLdsrg extends PluginForDecrypt {
                 continue;
             }
             dllink = dllink.replace("\\", "");
-            if (!dllink.startsWith("http")) dllink = Encoding.Base64Decode(dllink);
+            if (!dllink.startsWith("http")) {
+                dllink = Encoding.Base64Decode(dllink);
+            }
             final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink.replace("\\", "")));
             fp.add(dl);
             dl.setSourcePluginPasswordList(passwords);

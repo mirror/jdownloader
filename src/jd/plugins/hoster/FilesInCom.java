@@ -27,9 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesin.com" }, urls = { "http://(www\\.)?filesin\\.com/[A-Z0-9]+/download\\.html" }, flags = { 0 })
 public class FilesInCom extends PluginForHost {
@@ -74,8 +74,7 @@ public class FilesInCom extends PluginForHost {
         if (rcID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+        final Recaptcha rc = new Recaptcha(br, this);
         rc.setId(rcID);
         for (int i = 0; i <= 5; i++) {
             // Hmm, service contains wrong reCaptcha ID --> Error

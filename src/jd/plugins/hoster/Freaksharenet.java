@@ -42,11 +42,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net", "freakshare.com" }, urls = { "REGEXNOTUSED_BLAHASDAHAHDAHAHSDHAHDASDHAHD1223", "http://(www\\.)?freakshare\\.(net|com)/files?/[\\w]+/.+(\\.html)?" }, flags = { 0, 2 })
 public class Freaksharenet extends PluginForHost {
@@ -207,8 +207,7 @@ public class Freaksharenet extends PluginForHost {
             }
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                 captchaFailed = true;
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.parse();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

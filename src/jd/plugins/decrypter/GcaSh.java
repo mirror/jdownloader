@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,9 +33,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gca.sh" }, urls = { "http://(www\\.)?gca\\.sh/[A-Za-z0-9]+" }, flags = { 0 })
 public class GcaSh extends PluginForDecrypt {
@@ -56,8 +55,7 @@ public class GcaSh extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             /* ID 22.04.25: 6LcQedQSAAAAAH_O6lQcp-X-lrMa77g8TrNfxN-d */
             /* Params when reCaptcha is in use: last_key=9,i=fallback,captcha=captchaad,submit=Daten absenden */
             rc.findID();

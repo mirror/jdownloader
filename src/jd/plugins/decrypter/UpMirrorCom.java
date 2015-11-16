@@ -27,8 +27,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upmirror.com" }, urls = { "http://(www\\.)?upmirror\\.com/[a-z0-9]+" }, flags = { 0 })
 public class UpMirrorCom extends PluginForDecrypt {
@@ -48,17 +47,20 @@ public class UpMirrorCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         for (int i = 0; i <= 5; i++) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode("recaptcha", cf, param);
             rc.setCode(c);
-            if (br.containsHTML(CAPTCHATEXT)) continue;
+            if (br.containsHTML(CAPTCHATEXT)) {
+                continue;
+            }
             break;
         }
-        if (br.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (br.containsHTML(CAPTCHATEXT)) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         String finallink = br.getRegex("HTTP\\-EQUIV=\\'Refresh\\' CONTENT=\\'\\d+;URL=(.*?)\\'").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);

@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -26,9 +28,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "http://(www\\.)?compupaste\\.com/\\?v=\\d+" }, flags = { 0 })
 public class CompuPasteCom extends PluginForDecrypt {
@@ -46,8 +45,7 @@ public class CompuPasteCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.findID();
             rc.load();
             for (int i = 1; i <= 5; i++) {
@@ -60,15 +58,20 @@ public class CompuPasteCom extends PluginForDecrypt {
                 }
                 break;
             }
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         }
         final String[] links = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.info("Link offline (no links found): " + parameter);
             return decryptedLinks;
         }
-        for (final String singleLink : links)
-            if (!singleLink.contains("compupaste.com/")) decryptedLinks.add(createDownloadlink(singleLink));
+        for (final String singleLink : links) {
+            if (!singleLink.contains("compupaste.com/")) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
+        }
 
         return decryptedLinks;
     }

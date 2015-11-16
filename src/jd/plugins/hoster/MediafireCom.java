@@ -23,11 +23,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -53,20 +49,23 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
 
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME          = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
 
-    private static final int ACCOUNT_FREE_MAXDOWNLOADS = 10;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS       = 10;
 
     /** Settings stuff */
-    private static final String FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
+    private static final String  FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
 
     public static String stringUserAgent() {
         return UserAgents.stringUserAgent();
@@ -146,20 +145,20 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>(stringUserAgent());
+    private static AtomicReference<String> agent                      = new AtomicReference<String>(stringUserAgent());
 
-    static private final String offlinelink = "tos_aup_violation";
+    static private final String            offlinelink                = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
-    private static final String ERROR_PAGE                 = "error.php";
+    private static final String            ERROR_PAGE                 = "error.php";
     /**
      * The number of retries to be performed in order to determine if a file is availableor to try captcha/password.
      */
-    private int                 max_number_of_free_retries = 3;
+    private int                            max_number_of_free_retries = 3;
 
-    private String fileID;
+    private String                         fileID;
 
-    private String dlURL;
+    private String                         dlURL;
 
     @SuppressWarnings("deprecation")
     public MediafireCom(final PluginWrapper wrapper) {
@@ -314,8 +313,7 @@ public class MediafireCom extends PluginForHost {
                     } else if (freeArea != null && new Regex(freeArea, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                         logger.info("Detected captcha method \"Re Captcha\" for this host");
                         handleExtraReconnectSettingOnCaptcha(account);
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         String id = new Regex(freeArea, "challenge\\?k=(.+?)\"").getMatch(0);
                         if (id != null) {
                             logger.info("CaptchaID found, Form found " + (form != null));
@@ -366,7 +364,7 @@ public class MediafireCom extends PluginForHost {
                     }
                 }
             } catch (final Exception e) {
-                logger.log( e);
+                logger.log(e);
                 if (e instanceof PluginException) {
                     throw (PluginException) e;
                 }

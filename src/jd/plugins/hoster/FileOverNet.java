@@ -38,10 +38,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileover.net" }, urls = { "http(s)?://(www\\.)?fileover\\.net/\\d+" }, flags = { 2 })
 public class FileOverNet extends PluginForHost {
@@ -143,8 +143,7 @@ public class FileOverNet extends PluginForHost {
             recaptchaForm.put("hash", hash);
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.setForm(recaptchaForm);
                 String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                 rc.setId(id);

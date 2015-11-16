@@ -28,9 +28,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-share.ru" }, urls = { "http://[\\w\\.]*?free-share\\.ru/[0-9]+/[0-9]+/" }, flags = { 0 })
 public class FreeShareRu extends PluginForHost {
@@ -70,8 +70,7 @@ public class FreeShareRu extends PluginForHost {
             logger.warning("sid equals null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+        final Recaptcha rc = new Recaptcha(br, this);
         rc.parse();
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

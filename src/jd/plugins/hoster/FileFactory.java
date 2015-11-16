@@ -53,7 +53,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Application;
@@ -61,6 +60,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)((?:file|stream)/[\\w]+/?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
@@ -602,7 +602,7 @@ public class FileFactory extends PluginForHost {
         } catch (final InterruptedException e2) {
             return;
         } catch (final IOException e) {
-            logger.log( e);
+            logger.log(e);
             if (e.getMessage() != null && e.getMessage().contains("502")) {
                 logger.severe("Filefactory returned Bad gateway.");
                 Thread.sleep(1000);
@@ -722,8 +722,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public String handleRecaptcha(final DownloadLink link) throws Exception {
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+        final Recaptcha rc = new Recaptcha(br, this);
         final String id = br.getRegex("Recaptcha\\.create\\(([\r\n\t ]+)?\"([^\"]+)").getMatch(1);
         rc.setId(id);
         final Form form = new Form();

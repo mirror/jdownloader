@@ -19,10 +19,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.areyouahuman.CaptchaHelperCrawlerPluginAreYouHuman;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,8 +32,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.jdownloader.captcha.v2.challenge.areyouahuman.CaptchaHelperCrawlerPluginAreYouHuman;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivpaste.com" }, urls = { "http://(www\\.)?ivpaste\\.com/(v/|view\\.php\\?id=)[A-Za-z0-9]+" }, flags = { 0 })
 public class IvPasteCom extends PluginForDecrypt {
@@ -79,7 +78,7 @@ public class IvPasteCom extends PluginForDecrypt {
             if (i >= 5) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            if (form.containsHTML("pluscaptcha\\.com/") || /* ads captcha */ form.containsHTML("api\\.minteye\\.com/|api\\.adscaptcha\\.com/")) {
+            if (form.containsHTML("pluscaptcha\\.com/") || /* ads captcha */form.containsHTML("api\\.minteye\\.com/|api\\.adscaptcha\\.com/")) {
                 logger.info(i + "/3:Unsupported captchatype: " + parameter);
                 sleep(1000l, param);
                 br.getPage("http://ivpaste.com/p/" + ID);
@@ -93,8 +92,7 @@ public class IvPasteCom extends PluginForDecrypt {
                 form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.submitForm(form);
             } else if (form.containsHTML("api\\.recaptcha\\.net") || form.containsHTML("google\\.com/recaptcha/api/")) {
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 String apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                 if (apiKey == null) {
                     apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);

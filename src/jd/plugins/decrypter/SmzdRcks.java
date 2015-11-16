@@ -40,7 +40,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
@@ -49,6 +48,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision: 28619 $", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/(folder/[A-Za-z0-9\\-_]+|redirect/[A-Za-z0-9\\-_]+\\?_link=[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class SmzdRcks extends antiDDoSForDecrypt {
@@ -130,7 +130,7 @@ public class SmzdRcks extends antiDDoSForDecrypt {
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);
         if (rcID != null) {
             // Form[] forms = br.getForms();
-            final DirectHTTP.Recaptcha rc = DirectHTTP.getReCaptcha(br.cloneBrowser(), this);
+            final Recaptcha rc = new Recaptcha(br.cloneBrowser(), this);
             rc.setId(rcID);
             rc.load();
             String secretKey = null;

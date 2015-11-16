@@ -30,10 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "r8link.com" }, urls = { "http://(www\\.)?r8link\\.com/[A-Za-z0-9]+" }, flags = { 0 })
@@ -57,8 +55,7 @@ public class R8LinkCom extends PluginForDecrypt {
         final int repeat = 4;
         for (int i = 1; i <= repeat; i++) {
             if (br.containsHTML(reCaptcha)) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.parse();
                 final String[] v = br.getRegex("(\\w)\\.name\\s*=\\s*(\"|')(\\w+)\";\\s*\\1\\.value\\s*=\\s*(\"|')([a-f0-9]+)\\4").getRow(0);
                 if (v == null) {

@@ -57,6 +57,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com/files|fp\\.io)/[a-z0-9]+" }, flags = { 2 })
 public class FilePostCom extends PluginForHost {
@@ -148,7 +149,7 @@ public class FilePostCom extends PluginForHost {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
@@ -427,8 +428,7 @@ public class FilePostCom extends PluginForHost {
             }
             form.setEncoding("application/octet-stream;");
             if (captchaNeeded) {
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 String cid = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
                 rc.setId(cid);
                 rc.load();
@@ -686,8 +686,7 @@ public class FilePostCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         br.getPage("/");
-                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         String id = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
                         rc.setId(id);
                         rc.load();

@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -35,7 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" }, flags = { 2 })
@@ -146,8 +147,7 @@ public class FilerNet extends PluginForHost {
             int maxCaptchaTries = 5;
             int tries = 0;
             while (tries < maxCaptchaTries) {
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 if (recapID == null) {
                     recapID = getJson("recaptcha_challange", br.toString());
                 }

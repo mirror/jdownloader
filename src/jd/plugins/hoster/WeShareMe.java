@@ -38,14 +38,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "weshare.me" }, urls = { "https?://(www\\.)?weshare\\.me/[A-Za-z0-9]+" }, flags = { 2 })
 public class WeShareMe extends antiDDoSForHost {
@@ -258,8 +255,7 @@ public class WeShareMe extends antiDDoSForHost {
                         logger.warning("Failed to find reCaptchaID");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.setId(rcID);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -268,7 +264,7 @@ public class WeShareMe extends antiDDoSForHost {
                 } else if (br.containsHTML(captcha_SOLVEMEDIA)) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     captcha = true;
-                   
+
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {

@@ -39,10 +39,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfilee.com", "restfile.ws", "restfile.com" }, urls = { "https?://(www\\.)?(restfile\\.(ws|ca|co|com|bz|cc|net)|restfiles\\.net|restfilee\\.com)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" }, flags = { 0, 0, 0 })
 public class RestFileCom extends PluginForHost {
@@ -228,8 +228,7 @@ public class RestFileCom extends PluginForHost {
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
             } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                 logger.info("Detected captcha method \"Re Captcha\" for this host");
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.setForm(dlForm);
                 String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                 rc.setId(id);
@@ -525,9 +524,10 @@ public class RestFileCom extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }
