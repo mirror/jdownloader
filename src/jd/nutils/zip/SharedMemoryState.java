@@ -173,7 +173,7 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         final long totalDl = dla.getTotalBytes();
         final long curDl = dla.getBytesLoaded();
         final long remain = Math.max(0, totalDl - curDl);
-        long eta = Math.max(0, dla.getEta());
+        long eta = dla.getEta();
 
         final List<ExtractionController> jobs = ExtractionExtension.getInstance().getJobQueue().getJobs();
         for (final ExtractionController controller : jobs) {
@@ -188,7 +188,7 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         buf.putLong(totalDl);
         buf.putLong(curDl);
         buf.putLong(remain);
-        buf.putLong(eta);
+        buf.putLong(Math.max(0, eta));
         buf.putLong(DownloadWatchDog.getInstance().getActiveDownloads());
         buf.putLong(DownloadWatchDog.getInstance().getDownloadSpeedManager().connections());
         buf.putLong(DownloadWatchDog.getInstance().getRunningFilePackages().size());
@@ -196,7 +196,7 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         // formatted eta string
         byte[] etas;
         try {
-            etas = Formatter.formatSeconds(dla.getEta()).replace(":", " ").getBytes("ISO-8859-1"); // use standard charset
+            etas = Formatter.formatSeconds(eta).replace(":", " ").getBytes("ISO-8859-1"); // use standard charset
             buf.putInt(etas.length);
             buf.put(etas);
         } catch (UnsupportedEncodingException e) {
