@@ -19,10 +19,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -36,9 +32,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.utils.JDUtilities;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -394,8 +393,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                         }
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr, this);
+                        final Recaptcha rc = new Recaptcha(ibr, this);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -601,8 +599,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         if (apiKey == null) {
                             apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
                         }
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr, this);
+                        final Recaptcha rc = new Recaptcha(ibr, this);
                         rc.setId(apiKey);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

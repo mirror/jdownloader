@@ -34,9 +34,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "omerta.is" }, urls = { "https?://(www\\.)?omerta\\.is/[A-Za-z0-9]+" }, flags = { 0 })
 public class OmertaIs extends PluginForHost {
@@ -209,8 +209,7 @@ public class OmertaIs extends PluginForHost {
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
                     } else {
                         captcha = true;
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         rc.setId(rcID);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -359,10 +358,9 @@ public class OmertaIs extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.MFScripts_YetiShare;
-	}
-
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
+    }
 
 }

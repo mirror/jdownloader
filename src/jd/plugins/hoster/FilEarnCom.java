@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -43,10 +42,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filearn.com" }, urls = { "http://(www\\.)?filearn\\.com/files/get/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class FilEarnCom extends PluginForHost {
@@ -74,7 +73,7 @@ public class FilEarnCom extends PluginForHost {
         try {
             result = engine.eval(fun);
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (result == null) {
@@ -165,8 +164,7 @@ public class FilEarnCom extends PluginForHost {
             if (action == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             Form dlForm = new Form();
             dlForm.setAction(action);
             dlForm.put("pass", "");

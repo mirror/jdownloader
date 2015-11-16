@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "embedupload.com" }, urls = { "http://(www\\.)?embedupload\\.(com|to)/\\?([A-Z0-9]{2}|d)=[A-Z0-9]+" }, flags = { 0 })
 public class EmbedUploadCom extends PluginForDecrypt {
@@ -60,8 +60,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (br.containsHTML(recaptcha)) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                 rc.setId(id);
                 if (id == null) {

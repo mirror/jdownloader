@@ -43,10 +43,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecad.com" }, urls = { "https?://(?:www\\.)?filecad\\.com/[A-Za-z0-9]+" }, flags = { 2 })
@@ -226,8 +226,7 @@ public class FilecadCom extends PluginForHost {
                     } else if (rcID != null) {
                         captcha = true;
                         success = false;
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         rc.setId(rcID);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

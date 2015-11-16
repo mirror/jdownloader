@@ -53,6 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
@@ -293,8 +294,7 @@ public class HitFileNet extends PluginForHost {
         }
 
         if (br.containsHTML(HTML_RECAPTCHATEXT)) {
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.parse();
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

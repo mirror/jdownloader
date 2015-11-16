@@ -40,7 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
@@ -195,8 +195,7 @@ public class UploadableCh extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1001l);
             }
             boolean captchaFailed = true;
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(recaptchaid);
             rc.load();
             for (int i = 1; i <= 5; i++) {
@@ -322,8 +321,7 @@ public class UploadableCh extends PluginForHost {
                     loginform.put("autoLogin", "on");
                     if (loginform.hasInputFieldByName("recaptcha_response_field")) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "uploadable.ch", "https://uploadable.ch", true);
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         rc.setId(recaptchaid);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

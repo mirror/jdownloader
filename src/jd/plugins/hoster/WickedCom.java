@@ -41,7 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wicked.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.wicked\\.com/download/\\d+/[a-z0-9_\\-]+" }, flags = { 2 })
 public class WickedCom extends PluginForHost {
@@ -171,8 +171,7 @@ public class WickedCom extends PluginForHost {
                 String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 if (br.containsHTML("for=\"recaptcha_response_field\"")) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "wicked.com", MAINPAGE, true);
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

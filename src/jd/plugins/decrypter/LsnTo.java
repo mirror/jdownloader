@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -28,8 +30,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lesen.to" }, urls = { "http://(www\\.)?lesen\\.to/(protection/folder_\\d+\\.html|wp/tipp/Download/\\d+/)" }, flags = { 0 })
@@ -74,8 +74,7 @@ public class LsnTo extends PluginForDecrypt {
         boolean failed = true;
         if (br.containsHTML(RECAPTCHA)) {
             for (int i = 0; i <= 5; i++) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.parse();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -88,9 +87,13 @@ public class LsnTo extends PluginForDecrypt {
                 failed = false;
                 break;
             }
-            if (failed) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         }
-        if (br.containsHTML("Anfrage abgefangen")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        if (br.containsHTML("Anfrage abgefangen")) {
+            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        }
         final Form form = br.getForm(1);
         if (form != null) {
             br.submitForm(form);
@@ -113,7 +116,9 @@ public class LsnTo extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             } else {
-                if (!singleLink.contains("lesen.to/")) decryptedLinks.add(createDownloadlink(singleLink));
+                if (!singleLink.contains("lesen.to/")) {
+                    decryptedLinks.add(createDownloadlink(singleLink));
+                }
             }
         }
         return decryptedLinks;

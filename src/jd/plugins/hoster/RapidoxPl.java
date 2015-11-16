@@ -43,6 +43,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class RapidoxPl extends PluginForHost {
@@ -418,8 +419,7 @@ public class RapidoxPl extends PluginForHost {
                         logger.warning("Expected login captcha is not there!");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.setId(rcID);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

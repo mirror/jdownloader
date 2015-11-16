@@ -39,10 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depofile.info" }, urls = { "http://(www\\.)?depofile\\.info/[a-z0-9]+" }, flags = { 2 })
 public class DepoFileInfo extends PluginForHost {
@@ -153,8 +153,7 @@ public class DepoFileInfo extends PluginForHost {
                 logger.warning("reCaptcha_ID or captchaAction NULL - plugin seems to be broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             for (int i = 0; i <= 5; i++) {
@@ -330,10 +329,10 @@ public class DepoFileInfo extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.MFScripts_YetiShare;
-	}
 
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
+    }
 
 }

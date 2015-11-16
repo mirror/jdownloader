@@ -20,6 +20,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,8 +31,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liens-protector.com" }, urls = { "http://(www\\.)?liens\\-protector\\.com/[A-Za-z0-9\\-_\\.]+\\.html" }, flags = { 0 })
 public class LiensProtectorCom extends PluginForDecrypt {
@@ -58,8 +58,7 @@ public class LiensProtectorCom extends PluginForDecrypt {
             } else {
                 boolean failed = true;
                 for (int i = 0; i <= 5; i++) {
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.parse();
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());

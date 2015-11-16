@@ -31,9 +31,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files123.net" }, urls = { "http://(www\\.)?files123\\.net/[A-Z0-9]+/download\\.html" }, flags = { 0 })
 public class Files123Net extends PluginForHost {
@@ -77,8 +77,7 @@ public class Files123Net extends PluginForHost {
             }
             br.getPage(continuelink);
             br.setFollowRedirects(false);
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.findID();
             rc.load();
             for (int i = 1; i <= 5; i++) {

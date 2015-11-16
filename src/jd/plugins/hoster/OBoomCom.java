@@ -31,11 +31,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" }, flags = { 2 })
 public class OBoomCom extends PluginForHost {
@@ -529,10 +529,10 @@ public class OBoomCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-             * account != null &&
-             */
-        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+         * account != null &&
+         */
+                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }
@@ -656,9 +656,8 @@ public class OBoomCom extends PluginForHost {
             maxchunks = 0;
             dllink = link.getDownloadURL();
         } else {
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             for (int i = 1; i <= 5; i++) {
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.setId("6LdqpO0SAAAAAJGHXo63HyalP7H4qlRs_vff0kJX");
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());

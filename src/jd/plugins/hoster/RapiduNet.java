@@ -26,8 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,6 +48,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" }, flags = { 2 })
 public class RapiduNet extends PluginForHost {
@@ -224,10 +225,10 @@ public class RapiduNet extends PluginForHost {
             sleep(timeLeft, downloadLink);
         }
         String fileID = downloadLink.getProperty("FILEID").toString();
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+
         Form dlForm = new Form();
 
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+        final Recaptcha rc = new Recaptcha(br, this);
         dlForm.put("ajax", "1");
         dlForm.put("cachestop", "0.7658682554028928");
         rc.setForm(dlForm);
@@ -629,17 +630,17 @@ public class RapiduNet extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
-                                                  }
-                                              };
+        {
+            put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
+        }
+    };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
+        {
+            put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
 
-                                                  }
-                                              };
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

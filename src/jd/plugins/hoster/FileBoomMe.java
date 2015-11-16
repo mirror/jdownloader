@@ -37,12 +37,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "https?://(www\\.)?(fboom|fileboom)\\.me/file/[a-z0-9]{13,}" }, flags = { 2 })
 public class FileBoomMe extends K2SApi {
@@ -218,8 +217,7 @@ public class FileBoomMe extends K2SApi {
                 final int repeat = 4;
                 for (int i = 1; i <= repeat; i++) {
                     if (br.containsHTML(reCaptcha)) {
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         rc.findID();
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

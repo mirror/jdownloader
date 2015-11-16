@@ -2194,6 +2194,15 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        if (link != null && StringUtils.equals(link.getHost(), getHost())) {
+            // link and plugin from same service
+            return account == null;
+        }
+        // multihoster
+        return false;
+    }
+
     /**
      * plugins may set a mirrorid to help the mirror detector. You have to ensure, that two mirrors either get the same mirror id, or no
      * mirrorid(null)

@@ -15,6 +15,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
@@ -138,11 +139,12 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         if (warningEnabled.get() && value instanceof DownloadLink) {
             final DownloadLink dl = (DownloadLink) value;
             final SingleDownloadController dlc = dl.getDownloadLinkController();
-            if (dlc == null || dlc.getAccount() != null) {
+            Account acc = null;
+            if (dlc == null || (acc = dlc.getAccount()) != null) {
                 return false;
             }
             PluginForHost plugin = dl.getDefaultPlugin();
-            if (plugin == null || !plugin.isPremiumEnabled()) {
+            if (plugin == null || !plugin.isSpeedLimited(dl, acc) | !plugin.isPremiumEnabled()) {
                 /* no account support yet for this plugin */
                 return false;
             }

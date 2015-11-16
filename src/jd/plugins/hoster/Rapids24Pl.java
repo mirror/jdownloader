@@ -34,9 +34,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids24.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class Rapids24Pl extends PluginForHost {
@@ -89,8 +89,7 @@ public class Rapids24Pl extends PluginForHost {
         final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=(.+)").getMatch(0);
         if (rcID != null) {
             final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, "http://" + NICE_HOST, true);
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             for (int i = 1; i <= 5; i++) {

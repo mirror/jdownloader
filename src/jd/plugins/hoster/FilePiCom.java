@@ -29,9 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepi.com" }, urls = { "http://(www\\.)?filepi\\.com/i/[A-Za-z0-9]+" }, flags = { 0 })
 public class FilePiCom extends PluginForHost {
@@ -83,8 +83,7 @@ public class FilePiCom extends PluginForHost {
         }
         final Browser br2 = br.cloneBrowser();
         br2.getPage("http://static.filepi.com/js/file.js?15");
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2, this);
+        final Recaptcha rc = new Recaptcha(br2, this);
         rc.findID();
         rc.load();
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

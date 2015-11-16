@@ -47,14 +47,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" }, flags = { 2 })
@@ -302,8 +301,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             final long t = System.currentTimeMillis();
             final String waittime = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
             // register wait i guess, it should return 1
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.findID();
             final int repeat = 5;
             for (int i = 1; i <= repeat; i++) {
@@ -492,8 +490,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 logger.info("Detected captcha method \"Re Captcha\"");
                 final Browser captcha = br.cloneBrowser();
                 final DownloadLink dummyLink = new DownloadLink(null, "Account Login Requires Recaptcha", this.getHost(), br.getURL(), true);
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha, this);
+                final Recaptcha rc = new Recaptcha(captcha, this);
                 // after 5 wrong guesses they ban ip/account
                 rc.setId(recap);
                 rc.load();
@@ -771,8 +768,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 String recap = getJson("recaptchaPublic");
                 if (!inValidate(recap)) {
                     logger.info("Detected captcha method \"Re Captcha\"");
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.setId(recap);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

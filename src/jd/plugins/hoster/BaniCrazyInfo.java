@@ -35,9 +35,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "banicrazy.info" }, urls = { "http://(www\\.)?banicrazy\\.info/[a-z0-9]{12}" }, flags = { 0 })
 public class BaniCrazyInfo extends PluginForHost {
@@ -291,8 +291,7 @@ public class BaniCrazyInfo extends PluginForHost {
             // the !br.contains...check Exampleplugin:
             // FileGigaCom
             logger.info("Detected captcha method \"Re Captcha\" for this host");
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -503,9 +502,10 @@ public class BaniCrazyInfo extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

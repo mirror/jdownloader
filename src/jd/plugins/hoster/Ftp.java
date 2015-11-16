@@ -53,6 +53,11 @@ public class Ftp extends PluginForHost {
         return super.getHost(link, account);
     }
 
+    @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
+    }
+
     public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws Exception {
         SimpleFTP ftp = new SimpleFTP();
         try {

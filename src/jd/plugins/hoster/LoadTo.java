@@ -35,13 +35,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "http://(www\\.)?load\\.to/[A-Za-z0-9]+/" }, flags = { 2 })
 public class LoadTo extends PluginForHost {
@@ -122,8 +121,7 @@ public class LoadTo extends PluginForHost {
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             for (int i = 1; i <= 5; i++) {
                 /* Captcha */
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.findID();
                 rc.load();
                 linkurl = getLinkurl();
@@ -150,7 +148,7 @@ public class LoadTo extends PluginForHost {
         } else if (br.containsHTML("solvemedia\\.com/papi/")) {
             for (int i = 1; i <= 3; i++) {
                 /* Captcha */
-               
+
                 final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = null;
                 try {

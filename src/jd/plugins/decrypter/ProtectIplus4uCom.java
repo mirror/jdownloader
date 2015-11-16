@@ -20,6 +20,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,8 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.iplus4u.com" }, urls = { "http://(www\\.)?protect\\.iplus4u\\.com/[A-Za-z0-9\\-_\\.]+\\.html" }, flags = { 0 })
 public class ProtectIplus4uCom extends PluginForDecrypt {
@@ -65,8 +65,7 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.parse();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

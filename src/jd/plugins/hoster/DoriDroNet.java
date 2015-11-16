@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -31,7 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doridro.net" }, urls = { "http://(www\\.)?doridrodecrypted\\.net/download/[^<>\"]*?\\.html" }, flags = { 0 })
 public class DoriDroNet extends PluginForHost {
@@ -58,9 +59,15 @@ public class DoriDroNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("<meta name=\"audio_title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("Title: ([^<>\"]+)<br").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            filename = br.getRegex("Title: ([^<>\"]+)<br").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (filename.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         return AvailableStatus.TRUE;
     }
@@ -82,18 +89,21 @@ public class DoriDroNet extends PluginForHost {
             }
             br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 for (int i = 0; i <= 5; i++) {
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.parse();
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     rc.setCode(c);
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        continue;
+                    }
                     break;
                 }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 /** Save cookies to prevent more captchas */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -103,13 +113,21 @@ public class DoriDroNet extends PluginForHost {
             }
         }
         String dllink = br.getRegex("Download Link</div><a href=\"(http://[^<>\"]+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dl\\.doridro\\.net/get/(http://[^<>\"]+))\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://dl\\.doridro\\.net/get/(http://[^<>\"]+))\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("File Not Found\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("Downloading this file is disabled by Administrator on Artists request")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible");
+            if (br.containsHTML("File Not Found\\.")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML("Downloading this file is disabled by Administrator on Artists request")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

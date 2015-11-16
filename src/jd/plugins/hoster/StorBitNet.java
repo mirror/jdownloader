@@ -37,7 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -216,8 +216,7 @@ public class StorBitNet extends PluginForHost {
                 if (br.containsHTML("\"message\":\"error\"")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 }
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.setId("6Lc4YwgTAAAAAPoZXXByh65cUKulPwDN31HlV1Wp");
                 for (int i = 0; i < 5; i++) {
                     rc.load();

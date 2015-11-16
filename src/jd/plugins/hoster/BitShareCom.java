@@ -43,6 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/(\\?(f|m)=[a-z0-9]{8}|files/[a-z0-9]{8})" }, flags = { 2 })
 public class BitShareCom extends PluginForHost {
@@ -248,8 +249,7 @@ public class BitShareCom extends PluginForHost {
                 reCaptchaForm.setAction(ajax_url);
                 reCaptchaForm.put("request", "validateCaptcha");
                 reCaptchaForm.put("ajaxid", tempID);
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                final Recaptcha rc = new Recaptcha(br, this);
                 rc.setForm(reCaptchaForm);
                 rc.setId(id);
                 rc.load();

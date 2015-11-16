@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +31,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cpvlink.com" }, urls = { "http://(www\\.)?shr77\\.com/[A-Za-z0-9]+" }, flags = { 0 })
 public class CpvLinkCom extends PluginForDecrypt {
@@ -64,8 +63,7 @@ public class CpvLinkCom extends PluginForDecrypt {
         final String rcid = br.getRegex("recaptcha/api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
         if (rcid != null) {
             final String lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.setId(rcid);
             rc.load();
             for (int i = 1; i <= 5; i++) {

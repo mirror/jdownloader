@@ -39,9 +39,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(www\\.)?pixabay\\.com/en/[a-z0-9\\-]+\\-\\d+/" }, flags = { 2 })
 public class PixaBayCom extends PluginForHost {
@@ -152,8 +152,7 @@ public class PixaBayCom extends PluginForHost {
             }
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             /* Last updated: 2015-08-17 */
             rc.setId("6Ld8hL8SAAAAAKbydL06Ir20hG_u2SfRkBbfpTNf");
             rc.load();

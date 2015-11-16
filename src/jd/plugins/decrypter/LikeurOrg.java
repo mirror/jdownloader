@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,9 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "likeur.org" }, urls = { "http://(?:www\\.)?likeur\\.org/lien/[^/]+\\.html" }, flags = { 0 })
 public class LikeurOrg extends PluginForDecrypt {
@@ -50,8 +49,7 @@ public class LikeurOrg extends PluginForDecrypt {
         }
         boolean failed = true;
         for (int i = 0; i <= 5; i++) {
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.findID();
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

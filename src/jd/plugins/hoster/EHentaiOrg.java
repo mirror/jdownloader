@@ -43,10 +43,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org", "exhentai.org" }, urls = { "http://g\\.e\\-hentai\\.orgdecrypted\\d+", "http://exhentai\\.orgdecrypted\\d+" }, flags = { 2, 2 })
 public class EHentaiOrg extends PluginForHost {
@@ -266,8 +266,7 @@ public class EHentaiOrg extends PluginForHost {
                     loginform.put("PassWord", account.getPass());
                     if (i > 0 && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                         /* First login try failed and we get a captcha --> Does not necessarily mean that user entered wrong logindata! */
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         rc.findID();
                         rc.load();
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "e-hentai.org", "http://e-hentai.org", true);

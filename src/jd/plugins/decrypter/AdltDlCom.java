@@ -34,10 +34,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
 
@@ -130,8 +128,7 @@ public class AdltDlCom extends PluginForDecrypt {
                 captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             } else if (br2.containsHTML("google\\.com/recaptcha")) {
                 // recaptcha v1
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2, this);
+                final Recaptcha rc = new Recaptcha(br2, this);
                 rc.findID();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

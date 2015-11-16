@@ -41,6 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -603,8 +604,7 @@ public class UploadingCom extends PluginForHost {
                     // don't need it but it's always present on login page
                     String recaptcha = br.getRegex("\\(\\'recaptcha_block\\', \\'([^\\']+)").getMatch(0);
                     if (loginFail == true && recaptcha != null) {
-                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         rc.setForm(login);
                         String id = recaptcha;
                         rc.setId(id);

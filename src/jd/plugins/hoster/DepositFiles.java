@@ -56,13 +56,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
@@ -681,7 +681,7 @@ public class DepositFiles extends antiDDoSForHost {
                 date = dateFormat.parse(expire);
                 ai.setValidUntil(date.getTime());
             } catch (final ParseException e) {
-                logger.log( e);
+                logger.log(e);
             }
         }
         return ai;
@@ -745,8 +745,7 @@ public class DepositFiles extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid != null) {
                     DownloadLink dummy = new DownloadLink(null, null, null, null, true);
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                    final Recaptcha rc = new Recaptcha(br2, this);
                     rc.setId(cid);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -980,8 +979,7 @@ public class DepositFiles extends antiDDoSForHost {
             if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
                 for (int i = 0; i <= 2; i++) {
                     DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.get(), true);
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                    final Recaptcha rc = new Recaptcha(br, this);
                     rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -1057,7 +1055,7 @@ public class DepositFiles extends antiDDoSForHost {
                     date = dateFormat.parse(expire);
                     ai.setValidUntil(date.getTime());
                 } catch (final ParseException e) {
-                    logger.log( e);
+                    logger.log(e);
                 }
             } else {
                 ai.setStatus("Free Account");
@@ -1146,8 +1144,7 @@ public class DepositFiles extends antiDDoSForHost {
                 apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken);
                 if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
                     for (int i = 0; i <= 2; i++) {
-                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+                        final Recaptcha rc = new Recaptcha(br, this);
                         rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

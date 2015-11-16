@@ -40,7 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -184,8 +184,7 @@ public class UploadCd extends PluginForHost {
             br.postPage("http://upload.cd/download/checkTimer", "sid=" + sid);
 
             br.postPage("http://upload.cd/download/url", "fileid=" + fid + "&usid=" + sid + "&referer=&premium_dl=0");
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
+            final Recaptcha rc = new Recaptcha(br, this);
             rc.findID();
             rc.load();
             for (int i = 1; i <= 5; i++) {
