@@ -63,11 +63,11 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     public boolean isHeadlessRunnable() {
-        return false;
+        return true;
     }
 
     public void saveScheduleEntries() {
-        List<ScheduleEntryStorable> scheduleStorables = new ArrayList<ScheduleEntryStorable>();
+        final List<ScheduleEntryStorable> scheduleStorables = new ArrayList<ScheduleEntryStorable>();
         for (ScheduleEntry entry : getScheduleEntries()) {
             scheduleStorables.add(entry.getStorable());
         }
@@ -98,8 +98,10 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     @Override
     protected void stop() throws StopException {
         saveScheduleEntries();
-        MenuManagerMainToolbar.getInstance().unregisterExtender(this);
-        MenuManagerMainmenu.getInstance().unregisterExtender(this);
+        if (!Application.isHeadless()) {
+            MenuManagerMainToolbar.getInstance().unregisterExtender(this);
+            MenuManagerMainmenu.getInstance().unregisterExtender(this);
+        }
         ShutdownController.getInstance().removeShutdownEvent(shutDownEvent);
         synchronized (lock) {
             if (scheduler != null) {
@@ -198,7 +200,6 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     protected void initExtension() throws StartException {
-
         if (!Application.isHeadless()) {
             configPanel = new SchedulerConfigPanel(this);
         }
@@ -211,7 +212,6 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-
         return null;
     }
 

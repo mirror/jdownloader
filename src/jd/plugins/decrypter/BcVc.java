@@ -28,10 +28,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.StringUtils;
+
 /**
  * Note: using cloudflare, has simlar link structure/behaviour to adfly
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/([A-Za-z0-9]{5,6}$|\\d+/(?:ftp|http).+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/([A-Za-z0-9]{5,6}$|\\d+/.+)" }, flags = { 0 })
 public class BcVc extends antiDDoSForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {
@@ -57,10 +59,18 @@ public class BcVc extends antiDDoSForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         {
-            final String linkInsideLink = new Regex(parameter, "/\\d+/((?:http|ftp).+)").getMatch(0);
+            final String linkInsideLink = new Regex(parameter, "bc\\.vc/\\d+/(.+)").getMatch(0);
             if (linkInsideLink != null) {
-                if (!linkInsideLink.matches(this.getHost() + "/.+")) {
-                    decryptedLinks.add(createDownloadlink(linkInsideLink));
+                final String finalLinkInsideLink;
+                if (StringUtils.startsWithCaseInsensitive(linkInsideLink, "http") || StringUtils.startsWithCaseInsensitive(linkInsideLink, "ftp")) {
+                    finalLinkInsideLink = linkInsideLink;
+                } else {
+                    finalLinkInsideLink = "http://" + linkInsideLink;
+                }
+                if (!StringUtils.containsIgnoreCase(finalLinkInsideLink, getHost() + "/")) {
+                    final DownloadLink link = createDownloadlink(finalLinkInsideLink);
+                    link.setProperty("Referer", param.toString());
+                    decryptedLinks.add(link);
                     return decryptedLinks;
                 } else {
                     parameter = linkInsideLink;
