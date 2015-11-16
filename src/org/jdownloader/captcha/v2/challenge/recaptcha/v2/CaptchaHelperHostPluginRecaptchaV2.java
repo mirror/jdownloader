@@ -41,7 +41,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
     }
 
     public String getToken() throws PluginException, InterruptedException {
-
+        runDdosPrevention();
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }

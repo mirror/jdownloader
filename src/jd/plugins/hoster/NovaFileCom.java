@@ -321,7 +321,7 @@ public class NovaFileCom extends PluginForHost {
                 } else if (new Regex(correctedBR, regexRecaptcha).matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                     rc.setForm(dlForm);
                     String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     rc.setId(id);
@@ -763,7 +763,7 @@ public class NovaFileCom extends PluginForHost {
                 for (int i = 0; i <= repeat; i++) {
                     if (br.containsHTML(regexRecaptcha)) {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.findID();
                         rc.load();
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "novafile.com", "http://novafile.com", true);

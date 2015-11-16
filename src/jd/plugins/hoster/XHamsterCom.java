@@ -481,7 +481,7 @@ public class XHamsterCom extends PluginForHost {
                     for (int i = 1; i <= 5; i++) {
                         final String rcID = "6Ld7YsISAAAAAN-PZ6ABWPR9y5IhwiWbGZgeoqRa";
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.setId(rcID);
                         rc.load();
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);

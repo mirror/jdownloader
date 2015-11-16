@@ -196,7 +196,7 @@ public class UploadableCh extends PluginForHost {
             }
             boolean captchaFailed = true;
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.setId(recaptchaid);
             rc.load();
             for (int i = 1; i <= 5; i++) {
@@ -323,7 +323,7 @@ public class UploadableCh extends PluginForHost {
                     if (loginform.hasInputFieldByName("recaptcha_response_field")) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "uploadable.ch", "https://uploadable.ch", true);
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.setId(recaptchaid);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

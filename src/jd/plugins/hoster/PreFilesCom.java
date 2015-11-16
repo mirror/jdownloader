@@ -278,7 +278,7 @@ public class PreFilesCom extends PluginForHost {
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = jd.plugins.hoster.DirectHTTP.getReCaptcha(br);
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = jd.plugins.hoster.DirectHTTP.getReCaptcha(br, this);
                     rc.setForm(dlForm);
                     String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     rc.setId(id);

@@ -776,9 +776,11 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         String dlINFO = br.getRegex("var dl=\"(.*?)\"").getMatch(0);
         String url = Encoding.Base64Decode(dlINFO);
         if (captcha) {
+
             /* recaptcha handling */
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = jd.plugins.hoster.DirectHTTP.getReCaptcha(br);
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = jd.plugins.hoster.DirectHTTP.getReCaptcha(br, this);
             rc.setId("6LdatrsSAAAAAHZrB70txiV5p-8Iv8BtVxlTtjKX");
+
             rc.load();
             long last = -1;
             int imax = 15;

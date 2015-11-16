@@ -13,6 +13,7 @@ public enum PluginTaskID {
     CONVERT,
     PLUGIN,
     USERIO,
-    MOVE_FILE
+    MOVE_FILE,
+    WAIT_CAPTCHA_SLOT
 
 }

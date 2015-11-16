@@ -189,7 +189,7 @@ public class UploadManCom extends PluginForHost {
             }
             captcha = true;
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             for (int icaptcha = 1; icaptcha <= 5; icaptcha++) {

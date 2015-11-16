@@ -447,7 +447,7 @@ public class RapidGatorNet extends PluginForHost {
             final long timeBeforeCaptchaInput = System.currentTimeMillis();
             if (this.br.containsHTML("(api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br, this);
                 for (int i = 0; i <= 5; i++) {
                     rc.parse();
                     rc.load();

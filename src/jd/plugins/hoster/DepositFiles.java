@@ -746,7 +746,7 @@ public class DepositFiles extends antiDDoSForHost {
                 } else if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid != null) {
                     DownloadLink dummy = new DownloadLink(null, null, null, null, true);
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                     rc.setId(cid);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -981,7 +981,7 @@ public class DepositFiles extends antiDDoSForHost {
                 for (int i = 0; i <= 2; i++) {
                     DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.get(), true);
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                     rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -1147,7 +1147,7 @@ public class DepositFiles extends antiDDoSForHost {
                 if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
                     for (int i = 0; i <= 2; i++) {
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

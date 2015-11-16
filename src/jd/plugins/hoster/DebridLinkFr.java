@@ -166,7 +166,7 @@ public class DebridLinkFr extends PluginForHost {
                     }
                     DownloadLink dummyLink = new DownloadLink(this, "Account", "http://" + this.getHost(), "http://" + this.getHost(), true);
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2, this);
                     rc.setId(apiKey);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

@@ -80,9 +80,11 @@ public class DirectHTTP extends antiDDoSForHost {
         private boolean          clearReferer = true;
         private String           sourceHost;
         private String           helperID;
+        private Plugin           plg;
 
-        public Recaptcha(final Browser br) {
+        public Recaptcha(final Browser br, Plugin plg) {
             this.br = br;
+            this.plg = plg;
             sourceHost = br.getHost();
             track("challenge/");
         }
@@ -253,6 +255,7 @@ public class DirectHTTP extends antiDDoSForHost {
         }
 
         public void load() throws IOException, PluginException {
+            runDdosProtection();
             prepRcBr();
 
             try {
@@ -280,6 +283,20 @@ public class DirectHTTP extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 this.captchaAddress = this.server + "image?c=" + this.challenge;
+            }
+        }
+
+        /**
+         * @throws PluginException
+         */
+        protected void runDdosProtection() throws PluginException {
+            if (plg != null) {
+
+                try {
+                    plg.runCaptchaDDosProtection("recaptcha");
+                } catch (InterruptedException e) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
         }
 
@@ -356,6 +373,7 @@ public class DirectHTTP extends antiDDoSForHost {
         }
 
         public void reload() throws IOException, PluginException {
+            runDdosProtection();
             String newChallenge = null;
             try {
                 newChallenge = org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.load(rcBr, id);
@@ -605,9 +623,12 @@ public class DirectHTTP extends antiDDoSForHost {
 
     /**
      * TODO: can be removed with next major update cause of recaptcha change
+     *
+     * @param plg
+     *            TODO
      */
-    public static Recaptcha getReCaptcha(final Browser br) {
-        return new Recaptcha(br);
+    public static Recaptcha getReCaptcha(final Browser br, Plugin plg) {
+        return new Recaptcha(br, plg);
     }
 
     @Override

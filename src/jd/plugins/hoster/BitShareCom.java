@@ -249,7 +249,7 @@ public class BitShareCom extends PluginForHost {
                 reCaptchaForm.put("request", "validateCaptcha");
                 reCaptchaForm.put("ajaxid", tempID);
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.setForm(reCaptchaForm);
                 rc.setId(id);
                 rc.load();

@@ -723,7 +723,7 @@ public class FileFactory extends PluginForHost {
 
     public String handleRecaptcha(final DownloadLink link) throws Exception {
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
         final String id = br.getRegex("Recaptcha\\.create\\(([\r\n\t ]+)?\"([^\"]+)").getMatch(1);
         rc.setId(id);
         final Form form = new Form();

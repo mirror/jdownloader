@@ -330,7 +330,7 @@ public class PureVidCom extends PluginForHost {
             boolean captcha = false;
             String dllink = this.checkDirectLink(link, "premium_directlink");
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             for (int i = 0; i <= 5; i++) {
                 final String return_url = "http://www.purevid.com/?m=video_info_embed_dev&id=" + getFID(link);
                 if (dllink == null) {

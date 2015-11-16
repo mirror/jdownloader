@@ -89,7 +89,7 @@ public class ExtremeProtectNet extends PluginForDecrypt {
                     boolean failed = true;
                     for (int i = 0; i <= 5; i++) {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.parse();
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());

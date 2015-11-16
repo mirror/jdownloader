@@ -144,7 +144,7 @@ public class FileOverNet extends PluginForHost {
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.setForm(recaptchaForm);
                 String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                 rc.setId(id);

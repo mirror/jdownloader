@@ -604,7 +604,7 @@ public class UploadingCom extends PluginForHost {
                     String recaptcha = br.getRegex("\\(\\'recaptcha_block\\', \\'([^\\']+)").getMatch(0);
                     if (loginFail == true && recaptcha != null) {
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.setForm(login);
                         String id = recaptcha;
                         rc.setId(id);

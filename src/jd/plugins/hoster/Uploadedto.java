@@ -835,8 +835,9 @@ public class Uploadedto extends PluginForHost {
             }
 
             final long timebefore = System.currentTimeMillis();
+
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
             rc.setId(rcID);
             rc.load();
             for (int i = 0; i <= 15; i++) {

@@ -80,7 +80,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.ExtJFrame;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.uio.CloseReason;
@@ -92,6 +91,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
@@ -218,7 +218,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private LinkGrabberView         linkgrabberView;
     private LogSource               logger;
-    protected ExtJFrame             mainFrame;
+    protected JDownloaderMainFrame  mainFrame;
 
     private MainTabbedPane          mainTabbedPane;
     private JDMenuBar               menuBar;
@@ -387,7 +387,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
      *
      * @return
      */
-    public JFrame getMainFrame() {
+    public JDownloaderMainFrame getMainFrame() {
         return mainFrame;
     }
 
@@ -724,7 +724,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             @Override
             public void run() {
                 try {
-                    internalInitLocationAndDimension();
+                    internalInitLocationAndDimension(mainFrame, logger, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus(), tray == null || !tray.getSettings().isEnabled() || !tray.getSettings().isStartMinimizedEnabled(), true);
                 } finally {
                     initThread = null;
                 }
@@ -923,10 +923,11 @@ public class JDGui implements UpdaterListener, OwnerFinder {
      * and only put the mainframe stuff into EDT
      *
      * restores the dimension and location to the window
+     *
+     * @param logger
+     * @param mainFrame
      */
-    private void internalInitLocationAndDimension() {
-
-        FrameStatus stat = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
+    public static void internalInitLocationAndDimension(final JDownloaderMainFrame mainFrame, final LogInterface logger, FrameStatus stat, final boolean setVisible, final boolean setExtendedState) {
 
         if (stat == null) {
             stat = new FrameStatus();
@@ -954,24 +955,26 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         if (lastScreen == null) {
             lastScreen = GUIUtils.getScreenDevice(status.getX(), status.getY());
         }
-        switch (status.getExtendedState()) {
-        case MAXIMIZED_BOTH:
-            if (lastScreen != null) {
-                loc = lastScreen.getDefaultConfiguration().getBounds().getLocation();
+        if (setExtendedState) {
+            switch (status.getExtendedState()) {
+            case MAXIMIZED_BOTH:
+                if (lastScreen != null) {
+                    loc = lastScreen.getDefaultConfiguration().getBounds().getLocation();
+                }
+                break;
+            case MAXIMIZED_HORIZ:
+                // TODO: no idea what this should do. seems do have no effect for win7
+                // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_HORIZ)==false
+                // check on other OSs
+                break;
+
+            case MAXIMIZED_VERT:
+                // TODO: no idea what this should do. seems do have no effect for win7
+                // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_VERT)==false
+                // check on other OSs
+                break;
+
             }
-            break;
-        case MAXIMIZED_HORIZ:
-            // TODO: no idea what this should do. seems do have no effect for win7
-            // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_HORIZ)==false
-            // check on other OSs
-            break;
-
-        case MAXIMIZED_VERT:
-            // TODO: no idea what this should do. seems do have no effect for win7
-            // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_VERT)==false
-            // check on other OSs
-            break;
-
         }
 
         if (!status.isLocationSet()) {
@@ -1072,10 +1075,12 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 mainFrame.setMinimumSize(new Dimension(400, 100));
                 mainFrame.setSize(finalDim);
                 mainFrame.setPreferredSize(finalDim);
-                if (finalState != null) {
-                    mainFrame.setExtendedState(finalState);
+                if (setExtendedState) {
+                    if (finalState != null) {
+                        mainFrame.setExtendedState(finalState);
+                    }
                 }
-                if (tray == null || !tray.getSettings().isEnabled() || !tray.getSettings().isStartMinimizedEnabled()) {
+                if (setVisible) {
                     WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                 }
 
@@ -1639,6 +1644,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                 if (!minimize) {
                     int estate = getMainFrame().getExtendedState();
+                    ExtendedState latest = getMainFrame().getLastKnownVisibleExtendedState();
+                    if (latest != null) {
+                        estate = latest.getId();
+                    }
                     if (!getMainFrame().isVisible()) {
                         WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
                     }

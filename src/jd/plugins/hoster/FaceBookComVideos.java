@@ -563,7 +563,7 @@ public class FaceBookComVideos extends PluginForHost {
                         }
 
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                         rc.setId(rcID);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

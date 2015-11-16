@@ -658,7 +658,7 @@ public class OBoomCom extends PluginForHost {
         } else {
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             for (int i = 1; i <= 5; i++) {
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.setId("6LdqpO0SAAAAAJGHXo63HyalP7H4qlRs_vff0kJX");
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());

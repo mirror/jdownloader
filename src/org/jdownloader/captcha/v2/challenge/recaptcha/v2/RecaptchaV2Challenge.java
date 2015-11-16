@@ -41,6 +41,8 @@ import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
+    public static final String RECAPTCHAV2 = "recaptchav2";
+
     public static final class Recaptcha2FallbackChallenge extends BasicCaptchaChallenge {
         private RecaptchaV2Challenge          owner;
         private Browser                       iframe;
@@ -178,7 +180,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     public RecaptchaV2Challenge(String siteKey, Plugin pluginForHost) {
-        super("recaptchav2", pluginForHost);
+        super(RECAPTCHAV2, pluginForHost);
         this.siteKey = siteKey;
         if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");

@@ -21,6 +21,15 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             logger = LogController.getInstance().getLogger(getClass().getSimpleName());
         }
         this.siteKey = siteKey;
+
+    }
+
+    protected void runDdosPrevention() throws InterruptedException {
+        if (plugin != null) {
+
+            plugin.runCaptchaDDosProtection(RecaptchaV2Challenge.RECAPTCHAV2);
+
+        }
     }
 
     public T getPlugin() {

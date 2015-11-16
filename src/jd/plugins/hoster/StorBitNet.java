@@ -217,7 +217,7 @@ public class StorBitNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 }
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
                 rc.setId("6Lc4YwgTAAAAAPoZXXByh65cUKulPwDN31HlV1Wp");
                 for (int i = 0; i < 5; i++) {
                     rc.load();

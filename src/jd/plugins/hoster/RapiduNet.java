@@ -227,7 +227,7 @@ public class RapiduNet extends PluginForHost {
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         Form dlForm = new Form();
 
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br, this);
         dlForm.put("ajax", "1");
         dlForm.put("cachestop", "0.7658682554028928");
         rc.setForm(dlForm);

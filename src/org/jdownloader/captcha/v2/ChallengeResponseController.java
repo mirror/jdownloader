@@ -13,6 +13,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.appwork.timetracker.TimeTracker;
+import org.appwork.timetracker.TimeTrackerController;
+import org.appwork.timetracker.TrackerRule;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
@@ -20,6 +23,7 @@ import org.jdownloader.captcha.event.ChallengeResponseEvent;
 import org.jdownloader.captcha.event.ChallengeResponseEventSender;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaDialogSolver;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaJACSolver;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolver;
@@ -57,7 +61,8 @@ public class ChallengeResponseController {
         return eventSender;
     }
 
-    private LogSource logger;
+    private LogSource             logger;
+    private TimeTrackerController trackerCache;
 
     /**
      * Create a new instance of ChallengeResponseController. This is a singleton class. Access the only existing instance by using
@@ -66,6 +71,19 @@ public class ChallengeResponseController {
     private ChallengeResponseController() {
         logger = LogController.getInstance().getLogger(getClass().getName());
         eventSender = new ChallengeResponseEventSender(logger);
+        trackerCache = new TimeTrackerController();
+        TimeTracker recaptcha = trackerCache.getTracker("recaptcha");
+        recaptcha.addRule(new TrackerRule(20, 10 * 60 * 1000));
+        recaptcha.addRule(new TrackerRule(4, 60 * 1000));
+        recaptcha.addRule(new TrackerRule(3, 30 * 1000));
+        recaptcha.addRule(new TrackerRule(2, 10 * 1000));
+
+        TimeTracker recaptcha2 = trackerCache.getTracker(RecaptchaV2Challenge.RECAPTCHAV2);
+        recaptcha2.addRule(new TrackerRule(20, 10 * 60 * 1000));
+        recaptcha2.addRule(new TrackerRule(4, 60 * 1000));
+        recaptcha2.addRule(new TrackerRule(3, 30 * 1000));
+        recaptcha2.addRule(new TrackerRule(2, 10 * 1000));
+
     }
 
     private final AtomicBoolean init = new AtomicBoolean(false);
@@ -185,6 +203,7 @@ public class ChallengeResponseController {
         if (logger == null) {
             logger = this.logger;
         }
+
         logger.info("Log to " + logger.getName());
         logger.info("Handle Challenge: " + c);
         final ArrayList<ChallengeSolver<T>> solver = createList(c);
@@ -286,5 +305,9 @@ public class ChallengeResponseController {
                 s.getService().getConfig().setWaitForMap(null);
             }
         }
+    }
+
+    public TimeTracker getTracker(String method) {
+        return trackerCache.getTracker(method);
     }
 }
