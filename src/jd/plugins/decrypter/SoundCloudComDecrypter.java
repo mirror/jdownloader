@@ -338,7 +338,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private void setFilePackage(String usernName, String playListName) throws ParseException {
-        final String date = br.getRegex("<created\\-at type=\"datetime\">([^<>\"]*?)</created\\-at>").getMatch(0);
+        String date = br.getRegex("<created\\-at type=\"datetime\">([^<>\"]*?)</created\\-at>").getMatch(0);
+        if (date == null) {
+            date = this.br.getRegex("published on <time pubdate>([^<>\"]*?)</time>").getMatch(0);
+        }
+        if (date == null) {
+            date = this.br.getRegex("\"last_modified\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         if (usernName == null) {
             usernName = "Unknown user";
         } else {
@@ -747,8 +753,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             try {
                 final String userDefinedDateFormat = CFG.getStringProperty(CUSTOM_DATE);
                 final SimpleDateFormat formatter;
-                if (date.contains("/")) {
-                    formatter = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss'Z'");
+                if (date.matches("\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2} \\+\\d+")) {
+                    formatter = new SimpleDateFormat("yyyy/MM/ddHH:mm:ss");
+                } else if (date.contains("/")) {
+                    formatter = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss Z");
                 } else {
                     formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
                 }
