@@ -95,7 +95,7 @@ public class VideoMegaTv extends antiDDoSForHost {
             // lets set all referrer to home page
             br.getHeaders().put("Referer", "http://videomega.tv/");
             br.getPage("http://videomega.tv/iframe.php?ref=" + fuid + "&width=800&height=400");
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 | br.containsHTML("<source src=\"http:///v/.mp4?")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
