@@ -52,7 +52,7 @@ public class CloudMailRu extends PluginForHost {
     public CloudMailRu(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium("");
+        this.enablePremium("https://cloud.mail.ru/");
     }
 
     private static final String  TYPE_FROM_DECRYPTER          = "http://clouddecrypted\\.mail\\.ru/\\d+";
@@ -229,16 +229,34 @@ public class CloudMailRu extends PluginForHost {
                     }
                 }
             } else {
+
                 logger.warning("Failed to use saved dllink, trying to generate new link");
+                final String mainlink = getMainlink(dl);
+                this.br.getPage(mainlink);
+                final String pageid = this.br.getRegex("\"x\\-page\\-id\"[\n\r\t ]*?:[\n\r\t ]*?\"([^<>\"]*?)\"").getMatch(0);
+                if (pageid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 String dataserver;
-                br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
+                this.br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=hotfix-32-0-3.201511121458&x-page-id=" + pageid);
+                final String token = this.br.getRegex("\"token\":\"([^<>\"]*?)\"").getMatch(0);
+                if (token == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
                 dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
                 if (dataserver != null) {
+                    /* Old handling see Rev. 29087 */
+                    String linkpart = new Regex(mainlink, "/public/([^/]+/[^/]+)").getMatch(0);
+                    if (linkpart == null) {
+                        linkpart = unique_id;
+                    }
                     logger.info("Successfully found new finallink");
-                    dllink = dataserver + "get/" + unique_id + "?x-email=undefined";
+                    dllink = dataserver + "get/" + linkpart + "?key=" + token;
                 } else {
                     logger.warning("Failed to find dataserver for finallink");
                 }
+
             }
         }
         if (dllink == null) {

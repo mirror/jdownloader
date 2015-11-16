@@ -43,7 +43,7 @@ public class DeluxemusicTv extends PluginForDecrypt {
     private static final short  playlist_id_max          = 200;
     /* 2015-11-15: More test values - please do not touch this - pspzockerscene */
     private static final long   production_video_ids_min = 0;
-    private static final long   production_video_ids_max = 1000000;
+    private static final long   production_video_ids_max = 100000;
     private static final String playlist_id_dummy        = "999";
 
     @SuppressWarnings("deprecation")

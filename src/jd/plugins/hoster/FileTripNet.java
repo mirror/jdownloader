@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -28,14 +30,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetrip.net" }, urls = { "https?://(www\\.)?filetrip.net/dl\\?[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetrip.net" }, urls = { "https?://(www\\.)?filetrip.net/dl\\?[A-Za-z0-9]+" }, flags = { 2 })
 public class FileTripNet extends PluginForHost {
 
     public FileTripNet(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -43,11 +47,13 @@ public class FileTripNet extends PluginForHost {
         return "https://filetrip.net/document.php?id=1";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         // Offline links should also have nice filenames
@@ -55,7 +61,7 @@ public class FileTripNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">You might want to check that URL<|>Sorry, this file has been temporarily disabled")) {
+        if (br.containsHTML(">You might want to check that URL<|>Sorry, this file has been temporarily disabled") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fileInfo = br.getRegex(">([^<>\"]*?)</a><span style=\\'color: #888; font\\-size: 22px; padding\\-left: 20px;\\'>([^<>\"]*?)</span>");
@@ -77,7 +83,11 @@ public class FileTripNet extends PluginForHost {
         if (dlform == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, -2);
+        int maxchunks = -2;
+        if (this.getPluginConfig().getBooleanProperty(ENABLE_UNLIMITED_CHUNKS, defaultENABLE_UNLIMITED_CHUNKS)) {
+            maxchunks = 0;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">Error 404")) {
@@ -86,6 +96,18 @@ public class FileTripNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's FileTrip plugin helps downloading files from filetrip.net.";
+    }
+
+    public static final String  ENABLE_UNLIMITED_CHUNKS        = "ENABLE_UNLIMITED_CHUNKS";
+    public static final boolean defaultENABLE_UNLIMITED_CHUNKS = false;
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_UNLIMITED_CHUNKS, JDL.L("plugins.hoster.FileTripNet.enableUnlimitedChunks", "Enable unlimited chunks?\r\nWARNING: This may cause download failures / loops!")).setDefaultValue(defaultENABLE_UNLIMITED_CHUNKS));
     }
 
     @Override
