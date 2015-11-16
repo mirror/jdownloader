@@ -130,14 +130,15 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         LinkCollector.getInstance().getEventsender().removeListener(this);
 
-        MenuManagerTrayIcon.getInstance().unregisterExtender(this);
-
-        MenuManagerMainToolbar.getInstance().unregisterExtender(this);
-        MenuManagerMainmenu.getInstance().unregisterExtender(this);
-        MenuManagerDownloadTabBottomBar.getInstance().unregisterExtender(this);
-        MenuManagerDownloadTableContext.getInstance().unregisterExtender(this);
-        MenuManagerLinkgrabberTabBottombar.getInstance().unregisterExtender(this);
-        MenuManagerLinkgrabberTableContext.getInstance().unregisterExtender(this);
+        if (!Application.isHeadless()) {
+            MenuManagerTrayIcon.getInstance().unregisterExtender(this);
+            MenuManagerMainToolbar.getInstance().unregisterExtender(this);
+            MenuManagerMainmenu.getInstance().unregisterExtender(this);
+            MenuManagerDownloadTabBottomBar.getInstance().unregisterExtender(this);
+            MenuManagerDownloadTableContext.getInstance().unregisterExtender(this);
+            MenuManagerLinkgrabberTabBottombar.getInstance().unregisterExtender(this);
+            MenuManagerLinkgrabberTableContext.getInstance().unregisterExtender(this);
+        }
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
 
             @Override
@@ -158,14 +159,16 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         FileCreationManager.getInstance().getEventSender().addListener(this);
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         RemoteAPIController.getInstance().getEventSender().addListener(this);
-        MenuManagerMainToolbar.getInstance().registerExtender(this);
-        MenuManagerMainmenu.getInstance().registerExtender(this);
-        MenuManagerDownloadTabBottomBar.getInstance().registerExtender(this);
-        MenuManagerDownloadTableContext.getInstance().registerExtender(this);
-        MenuManagerLinkgrabberTabBottombar.getInstance().registerExtender(this);
-        MenuManagerLinkgrabberTableContext.getInstance().registerExtender(this);
-        MenuManagerTrayIcon.getInstance().registerExtender(this);
 
+        if (!Application.isHeadless()) {
+            MenuManagerMainToolbar.getInstance().registerExtender(this);
+            MenuManagerMainmenu.getInstance().registerExtender(this);
+            MenuManagerDownloadTabBottomBar.getInstance().registerExtender(this);
+            MenuManagerDownloadTableContext.getInstance().registerExtender(this);
+            MenuManagerLinkgrabberTabBottombar.getInstance().registerExtender(this);
+            MenuManagerLinkgrabberTableContext.getInstance().registerExtender(this);
+            MenuManagerTrayIcon.getInstance().registerExtender(this);
+        }
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
 
             @Override
@@ -186,6 +189,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         if (!Application.isHeadless()) {
             configPanel = new EventScripterConfigPanel(this);
         }
+        intervalController = new IntervalController(this);
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
@@ -202,8 +206,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 }
             }
         });
-
-        intervalController = new IntervalController(this);
 
     }
 
