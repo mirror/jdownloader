@@ -44,7 +44,12 @@ public class AtvAt extends PluginForDecrypt {
     }
 
     /**
-     * Important note: Via browser the videos are streamed via RTSP
+     * Important note: Via browser the videos are streamed via RTSP.
+     *
+     * Old URL: http://atv.at/binaries/asset/tvnext_clip/496790/video
+     *
+     *
+     * --> http://b2b.atv.at/binaries/asset/tvnext_clip/496790/video
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

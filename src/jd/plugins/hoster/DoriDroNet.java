@@ -21,18 +21,19 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doridro.net" }, urls = { "http://(www\\.)?doridrodecrypted\\.net/download/[^<>\"]*?\\.html" }, flags = { 0 })
 public class DoriDroNet extends PluginForHost {
@@ -46,6 +47,7 @@ public class DoriDroNet extends PluginForHost {
         return COOKIE_HOST;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("doridrodecrypted.net/", "doridro.net/"));
     }
@@ -53,14 +55,22 @@ public class DoriDroNet extends PluginForHost {
     private static Object       LOCK        = new Object();
     private static final String COOKIE_HOST = "http://doridro.net/";
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta name=\"audio_title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("Title: ([^<>\"]+)<br").getMatch(0);
+        }
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = new Regex(link.getDownloadURL(), "([^/]+)\\.html").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -68,11 +78,17 @@ public class DoriDroNet extends PluginForHost {
         if (filename.equals("")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        filename = Encoding.htmlDecode(filename.trim());
+        if (this.br.containsHTML(">Download This Album<")) {
+            filename += ".zip";
+        } else {
+            filename += ".mp3";
+        }
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -114,7 +130,19 @@ public class DoriDroNet extends PluginForHost {
         }
         String dllink = br.getRegex("Download Link</div><a href=\"(http://[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://dl\\.doridro\\.net/get/(http://[^<>\"]+))\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://dl\\.doridro\\.net/get/(http://[^<>\"]+))\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://doridro\\.net/file/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            /* Single mp3 download */
+            dllink = this.br.getRegex("property=\"og:url\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.postPage(dllink, "action=nocaptchadown");
+            dllink = getJson("down_link");
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -131,6 +159,16 @@ public class DoriDroNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

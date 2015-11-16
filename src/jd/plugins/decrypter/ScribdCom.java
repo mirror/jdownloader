@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -31,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(?!doc/)(collections/\\d+/)?[A-Za-z0-9\\-_%]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(?!doc/)(collections/\\d+/)?[A-Za-z0-9\\-_%]+" }, flags = { 0 })
 public class ScribdCom extends PluginForDecrypt {
 
     public ScribdCom(PluginWrapper wrapper) {
@@ -65,13 +64,9 @@ public class ScribdCom extends PluginForDecrypt {
             int page = 0;
             int decryptedLinksNum = 0;
             do {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
                 }
                 br.getPage("https://www.scribd.com/collections/" + collection_id + "/get_collection_documents?page=" + page);
                 br.getRequest().setHtmlCode(unescape(br.toString()));
@@ -92,11 +87,7 @@ public class ScribdCom extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl.setName(title + ".pdf");
                     dl._setFilePackage(fp);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
+                    distribute(dl);
                     decryptedLinks.add(dl);
                 }
                 decryptedLinksNum += uplInfo.length;
@@ -112,12 +103,7 @@ public class ScribdCom extends PluginForDecrypt {
             final String url_username = new Regex(parameter, "([A-Za-z0-9\\-_%]+)$").getMatch(0);
             fpname = "scribd.com uploads of user " + Encoding.htmlDecode(url_username);
             fp.setName(fpname);
-            try {
-                br.getPage(parameter);
-            } catch (final BrowserException e) {
-                decryptedLinks.add(getOfflineLink(parameter));
-                return decryptedLinks;
-            }
+            br.getPage(parameter);
             final String id = br.getRegex("\"id\":(\\d+)").getMatch(0);
             if (id == null) {
                 decryptedLinks.add(getOfflineLink(parameter));
@@ -142,15 +128,11 @@ public class ScribdCom extends PluginForDecrypt {
             int page = 1;
             int decryptedLinksNum = 0;
             do {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
                 }
-                br.getPage("https://de.scribd.com/" + url_username + "/content.json?content_key=documents&page=" + page);
+                br.getPage("https://de.scribd.com/profiles/content.json?content_key=documents&id=" + id + "&page=" + page);
                 if (!this.br.getHttpConnection().getContentType().contains("json")) {
                     decryptedLinks.add(getOfflineLink(parameter));
                     return decryptedLinks;
@@ -177,11 +159,7 @@ public class ScribdCom extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl.setName(title + ".pdf");
                     dl._setFilePackage(fp);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
+                    distribute(dl);
                     decryptedLinks.add(dl);
                 }
                 decryptedLinksNum += uplInfo.length;

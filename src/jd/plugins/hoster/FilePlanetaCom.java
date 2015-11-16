@@ -95,6 +95,7 @@ public class FilePlanetaCom extends PluginForHost {
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
     private final long                 useLoginIndividual           = 6 * 3480000l;
+    public static final long           trust_cookie_age             = 30000l;
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
@@ -880,27 +881,25 @@ public class FilePlanetaCom extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (ACCLOCK) {
             try {
                 /** Load cookies */
                 prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
                         return;
                     }
+                    this.br.getPage("http://fileplaneta.com/?op=my_files");
+                    if (this.br.containsHTML("\\?op=logout")) {
+                        /* Save timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    }
+                    this.br = prepBrowser(new Browser());
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
@@ -928,19 +927,10 @@ public class FilePlanetaCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
                 account.setProperty("lastlogin", System.currentTimeMillis());
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                account.setProperty("lastlogin", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }

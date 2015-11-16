@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "focus.de" }, urls = { "http://(www\\.)?focus\\.de/[A-Za-z]+/(videos|internet/[a-zA-Z]+)/[\\w\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "focus.de" }, urls = { "http://(?:www\\.)?focus\\.de/[A-Za-z]+/(?:videos|internet/[a-zA-Z]+)/[\\w\\-]+\\.html" }, flags = { 0 })
 public class FocusDe extends PluginForHost {
 
     public FocusDe(PluginWrapper wrapper) {
@@ -79,8 +79,15 @@ public class FocusDe extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("videourl[\t\n\r ]+=[\t\n\r ]+\"(http[^<>\"]*?)\"").getMatch(0);
         }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("videoUrl[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"]*?)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (DLLINK.startsWith("rtmp")) {
+            /* Livestreams are not supported */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
@@ -101,13 +108,7 @@ public class FocusDe extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                try {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(DLLINK);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
-                }
+                con = br.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
