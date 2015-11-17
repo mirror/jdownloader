@@ -20,6 +20,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.controlling.FileCreationManager;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,16 +42,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.controlling.FileCreationManager;
-
 /**
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30118 $", interfaceVersion = 3, names = { "megacry.pt" }, urls = { "http://(?:www\\.)?megacry\\.pt/([A-Za-z0-9]{12})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 30118 $", interfaceVersion = 3, names = { "megacry.pt", "megacrypt.cc" }, urls = { "http://(?:www\\.)?megacry\\.pt/([A-Za-z0-9]{12})", "http://(?:www\\.)?megacrypt\\.cc/([A-Za-z0-9]{20})" }, flags = { 0 })
 public class MegaCryPt extends PluginForDecrypt {
 
     public MegaCryPt(PluginWrapper wrapper) {
@@ -68,7 +70,7 @@ public class MegaCryPt extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getPage(parameter);
         br.setCookie(this.getHost(), "devicePixelRatio", "1");
-        if (br.containsHTML(">Page not found</h1>|<title>Nothing found for")) {
+        if (br.containsHTML(">Page not found</h1>|<title>Nothing found for|<h1[^>]*>Seite nicht gefunden</h1>")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -82,31 +84,38 @@ public class MegaCryPt extends PluginForDecrypt {
                 if (++i > repeat) {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
-                final String imageHash = br.getRegex("/wp-content/plugins/securimage-wp/lib/siwp_captcha\\.php\\?id=([a-f0-9]{40})").getMatch(0);
-                if (imageHash == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unexpected captcha type?");
-                }
-                final Browser cap = br.cloneBrowser();
-                cap.getHeaders().put("Cache-Control", null);
-                cap.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
-                final File captchaFile = this.getLocalCaptchaFile();
-                String code = null;
-                try {
-                    cap.getDownload(captchaFile, "/wp-content/plugins/securimage-wp/lib/siwp_captcha.php?id=" + imageHash);
-                    code = getCaptchaCode(getHost(), captchaFile, param);
-                } finally {
-                    if (captchaFile != null) {
-                        FileCreationManager.getInstance().delete(captchaFile, null);
+                // protected by recaptchav2
+                if (captcha.containsHTML("class=\"g-recaptcha\"")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    br.submitForm(captcha);
+                } else {
+                    final String imageHash = br.getRegex("/wp-content/plugins/securimage-wp/lib/siwp_captcha\\.php\\?id=([a-f0-9]{40})").getMatch(0);
+                    if (imageHash == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unexpected captcha type?");
                     }
+                    final Browser cap = br.cloneBrowser();
+                    cap.getHeaders().put("Cache-Control", null);
+                    cap.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                    final File captchaFile = this.getLocalCaptchaFile();
+                    String code = null;
+                    try {
+                        cap.getDownload(captchaFile, "/wp-content/plugins/securimage-wp/lib/siwp_captcha.php?id=" + imageHash);
+                        code = getCaptchaCode(getHost(), captchaFile, param);
+                    } finally {
+                        if (captchaFile != null) {
+                            FileCreationManager.getInstance().delete(captchaFile, null);
+                        }
+                    }
+                    if ("".equals(code)) {
+                        // this will effectively change the hash value without doing another request
+                        br.getRequest().setHtmlCode(br.toString().replace(imageHash, JDHash.getSHA1(System.currentTimeMillis() + "")));
+                        forms = br.getForms();
+                        captcha = getCaptchaForm(forms);
+                        continue;
+                    }
+                    captcha.put("siwp_captcha_value", Encoding.urlEncode(code));
                 }
-                if ("".equals(code)) {
-                    // this will effectively change the hash value without doing another request
-                    br.getRequest().setHtmlCode(br.toString().replace(imageHash, JDHash.getSHA1(System.currentTimeMillis() + "")));
-                    forms = br.getForms();
-                    captcha = getCaptchaForm(forms);
-                    continue;
-                }
-                captcha.put("siwp_captcha_value", Encoding.urlEncode(code));
                 br.submitForm(captcha);
                 forms = br.getForms();
                 captcha = getCaptchaForm(forms);
@@ -126,22 +135,44 @@ public class MegaCryPt extends PluginForDecrypt {
                 break;
             }
         }
-        if (cnl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "clicknload can not be found.");
-        }
-        final HashMap<String, String> infos = new HashMap<String, String>();
-        infos.put("crypted", Encoding.urlDecode(cnl.getInputField("crypted").getValue(), false));
-        infos.put("jk", Encoding.urlDecode(cnl.getInputField("jk").getValue(), false));
-        String source = cnl.getInputField("source").getValue();
-        if (StringUtils.isEmpty(source)) {
-            source = parameter.toString();
-        } else {
+        if (cnl != null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "clicknload can not be found.");
+            // }
+            final HashMap<String, String> infos = new HashMap<String, String>();
+            infos.put("crypted", Encoding.urlDecode(cnl.getInputField("crypted").getValue(), false));
+            infos.put("jk", Encoding.urlDecode(cnl.getInputField("jk").getValue(), false));
+            String source = cnl.getInputField("source").getValue();
+            if (StringUtils.isEmpty(source)) {
+                source = parameter.toString();
+            } else {
+                infos.put("source", source);
+            }
             infos.put("source", source);
+            final String json = JSonStorage.toString(infos);
+            final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+            decryptedLinks.add(dl);
+        } else {
+            // weblinks, this has been blind coded and not tested.
+            final String auid = br.getRegex("\"ajax\": mc\\.folder_show \\+ \"(.*?)\",").getMatch(0);
+            // http://www.megacrypt.cc/wp-admin/admin-ajax.php?action=fsw&cn=5648531614b2b670d1b80ce8&_=1447743768066
+            final Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            ajax.getPage("/wp-admin/admin-ajax.php?action=fsw&cn=" + auid + "&_=" + System.currentTimeMillis());
+            final String[] links = ajax.getRegex("href='(.*?/\\?jp=[a-f0-9]{32})'").getColumn(0);
+            if (links != null) {
+                for (final String link : links) {
+                    final Browser br2 = br.cloneBrowser();
+                    br2.getPage(JSonUtils.unescape(link));
+                    final String redirect = br2.getRedirectLocation();
+                    if (redirect != null) {
+                        decryptedLinks.add(createDownloadlink(redirect));
+                    }
+                    // small sleep
+                    this.sleep(250, param);
+                }
+            }
         }
-        infos.put("source", source);
-        final String json = JSonStorage.toString(infos);
-        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-        decryptedLinks.add(dl);
 
         return decryptedLinks;
 
