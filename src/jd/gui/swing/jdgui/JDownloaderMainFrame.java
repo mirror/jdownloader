@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui;
 
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ComponentEvent;
@@ -13,7 +14,7 @@ import javax.swing.JFrame;
 
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.JSonStorage;
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -25,7 +26,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class JDownloaderMainFrame extends ExtJFrame {
@@ -51,7 +51,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
                 if (newState.isLocationSet()) {
                     latestFrameStatus = newState;
-                    // System.out.println("new State " + JSonStorage.toString(latestFrameStatus));
+                    System.out.println("new State " + JSonStorage.toString(latestFrameStatus));
                 }
             }
 
@@ -86,8 +86,6 @@ public class JDownloaderMainFrame extends ExtJFrame {
         });
         addWindowStateListener(new WindowStateListener() {
 
-            private boolean firstTime = true;
-
             @Override
             public void windowStateChanged(WindowEvent e) {
                 delayedStateSaver.resetAndStart();
@@ -97,27 +95,6 @@ public class JDownloaderMainFrame extends ExtJFrame {
                     lastKnownVisibleExtendedState = ext;
                 }
 
-                // workaround. When JDownloader starts maximized the first normalize call will not restore the correct size.
-                // the following code fixes this
-                if (lastKnownVisibleExtendedState == ExtendedState.NORMAL && firstTime) {
-                    firstTime = false;
-                    FrameStatus lfs = latestFrameStatus;
-                    if (lfs == null) {
-                        lfs = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
-                    }
-
-                    if (lfs != null) {
-                        // without the visible switch, the frame will resize and move on screen (under windows 10)
-
-                        JDownloaderMainFrame.this.setVisible(false);
-
-                        JDGui.internalInitLocationAndDimension(JDownloaderMainFrame.this, logger, lfs, false, false);
-
-                        JDownloaderMainFrame.this.setVisible(true);
-
-                        firstTime = false;
-                    }
-                }
             }
         });
     }
@@ -130,6 +107,43 @@ public class JDownloaderMainFrame extends ExtJFrame {
     @Override
     public void setSize(int width, int height) {
         super.setSize(width, height);
+    }
+
+    @Override
+    public Point getLocation() {
+        return super.getLocation();
+    }
+
+    @Override
+    public Point getLocation(Point rv) {
+        return super.getLocation(rv);
+    }
+
+    @Override
+    public Point getLocationOnScreen() {
+        return super.getLocationOnScreen();
+    }
+
+    @Override
+    public void setLocation(int x, int y) {
+        super.setLocation(x, y);
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        // Dimension su = super.getPreferredSize();
+        // ;
+        //
+        // FrameStatus lfs = latestFrameStatus;
+        // if (lfs == null) {
+        // lfs = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
+        // }
+        //
+        // if (lfs != null && lfs.getWidth() > 100 && lfs.getHeight() > 100) {
+        //
+        // return new Dimension(lfs.getWidth(), lfs.getHeight());
+        // }
+        return super.getPreferredSize();
     }
 
     @Override

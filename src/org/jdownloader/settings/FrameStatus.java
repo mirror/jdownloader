@@ -99,7 +99,7 @@ public class FrameStatus implements Storable {
 
     public static final TypeRef<FrameStatus> TYPE_REF       = new TypeRef<FrameStatus>() {
 
-    };
+                                                            };
 
     private ExtendedState                    extendedState  = ExtendedState.NORMAL;
     private int                              width          = -1;

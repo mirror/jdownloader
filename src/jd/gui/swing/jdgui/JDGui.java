@@ -252,7 +252,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         this.initComponents();
         this.setWindowIcon();
         this.layoutComponents();
-        this.mainFrame.pack();
+
         // init tray
         tray = new TrayExtension();
         try {
@@ -261,6 +261,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             logger.log(e1);
         }
         initLocationAndDimension();
+
         //
         initToolTipSettings();
 
@@ -952,14 +953,21 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 break;
             }
         }
+
         if (lastScreen == null) {
             lastScreen = GUIUtils.getScreenDevice(status.getX(), status.getY());
         }
         if (setExtendedState) {
             switch (status.getExtendedState()) {
             case MAXIMIZED_BOTH:
-                if (lastScreen != null) {
-                    loc = lastScreen.getDefaultConfiguration().getBounds().getLocation();
+
+                GraphicsDevice screenByCoordinates = GUIUtils.getScreenDevice(status.getX(), status.getY());
+                if (screenByCoordinates == null || !screenByCoordinates.equals(lastScreen)) {
+
+                    Rectangle screenSize = lastScreen.getDefaultConfiguration().getBounds();
+                    int width = screenSize.width;
+                    int height = screenSize.height;
+                    loc = new Point(screenSize.x + width / 2 - dim.width / 2, screenSize.y + height / 2 - dim.height / 2);
                 }
                 break;
             case MAXIMIZED_HORIZ:
@@ -1064,6 +1072,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
         final Dimension finalDim = dim;
         final Integer finalState = state;
+
         final Point finalLocation2 = finalLocation;
         new EDTRunner() {
 
@@ -1072,14 +1081,16 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 if (finalLocation2 != null) {
                     mainFrame.setLocation(finalLocation2);
                 }
+
                 mainFrame.setMinimumSize(new Dimension(400, 100));
-                mainFrame.setSize(finalDim);
+                // mainFrame.setSize(finalDim);
                 mainFrame.setPreferredSize(finalDim);
                 if (setExtendedState) {
                     if (finalState != null) {
                         mainFrame.setExtendedState(finalState);
                     }
                 }
+                mainFrame.pack();
                 if (setVisible) {
                     WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                 }
