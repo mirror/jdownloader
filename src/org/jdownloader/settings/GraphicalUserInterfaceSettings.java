@@ -1306,4 +1306,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isPremiumDisabledWarningFlashEnabled();
 
     void setPremiumDisabledWarningFlashEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isClipboardDisabledWarningFlashEnabled();
+
+    void setClipboardDisabledWarningFlashEnabled(boolean b);
+
 }

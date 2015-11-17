@@ -10,7 +10,11 @@ import org.appwork.utils.swing.EDTRunner;
 
 public abstract class AbstractToolbarToggleAction extends AbstractToolBarAction implements GenericConfigEventListener<Boolean> {
 
-    private BooleanKeyHandler keyHandler;
+    private final BooleanKeyHandler keyHandler;
+
+    protected BooleanKeyHandler getKeyHandler() {
+        return keyHandler;
+    }
 
     public AbstractToolbarToggleAction(BooleanKeyHandler keyHandler) {
         this.keyHandler = keyHandler;

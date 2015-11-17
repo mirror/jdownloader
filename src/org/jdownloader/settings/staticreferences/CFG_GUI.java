@@ -80,6 +80,8 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              PREMIUM_DISABLED_WARNING_FLASH_ENABLED                  = SH.getKeyHandler("PremiumDisabledWarningFlashEnabled", BooleanKeyHandler.class);
 
+    public static final BooleanKeyHandler                              CLIPBOARD_DISABLED_WARNING_FLASH_ENABLED                = SH.getKeyHandler("ClipboardDisabledWarningFlashEnabled", BooleanKeyHandler.class);
+
     public static final BooleanKeyHandler                              TASK_BAR_FLASH_ENABLED                                  = SH.getKeyHandler("TaskBarFlashEnabled", BooleanKeyHandler.class);
 
     public static final IntegerKeyHandler                              SPEED_METER_TIME_FRAME                                  = SH.getKeyHandler("SpeedMeterTimeFrame", IntegerKeyHandler.class);

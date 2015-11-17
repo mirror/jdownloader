@@ -72,6 +72,7 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.IconKey;
@@ -182,14 +183,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
                 if (JDGui.bugme(WarnLevel.SEVERE)) {
                     if (!newValue) {
-                        ConfirmDialog d = new ConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.are_you_sure_disabled_premium(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_continue(), null);
+                        final ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.are_you_sure_disabled_premium(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_continue(), null);
                         try {
                             UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                             return;
                         } catch (DialogClosedException e) {
-
                         } catch (DialogCanceledException e) {
-
                         }
                         // we need a new thread to throw correct change events
                         new Thread("") {
