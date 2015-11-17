@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -61,7 +63,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
         String[] a = new String[getAnnotationNames().length];
         int i = 0;
         for (final String domain : getAnnotationNames()) {
-            a[i] = "http://(?:[a-f0-9]{8}\\." + Pattern.quote(domain) + "/|(?:www\\.)?" + Pattern.quote(domain) + "/(?:(?:link/)?[a-f0-9]{8}|[0-9a-zA-Z]{5}/url/[a-f0-9]+|[a-zA-Z0-9]{4,5}))";
+            a[i] = "http://(?:[a-f0-9]{8}\\." + Pattern.quote(domain) + "/|(?:www\\.)?" + Pattern.quote(domain) + "/(?:[a-f0-9]{8}/url/.+|[0-9a-zA-Z]{5}/url/[a-f0-9]+|(?:link/)?[a-f0-9]{8}|[a-zA-Z0-9]{4,5}))$";
             i++;
         }
         return a;
@@ -99,6 +101,19 @@ public class LnkBcks extends antiDDoSForDecrypt {
             JDUtilities.getPluginForHost("mediafire.com");
             agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
+        {
+            // these link formats are derived from secondary url, without this information website takes you to some random website.
+            String linkInsideLink = new Regex(parameter, "/[a-f0-9]{8}/url/(.+)").getMatch(0);
+            if (linkInsideLink != null) {
+                if (!StringUtils.startsWithCaseInsensitive(linkInsideLink, "http") && !StringUtils.startsWithCaseInsensitive(linkInsideLink, "ftp")) {
+                    // assume they are http
+                    linkInsideLink = "http://" + linkInsideLink;
+                }
+                decryptedLinks.add(createDownloadlink(linkInsideLink));
+                return decryptedLinks;
+            }
+        }
+
         br.getHeaders().put("User-Agent", agent.get());
         br.getHeaders().put("Accept-Language", "en,en-GB;q=0.8");
         br.getHeaders().put("Accept-Charset", null);
@@ -231,9 +246,8 @@ public class LnkBcks extends antiDDoSForDecrypt {
                         br.getPage("/awe");
                         firstGet = System.currentTimeMillis();
                         link = null;
-                        count++;
                         // prevent inf loop.
-                        if (count > 4) {
+                        if (++count > 4) {
                             logger.warning("Decrypter broken for link: " + parameter + " Count == " + count);
                         }
                         continue goAgain;
