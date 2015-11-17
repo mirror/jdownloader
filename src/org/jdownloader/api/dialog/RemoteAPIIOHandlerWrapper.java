@@ -299,10 +299,10 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
             final T ret = (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
 
             if (impl instanceof AbstractDialog) {
-                AbstractDialog<?> dialog = (AbstractDialog<?>) impl;
+                final AbstractDialog<?> dialog = (AbstractDialog<?>) impl;
                 if (dialog.isDontShowAgainFlagEabled()) {
-                    boolean dontShowAgain = ret.isDontShowAgainSelected();
-                    boolean clickedOK = ret.getCloseReason() == CloseReason.OK;
+                    final boolean dontShowAgain = ret.isDontShowAgainSelected();
+                    final boolean clickedOK = ret.getCloseReason() == CloseReason.OK;
                     dialog.writeDontShowAgainAnswer(clickedOK, dontShowAgain);
                 }
 
