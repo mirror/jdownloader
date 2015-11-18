@@ -16,7 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
@@ -32,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|http://(?:www\\.)?chip\\.de/video/[A-Za-z0-9_\\-]+_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:www\\.)?chip\\.de/video/[^/]+_\\d+\\.html" }, flags = { 0 })
 public class ChipDe extends PluginForHost {
 
     public ChipDe(PluginWrapper wrapper) {
@@ -56,16 +57,16 @@ public class ChipDe extends PluginForHost {
     private static final String type_file_invalidlinks = "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/download\\-manager\\-for\\-free\\-zum\\-download.+";
     private static final String type_file              = "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html";
     private static final String type_file_chip_eu      = "http://(www\\.)?download\\.chip\\.(eu|asia)/.{2}/[A-Za-z0-9_\\-]+_\\d+\\.html";
-    private static final String type_video             = "http://(www\\.)?chip\\.de/video/[A-Za-z0-9_\\-]+_\\d+\\.html";
+    private static final String type_video             = "https?://(?:www\\.)?chip\\.de/video/[^/]+_\\d+\\.html";
 
     private String              DLLINK                 = null;
 
     // Links sind Sprachen zugeordnet. Leider kann man diese nicht alle auf eine
     // Sprache abändern. Somit muss man alle Sprachen manuell einbauen oder
     // bessere Regexes finden, die überall funktionieren
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getDownloadURL().matches(type_file_invalidlinks)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -88,33 +89,64 @@ public class ChipDe extends PluginForHost {
             }
         }
 
-        br.setFollowRedirects(false);
         String filename = null;
+        String filename_url = null;
         if (link.getDownloadURL().matches(type_video)) {
+            filename_url = new Regex(link.getDownloadURL(), "chip\\.de/video/(.+)_\\d+\\.html$").getMatch(0);
             filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
-            DLLINK = br.getRegex("itemprop=\"contentURL\" content=\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("data\\-mp4=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            final String sp = this.br.getRegex("sp/(\\d+)/embedIframeJs").getMatch(0);
+            final String entryid = this.br.getRegex("/entry_id/([^/]*?)/").getMatch(0);
+            final String uiconfid = this.br.getRegex("uiconf_id/(\\d+)").getMatch(0);
+            String wid = this.br.getRegex("/partner_id/(\\d+)").getMatch(0);
+            if (wid == null) {
+                wid = this.br.getRegex("kaltura.com/p/(\\d+)").getMatch(0);
             }
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\"(https?://video\\.chip\\.de/\\d+/[^<>\"]*?)\"").getMatch(0);
-            }
-            if (filename == null) {
+            final String playerid = this.br.getRegex("playerConf\\[\"([^<>\"]*?)\"\\]").getMatch(0);
+            if (sp == null || entryid == null || uiconfid == null || wid == null || playerid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* They use waay more arguments via browser - we don't need them :) */
+            final String postData = "&cache_st=5&wid=_" + wid + "&uiconf_id=" + uiconfid + "&entry_id=" + entryid + "&playerId=" + playerid + "&urid=2.34";
+            this.br.postPage("http://cdnapi.kaltura.com/html5/html5lib/v2.34/mwEmbedFrame.php", postData);
+            final String json = this.br.getRegex("window\\.kalturaIframePackageData = (\\{.*?\\});").getMatch(0);
+            if (json == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            long max_bitrate = 0;
+            long max_bitrate_temp = 0;
+            String ext = null;
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "entryResult/contextData/flavorAssets");
+            for (final Object videoo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) videoo;
+                final String flavourid = (String) entries.get("id");
+                ext = (String) entries.get("fileExt");
+                if (flavourid == null) {
+                    continue;
+                }
+                max_bitrate_temp = DummyScriptEnginePlugin.toLong(entries.get("bitrate"), 0);
+                if (max_bitrate_temp > max_bitrate) {
+                    DLLINK = "http://cdnapi.kaltura.com/p/" + wid + "/sp/" + sp + "/playManifest/entryId/" + entryid + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
+                    max_bitrate = max_bitrate_temp;
+                }
+            }
+            // DLLINK = "http://video.chip.de/38396417/textzwei.flv";
+            if (filename == null) {
+                filename = filename_url;
+            }
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (ext == null) {
+                ext = "mp4";
             }
             filename = Encoding.htmlDecode(filename).trim();
             filename = encodeUnicode(filename);
-            filename += ".mp4";
+            filename += "." + ext;
             link.setFinalFileName(filename);
             try {
                 try {
-                    try {
-                        /* @since JD2 */
-                        con = br.openHeadConnection(DLLINK);
-                    } catch (final Throwable t) {
-                        /* Not supported in old 0.9.581 Stable */
-                        con = br.openGetConnection(DLLINK);
-                    }
+                    con = br.openHeadConnection(DLLINK);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }

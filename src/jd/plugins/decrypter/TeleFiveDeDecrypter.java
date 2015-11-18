@@ -52,6 +52,7 @@ import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/[\\w/\\-]+\\.html" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
+    /* Tags: chip.de */
     // we cannot do core updates right now, and should keep this class internal until we can do core updates
     private static final String DOMAIN = "tele5.de";
 

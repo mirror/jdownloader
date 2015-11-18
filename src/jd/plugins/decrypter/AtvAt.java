@@ -51,6 +51,7 @@ public class AtvAt extends PluginForDecrypt {
      *
      * --> http://b2b.atv.at/binaries/asset/tvnext_clip/496790/video
      */
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<DownloadLink> decryptedLinksWorkaround = new ArrayList<DownloadLink>();
@@ -133,21 +134,6 @@ public class AtvAt extends PluginForDecrypt {
             if (!singleLink.startsWith("http") || !singleLink.contains(".m3u8")) {
                 continue;
             }
-
-            // if (this.br.getHttpConnection().getResponseCode() == 403 && !workaround_active && clipID_str != null) {
-            // final String[] rtsp_clipIDs = this.br.getRegex("").getColumn(0);
-            // int counter_intern = 0;
-            // clipID = Long.parseLong(clipID_str);
-            // final int numberof_clips = allLinks.length - 1;
-            // long clipID_temp = clipID - 6;
-            // for (counter_intern = 0; clipID_temp < clipID; clipID_temp++) {
-            // allLinks[counter_intern] = "http://109.68.230.208/vod/fallback/video_file/video/" + clipID_temp + ".mp4/index.m3u8";
-            // counter_intern++;
-            // }
-            // counter = 0;
-            // counter_max = numberof_clips - 1;
-            // continue;
-            // }
 
             br.getPage(singleLink);
             String quality = "360p";
