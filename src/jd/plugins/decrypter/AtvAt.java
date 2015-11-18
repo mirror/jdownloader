@@ -53,6 +53,7 @@ public class AtvAt extends PluginForDecrypt {
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinksWorkaround = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
         final String fid = new Regex(parameter, "/(d\\d+)/$").getMatch(0);
@@ -84,7 +85,7 @@ public class AtvAt extends PluginForDecrypt {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         final String source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"(.*?)\">").getMatch(0);
         String name;
-        final String[] allLinks = new Regex(source, "src\\&quot;:\\&quot;(http://[^<>\"]*?(index|playlist)\\.m3u8)\\&quot;}").getColumn(0);
+        final String[] allLinks = new Regex(source, "src\\&quot;:\\&quot;([a-z]+://[^<>\"]*?)\\&quot;}").getColumn(0);
         if (allLinks == null || allLinks.length == 0) {
             logger.info("Seems like the video source of the player is missing: " + parameter);
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
@@ -94,7 +95,11 @@ public class AtvAt extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String episodeNr = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
+        String episodeNr = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
+        if (episodeNr == null) {
+            /* Fallback to URL */
+            episodeNr = new Regex(parameter, "folge\\-(\\d+)").getMatch(0);
+        }
         if (episodeNr != null) {
             name = br.getRegex("class=\"title_bar\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
         } else {
@@ -108,21 +113,53 @@ public class AtvAt extends PluginForDecrypt {
         name = decodeUnicode(name);
         final DecimalFormat df = new DecimalFormat("000");
         final DecimalFormat episodeFormat = new DecimalFormat("00");
+        int part_counter = 1;
+        int part_counter_workaround = 1;
+        boolean is_workaround_active;
 
-        int counter = 1;
-        for (String singleLink : allLinks) {
+        int counter_max = allLinks.length - 1;
+        for (int counter = 0; counter <= counter_max; counter++) {
+            String singleLink = allLinks[counter];
+            singleLink = singleLink.replace("\\", "");
 
-            br.getPage(singleLink.replace("\\", ""));
+            String clipID_str = new Regex(singleLink, "rtsp://.+/((?:tvnext_clip|video_file)/video/\\d+)\\.mp4").getMatch(0);
+            if (clipID_str != null) {
+                /* Convert rtsp --> hls --> Sometimes their hls fails / can also be used to get around their GEO-block */
+                singleLink = "http://109.68.230.208/vod/fallback/" + clipID_str + ".mp4/index.m3u8";
+                is_workaround_active = true;
+            } else {
+                is_workaround_active = false;
+            }
+            if (!singleLink.startsWith("http") || !singleLink.contains(".m3u8")) {
+                continue;
+            }
+
+            // if (this.br.getHttpConnection().getResponseCode() == 403 && !workaround_active && clipID_str != null) {
+            // final String[] rtsp_clipIDs = this.br.getRegex("").getColumn(0);
+            // int counter_intern = 0;
+            // clipID = Long.parseLong(clipID_str);
+            // final int numberof_clips = allLinks.length - 1;
+            // long clipID_temp = clipID - 6;
+            // for (counter_intern = 0; clipID_temp < clipID; clipID_temp++) {
+            // allLinks[counter_intern] = "http://109.68.230.208/vod/fallback/video_file/video/" + clipID_temp + ".mp4/index.m3u8";
+            // counter_intern++;
+            // }
+            // counter = 0;
+            // counter_max = numberof_clips - 1;
+            // continue;
+            // }
+
+            br.getPage(singleLink);
             String quality = "360p";
             if (br.containsHTML("#EXT-X-STREAM-INF")) {
                 for (String line : Regex.getLines(br.toString())) {
                     if (!line.startsWith("#")) {
-                        DownloadLink link = createDownloadlink(br.getBaseURL() + line);
+                        final DownloadLink link = createDownloadlink(br.getBaseURL() + line);
                         link.setContainerUrl(parameter);
 
                         try {
                             // try to get the video quality
-                            HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
+                            final HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
                                 @Override
                                 public LogInterface initLogger(DownloadLink link) {
                                     return getLogger();
@@ -149,11 +186,24 @@ public class AtvAt extends PluginForDecrypt {
                             finalName.append("_").append(quality);
                         }
                         quality = null;
-                        String n = finalName.toString() + "_" + df.format(counter);
+                        final String part_formatted;
+                        if (is_workaround_active) {
+                            part_formatted = df.format(part_counter_workaround);
+                        } else {
+                            part_formatted = df.format(part_counter);
+                        }
+
+                        final String n = finalName.toString() + "_" + part_formatted;
 
                         link.setFinalFileName(n + ".mp4");
-                        decryptedLinks.add(link);
-                        counter++;
+                        link.setAvailable(true);
+                        if (is_workaround_active) {
+                            decryptedLinksWorkaround.add(link);
+                            part_counter_workaround++;
+                        } else {
+                            decryptedLinks.add(link);
+                            part_counter++;
+                        }
 
                     }
 
@@ -161,6 +211,12 @@ public class AtvAt extends PluginForDecrypt {
             }
 
         }
+
+        if (decryptedLinks.size() == 0) {
+            /* Use workaround e.g. for GEO-blocked urls */
+            decryptedLinks = decryptedLinksWorkaround;
+        }
+
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(name);
         fp.addLinks(decryptedLinks);

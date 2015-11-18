@@ -57,19 +57,19 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String                          VIDEOSOURCE       = null;
     /**
      * @ 1hd1080URL or stream_h264_hd1080_url [1920x1080]
-     * 
+     *
      * @ 2 hd720URL or stream_h264_hd_url [1280x720]
-     * 
+     *
      * @ 3 hqURL or stream_h264_hq_url [848x480]
-     * 
+     *
      * @ 4 sdURL or stream_h264_url [512x384]
-     * 
+     *
      * @ 5 ldURL or video_url or stream_h264_ld_url [320x240]
-     * 
+     *
      * @ 6 video_url or rtmp
-     * 
+     *
      * @ 7 hds
-     * 
+     *
      * @String[] = {"Direct download url", "filename, if available before quality selection"}
      */
     private LinkedHashMap<String, String[]> FOUNDQUALITIES    = new LinkedHashMap<String, String[]>();
@@ -88,7 +88,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final String             TYPE_PLAYLIST     = "https?://(?:www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?";
     private static final String             TYPE_USER         = "https?://(?:www\\.)?dailymotion\\.com/user/[A-Za-z0-9_\\-]+/\\d+";
     private static final String             TYPE_USER_SEARCH  = "https?://(?:www\\.)?dailymotion\\.com/.*?/user/[^/]+/search/[^/]+/\\d+";
-    private static final String             TYPE_VIDEO        = "https?://(?:www\\.)?dailymotion\\.com/((?:embed/)?video/[A-Za-z0-9\\-_]+(\\?.+)?|swf(?:/video)?/[A-Za-z0-9]+)";
+    private static final String             TYPE_VIDEO        = "https?://(?:www\\.)?dailymotion\\.com/((?:embed/)?video/[^/]+|swf(?:/video)?/[^/]+)";
 
     private static final String             REGEX_VIDEOURLS   = "preview_link[\t\n\r ]*?\"[\t\n\r ]*?href=\"(/video/[^<>\"/]+)\"";
 

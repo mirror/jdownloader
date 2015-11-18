@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ecostream.tv" }, urls = { "http://(www\\.)?ecostream\\.tv/(stream|embed)/[a-z0-9]{32}\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ecostream.tv" }, urls = { "http://(?:www\\.)?ecostream\\.tv/(?:stream|embed)/[a-z0-9]{32}\\.html" }, flags = { 0 })
 public class EcoStreamTv extends PluginForHost {
 
     private final AtomicBoolean use_js = new AtomicBoolean(true);
@@ -52,17 +52,26 @@ public class EcoStreamTv extends PluginForHost {
         return -1;
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
+    public static final String  default_extension = ".mp4";
+    private static final String NOCHUNKS          = "NOCHUNKS";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String filename_fid = getfid(downloadLink) + ".mp4";
+        downloadLink.setName(filename_fid);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File not found")) {
+        /* Hoster never has good filenames thus decrypters can set their own filenames. */
+        String filename = downloadLink.getStringProperty("decrypterfilename");
+        if (filename == null) {
+            filename = filename_fid;
+        }
+        if (br.containsHTML(">File not found") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setFinalFileName(getfid(downloadLink) + ".mp4");
+        downloadLink.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 

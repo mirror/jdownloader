@@ -290,14 +290,7 @@ public class FernsehkritikTv extends PluginForHost {
                  * This should never happen - even if the Fernsehkritiker is VERY late but in case the current episode is not available for
                  * free after 14 days we have to assume that it is only available for Massengeschmack members.!
                  */
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                    throw new PluginException(LinkStatus.ERROR_FATAL, MSG_PREMIUMONLY);
-                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else {
                 /* Less than 14 days after the release of the episode --> Wait for free release */
                 final long waitUntilFreeRelease;
@@ -578,7 +571,7 @@ public class FernsehkritikTv extends PluginForHost {
         sb.append("*ext* = Dateiendung - meistens '.flv'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Dateinamen für alle anderen Massengeschmack Links fest!\r\nBeispiel: '*seriesname* Episode *episodenumber* vom *date**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Lege eigene Dateinamen für alle anderen Massengeschmack Links fest!\r\nBeispiel: '*channel* Episode *episodenumber* vom *date**ext*'"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, JDL.L("plugins.hoster.fernsehkritiktv.customfilename_massengeschmack", "Definiere das Muster der eigenen Dateinamen:")).setDefaultValue(defaultCustomFilename_massengeschmack_other));
         final StringBuilder sb_other = new StringBuilder();
         sb_other.append("Erklärung der verfügbaren Tags:\r\n");

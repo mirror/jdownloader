@@ -65,7 +65,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -74,8 +73,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamratio.com" }, urls = { "https?://(www\\.)?streamratio\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamratio.com" }, urls = { "https?://(www\\.)?streamratio\\.com/(?:(?:vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class StreamRatioCom extends PluginForHost {
 
@@ -91,8 +91,8 @@ public class StreamRatioCom extends PluginForHost {
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
     private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = true;
-    private final boolean              useAltEmbed                  = true;
+    private final boolean              useVidEmbed                  = false;
+    private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
     private final long                 useLoginIndividual           = 6 * 3480000l;
     private final boolean              waitTimeSkipableReCaptcha    = true;
@@ -102,7 +102,7 @@ public class StreamRatioCom extends PluginForHost {
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileShare Version 3.0.8.5
@@ -115,7 +115,7 @@ public class StreamRatioCom extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 0;
+            chunks = -2;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -127,7 +127,7 @@ public class StreamRatioCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0;
+            chunks = -2;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -312,6 +312,9 @@ public class StreamRatioCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("class=\"dfilename\">([^<>\"]*?)</span>").getMatch(0);
         }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
