@@ -246,7 +246,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (link.toLowerCase().contains("1418317446_53af83b0c0ff48717413b401bdc95723")) {
+        if (link.toLowerCase().contains("1418317446_53af83b0c0ff48717413b401bdc95723") || link.toLowerCase().contains("qm9ccs3xn4c9le2paels")) {
             return null;
         }
 
