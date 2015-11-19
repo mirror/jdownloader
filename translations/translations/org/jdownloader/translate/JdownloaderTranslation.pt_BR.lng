@@ -192,6 +192,7 @@ UrlDisplayType_ORIGIN=Origem
 UrlDisplayType_ORIGIN_description=Sua entrada atual - o que você colou no JDownloader
 UrlDisplayType_REFERRER=Referência
 UrlDisplayType_REFERRER_description=O site no qual você achou os links. Somente disponível se você adicionou pela extensão do navegador ou Click'n'Load
+WaitForTrackerSlotPluginProcess=Aguardar por %s1: %s2
 YoutubeDash_GroupLogic_BY_FILE_TYPE=Extensão do arquivo (MP4, AAC, MP3, ...)
 YoutubeDash_GroupLogic_BY_MEDIA_TYPE=Tipo de mídia (vídeo, áudio, imagem, legendas, ... )
 YoutubeDash_GroupLogic_NO_GROUP=Desativado - Não agrupar
