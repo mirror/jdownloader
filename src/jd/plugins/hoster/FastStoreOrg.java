@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,11 +54,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faststore.org" }, urls = { "https?://(www\\.)?faststore\\.org/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class FastStoreOrg extends PluginForHost {
@@ -94,7 +94,6 @@ public class FastStoreOrg extends PluginForHost {
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
     private static Object                  LOCK                         = new Object();
     private String                         fuid                         = null;
 
@@ -326,7 +325,9 @@ public class FastStoreOrg extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+                /*
+                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                 */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -718,7 +719,7 @@ public class FastStoreOrg extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -733,7 +734,7 @@ public class FastStoreOrg extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -763,7 +764,9 @@ public class FastStoreOrg extends PluginForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            /*
+             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
@@ -945,10 +948,8 @@ public class FastStoreOrg extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
-            login(account, true);
+            login(account);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
@@ -981,33 +982,19 @@ public class FastStoreOrg extends PluginForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setProperty("nopremium", true);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) account");
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(expire_milliseconds);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setProperty("nopremium", false);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium account");
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
@@ -1042,8 +1029,9 @@ public class FastStoreOrg extends PluginForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                if (this.br.containsHTML("/captchas/")) {
-                    final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", "faststore.org", COOKIE_HOST, true);
+                if (loginform.containsHTML("/captchas/")) {
+                    final String[] sitelinks = HTMLParser.getHttpLinks(loginform.getHtmlCode(), null);
                     String captchaurl = null;
                     if (sitelinks == null || sitelinks.length == 0) {
                         logger.warning("Standard captcha captchahandling broken!");
@@ -1064,9 +1052,18 @@ public class FastStoreOrg extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "faststore.org", COOKIE_HOST, true);
                     final String c = getCaptchaCode("xfilesharingprobasic", captchaurl, dummyLink);
                     loginform.put("code", c);
+                } else if (loginform.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
+                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    final Recaptcha rc = new Recaptcha(br, this);
+                    rc.findID();
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
+                    loginform.put("recaptcha_challenge_field", rc.getChallenge());
+                    loginform.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 }
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
@@ -1082,9 +1079,9 @@ public class FastStoreOrg extends PluginForHost {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setType(AccountType.PREMIUM);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -1099,7 +1096,7 @@ public class FastStoreOrg extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
-        login(account, false);
+        login(account);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
@@ -1143,12 +1140,6 @@ public class FastStoreOrg extends PluginForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
