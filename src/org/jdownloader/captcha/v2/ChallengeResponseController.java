@@ -72,18 +72,16 @@ public class ChallengeResponseController {
         logger = LogController.getInstance().getLogger(getClass().getName());
         eventSender = new ChallengeResponseEventSender(logger);
         trackerCache = new TimeTrackerController();
-        TimeTracker recaptcha = trackerCache.getTracker("recaptcha");
+        final TimeTracker recaptcha = trackerCache.getTracker("recaptcha");
         recaptcha.addRule(new TrackerRule(20, 10 * 60 * 1000));
         recaptcha.addRule(new TrackerRule(4, 60 * 1000));
         recaptcha.addRule(new TrackerRule(3, 30 * 1000));
         recaptcha.addRule(new TrackerRule(2, 10 * 1000));
-
-        TimeTracker recaptcha2 = trackerCache.getTracker(RecaptchaV2Challenge.RECAPTCHAV2);
+        final TimeTracker recaptcha2 = trackerCache.getTracker(RecaptchaV2Challenge.RECAPTCHAV2);
         recaptcha2.addRule(new TrackerRule(20, 10 * 60 * 1000));
         recaptcha2.addRule(new TrackerRule(4, 60 * 1000));
         recaptcha2.addRule(new TrackerRule(3, 30 * 1000));
         recaptcha2.addRule(new TrackerRule(2, 10 * 1000));
-
     }
 
     private final AtomicBoolean init = new AtomicBoolean(false);

@@ -43,19 +43,19 @@ public class AllDebridCom extends antiDDoSForHost {
 
     public AllDebridCom(PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(4 * 1000l);
+        setStartIntervall(2 * 1000l);
         this.enablePremium("http://www.alldebrid.com/offer/");
     }
 
     private static final String NICE_HOST         = "alldebrid.com";
     private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
-    private static final String NOCHUNKS = "NOCHUNKS";
-    private final String        hash1    = "593f356a67e32332c13d6692d1fe10b7";
+    private static final String NOCHUNKS          = "NOCHUNKS";
+    private final String        hash1             = "593f356a67e32332c13d6692d1fe10b7";
 
-    private int          statuscode       = 0;
-    private Account      currAcc          = null;
-    private DownloadLink currDownloadLink = null;
+    private int                 statuscode        = 0;
+    private Account             currAcc           = null;
+    private DownloadLink        currDownloadLink  = null;
 
     @SuppressWarnings("deprecation")
     @Override
