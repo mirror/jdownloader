@@ -14,7 +14,7 @@ import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.statistics.StatsManager;
@@ -146,8 +146,7 @@ public class Recaptcha {
              * Effectively this can all be done with a new browser, with regex tasks from source browser (ids|keys|submitting forms).
              */
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            this.rcBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+            this.rcBr.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
 
             // this prevents google/recaptcha group from seeing referrer
             if (this.clearReferer) {
