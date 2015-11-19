@@ -192,6 +192,7 @@ UrlDisplayType_ORIGIN=Izvor
 UrlDisplayType_ORIGIN_description=Vaš stvarni unos - ono što ste nalijepili u JDownloader
 UrlDisplayType_REFERRER=Referer
 UrlDisplayType_REFERRER_description=Web stranica na kojoj ste pronašli linkove. Dostupno samo ako ste ih dodali kroz Dodatke Preglednika ili Click'n'Load
+WaitForTrackerSlotPluginProcess=Čekanje na %s1: %s2
 YoutubeDash_GroupLogic_BY_FILE_TYPE=Ekstenzija dokumenta (MP4, AAC, MP3,...
 YoutubeDash_GroupLogic_BY_MEDIA_TYPE=Media Tip (Video, Audio, Slika, Prijevodi,...
 YoutubeDash_GroupLogic_NO_GROUP=Onemogućeno - Ne Grupiši
