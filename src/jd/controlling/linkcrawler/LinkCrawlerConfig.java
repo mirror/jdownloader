@@ -78,4 +78,10 @@ public interface LinkCrawlerConfig extends ConfigInterface {
 
     void setDirectHTTPPermission(DirectHTTPPermission e);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isAutoImportContainer();
+
+    public void setAutoImportContainer(boolean b);
+
 }
