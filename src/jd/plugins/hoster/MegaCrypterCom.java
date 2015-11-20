@@ -31,6 +31,10 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.PluginTaskID;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,10 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.PluginTaskID;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
 public class MegaCrypterCom extends antiDDoSForHost {
@@ -227,8 +227,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
         linkPart = new Regex(link.getDownloadURL(), "/(\\!.+)").getMatch(0);
         noExpire = link.getStringProperty("expire", null);
         // youpaste.co actually verifies if content-type application/json has been set
-        br.getHeaders().put("Content-Type", "application/json");
-        br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"}");
+        postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"}", true);
         try {
             checkError(br);
         } catch (final PluginException e) {
@@ -283,8 +282,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        br.getHeaders().put("Content-Type", "application/json");
-        br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"" + (inValidate(noExpire) || noExpire.split("#").length != 2 ? "" : ", \"noexpire\":\"" + JSonUtils.escape(noExpire.split("#")[1]) + "\"") + "}");
+        postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"" + (inValidate(noExpire) || noExpire.split("#").length != 2 ? "" : ", \"noexpire\":\"" + JSonUtils.escape(noExpire.split("#")[1]) + "\"") + "}", true);
         checkError(br);
         String dllink = getJson("url");
         if (dllink == null) {

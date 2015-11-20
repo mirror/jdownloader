@@ -24,6 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,11 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -409,27 +409,27 @@ public class DirectHTTP extends antiDDoSForHost {
                 br.getHeaders().put("Range", "bytes=" + 0 + "-");
             }
             if (downloadLink.getStringProperty("post", null) != null) {
-                urlConnection = openAntiDDOSRequestConnection(br, br.createPostRequest(getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null)));
+                urlConnection = openAntiDDoSRequestConnection(br, br.createPostRequest(getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null)));
             } else {
                 try {
                     if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty("requestType", null))) {
-                        urlConnection = openAntiDDOSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
+                        urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
-                        urlConnection = openAntiDDOSRequestConnection(br, br.createHeadRequest(getDownloadURL(downloadLink)));
+                        urlConnection = openAntiDDoSRequestConnection(br, br.createHeadRequest(getDownloadURL(downloadLink)));
                         if (urlConnection.getResponseCode() == 404) {
                             /*
                              * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") &&
                              * urlConnection.getHeaderField("Via") != null
                              */
                             urlConnection.disconnect();
-                            urlConnection = openAntiDDOSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
+                            urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
                             // no head support?
                             urlConnection.disconnect();
-                            urlConnection = openAntiDDOSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
+                            urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
                         }
                     } else {
-                        urlConnection = openAntiDDOSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
+                        urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
                     }
                 } catch (final IOException e) {
                     if (urlConnection != null) {
@@ -437,7 +437,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     }
                     if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         /* some servers do not allow head requests */
-                        urlConnection = openAntiDDOSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
+                        urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
                         downloadLink.setProperty("requestType", "GET");
                     } else {
                         throw e;
