@@ -67,6 +67,7 @@ public class ChipDe extends PluginForHost {
     private static final String           kaltura_partner_id = "1741931";
     private static final String           kaltura_uiconf_id  = "30910812";
     private static final String           kaltura_sp         = "174193100";
+    private static final String           host_chip_de       = "chip.de";
 
     private String                        DLLINK             = null;
     private LinkedHashMap<String, Object> entries            = null;
@@ -261,6 +262,10 @@ public class ChipDe extends PluginForHost {
         } else {
             filename = "chip_" + filename;
         }
+        if (!link.getDownloadURL().contains(host_chip_de + "/")) {
+            /* Basically a warning for chip.eu downloads as there is no way around their adware installers! */
+            filename = "THIS_FILE_CONTAINS_ADWARE_" + filename + ".exe";
+        }
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
         if (set_final_filename) {
@@ -271,7 +276,11 @@ public class ChipDe extends PluginForHost {
         if (filesize > -1) {
             link.setDownloadSize(filesize);
         }
-        if (md5 != null) {
+        /*
+         * Do not allow chip.eu hashes because at the moment we can only download their adware installers so even though they give us the
+         * hash, we can never check it against the original file so it makes no sense to set it here.
+         */
+        if (md5 != null && link.getDownloadURL().contains(host_chip_de + "/")) {
             link.setMD5Hash(md5);
         }
         if (description != null) {
@@ -420,8 +429,8 @@ public class ChipDe extends PluginForHost {
         String dllink_temp = null;
         /* First try to get informartion via website */
         String sp = this.br.getRegex("sp/(\\d+)/embedIframeJs").getMatch(0);
-        final String entryid = this.br.getRegex("/entry_id/([^/]*?)/").getMatch(0);
-        String uiconfid = this.br.getRegex("uiconf_id/(\\d+)").getMatch(0);
+        final String entry_id = this.br.getRegex("/entry_id/([^/]*?)/").getMatch(0);
+        String uiconf_id = this.br.getRegex("uiconf_id/(\\d+)").getMatch(0);
         String partner_id = this.br.getRegex("/partner_id/(\\d+)").getMatch(0);
         if (partner_id == null) {
             partner_id = this.br.getRegex("kaltura.com/p/(\\d+)").getMatch(0);
@@ -430,17 +439,17 @@ public class ChipDe extends PluginForHost {
         if (partner_id == null) {
             partner_id = kaltura_partner_id;
         }
-        if (uiconfid == null) {
-            uiconfid = kaltura_uiconf_id;
+        if (uiconf_id == null) {
+            uiconf_id = kaltura_uiconf_id;
         }
         if (sp == null) {
             sp = kaltura_sp;
         }
-        if (entryid == null) {
+        if (entry_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* They use waay more arguments via browser - we don't need them :) */
-        final String postData = "&cache_st=5&wid=_" + partner_id + "&uiconf_id=" + uiconfid + "&entry_id=" + entryid + "&urid=2.34";
+        final String postData = "&cache_st=5&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&entry_id=" + entry_id + "&urid=2.34";
         this.br.postPage("http://cdnapi.kaltura.com/html5/html5lib/v2.34/mwEmbedFrame.php", postData);
         final String json = this.br.getRegex("window\\.kalturaIframePackageData = (\\{.*?\\});").getMatch(0);
         if (json == null) {
@@ -458,7 +467,7 @@ public class ChipDe extends PluginForHost {
             }
             max_bitrate_temp = DummyScriptEnginePlugin.toLong(entries.get("bitrate"), 0);
             if (max_bitrate_temp > max_bitrate) {
-                dllink_temp = "http://cdnapi.kaltura.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entryid + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
+                dllink_temp = "http://cdnapi.kaltura.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
                 max_bitrate = max_bitrate_temp;
             }
         }
