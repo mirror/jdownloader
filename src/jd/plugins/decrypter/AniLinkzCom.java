@@ -41,7 +41,8 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
     private String                  parameter        = null;
     private String                  fpName           = null;
     private String                  escapeAll        = null;
-    private int                     spart            = 1;
+    private int                     spart            = -1;
+    private int                     spart_count      = 0;
     private Browser                 br2              = new Browser();
     private ArrayList<DownloadLink> decryptedLinks   = null;
     private static Object           LOCK             = new Object();
@@ -61,7 +62,8 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
         // testing purpose lets null/zero/false storables
         decryptedLinks = new ArrayList<DownloadLink>();
         escapeAll = null;
-        spart = 1;
+        spart = -1;
+        spart_count = 0;
 
         parameter = param.toString().replaceFirst("anilinkz\\.com/", "anilinkz.tv/");
         if (parameter.matches(invalid_links)) {
@@ -157,7 +159,8 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                     if (links != null && links.length != 0) {
                         for (String link : links) {
                             // we should reset any values that carry over!
-                            spart = 1;
+                            spart = -1;
+                            spart_count = 0;
                             br2 = br.cloneBrowser();
                             getPage(br2, link);
                             parsePage();
@@ -193,14 +196,8 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 // }
             }
             if (inValidate(escapeAll)) {
-                // seems they might not be using escape function.. just plain old iframe
-                final String[] iframes = br2.getRegex("<iframe[^>]+>").getColumn(-1);
-                if (iframes != null) {
-                    escapeAll = "";
-                    for (final String ifr : iframes) {
-                        escapeAll += ifr;
-                    }
-                }
+                // seems they might not be using escape function.. any longer...
+                escapeAll = br2.toString();
             }
             if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
                 // escapeAll == null / not online yet... || offline results within escapeAll
@@ -294,13 +291,16 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
             }
         }
         // logic to deal with split parts within escapeAll. Uses all existing code within parsePage (see #9373)
-        String[] sprt = new Regex(escapeAll, "(<div class=\"spart\".*?</div>|Part \\d+\r\n)").getColumn(0);
+        final String[] sprt = new Regex(escapeAll, "(<div class=\"spart\".*?</div>|Part \\d+\r\n)").getColumn(0);
         if (sprt != null && sprt.length > 1) {
-            spart = sprt.length;
+            if (spart == -1) {
+                spart = sprt.length;
+            }
             // lets remove previous results from escape all
-            if (spart > 1 && link != null) {
+            if (spart > 1 && link != null && spart != (spart_count + 1)) {
                 escapeAll = escapeAll.replace(link, "");
-                parsePage();
+                spart_count++;
+                return parsePage();
             }
         }
         if (link == null) {
