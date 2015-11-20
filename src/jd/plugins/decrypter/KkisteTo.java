@@ -64,9 +64,9 @@ public class KkisteTo extends PluginForDecrypt {
             fp.setName(fpName);
             for (final String singleLink : links) {
                 final DownloadLink dl = createDownloadlink(singleLink);
-                final String decrypterfilename = fpName + "_part_" + df.format(counter) + ecostream_default_extension;
+                final String decrypterfilename = fpName + "_part_" + df.format(counter);
                 dl.setProperty("decrypterfilename", decrypterfilename);
-                dl.setName(decrypterfilename);
+                dl.setName(decrypterfilename + ecostream_default_extension);
                 dl._setFilePackage(fp);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
@@ -101,10 +101,9 @@ public class KkisteTo extends PluginForDecrypt {
                 if (decrypterfilename == null || true) {
                     decrypterfilename = fpName + "_" + season_formatted + "E" + df.format(counter);
                 }
-                decrypterfilename += ecostream_default_extension;
                 final DownloadLink dl = createDownloadlink("http://www.ecostream.tv/stream/" + linkid + ".html");
                 dl.setProperty("decrypterfilename", decrypterfilename);
-                dl.setName(decrypterfilename);
+                dl.setName(decrypterfilename + ecostream_default_extension);
                 dl._setFilePackage(fp);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
