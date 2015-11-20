@@ -21,7 +21,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -44,12 +48,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecad.com" }, urls = { "https?://(?:www\\.)?filecad\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecad.com" }, urls = { "https?://(?:www\\.)?filecad\\.com/[A-Za-z0-9]+" }, flags = { 2 })
 public class FilecadCom extends PluginForHost {
 
     public FilecadCom(PluginWrapper wrapper) {
@@ -104,8 +103,6 @@ public class FilecadCom extends PluginForHost {
     private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
     private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
 
-    private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -149,7 +146,7 @@ public class FilecadCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             handleErrors();
-            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
@@ -210,7 +207,7 @@ public class FilecadCom extends PluginForHost {
                     } else {
                         logger.info("Found continue_link, continuing...");
                     }
-                    final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+                    final String waittime = br.getRegex("\\$\\('\\.download-timer-seconds'\\)\\.html\\((\\d+)\\);").getMatch(0);
                     if (waittime != null) {
                         logger.info("Found waittime, waiting (seconds): " + waittime + " + " + additional_WAIT_SECONDS + " additional seconds");
                         sleep((Integer.parseInt(waittime) + additional_WAIT_SECONDS) * 1001l, downloadLink);
@@ -218,7 +215,7 @@ public class FilecadCom extends PluginForHost {
                         logger.info("Current pre-download page has no waittime");
                     }
                     final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (br.containsHTML("data\\-sitekey=")) {
+                    if (br.containsHTML("data-sitekey=")) {
                         captcha = true;
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         success = true;
@@ -235,7 +232,7 @@ public class FilecadCom extends PluginForHost {
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                        if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                        if (br.containsHTML("api-secure\\.solvemedia\\.com/")) {
                             sm.setSecure(true);
                         }
                         File cf = null;
@@ -288,15 +285,15 @@ public class FilecadCom extends PluginForHost {
     }
 
     private String getContinueLink() {
-        String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        String continue_link = br.getRegex("\\$\\('\\.download-timer'\\)\\.html\\(\"<a href='(https?://[^<>\"]*?)'").getMatch(0);
         if (continue_link == null) {
-            continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
+            continue_link = br.getRegex("class='btn btn-free' href='(https?://[^<>\"]*?)'>").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (continue_link == null) {
-            continue_link = br.getRegex("(?:\"|\\')(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            continue_link = br.getRegex("(\"|')(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)\\1").getMatch(1);
         }
         if (continue_link == null) {
             continue_link = getDllink();
@@ -374,11 +371,7 @@ public class FilecadCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -408,7 +401,7 @@ public class FilecadCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -419,14 +412,10 @@ public class FilecadCom extends PluginForHost {
 
     private String getProtocol() {
         if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
-            return "https://";
+            return "https://www.";
         } else {
-            return "http://";
+            return "http://www.";
         }
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
@@ -486,10 +475,10 @@ public class FilecadCom extends PluginForHost {
                     }
                 }
                 br.getPage(loginstart + this.getHost() + "/account_home." + type);
-                if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
-                    account.setProperty("free", true);
+                if (!br.containsHTML("class=\"badge badge-success\">(?:PAID|PREMIUM) USER</span>")) {
+                    account.setType(Account.AccountType.FREE);
                 } else {
-                    account.setProperty("free", false);
+                    account.setType(Account.AccountType.PREMIUM);
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -511,27 +500,19 @@ public class FilecadCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        MAXPREM.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        if (account.getBooleanProperty("free", false)) {
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-                /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
-            MAXPREM.set(account_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) account");
+        if (account.getType() == AccountType.FREE) {
+            account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
+            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            br.getPage(this.getProtocol() + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -541,27 +522,16 @@ public class FilecadCom extends PluginForHost {
             long expire_milliseconds = 0;
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-                account.setProperty("free", true);
-                try {
-                    account.setType(AccountType.FREE);
-                    account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-                    /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-                    account.setConcurrentUsePossible(false);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
-                MAXPREM.set(account_FREE_MAXDOWNLOADS);
-                ai.setStatus("Registered (free) user");
+                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
+                /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+                account.setConcurrentUsePossible(false);
+                account.setType(AccountType.FREE);
+                ai.setStatus("Free Account");
             } else {
                 ai.setValidUntil(expire_milliseconds);
-                try {
-                    account.setType(AccountType.PREMIUM);
-                    account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
-                MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
+                ai.setStatus("Premium Account");
             }
         }
         account.setValid(true);
@@ -574,7 +544,7 @@ public class FilecadCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             if (!available_CHECK_OVER_INFO_PAGE) {
                 br.getPage(link.getDownloadURL());
             }
@@ -604,12 +574,6 @@ public class FilecadCom extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return MAXPREM.get();
     }
 
     @Override
