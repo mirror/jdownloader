@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+|http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+" }, flags = { 0 })
 public class PlayFourtyFourNet extends antiDDoSForHost {
 
     // raztoki embed video player template.
@@ -62,19 +63,16 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = downloadLink.getDownloadURL();
+        dllink = HTMLEntities.unhtmlentities(dllink);
         // Offline links should also have nice filenames
-        String filename = new Regex(downloadLink.getDownloadURL(), "play44\\.net/embed\\.php\\?(.+)").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "[\\?&]file=([^&]+)").getMatch(0);
-        }
+        final String filename = new Regex(dllink, "[\\?&](?:file|vid(?:eo)?)=(?:[^/]*/){0,}([^&]+)").getMatch(0);
         if (filename != null) {
             downloadLink.setName(filename);
         }
         this.setBrowserExclusive();
-        dllink = downloadLink.getDownloadURL();
         URLConnectionAdapter con = null;
-        if (dllink.matches(".+://gateway\\d*\\.play44\\.net/.+")) {
-            dllink = Encoding.urlDecode(dllink, false);
+        if (dllink.matches(".+://gateway\\d*\\.\\w+\\.\\w+/.+")) {
             // In case the link are directlinks! current cloudflare implementation will actually open them!
             br.setFollowRedirects(true);
             try {
