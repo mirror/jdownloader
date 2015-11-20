@@ -60,15 +60,17 @@ public class EcoStreamTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String filename_fid = getfid(downloadLink) + ".mp4";
+        final String filename_fid = getfid(downloadLink) + default_extension;
         downloadLink.setName(filename_fid);
         br.getPage(downloadLink.getDownloadURL());
         /* Hoster never has good filenames thus decrypters can set their own filenames. */
         String filename = downloadLink.getStringProperty("decrypterfilename");
         if (filename == null) {
             filename = filename_fid;
+        } else {
+            filename += default_extension;
         }
-        if (br.containsHTML(">File not found") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.containsHTML(">File not found") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setFinalFileName(filename);
