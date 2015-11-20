@@ -24,10 +24,16 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mylinkgen.com" }, urls = { "http://(www\\.)?mylinkgen\\.com/p/[A-Za-z0-9]+" }, flags = { 0 })
-public class MyLinkGenCom extends PluginForDecrypt {
+/**
+ * NOTE: uses cloudflare
+ *
+ * @author raztoki
+ * @author psp
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mylinkgen.com" }, urls = { "https?://(?:www\\.)?mylinkgen\\.com/(p|g)/([A-Za-z0-9]+)" }, flags = { 0 })
+public class MyLinkGenCom extends antiDDoSForDecrypt {
 
     public MyLinkGenCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -35,22 +41,22 @@ public class MyLinkGenCom extends PluginForDecrypt {
 
     /* Heavily modified safelinking.net script, thus not using SflnkgNt class */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        final String type = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        getPage(parameter);
         if (br.containsHTML("file not exist")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String continuelink = br.getRegex("\"(http[^<>\"]*?)\" class=\"btn btn-default\">Continue to file").getMatch(0);
-        if (continuelink == null) {
-            continuelink = "http://mylinkgen.com/g" + parameter.substring(parameter.lastIndexOf("/"));
+        if ("p".equalsIgnoreCase(type)) {
+            String continuelink = br.getRegex("\"(http[^<>\"]*?)\" class=\"btn btn-default\">Continue to file").getMatch(0);
+            if (continuelink == null) {
+                continuelink = "http://mylinkgen.com/g/" + uid;
+            }
+            getPage(continuelink);
         }
-        br.getPage(continuelink);
         final String finallink = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
