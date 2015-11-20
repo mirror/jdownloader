@@ -260,6 +260,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add new Account" })
     String jd_gui_swing_components_AccountDialog_title();
 
+    @Default(lngs = { "en" }, values = { "Edit Account" })
+    String jd_gui_swing_components_AccountDialog_edit_title();
+
     @Default(lngs = { "en" }, values = { "Host/Port:" })
     String jd_gui_swing_dialog_ProxyDialog_hostport();
 

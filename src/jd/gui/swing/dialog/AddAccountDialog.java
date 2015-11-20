@@ -44,7 +44,6 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.StringUtils;
-
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -403,7 +402,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() == okButton) {
             if (hoster != null && hoster.getSelectedItem() != null && editAccountPanel.validateInputs()) {
                 super.actionPerformed(e);

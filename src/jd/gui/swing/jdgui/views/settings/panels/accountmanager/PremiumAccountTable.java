@@ -79,7 +79,7 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.java.util.List , java.awt.event.KeyEvent, boolean)
      */
     @Override
@@ -112,7 +112,7 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.java.util.List,
      * org.appwork.swing.exttable.ExtColumn)
      */
@@ -121,11 +121,12 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
         if (popup != null) {
             if (selection == null) {
                 popup.add(new NewAction());
-                popup.add(new RemoveAction(selection, false));
+                popup.add(new RemoveAction(null, false));
                 popup.add(new BuyAction());
                 popup.add(new RefreshAction(null));
             } else {
                 popup.add(new NewAction());
+                popup.add(new EditAction(selection));
                 popup.add(new RemoveAction(selection, false));
                 popup.add(new RefreshAction(selection));
             }

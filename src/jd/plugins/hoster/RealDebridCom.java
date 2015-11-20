@@ -28,13 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.accounts.AccountFactory;
-import org.jdownloader.plugins.accounts.EditAccountPanel;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -56,6 +49,13 @@ import jd.plugins.PluginException;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends antiDDoSForHost {
 
@@ -76,8 +76,8 @@ public class RealDebridCom extends antiDDoSForHost {
     private static final long                              UNKNOWN_ERROR_RETRY_3 = 20;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap    = new HashMap<Account, HashMap<String, Long>>();
 
-    private final String hash1 = "23764902a26fbd6345d3cc3533d1d5eb";
-    private final String hash2 = "058c09bc934061efe763c4712649091f";
+    private final String                                   hash1                 = "23764902a26fbd6345d3cc3533d1d5eb";
+    private final String                                   hash2                 = "058c09bc934061efe763c4712649091f";
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -102,11 +102,6 @@ public class RealDebridCom extends antiDDoSForHost {
             return null;
         }
     }
-
-    // @Override
-    // public AccountFactory getAccountFactory() {
-    // return new PremiumizeMeAccountFactory();
-    // }
 
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
@@ -503,13 +498,14 @@ public class RealDebridCom extends antiDDoSForHost {
                 // {"error":6,"message":"Daily limit exceeded."}
                 errNoHosterTrafficLeft(account, link);
             } else if (br.containsHTML("error\":7,")) {
-                // {"error":7,"message":"F\u00fcr den Hoster ist kein Server vorhanden."} // Für den Hoster ist kein Server vorhanden. // tempUnavailableHoster(account,
-                                                                                                                                       // link,
-                                                                                                                                       // 60
-                                                                                                                                       // *
-                                                                                                                                       // 60
-                                                                                                                                       // *
-                                                                                                                                       // 1000l);
+                // {"error":7,"message":"F\u00fcr den Hoster ist kein Server vorhanden."} // Für den Hoster ist kein Server vorhanden. //
+                // tempUnavailableHoster(account,
+                // link,
+                // 60
+                // *
+                // 60
+                // *
+                // 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":10,")) {
                 logger.info("File's hoster is in maintenance. Try again later");
