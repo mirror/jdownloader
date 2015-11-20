@@ -120,7 +120,8 @@ public class TenluaVnFolder extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private void postPageRaw(final String url, final String postData) throws IOException {
+    @Override
+    protected void postPageRaw(final String url, final String postData) throws IOException {
         if (req_num == 0) {
             req_num = (long) Math.ceil(Math.random() * 1000000000);
         } else {

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -19,12 +20,21 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
+import jd.http.requests.PostRequest;
+import jd.http.requests.RequestVariable;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -32,12 +42,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.utils.JDUtilities;
-
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -208,6 +213,59 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         postPage(br, page, param);
     }
 
+    protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
+        final PostRequest request = (PostRequest) ibr.createPostRequest(page, new ArrayList<RequestVariable>(), null);
+        request.setPostDataString(post);
+        setContentType(request, isJson);
+        // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
+        // use existing browser session to determine host
+        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
+        prepBrowser(ibr, host);
+        URLConnectionAdapter con = null;
+        try {
+            con = ibr.openRequestConnection(request);
+            readConnection(con, ibr);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+            ibr.getHeaders().put("Content-Type", null);
+        }
+        antiDDoS(ibr);
+        runPostRequestTask(ibr);
+    }
+
+    protected void setContentType(final PostRequest request, final boolean isJson) {
+        if (request != null) {
+            if (isJson) {
+                request.setContentType("application/json");
+            } else {
+                request.setContentType("application/x-www-form-urlencoded");
+            }
+        }
+    }
+
+    /**
+     * Wrapper into postPageRaw(importBrowser, page, post), where browser == this.br;
+     *
+     * @author raztoki
+     *
+     */
+    protected void postPageRaw(final String page, final String post) throws Exception {
+        postPageRaw(br, page, post, false);
+    }
+
+    /**
+     * Wrapper into postPageRaw(importBrowser, page, post), where browser == this.br;
+     *
+     * @author raztoki
+     *
+     */
+    protected void postPageRaw(final String page, final String post, final boolean isJson) throws Exception {
+        postPageRaw(br, page, post, isJson);
+    }
+
     protected void submitForm(final Browser ibr, final Form form) throws Exception {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -249,6 +307,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected void sendRequest(final Browser ibr, final Request request) throws Exception {
+        final String host = Browser.getHost(request.getUrl());
+        prepBrowser(ibr, host);
         URLConnectionAdapter con = null;
         try {
             con = ibr.openRequestConnection(request);
@@ -290,7 +350,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @throws IOException
      * @throws PluginException
      */
-    private void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
+    public void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
         InputStream is = null;
         try {
             /* beta */
@@ -349,6 +409,30 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     private int responseCode5xx = 0;
 
     /**
+     * uses common method antiDDoS
+     *
+     * @author Jiaz
+     * @author raztoki
+     */
+    protected URLConnectionAdapter openAntiDDoSRequestConnection(final Browser ibr, Request request) throws Exception {
+        final String host = Browser.getHost(request.getUrl());
+        prepBrowser(ibr, host);
+        ibr.openRequestConnection(request);
+        antiDDoS(ibr, request);
+        return ibr.getHttpConnection();
+    }
+
+    /**
+     * wrapper for antiDDoS(Browser)
+     *
+     * @param ibr
+     * @throws Exception
+     */
+    protected final void antiDDoS(final Browser ibr) throws Exception {
+        antiDDoS(ibr, null);
+    }
+
+    /**
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
@@ -356,7 +440,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @version 0.03
      * @author raztoki
      **/
-    protected final void antiDDoS(final Browser ibr) throws Exception {
+    protected final void antiDDoS(final Browser ibr, final Request request) throws Exception {
         if (ibr == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -365,6 +449,14 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             final String URL = ibr.getURL();
             final int responseCode = ibr.getHttpConnection().getResponseCode();
             if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
+                if (request != null) {
+                    // used soley by openAntiDDoSRequestConnection/DirectHTTP plugin when open connection is used.
+                    ibr.followConnection();
+                    if (request instanceof HeadRequest && (responseCode == 403 || responseCode == 429 || (responseCode >= 503 && responseCode <= 525))) {
+                        openAntiDDoSRequestConnection(ibr, new GetRequest(request));
+                        return;
+                    }
+                }
                 Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
                 if (cloudflare == null) {
                     cloudflare = ibr.getFormbyProperty("id", "challenge-form");
