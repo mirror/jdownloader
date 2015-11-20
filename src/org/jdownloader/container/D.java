@@ -70,7 +70,6 @@ public class D extends PluginsC {
         // 97, 112, 99, 107, 97, 103, 101, 1 }), new byte[] { 112, 97, 99, 107,
         // 97, 103, 101 });
         //
-
     }
 
     public static String filterString(final String str) {
