@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+" }, flags = { 0 })
 public class PlayFourtyFourNet extends antiDDoSForHost {
 
     // raztoki embed video player template.
@@ -63,11 +63,18 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // Offline links should also have nice filenames
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "play44\\.net/embed\\.php\\?(.+)").getMatch(0));
+        String filename = new Regex(downloadLink.getDownloadURL(), "play44\\.net/embed\\.php\\?(.+)").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "[\\?&]file=([^&]+)").getMatch(0);
+        }
+        if (filename != null) {
+            downloadLink.setName(filename);
+        }
         this.setBrowserExclusive();
         dllink = downloadLink.getDownloadURL();
         URLConnectionAdapter con = null;
         if (dllink.matches(".+://gateway\\d*\\.play44\\.net/.+")) {
+            dllink = Encoding.urlDecode(dllink, false);
             // In case the link are directlinks! current cloudflare implementation will actually open them!
             br.setFollowRedirects(true);
             try {
@@ -102,7 +109,7 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         }
         dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("playlist:.*?url: \\'(http[^']+play44\\.net[^']+)\\'").getMatch(0);
+            dllink = br.getRegex("playlist:.*?url: '(http[^']+)'").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -113,17 +120,26 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
             con = getConnection(br, downloadLink);
             if (!con.getContentType().contains("html")) {
                 // is file
-                downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                // setname from google video will be shit, use the downloadlink file reference
+                if ((dllink.contains("googlevideo.com/") || dllink.contains("googleusercontent.com/")) && filename != null) {
+                    downloadLink.setFinalFileName(filename);
+                } else {
+                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                }
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
             } else {
                 // is html
+                br.followConnection();
+                if (br.toString().equals("Not found")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
             // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
+            return AvailableStatus.FALSE;
         } finally {
             try {
                 con.disconnect();
@@ -135,6 +151,9 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
     private boolean preferHeadRequest = true && isNewJD();
 
     private URLConnectionAdapter getConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
+        br.setFollowRedirects(true);
+        br.getHeaders().put("X-Requested-With", "ShockwaveFlash/19.0.0.245");
+        br.getHeaders().put("Accept", "*/*");
         URLConnectionAdapter urlConnection = null;
         boolean rangeHeader = false;
         try {
