@@ -495,7 +495,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         }
                         cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                         cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
-                        ibr.submitForm(cloudflare);
+                        if (request != null) {
+                            ibr.openFormConnection(cloudflare);
+                        } else {
+                            ibr.submitForm(cloudflare);
+                        }
                         if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
                             logger.warning("Wrong captcha");
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -528,7 +532,11 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     long answer = ((Number) engine.eval(sb.toString())).longValue();
                     cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
                     Thread.sleep(5500);
-                    ibr.submitForm(cloudflare);
+                    if (request != null) {
+                        ibr.openFormConnection(cloudflare);
+                    } else {
+                        ibr.submitForm(cloudflare);
+                    }
                     // if it works, there should be a redirect.
                     if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                         ibr.getPage(ibr.getRedirectLocation());
