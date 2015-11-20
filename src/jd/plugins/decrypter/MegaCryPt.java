@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -53,11 +54,14 @@ public class MegaCryPt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String uid = null;
-    private String a   = null;
+    private String                  uid = null;
+    private String                  a   = null;
+    private ArrayList<DownloadLink> decryptedLinks;
+    private CryptedLink             param;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        this.param = param;
+        decryptedLinks = new ArrayList<DownloadLink>();
         br = new Browser();
         final String parameter = param.toString();
         uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
@@ -153,29 +157,41 @@ public class MegaCryPt extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             // weblinks, this has been blind coded and not tested.
+            // folders are within another ajax request
             final String auid = br.getRegex("\"ajax\": mc\\.folder_show \\+ \"(.*?)\",").getMatch(0);
-            // http://www.megacrypt.cc/wp-admin/admin-ajax.php?action=fsw&cn=5648531614b2b670d1b80ce8&_=1447743768066
-            final Browser ajax = br.cloneBrowser();
-            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            ajax.getPage("/wp-admin/admin-ajax.php?action=fsw&cn=" + auid + "&_=" + System.currentTimeMillis());
-            final String[] links = ajax.getRegex("href='(.*?/\\?jp=[a-f0-9]{32})'").getColumn(0);
-            if (links != null) {
-                for (final String link : links) {
-                    final Browser br2 = br.cloneBrowser();
-                    br2.getPage(JSonUtils.unescape(link));
-                    final String redirect = br2.getRedirectLocation();
-                    if (redirect != null) {
-                        decryptedLinks.add(createDownloadlink(redirect));
-                    }
-                    // small sleep
-                    this.sleep(250, param);
-                }
+            if (auid != null) {
+                // http://www.megacrypt.cc/wp-admin/admin-ajax.php?action=fsw&cn=5648531614b2b670d1b80ce8&_=1447743768066
+                final Browser ajax = br.cloneBrowser();
+                ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                ajax.getPage("/wp-admin/admin-ajax.php?action=fsw&cn=" + auid + "&_=" + System.currentTimeMillis());
+                final String[] links = ajax.getRegex("href='([^']*/\\?jp=[a-f0-9]{32})'").getColumn(0);
+                processLinks(links);
+            } else {
+                // single link don't have another ajax request.
+                // https://svn.jdownloader.org/issues/75006#change-470090
+                final String[] links = br.getRegex("href=\"([^\"]*/\\?jp=[a-f0-9]{32})\"").getColumn(0);
+                processLinks(links);
             }
         }
 
         return decryptedLinks;
 
+    }
+
+    private final void processLinks(final String[] links) throws IOException, InterruptedException {
+        if (links != null) {
+            for (final String link : links) {
+                final Browser br2 = br.cloneBrowser();
+                br2.getPage(JSonUtils.unescape(link));
+                final String redirect = br2.getRedirectLocation();
+                if (redirect != null) {
+                    decryptedLinks.add(createDownloadlink(redirect));
+                }
+                // small sleep
+                this.sleep(250, param);
+            }
+        }
     }
 
     private Form getCaptchaForm(Form[] forms) {
