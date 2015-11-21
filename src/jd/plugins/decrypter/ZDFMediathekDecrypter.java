@@ -276,13 +276,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         link.setAvailable(true);
                     }
                     link.setFinalFileName(name);
-                    try {
-                        /* JD2 only */
-                        link.setContentUrl(PARAMETER_ORIGINAL);
-                    } catch (Throwable e) {
-                        /* Stable */
-                        link.setBrowserUrl(PARAMETER_ORIGINAL);
-                    }
+                    link.setContentUrl(PARAMETER_ORIGINAL);
                     link.setProperty("date", date_formatted);
                     link.setProperty("directURL", url);
                     link.setProperty("directName", name);
@@ -331,7 +325,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (grabSubtitles && subtitleURL != null) {
                 final String dlfmt = dl.getStringProperty("directfmt", null);
                 final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
-                final String name = date_formatted + "_" + title + "@" + dlfmt + ".xml";
+                final String name = date_formatted + "_zdf_" + show + " - " + title + "@" + dlfmt + ".xml";
                 final DownloadLink subtitle = createDownloadlink(String.format(decrypterurl, dlfmt + "subtitle"));
                 subtitle.setAvailable(true);
                 subtitle.setFinalFileName(name);

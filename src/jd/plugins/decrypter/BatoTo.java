@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "http://bato\\.to/reader#[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "https?://bato\\.to/reader#[a-z0-9]+" }, flags = { 0 })
 public class BatoTo extends PluginForDecrypt {
 
     /**
@@ -42,7 +42,13 @@ public class BatoTo extends PluginForDecrypt {
      */
     public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
+        /* Prevent server response 503! */
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
+    }
+
+    public int getMaxConcurrentProcessingInstances() {
+        /* Prevent server response 503! */
+        return 3;
     }
 
     @SuppressWarnings("deprecation")

@@ -41,7 +41,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -53,7 +52,7 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.ScriptableObject;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
-public class ShrLnksBz extends PluginForDecrypt {
+public class ShrLnksBz extends antiDDoSForDecrypt {
 
     private String MAINPAGE = "http://share-links.biz/";
     private String ua       = RandomUserAgent.generate();
@@ -67,7 +66,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         DownloadLink ret = super.createDownloadlink(link);
         try {
             ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
 
         }
         return ret;
@@ -80,7 +79,7 @@ public class ShrLnksBz extends PluginForDecrypt {
 
         if (parameter.contains("s2l.biz")) {
             br.setFollowRedirects(false);
-            br.getPage(parameter);
+            getPage(parameter);
             parameter = br.getRedirectLocation();
         }
         setBrowserExclusive();
@@ -101,7 +100,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         /* Prefer English */
         parameter += "?lng=en";
 
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
             logger.info("Link offline: " + parameter);
             try {
@@ -132,15 +131,11 @@ public class ShrLnksBz extends PluginForDecrypt {
         }
         /* Check if a redirect was there before */
         if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
+            getPage(br.getRedirectLocation());
         }
         if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
             logger.info("Link offline: " + parameter);
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         /* Folderpassword */
@@ -185,10 +180,7 @@ public class ShrLnksBz extends PluginForDecrypt {
             for (int i = 0; i <= max; i++) {
                 String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
                 if (Captchamap == null) {
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    invalidateLastChallengeResponse();
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
@@ -214,23 +206,17 @@ public class ShrLnksBz extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.setFollowRedirects(true);
-                br.getPage(MAINPAGE + nexturl);
+                getPage(MAINPAGE + nexturl);
                 if (br.containsHTML("> Your choice was wrong\\.<")) {
-                    br.getPage(parameter);
+                    getPage(parameter);
                     if (i == max && auto) {
                         i = 0;
                         auto = false;
                     }
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    invalidateLastChallengeResponse();
                     continue;
                 } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    validateLastChallengeResponse();
                 }
                 failed = false;
                 break;
@@ -244,7 +230,8 @@ public class ShrLnksBz extends PluginForDecrypt {
             String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
             if (flashVars != null) {
                 final Browser cnlbr = new Browser();
-                String test = cnlbr.getPage(MAINPAGE + "get/cnl2/_" + flashVars);
+                getPage(cnlbr, MAINPAGE + "get/cnl2/_" + flashVars);
+                String test = cnlbr.toString();
                 String[] encVars = null;
                 if (test != null) {
                     encVars = test.split("\\;\\;");
@@ -285,7 +272,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                         cnlbr.setConnectTimeout(5000);
                         cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
                         try {
-                            cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", flashVars);
+                            postPage(cnlbr, "http://127.0.0.1:9666/flash/addcrypted2", flashVars);
                             if (cnlbr.containsHTML("success")) {
                                 return decryptedLinks;
                             } else {
@@ -313,7 +300,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         }
         final LinkedList<String> links = new LinkedList<String>();
         for (int i = 1; i <= pages; i++) {
-            br.getPage(MAINPAGE + pattern);
+            getPage(MAINPAGE + pattern);
             final String[] linki = br.getRegex("decrypt\\.gif\" onclick=\"javascript:_get\\('(.*?)'").getColumn(0);
             if (linki.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -330,11 +317,11 @@ public class ShrLnksBz extends PluginForDecrypt {
             return null;
         }
         for (final String tmplink : links) {
-            br.getPage(MAINPAGE + "get/lnk/" + tmplink);
+            getPage(MAINPAGE + "get/lnk/" + tmplink);
             final String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
             if (clink0 != null) {
                 try {
-                    br.getPage(new Regex(Encoding.htmlDecode(clink0), "\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0));
+                    getPage(new Regex(Encoding.htmlDecode(clink0), "\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0));
                 } catch (final Throwable e) {
                     continue;
                 }
@@ -343,7 +330,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 if (result != null) {
                     if (result.contains("share-links.biz")) {
                         br.setFollowRedirects(false);
-                        br.getPage(result);
+                        getPage(result);
                         result = br.getRedirectLocation() != null ? br.getRedirectLocation() : null;
                         if (result == null) {
                             continue;

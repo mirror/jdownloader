@@ -340,14 +340,14 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     if (ext.length() == 4) {
                         extension = ext;
                     }
-                    String name = fileName + (protocol != null ? "_" + protocol : "");
-                    name += extension;
+                    final String final_filename_without_extension = fileName + (protocol != null ? "_" + protocol : "");
+                    final String final_filename_video = final_filename_without_extension + extension;
                     final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
 
-                    link.setFinalFileName(name);
+                    link.setFinalFileName(final_filename_video);
                     link.setContentUrl(data);
                     link.setProperty("directURL", url);
-                    link.setProperty("directName", name);
+                    link.setProperty("directName", final_filename_video);
                     link.setProperty("directQuality", fmt);
                     link.setProperty("mainlink", data);
                     if (protocol == null && delivery == null) {
@@ -371,14 +371,14 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
                             String subtitleUrl = mediaEntry.get("SubTitleUrl");
                             if (!isEmpty(subtitleUrl)) {
-                                final String name_subtitle = fileName + ".srt";
+                                final String final_filename_subtitle = final_filename_without_extension + ".srt";
                                 final DownloadLink subtitle = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                                 subtitle.setProperty("directURL", subtitleUrl);
-                                subtitle.setProperty("directName", name_subtitle);
+                                subtitle.setProperty("directName", final_filename_subtitle);
                                 subtitle.setProperty("streamingType", "subtitle");
                                 subtitle.setProperty("mainlink", data);
                                 subtitle.setAvailable(true);
-                                subtitle.setFinalFileName(name_subtitle);
+                                subtitle.setFinalFileName(final_filename_subtitle);
                                 subtitle.setContentUrl(data);
                                 subtitle.setLinkID(video_id_detailed + "_" + fmt + "_subtitle");
                                 part.add(subtitle);
