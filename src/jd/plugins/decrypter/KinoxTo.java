@@ -48,7 +48,6 @@ public class KinoxTo extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final DecimalFormat df = new DecimalFormat("00");
         final String url_name = new Regex(parameter, "kinox\\.to/Stream/([A-Za-z0-9\\-_]+)\\.html").getMatch(0);
         addr_id = this.br.getRegex("Addr=([^<>\"\\&]*?)&").getMatch(0);
         final String series_id = this.br.getRegex("SeriesID=(\\d+)").getMatch(0);
@@ -72,11 +71,6 @@ public class KinoxTo extends antiDDoSForDecrypt {
             for (final String[] season : season_info_all) {
                 final String season_number = season[1];
                 final String[] season_episodes = season[0].split(",");
-
-                final int season_int = Integer.parseInt(season_number);
-                final FilePackage fp = FilePackage.getInstance();
-                final String season_formatted = "S" + df.format(season_int);
-                fp.setName(fpName + " " + season_formatted);
                 for (final String episode : season_episodes) {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted by user");
@@ -101,6 +95,15 @@ public class KinoxTo extends antiDDoSForDecrypt {
         if (mirrors == null || mirrors.length == 0) {
             throw new DecrypterException("Decrypter broken");
         }
+        final DecimalFormat df = new DecimalFormat("00");
+        final int season_int = Integer.parseInt(season_number);
+        final FilePackage fp = FilePackage.getInstance();
+        final String season_formatted = "S" + df.format(season_int);
+        String fpname = addr_id;
+        if (season_number != null && episode != null) {
+            fpname += " " + season_formatted;
+        }
+        fp.setName(fpname);
         for (final String mirror : mirrors) {
             /* Crawl Mirrors --> Find directlinks */
             if (this.isAbort()) {

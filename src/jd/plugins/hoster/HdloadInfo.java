@@ -19,9 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -32,7 +30,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -49,6 +46,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -58,63 +56,85 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadex.com" }, urls = { "https?://(?:www\\.)?uploadex\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class UploadexCom extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdload.info" }, urls = { "https?://(www\\.)?hdload\\.info/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class HdloadInfo extends PluginForHost {
 
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    /* Some HTML code to identify different (error) states */
+    private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
+    private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
+
+    /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://uploadex.com";
-    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                     = "http://hdload.info";
+    private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(uploadex\\.com)";
-    /* Linktypes */
-    private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
-    private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final String            DOMAINS                         = "(hdload\\.info|megahd\\.xyz)";
+    /*
+     * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
+     * check for imagehost final downloadlinks.
+     */
+    private static final boolean           AUDIOHOSTER                     = false;
+    /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
+    private static final boolean           VIDEOHOSTER                     = false;
+    /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
+    private static final boolean           VIDEOHOSTER_2                   = true;
+    /* Enable this for imagehosts */
+    private static final boolean           IMAGEHOSTER                     = false;
 
-    private static final boolean           AUDIOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = false;
-
-    private static final boolean           SUPPORTSHTTPS                = true;
-    private static final boolean           SUPPORTSHTTPS_FORCED         = true;
-    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private static final boolean           SUPPORTS_HTTPS                  = false;
+    private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
+    private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = false;
+    private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = false;
+    private static final boolean           ENABLE_RANDOM_UA                = false;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = false;
     /* Waittime stuff */
-    private static final boolean           WAITFORCED                   = false;
-    private static final int               WAITSECONDSMIN               = 3;
-    private static final int               WAITSECONDSMAX               = 100;
-    private static final int               WAITSECONDSFORCED            = 5;
+    private static final boolean           WAITFORCED                      = false;
+    private static final int               WAITSECONDSMIN                  = 3;
+    private static final int               WAITSECONDSMAX                  = 100;
+    private static final int               WAITSECONDSFORCED               = 5;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 0;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean           FREE_RESUME                     = true;
+    private static final int               FREE_MAXCHUNKS                  = -5;
+    private static final int               FREE_MAXDOWNLOADS               = 4;
+    private static final boolean           ACCOUNT_FREE_RESUME             = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS          = -5;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 4;
+    /* Max chunks overall: ~ 21 */
+    private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = -2;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
+
+    /* Linktypes */
+    private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String            USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
+    private static final String            USERTEXT_MAINTENANCE            = "This server is under maintenance";
+    private static final String            USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
+
+    /* Properties */
+    private static final String            PROPERTY_DLLINK_FREE            = "freelink";
+    private static final String            PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
+    private static final String            PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
+    private static final String            PROPERTY_PASS                   = "pass";
+
+    /* Used variables */
+    private String                         correctedBR                     = "";
+    private String                         fuid                            = null;
+    private String                         passCode                        = null;
+
+    private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
-    private String                         fuid                         = null;
+    private static AtomicInteger           maxFree                         = new AtomicInteger(1);
+    private static AtomicInteger           maxPrem                         = new AtomicInteger(1);
+    private static Object                  LOCK                            = new Object();
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.8.8
+    // XfileSharingProBasic Version 2.7.0.5
     // Tags: Script, template
-    // mods: scanInfo[other filename RegEx]
+    // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -127,7 +147,7 @@ public class UploadexCom extends antiDDoSForHost {
         final String fuid = getFUIDFromURL(link);
         final String protocol;
         /* link cleanup, prefer https if possible */
-        if (SUPPORTSHTTPS || SUPPORTSHTTPS_FORCED) {
+        if (SUPPORTS_HTTPS || SUPPORTS_HTTPS_FORCED) {
             protocol = "https://";
         } else {
             protocol = "http://";
@@ -136,11 +156,7 @@ public class UploadexCom extends antiDDoSForHost {
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
-            try {
-                link.setContentUrl(url_embed);
-            } catch (final Throwable e) {
-                /* Not available in 0.9.581 Stable */
-            }
+            link.setContentUrl(url_embed);
         }
         link.setUrlDownload(corrected_downloadurl);
     }
@@ -151,12 +167,12 @@ public class UploadexCom extends antiDDoSForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public UploadexCom(PluginWrapper wrapper) {
+    public HdloadInfo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
@@ -170,29 +186,34 @@ public class UploadexCom extends antiDDoSForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
-            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-            if (fileInfo[0] != null) {
-                link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
-                return AvailableStatus.TRUE;
+        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+            if (SUPPORTS_AVAILABLECHECK_ABUSE) {
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                if (fileInfo[0] != null) {
+                    link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+                    return AvailableStatus.TRUE;
+                }
             }
-            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
+            link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
         }
         if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
-            link.getLinkStatus().setStatusText(PREMIUMONLY2);
+            link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
             try {
-                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                if (br.containsHTML(">No such file<")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (SUPPORTS_AVAILABLECHECK_ABUSE) {
+                    fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                    if (br.containsHTML(">No such file<")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
-                if (SUPPORTS_ALT_AVAILABLECHECK) {
-                    postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                if (SUPPORTS_AVAILABLECHECK_ALT) {
+                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
                 }
                 /* 2nd offline check */
-                if ((SUPPORTS_ALT_AVAILABLECHECK && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+                if ((SUPPORTS_AVAILABLECHECK_ALT && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+                    /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (fileInfo[0] != null || fileInfo[1] != null) {
                     /* We know the link is online, set all information we got */
@@ -215,6 +236,10 @@ public class UploadexCom extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
+        /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
+        if (IMAGEHOSTER && fileInfo[0] == null) {
+            fileInfo[0] = this.fuid;
+        }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -227,12 +252,15 @@ public class UploadexCom extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        if (!fileInfo[0].endsWith(".mp4")) {
+            fileInfo[0] += ".mp4";
+        }
         link.setName(fileInfo[0].trim());
-        if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
+        if (fileInfo[1] == null && SUPPORTS_AVAILABLECHECK_ALT) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
             try {
-                postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                 fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }
@@ -273,25 +301,26 @@ public class UploadexCom extends antiDDoSForHost {
             }
         }
         if (fileInfo[0] == null) {
-            /* Link of the box without filesize */
-            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)</span>").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "<title>Watch ([^<>\"]*?)</title>").getMatch(0);
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                // next two are details from sharing box
+                fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    // next two are details from sharing box
                     if (fileInfo[1] == null) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                        // generic failover#1
+                        fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                         if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                        }
-                        // generic failover#2
-                        if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                            fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                            // generic failover#1
+                            if (fileInfo[1] == null) {
+                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                            }
+                            // generic failover#2
+                            if (fileInfo[1] == null) {
+                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                            }
                         }
                     }
                 }
@@ -303,33 +332,33 @@ public class UploadexCom extends antiDDoSForHost {
         return fileInfo;
     }
 
-    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
+        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DLLINK_FREE);
     }
 
-    @SuppressWarnings({ "unused", "deprecation" })
+    @SuppressWarnings({ "unused", "deprecation", "static-access" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
-        passCode = downloadLink.getStringProperty("pass");
-        /* First, bring up saved final links */
+        passCode = downloadLink.getStringProperty(PROPERTY_PASS);
+        /* 1, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        /* Second, check for streaming/direct links on the first page */
+        /* 2, check for streaming/direct links on the first page */
         if (dllink == null) {
             dllink = getDllink();
         }
-        /* Third, do they provide video/audio hosting? */
+        /* 3, do they provide audio hosting? */
         if (dllink == null && AUDIOHOSTER && downloadLink.getName().endsWith(".mp3")) {
             try {
                 logger.info("Trying to get link via mp3embed");
                 final Browser brv = br.cloneBrowser();
-                getPage(brv, "/mp3embed-" + fuid);
+                brv.getPage("/mp3embed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
@@ -343,11 +372,12 @@ public class UploadexCom extends antiDDoSForHost {
                 logger.info("Failed to get link via mp3embed");
             }
         }
+        /* 4, do they provide video hosting? */
         if (dllink == null && VIDEOHOSTER) {
             try {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
-                getPage(brv, "/vidembed-" + fuid);
+                brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     logger.info("Failed to get link via vidembed because: " + br.toString());
@@ -358,6 +388,7 @@ public class UploadexCom extends antiDDoSForHost {
                 logger.info("Failed to get link via vidembed");
             }
         }
+        /* 5, do they provide video hosting #2? */
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
@@ -377,9 +408,28 @@ public class UploadexCom extends antiDDoSForHost {
                 getPage(downloadLink.getDownloadURL());
             }
         }
-        /* Fourth, continue like normal */
-        if (dllink == null) {
+        /* 6, do we have an imagehost? */
+        if (dllink == null && IMAGEHOSTER) {
             checkErrors(downloadLink, false);
+            Form imghost_next_form = null;
+            do {
+                imghost_next_form = this.br.getFormbyKey("next");
+                if (imghost_next_form != null) {
+                    imghost_next_form.remove("method_premium");
+                    /* end of backward compatibility */
+                    submitForm(imghost_next_form);
+                    checkErrors(downloadLink, false);
+                    dllink = getDllink();
+                    /* For imagehosts, filenames are often not given until we can actually see/download the image! */
+                    final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
+                    if (image_filename != null) {
+                        downloadLink.setName(Encoding.htmlDecode(image_filename));
+                    }
+                }
+            } while (imghost_next_form != null);
+        }
+        /* 7, continue like normal */
+        if (dllink == null) {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
@@ -402,6 +452,9 @@ public class UploadexCom extends antiDDoSForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
+                /* Last chance - maybe our errorhandling kicks in here. */
+                checkErrors(downloadLink, false);
+                /* Okay we finally have no idea what happened ... */
                 handlePluginBroken(downloadLink, "dlform_f1_null", 3);
             }
             /* how many forms deep do you want to try? */
@@ -411,7 +464,7 @@ public class UploadexCom extends antiDDoSForHost {
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
                 boolean skipWaittime = false;
-                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
                 }
@@ -519,16 +572,10 @@ public class UploadexCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    invalidateLastChallengeResponse();
                     continue;
                 } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    validateLastChallengeResponse();
                     break;
                 }
             }
@@ -564,7 +611,7 @@ public class UploadexCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -598,8 +645,8 @@ public class UploadexCom extends antiDDoSForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
+        if (acc.getType() == AccountType.FREE) {
+            /* Free accounts can have captchas */
             return true;
         }
         return false;
@@ -660,6 +707,7 @@ public class UploadexCom extends antiDDoSForHost {
         }
     }
 
+    @SuppressWarnings("unused")
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
@@ -679,6 +727,26 @@ public class UploadexCom extends antiDDoSForHost {
         if (dllink == null) {
             /* Sometimes used for streaming */
             dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+        }
+        if (dllink == null && IMAGEHOSTER) {
+            /* Used for image-hosts */
+            dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\']+)").getMatch(0);
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(https?://[^/]+/img/\\d+/[^<>\"\\']+)").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+)").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);
+            }
+            if (dllink != null && dllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
+                /* Do NOT download thumbnails! */
+                dllink = null;
+            }
         }
         return dllink;
     }
@@ -713,17 +781,24 @@ public class UploadexCom extends antiDDoSForHost {
         return finallink;
     }
 
-    protected void getPage(final String page) throws Exception {
-        super.getPage(page);
+    private void getPage(final String page) throws Exception {
+        br.getPage(page);
         correctBR();
     }
 
-    protected void submitForm(final Form form) throws Exception {
-        super.submitForm(form);
+    @SuppressWarnings("unused")
+    private void postPage(final String page, final String postdata) throws Exception {
+        br.postPage(page, postdata);
+        correctBR();
+    }
+
+    private void submitForm(final Form form) throws Exception {
+        br.submitForm(form);
         correctBR();
     }
 
     /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
+    @SuppressWarnings("unused")
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -734,6 +809,9 @@ public class UploadexCom extends antiDDoSForHost {
         }
         if (ttt == null) {
             ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
         }
         if (ttt != null) {
             wait = Integer.parseInt(ttt);
@@ -779,6 +857,22 @@ public class UploadexCom extends antiDDoSForHost {
             }
         }
         return null;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -843,7 +937,7 @@ public class UploadexCom extends antiDDoSForHost {
         if (passCode == null || passCode.equals("")) {
             logger.info("User has entered blank password, exiting handlePassword");
             passCode = null;
-            thelink.setProperty("pass", Property.NULL);
+            thelink.setProperty(PROPERTY_PASS, Property.NULL);
             return null;
         }
         if (pwform == null) {
@@ -853,17 +947,17 @@ public class UploadexCom extends antiDDoSForHost {
             logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
             pwform.put("password", Encoding.urlEncode(passCode));
         }
-        thelink.setProperty("pass", passCode);
+        thelink.setProperty(PROPERTY_PASS, passCode);
         return passCode;
     }
 
     private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
+            if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches() && correctedBR.contains("Wrong password")) {
                 /* handle password has failed in the past, additional try catching / resetting values */
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
-                theLink.setProperty("pass", Property.NULL);
+                theLink.setProperty(PROPERTY_PASS, Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (correctedBR.contains("Wrong captcha")) {
@@ -909,7 +1003,7 @@ public class UploadexCom extends antiDDoSForHost {
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /* Not enough wait time to reconnect -> Wait short and retry */
                 if (waittime < 180000) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", USERTEXT_ALLWAIT_SHORT), waittime);
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
@@ -921,43 +1015,22 @@ public class UploadexCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.info("As free user you can download files up to " + filesizelimit + " only");
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else {
                 logger.info("Only downloadable via premium");
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
         } else if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("Only downloadable via premium");
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
         }
     }
 
@@ -997,20 +1070,6 @@ public class UploadexCom extends antiDDoSForHost {
             logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @SuppressWarnings("deprecation")
@@ -1054,53 +1113,31 @@ public class UploadexCom extends antiDDoSForHost {
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setProperty("nopremium", true);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) account");
         } else {
             ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setProperty("nopremium", false);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
         }
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
@@ -1117,7 +1154,7 @@ public class UploadexCom extends antiDDoSForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (br.getCookie(COOKIE_HOST, "login") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1130,21 +1167,13 @@ public class UploadexCom extends antiDDoSForHost {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setType(AccountType.PREMIUM);
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -1153,21 +1182,21 @@ public class UploadexCom extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        passCode = downloadLink.getStringProperty("pass");
+        passCode = downloadLink.getStringProperty(PROPERTY_PASS);
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
+            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
-            String dllink = checkDirectLink(downloadLink, "premlink");
+            String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                    if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
                     checkErrors(downloadLink, true);
@@ -1196,7 +1225,7 @@ public class UploadexCom extends antiDDoSForHost {
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
             fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
+            downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl.startDownload();
         }
     }
