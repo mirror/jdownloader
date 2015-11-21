@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -155,7 +154,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepBrowser(br);
         correctCurrentDomain();
         correctDownloadLink(link);
@@ -165,6 +164,13 @@ public class NowVideoEu extends PluginForHost {
             br.getPage(link.getContentUrl());
         } catch (final Throwable e) {
             br.getPage(link.getDownloadURL());
+        }
+        {
+            // some bullshit here 20151121
+            final Form f = br.getFormbyKey("stepkey");
+            if (f != null) {
+                br.submitForm(f);
+            }
         }
         if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -177,9 +183,12 @@ public class NowVideoEu extends PluginForHost {
         String filename = br.getRegex("<title>Watch (.*?) online \\|").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"Watch (.*?) online \\|").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                filename = br.getRegex("<h4>(.*?)</h4>").getMatch(0);
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
         String id = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         if (id != null) {

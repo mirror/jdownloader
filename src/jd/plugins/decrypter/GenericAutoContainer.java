@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawlerConfig;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -15,9 +16,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf)$" }, flags = { 0 })
 public class GenericAutoContainer extends PluginForDecrypt {
@@ -30,7 +28,8 @@ public class GenericAutoContainer extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String url = parameter.getCryptedUrl();
-        if (!JsonConfig.create(LinkCrawlerConfig.class).isAutoImportContainer()) {
+        if (false) {
+            // if (!JsonConfig.create(LinkCrawlerConfig.class).isAutoImportContainer()) {
             ret.add(createDownloadlink(url));
         } else {
             final String type = new Regex(url, "(dlc|rsdf|ccf)$").getMatch(0);
