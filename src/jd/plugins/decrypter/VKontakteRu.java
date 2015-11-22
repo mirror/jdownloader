@@ -443,7 +443,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -531,12 +531,14 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         for (String audnfo : audioinfo) {
             final String artist = new Regex(audnfo, "event: event, name: \\'([^<>\"]*?)\\'").getMatch(0);
-            final String title = new Regex(audnfo, "return cancelEvent\\(event\\);\">([^<>\"]*?)</a>").getMatch(0);
+            // final String title = new Regex(audnfo, "return cancelEvent\\(event\\);\">([^<>\"]*?)</a>").getMatch(0);
+            final String title = new Regex(audnfo, "class=\"title\">([^<>\"]*?)<").getMatch(0);
             final Regex idinfo = new Regex(audnfo, "id=\"play\\-(\\d+)_(\\d+)\"");
             final String owner_id = idinfo.getMatch(0);
             final String content_id = idinfo.getMatch(1);
             final String finallink = new Regex(audnfo, "\"(https?://cs[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/u\\d+/audios?/[^<>\"/]+)\"").getMatch(0);
             if (finallink == null || artist == null || title == null || owner_id == null || content_id == null) {
+                logger.info("artist: " + artist + ", title: " + title + ", owner_id: " + owner_id + ", content_id: " + content_id + ", finallink: " + finallink);
                 decryptedLinks = null;
                 return;
             }
@@ -617,7 +619,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API, TODO: Return host-plugin links here to improve the overall stability.
-     *
+     * 
      * @throws Exception
      */
     private void decryptAudioPage() throws Exception {
@@ -1040,7 +1042,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     private void decryptCommunityVideoAlbum() throws Exception {
@@ -1355,7 +1357,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     *
+     * 
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -1621,7 +1623,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Handles these error-codes: https://vk.com/dev/errors
-     *
+     * 
      * @return true = ready to retry, false = problem - failed!
      */
     private boolean apiHandleErrors() throws Exception {
@@ -1816,7 +1818,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Returns the ownerID which belongs to a name e.g. vk.com/some_name
-     *
+     * 
      * @throws Exception
      */
     private String resolveScreenNameAPI(final String screenname) throws Exception {
