@@ -36,7 +36,7 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/" }, flags = { 0 })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {
@@ -54,25 +54,34 @@ public class AtvAt extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<DownloadLink> decryptedLinksWorkaround = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinksWorkaround = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        final Regex linkinfo = new Regex(parameter, "atv\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
+        String url_seriesname = linkinfo.getMatch(0);
+        String url_episodename = linkinfo.getMatch(1);
+        final String fid = linkinfo.getMatch(2);
+        final String url_seriesname_remove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
+        final String url_episodename_remove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
+        String seriesname = null;
+        String episodename = null;
+        short seasonnumber = -1;
+        short episodenumber = -1;
+        String seasonnumber_str = null;
+        String episodenumber_str = null;
+        final DecimalFormat df = new DecimalFormat("00");
+
         br.getPage(parameter);
-        final String fid = new Regex(parameter, "/(d\\d+)/$").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline (404 error): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(fid);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (!br.containsHTML("class=\"jsb_ jsb_video/FlashPlayer\"")) {
             logger.info("There is no downloadable content: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(fid);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
@@ -81,45 +90,68 @@ public class AtvAt extends PluginForDecrypt {
              * We can get the direct links of geo blocked videos anyways - also, this variable only tells if a video is geo blocked at all -
              * this does not necessarily mean that it is blocked in the users'country!
              */
-            logger.info("Video might not be available in your country: " + parameter);
+            logger.info("Video might not be available in your country [workaround might be possible though]: " + parameter);
         }
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+
         final String source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"(.*?)\">").getMatch(0);
-        String name;
+
         final String[] allLinks = new Regex(source, "src\\&quot;:\\&quot;([a-z]+://[^<>\"]*?)\\&quot;}").getColumn(0);
         if (allLinks == null || allLinks.length == 0) {
             logger.info("Seems like the video source of the player is missing: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(fid);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        String episodeNr = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
-        if (episodeNr == null) {
-            /* Fallback to URL */
-            episodeNr = new Regex(parameter, "folge\\-(\\d+)").getMatch(0);
+        /* Get filename information */
+        seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
+        if (seriesname == null) {
+            /* Fallback to URL information */
+            seriesname = url_seriesname.replace("-", " ");
         }
-        if (episodeNr != null) {
-            name = br.getRegex("class=\"title_bar\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
-        } else {
-            name = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+
+        episodename = this.br.getRegex("property=\"og:title\" content=\"Folge \\d+ \\- ([^<>\"]*?)\"").getMatch(0);
+        if (episodename == null) {
+            /* Fallback to URL information */
+            episodename = url_episodename.replace("-", " ");
         }
-        if (name == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (url_seriesname_remove != null) {
+            seasonnumber_str = new Regex(url_seriesname_remove, "(\\d+)$").getMatch(0);
+            /* Clean url_seriesname */
+            url_seriesname = url_seriesname.replace(url_seriesname_remove, "");
         }
-        name = Encoding.htmlDecode(name.trim());
-        name = decodeUnicode(name);
-        final DecimalFormat df = new DecimalFormat("000");
-        final DecimalFormat episodeFormat = new DecimalFormat("00");
+        if (url_episodename_remove != null) {
+            episodenumber_str = new Regex(url_episodename_remove, "(\\d+)$").getMatch(0);
+            /* Clean url_episodename! */
+            url_episodename = url_episodename.replace(url_episodename_remove, "");
+        }
+        if (episodenumber_str == null) {
+            episodenumber_str = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
+        }
+        if (seasonnumber_str != null && episodenumber_str != null) {
+            seasonnumber = Short.parseShort(seasonnumber_str);
+            episodenumber = Short.parseShort(episodenumber_str);
+        }
+        String hybrid_name = seriesname + "_";
+        if (seasonnumber > 0 && episodenumber > 0) {
+            /* That should be given in most of all cases! */
+            hybrid_name += "S" + df.format(seasonnumber) + "E" + df.format(episodenumber) + "_";
+        }
+        hybrid_name += episodename;
+        hybrid_name = Encoding.htmlDecode(hybrid_name);
+        hybrid_name = decodeUnicode(hybrid_name);
+
         int part_counter = 1;
         int part_counter_workaround = 1;
         boolean is_workaround_active;
 
         int counter_max = allLinks.length - 1;
         for (int counter = 0; counter <= counter_max; counter++) {
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return decryptedLinks;
+            }
             String singleLink = allLinks[counter];
             singleLink = singleLink.replace("\\", "");
 
@@ -140,6 +172,8 @@ public class AtvAt extends PluginForDecrypt {
             if (br.containsHTML("#EXT-X-STREAM-INF")) {
                 for (String line : Regex.getLines(br.toString())) {
                     if (!line.startsWith("#")) {
+                        /* Reset quality value */
+                        quality = null;
                         final DownloadLink link = createDownloadlink(br.getBaseURL() + line);
                         link.setContainerUrl(parameter);
 
@@ -162,27 +196,21 @@ public class AtvAt extends PluginForDecrypt {
                         } catch (Throwable e) {
                             getLogger().log(e);
                         }
-                        StringBuilder finalName = new StringBuilder();
-                        if (episodeNr != null) {
-                            finalName.append(name + "_E" + episodeFormat.format(Integer.parseInt(episodeNr)));
-                        } else {
-                            finalName.append(name + "_part");
-                        }
-                        if (quality != null) {
-                            finalName.append("_").append(quality);
-                        }
-                        quality = null;
                         final String part_formatted;
                         if (is_workaround_active) {
                             part_formatted = df.format(part_counter_workaround);
                         } else {
                             part_formatted = df.format(part_counter);
                         }
+                        String finalname = hybrid_name + "_";
+                        if (quality != null) {
+                            finalname += quality + "_";
+                        }
+                        finalname += "part_" + part_formatted + ".mp4";
 
-                        final String n = finalName.toString() + "_" + part_formatted;
-
-                        link.setFinalFileName(n + ".mp4");
+                        link.setFinalFileName(finalname);
                         link.setAvailable(true);
+                        link.setContentUrl(parameter);
                         if (is_workaround_active) {
                             decryptedLinksWorkaround.add(link);
                             part_counter_workaround++;
@@ -198,13 +226,18 @@ public class AtvAt extends PluginForDecrypt {
 
         }
 
-        if (decryptedLinks.size() == 0) {
+        /*
+         * Do not check for Array size 0 here as it might happens that e.g. 1 or 2 out of 6 geo-blocked parts are not blocked (maybe they
+         * forget that restriction sometimes). If any of the normal hls urls does not work we should always fall back to their fallback hls
+         * urls!
+         */
+        if (decryptedLinksWorkaround.size() > decryptedLinks.size()) {
             /* Use workaround e.g. for GEO-blocked urls */
             decryptedLinks = decryptedLinksWorkaround;
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(name);
+        fp.setName(hybrid_name);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
