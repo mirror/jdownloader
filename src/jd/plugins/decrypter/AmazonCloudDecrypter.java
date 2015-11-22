@@ -43,8 +43,12 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
     private String parameter       = null;
     private String plain_folder_id = null;
     private String plain_domain    = null;
+    private String nodeid          = null;
+    private String subfolder_id    = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        nodeid = null;
+        subfolder_id = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = param.toString();
 
@@ -75,7 +79,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
 
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     private ArrayList<DownloadLink> handleNewType(ArrayList<DownloadLink> decryptedLinks, CryptedLink parameter, ProgressController progress) throws Exception {
         LinkedHashMap<String, Object> entries = null;
         prepBR();
@@ -85,13 +89,14 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
         if (path_b64 != null) {
             path_decrypted = Encoding.Base64Decode(path_b64);
         }
-        final String subfolder_id = new Regex(parameter, "/folder/([^/\\&]+)").getMatch(0);
+        subfolder_id = new Regex(parameter, "/folder/([^/\\&]+)").getMatch(0);
         if (subfolder_id != null) {
             /* Subfolders-/files */
-            br.setAllowedResponseCodes(400);
-            br.getPage("https://www.amazon.com/drive/v1/nodes/" + subfolder_id + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&limit=200&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            resource_data_list = (ArrayList) entries.get("data");
+            resource_data_list = jd.plugins.hoster.AmazonCloud.getListFromNode(this.br, this.plain_domain, this.plain_folder_id, this.subfolder_id);
+            if (jd.plugins.hoster.AmazonCloud.isOffline(this.br)) {
+                decryptedLinks.add(createOfflinelink(this.parameter));
+                return decryptedLinks;
+            }
         } else {
             final DownloadLink main = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
             String requestedFilename = new Regex(parameter.getCryptedUrl(), "name=(.+)").getMatch(0);
@@ -100,24 +105,29 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             }
             main.setProperty("plain_folder_id", plain_folder_id);
             main.setProperty("mainlink", parameter);
-            main.setContentUrl(" https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id);
+            main.setContentUrl("https://www." + this.plain_domain + "/clouddrive/share/" + plain_folder_id);
 
-            br.getPage("https://www." + this.plain_domain + "/drive/v1/shares/" + plain_folder_id + "?customerId=0&resourceVersion=V2&ContentType=JSON&asset=ALL");
-            if (br.containsHTML("\"message\":\"ShareId does not exist") || this.br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(createOfflinelink(this.parameter, new Regex(this.parameter, "([A-Za-z0-9]+)$").getMatch(0), "File does not exist"));
+            jd.plugins.hoster.AmazonCloud.accessFolder(this.br, this.plain_domain, this.plain_folder_id);
+            if (jd.plugins.hoster.AmazonCloud.isOffline(this.br)) {
+                decryptedLinks.add(createOfflinelink(this.parameter));
                 return decryptedLinks;
             }
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) entries.get("nodeInfo");
-            final String kind = (String) nodeInfo.get("kind");
-            if (kind.equals("FILE")) {
+            final LinkedHashMap<String, Object> nodeInfo = jd.plugins.hoster.AmazonCloud.jsonGetNodeInfo(entries);
+            final String kind = jd.plugins.hoster.AmazonCloud.jsonGetKind(nodeInfo);
+            if (kind.equals(jd.plugins.hoster.AmazonCloud.JSON_KIND_FILE)) {
                 resource_data_list = new ArrayList<Object>();
                 resource_data_list.add(nodeInfo);
             } else {
-                final String id = (String) nodeInfo.get("id");
-                br.getPage("https://www.amazon.com/drive/v1/nodes/" + id + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&limit=200&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-                resource_data_list = (ArrayList) entries.get("data");
+                nodeid = (String) nodeInfo.get("id");
+                if (nodeid == null) {
+                    return null;
+                }
+                resource_data_list = jd.plugins.hoster.AmazonCloud.getListFromNode(this.br, this.plain_domain, this.plain_folder_id, this.nodeid);
+                if (jd.plugins.hoster.AmazonCloud.isOffline(this.br)) {
+                    decryptedLinks.add(createOfflinelink(this.parameter));
+                    return decryptedLinks;
+                }
             }
         }
         for (final Object o : resource_data_list) {
@@ -131,18 +141,22 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
     private DownloadLink crawlSingleObject(final Object o, String path_decrypted) throws IOException {
         final String path_encrypted;
         final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) o;
-        final LinkedHashMap<String, Object> contentProperties = (LinkedHashMap<String, Object>) nodeInfo.get("contentProperties");
-        final String kind = (String) nodeInfo.get("kind");
+        final LinkedHashMap<String, Object> contentProperties = jd.plugins.hoster.AmazonCloud.jsonGetContentProperties(nodeInfo);
+        final String kind = jd.plugins.hoster.AmazonCloud.jsonGetKind(nodeInfo);
+        String name = jd.plugins.hoster.AmazonCloud.jsonGetName(nodeInfo);
         final String id = (String) nodeInfo.get("id");
-        String name = (String) nodeInfo.get("name");
         final DownloadLink dl;
-        if (kind.equals("FILE")) {
+        if (kind.equals(jd.plugins.hoster.AmazonCloud.JSON_KIND_FILE)) {
             dl = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            final String finallink = (String) nodeInfo.get("tempLink");
+            final String finallink = jd.plugins.hoster.AmazonCloud.jsonGetFinallink(nodeInfo);
             final long filesize = ((Number) contentProperties.get("size")).longValue();
-            final String md5 = (String) contentProperties.get("md5");
+            final String md5 = jd.plugins.hoster.AmazonCloud.jsonGetFinallink(nodeInfo);
+            if (finallink == null || md5 == null) {
+                return null;
+            }
+            final String fid = jd.plugins.hoster.AmazonCloud.getLinkid(this.plain_folder_id, md5, name);
+
             name = Encoding.htmlDecode(name).trim();
-            final String fid = name + "_" + md5;
 
             dl.setDownloadSize(filesize);
             dl.setFinalFileName(name);
@@ -151,12 +165,19 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             dl.setProperty("mainlink", parameter);
             dl.setProperty("plain_directlink", finallink);
             dl.setProperty("plain_folder_id", plain_folder_id);
+            if (subfolder_id != null) {
+                dl.setProperty("subfolder_id", subfolder_id);
+            }
+            if (nodeid != null) {
+                dl.setProperty("nodeid", nodeid);
+            }
             dl.setProperty("plain_domain", plain_domain);
             dl.setProperty(PackagizerController.SUBFOLDERBYPLUGIN, path_decrypted);
             dl.setAvailable(true);
             dl.setContentUrl(parameter);
             dl.setContainerUrl("https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id);
             dl.setLinkID(fid);
+            dl.setMD5Hash(md5);
             if (!inValidate(path_decrypted)) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(path_decrypted.replace("/", "_"));
@@ -166,7 +187,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             path_decrypted += "/" + name;
             path_encrypted = Encoding.Base64Encode(path_decrypted);
             /* Add url to crawl subfolders/files - save subfolderpath inside url as their API won't give us that :) */
-            dl = createDownloadlink("https://www.amazon.com/clouddrive/share/" + plain_folder_id + "/folder/" + id + "&subfolderpath=" + path_encrypted);
+            dl = createDownloadlink("https://www." + this.plain_domain + "/clouddrive/share/" + plain_folder_id + "/folder/" + id + "&subfolderpath=" + path_encrypted);
         }
         return dl;
     }
