@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -28,7 +27,6 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -81,7 +79,8 @@ public class LinkSnappyCom extends PluginForHost {
     private String              dllink                 = null;
 
     /* 75 GB, Last checked: 18.06.2015 */
-    private static final long   dfault_traffic_max     = 80530636800L;
+    private static final long   default_traffic_max    = 80530636800L;
+    public static final long    site_trust_cookie_age  = 30000l;
     /* Last checked: 18.06.2015 */
     private static final String reCaptchaV2_sitekey    = "6LfhJgQTAAAAAIM7Pz3XxW1QMWssU51lcN-kUDRA";
 
@@ -158,7 +157,7 @@ public class LinkSnappyCom extends PluginForHost {
                 ac.setTrafficLeft(Long.parseLong(trafficLeft));
             }
             /* API does not (yet) return max daily traffic - use default value! */
-            ac.setTrafficMax(dfault_traffic_max);
+            ac.setTrafficMax(default_traffic_max);
         }
 
         /* now it's time to get all supported hosts */
@@ -252,7 +251,7 @@ public class LinkSnappyCom extends PluginForHost {
         ArrayList<String> supportedHosts = new ArrayList<String>();
         final String lang = System.getProperty("user.language");
         try {
-            if (!site_login(currentAcc, true)) {
+            if (!site_login(currentAcc)) {
                 ac.setStatus("Account is invalid. Wrong username/password or login captcha?!");
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -278,12 +277,15 @@ public class LinkSnappyCom extends PluginForHost {
         if (br.containsHTML("<strong>Daily traffic left:</strong> Unlimited")) {
             ac.setUnlimitedTraffic();
         } else {
-            final String trafficleft = br.getRegex("<strong>Daily traffic left:</strong> (-?\\d+(\\.\\d+)? [A-Z]{2})").getMatch(0);
+            String trafficleft = br.getRegex("<strong>Daily traffic left:</strong> (-?\\d+(\\.\\d+)? ?[A-Z]{1,2})").getMatch(0);
             if (trafficleft != null) {
                 /* Also check for negative traffic */
                 if (trafficleft.contains("-")) {
                     ac.setTrafficLeft(0);
                 } else {
+                    if (trafficleft.matches("-?\\d+(\\.\\d+)? ?G")) {
+                        trafficleft += "B";
+                    }
                     ac.setTrafficLeft(SizeFormatter.getSize(trafficleft));
                 }
             }
@@ -296,7 +298,7 @@ public class LinkSnappyCom extends PluginForHost {
             if (max_traffic != null) {
                 ac.setTrafficMax(SizeFormatter.getSize(max_traffic));
             } else {
-                ac.setTrafficMax(dfault_traffic_max);
+                ac.setTrafficMax(default_traffic_max);
             }
         }
 
@@ -313,6 +315,7 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
 
         synchronized (hostUnavailableMap) {
@@ -341,7 +344,6 @@ public class LinkSnappyCom extends PluginForHost {
         }
         prepBrowser(br);
         setConstants(account, link);
-        br.setFollowRedirects(true);
         final boolean use_api = api_active();
         dllink = link.getStringProperty("linksnappycomdirectlink", null);
         if (dllink != null) {
@@ -359,7 +361,7 @@ public class LinkSnappyCom extends PluginForHost {
                     break;
                 }
             } else {
-                this.site_login(account, false);
+                this.site_login(account);
                 for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                     /*
                      * IMPORTANT: Even though we're on the site here, https is not forced here - last time I checked it did not even work
@@ -588,50 +590,40 @@ public class LinkSnappyCom extends PluginForHost {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean site_login(final Account account, final boolean force) throws Exception {
+    private boolean site_login(final Account account) throws Exception {
         synchronized (LOCK) {
             /** Load cookies */
             br.setCookiesExclusive(true);
             prepBrowser(this.br);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) {
-                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        this.br.setCookie(COOKIE_HOST, key, value);
-                    }
-                    if (!force) {
-                        return true;
-                    }
-                    this.br.getPage("https://linksnappy.com/myaccount?lang=en");
-                    if (br.containsHTML("id=\"signedin\"")) {
-                        return true;
-                    }
-                    logger.info("Failed to re-use saved cookies - performing full login (captcha might be needed)");
-                    /* Remove old cookies & Headers */
-                    this.br = new Browser();
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                this.br.setCookies(this.getHost(), cookies);
+                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= site_trust_cookie_age) {
+                    /* We trust these cookies --> Do not check them */
+                    return true;
                 }
+                this.br.getPage("https://linksnappy.com/myaccount?lang=en");
+                if (br.containsHTML("id=\"signedin\"")) {
+                    /* Refresh timestamp */
+                    account.saveCookies(br.getCookies(COOKIE_HOST), "");
+                    return true;
+                }
+                logger.info("Failed to re-use saved cookies - performing full login (captcha might be needed)");
+                /* Remove old cookies & Headers */
+                this.br = new Browser();
             }
-            br.setFollowRedirects(true);
-            String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+            String getdata = "?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
             br.getPage(HTTP_S + "linksnappy.com/");
-            if (br.containsHTML("grecaptcha\\.render")) {
+            if (br.containsHTML("grecaptcha\\.render") && !this.br.containsHTML("// regCaptcha = grecaptcha\\.render\\(\\'regCaptcha\\', \\{")) {
                 final DownloadLink dummy = new DownloadLink(this, "Account", "linksnappy.com", "http://linksnappy.com", true);
                 if (this.getDownloadLink() == null) {
                     this.setDownloadLink(dummy);
                 }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2_sitekey).getToken();
-                postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                getdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
             }
-            postPageSecure("/login", postdata);
-            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null || !br.toString().equals("TRUE")) {
+            this.br.getPage("https://linksnappy.com/api/AUTHENTICATE" + getdata);
+            if (br.getCookie(COOKIE_HOST, "Auth") == null || this.br.containsHTML("\"error\":true")) {
                 return false;
             }
             /* Valid account --> Check if the account type is supported */
@@ -640,7 +632,7 @@ public class LinkSnappyCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nIf your account is Premium contact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             /* Unsupported account type? */
-            if (!br.containsHTML("<strong>Account Type:</strong>[\t\n\r ]+Lifetime")) {
+            if (!br.containsHTML("<strong>Account Type:</strong>[\t\n\r ]+(?:Lifetime|Elite)")) {
                 final String lang = System.getProperty("user.language");
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -649,15 +641,7 @@ public class LinkSnappyCom extends PluginForHost {
                 }
             }
 
-            /** Save cookies */
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(COOKIE_HOST);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
             return true;
         }
     }
@@ -771,6 +755,7 @@ public class LinkSnappyCom extends PluginForHost {
         prepBr.setAllowedResponseCodes(999);
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         prepBr.setCookie(COOKIE_HOST, "lang", "en");
+        prepBr.setFollowRedirects(true);
         return prepBr;
     }
 
@@ -810,48 +795,6 @@ public class LinkSnappyCom extends PluginForHost {
      */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     @Override
