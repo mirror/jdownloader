@@ -19,6 +19,9 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,16 +37,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 /**
  * @captcha recaptchav1
  * @antiddos cloudflare
  * @author User
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30726 $", interfaceVersion = 3, names = { "link.ligadepeliculas.net" }, urls = { "http://link\\.ligadepeliculas\\.net/index\\.php\\?v=(\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 30726 $", interfaceVersion = 3, names = { "link.ligadepeliculas.net" }, urls = { "http://link\\.ligadepeliculas\\.net/(?:index\\.php)?\\?v=(\\d+)" }, flags = { 0 })
 public class LnkLdpNt extends antiDDoSForDecrypt {
 
     public LnkLdpNt(PluginWrapper wrapper) {
