@@ -54,7 +54,7 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
                     s = s.substring(s.length() - 2);
                     sigger.append(s);
                 }
-                Signature signature = filesignatures.getSignature(sigger.toString());
+                final Signature signature = filesignatures.getSignature(sigger.toString(), itemName);
                 if (signature != null) {
                     if (signature.getExtensionSure() != null && (itemName == null || signature.getExtensionSure().matcher(itemName).matches())) {
                         /* signature matches, lets abort PWFinding now */

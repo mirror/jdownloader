@@ -19,6 +19,7 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
@@ -106,14 +107,46 @@ public class FileSignatures {
      * @param sig
      * @return
      */
-    public Signature getSignature(String sig) {
-        Signature[] db = getSignatureList();
-        for (Signature entry : db) {
-            if (entry != null && entry.matches(sig)) {
-                return entry;
+    public Signature getSignature(final String sig) {
+        if (sig != null) {
+            final Signature[] db = getSignatureList();
+            for (final Signature entry : db) {
+                if (entry != null && entry.matches(sig)) {
+                    return entry;
+                }
+            }
+            return checkTxt(sig);
+        }
+        return null;
+    }
+
+    public Signature getSignature(final String signature, final String fileName) {
+        if (signature != null) {
+            if (fileName == null) {
+                return getSignature(signature);
+            } else {
+                Signature ret = null;
+                final Signature[] db = getSignatureList();
+                for (final Signature sig : db) {
+                    if (sig != null && sig.matches(signature)) {
+                        final Pattern extensionSure = sig.getExtensionSure();
+                        if (extensionSure != null) {
+                            if (extensionSure.matcher(fileName).matches()) {
+                                return sig;
+                            }
+                        } else {
+                            ret = sig;
+                        }
+                    }
+                }
+                if (ret == null) {
+                    return checkTxt(signature);
+                } else {
+                    return ret;
+                }
             }
         }
-        return checkTxt(sig);
+        return null;
     }
 
     /**
