@@ -77,7 +77,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
         String finalfilename = null;
         /* Some links don't have to be accessed (here) */
         try {
-            if (!new Regex(parameter, "1tool\\.biz|file4ever\\.us|tm-exchange\\.com/|mixconnect\\.com/|dwz\\.cn/|icefilms\\.info/|linkdecode\\.com|fastdecode\\.com/|is\\.gd/|swzz\\.xyz/").matches()) {
+            if (!new Regex(parameter, "1tool\\.biz|file4ever\\.us|tm-exchange\\.com/|mixconnect\\.com/|dwz\\.cn/|icefilms\\.info/|linkdecode\\.com|fastdecode\\.com/|is\\.gd/|swzz\\.xyz/|animeforce\\.org/").matches()) {
                 br.getPage(parameter);
             }
             if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
@@ -675,11 +675,18 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                     finallink = this.br.getRegex("\\{window\\.location = \\'(http[^<>\"]*?)\\'").getMatch(0);
                 }
             } else if (parameter.contains("animeforce.org/")) {
-                if (this.br.getRedirectLocation() != null) {
-                    this.br.setFollowRedirects(true);
-                    this.br.getPage(this.br.getRedirectLocation());
+                // use cloudflare
+                getPage(parameter);
+                if (br.getRedirectLocation() != null) {
+                    br.setFollowRedirects(true);
+                    getPage(br.getRedirectLocation());
                 }
-                finallink = this.br.getRegex("href=\"(http[^<>\"]*?)\" target=\"_blank\">Download</a>").getMatch(0);
+                finallink = br.getRegex("href=\"(http[^<>\"]*?)\" target=\"_blank\">Download</a>").getMatch(0);
+                if (finallink == null) {
+                    if (br.containsHTML(">Il file che stai provando a scaricare non esiste,<br>oppure deve essere ancora caricato<|>o semplicemente hai cliccato/digitato un link sbagliato\\s*<")) {
+                        return decryptedLinks;
+                    }
+                }
             } else if (parameter.contains("swzz.xyz/")) {
                 // cloudflare
                 getPage(parameter);
