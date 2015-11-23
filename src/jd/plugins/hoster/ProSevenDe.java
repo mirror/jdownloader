@@ -72,6 +72,7 @@ public class ProSevenDe extends PluginForHost {
         }
     }
 
+    /* E.g. information about a single video: http://contentapi.sim-technik.de/mega-app/v2/pro7/phone/video/4041141 */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -128,6 +129,12 @@ public class ProSevenDe extends PluginForHost {
          */
         /* HLS (does not work as a workaround for for rtmpe streams): http://vas.sim-technik.de/video/playlist.m3u8?ClipID=<ClipID> */
         // http://vas.sim-technik.de/video/video.json?clipid=clipID&app=megapp&method=4&drm=marlin2
+        /*
+         * Example of an hls url:
+         * http://vodakpsdhls-vh.akamaihd.net/i/clips/09/09/4117599-1o6e6wx-tp,03,04,05,06,.mp4.csmil/master.m3u8?hdnea=st%3D1448240481%
+         * 7Eexp%3D1448326881%7Eacl%3D%2Fi%2Fclips%2F09%2F09%2F4117599-1o6e6wx-tp%2C03%2C04%2C05%2C06%2C.mp4%2A%7Ehmac%3Dedb40ef2bc90a159a2fc660e108a8e4ed9f934ee5c2e5376222ecc54bfe47f3a&__a__=off
+         */
+        /* Example how to get hls urls: http://ws.vtc.sim-technik.de/video/playlist.m3u8?ClipID=4041141 */
 
         /*
          * First try to get a http stream --> Faster downloadspeed & more reliable/stable connection than rtmp and slightly better
@@ -170,7 +177,7 @@ public class ProSevenDe extends PluginForHost {
              * TODO: Instead of just trying all qualities, consider to use the f4mgenerator XML file to find the existing qualities:
              * http://vas.sim-technik.de/f4mgenerator.f4m?cid=3868276&ttl=604800&access_token=kabeleins&cdn=akamai&token=
              * a3c706238cec19617b8e70b64480fa20aacc2a162a3bbd21294a8ddaf0209699&g=TGENNQIQUMYD&hdcore=3.7.0&plugin=aasp-3.7.0.39.44
-             *
+             * 
              * ... but it might happen that not all are listed so maybe trying all possible qualities makes more sense especially if one of
              * them is down e.g. because of server issues.
              */

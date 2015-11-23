@@ -63,6 +63,7 @@ public class ChipDe extends PluginForHost {
 
     private static final boolean          video_use_API      = true;
 
+    /* Tags: kaltura player, medianac, api.medianac.com */
     /* Static values of their kaltura player configuration */
     private static final String           kaltura_partner_id = "1741931";
     private static final String           kaltura_uiconf_id  = "30910812";

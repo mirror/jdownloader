@@ -66,6 +66,11 @@ public class MyVideo extends PluginForHost {
      * =kolibri-2.3.0&client_id=dfae319031c31d6c782c0c3cfb8abf17d1e7743e8b&server_id=e7431c165522d6189abced952fe134cc2c0e964e
      * &ids=2,0,4,7,1&callback=_player1_mvas0
      */
+    /*
+     * E.g. hls: http://myvideo-apple-vod2.adaptive.level3.net/
+     * c3RhcnRfdGltZT0yMDE1MTEyMzAwNTgxNCZlbmRfdGltZT0yMDE1MTEyMzA1NTgxOSZkaWdlc3Q9OTBkZTdlZTZjYTVjYWJlMDczNDhiZTk1NzBhZmE1YzM
+     * =/movie42/d2/12093412/12093412.m3u8
+     */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
