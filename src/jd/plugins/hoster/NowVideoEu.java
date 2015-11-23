@@ -165,13 +165,7 @@ public class NowVideoEu extends PluginForHost {
         } catch (final Throwable e) {
             br.getPage(link.getDownloadURL());
         }
-        {
-            // some bullshit here 20151121
-            final Form f = br.getFormbyKey("stepkey");
-            if (f != null) {
-                br.submitForm(f);
-            }
-        }
+        checkForThis();
         if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -196,6 +190,14 @@ public class NowVideoEu extends PluginForHost {
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
+    }
+
+    private final void checkForThis() throws Exception {
+        // some bullshit here 20151121
+        final Form f = br.getFormbyKey("stepkey");
+        if (f != null) {
+            br.submitForm(f);
+        }
     }
 
     @Override
@@ -391,6 +393,7 @@ public class NowVideoEu extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        br = new Browser();
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
@@ -399,10 +402,13 @@ public class NowVideoEu extends PluginForHost {
             doFree(link, account);
             return;
         }
-        br.getPage(link.getDownloadURL());
+        checkForThis();
         String dllink = br.getRegex("\"(https?://[a-z0-9]+\\." + domains + "/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://[a-z0-9\\.]+/dl/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(/download\\.php\\?file=[a-f0-9]{32,}\\.flv)\"").getMatch(0);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
