@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 /**
  * @author raztoki
- * */
+ */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.com" }, urls = { "http://(www\\.)?pururin\\.com/(gallery|thumbs)/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class PururinCom extends antiDDoSForDecrypt {
 
@@ -40,7 +40,7 @@ public class PururinCom extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         parameter = parameter.replaceFirst("pururin\\.com/(gallery|thumbs)/", "pururin\\.com/gallery/");
         br.setFollowRedirects(true);
