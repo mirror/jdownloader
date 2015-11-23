@@ -48,7 +48,7 @@ import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/#N?|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/#N?|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+(=###n=[a-zA-Z0-9]+)?" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL   = "USE_SSL_V2";
@@ -121,6 +121,10 @@ public class MegaConz extends PluginForHost {
         try {
             final PostRequest request;
             String parentNode = link.getStringProperty("pn", null);
+            if (parentNode == null) {
+                parentNode = getParentNodeID(link);
+                link.setProperty("pn", parentNode);
+            }
             if (parentNode == null && getFolderID(link.getContainerUrl()) != null) {
                 parentNode = getFolderID(link.getContainerUrl());
                 link.setProperty("pn", parentNode);
@@ -580,6 +584,10 @@ public class MegaConz extends PluginForHost {
 
     private String getNodeFileID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "#N(!|%21)([a-zA-Z0-9]+)(!|%21)").getMatch(1);
+    }
+
+    private String getParentNodeID(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "=###n=([a-zA-Z0-9]+)").getMatch(0);
     }
 
     private String getNodeFileKey(DownloadLink link) {

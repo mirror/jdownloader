@@ -498,6 +498,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 }
                 if (userTrafficWorkaround()) {
                     ai.setSpecialTraffic(true);
+                } else {
+                    ai.setSpecialTraffic(false);
                 }
             }
         }

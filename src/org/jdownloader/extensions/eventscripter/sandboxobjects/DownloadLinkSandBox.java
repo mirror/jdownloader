@@ -11,6 +11,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginProgress;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storable;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
@@ -68,10 +69,10 @@ public class DownloadLinkSandBox {
     }
 
     public Object getProperty(String key) {
-        if (downloadLink == null) {
-            return null;
+        if (downloadLink != null) {
+            return downloadLink.getProperty(key);
         }
-        return downloadLink.getProperty(key);
+        return null;
     }
 
     public Object getSessionProperty(final String key) {
@@ -88,18 +89,17 @@ public class DownloadLinkSandBox {
     }
 
     public void setSessionProperty(final String key, final Object value) {
-        if (value != null) {
-            if (!Clazz.isPrimitive(value.getClass()) && !(value instanceof Storable)) {
-                throw new WTFException("Type " + value.getClass().getSimpleName() + " is not supported");
+        if (downloadLink != null) {
+            if (value != null) {
+                if (!canStore(value)) {
+                    throw new WTFException("Type " + value.getClass().getSimpleName() + " is not supported");
+                }
             }
-        }
-        final DownloadLink link = downloadLink;
-        if (link != null) {
             synchronized (SESSIONPROPERTIES) {
-                HashMap<String, Object> properties = SESSIONPROPERTIES.get(link);
+                HashMap<String, Object> properties = SESSIONPROPERTIES.get(downloadLink);
                 if (properties == null) {
                     properties = new HashMap<String, Object>();
-                    SESSIONPROPERTIES.put(link, properties);
+                    SESSIONPROPERTIES.put(downloadLink, properties);
                 }
                 properties.put(key, value);
             }
@@ -107,22 +107,25 @@ public class DownloadLinkSandBox {
     }
 
     public String getUUID() {
-        if (downloadLink == null) {
-            return null;
+        if (downloadLink != null) {
+            return downloadLink.getUniqueID().toString();
         }
-        return downloadLink.getUniqueID().toString();
+        return null;
     }
 
     public void setProperty(String key, Object value) {
-        if (downloadLink == null) {
-            return;
-        }
-        if (value != null) {
-            if (!Clazz.isPrimitive(value.getClass()) && !(value instanceof Storable)) {
-                throw new WTFException("Type " + value.getClass().getSimpleName() + " is not supported");
+        if (downloadLink != null) {
+            if (value != null) {
+                if (!canStore(value)) {
+                    throw new WTFException("Type " + value.getClass().getSimpleName() + " is not supported");
+                }
             }
+            downloadLink.setProperty(key, value);
         }
-        downloadLink.setProperty(key, value);
+    }
+
+    private boolean canStore(final Object value) {
+        return value == null || Clazz.isPrimitive(value.getClass()) || JsonKeyValueStorage.isWrapperType(value.getClass()) || value instanceof Storable;
     }
 
     public long getDownloadSessionDuration() {
@@ -146,12 +149,11 @@ public class DownloadLinkSandBox {
     }
 
     public void reset() {
-        if (downloadLink == null) {
-            return;
+        if (downloadLink != null) {
+            final ArrayList<DownloadLink> l = new ArrayList<DownloadLink>();
+            l.add(downloadLink);
+            DownloadWatchDog.getInstance().reset(l);
         }
-        final ArrayList<DownloadLink> l = new ArrayList<DownloadLink>();
-        l.add(downloadLink);
-        DownloadWatchDog.getInstance().reset(l);
     }
 
     public long getEta() {
@@ -188,10 +190,10 @@ public class DownloadLinkSandBox {
     }
 
     public String getComment() {
-        if (downloadLink == null) {
-            return null;
+        if (downloadLink != null) {
+            return downloadLink.getComment();
         }
-        return downloadLink.getComment();
+        return null;
     }
 
     public void setEnabled(boolean b) {
@@ -209,32 +211,30 @@ public class DownloadLinkSandBox {
 
     @ScriptAPI(description = "Sets a new filename", parameters = { "new Name" })
     public void setName(String name) {
-        if (downloadLink == null) {
-            return;
+        if (downloadLink != null) {
+            DownloadWatchDog.getInstance().renameLink(downloadLink, name);
         }
-        DownloadWatchDog.getInstance().renameLink(downloadLink, name);
-
     }
 
     public String getUrl() {
-        if (downloadLink == null) {
-            return null;
+        if (downloadLink != null) {
+            return downloadLink.getView().getDisplayUrl();
         }
-        return downloadLink.getView().getDisplayUrl();
+        return null;
     }
 
     public long getBytesLoaded() {
-        if (downloadLink == null) {
-            return -1;
+        if (downloadLink != null) {
+            return downloadLink.getView().getBytesLoaded();
         }
-        return downloadLink.getView().getBytesLoaded();
+        return -1;
     }
 
     public long getBytesTotal() {
-        if (downloadLink == null) {
-            return -1;
+        if (downloadLink != null) {
+            return downloadLink.getView().getBytesTotal();
         }
-        return downloadLink.getView().getBytesTotal();
+        return -1;
     }
 
     public String getName() {
