@@ -40,7 +40,7 @@ public class OneChannelCh extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("vodly.to/", "primewire.ag/");
         br.setFollowRedirects(true);
         getPage(parameter);

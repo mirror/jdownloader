@@ -55,7 +55,7 @@ public class VesselCom extends PluginForDecrypt {
         /* Load sister-host plugin and get account */
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(DOMAIN));
         if (aa == null) {
-            logger.info("Cannot decrypt anything without account");
+            // logger.info("Cannot decrypt anything without account");
             // return decryptedLinks;
         } else {
             ((jd.plugins.hoster.VesselCom) plugin).login(this.br, aa, false);
