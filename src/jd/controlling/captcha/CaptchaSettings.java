@@ -1,13 +1,18 @@
 package jd.controlling.captcha;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.jdownloader.captcha.v2.CaptchaQualityEnsuranceRule;
 
 public interface CaptchaSettings extends ConfigInterface {
 
@@ -102,4 +107,10 @@ public interface CaptchaSettings extends ConfigInterface {
 
     void setCancelDialogCountdownOnMouseClick(boolean b);
 
+    @AboutConfig
+    @DefaultJsonObject("")
+    @DescriptionForConfigEntry("If you change these rules, Captchas might become very hard or even impossible to solve over time. Do NEVER ever change these rules without knowing what you are doing")
+    HashMap<String, ArrayList<CaptchaQualityEnsuranceRule>> getQualityEnsuranceRules();
+
+    void setQualityEnsuranceRules(HashMap<String, ArrayList<CaptchaQualityEnsuranceRule>> map);
 }

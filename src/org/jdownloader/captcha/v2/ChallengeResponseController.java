@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -17,6 +18,7 @@ import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
 import org.appwork.utils.Application;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.captcha.event.ChallengeResponseEvent;
@@ -41,6 +43,7 @@ import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class ChallengeResponseController {
@@ -72,16 +75,43 @@ public class ChallengeResponseController {
         logger = LogController.getInstance().getLogger(getClass().getName());
         eventSender = new ChallengeResponseEventSender(logger);
         trackerCache = new TimeTrackerController();
-        final TimeTracker recaptcha = trackerCache.getTracker("recaptcha");
-        recaptcha.addRule(new TrackerRule(20, 10 * 60 * 1000));
-        recaptcha.addRule(new TrackerRule(4, 60 * 1000));
-        recaptcha.addRule(new TrackerRule(3, 30 * 1000));
-        recaptcha.addRule(new TrackerRule(2, 10 * 1000));
-        final TimeTracker recaptcha2 = trackerCache.getTracker(RecaptchaV2Challenge.RECAPTCHAV2);
-        recaptcha2.addRule(new TrackerRule(20, 10 * 60 * 1000));
-        recaptcha2.addRule(new TrackerRule(4, 60 * 1000));
-        recaptcha2.addRule(new TrackerRule(3, 30 * 1000));
-        recaptcha2.addRule(new TrackerRule(2, 10 * 1000));
+        HashMap<String, ArrayList<CaptchaQualityEnsuranceRule>> rules = CFG_CAPTCHA.CFG.getQualityEnsuranceRules();
+        if (rules == null) {
+            rules = new HashMap<String, ArrayList<CaptchaQualityEnsuranceRule>>();
+        }
+        boolean save = false;
+        save = addDefaultRules(rules, "recaptcha", new CaptchaQualityEnsuranceRule(20, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(4, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
+        save = addDefaultRules(rules, RecaptchaV2Challenge.RECAPTCHAV2, new CaptchaQualityEnsuranceRule(20, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(4, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
+        if (save) {
+            CFG_CAPTCHA.CFG.setQualityEnsuranceRules(rules);
+        }
+        for (Entry<String, ArrayList<CaptchaQualityEnsuranceRule>> es : rules.entrySet()) {
+            ArrayList<CaptchaQualityEnsuranceRule> rc = es.getValue();
+            final TimeTracker tracker = trackerCache.getTracker(es.getKey());
+
+            for (CaptchaQualityEnsuranceRule r : rc) {
+                logger.info("Add Captcha Limit Rule for " + es.getKey() + " " + r.getLimit() + " Reqs in " + TimeFormatter.formatMilliSeconds(r.getLimit(), 0));
+                tracker.addRule(new TrackerRule(r.getLimit(), r.getInterval()));
+            }
+
+        }
+
+    }
+
+    private boolean addDefaultRules(HashMap<String, ArrayList<CaptchaQualityEnsuranceRule>> rules, String key, CaptchaQualityEnsuranceRule... defList) {
+
+        ArrayList<CaptchaQualityEnsuranceRule> rc = rules.get(key);
+        if (rc == null || rc.size() == 0) {
+            rc = new ArrayList<CaptchaQualityEnsuranceRule>();
+            for (CaptchaQualityEnsuranceRule r : defList) {
+                rc.add(r);
+            }
+
+            rules.put(key, rc);
+            return true;
+
+        }
+        return false;
     }
 
     private final AtomicBoolean init = new AtomicBoolean(false);
