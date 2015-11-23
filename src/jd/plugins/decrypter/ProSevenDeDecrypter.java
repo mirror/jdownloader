@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,7 +54,11 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String date = br.getRegex("property=\"og:published_time\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String date = br.getRegex("property=\"og:published_time\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if ("1979-11-30T00:00:00+01:00".equals(date)) {
+            /* Avoid serverside wrong date e.g. http://www.7tv.de/circus-halligalli/52-episode-2-staffel-5-ganze-folge */
+            date = br.getRegex("property=\"og:modified_time\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         final String brand = new Regex(parameter, "https?://(?:www\\.)?([^<>\"/]*?)\\.de/").getMatch(0);
         final String json = this.br.getRegex("var contentResources = (\\[.+\\]);").getMatch(0);
         String fpName = br.getRegex("itemprop=\"title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
@@ -66,6 +71,7 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final DecimalFormat df = new DecimalFormat("00");
         final String date_formatted = formatDate(date);
         final ArrayList<Object> ressources = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
         if (ressources == null) {
@@ -74,13 +80,49 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
 
         for (final Object video_o : ressources) {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) video_o;
+            final String contentType = (String) entries.get("contentType");
             final String formatName = (String) entries.get("formatName");
-            final String title = (String) entries.get("title");
+            String title = (String) entries.get("title");
             final String videoid = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("id"), -1));
-            if (formatName == null || title == null || videoid.equals("-1")) {
+            if (contentType == null || formatName == null || title == null || videoid.equals("-1")) {
                 return null;
             }
-            String filename = date_formatted + "_" + brand + "_" + formatName + " - " + title;
+            String filename = date_formatted + "_" + brand + "_" + formatName;
+
+            /* E.g. http://www.7tv.de/big-brother/161-staffel-1-episode-61-big-brother-tag-60-teil-2-ganze-folge */
+            Regex seriesinfo = new Regex(title, "(Staffel (\\d+) Episode (\\d+): )");
+            String delete_me = seriesinfo.getMatch(0);
+            String seasonnumber_str = seriesinfo.getMatch(1);
+            String episodenumber_str = seriesinfo.getMatch(2);
+            if (seasonnumber_str == null || episodenumber_str == null || delete_me == null) {
+                /* E.g. http://www.7tv.de/circus-halligalli/52-episode-2-staffel-5-ganze-folge */
+                seriesinfo = new Regex(title, "(Episode (\\d+) \\- Staffel (\\d+))");
+                delete_me = seriesinfo.getMatch(0);
+                seasonnumber_str = seriesinfo.getMatch(2);
+                episodenumber_str = seriesinfo.getMatch(1);
+            }
+            if (seasonnumber_str == null || episodenumber_str == null || delete_me == null) {
+                /* E.g. http://www.7tv.de/circus-halligalli/62-staffel-6-episode-2-ganze-folge */
+                seriesinfo = new Regex(title, "(Staffel (\\d+) \\- Episode (\\d+))");
+                delete_me = seriesinfo.getMatch(0);
+                seasonnumber_str = seriesinfo.getMatch(1);
+                episodenumber_str = seriesinfo.getMatch(2);
+            }
+            /* Add series information in case we: 1. Found them and 2. Have a FULL episode (check contentType) */
+            if (seasonnumber_str != null && episodenumber_str != null && delete_me != null && contentType.equals("full")) {
+                filename += "_S" + df.format(Short.parseShort(seasonnumber_str)) + "E" + df.format(Short.parseShort(episodenumber_str));
+                title = title.replace(delete_me, "");
+                /* Only try this if we already found season- and episodenumber! */
+                delete_me = new Regex(title, "(Folge \\d+)").getMatch(0);
+                if (delete_me != null) {
+                    /* E.g. http://www.7tv.de/mila/131-staffel-1-episode-31-folge-31-ganze-folge */
+                    title = title.replace(delete_me, "");
+                }
+            }
+            if (!inValidate(title)) {
+                /* In some rare cases title will be "" after we remove season- and episodenumbers from it ... */
+                filename += " - " + title;
+            }
             filename = encodeUnicode(filename) + ".mp4";
             final DownloadLink dl = this.createDownloadlink("http://7tvdecrypted.de/" + videoid);
             dl.setProperty("decrypter_filename", filename);
@@ -129,6 +171,22 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     */
+    protected boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }

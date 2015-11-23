@@ -41,8 +41,9 @@ public class MultidownCoIl extends PluginForHost {
         this.enablePremium("http://multidown.co.il/");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -50,10 +51,19 @@ public class MultidownCoIl extends PluginForHost {
         String hosts = null;
         // check if account is valid
         page = br.getPage("http://multidown.co.il/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass() + "&link={stupid_workaround_to_get_pw_ok}");
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         String error = "";
         try {
             error = getRegexTag(page, "error").getMatch(0);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "server error. Please try later.", 10 * 60 * 1000l);
         }
         if (!error.equalsIgnoreCase("Host not supported") && !error.equalsIgnoreCase("Host not supported or under maintenance") && !error.equalsIgnoreCase("\u05e9\u05e8\u05ea \u05dc\u05d0 \u05d6\u05de\u05d9\u05df")) {
@@ -67,7 +77,7 @@ public class MultidownCoIl extends PluginForHost {
         long daysLeft = -1;
         try {
             daysLeft = Long.parseLong(getRegexTag(page, "daysleft").getMatch(0));
-        } catch (Exception e) {
+        } catch (final Exception e) {
         }
         account.setValid(true);
         long validuntil = System.currentTimeMillis() + (daysLeft * 1000 * 60 * 60 * 24);
@@ -79,7 +89,7 @@ public class MultidownCoIl extends PluginForHost {
             ac.setStatus("cn not get supported hosters.");
             return ac;
         }
-        String hosters[] = new Regex(hosts, "'([^,]*)'").getColumn(0);
+        final String hosters[] = new Regex(hosts, "'([^,]*)'").getColumn(0);
         for (String host : hosters) {
             supportedHosts.add(host.trim());
         }
@@ -218,7 +228,7 @@ public class MultidownCoIl extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    private Regex getRegexTag(String someText, String tag) {
+    private Regex getRegexTag(final String someText, final String tag) {
         // example: "error":"Host not supported"
         return new Regex(someText, "\"" + tag + "\":\"([^\"]*)\"");
     }

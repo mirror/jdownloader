@@ -126,7 +126,7 @@ public class MadThumbsCom extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return null; // SiteTemplate.UnknownPornScript7;
+        return SiteTemplate.UnknownPornScript7;
     }
 
     @Override
