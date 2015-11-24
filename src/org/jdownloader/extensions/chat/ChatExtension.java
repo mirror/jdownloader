@@ -47,18 +47,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.controlling.reconnect.Reconnecter;
-import jd.controlling.reconnect.ReconnecterEvent;
-import jd.controlling.reconnect.ReconnecterListener;
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.http.Browser;
-import jd.plugins.AddonPanel;
-import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
@@ -84,24 +72,37 @@ import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
 import org.schwering.irc.lib.IRCConnection;
 
-public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation> implements ReconnecterListener, MenuExtenderHandler {
-    private static final long                   AWAY_TIMEOUT         = 15 * 60 * 1000;
-    private static final Pattern                CMD_ACTION           = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_CONNECT          = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_DISCONNECT       = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_EXIT             = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_MODE             = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_JOIN             = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_NICK             = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_PM               = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_SLAP             = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_TOPIC            = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_TRANSLATE        = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern                CMD_VERSION          = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
+import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.http.Browser;
+import jd.plugins.AddonPanel;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
-    private static final java.util.List<String> COMMANDS             = new ArrayList<String>();
+public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation> implements ReconnecterListener, MenuExtenderHandler {
+    private static final long                   AWAY_TIMEOUT   = 15 * 60 * 1000;
+    private static final Pattern                CMD_ACTION     = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_CONNECT    = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_DISCONNECT = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_EXIT       = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_MODE       = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_JOIN       = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_NICK       = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_PM         = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_SLAP       = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_TOPIC      = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_TRANSLATE  = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_VERSION    = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
+
+    private static final java.util.List<String> COMMANDS       = new ArrayList<String>();
 
     public static String                        STYLE;
+
     static {
         try {
 
@@ -112,15 +113,17 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
         }
     }
-    public static final String                  STYLE_ACTION         = "action";
-    public static final String                  STYLE_ERROR          = "error";
-    public static final String                  STYLE_HIGHLIGHT      = "highlight";
-    public static final String                  STYLE_NOTICE         = "notice";
-    public static final String                  STYLE_PM             = "pm";
-    public static final String                  STYLE_SELF           = "self";
-    public static final String                  STYLE_SYSTEM_MESSAGE = "system";
 
-    public static String                        USERLIST_STYLE;
+    public static final String STYLE_ACTION         = "action";
+    public static final String STYLE_ERROR          = "error";
+    public static final String STYLE_HIGHLIGHT      = "highlight";
+    public static final String STYLE_NOTICE         = "notice";
+    public static final String STYLE_PM             = "pm";
+    public static final String STYLE_SELF           = "self";
+    public static final String STYLE_SYSTEM_MESSAGE = "system";
+
+    public static String       USERLIST_STYLE;
+
     static {
         try {
             USERLIST_STYLE = IO.readURLToString(ChatExtension.class.getResource("userliststyles.css"));
@@ -131,31 +134,31 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         }
     }
 
-    private JTextField                          top;
+    private JTextField                       top;
 
-    private IRCConnection                       conn;
-    private long                                lastAction;
-    private String                              lastCommand;
-    private boolean                             loggedIn;
-    private java.util.List<User>                NAMES;
-    private boolean                             nickaway;
-    private int                                 nickCount            = 0;
-    private String                              orgNick;
-    private JTextPane                           right;
-    private final TreeMap<String, JDChatPMS>    pms                  = new TreeMap<String, JDChatPMS>();
-    private StringBuilder                       sb;
-    private JScrollPane                         scrollPane;
-    private JTextPane                           textArea;
-    private JTextField                          textField;
+    private IRCConnection                    conn;
+    private long                             lastAction;
+    private String                           lastCommand;
+    private boolean                          loggedIn;
+    private java.util.List<User>             NAMES;
+    private boolean                          nickaway;
+    private int                              nickCount = 0;
+    private String                           orgNick;
+    private JTextPane                        right;
+    private final TreeMap<String, JDChatPMS> pms       = new TreeMap<String, JDChatPMS>();
+    private StringBuilder                    sb;
+    private JScrollPane                      scrollPane;
+    private JTextPane                        textArea;
+    private JTextField                       textField;
 
-    private JDChatView                          view;
+    private JDChatView                       view;
 
-    private JTabbedPane                         tabbedPane;
+    private JTabbedPane                      tabbedPane;
 
-    private ChatConfigPanel                     configPanel;
-    private String                              currentChannel;
-    private Thread                              awayChecker;
-    private String                              banText              = null;
+    private ChatConfigPanel                  configPanel;
+    private String                           currentChannel;
+    private Thread                           awayChecker;
+    private String                           banText   = null;
 
     public ExtensionConfigPanel<ChatExtension> getConfigPanel() {
         return configPanel;
@@ -783,14 +786,39 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     }
 
-    public void perform() {
-        final String[] perform = org.appwork.utils.Regex.getLines(getSettings().getPerformOnLoginCommands());
+    /**
+     * Cleans up and prevents spam from been sent to IRC channels.
+     *
+     * @param input
+     * @return
+     */
+    public final static String performCleanup(final String input) {
+        final String[] perform = org.appwork.utils.Regex.getLines(input);
         if (perform == null) {
+            return null;
+        }
+        final StringBuilder sb = new StringBuilder();
+        for (final String cmd : perform) {
+            final String cleaned = cmd.trim();
+            // only allow IRC commands. Do not allow message/actions to be sent to channels. Effectively users only need to change
+            // nickname and authenticate to channel services. This is done via /msg chanserv and /msg nickserv on freenode.
+            if (cleaned.length() > 0 && StringUtils.startsWithCaseInsensitive(cleaned, "/") && !cleaned.matches("^(?i)/[a-z]+ #.+$")) {
+                sb.append(cleaned.concat("\r\n"));
+            }
+        }
+        return sb.toString();
+    }
+
+    public void perform() {
+        final String performAction = performCleanup(getSettings().getPerformOnLoginCommands());
+        if (performAction == null) {
             return;
         }
+        final String[] perform = org.appwork.utils.Regex.getLines(performAction);
         for (final String cmd : perform) {
-            if (cmd.trim().length() > 0) {
-                this.sendMessage(getCurrentChannel(), cmd);
+            final String cleaned = cmd.trim();
+            if (cleaned.length() > 0) {
+                this.sendMessage(getCurrentChannel(), cleaned);
             }
         }
     }
