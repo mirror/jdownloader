@@ -180,9 +180,23 @@ public class FileNukeCom extends antiDDoSForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            String free = new Regex(correctedBR, "href=\"([^\"]+)\">Free<").getMatch(0);
-            getPage(free);
-            dllink = br.getRegex("lnk234 = \'(http://[^\']+)\'").getMatch(0);
+            /* 2015-11-24 --> This way, free downloads (streams) are sometimes possible! */
+            final String free = new Regex(correctedBR, "href=\"([^\"]+)\">Free<").getMatch(0);
+            if (free != null) {
+                getPage(free);
+                dllink = br.getRegex("lnk234 = \'(http://[^\']+)\'").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("var lnk1 = \\'(http[^<>\"]*?)\\';").getMatch(0);
+                }
+            }
+        }
+        if (dllink == null) {
+            /* 2015-11-24 --> This way, free downloads (streams) are sometimes possible! */
+            final String free = new Regex(correctedBR, "\"(/f/[/]+/\\?code=[/]+)\"").getMatch(0);
+            if (free != null) {
+                getPage(free);
+                dllink = br.getRegex("var lnk1 = \\'(http[^<>\"]*?)\\';").getMatch(0);
+            }
         }
         boolean force_premiumonly = false;
         if (dllink == null && useSpecialWay) {
