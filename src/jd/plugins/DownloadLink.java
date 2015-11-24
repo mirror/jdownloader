@@ -1522,7 +1522,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @since JD2
      */
     public void setComment(String comment) {
-        if (StringUtils.equals(comment, getComment())) {
+        final String oldComment = getComment();
+        if (StringUtils.equals(comment, oldComment) || (StringUtils.isEmpty(comment) && StringUtils.isEmpty(oldComment))) {
             return;
         }
         if (comment == null || comment.length() == 0) {
@@ -1654,7 +1655,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @since JD2
      */
     public void setDownloadPassword(String pass) {
-        if (StringUtils.equals(pass, getDownloadPassword())) {
+        final String oldPassword = getDownloadPassword();
+        if (StringUtils.equals(pass, oldPassword) || (StringUtils.isEmpty(pass) && StringUtils.isEmpty(oldPassword))) {
             return;
         }
         if (StringUtils.isEmpty(pass)) {

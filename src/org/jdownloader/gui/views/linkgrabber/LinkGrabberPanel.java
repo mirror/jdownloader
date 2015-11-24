@@ -103,7 +103,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             protected void runInEDT() {
-
                 propertiesPanel.setVisible(propertiesPanelVisible);
                 revalidate();
 
@@ -126,17 +125,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
                     @Override
                     protected void runInEDT() {
-                        final AbstractNode node;
-                        if (table.getModel().hasSelectedObjects()) {
-                            node = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
-                        } else {
-                            node = null;
-                        }
-                        if (node != null) {
+                        if (table.getSelectedRowCount() > 0) {
                             setPropertiesPanelVisible(true);
-                            propertiesPanel.update(node);
+                            propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
                         } else {
                             setPropertiesPanelVisible(false);
+                            propertiesPanel.update((AbstractNode) null);
                         }
                     }
                 };
@@ -511,7 +505,15 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private PropertiesScrollPane createPropertiesPanel() {
         final LinkgrabberProperties loverView = new LinkgrabberProperties(table);
-        PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table);
+        PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table) {
+            @Override
+            public void setVisible(boolean aFlag) {
+                if (!aFlag) {
+                    loverView.save();
+                }
+                super.setVisible(aFlag);
+            }
+        };
 
         LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
         propertiesScrollPane.setColumnHeaderView(new LinkgrabberPropertiesHeader(loverView) {
