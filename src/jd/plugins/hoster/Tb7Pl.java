@@ -59,11 +59,7 @@ public class Tb7Pl extends PluginForHost {
             try {
                 br.postPage(MAINPAGE + "login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "autologin") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_PREMIUM"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -98,19 +94,11 @@ public class Tb7Pl extends PluginForHost {
             ai.setStatus("Account expired");
             return ai;
         } else if (br.containsHTML(">Brak ważnego dostępu Premium<")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("UNSUPPORTED_PREMIUM"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do <b>(.*?)</b><br />").getMatch(0);
             if (validUntil == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             validUntil = validUntil.replace(" / ", " ");
         }
@@ -118,17 +106,22 @@ public class Tb7Pl extends PluginForHost {
         /*
          * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
          */
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "uploadable.ch", "uploaded.to", "uploaded.net", "ul.to"
-                // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "storbit.net"
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(
+        // "turbobit.net",
+                "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "uploadable.ch", "uploaded.to", "uploaded.net", "ul.to"
+        // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "storbit.net"
                 ));
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
         account.setValid(true);
         ai.setMultiHostSupport(this, supportedHosts);
-        ai.setProperty("Turbobit traffic", "Unlimited");
-        final String otherHostersLimitLeft = br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
-        ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
-        ai.setStatus("Premium User (TB: unlimited," + " Other: " + otherHostersLimitLeft + ")");
+        // ai.setProperty("Turbobit traffic", "Unlimited");
+        final String otherHostersLimitLeft = // br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
+        br.getRegex("Pozostały Limit Premium do wykorzystania: <b>([^<>\"\\']+)</b></div>").getMatch(0);
+        // ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
+        ai.setProperty(getPhrase("TRAFFIC_LEFT"), SizeFormatter.getSize(otherHostersLimitLeft));
+        // ai.setStatus("Premium User (TB: unlimited," + " Other: " + otherHostersLimitLeft + ")");
+        ai.setStatus(getPhrase("TRAFFIC_LEFT") + ": " + otherHostersLimitLeft);
 
         return ai;
     }
@@ -161,7 +154,7 @@ public class Tb7Pl extends PluginForHost {
                 Long lastUnavailable = unavailableMap.get(link.getHost());
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("HOSTER_UNAVAILABLE") + " " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -196,7 +189,7 @@ public class Tb7Pl extends PluginForHost {
             br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
             if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
                 logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download limit exceeded!", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("DOWNLOAD_LIMIT"), 1 * 60 * 1000l);
             }
             postData = "step=2" + "&0=on";
             br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
@@ -225,10 +218,15 @@ public class Tb7Pl extends PluginForHost {
                     }
                     /* reset retrycounter */
                     link.getLinkStatus().setRetryCount(0);
+                    final String inactiveLink = br.getRegex("textarea id=\"listInactive\" class=\"small\" readonly>(.*?)[ \t\n\r]+</textarea>").getMatch(0);
+                    if (downloadUrl.compareTo(inactiveLink) != 0) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("LINK_INACTIVE"), 30 * 1000l);
+                    }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 2 + ")";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
+
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("RETRY") + msg, 20 * 1000l);
             }
             link.setProperty("generatedLinkTb7", generatedLink);
         }
@@ -255,7 +253,7 @@ public class Tb7Pl extends PluginForHost {
                 // previously generated link expired,
                 // clear the property and restart the download
                 // and generate new link
-                sleep(10 * 1000l, link, "Previously generated Link expired!");
+                sleep(10 * 1000l, link, getPhrase("LINK_EXPIRED"));
                 logger.info("Tb7.pl: previously generated link expired - removing it and restarting download process.");
                 link.setProperty("generatedLinkTb7", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -264,7 +262,7 @@ public class Tb7Pl extends PluginForHost {
             if (br.getBaseURL().contains("notransfer")) {
                 /* No traffic left */
                 account.getAccountInfo().setTrafficLeft(0);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (br.getBaseURL().contains("serviceunavailable")) {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
@@ -273,20 +271,15 @@ public class Tb7Pl extends PluginForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
             if (br.getBaseURL().contains("invaliduserpass")) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PREMIUM_ERROR"), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (br.getBaseURL().contains("notfound")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
                 logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download limit exceeded!", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("DOWNLOAD_LIMIT"), 1 * 60 * 1000l);
             }
-
         }
 
         if (dl.getConnection().getResponseCode() == 404) {
@@ -348,7 +341,7 @@ public class Tb7Pl extends PluginForHost {
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("UNKNOWN_ERROR"));
         }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -377,8 +370,58 @@ public class Tb7Pl extends PluginForHost {
 
     public void showAccountDetailsDialog(Account account) {
         AccountInfo ai = account.getAccountInfo();
-        long otherHostersLimit = Long.parseLong(ai.getProperty("Other hosters traffic").toString(), 10);
-        jd.gui.UserIO.getInstance().requestMessageDialog("Tb7.pl Account", "Account type: Premium\n" + "TurboBit limit: " + ai.getProperty("Turbobit traffic") + "\nOther hosters limit: " + SizeFormatter.formatBytes(otherHostersLimit));
+        long otherHostersLimit = Long.parseLong(ai.getProperty(getPhrase("TRAFFIC_LEFT")).toString(), 10);
+        jd.gui.UserIO.getInstance().requestMessageDialog("Tb7.pl Account", getPhrase("ACCOUNT_TYPE") + ": Premium\n" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(otherHostersLimit));
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("PREMIUM_ERROR", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                      put("UNSUPPORTED_PREMIUM", "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.");
+                                                      put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
+                                                      put("TRAFFIC_LEFT", "Traffic left");
+                                                      put("HOSTER_UNAVAILABLE", "Host is temporarily unavailable via");
+                                                      put("DOWNLOAD_LIMIT", "Download limit exceeded!");
+                                                      put("RETRY", "Retry in few secs");
+                                                      put("LINK_INACTIVE", "Tb7 reports the link is as inactive!");
+                                                      put("LINK_EXPIRED", "Previously generated Link expired!");
+                                                      put("NO_TRAFFIC", "No traffic left");
+                                                      put("UNKNOWN_ERROR", "Unable to handle this errorcode!");
+                                                      put("ACCOUNT_TYPE", "Account type");
+        }
+                                              };
+    private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
+                                                  {
+                                                      put("PREMIUM_ERROR", "\r\nNieprawidłowy użytkownik/hasło!\r\nUpewnij się, że wprowadziłeś poprawnie użytkownika i hasło. Podpowiedzi:\r\n1. Jeśli w twoim haśle znajdują się znaki specjalne - usuń je/popraw i wprowadź ponownie hasło!\r\n2. Wprowadzając nazwę użytkownika i hasło - nie używaj operacji Kopiuj i Wklej.");
+                                                      put("UNSUPPORTED_PREMIUM", "\r\nNieobsługiwany typ konta!\r\nJesli uważasz, że informacja ta jest niepoprawna i chcesz aby dodac obsługę tego typu konta\r\nskontaktuj się z nami poprzez forum wsparcia.");
+                                                      put("PLUGIN_BROKEN", "\r\nProblem z wtyczką, skontaktuj się z zespołem wsparcia JDownloader!");
+                                                      put("TRAFFIC_LEFT", "Pozostały transfer");
+                                                      put("HOSTER_UNAVAILABLE", "Serwis jest niedostępny przez");
+                                                      put("DOWNLOAD_LIMIT", "Przekroczono dostępny limit transferu!");
+                                                      put("RETRY", "Ponawianie za kilka sekund");
+                                                      put("LINK_INACTIVE", "Tb7 raportuje link jako nieaktywny!");
+                                                      put("LINK_EXPIRED", "Poprzednio wygenerowany link wygasł!");
+                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
+                                                      put("UNKNOWN_ERROR", "Nieobsługiwany kod błędu!");
+                                                      put("ACCOUNT_TYPE", "Typ konta");
+                                                  }
+                                              };
+
+    /**
+     * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        String language = System.getProperty("user.language");
+        if ("pl".equals(language) && phrasesPL.containsKey(key)) {
+            return phrasesPL.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
     }
 
 }
