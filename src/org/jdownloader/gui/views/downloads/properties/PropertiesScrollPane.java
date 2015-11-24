@@ -7,13 +7,12 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 
 public class PropertiesScrollPane extends OverviewHeaderScrollPane {
 
-    private DownloadPropertiesBasePanel panel;
-    private DownloadPropertiesHeader    header;
+    private final DownloadPropertiesBasePanel panel;
+    private DownloadPropertiesHeader          header;
 
     public PropertiesScrollPane(DownloadPropertiesBasePanel loverView, DownloadsTable table) {
         super(loverView);
         this.panel = loverView;
-
     }
 
     public void setColumnHeaderView(DownloadPropertiesHeader linkgrabberPropertiesHeader) {
@@ -23,9 +22,7 @@ public class PropertiesScrollPane extends OverviewHeaderScrollPane {
 
     @Override
     public void setVisible(boolean aFlag) {
-
         super.setVisible(aFlag);
-
     }
 
     public void update(AbstractNode objectbyRow) {

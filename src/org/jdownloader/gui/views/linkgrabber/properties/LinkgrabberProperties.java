@@ -16,19 +16,17 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class LinkgrabberProperties extends MigPanel {
 
     /**
-     * 
+     *
      */
-    private static final long   serialVersionUID = -195024600818162517L;
-    private LinkGrabberTable    table;
-    private LinkPropertiesPanel pkgPanel;
-    private LinkPropertiesPanel linkPanel;
+    private static final long                   serialVersionUID = -195024600818162517L;
+    private final CrawledPackagePropertiesPanel pkgPanel;
+    private final CrawledLinkPropertiesPanel    linkPanel;
 
     public LinkgrabberProperties(LinkGrabberTable table) {
         super("ins 0", "[grow,fill]", "[grow,fill]");
-        this.table = table;
         LAFOptions.getInstance().applyPanelBackground(this);
-        pkgPanel = new PackagePropertiesPanel();
-        linkPanel = new LinkPropertiesPanel();
+        pkgPanel = new CrawledPackagePropertiesPanel();
+        linkPanel = new CrawledLinkPropertiesPanel();
         add(pkgPanel, "hidemode 3");
         add(linkPanel, "hidemode 3");
 
@@ -46,24 +44,25 @@ public class LinkgrabberProperties extends MigPanel {
     public void update(AbstractNode objectbyRow) {
         if (objectbyRow != null) {
             if (objectbyRow instanceof CrawledPackage) {
-                CrawledPackage pkg = (CrawledPackage) objectbyRow;
+                final CrawledPackage pkg = (CrawledPackage) objectbyRow;
                 linkPanel.setVisible(false);
                 pkgPanel.setVisible(true);
+                linkPanel.setSelectedItem(null);
                 pkgPanel.setSelectedItem(pkg);
             } else if (objectbyRow instanceof CrawledLink) {
-                CrawledLink link = (CrawledLink) objectbyRow;
+                final CrawledLink link = (CrawledLink) objectbyRow;
                 linkPanel.setVisible(true);
                 pkgPanel.setVisible(false);
+                pkgPanel.setSelectedItem(null);
                 linkPanel.setSelectedItem(link);
             }
         }
     }
 
     public void fillPopup(JPopupMenu pu) {
-
         if (linkPanel.isVisible()) {
             linkPanel.fillPopup(pu);
-        } else {
+        } else if (pkgPanel.isVisible()) {
             pkgPanel.fillPopup(pu);
         }
 
@@ -77,7 +76,7 @@ public class LinkgrabberProperties extends MigPanel {
     public void save() {
         if (linkPanel.isVisible()) {
             linkPanel.save();
-        } else {
+        } else if (pkgPanel.isVisible()) {
             pkgPanel.save();
         }
     }

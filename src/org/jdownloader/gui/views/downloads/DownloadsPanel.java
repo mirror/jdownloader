@@ -72,7 +72,15 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     private PropertiesScrollPane createPropertiesPanel() {
         final DownloadPropertiesBasePanel loverView = new DownloadPropertiesBasePanel(table);
-        PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table);
+        PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table) {
+            @Override
+            public void setVisible(boolean aFlag) {
+                if (!aFlag) {
+                    loverView.save();
+                }
+                super.setVisible(aFlag);
+            }
+        };
 
         LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
         propertiesScrollPane.setColumnHeaderView(new DownloadPropertiesHeader(loverView) {
@@ -97,18 +105,13 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
         // if (propertiesPanelVisible == this.propertiesPanelVisible) return;
-
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 propertiesPanel.setVisible(propertiesPanelVisible);
                 revalidate();
-
             }
         };
-
     }
 
     public DownloadsPanel() {
@@ -169,6 +172,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                             propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
                         } else {
                             setPropertiesPanelVisible(false);
+                            propertiesPanel.update((AbstractNode) null);
                         }
                     }
                 };
@@ -242,7 +246,6 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
                         if (newValue && keyHandler == CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE) {
                             setPropertiesPanelVisible(true);
-
                             propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
                         }
                     }

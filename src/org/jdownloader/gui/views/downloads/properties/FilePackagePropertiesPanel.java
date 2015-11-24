@@ -1,24 +1,22 @@
 package org.jdownloader.gui.views.downloads.properties;
 
-import java.io.File;
-import java.util.List;
-
 import javax.swing.JPopupMenu;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.swing.MigPanel;
-import org.jdownloader.controlling.Priority;
-import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
+public class FilePackagePropertiesPanel extends DownloadListPropertiesPanel<FilePackageNodeProperties> {
+
+    /**
+     *
+     */
+    private static final long serialVersionUID = -4215628601799696315L;
 
     @Override
     protected void addFilename(int height, MigPanel p) {
@@ -26,17 +24,6 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected void addDownloadFrom(int height, MigPanel p) {
-    }
-
-    @Override
-    protected List<Archive> loadArchives() {
-        final FilePackage pkg = currentPackage;
-        final boolean readL2 = pkg.getModifyLock().readLock();
-        try {
-            return ArchiveValidator.getArchivesFromPackageChildren(pkg.getChildren(), 2);
-        } finally {
-            pkg.getModifyLock().readUnlock(readL2);
-        }
     }
 
     public void fillPopup(JPopupMenu pu) {
@@ -47,31 +34,7 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
     }
 
     @Override
-    protected void savePriority(Priority priop) {
-        if (priop != null) {
-            currentPackage.setPriorityEnum(priop);
-        }
-    }
-
-    @Override
-    protected void saveComment(String text) {
-        currentPackage.setComment(text);
-    }
-
-    @Override
     protected void addChecksum(int height, MigPanel p) {
-    }
-
-    @Override
-    protected void saveSaveTo(final String stringpath) {
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentPackage)) {
-            protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
-
-                return new File(stringpath);
-            };
-        }.actionPerformed(null);
-
-        // currentPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(destination.getPath(), currentPackage.getName()));
     }
 
     @Override
@@ -79,18 +42,23 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
     }
 
     @Override
-    protected boolean isAbstractNodeSelected() {
-        return currentPackage != null;
+    protected FilePackageNodeProperties createAbstractNodeProperties(AbstractNode abstractNode) {
+        return new FilePackageNodeProperties((FilePackage) abstractNode);
     }
 
     @Override
-    protected String loadComment() {
-        return currentPackage.getComment();
+    protected void refreshOnDownloadLinkUpdate(DownloadLink downloadLink) {
+        final FilePackageNodeProperties current = getAbstractNodeProperties();
+        if (current != null && current.samePackage(downloadLink.getFilePackage())) {
+            refresh();
+        }
     }
 
     @Override
-    protected Priority loadPriority() {
-        return currentPackage.getPriorityEnum();
+    protected void refreshOnFilePackageUpdate(FilePackage pkg) {
+        final FilePackageNodeProperties current = getAbstractNodeProperties();
+        if (current != null && current.samePackage(pkg)) {
+            refresh();
+        }
     }
-
 }
