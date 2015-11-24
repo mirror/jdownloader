@@ -33,6 +33,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 import org.jdownloader.logging.LogController;
 
@@ -142,9 +143,16 @@ public class SubConfiguration extends Property implements Serializable {
             if (writeMark.getAndSet(lastSetMark) != lastSetMark) {
                 try {
                     LogController.GL.info("Save Name:" + getName() + "|SetMark:" + lastSetMark + "|File:" + file);
-                    final String jsonString = JSonStorage.getMapper().objectToString(getProperties());
+                    final String json = JSonStorage.getMapper().objectToString(getProperties());
                     writeMark.set(setMark.get());
-                    JSonStorage.saveTo(this.file, false, KEY, jsonString);
+                    final Runnable run = new Runnable() {
+
+                        @Override
+                        public void run() {
+                            JSonStorage.saveTo(file, false, KEY, json);
+                        }
+                    };
+                    StorageHandler.enqueueWrite(run, file.getAbsolutePath(), true);
                 } catch (final Throwable e) {
                     LogController.GL.log(e);
                 }

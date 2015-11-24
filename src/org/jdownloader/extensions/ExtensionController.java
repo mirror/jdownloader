@@ -262,7 +262,6 @@ public class ExtensionController implements MenuExtenderHandler {
         }
         JSonStorage.saveTo(getCache(), ret);
         validateCache();
-
         return ret;
     }
 

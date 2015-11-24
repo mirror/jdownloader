@@ -29,12 +29,12 @@ public class PluginJsonConfig {
     private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
     protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
 
-        @Override
-        public void delayedrun() {
-            saveAll();
-            cleanup();
-        }
-    };
+                                                                                                                     @Override
+                                                                                                                     public void delayedrun() {
+                                                                                                                         saveAll();
+                                                                                                                         cleanup();
+                                                                                                                     }
+                                                                                                                 };
     private final static boolean                                                                   DEBUG         = false;
 
     static {
@@ -90,7 +90,7 @@ public class PluginJsonConfig {
             classLoaderMap = new HashMap<String, WeakReference<ConfigInterface>>();
             CONFIG_CACHE.put(cl, classLoaderMap);
         }
-        WeakReference<ConfigInterface> ret = classLoaderMap.get(ID);
+        final WeakReference<ConfigInterface> ret = classLoaderMap.get(ID);
         ConfigInterface intf = null;
         if (ret != null && (intf = ret.get()) != null) {
             if (DEBUG) {
@@ -109,11 +109,17 @@ public class PluginJsonConfig {
             if (DEBUG) {
                 System.out.println("Create PluginJsonConfig for " + ID);
             }
-            storage = StorageHandler.createPrimitiveStorage(storageFile, null, configInterface, SAVEDELAYER);
+            storage = StorageHandler.createPrimitiveStorage(storageFile, null, configInterface);
             storage.setEnumCacheEnabled(false);
             STORAGE_CACHE.put(ID, storage);
         }
-        StorageHandler<T> storageHandler = new StorageHandler<T>(storage, configInterface) {
+        final StorageHandler<T> storageHandler = new StorageHandler<T>(storage, configInterface) {
+
+            @Override
+            protected void requestSave() {
+                super.requestSave();
+                SAVEDELAYER.resetAndStart();
+            }
 
             @Override
             protected void addStorageHandler(StorageHandler<? extends ConfigInterface> storageHandler, String interfaceName, String storage) {
