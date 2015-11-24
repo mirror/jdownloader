@@ -1,13 +1,13 @@
 package org.jdownloader.extensions.chat.settings;
 
+import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.extensions.chat.ChatConfig;
+import org.jdownloader.extensions.chat.ChatExtension;
+
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.TextArea;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
-
-import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.chat.ChatConfig;
-import org.jdownloader.extensions.chat.ChatExtension;
 
 public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
 
@@ -57,8 +57,10 @@ public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
             changes = true;
         }
 
-        config.setPerformOnLoginCommands(perform.getText());
-        if (changes) showRestartRequiredMessage();
+        config.setPerformOnLoginCommands(ChatExtension.performCleanup(perform.getText()));
+        if (changes) {
+            showRestartRequiredMessage();
+        }
     }
 
     @Override
