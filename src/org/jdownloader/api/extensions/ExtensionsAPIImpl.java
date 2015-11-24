@@ -6,8 +6,6 @@ import java.util.regex.Pattern;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
-
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.UninstalledExtension;
@@ -30,8 +28,6 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
         new Thread("Install Extension") {
             public void run() {
                 try {
-                    Dialog.getInstance().showConfirmDialog(0, "Extension Installation requested", "Do you want to install the " + id + "-extension?");
-
                     UpdateController.getInstance().setGuiVisible(true);
                     UpdateController.getInstance().runExtensionInstallation(id);
 
@@ -65,7 +61,7 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
             final List<LazyExtension> installedExtensions = ExtensionController.getInstance().getExtensions();
             final List<UninstalledExtension> uninstalledExtensions = ExtensionController.getInstance().getUninstalledExtensions();
             final ArrayList<ExtensionAPIStorable> result = new ArrayList<ExtensionAPIStorable>(installedExtensions.size() + uninstalledExtensions.size());
-            if (result.size() == 0) {
+            if (installedExtensions.size() + uninstalledExtensions.size() == 0) {
                 return result;
             }
             final Pattern cPat = StringUtils.isEmpty(query.getPattern()) ? null : Pattern.compile(query.getPattern(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
@@ -82,17 +78,14 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
                     if (query.isInstalled()) {
                         extensionStorable.setInstalled(true);
                     }
-                    if (query.isName()) {
-                        extensionStorable.setName(installedExtension.getName());
-                    }
                     if (query.isDescription()) {
                         extensionStorable.setDescription(installedExtension.getDescription());
                     }
                     if (query.isConfigInterface()) {
-                        extensionStorable.setDescription(installedExtension.getConfigInterface());
+                        extensionStorable.setConfigInterface(installedExtension.getConfigInterface());
                     }
                     if (query.isIconKey()) {
-                        extensionStorable.setName(installedExtension._getExtension().getIconKey());
+                        extensionStorable.setIconKey(installedExtension.getIconPath());
                     }
                     result.add(extensionStorable);
                 }
@@ -110,17 +103,14 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
                     if (query.isInstalled()) {
                         extensionStorable.setInstalled(false);
                     }
-                    if (query.isName()) {
-                        extensionStorable.setName(uninstalledExtension.getName());
-                    }
                     if (query.isDescription()) {
                         extensionStorable.setDescription(uninstalledExtension.getDescription());
                     }
                     if (query.isConfigInterface()) {
-                        extensionStorable.setDescription(null);
+                        extensionStorable.setConfigInterface(null);
                     }
                     if (query.isIconKey()) {
-                        extensionStorable.setName(uninstalledExtension.getIconKey());
+                        extensionStorable.setIconKey(uninstalledExtension.getIconKey());
                     }
                     result.add(extensionStorable);
                 }

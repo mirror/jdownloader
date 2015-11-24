@@ -507,6 +507,14 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     @Override
+    public boolean forceDownload(final long[] linkIds, long[] packageIds) throws BadParameterException {
+        final DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        final List<DownloadLink> links = packageControllerUtils.getSelectionInfo(linkIds, packageIds).getChildren();
+        dwd.forceDownload(links);
+        return true;
+    }
+
+    @Override
     public void setDownloadDirectory(String directory, long[] packageIds) {
         packageControllerUtils.setDownloadDirectory(directory, packageIds);
     }

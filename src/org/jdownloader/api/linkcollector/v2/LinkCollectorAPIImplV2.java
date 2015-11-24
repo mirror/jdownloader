@@ -40,6 +40,7 @@ import org.jdownloader.api.utils.PackageControllerUtils;
 import org.jdownloader.api.utils.SelectionInfoUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -330,6 +331,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             extPws.add(query.getExtractPassword());
         }
         final HashSet<String> finalExtPws = extPws;
+        final BooleanStatus finalExtractStatus = query.isAutoExtract() ? BooleanStatus.TRUE : BooleanStatus.FALSE;
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
             @Override
@@ -357,6 +359,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     }
                     packageInfo.setDestinationFolder(query.getDestinationFolder());
                     packageInfo.setIgnoreVarious(true);
+
                     packageInfo.setUniqueId(null);
                     link.setDesiredPackageInfo(packageInfo);
                 }
@@ -370,9 +373,24 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     link.setAutoConfirmEnabled(true);
                     link.setAutoStartEnabled(true);
                 }
+
+                if (!BooleanStatus.UNSET.equals(finalExtractStatus)) {
+                    BooleanStatus existing = BooleanStatus.UNSET;
+                    if (link.hasArchiveInfo()) {
+                        existing = link.getArchiveInfo().getAutoExtract();
+                    }
+                    if (existing == null || BooleanStatus.UNSET.equals(existing)) {
+                        link.getArchiveInfo().setAutoExtract(finalExtractStatus);
+                    }
+                }
             }
         };
         lcj.setCrawledLinkModifierPrePackagizer(modifier);
+
+        if (query.isDeepDecrypt()) {
+            lcj.setDeepAnalyse(true);
+        }
+
         if (StringUtils.isNotEmpty(query.getDestinationFolder()) || StringUtils.isNotEmpty(query.getPackageName())) {
             lcj.setCrawledLinkModifierPostPackagizer(modifier);
         }
