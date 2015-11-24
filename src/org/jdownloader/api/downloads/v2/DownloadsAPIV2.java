@@ -46,7 +46,7 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
     List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException;
 
     void removeLinks(final long[] linkIds, final long[] packageIds) throws BadParameterException;
-
+    
     void renamePackage(Long packageId, String newName);
 
     void renameLink(Long linkId, String newName);
@@ -107,5 +107,7 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
     void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException;
 
     boolean setDownloadPassword(long[] linkIds, long[] packageIds, String pass) throws BadParameterException;
+    
+    boolean forceDownload(long[] linkIds, long[] packageIds) throws BadParameterException;
 
 }

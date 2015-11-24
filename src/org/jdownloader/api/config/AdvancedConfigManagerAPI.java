@@ -45,4 +45,6 @@ public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
     @ApiDoc("get default value from interface by key")
     public Object getDefault(String interfaceName, String storage, String key);
 
+    @AllowStorage(value = { Object.class })
+    public ArrayList<AdvancedConfigAPIEntry> query(AdvancedConfigQueryStorable query);
 }
