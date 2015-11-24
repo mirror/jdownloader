@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,8 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision: 26673$", interfaceVersion = 3, names = { "putdrive.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PutDriveCom extends PluginForHost {
@@ -106,7 +106,7 @@ public class PutDriveCom extends PluginForHost {
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("Premium User");
+        ac.setStatus("Premium Account");
         return ac;
     }
 
@@ -352,16 +352,17 @@ public class PutDriveCom extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+            tempUnavailableHoster(this.currAcc, this.currDownloadLink, 1 * 60 * 60 * 1000l);
             /* TODO: Remove plugin defect once all known errors are correctly handled */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
         }
     }
 
     /** Unused API functions */
     // private void api_get_account_details(final Account acc) throws IOException, PluginException {
     // StringBuilder sb = new StringBuilder();
-    // sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?><soap12:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\"><soap12:Body>");
+    // sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?><soap12:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+    // xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\"><soap12:Body>");
     // sb.append("<getUserData xmlns=\"http://tempuri.org/\">");
     // sb.append("<szLogin>" + acc.getUser() + "</szLogin>");
     // sb.append("<szPass>" + acc.getPass() + "</szPass>");
@@ -375,11 +376,13 @@ public class PutDriveCom extends PluginForHost {
     // final String lang = System.getProperty("user.language");
     // if ("de".equalsIgnoreCase(lang)) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername
+    // und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your
+    // password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -388,7 +391,8 @@ public class PutDriveCom extends PluginForHost {
     //
     // private void api_gethosterswithlimit() throws IOException, PluginException {
     // StringBuilder sb = new StringBuilder();
-    // sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?><soap12:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\"><soap12:Body>");
+    // sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?><soap12:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+    // xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\"><soap12:Body>");
     // sb.append("<GetHostersWithLimit_JSON xmlns=\"http://tempuri.org/\" />");
     // sb.append("</soap12:Body></soap12:Envelope>");
     // br.getHeaders().put("Content-Type", "application/soap+xml; charset=utf-8");
