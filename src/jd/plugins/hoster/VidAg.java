@@ -42,12 +42,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vid.ag" }, urls = { "https?://(www\\.)?vid\\.ag/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class VidAg extends PluginForHost {
@@ -221,7 +221,11 @@ public class VidAg extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(fileInfo[0].trim());
+        fileInfo[0] = fileInfo[0].trim();
+        if (!fileInfo[0].endsWith(".mp4")) {
+            fileInfo[0] += ".mp4";
+        }
+        link.setName(fileInfo[0]);
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");

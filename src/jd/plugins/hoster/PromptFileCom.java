@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,7 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promptfile.com" }, urls = { "http://(www\\.)?promptfile\\.com/l/[A-Z0-9]+\\-[A-Z0-9]+" }, flags = { 2 })
 public class PromptFileCom extends PluginForHost {
@@ -57,18 +55,15 @@ public class PromptFileCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME               = true;
+    private static final int     FREE_MAXCHUNKS            = 0;
+    private static final int     FREE_MAXDOWNLOADS         = 20;
+    private static final boolean ACCOUNT_FREE_RESUME       = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -76,7 +71,7 @@ public class PromptFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.promptfile.com/?404")) {
+        if (br.getURL().equals("http://www.promptfile.com/?404") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fInfo = br.getRegex("<span style=\"text\\-decoration:none;cursor:text;\" title=\"([^<>\"]*?)\">([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? [A-Za-z]{2,5})\\)</span>");
@@ -97,16 +92,24 @@ public class PromptFileCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final boolean failed_once = downloadLink.getBooleanProperty("failed_once", false);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            // if (isStable()) throw new PluginException(LinkStatus.ERROR_FATAL, "Only supported in the JDownloader 2 BETA!");
             final String cHash = br.getRegex("name=\"chash\" value=\"([a-z0-9]+)\"").getMatch(0);
             if (cHash == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.postPage(br.getURL(), "chash=" + cHash);
-            // dllink = br.getRegex("clip: \\{\\s+url: \\'(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]+)(\\'|\")").getMatch(0);
-            dllink = br.getRegex("<a href=\"(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]{90,}+)\"").getMatch(0);
+            if (failed_once) {
+                /*
+                 * It failed once via downloadlink ? Sometimes the downloadlink is broken but if we have a stream, we might be able to
+                 * download that instead (lower quality / filesize).
+                 */
+                dllink = br.getRegex("clip: \\{\\s+url: \\'(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]+)(\\'|\")").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("<a href=\"(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]{90,}+)\"").getMatch(0);
+            }
             if (dllink == null) {
                 dllink = br.getRegex(">Download<.+\\s+.+\\s+<a href=\"(http://www\\.promptfile\\.com[^<>\"]+)\"").getMatch(0);
                 logger.info("dllink = " + dllink);
@@ -122,10 +125,18 @@ public class PromptFileCom extends PluginForHost {
             }
             br.followConnection();
             if (br.containsHTML("file unavailable")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File unavailable", 30 * 60 * 1000l);
+                if (failed_once) {
+                    /* Cycle through download/stream-download! --> Reset our errorhandling-boolean for broken downloadlinks */
+                    downloadLink.setProperty("failed_once", false);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File unavailable", 30 * 60 * 1000l);
+                }
+                downloadLink.setProperty("failed_once", true);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadlink broken, trying to download stream instead if possible");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Reset our errorhandling-boolean for broken downloadlinks */
+        downloadLink.setProperty("failed_once", false);
         dl.startDownload();
     }
 
@@ -193,8 +204,6 @@ public class PromptFileCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login-captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /* Only free accounts are supported at the moment */
-                account.setProperty("free", true);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);
@@ -222,40 +231,13 @@ public class PromptFileCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        /* No prremium available (yet) */
-        if (account.getBooleanProperty("free", false)) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
-        } else {
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                final String lang = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            }
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium Account");
-        }
+        /* Only free accounts are supported at the moment */
+        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+        account.setType(AccountType.FREE);
+        /* free accounts of this host can't have captchas */
+        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Registered (free) user");
         account.setValid(true);
         return ai;
     }
@@ -267,41 +249,22 @@ public class PromptFileCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (account.getBooleanProperty("free", false)) {
-            String dllink = this.checkDirectLink(link, "account_free_directlink");
+        String dllink = this.checkDirectLink(link, "account_free_directlink");
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://(www\\.)?promptfile\\.com/file/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(https?://(www\\.)?promptfile\\.com/file/[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty("account_free_directlink", dllink);
-            dl.startDownload();
-        } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://(www\\.)?promptfile\\.com/file/[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dllink);
-            dl.startDownload();
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("account_free_directlink", dllink);
+        dl.startDownload();
     }
 
     @Override
@@ -310,21 +273,13 @@ public class PromptFileCom extends PluginForHost {
         return maxPrem.get();
     }
 
-    private boolean isStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public void reset() {
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override

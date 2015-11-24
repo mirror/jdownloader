@@ -199,14 +199,18 @@ public class ShareSixCom extends PluginForHost {
         String filesize = fnameregex.getMatch(1);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "\\(([0-9]+ b(?:ytes)?)\\)").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    // generic regex picks up false positives (premium ads above filesize)
-                    // adjust accordingly to make work with COOKIE_HOST
-                    filesize = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))").getMatch(0);
-                }
-            }
+        }
+        if (filesize == null) {
+            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+        }
+        if (filesize == null) {
+            /* More generic RegEx - this will work in most|all cases */
+            filesize = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:KB|MB|GB))").getMatch(0);
+        }
+        filesize = null;
+        if (filesize == null) {
+            /* Last chance - allow 'b(ytes)' --> High chances to pick up false positives as hashes often contain '0b' or similar */
+            filesize = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
         }
         return filesize;
     }
@@ -229,6 +233,17 @@ public class ShareSixCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         boolean force_premiumonly = false;
+        if (dllink == null) {
+            /* 2015-11-24 --> This way, free downloads (streams) are sometimes possible! */
+            final String free = new Regex(correctedBR, "href=\"([^\"]+)\">Free<").getMatch(0);
+            if (free != null) {
+                getPage(free);
+                dllink = br.getRegex("lnk234 = \'(http://[^\']+)\'").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("var lnk1 = \\'(http[^<>\"]*?)\\';").getMatch(0);
+                }
+            }
+        }
         if (dllink == null && useSpecialWay) {
             specialWayPost();
             dllink = br.getRegex("file[\t\n\r ]+:[\t\n\r ]+\"(http://[^<>\"]*?)\"").getMatch(0);
