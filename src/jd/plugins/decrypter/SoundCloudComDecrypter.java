@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -56,18 +57,18 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private final String            EXCEPTION_LINKOFFLINE         = "EXCEPTION_LINKOFFLINE";
 
     private final String            TYPE_INVALID                  = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
-    private final String            TYPE_API_PLAYLIST             = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
-    private final String            TYPE_API_TRACK                = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?";
-    private final String            TYPE_SINGLE_SET               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+";
-    private final String            TYPE_USER_SETS                = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets";
-    private final String            TYPE_USER_IN_PLAYLIST         = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets";
-    private final String            TYPE_USER_LIKES               = "https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes";
-    private final String            TYPE_GROUPS                   = "https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+";
+    private final Pattern           TYPE_API_PLAYLIST             = Pattern.compile("https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+");
+    private final Pattern           TYPE_API_TRACK                = Pattern.compile("https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?");
+    private final Pattern           TYPE_SINGLE_SET               = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+");
+    private final Pattern           TYPE_USER_SETS                = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets");
+    private final Pattern           TYPE_USER_IN_PLAYLIST         = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets");
+    private final Pattern           TYPE_USER_LIKES               = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes");
+    private final Pattern           TYPE_GROUPS                   = Pattern.compile("https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+");
 
     /* Single soundcloud tracks, posted via smartphone/app. */
     private final String            subtype_mobile_facebook_share = "https?://(m\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\?fb_action_ids=.+";
 
-    private final String            TYPE_SHORT                    = "https?://snd\\.sc/[A-Za-z0-9]+";
+    private final Pattern           TYPE_SHORT                    = Pattern.compile("https?://snd\\.sc/[A-Za-z0-9]+");
 
     private int                     max_entries_per_request       = 100;
 
@@ -127,9 +128,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 return super.addAll(c);
             }
         };
-
         try {
-
             this.decryptedLinks = decryptedLinks;
             CFG = SubConfiguration.getConfig("soundcloud.com");
             originalLink = Encoding.htmlDecode(param.toString());
@@ -168,15 +167,15 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
                 final boolean decryptList = isList();
                 if (decryptList) {
-                    if (parameter.matches(TYPE_SINGLE_SET)) {
+                    if (TYPE_SINGLE_SET.matcher(parameter).find()) {
                         decryptSet();
-                    } else if (parameter.matches(TYPE_USER_SETS)) {
+                    } else if (TYPE_USER_SETS.matcher(parameter).find()) {
                         decryptUserSets();
-                    } else if (parameter.matches(TYPE_USER_IN_PLAYLIST)) {
+                    } else if (TYPE_USER_IN_PLAYLIST.matcher(parameter).find()) {
                         decryptUserInPlaylists();
-                    } else if (parameter.matches(TYPE_USER_LIKES)) {
+                    } else if (TYPE_USER_LIKES.matcher(parameter).find()) {
                         decryptLikes();
-                    } else if (parameter.matches(TYPE_GROUPS)) {
+                    } else if (TYPE_GROUPS.matcher(parameter).find()) {
                         decryptGroups();
                     } else {
                         decryptUser();
@@ -241,7 +240,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             logger.info("Invalid link: " + parameter);
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
-        if (parameter.matches(TYPE_SHORT)) {
+        if (TYPE_SHORT.matcher(parameter).find()) {
             br.setFollowRedirects(false);
             /* Use ORIGINAL_LINK because https is not available for short links */
             br.getPage(originalLink);
@@ -251,7 +250,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             parameter = newparameter;
-        } else if (parameter.matches(TYPE_API_TRACK)) {
+        } else if (TYPE_API_TRACK.matcher(parameter).find()) {
             String get_data = "?format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
             final String secret_token = new Regex(originalLink, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
             if (secret_token != null) {
@@ -273,7 +272,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
             newparameter = newparameter.replace("http://", "https://");
             parameter = newparameter;
-        } else if (parameter.matches(TYPE_API_PLAYLIST)) {
+        } else if (TYPE_API_PLAYLIST.matcher(parameter).find()) {
             final Regex info = new Regex(parameter, "api\\.soundcloud\\.com/playlists/(\\d+)\\?secret_token=([A-Za-z0-9\\-_]+)");
             br.getPage("https://api.soundcloud.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&format=json");
             String newparameter = br.getRegex("\"permalink_url\":\"(http://(www\\.)?soundcloud\\.com/[^<>\"/]*?/sets/[^<>\"]*?)\"").getMatch(0);
@@ -296,19 +295,18 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private void decryptSet() throws Exception {
         resolve(parameter);
         Map<String, Object> data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
-
         playlistname = getString(data, "title");
-
         username = getString(data, "user.username");
         final String playlist_uri = getString(data, "uri");
         if (playlist_uri == null) {
             return;
         }
-        br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION);
-
-        data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
         List<Map<String, Object>> tracks = (List<Map<String, Object>>) data.get("tracks");
-
+        if (tracks == null || tracks.size() == 0) {
+            br.getPage(playlist_uri + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION);
+            data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+            tracks = (List<Map<String, Object>>) data.get("tracks");
+        }
         final String usernameOfSet = username;
         if (tracks == null || tracks.size() == 0 || usernameOfSet == null) {
             if (getString(data, "duration").equals("0")) {
@@ -632,7 +630,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             throw new DecrypterException("parameter == null");
         } else if (parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?") || parameter.contains("/groups/") || parameter.contains("/sets")) {
             return true;
-        } else if (parameter.matches(TYPE_USER_LIKES)) {
+        } else if (TYPE_USER_LIKES.matcher(parameter).find()) {
             return true;
         } else if (parameter.matches(".*?soundcloud\\.com(/[A-Za-z\\-_0-9]+){2,3}/?")) {
             return false;
