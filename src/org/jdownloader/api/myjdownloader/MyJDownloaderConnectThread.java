@@ -28,6 +28,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
@@ -878,7 +879,16 @@ public class MyJDownloaderConnectThread extends Thread {
                     return;
                 }
                 session.setState(SessionInfoWrapper.STATE.VALID);
-                JSonStorage.saveTo(sessionInfoCache, false, HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue())), JSonStorage.serializeToJson(new SessionInfoStorable(session)));
+                final byte[] key = HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue()));
+                final String json = JSonStorage.serializeToJson(new SessionInfoStorable(session));
+                final Runnable run = new Runnable() {
+
+                    @Override
+                    public void run() {
+                        JSonStorage.saveTo(sessionInfoCache, false, key, json);
+                    }
+                };
+                StorageHandler.enqueueWrite(run, sessionInfoCache.getAbsolutePath(), true);
             } catch (final Throwable e) {
                 log(e);
             }
