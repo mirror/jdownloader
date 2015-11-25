@@ -220,22 +220,25 @@ public class AmazonCloud extends PluginForHost {
             }
         }
 
-        for (final Object data_o : resource_data_list) {
-            final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) data_o;
-            final LinkedHashMap<String, Object> contentProperties = jd.plugins.hoster.AmazonCloud.jsonGetContentProperties(nodeInfo);
-            final String kind = jd.plugins.hoster.AmazonCloud.jsonGetKind(nodeInfo);
-            if (!kind.equals(jd.plugins.hoster.AmazonCloud.JSON_KIND_FILE)) {
-                /* We want files (our file!), not folders! */
-                continue;
+        try {
+            for (final Object data_o : resource_data_list) {
+                final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) data_o;
+                // final LinkedHashMap<String, Object> contentProperties = jd.plugins.hoster.AmazonCloud.jsonGetContentProperties(nodeInfo);
+                final String kind = jd.plugins.hoster.AmazonCloud.jsonGetKind(nodeInfo);
+                if (!kind.equals(jd.plugins.hoster.AmazonCloud.JSON_KIND_FILE)) {
+                    /* We want files (our file!), not folders! */
+                    continue;
+                }
+                final String md5 = jd.plugins.hoster.AmazonCloud.jsonGetMd5(nodeInfo);
+                final String name_temp = jd.plugins.hoster.AmazonCloud.jsonGetName(nodeInfo);
+                linkid_temp = getLinkid(plain_folder_id, md5, name_temp);
+                if (linkid_temp.equals(linkid_target)) {
+                    /* Yey we found our link - now we can finally refresh the directlink! */
+                    finallink = jsonGetFinallink(nodeInfo);
+                    break;
+                }
             }
-            final String md5 = jd.plugins.hoster.AmazonCloud.jsonGetMd5(nodeInfo);
-            final String name_temp = jd.plugins.hoster.AmazonCloud.jsonGetName(nodeInfo);
-            linkid_temp = getLinkid(plain_folder_id, md5, name_temp);
-            if (linkid_temp.equals(linkid_target)) {
-                /* Yey we found our link - now we can finally refresh the directlink! */
-                finallink = jsonGetFinallink(nodeInfo);
-                break;
-            }
+        } catch (final Throwable e) {
         }
 
         if (finallink == null) {

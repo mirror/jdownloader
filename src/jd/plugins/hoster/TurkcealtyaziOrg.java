@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turkcealtyazi.org" }, urls = { "http://(www\\.)?turkcealtyazi\\.org/sub/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turkcealtyazi.org" }, urls = { "http://(?:www\\.)?turkcealtyazi\\.org/sub/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class TurkcealtyaziOrg extends PluginForHost {
 
     public TurkcealtyaziOrg(PluginWrapper wrapper) {
@@ -39,19 +40,30 @@ public class TurkcealtyaziOrg extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://opensubtitles.org/";
+        return "http://turkcealtyazi.org/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.turkcealtyazi.org/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.turkcealtyazi.org/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"portalust\" id=\"altyazilar\"><h5>([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"portalust\">[\t\n\r ]+<h1>([^<>\"]*?)<span").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<div class=\"portalust\">[\t\n\r ]+<h1>([^<>\"]*?)<span").getMatch(0);
+        }
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = new Regex(link.getDownloadURL(), "turkcealtyazi\\.org/sub/\\d+/([a-z0-9\\-]+)\\.html").getMatch(0);
+        }
         String filesize = br.getRegex(">Boyut:</div>[\t\n\r ]+<div class=\"sub\\-right\\-container\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".rar");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -60,8 +72,10 @@ public class TurkcealtyaziOrg extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Form dlform = br.getFormbyProperty("name", "downform");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Form dlform = this.br.getFormbyAction("/down.php");
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

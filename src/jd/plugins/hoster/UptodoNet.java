@@ -42,13 +42,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptodo.net" }, urls = { "https?://(www\\.)?uptodo\\.net/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptodo.net" }, urls = { "https?://(?:www\\.)?uptodo\\.net/[A-Za-z0-9]+" }, flags = { 2 })
 public class UptodoNet extends PluginForHost {
 
     public UptodoNet(PluginWrapper wrapper) {
@@ -79,7 +80,7 @@ public class UptodoNet extends PluginForHost {
     private static final boolean supportshttps                                = false;
     private static final boolean supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean available_CHECK_OVER_INFO_PAGE               = false;
+    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
     private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
     private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
@@ -157,7 +158,11 @@ public class UptodoNet extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename).trim());
+        filename = Encoding.htmlDecode(filename).trim();
+        link.setName(filename);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

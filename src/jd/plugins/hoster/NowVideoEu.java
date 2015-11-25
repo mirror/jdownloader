@@ -25,8 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +43,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to", "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014", "NEVERUSETHISSUPERDUBERREGEXATALL2015" }, flags = { 2, 0, 0, 0 })
 public class NowVideoEu extends PluginForHost {
 
@@ -61,7 +61,7 @@ public class NowVideoEu extends PluginForHost {
     private static AtomicReference<String> agent              = new AtomicReference<String>("http://www." + currentMainDomain);
 
     private String validateHost() {
-        final String[] ccTLDs = { "ch", "sx", "eu", "co", "ag", "at", "ec", "li", "to" };
+        final String[] ccTLDs = { "to", "ch", "sx", "eu", "co", "ag", "at", "ec", "li" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
             String CCtld = ccTLDs[i];
@@ -105,12 +105,15 @@ public class NowVideoEu extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        final String newlink = MAINPAGE.get() + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        try {
-            link.setContentUrl(newlink);
-        } catch (final Throwable e) {
-            link.setUrlDownload(newlink);
-        }
+        final String fid = getLinkid(link);
+        final String newlink = MAINPAGE.get() + "/player.php?v=" + fid;
+        link.setLinkID(fid);
+        link.setContentUrl(newlink);
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getLinkid(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
     private static void workAroundTimeOut(final Browser br) {
@@ -153,11 +156,15 @@ public class NowVideoEu extends PluginForHost {
         return prepBr;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepBrowser(br);
         correctCurrentDomain();
         correctDownloadLink(link);
+        /* Offline urls should also get nice filenames! */
+        final String linkid = getLinkid(link);
+        link.setName(linkid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
@@ -166,12 +173,12 @@ public class NowVideoEu extends PluginForHost {
             br.getPage(link.getDownloadURL());
         }
         checkForThis();
-        if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) {
+        if (br.containsHTML(">This file no longer exists on our servers|>Possible reasons:")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(ISBEINGCONVERTED)) {
             link.getLinkStatus().setStatusText("This file is being converted!");
-            link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv");
+            link.setName(linkid + ".flv");
             return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<title>Watch (.*?) online \\|").getMatch(0);
@@ -184,10 +191,7 @@ public class NowVideoEu extends PluginForHost {
                 }
             }
         }
-        String id = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        if (id != null) {
-            filename = filename.trim() + "(" + id + ")";
-        }
+        filename = filename.trim() + "(" + linkid + ")";
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }

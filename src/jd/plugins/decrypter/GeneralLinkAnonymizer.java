@@ -45,7 +45,7 @@ public class GeneralLinkAnonymizer extends PluginForDecrypt {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return null; // GeneralLinkAnonymizer
+        return SiteTemplate.GeneralLinkAnonymizer;
     }
 
 }
