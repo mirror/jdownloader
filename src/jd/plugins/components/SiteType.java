@@ -16,19 +16,19 @@ public class SiteType {
          */
         ArlesImageWebPageCreator,
         /**
+         * As the name says this class contains code to handle redirect/linkcrypt sites which have no direct redirects. Basically it is for
+         * websites for which a single class would be too much as only 1-2 lines of code are needed to handle them. <b>Main decrypter
+         * class:</b> DecrypterForRedirectServicesWithoutDirectRedirects<br />
+         * Example: <a href="http://migre.me/">migre.me</a>
+         */
+        DecrypterForRedirectServicesWithoutDirectRedirects,
+        /**
          * <a href="http://gempixel.com/project/premium-url-shortener/">Premium URL Shortener</a><br />
          * sold on <a href="http://codecanyon.net/item/premium-url-shortener/3688135">codecanyon.net</a><br />
          * examples <a href="http://cehs.ch/">cehs.ch</a> <a href="http://www.csurl.it">csurl.it</a>
          *
          */
         GemPixel_PremiumURLShortener,
-        /**
-         * Script used by some image hosting sites. <a href="http:/damimage.com/">damimage.com</a>. <br />
-         * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
-         * >http://codecanyon.net/item/imgshot-image-hosting-script/2558257</a>.<br />
-         * Demo: <a href="http://imgshot.com/">imgshot.com</a>
-         */
-        ImageHosting_ImgShot,
         /**
          * Script for URLs containing base64 strings which lead to downloadlinks.<br />
          * <b>Example that suits main decrypter class:</b> <a href="http:/free.downloader.my/">free.downloader.my</a><br />
@@ -57,6 +57,13 @@ public class SiteType {
          * Demo: <a href="http://www.kvs-demo.com/">kvs-demo.com</a>
          */
         KernelVideoSharing,
+        /**
+         * Script used by some image hosting sites. <a href="http:/damimage.com/">damimage.com</a>. <br />
+         * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
+         * >http://codecanyon.net/item/imgshot-image-hosting-script/2558257</a>.<br />
+         * Demo: <a href="http://imgshot.com/">imgshot.com</a>
+         */
+        ImageHosting_ImgShot,
         /**
          * Should cover all given templates.<br />
          * <a href="http://sibsoft.net/xfilesharing.html">XFileSharing<a><br />
