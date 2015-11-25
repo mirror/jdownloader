@@ -103,9 +103,10 @@ public class ChipDe extends PluginForHost {
      * ---> As you can see we are not able to (directly) use the V1 API because we do not have this ID: <b>136736</b><br />
      *
      */
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("ISO-8859-1");

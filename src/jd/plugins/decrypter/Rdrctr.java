@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,13 +25,16 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-names = { "engt.co", "camshowdownloads.com", "hungryleech.com", "soo.gd", "sht.io", "afl.to", "noref.co", "led.wf", "vk.cc", "somosmovies.com", "smv.tv", "ligman.me", "feedproxy.google.com", "cur.bz", "awe.sm", "pip.bz", "ovh.to", "po.st", "share-films.net", "fburls.com", "mblink.info", "shrk.biz", "go.madmimi.com", "alturl.com", "click.tf", "ssh.yt", "rapidsky.net", "yhoo.it", "proton.biz", "smarturl.it", "westernlink.co", "sharingdb.com", "ift.tt", "share.wf", "urlm.in", "cutmy.name", "tinyw.in", "baidu.com", "sharedpartners.com", "relink.ws", "clck.ru", "youtu.be", "readthis.ca", "redirects.ca", "goshrink.com", "clickthru.ca", "atu.ca", "easyurl.net", "redirect.wayaround.org", "rurl.org", "tinyurl.com", "smarturl.eu", "rln.me", "sp2.ro", "ow.ly", "bit.ly", "maticulo.us", "trib.al", "ab.co", "vb.ly", "ponyurl.com", "budurl.com", "yep.it", "tra.kz", "tiny.pl", "linkth.at", "moourl.com",
-        "ri.ms", "gelen.org", "pettyurl.com", "9mmo.com", "bmi-group.99k.org", "decenturl.com", "shor7.com", "f5y.info", "starturl.com", "2s8.org", "kno.li", "elurl.com", "wapurl.co.uk", "0845.com", "piurl.com", "tren.tk", "twurl.nl", "shortlinks.co.uk", "rubyurl.com", "u.nu", "hex.io", "short.redirect.am", "2li.ru", "goo.gl", "u.to", "up.ht", "romsite.net", "ymlp.com", "lowlifeinc.us2.list-manage.com", "metalwarez.com", "shorlink.net", "chilp.it", "dai.ly", "db.tt", "artofx.org", "ewe.h1.ru" },
+names = { "engt.co", "camshowdownloads.com", "hungryleech.com", "soo.gd", "sht.io", "afl.to", "noref.co", "led.wf", "vk.cc", "somosmovies.com", "smv.tv", "ligman.me", "feedproxy.google.com", "cur.bz", "awe.sm", "pip.bz", "ovh.to", "po.st", "share-films.net", "fburls.com", "mblink.info", "shrk.biz", "go.madmimi.com", "alturl.com", "click.tf", "ssh.yt", "rapidsky.net", "yhoo.it", "proton.biz", "smarturl.it", "westernlink.co", "sharingdb.com", "ift.tt", "share.wf", "urlm.in", "cutmy.name", "tinyw.in", "baidu.com", "sharedpartners.com", "relink.ws", "clck.ru", "youtu.be", "readthis.ca", "redirects.ca", "goshrink.com", "clickthru.ca", "atu.ca", "easyurl.net", "redirect.wayaround.org", "rurl.org", "tinyurl.com", "smarturl.eu", "rln.me", "sp2.ro", "ow.ly", "bit.ly", "maticulo.us", "trib.al", "ab.co", "vb.ly", "ponyurl.com", "budurl.com", "yep.it", "tra.kz", "tiny.pl", "linkth.at",
+        "moourl.com", "ri.ms", "gelen.org", "pettyurl.com", "9mmo.com", "bmi-group.99k.org", "decenturl.com", "shor7.com", "f5y.info", "starturl.com", "2s8.org", "kno.li", "elurl.com", "wapurl.co.uk", "0845.com", "piurl.com", "tren.tk", "twurl.nl", "shortlinks.co.uk", "rubyurl.com", "u.nu", "hex.io", "short.redirect.am", "2li.ru", "goo.gl", "u.to", "up.ht", "romsite.net", "ymlp.com", "lowlifeinc.us2.list-manage.com", "metalwarez.com", "shorlink.net", "chilp.it", "dai.ly", "db.tt", "artofx.org", "ewe.h1.ru" },
 
-urls = { "https?://(?:www\\.)?engt\\.co/[a-zA-Z0-9]+", "https?://(?:www\\.)?camshowdownloads\\.com/dl/.+", "https?://(?:www\\.)?hungryleech\\.com/redir/[a-zA-Z0-9]+(?:/[\\w\\-]+)?", "https?://soo\\.gd/.+", "https?://(?:\\w+\\.)?sht\\.io/[a-z0-9]{4,}", "https?://(?:\\w+\\.)?afl\\.to/[a-z0-9A-Z]{7}", "https?://noref\\.co/\\?id=\\d+", "https?://(www\\.)?led\\.wf/[a-zA-Z0-9]+", "https?://(?:www\\.)?vk\\.cc/[A-Za-z0-9]+", "https?://(?:www\\.)?somosmovies\\.com/link/[A-Za-z0-9=]+/?", "https?://(?:www\\.)?smv\\.tv/link/[A-Za-z0-9=]+/?", "http://(?:www\\.)?ligman\\.me/[A-Za-z0-9]+", "https?://feedproxy\\.google\\.com/~r/.+", "http://cur\\.bz/[A-Za-z0-9]+", "http://(www\\.)?awe\\.sm/[A-Za-z0-9]+", "http://(www\\.)?pip\\.bz/[A-Za-z0-9\\-]+", "http://(www\\.)?ovh\\.to/[A-Za-z0-9]+", "http://(www\\.)?po\\.st/[A-Za-z0-9]+", "http://(www\\.)?share-films\\.net/redirect\\.php\\?url=[a-z0-9]+",
+        urls = { "https?://(?:www\\.)?engt\\.co/[a-zA-Z0-9]+", "https?://(?:www\\.)?camshowdownloads\\.com/dl/.+", "https?://(?:www\\.)?hungryleech\\.com/redir/[a-zA-Z0-9]+(?:/[\\w\\-]+)?", "https?://soo\\.gd/.+", "https?://(?:\\w+\\.)?sht\\.io/[a-z0-9]{4,}", "https?://(?:\\w+\\.)?afl\\.to/[a-z0-9A-Z]{7}", "https?://noref\\.co/\\?id=\\d+", "https?://(www\\.)?led\\.wf/[a-zA-Z0-9]+", "https?://(?:www\\.)?vk\\.cc/[A-Za-z0-9]+", "https?://(?:www\\.)?somosmovies\\.com/link/[A-Za-z0-9=]+/?", "https?://(?:www\\.)?smv\\.tv/link/[A-Za-z0-9=]+/?", "http://(?:www\\.)?ligman\\.me/[A-Za-z0-9]+", "https?://feedproxy\\.google\\.com/~r/.+", "http://cur\\.bz/[A-Za-z0-9]+", "http://(www\\.)?awe\\.sm/[A-Za-z0-9]+", "http://(www\\.)?pip\\.bz/[A-Za-z0-9\\-]+", "http://(www\\.)?ovh\\.to/[A-Za-z0-9]+", "http://(www\\.)?po\\.st/[A-Za-z0-9]+", "http://(www\\.)?share-films\\.net/redirect\\.php\\?url=[a-z0-9]+",
         "http://(www\\.)?fburls\\.com/\\d+\\-[A-Za-z0-9]+", "http://(www\\.)?mblink\\.info/\\?id=\\d+", "http://(de\\.)?shrk\\.biz/\\w+", "https?://go\\.madmimi\\.com/redirects/[a-zA-Z0-9]+\\?pa=\\d+", "http://[\\w\\.]*?alturl\\.com/[a-z0-9]+", "http://click\\.tf/[a-zA-Z0-9]{8}", "http://(?:www\\.)?ssh\\.yt/[a-zA-Z0-9]+", "http://(www\\.)?rapidsky\\.net/[A-Za-z0-9]+", "https?://(www\\.)?yhoo\\.it/[\\w]+", "https?://(\\w\\.)?proton\\.biz/aralara\\.php\\?link=[a-z0-9]+", "http://[\\w\\.]*smarturl\\.it/[A-Za-z0-9]+", "http://[\\w\\.]*westernlink\\.co/l/[A-Za-z0-9]+", "http://[\\w\\.]*sharingdb\\.com/[a-z0-9]+", "http://(www\\.)?ift\\.tt/[a-zA-Z0-9]+", "http://(www\\.)?share\\.wf/[A-Za-z0-9]+", "https?://(www\\.)?urlm\\.in/[a-zA-Z0-9]+", "http://(www\\.)?cutmy\\.name/(?!#|.+\\.php)(u/[a-f0-9]{6,8}|[a-z0-9]+)", "https?://(www\\.)?tinyw\\.in/[a-zA-Z0-9]+",
         "http://(www\\.)?baidu\\.com/link\\?url=[A-Za-z0-9\\-_]+", "http://(www\\.)?sharedpartners\\.com/in/\\d+/\\d+", "http://(www\\.)?relink\\.ws/[A-Za-z0-9]+", "http://(www\\.)?clck\\.ru/(d/[A-Za-z0-9\\-_]+|[A-Za-z0-9\\-_]+)", "https?://[\\w\\.]*youtu\\.be/[a-z_A-Z0-9\\-]+", "http://[\\w\\.]*readthis\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*redirects\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*goshrink\\.com(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*clickthru\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*atu\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*easyurl\\.net(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", "http://[\\w\\.]*rurl\\.org(/[a-zA-Z0-9]+)?", "http://(www\\.)?tinyurl\\.com/(?!favicon|preview)[a-z0-9]+(/[a-z0-9]+)?", "http://[\\w\\.]*smarturl\\.eu/\\?[a-zA-Z0-9]+", "http://[\\w\\.]*rln\\.me/[0-9a-zA-Z]+", "http://[\\w\\.]*sp2\\.ro/[0-9a-zA-Z]+",
         "http://[\\w\\.]*ow\\.ly/[\\w]+", "http://(www\\.)?bit\\.ly/[\\w]+", "http://(www\\.)?maticulo\\.us/[\\w]+", "http://(www\\.)?trib\\.al/[\\w]+", "http://(www\\.)?ab\\.co/[\\w]+", "http://[\\w\\.]*vb\\.ly/[\\w]+", "http://[\\w\\.]*ponyurl\\.com/[\\w]+", "http://[\\w\\.]*budurl\\.com/[a-zA-Z0-9]+", "http://(www\\.)?yep\\.it/(?!preview|stat|favicon|css|js|apipage|go|yepsrc|contacts|about|cloud|icon|rssfeed)[A-Za-z0-9]+", "http://[\\w\\.]*tra\\.kz/[\\w_\\-,()*:]+", "http://[\\w\\.]*tiny\\.pl/[\\w]+", "http://[\\w\\.]*linkth\\.at/[a-z]+", "http://[\\w\\.]*moourl\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*ri\\.ms/[a-z0-9]+", "http://[\\w\\.]*gelen\\.org/[0-9]+", "http://[\\w\\.]*pettyurl\\.com/[0-9a-z]+", "http://[\\w\\.]*9mmo\\.com/[a-z0-9]+", "http://[\\w\\.]*bmi-group\\.99k\\.org/go\\.php\\?id=[0-9]+", "http://[\\w\\.]*\\.decenturl\\.com/[a-z0-9.-]+",
@@ -117,6 +118,11 @@ public class Rdrctr extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(declink));
         }
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null; // GeneralRedirectorDecrypter
     }
 
     /* NO OVERRIDE!! */

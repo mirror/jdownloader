@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -111,6 +110,7 @@ public class NovaUpMovcom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!") || br.getURL().contains("novamov.com/index.php") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -122,17 +122,17 @@ public class NovaUpMovcom extends PluginForHost {
             }
             if (filename == null) {
                 // filename isn't always present!
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                filename = fid;
             } else {
                 filename = filename.trim();
                 if (filename.length() > 4 && filename.contains(".")) {
                     /* Remove old extension */
                     filename = filename.replace(filename.substring(filename.length() - 4, filename.length()), "");
                 }
-                /* Add correct extension */
-                filename += ".flv";
-                downloadLink.setFinalFileName(filename);
             }
+            /* Add correct extension */
+            filename += ".flv";
+            downloadLink.setFinalFileName(filename);
             if (br.containsHTML("error_msg=The video is being transfered")) {
                 downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
                 return AvailableStatus.TRUE;
@@ -276,7 +276,7 @@ public class NovaUpMovcom extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;

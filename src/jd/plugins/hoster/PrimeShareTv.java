@@ -56,16 +56,21 @@ public class PrimeShareTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex info = br.getRegex("<h1>(Watch|Download)\\&nbsp;[\t\n\r ]+\\(([^<>\"]*?)(\\[\\.\\.\\.\\])?\\)\\&nbsp;<strong>\\((.*?)\\)</strong></h1>");
-        final String filename = info.getMatch(1);
+        String filename = info.getMatch(1);
         final String filesize = info.getMatch(3);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        if (!filename.endsWith(".mp4")) {
+            filename += ".mp4";
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -95,6 +100,9 @@ public class PrimeShareTv extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dl.getConnection().getLongContentLength() < 100) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - File is too small (Below 100 bytes)");
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
