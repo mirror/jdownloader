@@ -45,7 +45,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String     unsupported_urls                    = "https://(www\\.)?pinterest\\.com/(business/create/|android\\-app:/.+|ios\\-app:/.+)";
+    private static final String     unsupported_urls                    = "https://(?:www\\.)?pinterest\\.com/(business/create/|android\\-app:/.+|ios\\-app:/.+)";
 
     private ArrayList<DownloadLink> decryptedLinks                      = new ArrayList<DownloadLink>();
     private String                  parameter                           = null;

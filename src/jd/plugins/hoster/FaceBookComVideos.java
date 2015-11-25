@@ -117,11 +117,16 @@ public class FaceBookComVideos extends PluginForHost {
             if (!loggedIN) {
                 return AvailableStatus.UNCHECKABLE;
             }
+            if (true) {
+                /** TODO !! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             this.br.getPage(FACEBOOKMAINPAGE);
             final String user = getUser(this.br);
             final String image_id = getPICID(link);
             final String thread_fbid = link.getStringProperty("thread_fbid", null);
-            final String tmp_postdata = "__user=" + user + "&__a=1&__dyn=" + jd.plugins.decrypter.FaceBookComGallery.getDyn() + "&__req=f&fb_dtsg=" + jd.plugins.decrypter.FaceBookComGallery.getfb_dtsg() + "&ttstamp=" + System.currentTimeMillis() + "&__rev=" + jd.plugins.decrypter.FaceBookComGallery.getRev(this.br);
+            final String tmp_postdata = "queryName=MESSAGE_THREAD_IMAGES_FIRST&params[after]=" + thread_fbid + "&params[first]=4&params[thread_id]=204489099682715&__user=" + user + "&__a=1&__dyn=" + jd.plugins.decrypter.FaceBookComGallery.getDyn() + "&__req=1g&fb_dtsg=AQHbT0AjbQdm&ttstamp=" + jd.plugins.decrypter.FaceBookComGallery.get_ttstamp() + "&__rev=" + jd.plugins.decrypter.FaceBookComGallery.getRev(this.br);
+            this.br.postPage("https://www.facebook.com/ajax/graphql/query/?__pc=EXP1%3ADEFAULT", tmp_postdata);
             this.br.postPage("https://www.facebook.com/ajax/messaging/attachments/sharedphotos.php?thread_id=" + thread_fbid + "&image_id=" + image_id, tmp_postdata);
             final String json = this.br.getRegex("for \\(;;\\);(\\{.+)").getMatch(0);
             if (json == null) {

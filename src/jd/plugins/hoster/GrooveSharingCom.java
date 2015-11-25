@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -28,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "groovesharing.com" }, urls = { "http://(www\\.)?(groovesharing|groovestreams)\\.com/\\?d=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "groovesharing.com" }, urls = { "http://(www\\.)?(groovesharing|groovestreams)\\.com/\\?d=[A-Z0-9]+" }, flags = { 0 })
 public class GrooveSharingCom extends PluginForHost {
 
     public GrooveSharingCom(PluginWrapper wrapper) {
@@ -48,20 +51,19 @@ public class GrooveSharingCom extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://groovesharing.com";
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) {
+        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<div class=\"content_header_middle widebox_outer_width\">[\t\n\r ]+<h2 class=\"float\\-left\">([^<>\"]*?)</h2>").getMatch(0);
-        final String filesize = br.getRegex(">File size</strong></li>[\t\n\r ]+<li class=\"col\\-w50\">([^<>\"]*?)</li>").getMatch(0);
+        final String filename = br.getRegex("class=\"remove\\-margin\">([^<>\"]*?)</h\\d+>").getMatch(0);
+        final String filesize = br.getRegex("\\((\\d+(?:\\.\\d+)? ?(KB|MB|GB))\\)").getMatch(0);
         if (filename == null || filename.matches("")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) {
@@ -70,23 +72,30 @@ public class GrooveSharingCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
-        final String finalLink = findLink();
-        if (finalLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
+            if (this.br.containsHTML("Vous avez atteint la quantite maximum de bande passante permise|groovesharing\\.com/limitsfree/")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
+            dllink = findLink();
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            int wait = 35;
+            final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
+            sleep(wait * 1001l, downloadLink);
         }
-        int wait = 35;
-        final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
-        if (waittime != null) {
-            wait = Integer.parseInt(waittime);
-        }
-        sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
@@ -95,6 +104,7 @@ public class GrooveSharingCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
@@ -114,6 +124,30 @@ public class GrooveSharingCom extends PluginForHost {
             }
         }
         return finalLink;
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
     // do not add @Override here to keep 0.* compatibility

@@ -24,9 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -46,6 +43,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }, flags = { 0 })
@@ -92,6 +91,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final String             TYPE_VIDEO        = "https?://(?:www\\.)?dailymotion\\.com/((?:embed/)?video/[^/]+|swf(?:/video)?/[^/]+)";
 
     private static final String             REGEX_VIDEOURLS   = "preview_link[\t\n\r ]*?\"[\t\n\r ]*?href=\"(/video/[^<>\"/]+)\"";
+
+    /** API limits for: https://developer.dailymotion.com/api#graph-api */
+    private static final short              api_limit_items   = 100;
+    private static final short              api_limit_pages   = 100;
 
     public final static boolean             defaultAllowAudio = true;
 
@@ -171,87 +174,50 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void decryptUser() throws IOException {
+    /**
+     * Crawls all videos of a user. In some cases it is not possible to crawl all videos due to website- AND API limitations (both have the
+     * same limits).
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void decryptUser() throws Exception {
         logger.info("Decrypting user: " + PARAMETER);
         String username = new Regex(PARAMETER, "dailymotion\\.com/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         if (username == null) {
             username = new Regex(PARAMETER, "dailymotion\\.com/([A-Za-z0-9_\\-]+)").getMatch(0);
         }
-        br.getPage("http://www.dailymotion.com/" + username);
-        if (br.containsHTML("class=\"dmco_text nothing_to_see\"")) {
-            final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
-            dl.setContentUrl(PARAMETER);
-            dl.setFinalFileName(username);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return;
-        }
-        String fpName = br.getRegex("class=\"mrg-end-sm user-screenname-inner\">([^<>\"]*?)</span>").getMatch(0);
-        if (fpName == null) {
-            fpName = username;
-        }
-        fpName = Encoding.htmlDecode(fpName.trim());
-        String videosNum = br.getRegex(Pattern.compile("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+(?:,\\d+)?)</span>[\t\n\r ]+Videos?[\t\n\r ]+</div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (videosNum == null) {
-            videosNum = br.getRegex("class=\"font-xl mrg-end-xs\">(\\d+(?:,\\d+)?)</span> Videos?").getMatch(0);
-        }
-        if (videosNum == null) {
-            logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
-            decryptedLinks = null;
-            return;
-        }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
-        final int videoCount = Integer.parseInt(videosNum.replace(",", ""));
-        if (videoCount == 0) {
-            /* User has 0 videos */
-            final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
-            dl.setContentUrl(PARAMETER);
-            dl.setFinalFileName(username);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return;
-        }
-        String desiredPage = new Regex(PARAMETER, "/user/[A-Za-z0-9]+/(\\d+)$").getMatch(0);
-        if (desiredPage == null) {
-            desiredPage = "1";
-        }
-        boolean parsePageOnly = false;
-        if (Integer.parseInt(desiredPage) != 1) {
-            parsePageOnly = true;
-        }
-        int currentPage = Integer.parseInt(desiredPage);
-        final BigDecimal bd = new BigDecimal((double) videoCount / 18);
-        final int pagesNum = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
+        fp.setName(username);
+        boolean has_more = false;
+        /* Important - start from 1 ! */
+        int page = 1;
         do {
             if (this.isAbort()) {
-                logger.info("dailymotion.com: Decrypt process aborted by user on page " + currentPage + " of " + pagesNum);
+                logger.info("dailymotion.com: Decrypt process aborted by user on page " + page);
                 return;
             }
-            logger.info("Decrypting page " + currentPage + " / " + pagesNum);
-            br.getPage("http://www.dailymotion.com/user/" + username + "/" + currentPage);
-            final String[] videos = br.getRegex(REGEX_VIDEOURLS).getColumn(0);
-            if (videos == null || videos.length == 0) {
-                logger.info("Found no videos on page " + currentPage + " -> Stopping decryption");
-                break;
+            this.br.getPage("https://api.dailymotion.com/user/" + username + "/videos?limit=" + api_limit_items + "&page=" + page);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            has_more = ((Boolean) entries.get("has_more")).booleanValue();
+            final ArrayList<Object> list = (ArrayList) entries.get("list");
+            for (final Object video_o : list) {
+                entries = (LinkedHashMap<String, Object>) video_o;
+                final String videoid = (String) entries.get("id");
+                if (videoid == null) {
+                    logger.warning("Dailymotion.com decrypter failed: " + PARAMETER);
+                    decryptedLinks = null;
+                    return;
+                }
+                final DownloadLink dl = this.createDownloadlink("http://www.dailymotion.com/video/" + videoid);
+                dl._setFilePackage(fp);
+                this.decryptedLinks.add(dl);
+                distribute(dl);
             }
-            for (final String videolink : videos) {
-                final DownloadLink fina = createDownloadlink("http://www.dailymotion.com" + videolink);
-                fp.add(fina);
-                distribute(fina);
-                decryptedLinks.add(fina);
-            }
-            logger.info("dailymotion.com: Decrypted page " + currentPage + " of " + pagesNum);
-            logger.info("dailymotion.com: Found " + videos.length + " links on current page");
-            logger.info("dailymotion.com: Found " + decryptedLinks.size() + " of total " + videoCount + " links already...");
-            currentPage++;
-        } while (decryptedLinks.size() < videoCount && !parsePageOnly);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        } while (has_more && page <= api_limit_pages);
+        if (decryptedLinks == null) {
             logger.warning("Dailymotion.com decrypter failed: " + PARAMETER);
             decryptedLinks = null;
             return;
         }
-        fp.addLinks(decryptedLinks);
     }
 
     private void decryptPlaylist() throws IOException {

@@ -54,9 +54,13 @@ public class AbelhasPt extends PluginForHost {
     }
 
     private static boolean pluginloaded = false;
+    private String         fileid       = null;
+    private String         requesttoken = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        fileid = null;
+        requesttoken = null;
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!link.getDownloadURL().matches("http://(www\\.)?abelhasdecrypted\\.pt/\\d+")) {
@@ -79,18 +83,19 @@ public class AbelhasPt extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        handlePWProtected(downloadLink);
-        /* Free users can only download low quality streams */
-        String dllink = br.getRegex("\"(http://(www\\.)?abelhas\\.pt/Video\\.ashx\\?e=[^<>\"]*?)\"").getMatch(0);
+        /* Sometimes free users can only download low quality streams */
+        String dllink_video = br.getRegex("\"(http://(www\\.)?abelhas\\.pt/Video\\.ashx\\?e=[^<>\"]*?)\"").getMatch(0);
+        String dllink = null;
+        try {
+            dllink = getDllink_general(downloadLink);
+        } catch (final Throwable e) {
+        }
         if (dllink == null) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+            dllink = dllink_video;
+        }
+        if (dllink == null) {
+            /* Either plugin broken or only downloadable via account */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
@@ -178,18 +183,7 @@ public class AbelhasPt extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(true);
         br.getPage(link.getStringProperty("mainlink", null));
-        handlePWProtected(link);
-        final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
-        final String requesttoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (fileid == null || requesttoken == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://abelhas.pt/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requesttoken));
-        String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(http://s\\d+\\.abelhas\\.pt/File\\.aspx[^\\\\\"]+)").getMatch(0);
-        }
+        String dllink = getDllink_general(link);
         if (dllink == null) {
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             final String orgfile = br.getRegex("name=\"orgFile\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -199,17 +193,38 @@ public class AbelhasPt extends PluginForHost {
             }
             br.postPage("http://abelhas.pt/action/License/acceptLargeTransfer", "fileId=" + fileid + "&orgFile=" + Encoding.urlEncode(orgfile) + "&userSelection=" + Encoding.urlEncode(userSelection) + "&__RequestVerificationToken=" + Encoding.urlEncode(requesttoken));
             dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink != null) {
+                dllink = unescape(dllink);
+            }
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = unescape(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDllink_general(final DownloadLink dl) throws PluginException, IOException {
+        handlePWProtected(dl);
+        fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
+        requesttoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (fileid == null || requesttoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://abelhas.pt/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requesttoken));
+        String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://s\\d+\\.abelhas\\.pt/File\\.aspx[^\\\\\"]+)").getMatch(0);
+        }
+        if (dllink != null) {
+            dllink = unescape(dllink);
+        }
+        return dllink;
     }
 
     private static synchronized String unescape(final String s) {

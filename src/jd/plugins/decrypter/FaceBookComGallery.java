@@ -18,9 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Map.Entry;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -29,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -46,6 +45,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.logging2.LogInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.+|l\\.facebook\\.com/l/[^/]+/.+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
@@ -70,7 +71,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     TYPE_ALBUMS_LINK                = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
     private static final String     TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
     private static final String     TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
-    private static final String     TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream.*";
+    private static final String     TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[^/]+/photos_stream.*";
+    private static final String     TYPE_PHOTOS_STREAM_LINK_2       = "https?://(?:www\\.)?facebook\\.com/pages/[^/]+/\\d+\\?sk=photos_stream\\&tab=.*";
     private static final String     TYPE_PHOTOS_LINK                = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos.*";
     private static final String     TYPE_GROUPS_PHOTOS              = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
     private static final String     TYPE_GROUPS_FILES               = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
@@ -100,38 +102,38 @@ public class FaceBookComGallery extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Code below = prevents Eclipse from freezing as it removes the log output of this thread! */
-        // LogInterface logger = new LogInterface() {
-        //
-        // @Override
-        // public void warning(String msg) {
-        // }
-        //
-        // @Override
-        // public void severe(String msg) {
-        // }
-        //
-        // @Override
-        // public void log(Throwable e) {
-        // }
-        //
-        // @Override
-        // public void info(String msg) {
-        // }
-        //
-        // @Override
-        // public void finest(String msg) {
-        // }
-        //
-        // @Override
-        // public void finer(String msg) {
-        // }
-        //
-        // @Override
-        // public void fine(String msg) {
-        // }
-        // };
-        // this.setLogger(logger);
-        // ((LinkCrawlerThread) Thread.currentThread()).setLogger(logger);
+        LogInterface logger = new LogInterface() {
+
+            @Override
+            public void warning(String msg) {
+            }
+
+            @Override
+            public void severe(String msg) {
+            }
+
+            @Override
+            public void log(Throwable e) {
+            }
+
+            @Override
+            public void info(String msg) {
+            }
+
+            @Override
+            public void finest(String msg) {
+            }
+
+            @Override
+            public void finer(String msg) {
+            }
+
+            @Override
+            public void fine(String msg) {
+            }
+        };
+        this.setLogger(logger);
+        ((LinkCrawlerThread) Thread.currentThread()).setLogger(logger);
         br = new Browser();
         this.br.setAllowedResponseCodes(400);
 
@@ -197,7 +199,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptPhotosOf();
             } else if (PARAMETER.matches(TYPE_PHOTOS_ALL_LINK)) {
                 decryptPhotosAll();
-            } else if (PARAMETER.matches(TYPE_PHOTOS_STREAM_LINK)) {
+            } else if (PARAMETER.matches(TYPE_PHOTOS_STREAM_LINK) || PARAMETER.matches(TYPE_PHOTOS_STREAM_LINK_2)) {
                 decryptSets();
             } else if (PARAMETER.matches(TYPE_PHOTOS_LINK)) {
                 // Old handling removed 05.12.13 in rev 23262
@@ -639,10 +641,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     /* TODO: Improve this and clean this up! */
     private void decryptSets() throws Exception {
-        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
-            logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-        }
         String fpName = getPageTitle();
         final String url_username = new Regex(PARAMETER, "facebook\\.com/([^<>\"\\?/]+)").getMatch(0);
         final String rev = getRev(this.br);
@@ -652,8 +650,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
         final String profileID = getProfileID();
         final String totalPicCount = br.getRegex("data-medley-id=\"pagelet_timeline_medley_photos\">Photos<span class=\"_gs6\">(\\d+((,|\\.)\\d+)?)</span>").getMatch(0);
         final String setid = new Regex(this.PARAMETER, "/set/\\?set=([a-z0-9\\.]+)").getMatch(0);
+        final String tab = new Regex(this.PARAMETER, "tab=([^/\\&]+)").getMatch(0);
         if (user == null || profileID == null || ajaxpipe_token == null || profileID == null) {
-            logger.warning("Decrypter broken for link: " + PARAMETER);
+            /* Errorhandling for offline cases is just hard to do - we can never be 100% sure why it fails! */
+            logger.info("Decrypter broken or url offline: " + PARAMETER);
             return;
         }
         if (fpName == null) {
@@ -707,9 +707,18 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 if (this.PARAMETER.matches(TYPE_SET_LINK_VIDEO)) {
                     data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"viewmode\":null,\"profile_id\":" + profileID + ",\"set\":\"" + setid + "\",\"type\":2}";
                     urlload = "/ajax/pagelet/generic.php/TimelinePhotoSetPagelet?__pc=EXP1:DEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
+                } else if (this.PARAMETER.matches(TYPE_PHOTOS_STREAM_LINK)) {
+                    if (tab != null) {
+                        /* E.g. https://www.facebook.com/JenniLee.Official/photos_stream?tab=photos */
+                        data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"is_medley_view\":true,\"" + tab + "\":\"photos\",\"is_page_new_view\":true}";
+                        urlload = "/ajax/pagelet/generic.php/TimelinePhotosPagelet?__pc=EXP1:DEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
+                    } else {
+                        data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"tab\":\"photos_stream\",\"vanity\":\"" + url_username + "\",\"sk\":\"photos_stream\",\"tab_key\":\"photos_stream\",\"page\":" + profileID + ",\"is_medley_view\":true,\"pager_fired_on_init\":true}";
+                        urlload = "/ajax/pagelet/generic.php/TimelinePhotosStreamPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
+                    }
                 } else {
-                    data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"tab\":\"photos_stream\",\"vanity\":\"" + url_username + "\",\"sk\":\"photos_stream\",\"tab_key\":\"photos_stream\",\"page\":" + profileID + ",\"is_medley_view\":true,\"pager_fired_on_init\":true}";
-                    urlload = "/ajax/pagelet/generic.php/TimelinePhotosStreamPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
+                    logger.warning("Unsupported case");
+                    return;
                 }
                 // final String data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" +
                 // profileID + ",\"tab\":\"photos_stream\",\"ajaxpipe\":\"1\",\"ajaxpipe_token\":\"" + ajaxpipe_token +
@@ -783,7 +792,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void decryptGroupsPhotos() throws Exception {
         String fpName = getPageTitle();
         final String rev = getRev(this.br);
@@ -912,11 +920,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     }
 
-    private void handlePagination() {
-
-    }
-
-    @SuppressWarnings("unchecked")
+    /** Crawls all images of a Facebook private conversation */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void decryptMessagePhotos() throws Exception {
         final String url_username = new Regex(this.PARAMETER, "/messages/(.+)").getMatch(0);
         if (!this.logged_in) {
@@ -926,13 +931,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
         this.getpagefirsttime(this.PARAMETER);
         final String thread_fbid = this.br.getRegex("" + url_username + "\",\"id\":\"fbid:(\\d+)\"").getMatch(0);
         final String user = getUser(this.br);
-        if (thread_fbid == null || user == null) {
+        final String token = this.br.getRegex("name=\\\\\"fb_dtsg\\\\\" value=\\\\\"([^<>\"]*?)\\\\\"").getMatch(0);
+        if (thread_fbid == null || user == null || token == null) {
             /* Probably offline url */
             return;
         }
-        final String postdata = "thread_id=" + thread_fbid + "&offset=0&limit=1000&__user=" + user + "&__a=1&__dyn=" + getDyn() + "&__req=19&fb_dtsg=" + getfb_dtsg() + "&ttstamp=" + System.currentTimeMillis() + "&__rev=" + getRev(this.br);
+        final String postdata = "thread_id=" + thread_fbid + "&offset=0&limit=100000&__user=" + user + "&__a=1&__dyn=" + getDyn() + "&__req=c&fb_dtsg=" + token + "&ttstamp=" + get_ttstamp() + "&__rev=" + getRev(this.br);
         /* First find all image-IDs */
-        this.br.postPage("/ajax/messaging/attachments/sharedphotos.php", postdata);
+        this.br.postPage("/ajax/messaging/attachments/sharedphotos.php?__pc=EXP1%3ADEFAULT", postdata);
         /* Secondly access each image individually to find its' final URL and download it */
         String json = this.br.getRegex("for \\(;;\\);(\\{.+)").getMatch(0);
         if (json == null) {
@@ -940,16 +946,27 @@ public class FaceBookComGallery extends PluginForDecrypt {
             return;
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "payload/imagesData");
-        final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
-        while (it.hasNext()) {
-            final Entry<String, Object> entry = it.next();
-            final String image_id = entry.getKey();
+        final Object imagesData = DummyScriptEnginePlugin.walkJson(entries, "payload/imagesData");
+        final ArrayList<Object> ressourcelist = (ArrayList) imagesData;
+        for (final Object pic_o : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) pic_o;
+            final String image_id = (String) entries.get("fbid");
+            final String directlink = (String) entries.get("");
             final DownloadLink dl = createPicDownloadlink(image_id);
             dl.setProperty("is_private", true);
             dl.setProperty("thread_fbid", thread_fbid);
             this.decryptedLinks.add(dl);
         }
+        // entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "payload/imagesData");
+        // final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+        // while (it.hasNext()) {
+        // final Entry<String, Object> entry = it.next();
+        // final String image_id = entry.getKey();
+        // final DownloadLink dl = createPicDownloadlink(image_id);
+        // dl.setProperty("is_private", true);
+        // dl.setProperty("thread_fbid", thread_fbid);
+        // this.decryptedLinks.add(dl);
+        // }
     }
 
     private void decryptNotes() throws Exception {
@@ -1193,8 +1210,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return user;
     }
 
-    public static String getfb_dtsg() {
-        return "fb_dtsg";
+    public static final String get_ttstamp() {
+        return Long.toString(System.currentTimeMillis());
     }
 
     /**

@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigafront.de" }, urls = { "http://(www\\.)?gigafront\\.de/downloads,id\\d+,.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigafront.de" }, urls = { "https?://(?:www\\.)?gigafront\\.de/downloads,id\\d+,.*?\\.html" }, flags = { 0 })
 public class GigaFrontDe extends PluginForHost {
 
     public GigaFrontDe(PluginWrapper wrapper) {
@@ -46,14 +47,49 @@ public class GigaFrontDe extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(Das angeforderte Dokument konnte nicht gefunden werden|<title>apexx \\- CMS \\&amp; Portalsystem \\| Information</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("class=\"download_detail_title\">Name:</div>[\t\n\r ]+<div class=\"download_detail_value\">[\t\n\r ]+<span class=\"download_detail_blue_text\">([^<>\"\\'/]+)</span>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title> Download: ([^<>\"\\'/]+) \\- GIGAFRONT</title>").getMatch(0);
+        }
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = new Regex(link.getDownloadURL(), "gigafront\\.de/downloads,id\\d+,(.*?)\\.html").getMatch(0);
+        }
+        String filesize = br.getRegex("class=\"download_detail_title\">Dateigröße:</div>[\t\n\r ]+<div class=\"download_detail_value\">[\t\n\r ]+<span class=\"download_detail_span\">([^<>\"\\'/]+)</span>").getMatch(0);
+        if (filesize == null) {
+            filesize = this.br.getRegex("<div>Dateigröße</div><div>([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setName(filename.trim());
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL() + "?guest=1");
         String dllink = br.getRegex("class=\"gast_download\" href=\"(misc.*?)\">").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(misc\\.php\\?action=downloadfile\\&amp;id=\\d+\\&amp;sechash=[a-z0-9]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(misc\\.php\\?action=downloadfile\\&amp;id=\\d+\\&amp;sechash=[a-z0-9]+)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = "http://www.gigafront.de/" + Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -62,20 +98,6 @@ public class GigaFrontDe extends PluginForHost {
         }
         downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Das angeforderte Dokument konnte nicht gefunden werden|<title>apexx \\- CMS \\&amp; Portalsystem \\| Information</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"download_detail_title\">Name:</div>[\t\n\r ]+<div class=\"download_detail_value\">[\t\n\r ]+<span class=\"download_detail_blue_text\">([^<>\"\\'/]+)</span>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title> Download: ([^<>\"\\'/]+) \\- GIGAFRONT</title>").getMatch(0);
-        String filesize = br.getRegex("class=\"download_detail_title\">Dateigröße:</div>[\t\n\r ]+<div class=\"download_detail_value\">[\t\n\r ]+<span class=\"download_detail_span\">([^<>\"\\'/]+)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        return AvailableStatus.TRUE;
     }
 
     @Override
