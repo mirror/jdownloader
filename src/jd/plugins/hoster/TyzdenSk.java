@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tyzden.sk" }, urls = { "http://[\\w\\.]*?tyzden\\.sk/(video-komentare|filmy|rozhovory-dna|rozhovory-tyzdna|reportaze-tyzdna|kampan|vecery-tyzdna|ankety|pripravujeme0|tyzden-na-pulte|komentare-dna)/[-0-9a-zA-Z]+.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tyzden.sk" }, urls = { "http://(?:www\\.)?tyzden\\.sk/(?:video-komentare|filmy|rozhovory-dna|rozhovory-tyzdna|reportaze-tyzdna|kampan|vecery-tyzdna|ankety|pripravujeme0|tyzden-na-pulte|komentare-dna)/[-0-9a-zA-Z]+.html" }, flags = { 0 })
 public class TyzdenSk extends PluginForHost {
     private String dlink = null;
 
@@ -39,8 +39,7 @@ public class TyzdenSk extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        // nothing found on site
-        return "";
+        return "http://www.tyzden.sk/";
     }
 
     @Override
@@ -51,7 +50,9 @@ public class TyzdenSk extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
@@ -60,19 +61,29 @@ public class TyzdenSk extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) [|] ").getMatch(0);
-        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == filename || filename.trim().length() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         StringBuilder linkSB = new StringBuilder("http://media.monogram.sk/media/file?ac=tyzden&fid");
         String dlinkPart = new Regex(Encoding.htmlDecode(br.toString()), "\"FlashVars\", \"basePath=(.*?)fid(.*?)&").getMatch(1);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (null == dlinkPart || dlinkPart.trim().length() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         linkSB.append(dlinkPart);
 
         dlink = Encoding.htmlDecode(linkSB.toString());
-        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dlink == null || dlink.trim().length() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");
@@ -84,7 +95,9 @@ public class TyzdenSk extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } finally {
-            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+            if (br.getHttpConnection() != null) {
+                br.getHttpConnection().disconnect();
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
