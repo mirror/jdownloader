@@ -26,6 +26,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -42,9 +44,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }, flags = { 0 })
@@ -514,33 +515,36 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         fp.setName(FILENAME);
 
         /** Decrypt subtitles if available */
-        String subsource = new Regex(VIDEOSOURCE, "\"recorded\",(.*?\\}\\})").getMatch(0).replace("\\/", "/");
-        String[] subtitles = new Regex(subsource, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt(?:\\?\\d+)?)\"").getColumn(0);
-        if (subtitles != null && subtitles.length != 0) {
-            final FilePackage fpSub = FilePackage.getInstance();
-            fpSub.setName(FILENAME + "_Subtitles");
-            for (final String subtitle : subtitles) {
-                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                dl.setContentUrl(PARAMETER);
-                final String language = new Regex(subtitle, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
-                String qualityname = "subtitle";
-                if (language != null) {
-                    qualityname += "_" + language;
+        String subsource = new Regex(VIDEOSOURCE, "\"recorded\",(.*?\\}\\})").getMatch(0);
+        if (subsource != null) {
+            subsource = subsource.replace("\\/", "/");
+            final String[] subtitles = new Regex(subsource, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt(?:\\?\\d+)?)\"").getColumn(0);
+            if (subtitles != null && subtitles.length != 0) {
+                final FilePackage fpSub = FilePackage.getInstance();
+                fpSub.setName(FILENAME + "_Subtitles");
+                for (final String subtitle : subtitles) {
+                    final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                    dl.setContentUrl(PARAMETER);
+                    final String language = new Regex(subtitle, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
+                    String qualityname = "subtitle";
+                    if (language != null) {
+                        qualityname += "_" + language;
+                    }
+                    dl.setProperty("directlink", subtitle);
+                    dl.setProperty("type_subtitle", true);
+                    dl.setProperty("qualityname", qualityname);
+                    dl.setProperty("mainlink", PARAMETER);
+                    dl.setProperty("plain_videoname", FILENAME);
+                    dl.setProperty("plain_ext", ".srt");
+                    dl.setProperty("plain_videoid", VIDEOID);
+                    dl.setProperty("plain_channel", CHANNELNAME);
+                    dl.setProperty("plain_date", Long.toString(DATE));
+                    dl.setLinkID("dailymotioncom" + VIDEOID + "_" + qualityname);
+                    final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
+                    dl.setName(formattedFilename);
+                    fpSub.add(dl);
+                    decryptedLinks.add(dl);
                 }
-                dl.setProperty("directlink", subtitle);
-                dl.setProperty("type_subtitle", true);
-                dl.setProperty("qualityname", qualityname);
-                dl.setProperty("mainlink", PARAMETER);
-                dl.setProperty("plain_videoname", FILENAME);
-                dl.setProperty("plain_ext", ".srt");
-                dl.setProperty("plain_videoid", VIDEOID);
-                dl.setProperty("plain_channel", CHANNELNAME);
-                dl.setProperty("plain_date", Long.toString(DATE));
-                dl.setLinkID("dailymotioncom" + VIDEOID + "_" + qualityname);
-                final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
-                dl.setName(formattedFilename);
-                fpSub.add(dl);
-                decryptedLinks.add(dl);
             }
         }
 
@@ -625,7 +629,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         for (final String quality[] : qualities) {
             final String qualityName = quality[0];
             final String qualityNumber = quality[1];
-            final String currentQualityUrl = getQuality(qualityName, videosource);
+            final String currentQualityUrl = JSonUtils.getJson(videosource, qualityName);
             if (currentQualityUrl != null) {
                 final String[] dlinfo = new String[4];
                 dlinfo[0] = currentQualityUrl;
@@ -688,7 +692,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 for (final String quality[] : embedQualities) {
                     final String qualityName = quality[0];
                     final String qualityNumber = quality[1];
-                    final String currentQualityUrl = getQuality(qualityName, videosource);
+                    final String currentQualityUrl = JSonUtils.getJson(videosource, qualityName);
                     if (currentQualityUrl != null) {
                         final String[] dlinfo = new String[4];
                         dlinfo[0] = currentQualityUrl;
@@ -724,6 +728,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
         if (videosource == null) {
             videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
+            if (videosource != null) {
+                videosource = Encoding.urlDecode(videosource, false);
+            }
         }
         if (videosource == null) {
             videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
@@ -751,7 +758,22 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
             String qualityName = directlinkinfo[1]; // qualityName is dlinfo[2]
             if (qualityName == null) {
+                // for example H264-320x240
                 qualityName = new Regex(directlink, "cdn/([^<>\"]*?)/video").getMatch(0);
+                if (qualityName == null) {
+                    // statically set it... better than nothing.
+                    if ("1".equalsIgnoreCase(qualityValue)) {
+                        qualityName = "H264-1920x1080";
+                    } else if ("2".equalsIgnoreCase(qualityValue)) {
+                        qualityName = "H264-1280x720";
+                    } else if ("3".equalsIgnoreCase(qualityValue)) {
+                        qualityName = "H264-848x480";
+                    } else if ("4".equalsIgnoreCase(qualityValue)) {
+                        qualityName = "H264-512x384";
+                    } else if ("5".equalsIgnoreCase(qualityValue)) {
+                        qualityName = "H264-320x240";
+                    }
+                }
             }
             final String originalQualityName = directlinkinfo[2];
             final String qualityNumber = directlinkinfo[3];
@@ -781,10 +803,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         } else {
             return null;
         }
-    }
-
-    private static String getQuality(final String quality, final String videosource) {
-        return new Regex(videosource, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
     }
 
     /* NO OVERRIDE!! */
