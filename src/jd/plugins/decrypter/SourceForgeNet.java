@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?sourceforge\\.net/projects/[^/]+/files/[^\\?<>\"]{0,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?sourceforge\\.net/projects/[^/]+/files/[^\\?<>\"]{0,}" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -96,12 +96,7 @@ public class SourceForgeNet extends PluginForDecrypt {
             if (downloadable) {
                 /* Downloadable filelink --> Goes into the host plugin */
                 dl = createDownloadlink(dloadlink.replace("sourceforge.net/", "sourceforgedecrypted.net/"));
-                try {
-                    dl.setContentUrl(url);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    dl.setBrowserUrl(url);
-                }
+                dl.setContentUrl(url);
                 /* Hashes should actually always be available! */
                 if (!inValidate(sha1)) {
                     dl.setSha1Hash(sha1);
