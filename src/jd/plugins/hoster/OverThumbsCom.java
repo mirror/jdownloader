@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "overthumbs.com" }, urls = { "http://(www\\.)?overthumbs\\.com/galleries/[a-z0-9\\-]+" }, flags = { 0 })
 public class OverThumbsCom extends PluginForHost {
@@ -67,11 +71,23 @@ public class OverThumbsCom extends PluginForHost {
         if (filename == null || vid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final boolean new_way = false;
+        final boolean new_way = true;
         if (new_way) {
             /* New/Alternative way: jwplayer/playvideo.php?id= */
             br.getPage("http://overthumbs.com/jwplayer/playvideo.php?id=" + vid);
             // --> Unpack js and RegEx finallink
+            String js = br.getRegex("eval\\s*\\((function\\(p,a,c,k,e,d\\).*?\\{\\}\\))\\)").getMatch(0);
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            String result = null;
+            try {
+                engine.eval("var res = " + js);
+                result = (String) engine.get("res");
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+            DLLINK = JSonUtils.getJson(result, "file");
+
         } else {
             /* Use old way - avoids packed JS althougs js is just packed, nothing else. */
             br.getPage("http://overthumbs.com/flvplayer/player/xml_connect.php?code=" + vid);
