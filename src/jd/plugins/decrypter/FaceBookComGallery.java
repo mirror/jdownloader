@@ -27,7 +27,6 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -45,8 +44,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.logging2.LogInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.+|l\\.facebook\\.com/l/[^/]+/.+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
@@ -102,38 +99,38 @@ public class FaceBookComGallery extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Code below = prevents Eclipse from freezing as it removes the log output of this thread! */
-        LogInterface logger = new LogInterface() {
-
-            @Override
-            public void warning(String msg) {
-            }
-
-            @Override
-            public void severe(String msg) {
-            }
-
-            @Override
-            public void log(Throwable e) {
-            }
-
-            @Override
-            public void info(String msg) {
-            }
-
-            @Override
-            public void finest(String msg) {
-            }
-
-            @Override
-            public void finer(String msg) {
-            }
-
-            @Override
-            public void fine(String msg) {
-            }
-        };
-        this.setLogger(logger);
-        ((LinkCrawlerThread) Thread.currentThread()).setLogger(logger);
+        // LogInterface logger = new LogInterface() {
+        //
+        // @Override
+        // public void warning(String msg) {
+        // }
+        //
+        // @Override
+        // public void severe(String msg) {
+        // }
+        //
+        // @Override
+        // public void log(Throwable e) {
+        // }
+        //
+        // @Override
+        // public void info(String msg) {
+        // }
+        //
+        // @Override
+        // public void finest(String msg) {
+        // }
+        //
+        // @Override
+        // public void finer(String msg) {
+        // }
+        //
+        // @Override
+        // public void fine(String msg) {
+        // }
+        // };
+        // this.setLogger(logger);
+        // ((LinkCrawlerThread) Thread.currentThread()).setLogger(logger);
         br = new Browser();
         this.br.setAllowedResponseCodes(400);
 
