@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +27,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -39,11 +37,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class LinkSnappyCom extends PluginForHost {
+public class LinkSnappyCom extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
@@ -58,7 +55,6 @@ public class LinkSnappyCom extends PluginForHost {
         return "https://linksnappy.com/tos";
     }
 
-    private static Object       LOCK                   = new Object();
     private static final String USE_API                = "USE_API";
     private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
 
@@ -75,13 +71,10 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * 24.11.15 Update by Bilal Ghouri:
-     * 
-     * -    Host has removed captcha and added attempts-lock based system.
-     *      API calls have been updated as well. 
-     * -    Cookies are valid for 30 days after last use.
-     *      After that, Session Expired error will occur. In which case, Login()
-     *      should be called to get new cookies and store them for further use.
-     * -    Better Error handling through exceptions.
+     *
+     * - Host has removed captcha and added attempts-account based system. API calls have been updated as well. - Cookies are valid for 30
+     * days after last use. After that, Session Expired error will occur. In which case, Login() should be called to get new cookies and
+     * store them for further use. - Better Error handling through exceptions.
      */
 
     @Override
@@ -95,20 +88,22 @@ public class LinkSnappyCom extends PluginForHost {
         ArrayList<String> supportedHosts = new ArrayList<String>();
 
         /** Load cookies */
-        prepBrowser(br);
-        final Cookies cookies = account.loadCookies("");
+        final Cookies cookies;
+        synchronized (account) {
+            cookies = account.loadCookies("");
+        }
         if (cookies != null) {
             br.setCookies(this.getHost(), cookies);
-            br.getPage("https://linksnappy.com/api/USERDETAILS");
+            getPage("https://linksnappy.com/api/USERDETAILS");
         }
         if (cookies == null || br.containsHTML("Session Expired")) {
             try {
-                Login(currentAcc);
+                login(currentAcc);
             } catch (final PluginException e) {
                 ac.setStatus(e.getErrorMessage());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + e.getErrorMessage(), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            br.getPage("https://linksnappy.com/api/USERDETAILS");
+            getPage("https://linksnappy.com/api/USERDETAILS");
         }
 
         if ("ERROR".equals(getJson("status"))) {
@@ -119,19 +114,20 @@ public class LinkSnappyCom extends PluginForHost {
         String accountType = null;
         final String expire = getJson("expire");
         if ("lifetime".equals(expire)) {
-            accountType = "Lifetime Premium account";
+            accountType = "Lifetime Premium Account";
         } else if ("expired".equals(expire)) {
             /* Free account = also expired */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nIf your account is Premium contact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             ac.setValidUntil(Long.parseLong(expire) * 1000);
-            accountType = "Premium account";
+            accountType = "Premium Account";
         }
         /* = all are premium anyways */
         currentAcc.setType(AccountType.PREMIUM);
         ac.setStatus(accountType);
         /* Find traffic left */
         final String trafficLeft = getJson("trafficleft");
+        final String maxtraffic = getJson("maxtraffic");
         if ("unlimited".equals(trafficLeft)) {
             ac.setUnlimitedTraffic();
         } else {
@@ -141,7 +137,9 @@ public class LinkSnappyCom extends PluginForHost {
             } else {
                 ac.setTrafficLeft(Long.parseLong(trafficLeft));
             }
-            ac.setTrafficMax(Long.parseLong(getJson("maxtraffic")));
+            if (maxtraffic != null) {
+                ac.setTrafficMax(Long.parseLong(maxtraffic));
+            }
         }
 
         /* now it's time to get all supported hosts */
@@ -264,15 +262,17 @@ public class LinkSnappyCom extends PluginForHost {
             }
         }
         /** Load cookies */
-        prepBrowser(br);
         setConstants(account, link);
         // br.setCookiesExclusive(true);
-        final Cookies cookies = account.loadCookies("");
+        final Cookies cookies;
+        synchronized (account) {
+            cookies = account.loadCookies("");
+        }
         if (cookies != null) {
             br.setCookies(this.getHost(), cookies);
         } else {
             try {
-                Login(currentAcc);
+                login(currentAcc);
             } catch (final PluginException e) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + e.getErrorMessage(), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -288,14 +288,14 @@ public class LinkSnappyCom extends PluginForHost {
 
             for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
 
-                br.getPage("https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}"));
+                getPage("https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}"));
                 if (br.containsHTML("Session Expired")) {
                     try {
-                        Login(currentAcc);
+                        login(currentAcc);
                     } catch (final PluginException e) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + e.getErrorMessage(), PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    br.getPage("https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}"));
+                    getPage("https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}"));
                 }
                 if (!attemptDownload()) {
                     continue;
@@ -355,8 +355,8 @@ public class LinkSnappyCom extends PluginForHost {
                 if (this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history)) {
                     boolean history_deleted = false;
                     try {
-                        br.getPage("https://linksnappy.com/api/DELETELINK?type=filehost&hash=all");
-                        if (getJson(br.toString(), "status") == "OK") {
+                        getPage("https://linksnappy.com/api/DELETELINK?type=filehost&hash=all");
+                        if ("OK".equalsIgnoreCase(getJson("status"))) {
                             history_deleted = true;
                         }
                     } catch (final Throwable e) {
@@ -425,7 +425,7 @@ public class LinkSnappyCom extends PluginForHost {
         if (br != null && br.getHttpConnection() != null) {
             if ("FAILED".equalsIgnoreCase(getJson("status"))) {
                 final String err = getJson("error");
-                if (err != null || !err.matches("\\s*") || !"".equalsIgnoreCase(err)) {
+                if (err != null && !err.matches("\\s*") && !"".equalsIgnoreCase(err)) {
                     if ("ERROR Code: 087".equalsIgnoreCase(err)) {
                         // "status":"FAILED","error":"ERROR Code: 087"
                         // I assume offline (webui says his host is offline, but not the api host list.
@@ -498,17 +498,18 @@ public class LinkSnappyCom extends PluginForHost {
         return true;
     }
 
-    private void Login(final Account account) throws Exception {
-        this.br = new Browser();
-        this.br.setCookiesExclusive(true);
-        String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-        getPage("https://linksnappy.com/api/AUTHENTICATE?" + postdata);
-        final String ResponseStatus = getJson(this.br.toString(), "status");
-        if (ResponseStatus.equals("ERROR")) {
-            final String ErrorMessage = getJson(this.br.toString(), "error");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + ErrorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if (ResponseStatus.equals("OK")) {
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
+    private void login(final Account account) throws Exception {
+        synchronized (account) {
+            this.br = new Browser();
+            this.br.setCookiesExclusive(true);
+            getPage("https://linksnappy.com/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            final String ResponseStatus = getJson("status");
+            if (ResponseStatus.equals("ERROR")) {
+                final String ErrorMessage = getJson("error");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + ErrorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (ResponseStatus.equals("OK")) {
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            }
         }
     }
 
@@ -547,56 +548,6 @@ public class LinkSnappyCom extends PluginForHost {
         return value;
     }
 
-    private void getPage(final String page) throws IOException, PluginException {
-        boolean failed = true;
-        for (int i = 1; i <= 10; i++) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(page);
-                if (con.getResponseCode() == 503) {
-                    logger.info("Try " + i + ": Got 503 error for link: " + page);
-                    continue;
-                }
-                br.followConnection();
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-            failed = false;
-            break;
-        }
-        if (failed) {
-            stupidServerError();
-        }
-    }
-
-    private void postPageSecure(final String page, final String postData) throws IOException, PluginException {
-        boolean failed = true;
-        for (int i = 1; i <= 10; i++) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openPostConnection(page, postData);
-                if (con.getResponseCode() == 503) {
-                    logger.info("Try " + i + ": Got 503 error for link: " + page);
-                    continue;
-                }
-                br.followConnection();
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-            failed = false;
-            break;
-        }
-        if (failed) {
-            stupidServerError();
-        }
-    }
-
     // Max 10 retries via link, 5 seconds waittime between = max 2 minutes trying -> Then deactivate host
     private void stupidServerError() throws PluginException {
         // it's only null on login
@@ -615,12 +566,13 @@ public class LinkSnappyCom extends PluginForHost {
         }
     }
 
-    private Browser prepBrowser(final Browser prepBr) {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         prepBr.setConnectTimeout(30 * 1000);
         prepBr.setReadTimeout(30 * 1000);
         prepBr.setAllowedResponseCodes(999);
         prepBr.getHeaders().put("User-Agent", "JDownloader");
-        prepBr.setCookie(COOKIE_HOST, "lang", "en");
         prepBr.setFollowRedirects(true);
         return prepBr;
     }
@@ -637,26 +589,6 @@ public class LinkSnappyCom extends PluginForHost {
         final ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_API, JDL.L("plugins.hoster.linksnappycom.useAPI", "Use API (recommended)?")).setDefaultValue(default_api);
         getConfig().addEntry(ce);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, JDL.L("plugins.hoster.linksnappycom.clear_serverside_download_history", "Clear download history in linksnappy account after each successful download?")).setDefaultValue(default_clear_download_history).setEnabledCondidtion(ce, false));
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
