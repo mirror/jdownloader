@@ -72,6 +72,7 @@ import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
 import org.jdownloader.extensions.extraction.contextmenu.ArchivesSubMenu;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.CleanupSubMenu;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.AbortExtractionAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.AutoExtractEnabledToggleAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteFilesEnabledToggleAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteLinksEnabledToggleAction;
@@ -933,6 +934,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
             final ArchivesSubMenu root = new ArchivesSubMenu();
             root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
+            root.add(new MenuItemData(new ActionData(AbortExtractionAction.class)));
             root.add(new MenuItemData(new ActionData(ShowExtractionResultAction.class)));
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
             root.add(new SeparatorData());

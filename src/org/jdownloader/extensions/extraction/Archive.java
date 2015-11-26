@@ -17,6 +17,7 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -129,23 +130,25 @@ public class Archive {
     /**
      * ArchiveFiles CRC error.
      */
-    private final List<ArchiveFile> crcError;
+    private final List<ArchiveFile>                      crcError;
 
     /**
      * List of the extracted files.
      */
-    private final List<File>        extractedFiles;
+    private final List<File>                             extractedFiles;
 
-    private final List<File>        skippedFiles;
+    private final List<File>                             skippedFiles;
 
-    private final ArchiveFactory    factory;
+    private final ArchiveFactory                         factory;
 
-    private String                  name;
+    private String                                       name;
 
-    private ContentView             contents;
+    private ContentView                                  contents;
 
-    private boolean                 passwordRequiredToOpen;
-    private volatile String         archiveID = null;
+    private boolean                                      passwordRequiredToOpen;
+    private volatile String                              archiveID            = null;
+
+    private volatile WeakReference<ExtractionController> extractionController = null;
 
     public String getArchiveID() {
         return archiveID;
@@ -297,7 +300,16 @@ public class Archive {
         return null;
     }
 
-    protected void onControllerAssigned(ExtractionController extractionController) {
+    protected void setExtractionController(ExtractionController extractionController) {
+        this.extractionController = new WeakReference<ExtractionController>(extractionController);
+    }
+
+    public ExtractionController getExtractionController() {
+        final WeakReference<ExtractionController> extractionController = this.extractionController;
+        if (extractionController != null) {
+            return extractionController.get();
+        }
+        return null;
     }
 
     protected void onStartExtracting() {

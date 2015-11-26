@@ -21,9 +21,9 @@ public enum CPUPriority implements LabelInterface {
     LOW(10) {
         @Override
         public String getLabel() {
-
             return T._.settings_cpupriority_low();
         }
+
     };
 
     private final int time;

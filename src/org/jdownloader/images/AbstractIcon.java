@@ -7,7 +7,6 @@ import javax.swing.Icon;
 
 import org.appwork.swing.components.IDIcon;
 import org.appwork.swing.components.IconIdentifier;
-import org.appwork.utils.ImageProvider.ImageProvider;
 
 public class AbstractIcon implements Icon, IDIcon {
 
@@ -43,7 +42,7 @@ public class AbstractIcon implements Icon, IDIcon {
     }
 
     /**
-     * 
+     *
      */
     protected void update() {
         Icon icon = NewTheme.I().getIcon(getKey(), getSize());
@@ -66,12 +65,12 @@ public class AbstractIcon implements Icon, IDIcon {
 
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
+        final Icon icon = NewTheme.I().getIcon(getKey(), getSize());
         if (c != null && !c.isEnabled()) {
-              org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon(getKey(), getSize())).paintIcon(c, g, x, y);
+            org.jdownloader.images.NewTheme.I().getDisabledIcon(icon).paintIcon(c, g, x, y);
         } else {
-            NewTheme.I().getIcon(getKey(), getSize()).paintIcon(c, g, x, y);
+            icon.paintIcon(c, g, x, y);
         }
-
     }
 
     @Override

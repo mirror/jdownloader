@@ -132,6 +132,9 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract Now" })
     String contextmenu_extract();
 
+    @Default(lngs = { "en" }, values = { "Abort extraction" })
+    String contextmenu_abort();
+
     @Default(lngs = { "en" }, values = { "Archive(s)" })
     String contextmenu_main();
 

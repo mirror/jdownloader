@@ -150,7 +150,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         extension = extractionExtension;
         extractor.setLogger(logger);
         passwordList = new CopyOnWriteArrayList<String>();
-        archive.onControllerAssigned(this);
+        archive.setExtractionController(this);
         fileBytesCache = DownloadSession.getDownloadWriteCache();
     }
 
@@ -596,7 +596,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     public double getProgress() {
-
         double percent = (double) getProcessedBytes() * 100 / Math.max(1, getCompleteBytes());
         return percent;
     }
