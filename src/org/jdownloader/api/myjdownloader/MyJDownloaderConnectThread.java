@@ -880,7 +880,7 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
                 session.setState(SessionInfoWrapper.STATE.VALID);
                 final byte[] key = HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue()));
-                final String json = JSonStorage.serializeToJson(new SessionInfoStorable(session));
+                final byte[] json = JSonStorage.getMapper().objectToByteArray(new SessionInfoStorable(session));
                 final Runnable run = new Runnable() {
 
                     @Override
