@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -46,13 +47,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "https?://(www\\.)?flashx\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class FlashxTv extends PluginForHost {
+public class FlashxTv extends antiDDoSForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
@@ -72,7 +71,6 @@ public class FlashxTv extends PluginForHost {
     private static final boolean           VIDEOHOSTER_2                = true;
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
-    private final boolean                  ENABLE_RANDOM_UA             = true;
     private static final boolean           try_to_get_file_downloadlink = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
@@ -96,6 +94,7 @@ public class FlashxTv extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.2
     // mods: heavily modified, do NOT upgrade!
+    // embed url format changed.
     // limit-info: premium untested, set FREE limits!
     // protocol: no https
     // captchatype: null
@@ -134,7 +133,6 @@ public class FlashxTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         correctDownloadLink(link);
-        prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
@@ -248,10 +246,11 @@ public class FlashxTv extends PluginForHost {
             if (stream_dllink == null && VIDEOHOSTER_2) {
                 try {
                     logger.info("Trying to get link via embed");
-                    final String embed_access = "/embed-" + fuid + ".html";
+                    final String embed_access = "/embed.php?c=" + fuid;
                     getPage(embed_access);
-                    if (br.getRedirectLocation() != null) {
-
+                    if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "/embed") && !StringUtils.containsIgnoreCase(br.getRedirectLocation(), ".mp4")) {
+                        // redirection can happen here its not a download link!
+                        getPage(br.getRedirectLocation());
                     }
                     stream_dllink = getDllink();
 
@@ -293,7 +292,7 @@ public class FlashxTv extends PluginForHost {
                         }
                         /* end of backward compatibility */
                         this.waitTime(System.currentTimeMillis(), downloadLink);
-                        sendForm(download1);
+                        submitForm(download1);
                         checkErrors(downloadLink, false);
                         if (stream_dllink == null) {
                             stream_dllink = getDllink();
@@ -383,18 +382,17 @@ public class FlashxTv extends PluginForHost {
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        return prepBr;
     }
 
     /**
@@ -539,18 +537,21 @@ public class FlashxTv extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(final String page, final String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -595,22 +596,6 @@ public class FlashxTv extends PluginForHost {
             }
         }
         return null;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /**
@@ -898,7 +883,6 @@ public class FlashxTv extends PluginForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -927,7 +911,7 @@ public class FlashxTv extends PluginForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -983,7 +967,7 @@ public class FlashxTv extends PluginForHost {
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
                 }
