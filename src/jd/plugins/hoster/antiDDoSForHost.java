@@ -60,8 +60,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
         return false;
     }
 
-    protected static final String                 cfRequiredCookies = "__cfduid|cf_clearance";
-    protected static final String                 icRequiredCookies = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
+    public static final String                    cfRequiredCookies = "__cfduid|cf_clearance";
+    public static final String                    icRequiredCookies = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
     protected static HashMap<String, Cookies>     antiDDoSCookies   = new HashMap<String, Cookies>();
     protected static AtomicReference<String>      userAgent         = new AtomicReference<String>(null);
     protected final WeakHashMap<Browser, Boolean> browserPrepped    = new WeakHashMap<Browser, Boolean>();
