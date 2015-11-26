@@ -69,7 +69,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        parameter = param.toString();
+        parameter = Encoding.urlDecode(param.toString(), false);
         original_link = parameter;
         String fpName = null;
         long totalItemType = 0;
