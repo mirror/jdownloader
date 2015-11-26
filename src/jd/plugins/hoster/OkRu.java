@@ -129,7 +129,7 @@ public class OkRu extends PluginForHost {
         }
     }
 
-    public static boolean isOffline(final Browser br) {
+    public static boolean isOffline(final Browser br) throws IOException {
         // class=\"empty\" is NOT an indication for an offline video!
         if (br.containsHTML("error\\-page\"") || br.getHttpConnection().getResponseCode() == 404) {
             return true;
@@ -137,6 +137,17 @@ public class OkRu extends PluginForHost {
         /* Offline or private video */
         if (br.containsHTML(">Access to this video has been restricted") || br.getURL().contains("/main/st.redirect/")) {
             return true;
+        }
+        // offline due to copyright claim
+        if (br.containsHTML("<div class=\"empty\"")) {
+            final String vid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
+            final Browser br2 = new Browser();
+            // mobile page .... get standard browser
+            br2.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+            br2.getPage("http://ok.ru/video/" + vid);
+            if (br2.containsHTML(">Video has been blocked due to author's rights infingement<")) {
+                return true;
+            }
         }
         return false;
     }
