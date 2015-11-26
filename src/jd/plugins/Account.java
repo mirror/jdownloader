@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Cookie;
-import jd.http.Cookies;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -34,6 +29,11 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 public class Account extends Property {
 
@@ -65,8 +65,12 @@ public class Account extends Property {
     public synchronized void saveCookies(final Cookies cookies, final String ID) {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
         final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
+        // do not cache antiddos cookies, this is job of the antiddos module, otherwise will can and will cause conflicts!
+        final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.cfRequiredCookies + "|" + jd.plugins.hoster.antiDDoSForHost.icRequiredCookies;
         for (final Cookie cookie : cookies.getCookies()) {
-            cookieStorables.add(new CookieStorable(cookie));
+            if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies)) {
+                cookieStorables.add(new CookieStorable(cookie));
+            }
         }
         setProperty(COOKIE_STORAGE, validation);
         final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
@@ -113,7 +117,7 @@ public class Account extends Property {
 
     /**
      * @since JD2
-     * */
+     */
     public void setConcurrentUsePossible(boolean concurrentUsePossible) {
         this.concurrentUsePossible = concurrentUsePossible;
     }
@@ -184,7 +188,7 @@ public class Account extends Property {
      * -1 = unlimited, 0 = use deprecated getMaxSimultanPremiumDownloadNum/getMaxSimultanFreeDownloadNum,>1 = use this
      *
      * @since JD2
-     * */
+     */
     public void setMaxSimultanDownloads(int max) {
         if (max < 0) {
             maxDownloads = -1;
