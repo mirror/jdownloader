@@ -8,227 +8,183 @@ import org.jdownloader.extensions.eventscripter.ScriptAPI;
 
 public class PackagizerLinkSandbox {
 
-    private CrawledLink link;
+    private final CrawledLink link;
 
     public PackagizerLinkSandbox(CrawledLink link) {
         this.link = link;
     }
 
     public PackagizerLinkSandbox() {
-        // {"variant":null,"host":null,"name":null,"comment":null,"availability":null,"variants":false,"priority":"DEFAULT","packageUUID":-1,"bytesTotal":-1,"uuid":-1,"url":null,"enabled":false}
-
+        this(null);
     }
 
     public long getBytesTotal() {
-        if (link == null) {
-            return -1;
+        if (link != null) {
+            return link.getSize();
         }
-        return link.getSize();
+        return -1;
     }
 
     public boolean isEnabled() {
-        if (link == null) {
-            return false;
+        if (link != null) {
+            return link.isEnabled();
         }
-        return link.isEnabled();
+        return false;
+    }
+
+    public void setEnabled(boolean e) {
+        if (link != null) {
+            link.setEnabled(e);
+        }
     }
 
     public String getHost() {
-        if (link == null) {
-            return null;
+        if (link != null) {
+            return link.getHost();
         }
-        return link.getHost();
+        return null;
     }
 
     public String getName() {
-        if (link == null) {
-            return null;
+        if (link != null) {
+            return link.getName();
         }
-        return link.getName();
+        return null;
+    }
+
+    public void setName(String name) {
+        if (link != null) {
+            link.setName(name);
+        }
     }
 
     @ScriptAPI(description = "Get the Link Priority (HIGHEST|HIGHER|HIGH|DEFAULT|LOWER)")
     public String getPriority() {
-        if (link == null) {
-            return null;
+        if (link != null) {
+            return link.getPriority().name();
         }
-        return link.getPriority().name();
+        return null;
     }
 
-    // public String
-    // PackageInfo dpi = link.getDesiredPackageInfo();
-    // if (dpi == null) {
-    // dpi = new PackageInfo();
-    // }
-    // boolean dpiSet = false;
-    // if (lgr.getRule().getChunks() >= 0) {
-    // /* customize chunk numbers */
-    // link.setChunks(lgr.getRule().getChunks());
-    // }
-
     public int getChunks() {
-        if (link == null) {
-            return -1;
+        if (link != null) {
+            return link.getChunks();
         }
-        return link.getChunks();
+        return -1;
     }
 
     public void setChunks(int chunks) {
-        if (link == null) {
-            return;
+        if (link != null) {
+            link.setChunks(chunks);
         }
-        link.setChunks(chunks);
     }
 
-    // if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
-    // /* customize download destination folder */
-    // String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
-    // dpiSet = true;
-    // dpi.setDestinationFolder(path);
-    // }
-
     public String getDownloadFolder() {
-        if (link == null) {
-            return null;
+        if (link != null) {
+            final PackageInfo dpi = link.getDesiredPackageInfo();
+            return dpi == null ? null : dpi.getDestinationFolder();
         }
-        PackageInfo dpi = link.getDesiredPackageInfo();
-        return dpi == null ? null : dpi.getDestinationFolder();
+        return null;
     }
 
     public void setDownloadFolder(String destinationFolder) {
-        if (link == null) {
-            return;
+        if (link != null) {
+            PackageInfo packageInfo = link.getDesiredPackageInfo();
+            if (packageInfo == null) {
+                packageInfo = new PackageInfo();
+            }
+            packageInfo.setDestinationFolder(destinationFolder);
+            link.setDesiredPackageInfo(packageInfo);
         }
-        PackageInfo packageInfo = link.getDesiredPackageInfo();
-        if (packageInfo == null) {
-            packageInfo = new PackageInfo();
-        }
-        packageInfo.setDestinationFolder(destinationFolder);
-        link.setDesiredPackageInfo(packageInfo);
     }
 
-    // if (lgr.getRule().getLinkEnabled() != null) {
-    // link.setEnabled(lgr.getRule().getLinkEnabled());
-    // }
-    // if (!StringUtils.isEmpty(lgr.getRule().getPackageName())) {
-    // /* customize package name */
-    // String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);
-    // dpiSet = true;
-    // dpi.setName(name);
-    // }
-    public String getPackageName() {
-        if (link == null) {
-            return null;
+    public String getURL() {
+        if (link != null) {
+            return link.getURL();
         }
-        PackageInfo dpi = link.getDesiredPackageInfo();
-        return dpi == null ? null : dpi.getName();
+        return null;
+    }
+
+    public String getLinkState() {
+        if (link != null) {
+            return link.getLinkState().name();
+        }
+        return null;
+    }
+
+    public String[] getSourceUrls() {
+        if (link != null) {
+            return link.getSourceUrls();
+        }
+        return null;
+    }
+
+    public String getPackageName() {
+        if (link != null) {
+            final PackageInfo dpi = link.getDesiredPackageInfo();
+            return dpi == null ? null : dpi.getName();
+        }
+        return null;
     }
 
     public void setPackageName(String name) {
-        if (link == null) {
-            return;
+        if (link != null) {
+            PackageInfo packageInfo = link.getDesiredPackageInfo();
+            if (packageInfo == null) {
+                packageInfo = new PackageInfo();
+            }
+            packageInfo.setName(name);
+            link.setDesiredPackageInfo(packageInfo);
         }
-        PackageInfo packageInfo = link.getDesiredPackageInfo();
-        if (packageInfo == null) {
-            packageInfo = new PackageInfo();
-        }
-        packageInfo.setName(name);
-        link.setDesiredPackageInfo(packageInfo);
     }
 
-    // if (lgr.getRule().getPriority() != null) {
-    // /* customize priority */
-    // link.setPriority(lgr.getRule().getPriority());
-    // }
     @ScriptAPI(description = "Sets the Link Priority", parameters = { "HIGHEST|HIGHER|HIGH|DEFAULT|LOWER" })
     public void setPriority(String priority) {
-        if (link == null) {
-            return;
+        if (link != null) {
+            link.setPriority(Priority.valueOf(priority));
         }
-        link.setPriority(Priority.valueOf(priority));
     }
 
-    // if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
-    // /* customize filename */
-    // link.setName(replaceVariables(lgr.getRule().getFilename(), link, lgr));
-    // }
-    // if (!StringUtils.isEmpty(lgr.getRule().getComment())) {
-    // /* customize filename */
-    // link.setComment(replaceVariables(lgr.getRule().getComment(), link, lgr));
-    // }
     public String getComment() {
-        if (link == null) {
-            return null;
+        if (link != null) {
+            return link.getComment();
         }
-        return link.getComment();
+        return null;
     }
 
     public void setComment(String comment) {
-        if (link == null) {
-            return;
+        if (link != null) {
+            link.setComment(comment);
         }
-        link.setComment(comment);
     }
 
-    // Boolean b = null;
-    // if ((b = lgr.getRule().isAutoExtractionEnabled()) != null) {
-    // /* customize auto extract */
-    // link.getArchiveInfo().setAutoExtract(b ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-    //
-    // }
-    // if ((b = lgr.getRule().isAutoAddEnabled()) != null) {
-    // /* customize auto add */
-    //
-    // link.setAutoConfirmEnabled(b);
-    //
     @ScriptAPI(description = "If true, the link will automove to the downloadlist")
     public boolean isAutoConfirmEnabled() {
-        if (link == null) {
-            return false;
+        if (link != null) {
+            return link.isAutoConfirmEnabled();
         }
-        return link.isAutoConfirmEnabled();
+        return false;
     }
 
     @ScriptAPI(description = "If true, the link will automove to the downloadlist")
     public void setAutoConfirmEnabled(boolean b) {
-        if (link == null) {
-            return;
+        if (link != null) {
+            link.setAutoConfirmEnabled(b);
         }
-        link.setAutoConfirmEnabled(b);
     }
-
-    // }
-    // if ((b = lgr.getRule().isAutoStartEnabled()) != null) {
-    // /* customize auto start */
-    //
-    // link.setAutoStartEnabled(b);
-    //
-    // }
-    // if ((b = lgr.getRule().isAutoForcedStartEnabled()) != null) {
-    // /* customize auto start */
-    //
-    // link.setForcedAutoStartEnabled(b);
-    //
-    // }
 
     @ScriptAPI(description = "If true, the link will autostart download after beeing confirmed")
     public boolean isAutoStartEnabled() {
-        if (link == null) {
-            return false;
+        if (link != null) {
+            return link.isAutoStartEnabled();
         }
-        return link.isAutoStartEnabled();
+        return false;
     }
 
     @ScriptAPI(description = "If true, the link will autostart download after beeing confirmed")
     public void setAutoStartEnabled(boolean b) {
-        if (link == null) {
-            return;
+        if (link != null) {
+            link.setAutoStartEnabled(b);
         }
-        link.setAutoStartEnabled(b);
     }
-    // if (dpiSet && link.getDesiredPackageInfo() == null) {
-    // /* set desiredpackageinfo if not set yet */
-    // link.setDesiredPackageInfo(dpi);
-    // dpi.setPackagizerRuleMatched(true);
-    // }
 }

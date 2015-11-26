@@ -9,17 +9,19 @@ import org.appwork.utils.os.CrossSystem;
 
 public class JDFileUtils extends Files {
 
-    private static boolean supported = false;
-    static {
+    private static final boolean supported = checkTrashSupported();
+
+    private static boolean checkTrashSupported() {
         try {
             if (CrossSystem.isWindows()) {
-                supported = com.sun.jna.platform.win32.W32FileUtils.getInstance().hasTrash();
+                return com.sun.jna.platform.win32.W32FileUtils.getInstance().hasTrash();
             } else if (CrossSystem.isMac()) {
-                supported = com.sun.jna.platform.mac.MacFileUtils.getInstance().hasTrash();
+                return com.sun.jna.platform.mac.MacFileUtils.getInstance().hasTrash();
             }
         } catch (final Throwable e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     /**
@@ -34,12 +36,16 @@ public class JDFileUtils extends Files {
         if (isTrashSupported()) {
             if (CrossSystem.isWindows()) {
                 for (File f : files) {
-                    if (!f.exists()) { throw new FileNotFoundException(f.getAbsolutePath()); }
+                    if (!f.exists()) {
+                        throw new FileNotFoundException(f.getAbsolutePath());
+                    }
                 }
                 com.sun.jna.platform.win32.W32FileUtils.getInstance().moveToTrash(files);
             } else if (CrossSystem.isMac()) {
                 for (File f : files) {
-                    if (!f.exists()) { throw new FileNotFoundException(f.getAbsolutePath()); }
+                    if (!f.exists()) {
+                        throw new FileNotFoundException(f.getAbsolutePath());
+                    }
                 }
                 com.sun.jna.platform.mac.MacFileUtils.getInstance().moveToTrash(files);
             }
