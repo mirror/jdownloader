@@ -51,7 +51,6 @@ public class ArchivesSubMenu extends MenuContainer {
                         @Override
                         protected void runInEDT() {
                             ret.setEnabled(true);
-
                         }
                     };
                 }

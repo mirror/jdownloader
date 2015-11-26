@@ -16,9 +16,7 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
     public JDDefaultLookAndFeel() throws java.text.ParseException {
         // load synth.xml from custom package
         super("/org/jdownloader/gui/laf/jddefault/synth.xml");
-
         OS.getCurrentOS();
-
     }
 
     // return an unique LAF id

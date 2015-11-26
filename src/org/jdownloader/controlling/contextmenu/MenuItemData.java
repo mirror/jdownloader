@@ -245,7 +245,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
             return ((ComponentProviderInterface) action).createComponent(this);
         }
         JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
-
         ret.getAccessibleContext().setAccessibleName(action.getName());
         ret.getAccessibleContext().setAccessibleDescription(action.getTooltipText());
         if (StringUtils.isNotEmpty(name)) {

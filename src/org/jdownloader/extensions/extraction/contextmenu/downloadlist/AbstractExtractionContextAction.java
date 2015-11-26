@@ -66,7 +66,6 @@ public abstract class AbstractExtractionContextAction extends AbstractExtensionA
         } else {
             super.setEnabled(false);
         }
-
     }
 
     public void setEnabled(boolean newValue) {

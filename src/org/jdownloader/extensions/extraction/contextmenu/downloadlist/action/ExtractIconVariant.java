@@ -21,7 +21,6 @@ public class ExtractIconVariant extends BadgeIcon {
 
     public ExtractIconVariant(String badge, int size, int badgesize, int xOffset, int yOffset) {
         super(org.jdownloader.gui.IconKey.ICON_COMPRESS, badge, size, badgesize, xOffset, yOffset);
-
     }
 
 }
