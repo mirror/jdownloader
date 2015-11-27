@@ -484,6 +484,7 @@ public class OldRAFDownload extends DownloadInterface {
             }
             if (connection != null) {
                 final String contentEncoding = connection.getHeaderField("Content-Encoding");
+                final long[] responseRange = connection.getRange();
                 boolean skipVerifyFileSizeCheck = true;
                 if (downloadable instanceof DownloadLinkDownloadable) {
                     final String displayName = ((DownloadLinkDownloadable) downloadable).getDownloadLinkController().getProcessingPlugin().getLazyP().getDisplayName();
@@ -491,16 +492,24 @@ public class OldRAFDownload extends DownloadInterface {
                         skipVerifyFileSizeCheck = false;
                     }
                 }
-                if (StringUtils.containsIgnoreCase(contentEncoding, "gzip") && (downloadable.getVerifiedFileSize() < 0 || skipVerifyFileSizeCheck)) {
+                final long verifiedFileSize = downloadable.getVerifiedFileSize();
+                final boolean verifiedFileSizeNotAvailable = verifiedFileSize < 0;
+                if (StringUtils.containsIgnoreCase(contentEncoding, "gzip") && (verifiedFileSizeNotAvailable || skipVerifyFileSizeCheck)) {
                     /* GZIP Encoding kann weder chunk noch resume */
                     /* hier dann auch den final filesize check prüfen */
+                    logger.info("Content-Encoding: 'gzip' detected! Disable Resume/Chunks because " + verifiedFileSizeNotAvailable + "|" + skipVerifyFileSizeCheck);
                     setResume(false);
                     setChunkNum(1);
                 }
                 final String transferEncoding = connection.getHeaderField("Transfer-Encoding");
-                if (StringUtils.containsIgnoreCase(transferEncoding, "chunked") && (downloadable.getVerifiedFileSize() < 0 || skipVerifyFileSizeCheck)) {
-                    setResume(false);
+                if (StringUtils.containsIgnoreCase(transferEncoding, "chunked") && (verifiedFileSizeNotAvailable || skipVerifyFileSizeCheck)) {
                     setChunkNum(1);
+                    if (responseRange != null && connection.isOK()) {
+                        logger.info("Transfer-Encoding: 'chunked' detected! 'Set Chunks=1' because (" + verifiedFileSizeNotAvailable + "|" + skipVerifyFileSizeCheck + ") and ResponseCode:" + connection.getResponseCode() + "|Range:" + Arrays.toString(responseRange));
+                    } else {
+                        logger.info("Transfer-Encoding: 'chunked' detected! 'Set Chunks=1/Disable Resume' because (" + verifiedFileSizeNotAvailable + "|" + skipVerifyFileSizeCheck + ")");
+                        setResume(false);
+                    }
                 }
             }
             // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
@@ -733,18 +742,22 @@ public class OldRAFDownload extends DownloadInterface {
     protected boolean connectResumable() throws IOException {
         // TODO: endrange pruefen
         long[] chunkProgress = downloadable.getChunksProgress();
+        final long verifiedFileSize = downloadable.getVerifiedFileSize();
+        final long fileSize = getFileSize();
         String start, end;
         start = end = "";
         boolean rangeRequested = false;
         logger.info("chunksProgress: " + Arrays.toString(chunkProgress));
-        if (downloadable.getVerifiedFileSize() > 0) {
+        if (verifiedFileSize > 0) {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = (getFileSize() / chunkProgress.length) + "";
+            logger.info("VerifiedFileSize:" + verifiedFileSize + "|Start:" + start + "|End:" + end);
         } else {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = chunkProgress.length > 1 ? (chunkProgress[1] + 1) + "" : "";
+            logger.info("FileSize:" + fileSize + "|Start:" + start + "|End:" + end);
         }
-        if (downloadable.getVerifiedFileSize() < 0 && start.equals("0")) {
+        if (verifiedFileSize < 0 && start.equals("0")) {
             logger.info("rangeless resumable connect");
             rangeRequested = false;
             request.getHeaders().remove("Range");
