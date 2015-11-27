@@ -46,7 +46,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
     protected volatile long          flushedBytes      = 0;
     protected final File             file;
     private final FileBytesCache     cache;
-    private AtomicBoolean            fileOpen          = new AtomicBoolean(true);
+    private final AtomicBoolean      fileOpen          = new AtomicBoolean(true);
     private volatile IOException     ioException       = null;
 
     MultiCallback(File file, ExtractionController con, ExtractionConfig config, boolean shouldCrc) throws FileNotFoundException {
@@ -80,7 +80,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
     }
 
     protected void waitCPUPriority() throws SevenZipException {
-        if (priority != null && !CPUPriority.HIGH.equals(priority)) {
+        if (priority != null) {
             synchronized (this) {
                 try {
                     wait(priority.getTime());
@@ -91,14 +91,19 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
         }
     }
 
-    public int write(byte[] data) throws SevenZipException {
+    public int write(final byte[] data) throws SevenZipException {
         if (fileOpen.get()) {
             cache.write(this, fileWritePosition, data, data.length);
             fileWritePosition += data.length;
             waitCPUPriority();
             return data.length;
         } else {
-            throw new MultiSevenZipException(ioException, ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
+            final IOException lIoException = ioException;
+            if (lIoException != null) {
+                throw new MultiSevenZipException(lIoException, ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
+            } else {
+                throw new MultiSevenZipException(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
+            }
         }
     }
 

@@ -251,28 +251,25 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                             protected void waitCPUPriority() throws SevenZipException {
                                 if (!slowDownWorkaroundNeeded) {
                                     super.waitCPUPriority();
+                                } else {
+                                    synchronized (this) {
+                                        try {
+                                            wait(SLOWDOWNWORKAROUNDTIMEOUT);
+                                        } catch (InterruptedException e) {
+                                            throw new SevenZipException(e);
+                                        }
+                                    }
                                 }
                             }
 
                             @Override
-                            public int write(byte[] data) throws SevenZipException {
-                                try {
-                                    if (slowDownWorkaroundNeeded) {
-                                        synchronized (this) {
-                                            try {
-                                                wait(SLOWDOWNWORKAROUNDTIMEOUT);
-                                            } catch (InterruptedException e) {
-                                                throw new SevenZipException(e);
-                                            }
-                                        }
-                                    }
-                                    if (ctrl.gotKilled()) {
-                                        throw new SevenZipException("Extraction has been aborted");
-                                    }
-                                    return super.write(data);
-                                } finally {
-                                    ctrl.addAndGetProcessedBytes(data.length);
+                            public int write(final byte[] data) throws SevenZipException {
+                                if (ctrl.gotKilled()) {
+                                    throw new SevenZipException("Extraction has been aborted");
                                 }
+                                final int ret = super.write(data);
+                                ctrl.addAndGetProcessedBytes(data.length);
+                                return ret;
                             }
 
                         };
@@ -295,7 +292,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         if (slowDownWorkaroundNeeded) {
             return new ISequentialOutStream() {
                 @Override
-                public int write(byte[] data) throws SevenZipException {
+                public int write(final byte[] data) throws SevenZipException {
                     synchronized (this) {
                         try {
                             wait(SLOWDOWNWORKAROUNDTIMEOUT);
@@ -315,7 +312,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         } else {
             return new ISequentialOutStream() {
                 @Override
-                public int write(byte[] data) throws SevenZipException {
+                public int write(final byte[] data) throws SevenZipException {
                     if (ctrl.gotKilled()) {
                         throw new SevenZipException("Extraction has been aborted");
                     }

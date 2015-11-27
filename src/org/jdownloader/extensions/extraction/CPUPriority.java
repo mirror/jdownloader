@@ -23,7 +23,6 @@ public enum CPUPriority implements LabelInterface {
         public String getLabel() {
             return T._.settings_cpupriority_low();
         }
-
     };
 
     private final int time;
