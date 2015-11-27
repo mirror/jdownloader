@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -131,17 +132,17 @@ public class RAFChunk extends Thread {
      * @return
      * @throws InterruptedException
      */
-    private URLConnectionAdapter copyConnection(URLConnectionAdapter connection) {
+    private URLConnectionAdapter copyConnection(final URLConnectionAdapter connection) {
         final long start = startByte;
         final String end = (endByte > 0 ? endByte + 1 : "") + "";
         final long[] connectionRange = connection.getRange();
         if (connectionRange == null && start == 0) {
             // TODO: check if it is possible to reach endByte with connection
-            logger.finer("Takeover connection(no range) at 0");
+            logger.finer("Takeover connection(no range) for Start:" + startByte + "|End:" + endByte);
             return connection;
         }
         if (connectionRange != null && connectionRange[0] == (start)) {
-            logger.finer("Takeover connection(open range) at " + connectionRange[0]);
+            logger.finer("Takeover connection(" + Arrays.toString(connectionRange) + ") for Start:" + startByte + "|End:" + endByte);
             // TODO: check if it is possible to reach endByte with connection
             return connection;
         }
@@ -153,14 +154,14 @@ public class RAFChunk extends Thread {
         }
         try {
             /* only forward referer if referer already has been sent! */
-            Browser br = downloadable.getContextBrowser();
+            final Browser br = downloadable.getContextBrowser();
             boolean forwardReferer = br.getHeaders().contains("Referer");
 
             br.setReadTimeout(dl.getReadTimeout());
             br.setConnectTimeout(dl.getRequestTimeout());
             /* set requested range */
 
-            Map<String, String> request = connection.getRequestProperties();
+            final Map<String, String> request = connection.getRequestProperties();
             if (request != null) {
                 String value;
                 for (Entry<String, String> next : request.entrySet()) {
@@ -203,7 +204,9 @@ public class RAFChunk extends Thread {
                 if (!returnConnection) {
                     try {
                         /* always close connections that got opened */
-                        con.disconnect();
+                        if (con != null) {
+                            con.disconnect();
+                        }
                     } catch (Throwable e) {
                     }
                 }
