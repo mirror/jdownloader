@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,8 +30,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
+/**
+ *
+ * @author psp
+ * @author raztoki
+ *
+ */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadrv.com" }, urls = { "http://(?:www\\.)?megadrv\\.com/.+" }, flags = { 0 })
 public class MegadrvCom extends PluginForDecrypt {
 
@@ -38,7 +44,7 @@ public class MegadrvCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
         if (jd.plugins.hoster.MegadrvCom.isOffline(this.br)) {
@@ -55,11 +61,11 @@ public class MegadrvCom extends PluginForDecrypt {
         for (final String html : htmls) {
             String filename = new Regex(html, "class=\"name\">(?:Name: )?([^<>\"]*?)</td>").getMatch(0);
             final String filesize = new Regex(html, "class=\"size\">Size: <b>([^<>\"]*?)</b>").getMatch(0);
-            String directlink = new Regex(html, "\"(/dl/[^<>\"]*?)\"").getMatch(0);
+            String directlink = new Regex(html, "name=\"downloadToken\" value=\"(.*?)\"").getMatch(0);
             if (filename == null || filesize == null || directlink == null) {
                 return null;
             }
-            directlink = "http://" + this.getHost() + directlink;
+            directlink = "http://" + this.getHost() + "/" + directlink;
             filename = Encoding.htmlDecode(filename);
             final String linkid = fid + "_" + filename;
             final DownloadLink dl = createDownloadlink("http://megadrvdecrypted.com/" + linkid);

@@ -18,10 +18,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,8 +32,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
+/**
+ *
+ * @author psp
+ * @author raztoki
+ *
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadrv.com" }, urls = { "http://megadrvdecrypted\\.com/.+" }, flags = { 0 })
 public class MegadrvCom extends PluginForHost {
 
@@ -92,7 +99,26 @@ public class MegadrvCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = downloadLink.getStringProperty("directlink", null);
+            Form form = null;
+            final String[] htmls = br.getRegex("class=\"file\\-container\"(.*?)class=\"report\"").getColumn(0);
+            for (final String html : htmls) {
+                if (html.contains(downloadLink.getStringProperty("directname", null))) {
+                    try {
+                        form = Form.getForms(html)[0];
+                        if (form != null) {
+                            break;
+                        }
+                    } catch (final NullPointerException npe) {
+                    }
+                }
+            }
+            if (form == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // so if we want to still cache temp dl link?
+            br.setFollowRedirects(false);
+            br.submitForm(form);
+            dllink = br.getRedirectLocation();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
