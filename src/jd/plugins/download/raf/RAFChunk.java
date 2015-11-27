@@ -134,8 +134,11 @@ public class RAFChunk extends Thread {
     private URLConnectionAdapter copyConnection(URLConnectionAdapter connection) {
         long start = startByte;
         String end = (endByte > 0 ? endByte + 1 : "") + "";
-
-        if ((connection.getRange() == null && start == 0) || (connection.getRange()[0] == (start))) {
+        final long[] connectionRange = connection.getRange();
+        if (connectionRange == null && start == 0) {
+            logger.finer("Takeover connection at 0");
+        }
+        if (connection != null && connection.getRange()[0] == (start)) {
             logger.finer("Takeover connection at " + connection.getRange()[0]);
             return connection;
         }
