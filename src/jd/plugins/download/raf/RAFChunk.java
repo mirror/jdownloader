@@ -525,13 +525,7 @@ public class RAFChunk extends Thread {
                     return;
                 }
             } else {
-                final URLConnectionAdapter originalConnection = getOriginalConnection();
-                if (originalConnection.getRange() == null || (originalConnection.getRange()[0] == 0)) {
-                    logger.finer("Takeover connection at " + originalConnection.getRange()[0]);
-                    connection = originalConnection;
-                } else {
-                    connection = copyConnection(originalConnection);
-                }
+                connection = copyConnection(originalConnection);
             }
             long[] ContentRange = connection.getRange();
             if (startByte >= 0) {
