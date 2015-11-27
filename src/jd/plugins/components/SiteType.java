@@ -31,7 +31,7 @@ public class SiteType {
         GemPixel_PremiumURLShortener,
         /**
          * Decrypter to auto download- and add these linkcontainers: DLC, RSDF, CCF<br />
-         * <b>Main decrypter class:</b> GeneralLinkAnonymizer<br />
+         * <b>Main decrypter class:</b> GenericAutoContainer<br />
          * */
         GenericAutoContainer,
         /**
