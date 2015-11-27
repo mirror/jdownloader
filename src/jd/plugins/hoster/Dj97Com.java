@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dj97.com" }, urls = { "http://(?:www\\.)?dj97\\.com/m/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dj97.com" }, urls = { "http://(?:www\\.)?(dj97\\.com/m/\\d+|dj19\\.com/dj19/play\\d+\\.htm)" }, flags = { 0 })
 public class Dj97Com extends PluginForHost {
 
     public Dj97Com(PluginWrapper wrapper) {
@@ -62,7 +62,7 @@ public class Dj97Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String fid = new Regex(link.getDownloadURL(), "(\\d+)(?:\\.html?)?$").getMatch(0);
         link.setLinkID(fid);
         /* Offline links should also have nice filenames. */
         link.setName(fid + ".mp3");
@@ -91,21 +91,47 @@ public class Dj97Com extends PluginForHost {
 
     /** RTMP seems to be possible too but it just didn't work for me: https://board.jdownloader.org/showpost.php?p=355006&postcount=8 */
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final String playpath_part = this.br.getRegex("var dance_file = \\'([^<>\"]*?)\\';").getMatch(0);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             dllink = br.getRegex("file:[\t\n\r ]*?\\'([^<>\"]*?)\\'").getMatch(0);
-            if (dllink == null) {
+            if (dllink != null) {
+                dllink = "http://m.dj19.com/djmusic/" + dllink + ".mp4";
+            }
+        }
+        if (dllink != null) {
+            /* http download */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http://m.dj97.com/djmusic/" + dllink + ".mp4";
+            downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+            dl.startDownload();
+        } else {
+            if (playpath_part == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String app = "djmusic/";
+            final String rtmpurl = "rtmp://m.oscaches.com:1935/" + app;
+            final String playpath = "mp4:" + playpath_part + ".mp4";
+            try {
+                dl = new RTMPDownload(this, downloadLink, rtmpurl);
+            } catch (final NoClassDefFoundError e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+            }
+            /* Setup rtmp connection */
+            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            rtmp.setPageUrl(this.br.getURL());
+            rtmp.setUrl(rtmpurl);
+            rtmp.setPlayPath(playpath);
+            rtmp.setApp(app);
+            rtmp.setFlashVer("WIN 19,0,0,245");
+            // http://www.dj19.com/style/m_oscaches_com_blue.swf?0.49371289845113353/[[DYNAMIC]]/2
+            rtmp.setSwfUrl("http://www.dj19.com/style/m_oscaches_com_blue.swf");
+            rtmp.setResume(true);
+            ((RTMPDownload) dl).startDownload();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.startDownload();
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

@@ -490,6 +490,11 @@ public class SaleFilesCom extends PluginForHost {
 
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
             } else {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();
@@ -998,6 +1003,11 @@ public class SaleFilesCom extends PluginForHost {
 
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
                 } else {
+                    if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    }
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
                     correctBR();

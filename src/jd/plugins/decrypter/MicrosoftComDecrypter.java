@@ -65,7 +65,7 @@ public class MicrosoftComDecrypter extends PluginForDecrypt {
         for (final String dlentry : entries) {
             final String filename = new Regex(dlentry, "class=\"file\\-name\\-view1\">([^<>\"]*?)</span>").getMatch(0);
             final String filesize = new Regex(dlentry, "class=\"file\\-size\\-view1\">([^<>\"]*?)</span>").getMatch(0);
-            final String dllink = new Regex(dlentry, "href=\"(http://download\\.microsoft\\.com/download/[^<>\"]+)\"").getMatch(0);
+            final String dllink = new Regex(dlentry, "href=\"(https?://download\\.microsoft\\.com/download/[^<>\"]+)\"").getMatch(0);
             if (filename != null && filesize != null && dllink != null) {
                 final DownloadLink dl = createDownloadlink(dllink);
                 dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
