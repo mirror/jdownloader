@@ -135,11 +135,7 @@ public class RAFChunk extends Thread {
         long start = startByte;
         String end = (endByte > 0 ? endByte + 1 : "") + "";
 
-        if (start == 0) {
-            logger.finer("Takeover 0 Connection");
-            return connection;
-        }
-        if (connection.getRange() != null && connection.getRange()[0] == (start)) {
+        if ((connection.getRange() == null && start == 0) || (connection.getRange()[0] == (start))) {
             logger.finer("Takeover connection at " + connection.getRange()[0]);
             return connection;
         }
@@ -521,7 +517,13 @@ public class RAFChunk extends Thread {
                     return;
                 }
             } else {
-                connection = getOriginalConnection();
+                final URLConnectionAdapter originalConnection = getOriginalConnection();
+                if (originalConnection.getRange() == null || (originalConnection.getRange()[0] == 0)) {
+                    logger.finer("Takeover connection at " + originalConnection.getRange()[0]);
+                    connection = originalConnection;
+                } else {
+                    connection = copyConnection(originalConnection);
+                }
             }
             long[] ContentRange = connection.getRange();
             if (startByte >= 0) {
