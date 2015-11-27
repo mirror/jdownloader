@@ -24,8 +24,12 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -52,52 +56,45 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudsix.me" }, urls = { "https?://(www\\.)?cloudsix\\.me/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class CloudSixMe extends antiDDoSForHost {
 
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR                  = "";
+    private String               passCode                     = null;
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://cloudsix.me";
-    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                  = "http://cloudsix.me";
+    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(cloudsix\\.me)";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
-    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
-    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private static final String  DOMAINS                      = "(cloudsix\\.me)";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean VIDEOHOSTER_2                = false;
+    private static final boolean SUPPORTSHTTPS                = false;
+    private static final boolean SUPPORTSHTTPS_FORCED         = false;
+    private static final boolean SUPPORTS_ALT_AVAILABLECHECK  = true;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = false;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME          = false;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                  = false;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_FREE_RESUME          = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
-    private String                         fuid                         = null;
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
+    private String               fuid                         = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.7
@@ -137,7 +134,6 @@ public class CloudSixMe extends antiDDoSForHost {
         Browser altbr = null;
         br.setFollowRedirects(true);
         correctDownloadLink(link);
-        prepBrowser(br);
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
@@ -163,7 +159,7 @@ public class CloudSixMe extends antiDDoSForHost {
                 }
                 fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
                 if (SUPPORTS_ALT_AVAILABLECHECK) {
-                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                    postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
                 }
                 /* 2nd offline check */
@@ -207,7 +203,7 @@ public class CloudSixMe extends antiDDoSForHost {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
             try {
-                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                 fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }
@@ -321,7 +317,9 @@ public class CloudSixMe extends antiDDoSForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+                /*
+                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                 */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -543,18 +541,17 @@ public class CloudSixMe extends antiDDoSForHost {
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        return prepBr;
     }
 
     /**
@@ -715,7 +712,7 @@ public class CloudSixMe extends antiDDoSForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -745,7 +742,9 @@ public class CloudSixMe extends antiDDoSForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            /*
+             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
@@ -994,7 +993,6 @@ public class CloudSixMe extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -1009,7 +1007,7 @@ public class CloudSixMe extends antiDDoSForHost {
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
                         /* Verify cookies - also works as a workaround for (cloudflare) login captchas. */
-                        this.br.getPage(COOKIE_HOST);
+                        getPage(COOKIE_HOST);
                         if (!this.br.containsHTML("cloudsix\\.me/\\?op=registration\"")) {
                             return;
                         }
