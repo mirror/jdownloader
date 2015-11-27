@@ -132,17 +132,19 @@ public class RAFChunk extends Thread {
      * @throws InterruptedException
      */
     private URLConnectionAdapter copyConnection(URLConnectionAdapter connection) {
-        long start = startByte;
-        String end = (endByte > 0 ? endByte + 1 : "") + "";
+        final long start = startByte;
+        final String end = (endByte > 0 ? endByte + 1 : "") + "";
         final long[] connectionRange = connection.getRange();
         if (connectionRange == null && start == 0) {
+            // TODO: check if it is possible to reach endByte with connection
             logger.finer("Takeover connection(no range) at 0");
+            return connection;
         }
         if (connectionRange != null && connectionRange[0] == (start)) {
             logger.finer("Takeover connection(open range) at " + connectionRange[0]);
+            // TODO: check if it is possible to reach endByte with connection
             return connection;
         }
-
         try {
             downloadable.waitForNextConnectionAllowed();
         } catch (InterruptedException e1) {
