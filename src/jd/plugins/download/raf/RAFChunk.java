@@ -136,10 +136,10 @@ public class RAFChunk extends Thread {
         String end = (endByte > 0 ? endByte + 1 : "") + "";
         final long[] connectionRange = connection.getRange();
         if (connectionRange == null && start == 0) {
-            logger.finer("Takeover connection at 0");
+            logger.finer("Takeover connection(no range) at 0");
         }
-        if (connection != null && connection.getRange()[0] == (start)) {
-            logger.finer("Takeover connection at " + connection.getRange()[0]);
+        if (connectionRange != null && connectionRange[0] == (start)) {
+            logger.finer("Takeover connection(open range) at " + connectionRange[0]);
             return connection;
         }
 
