@@ -17,9 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -117,41 +114,24 @@ public class FaceBookComVideos extends PluginForHost {
             if (!loggedIN) {
                 return AvailableStatus.UNCHECKABLE;
             }
-            if (true) {
-                /** TODO !! */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             this.br.getPage(FACEBOOKMAINPAGE);
             final String user = getUser(this.br);
             final String image_id = getPICID(link);
-            final String thread_fbid = link.getStringProperty("thread_fbid", null);
-            final String tmp_postdata = "queryName=MESSAGE_THREAD_IMAGES_FIRST&params[after]=" + thread_fbid + "&params[first]=4&params[thread_id]=204489099682715&__user=" + user + "&__a=1&__dyn=" + jd.plugins.decrypter.FaceBookComGallery.getDyn() + "&__req=1g&fb_dtsg=AQHbT0AjbQdm&ttstamp=" + jd.plugins.decrypter.FaceBookComGallery.get_ttstamp() + "&__rev=" + jd.plugins.decrypter.FaceBookComGallery.getRev(this.br);
-            this.br.postPage("https://www.facebook.com/ajax/graphql/query/?__pc=EXP1%3ADEFAULT", tmp_postdata);
-            this.br.postPage("https://www.facebook.com/ajax/messaging/attachments/sharedphotos.php?thread_id=" + thread_fbid + "&image_id=" + image_id, tmp_postdata);
-            final String json = this.br.getRegex("for \\(;;\\);(\\{.+)").getMatch(0);
-            if (json == null) {
-                /* No json? Probably our url is offline! */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (user == null || image_id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-            /**
-             * TODO: Change the walkString to only one:
-             * "jsmods/require/{0}/{3}/{1}/query_results/{1}/message_images/edges/{0}/node/image1/uri"
-             *
-             * Should work fine but needs to be tested first!
-             * */
-            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "jsmods/require/{0}/{3}/{1}/query_results");
-            final Iterator<Entry<String, Object>> it_temp = entries.entrySet().iterator();
-            final String id_temp = it_temp.next().getKey();
-            final String walkstring = id_temp + "/message_images/edges/{0}/node/image1/uri";
-            final String finallink = (String) DummyScriptEnginePlugin.walkJson(entries, walkstring);
-            if (finallink == null) {
-                /* Something website-wise has changed! */
+            final String getdata = "?photo_id=" + image_id + "&__pc=EXP1%3ADEFAULT&__user=" + user + "&__a=1&__dyn=" + jd.plugins.decrypter.FaceBookComGallery.getDyn() + "&__req=11&__rev=" + jd.plugins.decrypter.FaceBookComGallery.getRev(this.br);
+            this.br.getPage("https://www.facebook.com/mercury/attachments/photo/" + getdata);
+            this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
+            DLLINK = this.br.getRegex("\"(https?://[^/]+\\.fbcdn\\.net/[^<>\"]+)\"").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = this.br.getRegex("(https?://[^<>\"]+\\&dl=1)").getMatch(0);
+            }
+            if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             MAXCHUNKS = 1;
             try {
-                DLLINK = link.getDownloadURL();
                 con = br.openHeadConnection(DLLINK);
                 if (!con.getContentType().contains("html")) {
                     filename = Encoding.htmlDecode(getFileNameFromHeader(con));

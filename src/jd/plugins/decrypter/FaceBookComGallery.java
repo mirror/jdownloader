@@ -928,7 +928,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         this.getpagefirsttime(this.PARAMETER);
         final String thread_fbid = this.br.getRegex("" + url_username + "\",\"id\":\"fbid:(\\d+)\"").getMatch(0);
         final String user = getUser(this.br);
-        final String token = this.br.getRegex("name=\\\\\"fb_dtsg\\\\\" value=\\\\\"([^<>\"]*?)\\\\\"").getMatch(0);
+        final String token = get_fb_dtsg(this.br);
         if (thread_fbid == null || user == null || token == null) {
             /* Probably offline url */
             return;
@@ -1168,6 +1168,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     public static String getDyn() {
         return "7n8apij2qmumdDgDxyIJ3Ga58Ciq2W8GA8ABGeqheCu6po";
+    }
+
+    public static String get_fb_dtsg(final Browser br) {
+        final String fb_dtsg = br.getRegex("name=\\\\\"fb_dtsg\\\\\" value=\\\\\"([^<>\"]*?)\\\\\"").getMatch(0);
+        return fb_dtsg;
     }
 
     private String getLastFBID() {
