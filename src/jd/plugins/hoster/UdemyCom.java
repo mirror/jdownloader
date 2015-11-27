@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/(.+\\?dtcode=[A-Za-z0-9]+|.+/#/lecture/\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|.+/#/lecture/\\d+)" }, flags = { 2 })
 public class UdemyCom extends PluginForHost {
 
     public UdemyCom(PluginWrapper wrapper) {
@@ -51,21 +51,26 @@ public class UdemyCom extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension   = ".mp4";
+    private static final String  default_Extension    = ".mp4";
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME         = true;
-    private static final int     FREE_MAXCHUNKS      = 0;
-    private static final int     FREE_MAXDOWNLOADS   = 20;
+    private static final boolean FREE_RESUME          = true;
+    private static final int     FREE_MAXCHUNKS       = 0;
+    private static final int     FREE_MAXDOWNLOADS    = 20;
 
-    private String               DLLINK              = null;
+    private String               DLLINK               = null;
 
-    private static final String  TYPE_FREE           = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
-    private static final String  TYPE_ACCOUNT_NEEDED = "https?://(?:www\\.)?udemy\\.com/.+/#/lecture/\\d+";
+    private static final String  TYPE_SINGLE_FREE_OLD = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
+    public static final String   TYPE_SINGLE_PREMIUM  = "https?://(?:www\\.)?udemy\\.com/.+/#/lecture/\\d+";
 
     @Override
     public String getAGBLink() {
         return "https://www.udemy.com/terms/";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("udemydecrypted.com/", "udemy.com/"));
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
@@ -81,34 +86,24 @@ public class UdemyCom extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
-                this.login(aa, false);
+                login(this.br, aa, false);
                 loggedin = true;
             } catch (final Throwable e) {
             }
         }
-        if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_ACCOUNT_NEEDED)) {
+        if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
             downloadLink.setName(fid_accountneeded);
             downloadLink.getLinkStatus().setStatusText("Cannot check this url without account");
             return AvailableStatus.TRUE;
-        } else if (downloadLink.getDownloadURL().matches(TYPE_ACCOUNT_NEEDED)) {
+        } else if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
             /* Prepare the API-Headers to get the videourl */
             downloadLink.setName(fid_accountneeded);
-            final String clientid = this.br.getCookie(MAINPAGE, "client_id");
-            final String bearertoken = this.br.getCookie(MAINPAGE, "access_token");
-            final String newrelicid = "XAcEWV5ADAEDUlhaDw==";
-            if (clientid == null || bearertoken == null || newrelicid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             this.br.getPage(downloadLink.getDownloadURL());
-            final String courseid = this.br.getRegex("data-course-id=\"(\\d+)\"").getMatch(0);
+            final String courseid = getCourseID(this.br);
             if (courseid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.br.getHeaders().put("X-NewRelic-ID", newrelicid);
-            // this.br.getHeaders().put("X-Udemy-Client-Id", clientid);
-            this.br.getHeaders().put("Authorization", "Bearer " + bearertoken);
-            this.br.getHeaders().put("X-Udemy-Authorization", "Bearer " + bearertoken);
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            prepBRAPI(this.br);
             this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + fid_accountneeded + "?video_only=&auto_play=&fields%5Blecture%5D=asset%2Cembed_url&fields%5Basset%5D=asset_type%2Cdownload_urls%2Ctitle&instructorPreviewMode=False");
             // this.br.getPage("https://www.udemy.com/api-2.0/lectures/" + fid_accountneeded +
             // "/content?videoOnly=0&instructorPreviewMode=False");
@@ -117,8 +112,13 @@ public class UdemyCom extends PluginForHost {
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("asset");
+            String asset_type = (String) entries.get("asset_type");
+            if (asset_type == null) {
+                asset_type = "Video";
+            }
+            final String json_download_path = "download_urls/" + asset_type;
             filename = (String) entries.get("title");
-            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "download_urls/Video");
+            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, json_download_path);
             DLLINK = (String) DummyScriptEnginePlugin.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
             if (DLLINK != null) {
                 if (filename == null) {
@@ -162,7 +162,7 @@ public class UdemyCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
+        final Browser br2 = new Browser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -191,7 +191,7 @@ public class UdemyCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(TYPE_ACCOUNT_NEEDED)) {
+        if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         handleDownload(downloadLink);
@@ -199,9 +199,16 @@ public class UdemyCom extends PluginForHost {
 
     public void handleDownload(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        /*
+         * Remove old cookies and headers from Browser as they are not needed for their downloadurls in fact using them get you server
+         * response 400.
+         */
+        this.br = new Browser();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (dl.getConnection().getResponseCode() == 400) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
@@ -219,19 +226,19 @@ public class UdemyCom extends PluginForHost {
     private static final String MAINPAGE = "https://udemy.com";
     private static Object       LOCK     = new Object();
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(MAINPAGE, cookies);
                     return;
                 }
                 br.setFollowRedirects(true);
                 br.getPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE");
-                final String csrftoken = this.br.getCookie(MAINPAGE, "csrftoken");
+                final String csrftoken = br.getCookie(MAINPAGE, "csrftoken");
                 if (csrftoken == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -241,14 +248,14 @@ public class UdemyCom extends PluginForHost {
                 }
                 final String postData = "csrfmiddlewaretoken=" + csrftoken + "&locale=de_DE&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&displayType=ajax";
                 br.postPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE", postData);
-                if (this.br.containsHTML("data-purpose=\"do-login\"")) {
+                if (br.containsHTML("data-purpose=\"do-login\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -261,7 +268,7 @@ public class UdemyCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(this.br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
@@ -280,6 +287,24 @@ public class UdemyCom extends PluginForHost {
         requestFileInformation(link);
         /* No need to log in - we're already logged in! */
         handleDownload(link);
+    }
+
+    public static void prepBRAPI(final Browser br) {
+        final String clientid = br.getCookie(MAINPAGE, "client_id");
+        final String bearertoken = br.getCookie(MAINPAGE, "access_token");
+        final String newrelicid = "XAcEWV5ADAEDUlhaDw==";
+        if (clientid == null || bearertoken == null || newrelicid == null) {
+            return;
+        }
+        br.getHeaders().put("X-NewRelic-ID", newrelicid);
+        // this.br.getHeaders().put("X-Udemy-Client-Id", clientid);
+        br.getHeaders().put("Authorization", "Bearer " + bearertoken);
+        br.getHeaders().put("X-Udemy-Authorization", "Bearer " + bearertoken);
+    }
+
+    public static String getCourseID(final Browser br) {
+        final String courseid = br.getRegex("data\\-course\\-id=\"(\\d+)\"").getMatch(0);
+        return courseid;
     }
 
     @Override
