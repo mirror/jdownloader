@@ -1710,6 +1710,7 @@ jd_gui_swing_components_AboutDialog_title=O JDownloader-u
 jd_gui_swing_components_AboutDialog_trademark='JDownloader' je međunarodni Trgovinski znak AppWork GmbH
 jd_gui_swing_components_AboutDialog_translations=Prijevod:
 jd_gui_swing_components_AboutDialog_updater=Nadgrađivač:
+jd_gui_swing_components_AccountDialog_edit_title=Uredi nalog
 jd_gui_swing_components_AccountDialog_help_username=Unesite Korisničko ime...
 jd_gui_swing_components_AccountDialog_name=Ime:
 jd_gui_swing_components_AccountDialog_pass=Šifra:
