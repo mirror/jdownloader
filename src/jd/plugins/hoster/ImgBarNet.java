@@ -44,10 +44,13 @@ public class ImgBarNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://imgbar.net/upload.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://imgbar.net/upload.php")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>Imgbar\\.net >> ([^<>\"]*?)\\- Free images hosting \\- Share images make money</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Finallinks usually end with ".jpg" but we don't trust them
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
@@ -61,11 +64,15 @@ public class ImgBarNet extends PluginForHost {
             br.getPage("http://imgbar.net/show-" + sid + ".html");
         } else {
             final String contnueLink = br.getRegex("\"(show\\-[a-z0-9]+\\.html)\"").getMatch(0);
-            if (contnueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (contnueLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage("http://imgbar.net/" + contnueLink);
         }
-        String dllink = br.getRegex("\"(view/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("(view/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = "http://imgbar.net/" + dllink;
         // Disable chunks as we re only downloading little pictures here
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -81,7 +88,9 @@ public class ImgBarNet extends PluginForHost {
      */
     private void fixFilename(final DownloadLink downloadLink) {
         String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
+        if (oldName == null) {
+            oldName = downloadLink.getName();
+        }
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
         // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
@@ -96,7 +105,9 @@ public class ImgBarNet extends PluginForHost {
         }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldName.contains(".")) {
+                oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            }
             if (oldExtension != null && oldExtension.length() <= 5) {
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
             } else {
