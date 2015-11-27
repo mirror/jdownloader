@@ -14,6 +14,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
@@ -67,6 +68,11 @@ public class GenericAutoContainer extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null;// SiteTemplate.GenericAutoContainer;
     }
 
 }

@@ -30,6 +30,11 @@ public class SiteType {
          */
         GemPixel_PremiumURLShortener,
         /**
+         * Decrypter to auto download- and add these linkcontainers: DLC, RSDF, CCF<br />
+         * <b>Main decrypter class:</b> GeneralLinkAnonymizer<br />
+         * */
+        GenericAutoContainer,
+        /**
          * Script for URLs containing base64 strings which lead to downloadlinks.<br />
          * <b>Example that suits main decrypter class:</b> <a href="http:/free.downloader.my/">free.downloader.my</a><br />
          * <b>Main decrypter class:</b> GenericBase64Decrypter<br />
