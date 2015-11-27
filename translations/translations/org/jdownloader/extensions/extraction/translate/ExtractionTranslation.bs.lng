@@ -29,6 +29,7 @@ context_password_msg=Postavi Šifru za ekstraktovanje %s1.
 context_password_msg2=Postavi Šifru za ekstraktovanje %s1. Predložene šifre: %s2
 context_password_msg2_multi=Postavi Šifru. Predložene šifre: %s1
 context_password_msg_multi=Postavi Šifru
+contextmenu_abort=Prekini ekstrakciju
 contextmenu_autodeletefiles=Omogućeno je 'Izbriši Dokumente Arhive'
 contextmenu_autodeletelinks=Omogućeno je 'Ukloni Linkove iz Liste Download-a'
 contextmenu_autoextract=Omogućena je Automatska Ekstrakcija
