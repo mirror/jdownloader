@@ -514,18 +514,16 @@ public class Multi extends IExtraction {
                     }
                     ctrl.setCurrentActiveItem(new Item(item.getPath(), size, extractTo));
                     try {
-                        MultiCallback call = new MultiCallback(extractTo, getExtractionController(), getConfig(), false) {
+                        final MultiCallback call = new MultiCallback(extractTo, getExtractionController(), getConfig(), false) {
 
                             @Override
-                            public int write(byte[] data) throws SevenZipException {
-                                try {
-                                    if (ctrl.gotKilled()) {
-                                        throw new SevenZipException("Extraction has been aborted");
-                                    }
-                                    return super.write(data);
-                                } finally {
-                                    ctrl.addAndGetProcessedBytes(data.length);
+                            public int write(final byte[] data) throws SevenZipException {
+                                if (ctrl.gotKilled()) {
+                                    throw new SevenZipException("Extraction has been aborted");
                                 }
+                                final int ret = super.write(data);
+                                ctrl.addAndGetProcessedBytes(data.length);
+                                return ret;
                             }
                         };
                         archive.addExtractedFiles(extractTo);
