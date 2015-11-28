@@ -80,7 +80,6 @@ settings_extract_to_path=Extract to
 settings_extractto=Extract destination folder
 settings_multi=Special settings (Only for rar, 7z and zip. Not for split files)
 settings_multi_use_original_file_date=Use original file date if possible
-settings_overwrite=Overwrite existing files?
 settings_passwordlist=Archive Passwords (one per line)
 settings_passwords=Password List
 settings_remove_after_extract=Delete Archive Files after successful extraction?
