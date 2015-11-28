@@ -51,6 +51,7 @@ import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -146,28 +147,49 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         return doThis(param, progress, decryptedLinks, parameter, containerId);
     }
 
+    private final Form getPasswordForm() {
+        final Form[] passwords = br.getForms();
+        con: for (final Form password : passwords) {
+            Boolean istrue = false;
+            for (final InputField i : password.getInputFields()) {
+                if ("password".equalsIgnoreCase(i.getKey())) {
+                    istrue = true;
+                } else if ("email".equalsIgnoreCase(i.getType())) {
+                    continue con;
+                }
+            }
+            if (istrue) {
+                return password;
+            }
+        }
+        return null;
+    }
+
     private ArrayList<DownloadLink> doThis(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String containerId) throws Exception {
         // debug yo!
         map.clear();
         URLConnectionAdapter con;
         // check for a password. Store latest password in DB
-        Form password = br.getForm(0);
-        if (password != null && password.hasInputFieldByName("password")) {
-            String latestPassword = getPluginConfig().getStringProperty("PASSWORD");
+        Form password = getPasswordForm();
+        if (password != null) {
+            String latestPassword = getPluginConfig().getStringProperty("PASSWORD", null);
             if (latestPassword != null) {
-                password.put("password", latestPassword);
+                password.put("password", Encoding.urlEncode(latestPassword));
                 submitForm(password);
                 //
             }
             // no defaultpassword, or defaultpassword is wrong
             for (int i = 0; i <= 3; i++) {
-                password = br.getForm(0);
-                if (password != null && password.hasInputFieldByName("password")) {
+                password = getPasswordForm();
+                if (password != null) {
                     latestPassword = Plugin.getUserInput(null, param);
-                    password.put("password", latestPassword);
+                    password.put("password", Encoding.urlEncode(latestPassword));
                     submitForm(password);
-                    password = br.getForm(0);
+                    password = getPasswordForm();
                     if (password != null && password.hasInputFieldByName("password")) {
+                        if (i + 1 == 3) {
+                            throw new DecrypterException(DecrypterException.PASSWORD);
+                        }
                         continue;
                     }
                     getPluginConfig().setProperty("PASSWORD", latestPassword);
@@ -177,14 +199,29 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 break;
             }
         }
-        if (password != null && password.hasInputFieldByName("password")) {
-            throw new DecrypterException(DecrypterException.PASSWORD);
-        }
+
         // Look for containers
         String[] containers = br.getRegex("eval(.*?)[\r\n]+").getColumn(0);
         final String tmpc = br.getRegex("<div id=\"containerfiles\"(.*?)</script>").getMatch(0);
         if (tmpc != null) {
             containers = new Regex(tmpc, "eval(.*?)[\r\n]+").getColumn(0);
+        }
+        if (containers == null || containers.length == 0) {
+            // some new bullshit here where they want you to click on menu and select each hoster to get access to clicknload. -raz 20151128
+            // so here we go...
+            final String[] hosters = br.getRegex("<a href=(\"|')([^\r\n]*/dir/" + containerId + "\\?hostid=(?!all)[\\w\\-]+)\\1").getColumn(1);
+            if (hosters != null && hosters.length != 0) {
+                containers = new String[hosters.length];
+                for (int i = 0; i != hosters.length; i++) {
+                    final Browser br2 = br.cloneBrowser();
+                    final String host = hosters[i];
+                    getPage(br2, host);
+                    final String result = br2.getRegex("eval(.*?)[\r\n]+").getMatch(0);
+                    if (result != null) {
+                        containers[i] = result;
+                    }
+                }
+            }
         }
         String decryptedJS = null;
         for (String c : containers) {
