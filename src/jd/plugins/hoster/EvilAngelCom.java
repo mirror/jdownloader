@@ -162,10 +162,11 @@ public class EvilAngelCom extends PluginForHost {
     public void loginEvilAngelNetwork(Browser br, final Account account, final String getpage, final String html_loggedin) throws Exception {
         synchronized (LOCK) {
             try {
-                this.br = br;
                 final String host = account.getHoster();
                 final String url_main = "http://" + host + "/";
                 final Cookies cookies = account.loadCookies("");
+                /* Set Super br as we sometimes call this function inside other host plugins! */
+                this.br = prepBR(br, host);
                 br = prepBR(br, host);
                 if (cookies != null) {
                     br.setCookies(host, cookies);

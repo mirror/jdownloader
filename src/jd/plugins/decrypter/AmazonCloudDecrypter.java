@@ -150,7 +150,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             dl = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
             final String finallink = jd.plugins.hoster.AmazonCloud.jsonGetFinallink(nodeInfo);
             final long filesize = ((Number) contentProperties.get("size")).longValue();
-            final String md5 = jd.plugins.hoster.AmazonCloud.jsonGetFinallink(nodeInfo);
+            final String md5 = jd.plugins.hoster.AmazonCloud.jsonGetMd5(contentProperties);
             if (finallink == null || md5 == null) {
                 return null;
             }
