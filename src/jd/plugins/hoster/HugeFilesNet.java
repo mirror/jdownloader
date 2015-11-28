@@ -440,6 +440,11 @@ public class HugeFilesNet extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         if (dllink == null) {
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.

@@ -26,6 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbar.net" }, urls = { "http://(www\\.)?imgbar\\.net/img\\-\\d+\\.html" }, flags = { 0 })
 public class ImgBarNet extends PluginForHost {
@@ -114,6 +115,11 @@ public class ImgBarNet extends PluginForHost {
                 downloadLink.setFinalFileName(oldName + newExtension);
             }
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.ImageHosting_ImgShot;
     }
 
     @Override

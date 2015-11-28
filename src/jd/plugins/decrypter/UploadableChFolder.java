@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadable.ch" }, urls = { "http://(www\\.)?uploadable\\.ch/list/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadable.ch" }, urls = { "https?://(?:www\\.)?uploadable\\.ch/list/[A-Za-z0-9]+" }, flags = { 0 })
 public class UploadableChFolder extends PluginForDecrypt {
 
     public UploadableChFolder(PluginWrapper wrapper) {
@@ -36,18 +36,15 @@ public class UploadableChFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        /* Forced https */
+        final String parameter = param.toString().replace("http://", "https://");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"errorBox\"")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("class=\"folder\"><span>\\&nbsp;</span>([^<>\"]*?)</div>").getMatch(0);
-        final String[] links = br.getRegex("(https?://(www\\.)?uploadable\\.ch/[^<>\"]*?)\"").getColumn(0);
+        final String[] links = br.getRegex("(https?://(?:www\\.)?uploadable\\.ch/[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             if (fpName != null) {
                 // empty folder doesn't mean plugin defect. see: https://svn.jdownloader.org/issues/64770

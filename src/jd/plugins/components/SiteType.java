@@ -63,10 +63,13 @@ public class SiteType {
          */
         KernelVideoSharing,
         /**
-         * Script used by some image hosting sites. <a href="http:/damimage.com/">damimage.com</a>. <br />
+         * Script used by some image hosting sites e.g.: <a href="http:/damimage.com/">damimage.com</a>. <br />
          * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
          * >http://codecanyon.net/item/imgshot-image-hosting-script/2558257</a>.<br />
-         * Demo: <a href="http://imgshot.com/">imgshot.com</a>
+         * <b>Main decrypter class:</b> ImgShotDecrypt<br />
+         * <b>Example that suits main decrypter class:</b> <a href="http:/imgshot.com/">imgshot.com</a><br />
+         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a><br />
+         * Official Demo: <a href="http://imgshot.com/">imgshot.com</a><br />
          */
         ImageHosting_ImgShot,
         /**

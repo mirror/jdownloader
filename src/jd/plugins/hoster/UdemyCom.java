@@ -91,6 +91,7 @@ public class UdemyCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+        String ext = null;
         if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
             downloadLink.setName(fid_accountneeded);
             downloadLink.getLinkStatus().setStatusText("Cannot check this url without account");
@@ -115,6 +116,10 @@ public class UdemyCom extends PluginForHost {
             String asset_type = (String) entries.get("asset_type");
             if (asset_type == null) {
                 asset_type = "Video";
+            } else {
+                if (!asset_type.equals("Video")) {
+                    ext = ".pdf";
+                }
             }
             final String json_download_path = "download_urls/" + asset_type;
             filename = (String) entries.get("title");
@@ -153,7 +158,9 @@ public class UdemyCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null) {
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;

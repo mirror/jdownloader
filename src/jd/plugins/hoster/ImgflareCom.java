@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -26,6 +26,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -51,13 +55,14 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgflare.com" }, urls = { "https?://(www\\.)?imgflare\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class ImgflareCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -65,11 +70,11 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://ForDevsToPlayWith.com";
+    private static final String            COOKIE_HOST                     = "http://imgflare.com";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(ForDevsToPlayWith\\.com)";
+    private static final String            DOMAINS                         = "(imgflare\\.com)";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
@@ -80,14 +85,14 @@ public class XFileSharingProBasic extends PluginForHost {
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
     private static final boolean           VIDEOHOSTER_2                   = false;
     /* Enable this for imagehosts */
-    private static final boolean           IMAGEHOSTER                     = false;
+    private static final boolean           IMAGEHOSTER                     = true;
 
     private static final boolean           SUPPORTS_HTTPS                  = false;
     private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
     private static final boolean           ENABLE_RANDOM_UA                = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = false;
     /* Waittime stuff */
     private static final boolean           WAITFORCED                      = false;
     private static final int               WAITSECONDSMIN                  = 3;
@@ -133,10 +138,10 @@ public class XFileSharingProBasic extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.7.1.5
     // Tags: Script, template
-    // mods:
+    // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: null
     // other:
     // TODO: Add case maintenance + alternative filesize check
 
@@ -166,7 +171,7 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public ImgflareCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -181,12 +186,33 @@ public class XFileSharingProBasic extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String lnk = null;
+        if (br.getHttpConnection().getContentLength() < 2000 && br.containsHTML("You can not access this site because your browser does not support cookies")) {
+            // set cookie
+            final String a = br.getRegex("a\\s*=\\s*toNumbers\\(\"([^\"]+)").getMatch(0);
+            final String b = br.getRegex("b\\s*=\\s*toNumbers\\(\"([^\"]+)").getMatch(0);
+            final String c = br.getRegex("c\\s*=\\s*toNumbers\\(\"([^\"]+)").getMatch(0);
+            lnk = br.getRegex("window\\.location\\.href=\"(https?://[^<>\"]*imgflare\\.com/" + fuid + "[^<>\"]*\\?attempt=\\d+)\"").getMatch(0);
+            if (a == null || b == null || c == null || lnk == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final byte[] encrypted = HexFormatter.hexToByteArray(c);
+            final byte[] key = HexFormatter.hexToByteArray(a);
+            final byte[] iv = HexFormatter.hexToByteArray(b);
+            final IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+            final Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            final byte[] bin = cipher.doFinal(encrypted);
+            br.setCookie(COOKIE_HOST, "verifid", HexFormatter.byteArrayToHex(bin));
+            getPage(lnk);
         }
 
         altbr = br.cloneBrowser();
 
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
@@ -334,7 +360,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            br.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()));
+            br.postPage("http://www." + br.getHost() + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()));
             filesize = br.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
