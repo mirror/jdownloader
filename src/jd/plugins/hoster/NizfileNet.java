@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -36,6 +36,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -47,7 +48,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -55,8 +56,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nizfile.net" }, urls = { "https?://(www\\.)?nizfile\\.net/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class NizfileNet extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -64,16 +65,11 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://ForDevsToPlayWith.com";
+    private static final String            COOKIE_HOST                     = "http://nizfile.net";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(ForDevsToPlayWith\\.com)";
-
-    /* Errormessages inside URLs */
-    private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
-
-    /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
+    private static final String            DOMAINS                         = "(nizfile\\.net)";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
@@ -91,7 +87,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
     private static final boolean           ENABLE_RANDOM_UA                = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = false;
 
     /* Waittime stuff */
     private static final boolean           WAITFORCED                      = false;
@@ -101,8 +97,8 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean           FREE_RESUME                     = true;
-    private static final int               FREE_MAXCHUNKS                  = 0;
-    private static final int               FREE_MAXDOWNLOADS               = 20;
+    private static final int               FREE_MAXCHUNKS                  = -1;
+    private static final int               FREE_MAXDOWNLOADS               = 1;
     private static final boolean           ACCOUNT_FREE_RESUME             = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS          = 0;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 20;
@@ -110,11 +106,9 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
 
-    /* Supported linktypes */
+    /* Linktypes */
     private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
-
-    /* Texts displaed to the user in some errorcases */
     private static final String            USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
     private static final String            USERTEXT_MAINTENANCE            = "This server is under maintenance";
     private static final String            USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
@@ -146,11 +140,11 @@ public class XFileSharingProBasic extends PluginForHost {
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia recaptcha<br />
+     * captchatype: null<br />
      * other:<br />
      */
 
-    @SuppressWarnings({ "deprecation", "unused" })
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
@@ -176,7 +170,7 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public NizfileNet(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -186,16 +180,16 @@ public class XFileSharingProBasic extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         correctDownloadLink(link);
-        prepBrowser(this.br);
+        prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        altbr = this.br.cloneBrowser();
+        altbr = br.cloneBrowser();
 
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
@@ -208,34 +202,39 @@ public class XFileSharingProBasic extends PluginForHost {
             link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
         }
-        if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
+        if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
-            if (SUPPORTS_AVAILABLECHECK_ABUSE) {
-                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                if (this.br.containsHTML(">No such file<")) {
+            try {
+                if (SUPPORTS_AVAILABLECHECK_ABUSE) {
+                    fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                    if (br.containsHTML(">No such file<")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                }
+                if (SUPPORTS_AVAILABLECHECK_ALT) {
+                    fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
+                }
+                /* 2nd offline check */
+                if ((SUPPORTS_AVAILABLECHECK_ALT && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+                    /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (fileInfo[0] != null || fileInfo[1] != null) {
+                    /* We know the link is online, set all information we got */
+                    link.setAvailable(true);
+                    if (fileInfo[0] != null) {
+                        link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                    } else {
+                        link.setName(fuid);
+                    }
+                    if (fileInfo[1] != null) {
+                        link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+                    }
+                    return AvailableStatus.TRUE;
                 }
-            }
-            if (SUPPORTS_AVAILABLECHECK_ALT) {
-                fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
-            }
-            /* 2nd offline check */
-            if ((SUPPORTS_AVAILABLECHECK_ALT && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
-                /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (fileInfo[0] != null || fileInfo[1] != null) {
-                /* We know the link is online, set all information we got */
-                link.setAvailable(true);
-                if (fileInfo[0] != null) {
-                    link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
-                } else {
-                    link.setName(fuid);
-                }
-                if (fileInfo[1] != null) {
-                    link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-                }
-                return AvailableStatus.TRUE;
+            } catch (final Throwable e) {
+                logger.info("Unknown error occured in alternative linkcheck:");
+                e.printStackTrace();
             }
             logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
@@ -324,30 +323,17 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
         }
-        /* MD5 is only available in very rare cases! */
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
     }
 
-    /**
-     * Get filename via abuse-URL.<br />
-     * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
-     * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
-     * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ABUSE</b> is <b>true</b>!<br />
-     * */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
         br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
-    /**
-     * Get filename via mass-linkchecker/alternative availablecheck.<br />
-     * E.g. needed if officially only logged in users can see filesize or filesize is missing for whatever reason.<br />
-     * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
-     * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ALT</b> is <b>true</b>!<br />
-     * */
     @SuppressWarnings("deprecation")
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
@@ -365,7 +351,7 @@ public class XFileSharingProBasic extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DLLINK_FREE);
     }
 
-    @SuppressWarnings({ "unused", "deprecation" })
+    @SuppressWarnings({ "unused", "deprecation", "static-access" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
@@ -452,7 +438,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         /* 7, continue like normal */
         if (dllink == null) {
-            final Form download1 = this.br.getFormByInputFieldKeyValue("op", "download1");
+            final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
                 /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
@@ -625,10 +611,6 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
-    /**
-     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
-     * [NOT html]).
-     */
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -682,7 +664,9 @@ public class XFileSharingProBasic extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
             br.getHeaders().put("User-Agent", agent.get());
         }
@@ -729,7 +713,6 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
-    /** Function to find the final downloadlink. */
     @SuppressWarnings("unused")
     private String getDllink() {
         String dllink = br.getRedirectLocation();
@@ -855,6 +838,33 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    /**
+     * Returns the first form that has a 'key' that equals 'value'.
+     *
+     * @param key
+     * @param value
+     * @return
+     */
+    private Form getFormByKey(final String key, final String value) {
+        Form[] workaround = br.getForms();
+        if (workaround != null) {
+            for (Form f : workaround) {
+                for (InputField field : f.getInputFields()) {
+                    if (key != null && key.equals(field.getKey())) {
+                        if (value == null && field.getValue() == null) {
+                            return f;
+                        }
+                        if (value != null && value.equals(field.getValue())) {
+                            return f;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      *
@@ -947,10 +957,6 @@ public class XFileSharingProBasic extends PluginForHost {
         return passCode;
     }
 
-    /**
-     * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
-     * as 403, 404 and 503.
-     */
     private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches() && correctedBR.contains("Wrong password")) {
@@ -971,17 +977,17 @@ public class XFileSharingProBasic extends PluginForHost {
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
-            String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
-            String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
+            String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
+            String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             }
-            String tmpmin = new Regex(wait, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin == null) {
                 tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
             }
-            String tmpsec = new Regex(wait, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-            String tmpdays = new Regex(wait, "\\s+(\\d+)\\s+days?").getMatch(0);
+            String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
@@ -1025,7 +1031,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 logger.info("Only downloadable via premium");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
-        } else if (br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
+        } else if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
@@ -1035,7 +1041,6 @@ public class XFileSharingProBasic extends PluginForHost {
         checkResponseCodeErrors(this.br.getHttpConnection());
     }
 
-    /** Handles all kinds of error-responsecodes! */
     private void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
         if (con == null) {
             return;
@@ -1044,16 +1049,12 @@ public class XFileSharingProBasic extends PluginForHost {
         if (responsecode == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
         } else if (responsecode == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404#1", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
         } else if (responsecode == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached, please contact our support!", 5 * 60 * 1000l);
         }
     }
 
-    /**
-     * Handles all kinds of errors which can happen if we get the final downloadlink but we get html code instead of the file we want to
-     * download.
-     */
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'no file'", 2 * 60 * 60 * 1000l);
@@ -1062,7 +1063,7 @@ public class XFileSharingProBasic extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
         }
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404#2", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
         }
     }
 

@@ -261,6 +261,7 @@ public class SrnnksCategory extends PluginForDecrypt {
         Format currentFormat = new Format("");
         String normalName = "";
         for (String line : lines) {
+            /* Do not check for all Format information possible as this could end up in wrong information! */
             if (line.contains(Format.DURATION_KEY) || line.contains(Format.FORMAT_KEY) || line.contains(Format.LANGUAGE_KEY)) {
                 if (!currentFormat.isEmpty()) {
                     result.add(currentFormat);
@@ -355,6 +356,10 @@ public class SrnnksCategory extends PluginForDecrypt {
         private static final String DURATION_KEY      = "Dauer";
 
         private static final String FORMAT_KEY        = "Format";
+
+        private static final String SIZE_PER_EPISODE  = "Größe";
+
+        private static final String INFO              = "Info";
 
         private final Properties    descriptions      = new Properties();
 
@@ -470,6 +475,8 @@ public class SrnnksCategory extends PluginForDecrypt {
             appendIfNotEmpty(b, DURATION_KEY);
             appendIfNotEmpty(b, LANGUAGE_KEY);
             appendIfNotEmpty(b, UPLOADER_KEY);
+            appendIfNotEmpty(b, SIZE_PER_EPISODE);
+            appendIfNotEmpty(b, INFO);
 
             return b.toString();
         }
