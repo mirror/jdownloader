@@ -48,7 +48,7 @@ public class BatoTo extends PluginForDecrypt {
 
     public int getMaxConcurrentProcessingInstances() {
         /* Prevent server response 503! */
-        return 3;
+        return 1;
     }
 
     @SuppressWarnings("deprecation")
