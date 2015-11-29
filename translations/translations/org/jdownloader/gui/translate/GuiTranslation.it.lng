@@ -1710,6 +1710,7 @@ jd_gui_swing_components_AboutDialog_title=Info su JDownloader
 jd_gui_swing_components_AboutDialog_trademark='JDownloader' è un marchio internazionale di AppWork GmbH
 jd_gui_swing_components_AboutDialog_translations=Traduzione:
 jd_gui_swing_components_AboutDialog_updater=Programma di aggiornamento:
+jd_gui_swing_components_AccountDialog_edit_title=Modifica account
 jd_gui_swing_components_AccountDialog_help_username=Inserisci il nome utente...
 jd_gui_swing_components_AccountDialog_name=Nome:
 jd_gui_swing_components_AccountDialog_pass=Password:

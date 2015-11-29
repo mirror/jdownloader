@@ -29,6 +29,7 @@ context_password_msg=Imposta password per estrarre %s1
 context_password_msg2=Imposta password per l'estrazione di %s1.\nPassword suggerita(e):\n%s2
 context_password_msg2_multi=Imposta password.\r\nPassword suggerite:\r\n%s1
 context_password_msg_multi=Imposta password
+contextmenu_abort=Annulla estrazione
 contextmenu_autodeletefiles='Elimina file archivio' abilitato
 contextmenu_autodeletelinks='Rimuovi collegamenti dall'elenco download' abilitato
 contextmenu_autoextract=Estrazione automatica abilitata
