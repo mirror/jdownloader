@@ -29,6 +29,7 @@ context_password_msg=%s1を解凍するパスワードを設定してくださ�
 context_password_msg2=%s1の解凍パスワードを設定して下さい。\n推定パスワード:\n%s2
 context_password_msg2_multi=パスワードを設定して下さい。\n推定パスワード:\n%s1
 context_password_msg_multi=パスワードを設定
+contextmenu_abort=解凍を中止
 contextmenu_autodeletefiles=圧縮ファイルを削除する
 contextmenu_autodeletelinks=ダウンロードリストからリンクを削除
 contextmenu_autoextract=自動解凍: 有効

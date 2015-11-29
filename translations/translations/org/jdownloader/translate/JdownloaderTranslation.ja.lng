@@ -192,6 +192,7 @@ UrlDisplayType_ORIGIN=ソース
 UrlDisplayType_ORIGIN_description=入力時のリンク - JDownloaderへ貼り付けられたリンクそのものになります
 UrlDisplayType_REFERRER=リファラ
 UrlDisplayType_REFERRER_description=リンクの検出元 - ブラウザの拡張機能やClick'n'Loadを経由して追加されたものだけが利用可能になります
+WaitForTrackerSlotPluginProcess=%s1を待機: %s2
 YoutubeDash_GroupLogic_BY_FILE_TYPE=ファイル拡張子 (MP4, AAC, MP3等...
 YoutubeDash_GroupLogic_BY_MEDIA_TYPE=メディア種別 (動画, 音声, 画像, 字幕等...
 YoutubeDash_GroupLogic_NO_GROUP=無効 - グループ化無し
