@@ -128,6 +128,7 @@ public class HotstarCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.getPage(hls_main_url);
+        /* 2015-11-29: As far as I can tell there is no way around their GEO-block! */
         // X-ErrorType: geo-blocked
         if (this.br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked: This content is not downloadable in your country");
