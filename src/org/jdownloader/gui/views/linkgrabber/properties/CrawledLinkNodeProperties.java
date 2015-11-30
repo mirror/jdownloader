@@ -144,6 +144,11 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties {
     @Override
     protected void saveSaveTo(final String str) {
         new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage)) {
+            /**
+             *
+             */
+            private static final long serialVersionUID = -7244902643764170242L;
+
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
                 return new File(str);

@@ -130,6 +130,11 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
     @Override
     protected void saveSaveTo(final String stringpath) {
         new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentLink)) {
+            /**
+             *
+             */
+            private static final long serialVersionUID = -3767832209839199384L;
+
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
                 return new File(stringpath);
             };

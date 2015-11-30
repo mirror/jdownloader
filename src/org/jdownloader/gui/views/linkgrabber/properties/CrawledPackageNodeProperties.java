@@ -3,11 +3,10 @@ package org.jdownloader.gui.views.linkgrabber.properties;
 import java.io.File;
 import java.util.List;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
@@ -15,8 +14,8 @@ import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
-import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.gui.views.downloads.properties.AbstractNodeProperties;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 
 public class CrawledPackageNodeProperties extends AbstractNodeProperties {
 
@@ -75,7 +74,12 @@ public class CrawledPackageNodeProperties extends AbstractNodeProperties {
 
     @Override
     protected void saveSaveTo(final String stringpath) {
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentPackage)) {
+        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage)) {
+            /**
+             *
+             */
+            private static final long serialVersionUID = -1726390416496140264L;
+
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
                 return new File(stringpath);
