@@ -138,7 +138,6 @@ public class FileNukeCom extends antiDDoSForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        final Regex fnameregex = new Regex(correctedBR, "class=\"file(?:\\-|_)name\">Download File ([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? (MB|GB))\\)</p>");
         final String filename = jd.plugins.hoster.ShareSixCom.getFilename(this.correctedBR);
         final String filesize = jd.plugins.hoster.ShareSixCom.getFilesize(this.correctedBR);
         if (filename == null || filename.equals("")) {
