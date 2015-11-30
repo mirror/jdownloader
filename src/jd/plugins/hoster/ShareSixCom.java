@@ -207,7 +207,6 @@ public class ShareSixCom extends PluginForHost {
             /* More generic RegEx - this will work in most|all cases */
             filesize = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:KB|MB|GB))").getMatch(0);
         }
-        filesize = null;
         if (filesize == null) {
             /* Last chance - allow 'b(ytes)' --> High chances to pick up false positives as hashes often contain '0b' or similar */
             filesize = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
