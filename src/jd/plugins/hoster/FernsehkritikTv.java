@@ -82,29 +82,30 @@ public class FernsehkritikTv extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
-    private static final String TYPE_FOLGE_NEW                        = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
-    private static final String TYPE_MASSENGESCHMACK_GENERAL          = "https?://(?:www\\.)?massengeschmack\\.tv/play/\\d+/[a-z0-9\\-]+";
-    private static final String TYPE_MASSENGESCHMACK_LIVE             = "https?://(?:www\\.)?massengeschmack\\.tv/live/play/[a-z0-9\\-]+";
-    private static final String TYPE_MASSENGESCHMACK_DIRECT_PREMIUM   = "https?://massengeschmack\\.tv/dl/.+";
+    private static final String TYPE_FOLGE_NEW                              = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
+    private static final String TYPE_MASSENGESCHMACK_GENERAL                = "https?://(?:www\\.)?massengeschmack\\.tv/play/\\d+/[a-z0-9\\-]+";
+    private static final String TYPE_MASSENGESCHMACK_LIVE                   = "https?://(?:www\\.)?massengeschmack\\.tv/live/play/[a-z0-9\\-]+";
+    private static final String TYPE_MASSENGESCHMACK_DIRECT_PREMIUM         = "https?://massengeschmack\\.tv/dl/.+";
 
-    public static final String  HTML_MASSENGESCHMACK_OFFLINE          = ">Clip nicht gefunden";
-    private static final String HTML_MASSENGESCHMACK_PREMIUMONLY      = ">Clip nicht kostenlos verfügbar|Dieser Livestream benötigt ein Abo";
+    public static final String  HTML_MASSENGESCHMACK_OFFLINE                = ">Clip nicht gefunden";
+    private static final String HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY       = ">Clip nicht kostenlos verfügbar";
+    private static final String HTML_MASSENGESCHMACK_LIVESTREAM_PREMIUMONLY = "Dieser Livestream benötigt ein Abo";
 
-    private static final String MSG_PREMIUMONLY                       = "Nur für Massengeschmack Abonenten herunterladbar";
+    private static final String MSG_PREMIUMONLY                             = "Nur für Massengeschmack Abonenten herunterladbar";
 
-    private static final String HOST_MASSENGESCHMACK                  = "http://massengeschmack.tv";
-    private static final String HTML_LOGIN_ERROR                      = "class=\"alert alert\\-error\"";
-    private static final String HTML_NO_FREE_VERSION_FOUND            = ">Keine kostenlose Version gefunden";
-    private static final String GRAB_POSTECKE                         = "GRAB_POSTECKE";
-    private static final String CUSTOM_DATE                           = "CUSTOM_DATE";
-    private static final String CUSTOM_FILENAME_FKTV                  = "CUSTOM_FILENAME_FKTV_2";
-    private static final String CUSTOM_FILENAME_MASSENGESCHMACK_OTHER = "CUSTOM_FILENAME_MASSENGESCHMACK_OTHER_3";
-    private static final String CUSTOM_PACKAGENAME                    = "CUSTOM_PACKAGENAME";
-    private static final String FASTLINKCHECK                         = "FASTLINKCHECK";
+    private static final String HOST_MASSENGESCHMACK                        = "http://massengeschmack.tv";
+    private static final String HTML_LOGIN_ERROR                            = "class=\"alert alert\\-error\"";
+    private static final String HTML_NO_FREE_VERSION_FOUND                  = ">Keine kostenlose Version gefunden";
+    private static final String GRAB_POSTECKE                               = "GRAB_POSTECKE";
+    private static final String CUSTOM_DATE                                 = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME_FKTV                        = "CUSTOM_FILENAME_FKTV_2";
+    private static final String CUSTOM_FILENAME_MASSENGESCHMACK_OTHER       = "CUSTOM_FILENAME_MASSENGESCHMACK_OTHER_3";
+    private static final String CUSTOM_PACKAGENAME                          = "CUSTOM_PACKAGENAME";
+    private static final String FASTLINKCHECK                               = "FASTLINKCHECK";
 
-    private static Object       LOCK                                  = new Object();
-    private String              DLLINK                                = null;
-    private boolean             LOGGEDIN                              = false;
+    private static Object       LOCK                                        = new Object();
+    private String              DLLINK                                      = null;
+    private boolean             LOGGEDIN                                    = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -138,7 +139,7 @@ public class FernsehkritikTv extends PluginForHost {
                 /* This case is nearly impossible */
                 if (br.containsHTML(HTML_MASSENGESCHMACK_OFFLINE)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (br.containsHTML(HTML_MASSENGESCHMACK_PREMIUMONLY)) {
+                } else if (br.containsHTML(HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY)) {
                     downloadLink.getLinkStatus().setStatusText("Zurzeit nur für Massengeschmack Abonenten herunterladbar");
                     return AvailableStatus.TRUE;
                 }
@@ -149,7 +150,7 @@ public class FernsehkritikTv extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML(HTML_MASSENGESCHMACK_OFFLINE) || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML(HTML_NO_FREE_VERSION_FOUND) || this.br.containsHTML(HTML_MASSENGESCHMACK_PREMIUMONLY)) {
+            } else if (br.containsHTML(HTML_NO_FREE_VERSION_FOUND) || this.br.containsHTML(HTML_MASSENGESCHMACK_LIVESTREAM_PREMIUMONLY) || this.br.containsHTML(HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY)) {
                 downloadLink.getLinkStatus().setStatusText("No free downloadable version available");
                 downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0));
                 return AvailableStatus.TRUE;
@@ -308,11 +309,11 @@ public class FernsehkritikTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        final AvailableStatus availStatus = requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(TYPE_FOLGE_NEW) && br.containsHTML(HTML_MASSENGESCHMACK_PREMIUMONLY)) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        final AvailableStatus availStatus = requestFileInformation(link);
+        if (link.getDownloadURL().matches(TYPE_FOLGE_NEW) && br.containsHTML(HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY)) {
             /* User added a current fernsehkritik episode which is not yet available for free. */
-            final String date = downloadLink.getStringProperty("directdate", null);
+            final String date = link.getStringProperty("directdate", null);
             final long timestamp_released = getTimestampFromDate(date);
             final long timePassed = System.currentTimeMillis() - timestamp_released;
             if (timePassed > 14 * 24 * 60 * 60 * 1000l) {
@@ -342,18 +343,22 @@ public class FernsehkritikTv extends PluginForHost {
         }
         if (AvailableStatus.UNCHECKABLE.equals(availStatus)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (DLLINK == null && (br.containsHTML(HTML_NO_FREE_VERSION_FOUND) || this.br.containsHTML(HTML_MASSENGESCHMACK_PREMIUMONLY)) || DLLINK.contains(".m3u8")) {
+        } else if (DLLINK == null && (br.containsHTML(HTML_NO_FREE_VERSION_FOUND) || this.br.containsHTML(HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY)) || this.br.containsHTML(HTML_MASSENGESCHMACK_LIVESTREAM_PREMIUMONLY)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        br.setFollowRedirects(false);
-        /* More chunks work but download will stop at random point then */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
+        br.setFollowRedirects(true);
+        if (DLLINK.contains(".m3u8")) {
+            downloadHLS(link);
+        } else {
+            /* More chunks work but download will stop at random point then */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
@@ -371,32 +376,7 @@ public class FernsehkritikTv extends PluginForHost {
         }
         this.br.setFollowRedirects(true);
         if (DLLINK.contains(".m3u8")) {
-            /* hls download */
-            this.br.getPage(DLLINK);
-            DLLINK = null;
-            final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
-            if (medias == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            String url_hls = null;
-            long bandwidth_highest = 0;
-            for (final String media : medias) {
-                // name = quality
-                // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
-                final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-                final long bandwidth_temp = Long.parseLong(bw);
-                if (bandwidth_temp > bandwidth_highest) {
-                    bandwidth_highest = bandwidth_temp;
-                    url_hls = new Regex(media, "([^/\n\t\r]+\\.m3u8)").getMatch(0);
-                }
-            }
-            if (url_hls == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            url_hls = this.br.getBaseURL() + url_hls;
-            checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, url_hls);
-            dl.startDownload();
+            downloadHLS(link);
         } else {
             /* http download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
@@ -412,6 +392,35 @@ public class FernsehkritikTv extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    public void downloadHLS(final DownloadLink link) throws Exception {
+        /* hls download */
+        this.br.getPage(DLLINK);
+        DLLINK = null;
+        final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
+        if (medias == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String url_hls = null;
+        long bandwidth_highest = 0;
+        for (final String media : medias) {
+            // name = quality
+            // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
+            final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
+            final long bandwidth_temp = Long.parseLong(bw);
+            if (bandwidth_temp > bandwidth_highest) {
+                bandwidth_highest = bandwidth_temp;
+                url_hls = new Regex(media, "([^/\n\t\r]+\\.m3u8)").getMatch(0);
+            }
+        }
+        if (url_hls == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        url_hls = this.br.getBaseURL() + url_hls;
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, this.br, url_hls);
+        dl.startDownload();
     }
 
     @SuppressWarnings("unchecked")
