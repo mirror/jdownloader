@@ -149,14 +149,27 @@ public class SpankWireCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String finddllink() {
+    private String finddllink() throws PluginException {
         final String[] qualities = { "720", "480", "240", "180" };
+        final int count_max = qualities.length;
+        int count_offline = 0;
         String dllink = null;
+        String dllink_plain = null;
         for (final String quality : qualities) {
-            dllink = br.getRegex("cdnPath" + quality + "[^<>\"]*?(\"|\')(http[^<>\"\\']*?\\.mp4[^<>\"\\']*?)(\"|\')").getMatch(1);
-            if (dllink != null) {
+            dllink_plain = br.getRegex("cdnPath" + quality + "[^<>\"]*?(\"|\')([^<>\"\\']*?)(\"|\')").getMatch(1);
+            if (dllink_plain.equals("")) {
+                count_offline++;
+                continue;
+            }
+            if (dllink_plain.matches("http[^<>\"\\']*?\\.mp4[^<>\"\\']*?")) {
+                dllink = dllink_plain;
                 break;
             }
+        }
+        if (count_offline == count_max) {
+            /* No downloadlink available --> Video is not streamable --> Offline ?! */
+            /* E.g. http://www.spankwire.com/More-Teenager-Girls-On-Porn-Load/video1888571/ */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return dllink;
     }

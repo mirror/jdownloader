@@ -86,7 +86,7 @@ public class TriLuLiLuRo extends PluginForHost {
             throw e;
         }
         // Link offline
-        if (br.getURL().equals("http://www.trilulilu.ro/") || br.getURL().contains("no_file") || br.getURL().contains("ref=404")) {
+        if (br.getURL().equals("http://www.trilulilu.ro/") || br.getURL().contains("no_file") || br.getURL().contains("ref=404") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(COUNTRYBLOCK)) {
@@ -98,7 +98,7 @@ public class TriLuLiLuRo extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(COUNTRYBLOCKUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat)")) {
+        if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat|>Acest fişier nu mai este disponibil)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid link
