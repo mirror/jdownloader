@@ -583,7 +583,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     passCode = handlePassword(dlForm, downloadLink);
                 }
                 if (!skipWaittime) {
-                    waitTime(timeBefore, downloadLink);
+                    waitTime(downloadLink, timeBefore);
                 }
                 submitForm(dlForm);
                 logger.info("Submitted DLForm");
@@ -822,7 +822,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
     @SuppressWarnings("unused")
-    private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+    private void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
         int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /* Ticket Time */

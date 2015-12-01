@@ -22,11 +22,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -43,6 +43,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.components.UserAgents;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -57,13 +58,15 @@ public class ThreerbupCom extends PluginForHost {
         // this.enablePremium(mainpage + "/upgrade." + type);
     }
 
-    // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.6.2-psp
-    // mods:
-    // limit-info:
-    // protocol: no https
-    // captchatype: reCaptchaV1
-    // other:
+    /**
+     * For sites which use this script: http://www.yetishare.com/<br />
+     * YetiShareBasic Version 0.7.2-psp<br />
+     * mods:<br />
+     * limit-info:<br />
+     * protocol: no https<br />
+     * captchatype: null, solvemedia, reCaptchaV1, reCaptchaV2<br />
+     * other:<br />
+     */
 
     @Override
     public String getAGBLink() {
@@ -71,42 +74,44 @@ public class ThreerbupCom extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String         mainpage                                     = "http://3rbup.com";
-    private final String         domains                                      = "(3rbup\\.com)";
-    private final String         type                                         = "html";
-    private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
-    private static final int     additional_WAIT_SECONDS                      = 3;
-    private static final int     directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean supportshttps                                = false;
-    private static final boolean supportshttps_FORCED                         = false;
+    private final String                   mainpage                                     = "http://3rbup.com";
+    private final String                   domains                                      = "(3rbup\\.com)";
+    private final String                   type                                         = "html";
+    private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
+    private static final int               additional_WAIT_SECONDS                      = 3;
+    private static final int               directlinkfound_WAIT_SECONDS                 = 10;
+    private static final boolean           supportshttps                                = false;
+    private static final boolean           supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
-    private static final boolean useOldLoginMethod                            = false;
+    private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
+    private static final boolean           useOldLoginMethod                            = false;
+    private static final boolean           enable_RANDOM_UA                             = false;
     /* Known errors */
-    private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
-    private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
-    private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
+    private static final String            url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String            url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
+    private static final String            url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
     /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
     /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
-    private static final String  url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to";
+    private static final String            url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to";
     /* Texts for the known errors */
-    private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
-    private static final String  errortext_ERROR_SERVER                       = "Server error";
-    private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
-    private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
+    private static final String            errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
+    private static final String            errortext_ERROR_SERVER                       = "Server error";
+    private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
+    private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     /* Connection stuff */
-    private static final boolean free_RESUME                                  = true;
-    private static final int     free_MAXCHUNKS                               = 0;
-    private static final int     free_MAXDOWNLOADS                            = 20;
-    private static final boolean account_FREE_RESUME                          = true;
-    private static final int     account_FREE_MAXCHUNKS                       = 0;
-    private static final int     account_FREE_MAXDOWNLOADS                    = 20;
-    private static final boolean account_PREMIUM_RESUME                       = true;
-    private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
-    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
+    private static final boolean           free_RESUME                                  = true;
+    private static final int               free_MAXCHUNKS                               = 0;
+    private static final int               free_MAXDOWNLOADS                            = 20;
+    private static final boolean           account_FREE_RESUME                          = true;
+    private static final int               account_FREE_MAXCHUNKS                       = 0;
+    private static final int               account_FREE_MAXDOWNLOADS                    = 20;
+    private static final boolean           account_PREMIUM_RESUME                       = true;
+    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
 
-    private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
+    private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
+    private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -123,6 +128,7 @@ public class ThreerbupCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        prepBrowser(this.br);
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         String filename;
@@ -193,116 +199,126 @@ public class ThreerbupCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink link, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        boolean skipWaittime = false;
         String continue_link = null;
         boolean captcha = false;
         boolean success = false;
         final long timeBeforeDirectlinkCheck = System.currentTimeMillis();
-        try {
-            continue_link = checkDirectLink(downloadLink, directlinkproperty);
-            if (continue_link != null) {
-                /*
-                 * Let the server 'calm down' (if it was slow before) otherwise it will thing that we tried to open two connections as we
-                 * checked the directlink before and return an error.
-                 */
-                if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
-                    sleep(directlinkfound_WAIT_SECONDS * 1000l, downloadLink);
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
-            } else {
-                if (available_CHECK_OVER_INFO_PAGE) {
-                    br.getPage(downloadLink.getDownloadURL());
-                }
-                handleErrors();
-                /* Passwords are usually before waittime. */
-                handlePassword(downloadLink);
-                /* Handle up to 3 pre-download pages before the (eventually existing) captcha */;
-                for (int i = 1; i <= 5; i++) {
-                    logger.info("Handling pre-download page #" + i);
-                    continue_link = getContinueLink();
-                    if (i == 1 && continue_link == null) {
-                        logger.info("No continue_link available, plugin broken");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else if (continue_link == null) {
-                        logger.info("No continue_link available, stepping out of pre-download loop");
-                        break;
-                    } else {
-                        logger.info("Found continue_link, continuing...");
-                    }
-                    final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-                    if (waittime != null) {
-                        logger.info("Found waittime, waiting (seconds): " + waittime + " + " + additional_WAIT_SECONDS + " additional seconds");
-                        sleep((Integer.parseInt(waittime) + additional_WAIT_SECONDS) * 1001l, downloadLink);
-                    } else {
-                        logger.info("Current pre-download page has no waittime");
-                    }
-                    final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (br.containsHTML("data\\-sitekey=")) {
-                        captcha = true;
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        success = true;
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
-                    } else if (rcID != null) {
-                        captcha = true;
-                        success = false;
-                        final Recaptcha rc = new Recaptcha(br, this);
-                        rc.setId(rcID);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, downloadLink);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
-                    } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        logger.info("Detected captcha method \"solvemedia\" for this host");
-                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                        if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
-                            sm.setSecure(true);
-                        }
-                        File cf = null;
-                        try {
-                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        } catch (final Exception e) {
-                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                            }
-                            throw e;
-                        }
-                        final String code = getCaptchaCode(cf, downloadLink);
-                        final String chid = sm.getChallenge(code);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
-                    } else {
-                        success = true;
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
-                    }
-                    if (dl.getConnection().isContentDisposition()) {
-                        success = true;
-                        break;
-                    }
-                    br.followConnection();
-                    handleErrors();
-                    if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        logger.info("Wrong captcha");
-                        continue;
-                    }
-                }
+        long timeBeforeCaptchaInput;
+        boolean skipCaptcha = true;
+        continue_link = checkDirectLink(link, directlinkproperty);
+        if (continue_link != null) {
+            /*
+             * Let the server 'calm down' (if it was slow before) otherwise it will thing that we tried to open two connections as we
+             * checked the directlink before and return an error.
+             */
+            if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
+                sleep(directlinkfound_WAIT_SECONDS * 1000l, link);
             }
-            if (!dl.getConnection().isContentDisposition()) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+        } else {
+            if (available_CHECK_OVER_INFO_PAGE) {
+                br.getPage(link.getDownloadURL());
+            }
+            handleErrors();
+            /* Passwords are usually before waittime. */
+            handlePassword(link);
+            /* Handle up to 3 pre-download pages before the (eventually existing) captcha */;
+            for (int i = 1; i <= 5; i++) {
+                logger.info("Handling pre-download page #" + i);
+                timeBeforeCaptchaInput = System.currentTimeMillis();
+                continue_link = getContinueLink();
+                if (i == 1 && continue_link == null) {
+                    logger.info("No continue_link available, plugin broken");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (continue_link == null) {
+                    logger.info("No continue_link available, stepping out of pre-download loop");
+                    break;
+                } else {
+                    logger.info("Found continue_link, continuing...");
+                }
+                final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+                if (isDownloadlink(continue_link) || skipCaptcha) {
+                    /*
+                     * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
+                     * need a captcha in this case for sure! E.g. host '3rbup.com'.
+                     */
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                } else if (br.containsHTML("data\\-sitekey=")) {
+                    captcha = true;
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    success = true;
+                    if (!skipWaittime) {
+                        waitTime(link, timeBeforeCaptchaInput);
+                    }
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                } else if (rcID != null) {
+                    captcha = true;
+                    success = false;
+                    final Recaptcha rc = new Recaptcha(this.br, this);
+                    rc.setId(rcID);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, link);
+                    if (!skipWaittime) {
+                        waitTime(link, timeBeforeCaptchaInput);
+                    }
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                    captcha = true;
+                    success = false;
+                    logger.info("Detected captcha method \"solvemedia\" for this host");
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                        sm.setSecure(true);
+                    }
+                    File cf = null;
+                    try {
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    } catch (final Exception e) {
+                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        }
+                        throw e;
+                    }
+                    final String code = getCaptchaCode(cf, link);
+                    final String chid = sm.getChallenge(code);
+                    if (!skipWaittime) {
+                        waitTime(link, timeBeforeCaptchaInput);
+                    }
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                } else {
+                    success = true;
+                    if (!skipWaittime) {
+                        waitTime(link, timeBeforeCaptchaInput);
+                    }
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                }
+                checkResponseCodeErrors(dl.getConnection());
+                if (dl.getConnection().isContentDisposition()) {
+                    success = true;
+                    break;
+                }
                 br.followConnection();
-                if (captcha && !success) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
                 handleErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    logger.info("Wrong captcha");
+                    continue;
+                }
             }
-        } catch (final BrowserException e) {
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 429) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 2 * 60 * 1000l);
-            }
-            throw e;
         }
-        handleServerErrors();
+        checkResponseCodeErrors(dl.getConnection());
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (captcha && !success) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            handleErrors();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         continue_link = dl.getConnection().getURL().toString();
-        downloadLink.setProperty(directlinkproperty, continue_link);
+        link.setProperty(directlinkproperty, continue_link);
         dl.startDownload();
     }
 
@@ -327,6 +343,11 @@ public class ThreerbupCom extends PluginForHost {
         return br.getRegex("\"(https?://(www\\.)?(?:[A-Za-z0-9\\.]+\\.)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
     }
 
+    private boolean isDownloadlink(final String url) {
+        final boolean isdownloadlink = url.contains("download_token=");
+        return isdownloadlink;
+    }
+
     private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
         if (br.getURL().contains("/file_password.html")) {
             logger.info("Current link is password protected");
@@ -347,6 +368,21 @@ public class ThreerbupCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             logger.info("User entered correct password --> Continuing");
+        }
+    }
+
+    /** Handles pre download (pre-captcha) waittime. */
+    private void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
+        int wait = 0;
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        /* Ticket Time */
+        final String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        if (ttt != null) {
+            wait = Integer.parseInt(ttt) + additional_WAIT_SECONDS;
+        }
+        wait -= passedTime;
+        if (wait > 0) {
+            sleep(wait * 1000l, downloadLink);
         }
     }
 
@@ -377,27 +413,32 @@ public class ThreerbupCom extends PluginForHost {
         } else if (br.toString().equals("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
         }
+        checkResponseCodeErrors(this.br.getHttpConnection());
     }
 
-    private void handleServerErrors() throws PluginException {
-        if (dl.getConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+    /** Handles all kinds of error-responsecodes! */
+    private void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
+        if (con == null) {
+            return;
+        }
+        final long responsecode = con.getResponseCode();
+        if (responsecode == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+        } else if (responsecode == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+        } else if (responsecode == 429) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 connection limit reached, please contact our support!", 5 * 60 * 1000l);
         }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            final Browser br2 = this.br.cloneBrowser();
+            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -444,10 +485,6 @@ public class ThreerbupCom extends PluginForHost {
         }
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_MAXDOWNLOADS;
@@ -461,6 +498,8 @@ public class ThreerbupCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBrowser(this.br);
+                br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -477,7 +516,6 @@ public class ThreerbupCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
                 br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
@@ -601,7 +639,7 @@ public class ThreerbupCom extends PluginForHost {
         } else {
             String dllink = link.getDownloadURL();
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
-            handleServerErrors();
+            checkResponseCodeErrors(dl.getConnection());
             if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file, checking for errors...");
                 br.followConnection();
@@ -610,11 +648,12 @@ public class ThreerbupCom extends PluginForHost {
                 handlePassword(link);
                 dllink = this.getDllink();
                 if (dllink == null) {
+                    handleErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+                checkResponseCodeErrors(dl.getConnection());
             }
-            handleServerErrors();
             if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -623,6 +662,16 @@ public class ThreerbupCom extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private Browser prepBrowser(final Browser br) {
+        if (enable_RANDOM_UA) {
+            if (agent.get() == null) {
+                agent.set(UserAgents.stringUserAgent());
+            }
+            br.getHeaders().put("User-Agent", agent.get());
+        }
+        return br;
     }
 
     @Override

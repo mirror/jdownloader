@@ -115,20 +115,20 @@ public class BackinNet extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 1;
-            resumes = false;
+            chunks = -2;
+            resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0;
+            chunks = -3;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 1; // TESTED
-            resumes = false;
+            chunks = -2; // TESTED
+            resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -559,11 +559,13 @@ public class BackinNet extends PluginForHost {
 
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
-        for (final Form f : br.getForms()) {
-            if (!f.containsHTML("(<input[^>]+type=\"submit\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<input[^>]+type=\"button\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>)|" + dllinkRegex + ")")) {
-                toClean = toClean.replace(f.getHtmlCode(), "");
-            }
-        }
+        // for (final Form f : br.getForms()) {
+        // if
+        // (!f.containsHTML("(<input[^>]+type=\"submit\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<input[^>]+type=\"button\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>)|"
+        // + dllinkRegex + ")")) {
+        // toClean = toClean.replace(f.getHtmlCode(), "");
+        // }
+        // }
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
@@ -607,6 +609,9 @@ public class BackinNet extends PluginForHost {
         }
         if (inValidate(ttt)) {
             ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        }
+        if (inValidate(ttt)) {
+            ttt = cbr.getRegex("class=\"seconds\">(\\d+)</span>").getMatch(0);
         }
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
@@ -664,7 +669,7 @@ public class BackinNet extends PluginForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (cbr.containsHTML("You have to wait|<h2>Please wait \\d+ minuts")) {
+        if (br.containsHTML("You have to wait|<h2>Please wait \\d+ minuts")) {
             // adjust this Regex to catch the wait time string for COOKIE_HOST
             String WAIT = cbr.getRegex("((You have to wait|<h2>Please wait \\d+ minuts)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -911,7 +916,8 @@ public class BackinNet extends PluginForHost {
                 // check form for login captcha crap.
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
-                // end of check form for login captcha crap.
+                // end of check form for login captcha crap.loginform
+                loginform.remove(null);
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(language)) {
