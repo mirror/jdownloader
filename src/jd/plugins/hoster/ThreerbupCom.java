@@ -665,6 +665,7 @@ public class ThreerbupCom extends PluginForHost {
     }
 
     private Browser prepBrowser(final Browser br) {
+        br.setAllowedResponseCodes(429);
         if (enable_RANDOM_UA) {
             if (agent.get() == null) {
                 agent.set(UserAgents.stringUserAgent());
