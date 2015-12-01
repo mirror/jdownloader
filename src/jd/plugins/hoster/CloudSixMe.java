@@ -34,8 +34,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -92,7 +90,6 @@ public class CloudSixMe extends antiDDoSForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
     private String               fuid                         = null;
 
@@ -534,7 +531,7 @@ public class CloudSixMe extends antiDDoSForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
@@ -926,15 +923,16 @@ public class CloudSixMe extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, false);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
+            getPage("/?op=my_account");
+        }
+        final String space[] = new Regex(correctedBR, ">Used space:\\s*<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -943,7 +941,7 @@ public class CloudSixMe extends antiDDoSForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:\\s*<b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
@@ -962,27 +960,16 @@ public class CloudSixMe extends antiDDoSForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-                account.setProperty("nopremium", true);
-            }
-            ai.setStatus("Registered (free) account");
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(expire_milliseconds);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium account");
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -1039,19 +1026,13 @@ public class CloudSixMe extends antiDDoSForHost {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("nopremium", false);
-                }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                    account.setType(AccountType.PREMIUM);
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(this.getHost()));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -1065,7 +1046,7 @@ public class CloudSixMe extends antiDDoSForHost {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
@@ -1108,12 +1089,6 @@ public class CloudSixMe extends antiDDoSForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
