@@ -94,7 +94,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             if (posteckelink == null && episodenumber_short >= 139) {
                 /* 139 or higher == new massengeschmack Postecke ("Massengeschmack Direkt") starting from 139 == 1 */
                 final short massengeschmack_direct_episodenumber = (short) (episodenumber_short - 138);
-                posteckelink = "http://massengeschmack.tv/play/0/direkt-" + massengeschmack_direct_episodenumber;
+                posteckelink = "http://massengeschmack.tv/play/direkt-" + massengeschmack_direct_episodenumber;
             }
             /* Check if we got a new massengeschmack link - simply add it. */
             if (posteckelink != null && posteckelink.matches("http://massengeschmack\\.tv/play/.+")) {
@@ -129,7 +129,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         }
         if (account != null) {
             /* Account available? Add URL as premium! */
-            final DownloadLink dl = this.createDownloadlink("http://massengeschmack.tv/play/1/fktv" + EPISODENUMBER);
+            final DownloadLink dl = this.createDownloadlink("http://massengeschmack.tv/play/fktv" + EPISODENUMBER);
+            /* Set date here as it isn't necessarily given via massengeschmack.tv website. */
+            dl.setProperty("directdate", this.DATE);
             decryptedLinks.add(dl);
         } else {
             final ArrayList<DownloadLink> dllinks = getFktvParts(parameter, EPISODENUMBER);

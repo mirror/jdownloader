@@ -32,10 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.de", "mtviggy.com", "mtv.com", "movies.mtv.de", "southpark.de", "southpark.cc.com", "tvland.com", "spike.com", "vh1.com", "nickmom.com", "cmt.com", "cc.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com", "mtv.com.au", "logotv.com", "mtvnservices.com" }, urls = { "https?://www\\.viva\\.tv/(musikvideo|news|shows|musik/video)/\\d+([a-z0-9\\-]+)?", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?",
-        "http://www\\.mtv\\.de/(shows/\\d+[a-z0-9\\-]+/staffeln/\\d+/folgen/\\d+[a-z0-9\\-]+|artists/[a-z0-9\\-]+/videos/[a-z0-9\\-]+|news/\\d+[a-z0-9\\-]+)", "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtv\\.com/player/embed/AS3/rss/\\?uri=mgid:uma:video:mtv\\.com:\\d+|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://movies\\.mtv\\.de/(?!playlists)videos/(trailer/)?[a-z0-9\\-]+/[a-z0-9]+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+",
-        "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.vh1_jd_decrypted_jd_\\.com/.+", "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml", "http://www\\.cc\\.com/(full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+", "http://thedailyshow\\.cc\\.com/(videos|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://tosh\\.cc\\.com/((full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+|segments/[a-z0-9\\-]+/[a-z0-9]+)", "http://www\\.mtvu\\.com/(music|shows)/[a-z0-9\\-]+/", "http://intl.mtvnservices.com/mrss/mgid:(?:arc|uma):video:mtv\\.com\\.au:[a-z0-9\\-]+/", "http://media\\.mtvnservices\\.com/mgid:uma:video:logotv\\.com:\\d+", "http://media\\.mtvnservices\\.com/mgid:uma:content:mtv\\.com:\\d+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-        32, 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtviggy.com", "mtv.com", "southpark.de", "southpark.cc.com", "tvland.com", "spike.com", "vh1.com", "nickmom.com", "cmt.com", "cc.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com", "mtv.com.au", "logotv.com", "mtvnservices.com" }, urls = { "https?://api\\.mtvnn\\.com/v2/mrss(?:\\.xml)?\\?uri=mgid:.+", "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?",
+        "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+", "http://www\\.mtv\\.com/player/embed/AS3/rss/\\?uri=mgid:uma:video:mtv\\.com:\\d+|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.vh1_jd_decrypted_jd_\\.com/.+", "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml",
+        "http://www\\.cc\\.com/(full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+", "http://thedailyshow\\.cc\\.com/(videos|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://tosh\\.cc\\.com/((full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+|segments/[a-z0-9\\-]+/[a-z0-9]+)", "http://www\\.mtvu\\.com/(music|shows)/[a-z0-9\\-]+/", "http://intl.mtvnservices.com/mrss/mgid:(?:arc|uma):video:mtv\\.com\\.au:[a-z0-9\\-]+/", "http://media\\.mtvnservices\\.com/mgid:uma:video:logotv\\.com:\\d+", "http://media\\.mtvnservices\\.com/mgid:uma:content:mtv\\.com:\\d+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
 public class VivaTv extends PluginForHost {
 
     public VivaTv(PluginWrapper wrapper) {
@@ -48,11 +47,11 @@ public class VivaTv extends PluginForHost {
     }
 
     /* The different linktypes: */
-    private static final String  type_viva                               = "http://www\\.viva\\.tv/.+";
-    private static final String  subtype_viva_news                       = "http://www\\.viva\\.tv/news/\\d+([a-z0-9\\-]+)?";
-    private static final String  subtype_viva_shows                      = "http://www\\.viva\\.tv/shows/\\d+([a-z0-9\\-]+)?";
-    private static final String  subtype_viva_musicvideo                 = "http://www\\.viva\\.tv/musikvideo/\\d+([a-z0-9\\-]+)?";
-    private static final String  subtype_viva_music_interviews           = "http://www\\.viva\\.tv/musik/video/\\d+([a-z0-9\\-]+)?";
+    private static final String  type_viva                               = "https?://api\\.mtvnn\\.com/v2/mrss(?:\\.xml)?\\?uri=mgid:.+";
+    // private static final String subtype_viva_news = "http://www\\.viva\\.tv/news/\\d+([a-z0-9\\-]+)?";
+    // private static final String subtype_viva_shows = "http://www\\.viva\\.tv/shows/\\d+([a-z0-9\\-]+)?";
+    // private static final String subtype_viva_musicvideo = "http://www\\.viva\\.tv/musikvideo/\\d+([a-z0-9\\-]+)?";
+    // private static final String subtype_viva_music_interviews = "http://www\\.viva\\.tv/musik/video/\\d+([a-z0-9\\-]+)?";
 
     private static final String  type_funnyclips                         = "http://de\\.funnyclips\\.cc/.+";
 
@@ -64,14 +63,11 @@ public class VivaTv extends PluginForHost {
     private static final String  type_nicknight                          = "http://www\\.nicknight\\.de/.+";
     private static final String  type_nickjr                             = "http://www\\.nickjr\\.de/.+";
 
-    private static final String  type_mtv_de                             = "http://www\\.mtv\\.de/.+";
-
     private static final String  type_mtv_com_embedded                   = "http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+";
     private static final String  subtype_mtv_com_embedded_as3            = "http://www\\.mtv\\.com/player/embed/AS3/rss/\\?uri=mgid:uma:video:mtv\\.com:\\d+";
 
     private static final String  type_mtviggy                            = "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/";
     private static final String  type_mtviggy_embedded                   = "http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+";
-    private static final String  type_mtvmovies                          = "http://movies\\.mtv\\.de/.+";
 
     private static final String  type_southpark_de_clips                 = "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+";
     /* Links come from the decrypter */
@@ -177,46 +173,14 @@ public class VivaTv extends PluginForHost {
         final String main_url = link.getStringProperty("mainlink", null);
         final String browser_url = link.getDownloadURL();
         if (browser_url.matches(type_viva)) {
+            this.feed_url = browser_url;
             br.getPage(browser_url);
-            if ((!br.containsHTML("player\\.mtvnn\\.com/[^/]+/[^/]+\\.swf") && !this.br.containsHTML("\"video_type\":\"")) || br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("<title>([^<>]*?) \\- Musikvideo \\- VIVA\\.tv</title>").getMatch(0);
+            filename = feedGetFilename();
             if (filename == null) {
-                filename = br.getRegex("title: \\'([^<>]*?)\\',").getMatch(0);
-            }
-            if (filename == null) {
-                filename = br.getRegex("<h1 class=\\'title\\'>([^<>]*?)</h1>").getMatch(0);
-            }
-            if (filename == null) {
-                filename = this.br.getRegex("content=\"([^<>\"]*?)\" property=\"og:title\"").getMatch(0);
-            }
-            if (browser_url.matches(subtype_viva_musicvideo)) {
-                String title = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'name\\'").getMatch(0);
-                if (title == null) {
-                    title = br.getRegex("class=\"page\\-subtitle\"> <span>([^<>\"]*?)</span>").getMatch(0);
-                }
-                String author = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'author\\'").getMatch(0);
-                if (author == null) {
-                    author = this.br.getRegex("class=\"page\\-title\"> <span>([^<>\"]*?)</span>").getMatch(0);
-                }
-                if (author == null || title == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                filename = doFilenameEncoding(author) + " - " + doFilenameEncoding(title);
-            } else if (browser_url.matches(subtype_viva_shows) || browser_url.matches(subtype_viva_music_interviews)) {
-                String h2 = br.getRegex("class=\\'now_playing\\'.*?<h2>([^<>]*?)</h2>.*?class=\\'kobra-watch-count\\'").getMatch(0);
-                if (h2 == null) {
-                    h2 = br.getRegex("\">([^<>]*?)</a></h2>").getMatch(0);
-                }
-                String h3 = br.getRegex("class=\\'now_playing\\'.*?<h3>([^<>]*?)</h3>").getMatch(0);
-                if (h3 == null) {
-                    h3 = br.getRegex("\">([^<>]*?)</a></h3>").getMatch(0);
-                }
-                if (filename == null || h2 == null || h3 == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                filename += " - " + doFilenameEncoding(h2) + " - " + doFilenameEncoding(h3);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ext = ".flv";
         } else if (browser_url.matches(type_funnyclips)) {
@@ -320,20 +284,6 @@ public class VivaTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ext = ".flv";
-        } else if (browser_url.matches(type_mtv_de)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("player\\.mtvnn\\.com") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("<h1 class=\"page\\-title\">([^<>]*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>([^<>]*?)\\- Shows \\- MTV</title>").getMatch(0);
-            }
-            final String artist = br.getRegex("\"artist_name\":\"([^<>\"]*?)\"").getMatch(0);
-            if (artist != null) {
-                filename = doFilenameEncoding(artist) + " - " + filename;
-            }
-            ext = ".flv";
         }
         if (browser_url.matches(type_mtv_com_embedded) || browser_url.matches(subtype_mtv_com_embedded_as3)) {
             mgid = getMGIDOutOfEmbedURL(browser_url);
@@ -352,13 +302,6 @@ public class VivaTv extends PluginForHost {
             filename = feedGetTitle();
             description = feedGetDescription();
             ext = default_ext;
-        } else if (browser_url.matches(type_mtvmovies)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("class=\"mtvn\\-player") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"/>").getMatch(0);
-            ext = ".flv";
         } else if (browser_url.matches(type_southpark_de_clips)) {
             br.getPage(browser_url);
             if (!br.containsHTML("\"name\":\"mtvnPlayer\"") || br.getHttpConnection().getResponseCode() == 404) {
@@ -588,10 +531,7 @@ public class VivaTv extends PluginForHost {
         }
         if (mediagen_url == null) {
             /* Find- and access mediagen. */
-            mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?mediaGen[^<>\"]*?)(?:\\'|\")").getMatch(0);
-            if (mediagen_url == null) {
-                mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?/mediagen/[^<>\"/]*?)(?:\\'|\")").getMatch(0);
-            }
+            mediagen_url = feedGetMediagenURL();
             if (mediagen_url == null) {
                 /* Check if maybe we just got a nearly empty response --> Video won't load in the browser either! */
                 if (br.containsHTML("<rss xmlns:media=")) {
@@ -599,7 +539,12 @@ public class VivaTv extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            mediagen_url = fixMediagenURL(mediagen_url);
+            /**
+             * Sometimes there are spaces at the end of the link, undefined parameters or it's simply url encoded though we need it plain
+             * --> This can lead to 404 errors! --> This function takes care of these problems.
+             */
+            mediagen_url = Encoding.htmlDecode(mediagen_url);
+            mediagen_url = mediagen_url.trim();
         }
 
         br.getHeaders().put("Referer", player_url);
@@ -608,7 +553,7 @@ public class VivaTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Video temporarily or forever offline */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 60 * 1000l);
-        } else if (br.containsHTML("status=\"esiblocked\"") || br.containsHTML("/error_country_block") || br.containsHTML(">Sorry, content is not available for your country\\.") || br.containsHTML("copyright_error\\.flv") || br.containsHTML(">Copyrights restrict us from playing this video in your country")) {
+        } else if (br.containsHTML("status=\"esiblocked\"") || br.containsHTML("/error_country_block") || br.containsHTML(">Sorry, content is not available for your country\\.") || br.containsHTML("copyright_error\\.flv") || br.containsHTML(">Copyrights restrict us from playing this video in your country") || br.containsHTML("errorslates/video_error")) {
             /* Geo block */
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available from your location");
         } else if (br.containsHTML(">Sorry, this video is not found or no longer available due to date or rights restrictions")) {
@@ -657,7 +602,7 @@ public class VivaTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void findFEEDurl(final DownloadLink downloadLink) throws PluginException {
-        if (downloadLink.getDownloadURL().matches(type_viva) || downloadLink.getDownloadURL().matches(type_funnyclips) || downloadLink.getDownloadURL().matches(type_comedycentral) || downloadLink.getDownloadURL().matches(type_nick_de) || downloadLink.getDownloadURL().matches(type_nicknight) || downloadLink.getDownloadURL().matches(type_nickjr) || downloadLink.getDownloadURL().matches(type_mtv_de)) {
+        if (downloadLink.getDownloadURL().matches(type_funnyclips) || downloadLink.getDownloadURL().matches(type_comedycentral) || downloadLink.getDownloadURL().matches(type_nick_de) || downloadLink.getDownloadURL().matches(type_nicknight) || downloadLink.getDownloadURL().matches(type_nickjr)) {
             find_mgid("mtvnn.com");
             if (this.mgid != null) {
                 feed_url = getFEEDurl("ALL_OTHERS");
@@ -669,10 +614,6 @@ public class VivaTv extends PluginForHost {
             /* Special: This domain has it's own feed-URL. */
             find_mgid(downloadLink.getHost());
             feed_url = getFEEDurl("mtvworldwide");
-        } else if (downloadLink.getDownloadURL().matches(type_mtvmovies)) {
-            /* Special: This domain has it's own feed-URL. */
-            find_mgid("mtvmovies.com");
-            feed_url = getFEEDurl("mtvmovies.com");
         } else if (downloadLink.getDownloadURL().matches(type_southpark_de_clips)) {
             /* Special: This domain has it's own feed-URL. */
             find_mgid("southparkstudios.com");
@@ -795,7 +736,29 @@ public class VivaTv extends PluginForHost {
         if (title == null) {
             title = new Regex(source, "<media:title>([^<>]*?)</media:title>").getMatch(0);
         }
+        if (title == null) {
+            title = new Regex(source, "<title>([^<>]*?)</title>").getMatch(0);
+        }
         return title;
+    }
+
+    private String feedGetFilename() {
+        return feedGetFilename(this.br.toString());
+    }
+
+    private String feedGetFilename(final String source) {
+        String filename = null;
+        final String artist = new Regex(source, "<media:category scheme=\\'urn:mtvn:artist\\'>([^<>\"]*?)</media:category>").getMatch(0);
+        final String album = new Regex(source, "<media:category scheme=\\'urn:mtvn:album\\'>([^<>\"]*?)</media:category>").getMatch(0);
+        if (artist != null && album != null) {
+            filename = artist + " - " + album;
+        } else {
+            filename = this.feedGetTitle();
+        }
+        if (filename != null) {
+            filename = doFilenameEncoding(filename);
+        }
+        return filename;
     }
 
     private String feedGetDescription() {
@@ -810,15 +773,12 @@ public class VivaTv extends PluginForHost {
         return description;
     }
 
-    /**
-     * Sometimes there are spaces at the end of the link, undefined parameters or it's simply url encoded though we need it plain --> This
-     * can lead to 404 errors! --> This function takes care of these problems.
-     */
-    private String fixMediagenURL(String feedurl) {
-        feedurl = Encoding.htmlDecode(feedurl);
-        feedurl = feedurl.trim();
-        // feedurl = feedurl.replace("device={device}", "device=other");
-        return feedurl;
+    private String feedGetMediagenURL() {
+        String mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?mediaGen[^<>\"]*?)(?:\\'|\")").getMatch(0);
+        if (mediagen_url == null) {
+            mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?/mediagen/[^<>\"/]*?)(?:\\'|\")").getMatch(0);
+        }
+        return mediagen_url;
     }
 
     /** Returns a feed URL based on the domain. */

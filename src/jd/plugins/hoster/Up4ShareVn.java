@@ -35,10 +35,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" }, flags = { 2 })
 public class Up4ShareVn extends PluginForHost {
@@ -67,7 +67,10 @@ public class Up4ShareVn extends PluginForHost {
         if (br.containsHTML(">FID Không hợp lệ\\!|file not found|(F|f)ile (này)? đã bị xóa|File không tồn tại?| Error: FileLink da bi xoa|>Xin lỗi Bạn, file này không còn tồn tại")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);
+        String filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title> 4Share\\.vn \\-([^<>\"]*?)</title>").getMatch(0);
+        }
         final String filesize = br.getRegex(">\\s*Kích thước\\s*:\\s*<strong>\\s*(\\d+(?:\\.\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*</strong>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -120,6 +123,7 @@ public class Up4ShareVn extends PluginForHost {
         return 5;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -149,6 +153,7 @@ public class Up4ShareVn extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (dllink == null) {
+            handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int maxChunks = 1;
@@ -158,6 +163,7 @@ public class Up4ShareVn extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
@@ -200,6 +206,7 @@ public class Up4ShareVn extends PluginForHost {
             }
         }
         if (dllink == null) {
+            handleErrorsGeneral();
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -211,6 +218,7 @@ public class Up4ShareVn extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
@@ -342,6 +350,12 @@ public class Up4ShareVn extends PluginForHost {
     private void prepBR() {
         this.br.setReadTimeout(2 * 60 * 1000);
         this.br.setConnectTimeout(2 * 60 * 1000);
+    }
+
+    private void handleErrorsGeneral() throws PluginException {
+        if (this.br.containsHTML("File này tạm dừng Download do yêu cầu của Người upload|Thông báo với Administrator\\!")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+        }
     }
 
     @Override
