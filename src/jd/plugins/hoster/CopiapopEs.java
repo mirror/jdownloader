@@ -53,6 +53,8 @@ public class CopiapopEs extends PluginForHost {
     private static final int     FREE_MAXCHUNKS               = 0;
     private static final int     FREE_MAXDOWNLOADS            = 20;
 
+    private static final String  currentdomain                = "copiapop.com";
+
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -93,7 +95,7 @@ public class CopiapopEs extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://copiapop.es/action/DownloadFile", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
+            br.postPage("http://" + currentdomain + "/action/DownloadFile", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
             if (dllink == null) {
                 dllink = br.getRegex("\"DownloadUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
             }
@@ -134,8 +136,6 @@ public class CopiapopEs extends PluginForHost {
         }
         return dllink;
     }
-
-    private static final String MAINPAGE = "http://copiapop.es";
 
     private static synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */

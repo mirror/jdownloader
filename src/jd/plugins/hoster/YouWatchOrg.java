@@ -65,7 +65,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -74,6 +73,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youwatch.org" }, urls = { "https?://(www\\.)?youwatch\\.org/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -110,7 +110,7 @@ public class YouWatchOrg extends PluginForHost {
     // protocol: no https
     // captchatype: null
     // other: no redirects
-    // mods: dllinkRegex
+    // mods: heavily modified, do NOT upgrade!
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -277,7 +277,11 @@ public class YouWatchOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
-        downloadLink.setName(fileInfo[0].trim());
+        fileInfo[0] = fileInfo[0].trim();
+        if (!fileInfo[0].endsWith(".mp4")) {
+            fileInfo[0] += ".mp4";
+        }
+        downloadLink.setName(fileInfo[0]);
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
             downloadLink.setAvailable(true);
         }
@@ -313,6 +317,9 @@ public class YouWatchOrg extends PluginForHost {
                 }
             }
         }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("<h3 id=\"title\">([^<>\"]*?)</h3>").getMatch(0);
+        }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
@@ -344,6 +351,9 @@ public class YouWatchOrg extends PluginForHost {
         alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
         alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
+        if (linkInformation == null) {
+            linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + " ((?:not )?found)").getRow(0);
+        }
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
             if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) {
@@ -386,9 +396,45 @@ public class YouWatchOrg extends PluginForHost {
                 }
             }
             if (inValidate(dllink) && useAltEmbed) {
+                /* They often have multiple embed-redirects until we can finally get the downloadurl */
+
+                try {
+                    logger.info("Trying to get link via embed");
+                    String embed_url = null;
+                    int counter = 0;
+                    do {
+                        if (this.isAbort()) {
+                            break;
+                        }
+                        /* Do not grab the protocol here as they often hide it! */
+                        embed_url = cbr.getRegex("//([^/]+/embed\\-[^<>\"]*?\\.html(?:\\?\\d+)?)").getMatch(0);
+                        if (embed_url != null) {
+                            embed_url = Encoding.htmlDecode(embed_url);
+                            /* Remove linebreaks! */
+                            embed_url = embed_url.replace("\n", "");
+                            getPage("http://" + embed_url);
+                            getDllink();
+                        }
+                        counter++;
+                    } while (embed_url != null && counter <= 10 && dllink == null);
+                    // final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                    // getPage(embed_access);
+                    if (dllink == null) {
+                        logger.info("Failed to get link via embed because: " + br.toString());
+                    } else {
+                        logger.info("Successfully found link via embed");
+                    }
+                } catch (final Throwable e) {
+                    logger.info("Failed to get link via embed");
+                }
+                if (dllink == null) {
+                    /* If failed, go back to the beginning */
+                    getPage(downloadLink.getDownloadURL());
+                }
+
                 // alternative embed format
-                getPage("/embed-" + fuid + ".html");
-                getDllink();
+                // getPage("/embed-" + fuid + ".html");
+                // getDllink();
             }
             if (inValidate(dllink)) {
                 logger.warning("Failed to find 'embed dllink', trying normal download method.");
@@ -565,6 +611,12 @@ public class YouWatchOrg extends PluginForHost {
                 }
             }
         }
+
+        /* Streams */
+        if (inValidate(dllink)) {
+            dllink = cbr.getRegex("file:\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {

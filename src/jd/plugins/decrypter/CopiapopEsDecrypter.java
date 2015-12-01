@@ -21,7 +21,6 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.es" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.es/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.es" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.(?:es|com)/.+" }, flags = { 0 })
 public class CopiapopEsDecrypter extends PluginForDecrypt {
 
     public CopiapopEsDecrypter(PluginWrapper wrapper) {
@@ -41,21 +40,12 @@ public class CopiapopEsDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            final DownloadLink dl = createDownloadlink("http://copiapop.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
+        String parameter = param.toString().replace("copiapop.es/", "copiapop.com/");
+        br.getPage(parameter);
         final String server = new Regex(parameter, "(http://[a-z0-9]+\\.copiapop\\.es/)").getMatch(0);
         if (server != null) {
             /* Find normal links of online viewable doc links */
-            parameter = br.getRegex("\"(http://copiapop\\.es/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
+            parameter = br.getRegex("\"(http://copiapop\\.com/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
             if (parameter == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
