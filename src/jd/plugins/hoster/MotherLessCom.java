@@ -254,6 +254,9 @@ public class MotherLessCom extends PluginForHost {
                     DLLINK = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
                     if (DLLINK == null) {
                         DLLINK = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
+                        if (DLLINK == null) {
+                            DLLINK = br.getRegex("\"(https?://[\\w\\-\\.]*images\\.motherlessmedia\\.com/images/[a-zA-Z0-9]+\\..{3,4}(?:\\?fs=opencloud)?)\"").getMatch(0);
+                        }
                     }
                 }
             }
