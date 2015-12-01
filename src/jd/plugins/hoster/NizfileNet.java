@@ -97,11 +97,11 @@ public class NizfileNet extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean           FREE_RESUME                     = true;
-    private static final int               FREE_MAXCHUNKS                  = -1;
+    private static final int               FREE_MAXCHUNKS                  = -2;
     private static final int               FREE_MAXDOWNLOADS               = 1;
     private static final boolean           ACCOUNT_FREE_RESUME             = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS          = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 20;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS          = -2;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
@@ -140,7 +140,7 @@ public class NizfileNet extends PluginForHost {
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null<br />
+     * captchatype: solvemedia<br />
      * other:<br />
      */
 
@@ -351,7 +351,7 @@ public class NizfileNet extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DLLINK_FREE);
     }
 
-    @SuppressWarnings({ "unused", "deprecation", "static-access" })
+    @SuppressWarnings({ "unused", "deprecation" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
@@ -451,6 +451,8 @@ public class NizfileNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                download1.remove("method_free");
+                download1.put("method_free", "Free Download >>");
                 /* end of backward compatibility */
                 submitForm(download1);
                 checkErrors(downloadLink, false);

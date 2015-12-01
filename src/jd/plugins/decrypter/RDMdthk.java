@@ -29,7 +29,6 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -100,7 +99,6 @@ public class RDMdthk extends PluginForDecrypt {
         HTTP_ONLY = cfg.getBooleanProperty(Q_HTTP_ONLY, false);
         FASTLINKCHECK_boolean = cfg.getBooleanProperty(FASTLINKCHECK, false);
         grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
-        boolean offline = false;
         String fsk = null;
         parameter = Encoding.htmlDecode(param.toString());
 
@@ -109,12 +107,8 @@ public class RDMdthk extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            offline = true;
-        }
-        if (offline) {
+        br.getPage(parameter);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
@@ -437,7 +431,6 @@ public class RDMdthk extends PluginForDecrypt {
         return quality;
     }
 
-    @SuppressWarnings("deprecation")
     private void findBEST() {
         String lastQualityFMT = null;
         if (newRet.size() > 0) {
@@ -464,7 +457,7 @@ public class RDMdthk extends PluginForDecrypt {
                     if (grab_subtitle && subtitleLink != null && !isEmpty(subtitleLink)) {
                         final String plain_name = keep.getStringProperty("plain_name", null);
                         final String orig_streamingtype = keep.getStringProperty("streamingType", null);
-                        final String linkid = plain_name + "_" + orig_streamingtype;
+                        final String linkid = plain_name + "_" + orig_streamingtype + "_subtitle";
                         final String subtitle_filename = plain_name + ".xml";
                         final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                         dl_subtitle.setAvailable(true);
