@@ -179,7 +179,7 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         for (final ExtractionController controller : jobs) {
             final ExtractionProgress progress = controller.getExtractionProgress();
             if (progress != null) {
-                eta = Math.max(eta, progress.getETA());
+                eta = Math.max(eta, progress.getETA() / 1000);
             }
         }
         buf.clear();
