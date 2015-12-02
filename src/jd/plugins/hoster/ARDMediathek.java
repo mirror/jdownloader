@@ -212,7 +212,7 @@ public class ARDMediathek extends PluginForHost {
 
     /**
      * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     *
+     * 
      * @return The success of the conversion.
      */
     private boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -237,7 +237,7 @@ public class ARDMediathek extends PluginForHost {
         final String xmlContent = xml.toString();
         /* They got two different subtitle formats */
         if (xmlContent.contains("<ebuttm:documentEbuttVersion>")) {
-            success = jd.plugins.hoster.BrOnlineDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
+            success = jd.plugins.hoster.BrDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
         } else {
             BufferedWriter dest;
             try {
