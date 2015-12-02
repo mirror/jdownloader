@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(?!doc/)(collections/\\d+/)?[A-Za-z0-9\\-_%]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/user/\\d+/[^/]+" }, flags = { 0 })
 public class ScribdCom extends PluginForDecrypt {
 
     public ScribdCom(PluginWrapper wrapper) {
@@ -100,11 +100,15 @@ public class ScribdCom extends PluginForDecrypt {
                 return null;
             }
         } else {
-            final String url_username = new Regex(parameter, "([A-Za-z0-9\\-_%]+)$").getMatch(0);
+            final Regex urlinfo = new Regex(parameter, "scribd\\.com/user/(\\d+)/([^/]+)");
+            String id = urlinfo.getMatch(0);
+            final String url_username = urlinfo.getMatch(1);
             fpname = "scribd.com uploads of user " + Encoding.htmlDecode(url_username);
             fp.setName(fpname);
             br.getPage(parameter);
-            final String id = br.getRegex("\"id\":(\\d+)").getMatch(0);
+            // if(id == null){+
+            // id = br.getRegex("\"id\":(\\d+)").getMatch(0);
+            // }
             if (id == null) {
                 decryptedLinks.add(getOfflineLink(parameter));
                 return decryptedLinks;

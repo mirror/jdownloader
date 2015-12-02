@@ -43,7 +43,7 @@ public class BatoTo extends PluginForDecrypt {
     public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
         /* Prevent server response 503! */
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000);
     }
 
     public int getMaxConcurrentProcessingInstances() {

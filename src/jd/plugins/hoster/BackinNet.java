@@ -857,7 +857,9 @@ public class BackinNet extends PluginForHost {
                     if (!inValidate(tmpsec)) {
                         seconds = Integer.parseInt(tmpsec);
                     }
-                    expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                    if (days > 0 && hours > 0 && minutes > 0 && seconds > 0) {
+                        expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                    }
                 }
                 if (expireD == 0 && expireS == 0) {
                     ai.setExpired(true);
