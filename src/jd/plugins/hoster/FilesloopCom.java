@@ -554,8 +554,9 @@ public class FilesloopCom extends PluginForHost {
                 /* "invalid-file" --> The name itself has no meaning - its just a general error so we should retry */
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_apierror_invalidfile", 20, 5 * 60 * 1000l);
             case 100:
-                /* File offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /* File offline - don't trust their API! */
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_wrong_api_message_fileoffline", 20, 5 * 60 * 1000l);
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";
