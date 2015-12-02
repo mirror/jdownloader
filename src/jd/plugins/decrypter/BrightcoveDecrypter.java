@@ -139,6 +139,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         return media;
     }
 
+    public static String getBrightcoveMobileHLSUrl() {
+        return "http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=";
+    }
+
     /** Finds the highest video quality based on the max filesize. */
     @SuppressWarnings("unchecked")
     public static BrightcoveClipData findBestVideoHttpByFilesize(final Browser br) {
