@@ -50,7 +50,7 @@ public class MyStoreTo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">file not found<")) {
+        if (br.containsHTML(">file not found<") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("class=\"download\"><h1>([^<>\"]*?)</h1>").getMatch(0);
@@ -70,7 +70,7 @@ public class MyStoreTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only supported in the JDownloader 2 BETA!");
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://mystore.to/api/download", "FID=" + getFID(downloadLink));
+        br.postPage("http://mystore.to/api/download.php", "FID=" + getFID(downloadLink));
         final String dllink = br.toString();
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

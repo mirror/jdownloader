@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs|drive)\\.google\\.com/((leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class GoogleDrive extends PluginForHost {
 
     public GoogleDrive(PluginWrapper wrapper) {
@@ -58,11 +58,12 @@ public class GoogleDrive extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void correctDownloadLink(DownloadLink link) throws PluginException {
-        String id = getID(link);
+    public void correctDownloadLink(final DownloadLink link) throws PluginException {
+        final String id = getID(link);
         if (id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
+            link.setLinkID(id);
             link.setUrlDownload("https://docs.google.com/file/d/" + id);
         }
     }
@@ -76,6 +77,7 @@ public class GoogleDrive extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
+    @SuppressWarnings("deprecation")
     private String getID(DownloadLink downloadLink) {
         // known url formats
         // https://docs.google.com/file/d/0B4AYQ5odYn-pVnJ0Z2V4d1E5UWc/preview?pli=1
@@ -83,11 +85,15 @@ public class GoogleDrive extends PluginForHost {
         // https://docs.google.com/uc?id=0B4AYQ5odYn-pVnJ0Z2V4d1E5UWc&export=download
         // https://docs.google.com/leaf?id=0B_QJaGmmPrqeZjJkZDFmYzEtMTYzMS00N2Y2LWI2NDUtMjQ1ZjhlZDhmYmY3
         // https://docs.google.com/open?id=0B9Z2XD2XD2iQNmxzWjd1UTdDdnc
+        // https://video.google.com/get_player?docid=0B2vAVBc_577958658756vEo2eUk
 
         if (downloadLink == null) {
             return null;
         }
         String id = new Regex(downloadLink.getDownloadURL(), "/file/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
+        if (id == null) {
+            id = new Regex(downloadLink.getDownloadURL(), "video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)").getMatch(0);
+        }
         if (id == null) {
             id = new Regex(downloadLink.getDownloadURL(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
         }

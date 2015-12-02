@@ -28,9 +28,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/(list/[\\w\\-\\.%!]+|view)/\\d+" }, flags = { 0 })
-public class Rle34PhlNet extends PluginForDecrypt {
+public class Rule34PahealNet extends PluginForDecrypt {
 
-    public Rle34PhlNet(PluginWrapper wrapper) {
+    public Rule34PahealNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
