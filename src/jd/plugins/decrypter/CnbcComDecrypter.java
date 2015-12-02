@@ -116,15 +116,11 @@ public class CnbcComDecrypter extends PluginForDecrypt {
                 String filename = title + "_" + getFormatString(vidinfo);
                 filename += ".mp4";
 
-                try {
-                    dl.setContentUrl(parameter);
-                    if (description != null) {
-                        dl.setComment(description);
-                    }
-                    dl.setLinkID(vid + filename);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
+                dl.setContentUrl(parameter);
+                if (description != null) {
+                    dl.setComment(description);
                 }
+                dl.setLinkID(vid + filename);
                 dl._setFilePackage(fp);
                 dl.setProperty("format", qualinfo);
                 dl.setProperty("mainlink", parameter);

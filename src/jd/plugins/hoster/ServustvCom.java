@@ -81,7 +81,7 @@ public class ServustvCom extends PluginForHost {
             /* Seems like what the user wants to download hasn't aired yet --> Wait and retry later! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
         }
-        br.getPage("http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=" + videoid);
+        br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + videoid);
         final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
         if (medias == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

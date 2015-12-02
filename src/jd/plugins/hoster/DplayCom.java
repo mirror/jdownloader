@@ -1,0 +1,252 @@
+//jDownloader - Downloadmanager
+//Copyright (C) 2012  JD-Team support@jdownloader.org
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd.plugins.hoster;
+
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+
+import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "http://it\\.dplay\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" }, flags = { 0, 0, 0 })
+public class DplayCom extends PluginForHost {
+
+    public DplayCom(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.dplay.com/";
+    }
+
+    private static final String           TYPE_SHORT = "https?://[^/]+/\\?p=\\d+";
+
+    private LinkedHashMap<String, Object> entries    = null;
+
+    /**
+     * Example hds: <br />
+     * // * http://dplayit-vh.akamaihd.net/z/bc/dplayit/4026928142001/201511/4026928142001,_4631567816001,_4631576081001,_4631576666001,
+     * _4631579343001,_4631582324001,_4631584222001,_4631588747001,_4631514944001.mp4.csmil/manifest.f4m<br />
+     * hls:<br />
+     * http://dplayit-vh.akamaihd.net/i/bc/dplayit/4026928142001/201511/4026928142001,_4631567816001,_4631576081001,_4631576666001,
+     * _4631579343001,_4631582324001,_4631584222001,_4631588747001,_4631514944001.mp4.csmil/master.m3u8<br />
+     * */
+    @SuppressWarnings({ "deprecation", "unchecked", "unused" })
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        final String host = new Regex(link.getDownloadURL(), "https?://([^/]+)/").getMatch(0);
+        String videoid;
+        if (link.getDownloadURL().matches(TYPE_SHORT)) {
+            videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        } else {
+            br.getPage(link.getDownloadURL());
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            videoid = this.br.getRegex("data\\-video\\-id=\"(\\d+)\"").getMatch(0);
+            if (videoid == null) {
+                videoid = this.br.getRegex("page page\\-id\\-(\\d+)").getMatch(0);
+            }
+            if (videoid == null) {
+                videoid = this.br.getRegex("dplay\\.com/\\?p=(\\d+)\\'").getMatch(0);
+            }
+            if (videoid == null) {
+                /* Probably there simply is no downloadable content available ... */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        /*
+         * Using only their API we can get around the brightcove player limitations and bypass geo-blocks from it.dplay.com (e.g. for
+         * Germany) - sadly this doesn't work for dplay.dk and dplay.se.
+         */
+        this.br.getPage("http://" + host + "/api/v2/ajax/videos?video_id=" + videoid + "&page=0&items=500");
+        if (br.getHttpConnection().getResponseCode() != 200) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+
+        final long numberof_items = DummyScriptEnginePlugin.toLong(entries.get("items"), 0);
+        if (numberof_items == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+
+        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "data/{0}");
+        final String video_metadata_type = (String) entries.get("video_metadata_type");
+        final String date = (String) entries.get("created");
+        final DecimalFormat df = new DecimalFormat("00");
+        short season;
+        short episode;
+        String season_str = (String) entries.get("video_metadata_season");
+        if (season_str == null) {
+            season_str = (String) entries.get("season");
+        }
+        String episode_str = (String) entries.get("video_metadata_episode");
+        if (episode_str == null) {
+            episode_str = (String) entries.get("episode");
+        }
+        final String show = (String) entries.get("video_metadata_show");
+        final String description = (String) entries.get("video_metadata_longDescription");
+        if (inValidate(show) || inValidate(date) || inValidate(video_metadata_type)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String date_formatted = formatDate(date);
+
+        String filename = date_formatted + "_dplay_" + show;
+
+        if (video_metadata_type.equals("episode") && !inValidate(season_str) && !inValidate(episode_str)) {
+            season = Short.parseShort(season_str);
+            episode = Short.parseShort(episode_str);
+            filename += "_S" + df.format(season) + "E" + df.format(episode);
+        }
+        filename += ".mp4";
+
+        filename = Encoding.htmlDecode(filename);
+        filename = encodeUnicode(filename);
+
+        if (!inValidate(description)) {
+            link.setComment(description);
+        }
+
+        link.setFinalFileName(filename);
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        /* E.g. 4631514944001 */
+        final String brightcove_videoid = (String) entries.get("video_metadata_id");
+        String hls_main = (String) entries.get("hls");
+        if (inValidate(hls_main) && !inValidate(brightcove_videoid)) {
+            /* Fallback to mobile brightcove hls (also has ALL renditions available!) - this should NEVER be needed! */
+            hls_main = jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + brightcove_videoid;
+        }
+        if (inValidate(hls_main)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(hls_main);
+
+        if (this.br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
+        }
+
+        final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
+        if (medias == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String url_hls = null;
+        long bandwidth_highest = 0;
+        for (final String media : medias) {
+            // name = quality
+            // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
+            final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
+            final long bandwidth_temp = Long.parseLong(bw);
+            if (bandwidth_temp > bandwidth_highest) {
+                bandwidth_highest = bandwidth_temp;
+                url_hls = new Regex(media, "https?://[^\r\n]+").getMatch(-1);
+            }
+        }
+        if (url_hls == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        dl = new HLSDownloader(downloadLink, br, url_hls);
+        dl.startDownload();
+    }
+
+    @SuppressWarnings({ "static-access" })
+    private String formatDate(String input) {
+        final Calendar cal = Calendar.getInstance();
+        input += cal.get(cal.YEAR);
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     */
+    protected boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
+    }
+
+}
