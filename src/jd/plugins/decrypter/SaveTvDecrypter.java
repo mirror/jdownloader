@@ -72,7 +72,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private static final String          CRAWLER_PROPERTY_LASTCRAWL           = "CRAWLER_PROPERTY_LASTCRAWL";
 
     /* Decrypter constants */
-    private static final int             ENTRIES_PER_REQUEST                  = 1000;
+    private static final int             API_ENTRIES_PER_REQUEST              = 1000;
+    /* Website gets max 35 items per request. Using too much = server will ate us and return response code 500! */
+    private static final int             SITE_ENTRIES_PER_REQUEST             = 100;
     /* Max time in which save.tv recordings are saved inside a users' account. */
     private static final long            TELECAST_ID_EXPIRE_TIME              = 32 * 24 * 60 * 60 * 1000l;
     private static final long            waittime_between_crawl_page_requests = 2500;
@@ -258,14 +260,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 decryptAborted = true;
                 throw new DecrypterException("Decrypt aborted!");
             }
-            jd.plugins.hoster.SaveTv.api_doSoapRequestSafe(this.br, acc, "http://tempuri.org/IVideoArchive/SimpleParamsGetVideoArchiveList", "<channelId>0</channelId><filterType>0</filterType><recordingState>0</recordingState><tvCategoryId>0</tvCategoryId><tvSubCategoryId>0</tvSubCategoryId><textSearchType>0</textSearchType><from>" + offset + "</from><count>" + (offset + ENTRIES_PER_REQUEST) + "</count>");
+            jd.plugins.hoster.SaveTv.api_doSoapRequestSafe(this.br, acc, "http://tempuri.org/IVideoArchive/SimpleParamsGetVideoArchiveList", "<channelId>0</channelId><filterType>0</filterType><recordingState>0</recordingState><tvCategoryId>0</tvCategoryId><tvSubCategoryId>0</tvSubCategoryId><textSearchType>0</textSearchType><from>" + offset + "</from><count>" + (offset + API_ENTRIES_PER_REQUEST) + "</count>");
             final String[] telecastIDs = br.getRegex("Stv\\.Api\\.Contract\\.Telecast\">(\\d+)</Id>").getColumn(0);
             for (final String telecastID : telecastIDs) {
                 temp_telecastIDs.add(telecastID);
                 offset++;
             }
             logger.info("Found " + temp_telecastIDs.size() + " RAW telecastIDs so far");
-            if (telecastIDs.length < ENTRIES_PER_REQUEST) {
+            if (telecastIDs.length < API_ENTRIES_PER_REQUEST) {
                 logger.info("Seems like we found all telecastIDs --> Getting further information");
                 break;
             }
@@ -274,7 +276,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         /* Save on account to display information in account information. */
         totalLinksNum = temp_telecastIDs.size();
         acc.setProperty(SaveTv.PROPERTY_acc_count_telecast_ids, Integer.toString(totalLinksNum));
-        final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
+        final BigDecimal bd = new BigDecimal((double) totalLinksNum / API_ENTRIES_PER_REQUEST);
         requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
         offset = 0;
@@ -285,7 +287,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 throw new DecrypterException("Decrypt aborted!");
             }
             String telecastid_post_data = "";
-            for (int i = 0; i <= ENTRIES_PER_REQUEST - 1; i++) {
+            for (int i = 0; i <= API_ENTRIES_PER_REQUEST - 1; i++) {
                 if (offset >= totalLinksNum) {
                     break;
                 }
@@ -330,7 +332,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         totalLinksNum = (int) Double.parseDouble(totalLinks);
         /* Save on account to display in account information */
         acc.setProperty(SaveTv.PROPERTY_acc_count_telecast_ids, Integer.toString(totalLinksNum));
-        final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
+        final BigDecimal bd = new BigDecimal((double) totalLinksNum / SITE_ENTRIES_PER_REQUEST);
         requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
         int added_entries = 0;
@@ -352,7 +354,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 }
                 // getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST +
                 // "&iCurrentPage=" + i);
-                this.postPageSafe(this.br, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i + "&iFilterType=1&sSearchString=&iTextSearchType=2&iChannelId=0&iTvCategoryId=0&iTvSubCategoryId=0&bShowNoFollower=false&iRecordingState=1&sSortOrder=StartDateDESC&iTvStationGroupId=0&iRecordAge=0&iDaytime=0");
+                // Thread.sleep(8000l);
+                this.postPageSafe(this.br, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + i + "&iFilterType=1&sSearchString=&iTextSearchType=2&iChannelId=0&iTvCategoryId=0&iTvSubCategoryId=0&bShowNoFollower=false&iRecordingState=1&sSortOrder=StartDateDESC&iTvStationGroupId=0&iRecordAge=0&iDaytime=0");
 
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final ArrayList<Object> resource_data_list = (ArrayList) entries.get("ARRVIDEOARCHIVEENTRIES");

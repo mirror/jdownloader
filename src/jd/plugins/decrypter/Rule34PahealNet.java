@@ -39,26 +39,39 @@ public class Rule34PahealNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">No Images Found<")) {
+        if (br.containsHTML(">No Images Found<") || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
-        String[] links = br.getRegex("<br><a href=('|\")(http://.*?)\\1>").getColumn(1);
-        if (links == null || links.length == 0) {
-            links = br.getRegex("('|\")(http://rule34-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(new Regex(parameter, "rule34\\.paheal\\.net/post/list/(.*?)/\\d+").getMatch(0));
+        String next = parameter;
+        do {
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return decryptedLinks;
+            }
+            this.br.getPage(next);
+            String[] links = br.getRegex("<br><a href=('|\")(http://.*?)\\1>").getColumn(1);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("('|\")(http://rule34-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+            }
             if (links == null || links.length == 0) {
                 links = br.getRegex("('|\")(http://rule34-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
-                if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
             }
-        }
-        for (String dl : links) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + dl));
-        }
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "rule34\\.paheal\\.net/post/list/(.*?)/\\d+").getMatch(0));
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String singlelink : links) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + singlelink);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
+                distribute(dl);
+            }
+            next = this.br.getRegex("\"(/post/[^<>\"]*?)\">Next</a>").getMatch(0);
+        } while (next != null);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

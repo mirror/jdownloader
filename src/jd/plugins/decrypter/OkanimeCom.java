@@ -48,6 +48,13 @@ public class OkanimeCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = new Regex(parameter, "(\\d+)$").getMatch(0);
         }
+        String episodenumber = this.br.getRegex("class=\"numbeerr\" style=\"[^<>\"]+\">(\\d+)</div>").getMatch(0);
+        if (episodenumber == null) {
+            episodenumber = this.br.getRegex("<title>OKanime \\| (\\d+)</title>").getMatch(0);
+        }
+        if (episodenumber != null) {
+            fpName += " - Episode " + episodenumber;
+        }
         final String[] links = br.getRegex("onclick=\"FRAME\\d+\\.location\\.href=\\'(http[^<>\"]*?)\\'\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

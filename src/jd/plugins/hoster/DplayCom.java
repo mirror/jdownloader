@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -51,6 +52,8 @@ public class DplayCom extends PluginForHost {
     private static final String           TYPE_SHORT = "https?://[^/]+/\\?p=\\d+";
 
     private LinkedHashMap<String, Object> entries    = null;
+    private String                        videoid    = null;
+    private String                        host       = null;
 
     /**
      * Example hds: <br />
@@ -60,13 +63,14 @@ public class DplayCom extends PluginForHost {
      * http://dplayit-vh.akamaihd.net/i/bc/dplayit/4026928142001/201511/4026928142001,_4631567816001,_4631576081001,_4631576666001,
      * _4631579343001,_4631582324001,_4631584222001,_4631588747001,_4631514944001.mp4.csmil/master.m3u8<br />
      * */
-    @SuppressWarnings({ "deprecation", "unchecked", "unused" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String host = new Regex(link.getDownloadURL(), "https?://([^/]+)/").getMatch(0);
-        String videoid;
+        br.setCookie(this.br.getHost(), "notifications_cookie-notification", "submitted");
+        host = new Regex(link.getDownloadURL(), "https?://([^/]+)/").getMatch(0);
+
         if (link.getDownloadURL().matches(TYPE_SHORT)) {
             videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         } else {
@@ -143,12 +147,47 @@ public class DplayCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        boolean isFree = false;
+        try {
+            final ArrayList<Object> video_metadata_package = (ArrayList) entries.get("video_metadata_package");
+            for (final Object video_metadata_object : video_metadata_package) {
+                final String video_metadata_string = (String) video_metadata_object;
+                if (video_metadata_string.equals("Packages-Free")) {
+                    isFree = true;
+                }
+            }
+        } catch (final Throwable e) {
+        }
+        if (!isFree) {
+            logger.info("This content is only available for premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+        /*
+         * E.g. single renditions via quality-IDs inside main HLS/HDS URLs:
+         * http://c.brightcove.com/services/mobile/streaming/index/rendition.m3u8?assetId=4489207274001
+         */
         /* E.g. 4631514944001 */
         final String brightcove_videoid = (String) entries.get("video_metadata_id");
-        String hls_main = (String) entries.get("hls");
+        String hls_main = null;
+        if (host.equalsIgnoreCase("it.dplay.com")) {
+            hls_main = (String) entries.get("hls");
+        } else {
+            final String country_needed = this.host.substring(host.lastIndexOf(".") + 1).toUpperCase();
+            // br.setCookie("dplay.se", "s_fid", "06BC08F6EC982DC7-27BEDB5190979A80");
+            br.setCookie(this.br.getHost(), "dsc-geo", "%7B%22countryCode%22%3A%22" + country_needed + "%22%2C%22expiry%22%3A" + (System.currentTimeMillis() + 24 * 60 * 60 * 1000) + "%7D");
+            this.br.getPage("https://secure." + host.replace("www.", "") + "/secure/api/v2/user/authorization/stream/" + videoid + "?stream_type=hls");
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            try {
+                /* Now necessarily needed */
+                this.br.getPage("https://secure." + host + "/secure/api/v2/user/authorization/stream/" + videoid + "?authorisation_pulse=1");
+            } catch (final Throwable e) {
+            }
+            hls_main = (String) entries.get("hls");
+        }
         if (inValidate(hls_main) && !inValidate(brightcove_videoid)) {
             /* Fallback to mobile brightcove hls (also has ALL renditions available!) - this should NEVER be needed! */
             hls_main = jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + brightcove_videoid;
