@@ -42,7 +42,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
 
     /* DEV NOTES */
     // Tags:
-    // protocol: no https
+    // protocol: https
     // other:
 
     /* Extension which will be used if no correct extension is found */
