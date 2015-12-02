@@ -29,6 +29,8 @@ public class DownloadPropertiesBasePanel extends MigPanel {
         linkPanel = new DownloadLinkPropertiesPanel();
         add(pkgPanel, "hidemode 3");
         add(linkPanel, "hidemode 3");
+        pkgPanel.setVisible(false);
+        linkPanel.setVisible(false);
     }
 
     @Override
@@ -53,6 +55,11 @@ public class DownloadPropertiesBasePanel extends MigPanel {
             pkgPanel.setVisible(false);
             pkgPanel.setSelectedItem(null);
             linkPanel.setSelectedItem(link);
+        } else {
+            linkPanel.setVisible(false);
+            pkgPanel.setVisible(false);
+            linkPanel.setSelectedItem(null);
+            pkgPanel.setSelectedItem(null);
         }
     }
 
