@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime.thehylia.com" }, urls = { "http://(www\\.)?anime\\.thehylia\\.com/(downloads/series/|soundtracks/album/)[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "http://(www\\.)?anime\\.thehylia\\.com/(downloads/series/|soundtracks/album/)[a-z0-9\\-_]+" }, flags = { 0 })
 public class AnimeTheHyliaCom extends PluginForDecrypt {
 
     public AnimeTheHyliaCom(PluginWrapper wrapper) {
@@ -47,9 +47,7 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">No such series<|>No such album<")) {
             logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
@@ -71,14 +69,8 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
                 final String filename = fpName + Encoding.htmlDecode(singleLinkInfo[1]).replace(":", " - ") + ".avi";
                 final String directlink = singleLinkInfo[0];
                 final DownloadLink dl = createDownloadlink("http://anime.thehyliadecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                try {
-                    dl.setLinkID(filename);
-                    dl.setContentUrl(parameter);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    dl.setBrowserUrl(parameter);
-                    dl.setProperty("LINKDUPEID", filename);
-                }
+                dl.setLinkID(filename);
+                dl.setContentUrl(parameter);
                 dl.setFinalFileName(filename);
                 dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(singleLinkInfo[2])));
                 dl.setProperty("referer", br.getURL());
@@ -100,14 +92,8 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
                 final String filename = fpName + " - " + Encoding.htmlDecode(singleLinkInfo[1]) + ".mp3";
                 final String directlink = singleLinkInfo[0];
                 final DownloadLink dl = createDownloadlink("http://anime.thehyliadecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                try {
-                    dl.setLinkID(filename);
-                    dl.setContentUrl(parameter);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    dl.setBrowserUrl(parameter);
-                    dl.setProperty("LINKDUPEID", filename);
-                }
+                dl.setLinkID(filename);
+                dl.setContentUrl(parameter);
                 dl.setFinalFileName(fpName + " - " + Encoding.htmlDecode(singleLinkInfo[1]) + ".mp3");
                 dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(singleLinkInfo[2])));
                 dl.setProperty("referer", br.getURL());
