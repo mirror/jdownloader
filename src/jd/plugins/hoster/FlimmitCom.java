@@ -42,7 +42,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit\\.com/\\d+" }, flags = { 2 })
 public class FlimmitCom extends PluginForHost {
 
     public FlimmitCom(PluginWrapper wrapper) {
@@ -66,10 +66,7 @@ public class FlimmitCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (true) {
-            return AvailableStatus.FALSE;
-        }
-        // this.setBrowserExclusive();
+        this.setBrowserExclusive();
         // final Account aa = AccountController.getInstance().getValidAccount(this);
         // if (aa == null) {
         // link.getLinkStatus().setStatusText("Only downloadable for registered/premium users");
@@ -86,11 +83,8 @@ public class FlimmitCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        final String vid = link.getStringProperty("vid", null);
-        final String res = link.getStringProperty("res", null);
-        link.setFinalFileName(vid + " - " + filename + "-" + res + "p" + ".mp4");
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -208,17 +202,13 @@ public class FlimmitCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        // hls stuff.
-        final String dllink = link.getStringProperty("m3u", null);
+        // hls stuff
+        String dllink = link.getStringProperty("m3u8url", null);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // dllink = dllink.replace("https://flimmitcdn-a.akamaihd.net/", "https://edgecast-stream.flimmit.com/");
         checkFFmpeg(link, "Download a HLS Stream");
-        if (link.getBooleanProperty("encrypted")) {
-
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
-        }
-        // requestFileInformation(downloadLink);
         dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();
 
