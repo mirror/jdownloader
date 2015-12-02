@@ -182,7 +182,7 @@ public class DplayCom extends PluginForHost {
             this.br.getPage("https://secure." + host.replace("www.", "") + "/secure/api/v2/user/authorization/stream/" + videoid + "?stream_type=hls");
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             try {
-                /* Now necessarily needed */
+                /* Not necessarily needed */
                 this.br.getPage("https://secure." + host + "/secure/api/v2/user/authorization/stream/" + videoid + "?authorisation_pulse=1");
             } catch (final Throwable e) {
             }

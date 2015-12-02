@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "manga.life" }, urls = { "https?://manga\\.life/read\\-online/[^/]+/chapter\\-\\d+/index\\-\\d+/page\\-\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "manga.life" }, urls = { "https?://manga\\.life/read\\-online/[^/]+/chapter\\-\\d+(?:\\.\\d+)?/index\\-\\d+/page\\-\\d+" }, flags = { 0 })
 public class MangaLife extends PluginForDecrypt {
 
     public MangaLife(PluginWrapper wrapper) {
@@ -44,21 +45,28 @@ public class MangaLife extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "https?://manga\\.life/read\\-online/([^/]+)/chapter\\-(\\d+)/index\\-\\d+/page\\-\\d+");
+        final Regex urlinfo = new Regex(parameter, "https?://manga\\.life/read\\-online/([^/]+)/chapter\\-(\\d+(?:\\.\\d+)?)/index\\-\\d+/page\\-\\d+");
         final String chapter_str = urlinfo.getMatch(1);
-        final short chapter = Short.parseShort(chapter_str);
+        final String chapter_str_main;
+        String chapter_str_extra = "";
+        if (chapter_str.contains(".")) {
+            final String[] chapter_str_info = chapter_str.split("\\.");
+            chapter_str_main = chapter_str_info[0];
+            chapter_str_extra = "." + chapter_str_info[1];
+        } else {
+            chapter_str_main = chapter_str;
+        }
+        final short chapter_main = Short.parseShort(chapter_str_main);
         final String url_name = urlinfo.getMatch(0);
         final String url_fpname = url_name + "_chapter_" + chapter_str;
         final DecimalFormat df_chapter = new DecimalFormat("0000");
         final DecimalFormat df_page = new DecimalFormat("000");
 
-        final Regex downloadinfo = this.br.getRegex("\"(https?://[^<>\"]*?/)\\d{4}\\-\\d{3}(\\..*?)\"");
-        final String server_urlpart = downloadinfo.getMatch(0);
-        final String ext = downloadinfo.getMatch(1);
+        final Regex downloadinfo = this.br.getRegex("\"(https?://[^<>\"]*?/)\\d{4}(?:\\.\\d+)?\\-\\d{3}(\\..*?)\"");
+        String ext = downloadinfo.getMatch(1);
 
-        if (server_urlpart == null || ext == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (ext == null) {
+            ext = ".jpg";
         }
 
         short page_max = 1;
@@ -71,11 +79,18 @@ public class MangaLife extends PluginForDecrypt {
         }
 
         for (short page = 1; page <= page_max; page++) {
-            final String chapter_formatted = df_chapter.format(chapter);
+            final String chapter_formatted = df_chapter.format(chapter_main);
             final String page_formatted = df_page.format(page);
-            final String finallink = "directhttp://" + server_urlpart + chapter_formatted + "-" + page_formatted + ext;
-            final DownloadLink dl = this.createDownloadlink(finallink);
-            dl.setFinalFileName(url_name + "_" + chapter_formatted + "_" + page_formatted + ext);
+            // final String finallink = "directhttp://" + server_urlpart + chapter_formatted + chapter_str_extra + "-" + page_formatted +
+            // ext;
+            final String page_url = this.br.getBaseURL() + "page-" + page;
+            final DownloadLink dl = this.createDownloadlink("http://mangadecrypted.life/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+            final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
+            dl.setName(filename);
+            dl.setProperty("filename", filename);
+            dl.setProperty("pageurl", page_url);
+            dl.setContentUrl(page_url);
+            dl.setLinkID(filename);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }

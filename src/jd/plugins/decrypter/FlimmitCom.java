@@ -20,12 +20,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -51,12 +51,7 @@ public class FlimmitCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (true) {
-            // segmented dash or segmented hls, we don't support either.
-            return decryptedLinks;
-        }
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         final String vid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         login();
@@ -68,51 +63,55 @@ public class FlimmitCom extends PluginForDecrypt {
         if (m3u == null) {
             return null;
         }
-        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        if (filename == null) {
-            return null;
+        String title = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        if (title == null) {
+            title = vid;
         }
+        title = Encoding.htmlDecode(title).trim();
         br.getPage(m3u);
         final String[] medias = br.getRegex("#EXT-X.*?\\.m3u8").getColumn(-1);
         if (medias == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return null;
         }
         for (final String media : medias) {
             // segmented audio and segmented video in differnet objects. dl both and then mux?
 
-            // audio is first
-            if (media.contains("TYPE=AUDIO")) {
-                continue;
-            }
-            final String res = new Regex(media, "RESOLUTION=\\d+x(\\d+)").getMatch(0);
-            final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
+            final String groupid = new Regex(media, "GROUP-ID=\"([^<>\"]*?)\"").getMatch(0);
+            final String res = new Regex(media, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
+            // final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
             final String m3u8 = new Regex(media, "(?:\n|\")([^\n\"]+\\.m3u8)").getMatch(0);
+            if (m3u8 == null) {
+                return null;
+            }
+            String filename;
+            final String extension;
+            if (media.contains("TYPE=AUDIO")) {
+                /* MP4 extension needed for FFmpeg! */
+                extension = ".mp4";
+                filename = title + "_AUDIO_" + groupid + extension;
+            } else {
+                extension = ".mp4";
+                filename = title + "_VIDEO_" + res + extension;
+            }
 
             final DownloadLink dlink = createDownloadlink("http://flimmit.com/" + System.currentTimeMillis() + new Random().nextInt(100000000));
+            dlink.setProperty("title", title);
             dlink.setProperty("filename", filename);
             dlink.setProperty("ext", media);
-            dlink.setProperty("m3uVideo", br.getBaseURL() + m3u8);
+            dlink.setProperty("m3u8url", br.getBaseURL() + m3u8);
             dlink.setProperty("vid", vid);
-            dlink.setProperty("res", res);
-            final String linkID = "flimmit:" + vid + ":HLS:" + bw;
-            try {
-                dlink.setLinkID(linkID);
-            } catch (final Throwable t) {
-                dlink.setProperty("LINKDUPEID", linkID);
+            if (res != null) {
+                dlink.setProperty("res", res);
             }
-            // let linkchecking routine do all this!
-            // final String formattedFilename = jd.plugins.hoster.JustinTv.getFormattedFilename(dlink);
-            // dlink.setName(formattedFilename);
-            dlink.setName("linkcheck-failed-recheck-online-status-manually.mp4");
-            try {
-                dlink.setContentUrl(parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            final String linkID = "flimmit:" + vid + ":HLS:" + filename;
+            dlink.setLinkID(linkID);
+            dlink.setName(filename);
+            dlink.setContentUrl(parameter);
+            dlink.setAvailable(true);
             decryptedLinks.add(dlink);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(filename);
+        fp.setName(title);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
