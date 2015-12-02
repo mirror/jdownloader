@@ -29,7 +29,8 @@ public class LinkgrabberProperties extends MigPanel {
         linkPanel = new CrawledLinkPropertiesPanel();
         add(pkgPanel, "hidemode 3");
         add(linkPanel, "hidemode 3");
-
+        pkgPanel.setVisible(false);
+        linkPanel.setVisible(false);
     }
 
     @Override
@@ -56,6 +57,11 @@ public class LinkgrabberProperties extends MigPanel {
                 pkgPanel.setSelectedItem(null);
                 linkPanel.setSelectedItem(link);
             }
+        } else {
+            linkPanel.setVisible(false);
+            pkgPanel.setVisible(false);
+            linkPanel.setSelectedItem(null);
+            pkgPanel.setSelectedItem(null);
         }
     }
 
@@ -65,7 +71,6 @@ public class LinkgrabberProperties extends MigPanel {
         } else if (pkgPanel.isVisible()) {
             pkgPanel.fillPopup(pu);
         }
-
     }
 
     public void refreshAfterTabSwitch() {

@@ -119,9 +119,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
             @Override
             public void componentShown(ComponentEvent e) {
-
                 onShowing();
-
             }
 
             @Override
@@ -134,7 +132,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
             @Override
             public void componentHidden(ComponentEvent e) {
-
                 onHidden();
             }
         });
