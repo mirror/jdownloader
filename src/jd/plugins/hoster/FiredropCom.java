@@ -59,7 +59,7 @@ public class FiredropCom extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.5.8-psp
-    // mods: login[Added support for other names of premium accounts], fetchAccountInfo[Added support for premium accounts without
+    // mods: heavily modified, do NOT upgrade!
     // expiration]
     // limit-info:
     // protocol: no https
@@ -358,6 +358,8 @@ public class FiredropCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
         } else if (br.toString().equals("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
+        } else if (this.br.containsHTML(">You have reached the maximum number of simultanious server connections for free users")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error too many connections", 2 * 60 * 1000l);
         }
     }
 

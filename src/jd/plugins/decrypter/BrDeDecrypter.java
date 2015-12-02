@@ -25,7 +25,6 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,8 +36,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/(sendungen/[A-Za-z0-9\\-_]+/)?[A-Za-z0-9\\-_]+\\.html" }, flags = { 32 })
-public class BrOnlineDeDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" }, flags = { 32 })
+public class BrDeDecrypter extends PluginForDecrypt {
 
     private static final String Q_0          = "Q_0";
     private static final String Q_A          = "Q_A";
@@ -50,29 +49,23 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
 
     private static final String TYPE_INVALID = "http://(www\\.)?br\\.de/mediathek/video/index\\.html";
 
-    public BrOnlineDeDecrypter(final PluginWrapper wrapper) {
+    public BrDeDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         boolean offline = false;
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
 
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            offline = true;
-        }
-        if (offline || br.getHttpConnection().getResponseCode() == 404 || parameter.matches(TYPE_INVALID)) {
+        br.getPage(parameter);
+        if (offline || this.br.getHttpConnection().getResponseCode() == 404 || parameter.matches(TYPE_INVALID)) {
             /* Add offline link so user can see it */
-            final DownloadLink dl = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
-            dl.setAvailable(false);
-            dl.setProperty("offline", true);
-            String offline_name = new Regex(parameter, "br\\.de/(.+)\\.html").getMatch(0);
+            final DownloadLink dl = this.createOfflinelink(parameter);
+            String offline_name = new Regex(parameter, "br\\.de/(.+)\\.html$").getMatch(0);
             if (offline_name == null) {
                 offline_name = new Regex(parameter, "").getMatch(0);
             }
