@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -225,10 +224,7 @@ public class DplayCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings({ "static-access" })
-    private String formatDate(String input) {
-        final Calendar cal = Calendar.getInstance();
-        input += cal.get(cal.YEAR);
+    private String formatDate(final String input) {
         final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";

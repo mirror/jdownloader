@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv", "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?fernsehkritik\\.tv/jdownloaderfolgeneu?\\d+", "https?://(?:www\\.)?massengeschmack\\.tv/play/(?:\\d+/)?[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/play/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv", "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?fernsehkritik\\.tv/jdownloaderfolgeneu?\\d+", "https?://(?:www\\.)?massengeschmack\\.tv/play/(?:\\d+/)?[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" }, flags = { 2, 2 })
 public class FernsehkritikTv extends PluginForHost {
 
     public FernsehkritikTv(final PluginWrapper wrapper) {
@@ -84,7 +84,7 @@ public class FernsehkritikTv extends PluginForHost {
 
     private static final String TYPE_FOLGE_NEW                              = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
     private static final String TYPE_MASSENGESCHMACK_GENERAL                = "https?://(?:www\\.)?massengeschmack\\.tv/play/(?:\\d+/)?[a-z0-9\\-]+";
-    private static final String TYPE_MASSENGESCHMACK_LIVE                   = "https?://(?:www\\.)?massengeschmack\\.tv/live/play/[a-z0-9\\-]+";
+    private static final String TYPE_MASSENGESCHMACK_LIVE                   = "https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+";
     private static final String TYPE_MASSENGESCHMACK_DIRECT_PREMIUM         = "https?://massengeschmack\\.tv/dl/.+";
 
     public static final String  HTML_MASSENGESCHMACK_OFFLINE                = ">Clip nicht gefunden";
@@ -157,15 +157,13 @@ public class FernsehkritikTv extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             String episodenumber;
-            String channel;
+            String channel = null;
             String episodename;
             String date;
             if (downloadLink.getDownloadURL().matches(TYPE_MASSENGESCHMACK_LIVE)) {
                 /* Get m3u8 main playlist */
                 DLLINK = br.getRegex("\"(https?://dl\\.massengeschmack\\.tv/live/[^<>\"]*?adaptive\\.m3u8)\"").getMatch(0);
-                final Regex info = this.br.getRegex("<h3>([^<>\"]*?) ?<small>([^<>\"]*?)</small>");
-                channel = info.getMatch(0);
-                episodename = info.getMatch(1);
+                episodename = this.br.getRegex("class=\"active\"><span>([^<>\"]*?)</span></li>").getMatch(0);
                 if (episodename == null) {
                     /* Fallback to url */
                     episodename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
@@ -221,13 +219,10 @@ public class FernsehkritikTv extends PluginForHost {
                 if (episodenumber == null && !inValidate(episodename)) {
                     episodenumber = new Regex(episodename, "Folge (\\d+)").getMatch(0);
                 }
-                if (!inValidate(episodename) && episodename.contains("Folge " + episodenumber) && episodename.contains(channel)) {
+                if (!inValidate(episodename) && episodename.contains("Folge " + episodenumber) && (!inValidate(channel) && episodename.contains(channel))) {
                     /* We don't need that information twice! */
                     episodename = null;
                 }
-            }
-            if (channel == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -235,7 +230,6 @@ public class FernsehkritikTv extends PluginForHost {
                 ext = ".mp4";
             }
 
-            channel = Encoding.htmlDecode(channel).trim();
             if (!inValidate(episodename)) {
                 episodename = Encoding.htmlDecode(episodename).trim();
                 downloadLink.setProperty("directepisodename", episodename);
@@ -243,7 +237,10 @@ public class FernsehkritikTv extends PluginForHost {
             if (!inValidate(date)) {
                 downloadLink.setProperty("directdate", date);
             }
-            downloadLink.setProperty("directchannel", channel);
+            if (!inValidate(channel)) {
+                channel = Encoding.htmlDecode(channel).trim();
+                downloadLink.setProperty("directchannel", channel);
+            }
             downloadLink.setProperty("directepisodenumber", episodenumber);
             downloadLink.setProperty("directtype", ext);
 
@@ -449,6 +446,15 @@ public class FernsehkritikTv extends PluginForHost {
         if (url_hls == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        URLConnectionAdapter con = null;
+        try {
+            con = this.br.openGetConnection(url_hls);
+            con.disconnect();
+        } catch (final Throwable e) {
+        }
+        if (con != null && con.getLongContentLength() < 100) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - stream is not available");
+        }
         url_hls = this.br.getBaseURL() + url_hls;
         checkFFmpeg(link, "Download a HLS Stream");
         dl = new HLSDownloader(link, this.br, url_hls);
@@ -577,7 +583,7 @@ public class FernsehkritikTv extends PluginForHost {
 
         final String ext = downloadLink.getStringProperty("directtype", null);
         final String date = downloadLink.getStringProperty("directdate", null);
-        final String channel = downloadLink.getStringProperty("directchannel", null);
+        final String channel = downloadLink.getStringProperty("directchannel", EMPTY_FILENAME_INFORMATION);
         final String episodename = downloadLink.getStringProperty("directepisodename", EMPTY_FILENAME_INFORMATION);
         final String episodenumber = downloadLink.getStringProperty("directepisodenumber", EMPTY_FILENAME_INFORMATION);
 
