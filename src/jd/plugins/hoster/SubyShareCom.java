@@ -48,7 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -56,6 +55,8 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(www\\.)?subyshare\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class SubyShareCom extends PluginForHost {
@@ -99,10 +100,10 @@ public class SubyShareCom extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.1
-    // mods: checkErrors[Added another premiumonly text], requestFileInformation[Added another FNF text]
+    // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
-    // captchatype: null
+    // captchatype: reCaptchaV2
     // other:
 
     @Override
@@ -383,6 +384,10 @@ public class SubyShareCom extends PluginForHost {
                     }
                     dlForm.put("capcode", result);
                     skipWaittime = false;
+                } else if (br.containsHTML("class=\"g\\-recaptcha\"")) {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    skipWaittime = true;
                 }
                 /* Captcha END */
                 if (password) {
