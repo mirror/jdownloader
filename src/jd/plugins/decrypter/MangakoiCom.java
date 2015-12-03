@@ -27,20 +27,19 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "https?://(?:www\\.)?mangakoi\\.com/manga/[A-Za-z0-9\\-_]+/c\\d+(?:\\.\\d+)?" }, flags = { 0 })
-public class MangakoiCom extends PluginForDecrypt {
+public class MangakoiCom extends antiDDoSForDecrypt {
 
     public MangakoiCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.setFollowRedirects(true);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"mobile\\-none\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -82,8 +81,7 @@ public class MangakoiCom extends PluginForDecrypt {
             final String page_formatted = df_page.format(page);
             // final String finallink = "directhttp://" + server_urlpart + chapter_formatted + chapter_str_extra + "-" + page_formatted +
             // ext;
-            final String page_url = this.br.getBaseURL() + "c" + chapter_str_main + "/" + page + ".html";
-            System.out.printf(page_url);
+            final String page_url = this.br.getBaseURL() + "c" + chapter_str + "/" + page + ".html";
             final DownloadLink dl = this.createDownloadlink("http://mangakoidecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
             final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
             dl.setName(filename);
