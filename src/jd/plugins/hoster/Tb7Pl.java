@@ -116,12 +116,20 @@ public class Tb7Pl extends PluginForHost {
         account.setValid(true);
         ai.setMultiHostSupport(this, supportedHosts);
         // ai.setProperty("Turbobit traffic", "Unlimited");
-        final String otherHostersLimitLeft = // br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
+        String otherHostersLimitLeft = // br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         br.getRegex("Pozostały Limit Premium do wykorzystania: <b>([^<>\"\\']+)</b></div>").getMatch(0);
+        if (otherHostersLimitLeft == null) {
+            otherHostersLimitLeft = br.getRegex("Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
+        }
+
         // ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
-        ai.setProperty(getPhrase("TRAFFIC_LEFT"), SizeFormatter.getSize(otherHostersLimitLeft));
+        ai.setProperty("TRAFFIC_LEFT", otherHostersLimitLeft == null ? getPhrase("UNKNOWN") : SizeFormatter.getSize(otherHostersLimitLeft));
         // ai.setStatus("Premium User (TB: unlimited," + " Other: " + otherHostersLimitLeft + ")");
-        ai.setStatus(getPhrase("TRAFFIC_LEFT") + ": " + otherHostersLimitLeft);
+        String unlimited = br.getRegex("<br />(.*): <b>Bez limitu</b> \\|").getMatch(0);
+        if (unlimited != null) {
+            ai.setProperty("UNLIMITED", unlimited);
+        }
+        ai.setStatus(getPhrase("TRAFFIC_LEFT") + ": " + (otherHostersLimitLeft == null ? getPhrase("UNKNOWN") : otherHostersLimitLeft) + ", " + (unlimited == null ? "" : unlimited + ": " + getPhrase("UNLIMITED")));
 
         return ai;
     }
@@ -370,8 +378,10 @@ public class Tb7Pl extends PluginForHost {
 
     public void showAccountDetailsDialog(Account account) {
         AccountInfo ai = account.getAccountInfo();
-        long otherHostersLimit = Long.parseLong(ai.getProperty(getPhrase("TRAFFIC_LEFT")).toString(), 10);
-        jd.gui.UserIO.getInstance().requestMessageDialog("Tb7.pl Account", getPhrase("ACCOUNT_TYPE") + ": Premium\n" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(otherHostersLimit));
+        long otherHostersLimit = Long.parseLong(ai.getProperty("TRAFFIC_LEFT").toString(), 10);
+        String unlimited = (String) (ai.getProperty("UNLIMITED"));
+        jd.gui.UserIO.getInstance().requestMessageDialog("Tb7.pl Account", getPhrase("ACCOUNT_TYPE") + ": Premium\n" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(otherHostersLimit) + (unlimited == null ? "" : "\n" + unlimited + ": " + getPhrase("UNLIMITED")));
+
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
@@ -388,7 +398,9 @@ public class Tb7Pl extends PluginForHost {
                                                       put("NO_TRAFFIC", "No traffic left");
                                                       put("UNKNOWN_ERROR", "Unable to handle this errorcode!");
                                                       put("ACCOUNT_TYPE", "Account type");
-        }
+                                                      put("UNKNOWN", "Unknown");
+                                                      put("UNLIMITED", "Unlimited");
+                                                  }
                                               };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
                                                   {
@@ -404,6 +416,8 @@ public class Tb7Pl extends PluginForHost {
                                                       put("NO_TRAFFIC", "Brak dostępnego transferu");
                                                       put("UNKNOWN_ERROR", "Nieobsługiwany kod błędu!");
                                                       put("ACCOUNT_TYPE", "Typ konta");
+                                                      put("UNKNOWN", "Nieznany");
+                                                      put("UNLIMITED", "Bez limitu");
                                                   }
                                               };
 
