@@ -18,6 +18,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -688,7 +689,11 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         };
     }
 
+    private final AtomicLong refreshRequested = new AtomicLong(0);
+    private final AtomicLong refreshDone      = new AtomicLong(0);
+
     public void refresh() {
+        refreshRequested.incrementAndGet();
         updateDelayer.resetAndStart();
     }
 
@@ -748,6 +753,9 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 final E lAbstractNodeProperties = getAbstractNodeProperties();
                 if (lAbstractNodeProperties == null || settingLock.get() > 0) {
                     return;
+                }
+                if (refreshDone.get() != refreshRequested.get()) {
+                    loadInEDT(false, lAbstractNodeProperties);
                 }
                 saveInEDT(lAbstractNodeProperties);
             }
@@ -949,6 +957,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             }
         } finally {
             settingLock.decrementAndGet();
+            refreshDone.set(refreshRequested.get());
         }
     }
 
