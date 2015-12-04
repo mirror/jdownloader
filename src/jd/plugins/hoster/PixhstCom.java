@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(www\\.)?(pixhst\\.com|pxhst\\.co)/pictures/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co)/pictures/\\d+" }, flags = { 0 })
 public class PixhstCom extends PluginForHost {
 
     public PixhstCom(PluginWrapper wrapper) {
@@ -68,9 +68,17 @@ public class PixhstCom extends PluginForHost {
             /* Their way to tell a file is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String linkid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        downloadLink.setLinkID(linkid);
         String filename = br.getRegex("<td colspan=\\'3\\'>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (filename != null) {
+            /* Avoid duplicate filenames for different files */
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            filename = linkid + "_" + filename;
+        } else {
+            filename = linkid;
         }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
@@ -80,9 +88,6 @@ public class PixhstCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -98,7 +103,7 @@ public class PixhstCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

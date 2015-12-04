@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "canna.to" }, urls = { "http://[uu\\.canna\\.to|85\\.17\\.36\\.224]+/cpuser/links\\.php\\?action=[cp_]*?popup&kat_id=[\\d]+&fileid=[\\d]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "canna.to" }, urls = { "http://(?:uu\\.canna\\.to|ru\\.canna\\.to|85\\.17\\.36\\.224)/(?:cpuser/)?links\\.php\\?action=[^<>\"/\\&]+\\&kat_id=\\d+\\&fileid=\\d+" }, flags = { 0 })
 public class CnnT extends PluginForDecrypt {
 
     public CnnT(PluginWrapper wrapper) {
@@ -40,8 +40,11 @@ public class CnnT extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        final String host = new Regex(parameter, "https?://([^/]+)/").getMatch(0);
+        final String kat_id = new Regex(parameter, "kat_id=(\\d+)").getMatch(0);
         final String fid = new Regex(parameter, "fileid=(\\d+)").getMatch(0);
+        parameter = "http://ru.canna.to/cpuser/links.php?action=popup&kat_id=" + kat_id + "&fileid=" + fid;
         boolean valid = false;
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -57,12 +60,18 @@ public class CnnT extends PluginForDecrypt {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 final Form captchaForm = br.getFormbyProperty("name", "download_form");
                 captchaForm.setAction("/cpuser/links.php?action=load&fileid=" + fid);
-                final String captchaUrl = br.getRegex("\"(securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
-                if (captchaUrl == null || captchaForm == null) {
+                final String captchaUrlPart = br.getRegex("\"(securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
+                if (captchaUrlPart == null || captchaForm == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final String captchaCode = getCaptchaCode("http://uu.canna.to/cpuser/" + captchaUrl, param);
+                final String captchaurl;
+                if (this.br.getURL().contains("/cpuser/")) {
+                    captchaurl = "http://" + host + "/cpuser/" + captchaUrlPart;
+                } else {
+                    captchaurl = "http://" + host + "/" + captchaUrlPart;
+                }
+                final String captchaCode = getCaptchaCode(captchaurl, param);
                 captchaForm.put("cp_captcha", captchaCode);
                 br.submitForm(captchaForm);
                 if (br.containsHTML("Der Sicherheitscode ist falsch!")) {

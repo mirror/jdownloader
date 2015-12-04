@@ -43,11 +43,9 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
     private String parameter       = null;
     private String plain_folder_id = null;
     private String plain_domain    = null;
-    private String nodeid          = null;
     private String subfolder_id    = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        nodeid = null;
         subfolder_id = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = param.toString();
@@ -119,11 +117,11 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
                 resource_data_list = new ArrayList<Object>();
                 resource_data_list.add(nodeInfo);
             } else {
-                nodeid = (String) nodeInfo.get("id");
-                if (nodeid == null) {
+                subfolder_id = (String) nodeInfo.get("id");
+                if (subfolder_id == null) {
                     return null;
                 }
-                resource_data_list = jd.plugins.hoster.AmazonCloud.getListFromNode(this.br, this.plain_domain, this.plain_folder_id, this.nodeid);
+                resource_data_list = jd.plugins.hoster.AmazonCloud.getListFromNode(this.br, this.plain_domain, this.plain_folder_id, this.subfolder_id);
                 if (jd.plugins.hoster.AmazonCloud.isOffline(this.br)) {
                     decryptedLinks.add(createOfflinelink(this.parameter));
                     return decryptedLinks;
@@ -167,9 +165,6 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             dl.setProperty("plain_folder_id", plain_folder_id);
             if (subfolder_id != null) {
                 dl.setProperty("subfolder_id", subfolder_id);
-            }
-            if (nodeid != null) {
-                dl.setProperty("nodeid", nodeid);
             }
             dl.setProperty("plain_domain", plain_domain);
             dl.setProperty(PackagizerController.SUBFOLDERBYPLUGIN, path_decrypted);

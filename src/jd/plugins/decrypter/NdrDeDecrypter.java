@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ndr.de" }, urls = { "https?://(www\\.)?ndr\\.de/fernsehen/sendungen/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "https?://(www\\.)?ndr\\.de/fernsehen/sendungen/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }, flags = { 0 })
 public class NdrDeDecrypter extends PluginForDecrypt {
 
     public NdrDeDecrypter(PluginWrapper wrapper) {
@@ -58,7 +58,11 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("https://", "http://");
         final String url_id = new Regex(parameter, "([a-z0-9]+)\\.html$").getMatch(0);
+        final SubConfiguration cfg = SubConfiguration.getConfig(domain);
+        final boolean qsubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
+        final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.NdrDe.FAST_LINKCHECK, jd.plugins.hoster.NdrDe.defaultFAST_LINKCHECK);
         br.setFollowRedirects(true);
+
         this.br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -125,31 +129,21 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             final String finalfilename = date_formatted + "_ndr_" + title + "_" + getNiceQuality(quality) + ".mp4";
             final String directlink = "http://media.ndr.de/progressive/" + v_year + "/" + v_id + "/TV-" + v_year + v_id + v_rest + "." + quality + ".mp4";
             final DownloadLink dl = createDownloadlink("http://ndrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-            try {
-                dl.setContentUrl(parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(parameter);
-            }
+            dl.setContentUrl(parameter);
             dl.setProperty("directlink", directlink);
             dl.setProperty("quality", quality);
             dl.setProperty("streamingType", "video");
             dl.setProperty("decryptedfilename", finalfilename);
             dl.setProperty("mainlink", parameter);
-            try {
-                dl.setLinkID(String.format(linkdupeid, "video", quality));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setLinkID(String.format(linkdupeid, "video", quality));
-            }
+            dl.setLinkID(String.format(linkdupeid, "video", quality));
             dl.setFinalFileName(finalfilename);
-            dl.setAvailable(true);
+            if (fastlinkcheck) {
+                dl.setAvailable(true);
+            }
             foundqualities.put(quality, dl);
         }
         /** Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
-        final SubConfiguration cfg = SubConfiguration.getConfig(domain);
-        final boolean qsubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
         if (cfg.getBooleanProperty(Q_BEST, false)) {
             for (final String quality : qualities) {
                 if (foundqualities.get(quality) != null) {
@@ -187,23 +181,13 @@ public class NdrDeDecrypter extends PluginForDecrypt {
                     final String quality = dl.getStringProperty("quality", null);
                     final String finalfilename = date_formatted + "_ndr_" + title + "_" + getNiceQuality(quality) + ".xml";
                     final DownloadLink dlsubtitle = createDownloadlink("http://ndrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                    try {
-                        dlsubtitle.setContentUrl(parameter);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                        dlsubtitle.setBrowserUrl(parameter);
-                    }
+                    dlsubtitle.setContentUrl(parameter);
                     dlsubtitle.setProperty("directlink", subtitle_url);
                     dlsubtitle.setProperty("quality", quality);
                     dlsubtitle.setProperty("streamingType", "subtitle");
                     dlsubtitle.setProperty("decryptedfilename", finalfilename);
                     dlsubtitle.setProperty("mainlink", parameter);
-                    try {
-                        dl.setLinkID(String.format(linkdupeid, "subtitle", quality));
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                        dl.setLinkID(String.format(linkdupeid, "subtitle", quality));
-                    }
+                    dl.setLinkID(String.format(linkdupeid, "subtitle", quality));
                     dlsubtitle.setFinalFileName(finalfilename);
                     dlsubtitle.setAvailable(true);
                     decryptedLinks.add(dlsubtitle);
