@@ -54,8 +54,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
-        br.setAllowedResponseCodes(439);
-        br.setFollowRedirects(true);
+        this.br = jd.plugins.hoster.InstaGramCom.prepBR(this.br);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("user\\?username=.+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -99,18 +98,23 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 br.getHeaders().put("X-Instagram-AJAX", "1");
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.8,en-US;q=0.6,en;q=0.4");
+                // br.getHeaders().put("Origin", "https://www.instagram.com");
+                // br.getHeaders().put("Cache-Control", null);
                 if (csrftoken != null) {
                     br.getHeaders().put("X-CSRFToken", csrftoken);
                 }
                 if (maxid != null) {
                     this.br.getHeaders().put("Referer", "https://instagram.com/" + username_url + "/?max_id=" + maxid);
-                    // this.br.setCookie(this.getHost(), "ig_vw", "1680");
+                } else {
+                    this.br.getHeaders().put("Referer", "https://www.instagram.com/" + username_url);
                 }
+                this.br.setCookie(this.getHost(), "ig_vw", "1680");
                 int retrycounter = 1;
 
                 /* Access next page - 403 error may happen once for logged in users - reason unknown - will work fine on 2nd request! */
                 do {
-                    this.br.postPage("https://instagram.com/query/", "q=ig_user(" + id_owner + ")+%7B+media.after(" + nextid + "%2C+12)+%7B%0A++count%2C%0A++nodes+%7B%0A++++caption%2C%0A++++code%2C%0A++++comments+%7B%0A++++++count%0A++++%7D%2C%0A++++date%2C%0A++++display_src%2C%0A++++id%2C%0A++++is_video%2C%0A++++likes+%7B%0A++++++count%0A++++%7D%2C%0A++++owner+%7B%0A++++++id%0A++++%7D%0A++%7D%2C%0A++page_info%0A%7D%0A+%7D&ref=users%3A%3Ashow");
+                    this.br.postPage("https://instagram.com/query/", "q=ig_user(" + id_owner + ")+%7B+media.after(" + nextid + "%2C+12)+%7B%0A++count%2C%0A++nodes+%7B%0A++++caption%2C%0A++++code%2C%0A++++comments+%7B%0A++++++count%0A++++%7D%2C%0A++++date%2C%0A++++dimensions+%7B%0A++++++height%2C%0A++++++width%0A++++%7D%2C%0A++++display_src%2C%0A++++id%2C%0A++++is_video%2C%0A++++likes+%7B%0A++++++count%0A++++%7D%2C%0A++++owner+%7B%0A++++++id%0A++++%7D%2C%0A++++thumbnail_src%0A++%7D%2C%0A++page_info%0A%7D%0A+%7D&ref=users%3A%3Ashow");
                     retrycounter++;
                 } while (this.br.getHttpConnection().getResponseCode() == 403 && retrycounter <= 3);
 

@@ -80,6 +80,7 @@ public class InstaGramCom extends PluginForHost {
          * Decrypter can set this status - basically to be able to handfle private urls correctly in host plugin in case users' account gets
          * disabled for whatever reason.
          */
+        this.br = prepBR(this.br);
         is_private_url = downloadLink.getBooleanProperty("private_url", false);
         boolean is_logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -94,7 +95,6 @@ public class InstaGramCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Login required to download this content");
             return AvailableStatus.UNCHECKABLE;
         }
-        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Oops, an error occurred") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             /* This will also happen if a user tries to access private urls without being logged in! */
@@ -176,7 +176,7 @@ public class InstaGramCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                br.setCookie(MAINPAGE, "ig_pr", "1");
+                prepBR(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -193,7 +193,6 @@ public class InstaGramCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
                 br.getPage("https://instagram.com/accounts/login/");
                 try {
                     br.setHeader("X-Instagram-AJAX", "1");
@@ -251,6 +250,14 @@ public class InstaGramCom extends PluginForHost {
         requestFileInformation(link);
         /* We're already logged in - no need to login again here! */
         this.handleDownload(link);
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.73 Safari/537.36");
+        br.setCookie(MAINPAGE, "ig_pr", "1");
+        br.setAllowedResponseCodes(439);
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
