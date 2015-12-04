@@ -392,7 +392,7 @@ public class MediafireCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         this.br.setDebug(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
-        if (!this.dl.getConnection().isContentDisposition()) {
+        if (this.dl.getConnection().getContentType().contains("html")) {
             handleServerErrors();
             logger.info("Error (3)");
             logger.info(dl.getConnection() + "");
@@ -535,7 +535,7 @@ public class MediafireCom extends PluginForHost {
 
             this.br.setFollowRedirects(true);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (!this.dl.getConnection().isContentDisposition()) {
+            if (this.dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
                 logger.info("Error (4)");
                 logger.info(dl.getConnection() + "");
@@ -577,7 +577,8 @@ public class MediafireCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
 
-        if (!this.dl.getConnection().isContentDisposition()) {
+        if (this.dl.getConnection().getContentType().contains("html")) {
+
             logger.info("Error (3)");
             logger.info(dl.getConnection() + "");
             this.br.followConnection();
