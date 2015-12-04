@@ -44,6 +44,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     /** Tags: Viacom International Media Networks Northern Europe, mrss, gameone.de */
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/mtv.py */
     /* Additional information/methods can be found in the VivaTv host plugin */
+    /** TODO: mtvplay.tv */
 
     private static final String     type_viva                    = "https?://(?:www\\.)?viva\\.tv/.+";
     private static final String     type_mtv_de                  = "https?://(?:www\\.)?mtv\\.de/.+";
