@@ -559,14 +559,30 @@ public class YoutubeDashV2 extends PluginForHost {
 
     private boolean isDownloading = false;
 
+    protected void checkOldLink(DownloadLink downloadLink) throws PluginException {
+        if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
+            convertOldLink(downloadLink);
+        }
+        if (downloadLink.getDownloadURL().startsWith("youtubev2://")) {
+            String videoID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
+            if (videoID == null) {
+                videoID = new Regex(downloadLink.getDownloadURL(), "/([^/]*?)(/$|$)").getMatch(0);
+                downloadLink.setProperty(YoutubeHelper.YT_ID, videoID);
+            }
+            String var = downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT);
+            if (var == null) {
+                var = new Regex(downloadLink.getDownloadURL(), "youtubev2://(.*?)(/|$)").getMatch(0);
+                downloadLink.setProperty(YoutubeHelper.YT_VARIANT, var);
+            }
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
-        if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
-            convertOldLink(downloadLink);
-        }
+        checkOldLink(downloadLink);
 
         if (cfg.isFastLinkCheckEnabled() && !LinkChecker.isForcedLinkCheck(downloadLink)) {
 
@@ -1525,9 +1541,7 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
-        if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
-            convertOldLink(downloadLink);
-        }
+        checkOldLink(downloadLink);
         YoutubeHelper helper = getCachedHelper();
         YoutubeVariantInterface variant = getVariant(downloadLink);
 
