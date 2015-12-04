@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -49,12 +50,16 @@ public class FrancetelevisionsCom extends PluginForHost {
 
     LinkedHashMap<String, Object> entries = null;
 
+    /**
+     * Basically all french public TV stations use 1 network / API and we only need this one API request to get all information needed to
+     * download their videos :)
+     */
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         this.br.setAllowedResponseCodes(400);
-        br.setFollowRedirects(true);
+        this.br.setFollowRedirects(true);
         final String[] videoinfo = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/") + 1).split("@");
         final String videoid = videoinfo[0];
         final String catalogue = videoinfo[1];
@@ -84,6 +89,7 @@ public class FrancetelevisionsCom extends PluginForHost {
         }
         String filename = "";
         if (!inValidate(date)) {
+            /* Yap - the date is not always given! */
             final String date_formatted = formatDate(date);
             filename += date_formatted + "_";
         }
@@ -95,6 +101,7 @@ public class FrancetelevisionsCom extends PluginForHost {
             filename += " - " + subtitle;
         }
         filename += ".mp4";
+        filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
 
@@ -109,30 +116,57 @@ public class FrancetelevisionsCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dlurl = null;
+        String hls_master = null;
+        String url_http = null;
+        String url_temp = null;
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("videos");
         for (final Object videoo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) videoo;
             final String format = (String) entries.get("format");
-            if (inValidate(format)) {
+            url_temp = (String) entries.get("url");
+            if (inValidate(format) || inValidate(url_temp)) {
                 continue;
             }
-            if (format.contains("hls") || format.contains("m3u8") || format.equals("mp4-dp")) {
-                dlurl = (String) entries.get("url");
-                if (!inValidate(dlurl)) {
-                    break;
-                }
+            if (format.equals("mp4-dp")) {
+                url_http = url_temp;
+            } else if (format.contains("hls") || format.contains("m3u8")) {
+                hls_master = url_temp;
             }
         }
-        if (dlurl == null) {
-            /* Seems like what the user wants to download hasn't aired yet --> Wait and retry later! */
+        if (hls_master == null && url_http == null) {
+            /*
+             * That should never happen. Even geo-blocked users should get the final downloadlinks even though download attempts will end up
+             * in response code 403 which is handled correctly below.
+             */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dlurl.contains(".m3u8")) {
+        if (url_http != null) {
+            /* Download http (rare case!) */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url_http, true, 0);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            // this.br.getPage("http://hdfauthftv-a.akamaihd.net/esi/TA?format=json&url=" + Encoding.urlEncode(hls_master) +
+            // "&callback=_jsonp_loader_callback_request_2");
+            // final String json = this.br.getRegex("^_jsonp_loader_callback_request_2\\((.+)\\)$").getMatch(0);
+            // entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            // hls_master = (String) entries.get("url");
+            // this.br.getPage(hls_master);
+
             /* Download hls */
-            br.getPage(dlurl);
+            br.getPage(hls_master);
             if (this.br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
+            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
             if (medias == null) {
@@ -155,19 +189,6 @@ public class FrancetelevisionsCom extends PluginForHost {
             }
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
-        } else {
-            /* Download http (rare case!) */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlurl, true, 0);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
         dl.startDownload();
     }

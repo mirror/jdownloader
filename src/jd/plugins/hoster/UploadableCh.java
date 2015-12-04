@@ -40,12 +40,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadable.ch" }, urls = { "https?://(?:www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
@@ -173,7 +173,8 @@ public class UploadableCh extends PluginForHost {
             showFreeDialog(getHost());
         }
         br.setFollowRedirects(false);
-        String dllink = checkDirectLink(downloadLink, "uploadabledirectlink");
+        final String directlinkproperty = "uploadabledirectlink";
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             final String postLink = br.getURL();
@@ -236,6 +237,8 @@ public class UploadableCh extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            checkDirectlinkFailed(downloadLink, directlinkproperty);
+            checkResponseCodeErrors(dl.getConnection());
             logger.info("Finallink does not lead to a file, continuing...");
             br.followConnection();
             /* Error-links: http://www.uploadable.ch/l-error.php?error_code=ERRORCODE */
@@ -248,8 +251,33 @@ public class UploadableCh extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("uploadabledirectlink", dllink);
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    /**
+     * Use this if a download fails on final download attempt. In case a previously generated directurl has been re-used, this will simply
+     * retry and set the directlinkproperty to NULL to avoid unhandled errorcases.
+     */
+    private void checkDirectlinkFailed(final DownloadLink dl, final String directlinkproperty) throws PluginException {
+        final String directlink = dl.getStringProperty(directlinkproperty, null);
+        if (directlink != null) {
+            dl.setProperty(directlinkproperty, Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Directlink failed/expired");
+        }
+    }
+
+    /** Handles all kinds of error-responsecodes! */
+    private void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
+        if (con == null) {
+            return;
+        }
+        final long responsecode = con.getResponseCode();
+        if (responsecode == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+        } else if (responsecode == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -257,8 +285,9 @@ public class UploadableCh extends PluginForHost {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 404) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
@@ -274,7 +303,7 @@ public class UploadableCh extends PluginForHost {
     private static final String MAINPAGE = "http://uploadable.ch";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings({ "deprecation", "static-access" })
+    @SuppressWarnings({ "deprecation" })
     private AccountInfo login(final Account account, final boolean force, final AccountInfo ac) throws Exception {
         synchronized (LOCK) {
             final AccountInfo ai = ac != null ? ac : new AccountInfo();
@@ -391,6 +420,7 @@ public class UploadableCh extends PluginForHost {
         return br.getCookie(MAINPAGE, "autologin") == null || StringUtils.containsIgnoreCase(br.getCookie(MAINPAGE, "autologin"), "deleted") || !br.containsHTML("class=\"icon logout\"");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         try {
@@ -411,23 +441,27 @@ public class UploadableCh extends PluginForHost {
             doFree(link, account);
         } else {
             br.setFollowRedirects(false);
-            /* This way we don't have to care about the users' "instant download" setting */
-            String postlink = link.getDownloadURL();
-            if (!postlink.contains("http://www.")) {
-                /* TODO: Check if this is still needed! */
-                postlink = postlink.replace("http://", getProtocol() + "www.");
-            }
-            br.postPage(postlink, "download=premium");
-            /*
-             * Full message: You have exceeded your download limit. Please verify your email address to continue downloading.
-             */
-            if (br.containsHTML("You have exceeded your download limit")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            final String dllink = br.getRedirectLocation();
+            final String directlinkproperty = "uploadabledirectlink_premium";
+            String dllink = checkDirectLink(link, directlinkproperty);
             if (dllink == null) {
-                logger.warning("Final link is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* This way we don't have to care about the users' "instant download" setting */
+                String postlink = link.getDownloadURL();
+                if (!postlink.contains("http://www.")) {
+                    /* TODO: Check if this is still needed! */
+                    postlink = postlink.replace("http://", getProtocol() + "www.");
+                }
+                br.postPage(postlink, "download=premium");
+                /*
+                 * Full message: You have exceeded your download limit. Please verify your email address to continue downloading.
+                 */
+                if (br.containsHTML("You have exceeded your download limit")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    logger.warning("Final link is null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             int maxchunks = 1;
             if (this.getPluginConfig().getBooleanProperty(PREMIUM_UNLIMITEDCHUNKS, false)) {
@@ -436,9 +470,12 @@ public class UploadableCh extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
+                checkDirectlinkFailed(link, directlinkproperty);
+                checkResponseCodeErrors(dl.getConnection());
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         }
     }

@@ -46,15 +46,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(www\\.)?uploadboy\\.com/(vidembed\\-)?[a-z0-9]{12}(\\.html)?(\\?ref=[a-zA-Z0-9\\%\\.]+)?$" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(?:www\\.)?uploadboy\\.(?:com|me)/(?:vidembed\\-)?[a-z0-9]{12}(?:\\.html)?(?:\\?ref=[a-zA-Z0-9\\%\\.]+)?" }, flags = { 2 })
 public class UploadBoyCom extends antiDDoSForHost {
 
     public static final long     trust_cookie_age             = 30000l;
@@ -89,6 +89,7 @@ public class UploadBoyCom extends antiDDoSForHost {
     // captchatype: null
     // other: Free mode: 100 KB/s, Free Accound Mode: 150 KB/s
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
@@ -100,7 +101,7 @@ public class UploadBoyCom extends antiDDoSForHost {
         // output the hostmask as we wish based on COOKIE_HOST url!
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
-        String id = new Regex(link.getDownloadURL(), "https?://(www\\.)?uploadboy\\.com/(vidembed\\-)?([a-z0-9]{12})").getMatch(2);
+        String id = new Regex(link.getDownloadURL(), "([a-z0-9]{12})").getMatch(0);
         String ref = null;
         // disabled as incorrect/invalid refs = offline. just use fake facebook refs as this is a antiquated feature. re:
         // http://svn.jdownloader.org/issues/57472#note-2 - raztoki

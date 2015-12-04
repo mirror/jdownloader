@@ -42,7 +42,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://wdrdecrypted\\.de/\\?format=(mp3|mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de" }, urls = { "http://wdrdecrypted\\.de/\\?format=(mp3|mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" }, flags = { 0 })
 public class WdrDeMediathek extends PluginForHost {
 
     public WdrDeMediathek(PluginWrapper wrapper) {
@@ -60,6 +60,7 @@ public class WdrDeMediathek extends PluginForHost {
     private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
     private static final String TYPE_INVALID    = "http://([a-z0-9]+\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
 
+    public static final String  FAST_LINKCHECK  = "FAST_LINKCHECK";
     private static final String Q_LOW           = "Q_LOW";
     private static final String Q_MEDIUM        = "Q_MEDIUM";
     private static final String Q_BEST          = "Q_BEST";
@@ -180,7 +181,7 @@ public class WdrDeMediathek extends PluginForHost {
 
     /**
      * Converts the WDR Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @return The success of the conversion.
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -295,7 +296,7 @@ public class WdrDeMediathek extends PluginForHost {
 
     /**
      * Converts the the time of the WDR format to the SRT format.
-     * 
+     *
      * @param time
      *            . The time from the WDR XML.
      * @return The converted time as String.
@@ -370,6 +371,8 @@ public class WdrDeMediathek extends PluginForHost {
         return "JDownloader's WDR Plugin helps downloading videoclips from wdr.de. You can choose between different video qualities.";
     }
 
+    public static final boolean defaultFAST_LINKCHECK = false;
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.wdrdemediathek.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -379,6 +382,7 @@ public class WdrDeMediathek extends PluginForHost {
         getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.wdrdemediathek.loadlow", "Load 512x288 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.wdrdemediathek.loadmedium", "Load 960x544 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.wdr.fastlinkcheck", "Schnellen Linkcheck aktivieren?\r\n<html><b>WICHTIG: Dadurch erscheinen die Links schneller im Linkgrabber, aber die Dateigröße wird erst beim Downloadstart (oder manuellem Linkcheck) angezeigt.</b></html>")).setDefaultValue(defaultFAST_LINKCHECK));
     }
 
     @Override

@@ -32,7 +32,6 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -48,7 +47,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 // http://tvthek,orf.at/live/... --> HDS
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(programs?|topic)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(programs?|topic)/.+" }, flags = { 0 })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
@@ -73,21 +72,10 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         if (isStableEnviroment()) {
             return decryptedLinks;
         }
-        String parameter = param.toString();
-
-        try {
-            this.br.setLoadLimit(this.br.getLoadLimit() * 2);
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
-                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=default&hash=default");
-                link.setAvailable(false);
-                link.setProperty("offline", true);
-                decryptedLinks.add(link);
-                return decryptedLinks;
-            }
-            throw e;
-        }
+        String parameter = param.toString().replace("/index.php/", "/");
+        this.br.setAllowedResponseCodes(500);
+        this.br.setLoadLimit(this.br.getLoadLimit() * 2);
+        br.getPage(parameter);
         int status = br.getHttpConnection().getResponseCode();
         if (status == 301 || status == 302) {
             br.setFollowRedirects(true);
@@ -102,7 +90,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.add(link);
             return decryptedLinks;
         }
-        if (br.containsHTML("(404 \\- Seite nicht gefunden\\.|area_headline error_message\">Keine Sendung vorhanden<)") || !br.containsHTML("class=\"video_headline\"")) {
+        if (br.containsHTML("(404 \\- Seite nicht gefunden\\.|area_headline error_message\">Keine Sendung vorhanden<)") || !br.containsHTML("class=\"video_headline\"") || status == 404 || status == 500) {
             final DownloadLink link = this.createOfflinelink(parameter);
             link.setAvailable(false);
             link.setProperty("offline", true);

@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -56,15 +55,9 @@ public class MyStreamLa extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(downloadLink.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 500) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw e;
-        }
-        if (br.containsHTML(">File Not Found<|The file you were looking for could not be found|>The file was deleted by administration because")) {
+        br.setAllowedResponseCodes(500);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">File Not Found<|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<b>Filename:</b></td><td nowrap>([^<>\"]*?)</td>").getMatch(0);

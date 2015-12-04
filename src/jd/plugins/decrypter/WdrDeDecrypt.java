@@ -25,7 +25,6 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 32 })
 public class WdrDeDecrypt extends PluginForDecrypt {
 
     private static final String Q_LOW           = "Q_LOW";
@@ -62,7 +61,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = fixVideourl(param.toString());
-        boolean offline = false;
         br.setFollowRedirects(true);
 
         if (parameter.matches(TYPE_ROCKPALAST)) {
@@ -72,11 +70,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            offline = true;
-        }
+        br.getPage(parameter);
 
         /* Are we on a video-infor/overview page? We have to access the url which contains the player! */
         String videourl_forward = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
@@ -86,8 +80,8 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         }
 
         /* fernsehen/.* links |mediathek/.* links */
-        final boolean page_contains_video = br.containsHTML("class=\"videoLink\"") || br.containsHTML("class=\"mediaInfo\"");
-        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
+        final boolean page_contains_video = br.containsHTML("class=\"videoLink\"") || br.containsHTML("class=\"mediaInfo\"") || br.containsHTML("dataExtensionURL:");
+        if (parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
             /* Add offline link so user can see it */
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setAvailable(false);
@@ -154,6 +148,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
             final SubConfiguration cfg = SubConfiguration.getConfig("wdr.de");
             final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
+            final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.WdrDeMediathek.FAST_LINKCHECK, jd.plugins.hoster.WdrDeMediathek.defaultFAST_LINKCHECK);
 
             /*
              * Possible json "API" e.g. http://www1.wdr.de/mediathek/video/sendungen/videokoelnerlichter112.html
@@ -236,10 +231,9 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 dl_video.setProperty("plain_filename", final_video_name);
                 dl_video.setProperty("plain_resolution", resolution);
                 dl_video.setFinalFileName(final_video_name);
-                try {
-                    dl_video.setContentUrl(parameter);
-                } catch (final Throwable e) {
-                    dl_video.setBrowserUrl(parameter);
+                dl_video.setContentUrl(parameter);
+                if (fastlinkcheck) {
+                    dl_video.setAvailable(true);
                 }
                 best_map.put(quality_name, dl_video);
                 newRet.add(dl_video);
@@ -288,11 +282,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                         dl_subtitle.setProperty("streamingType", "subtitle");
                         dl_subtitle.setAvailable(true);
                         dl_subtitle.setFinalFileName(subtitle_filename);
-                        try {
-                            dl_subtitle.setContentUrl(parameter);
-                        } catch (final Throwable e) {
-                            dl_subtitle.setBrowserUrl(parameter);
-                        }
+                        dl_subtitle.setContentUrl(parameter);
                         decryptedLinks.add(dl_subtitle);
                     }
                     decryptedLinks.add(keep);
