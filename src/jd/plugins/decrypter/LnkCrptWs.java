@@ -21,7 +21,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -48,7 +48,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
@@ -59,7 +58,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
@@ -127,6 +125,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
     }
 
     private final HashMap<String, String> map = new HashMap<String, String>();
+    private final HashMap<String, String> cln = new HashMap<String, String>();
 
     public LnkCrptWs(final PluginWrapper wrapper) {
         super(wrapper);
@@ -186,7 +185,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     password.put("password", Encoding.urlEncode(latestPassword));
                     submitForm(password);
                     password = getPasswordForm();
-                    if (password != null && password.hasInputFieldByName("password")) {
+                    if (password != null) {
                         if (i + 1 == 3) {
                             throw new DecrypterException(DecrypterException.PASSWORD);
                         }
@@ -236,18 +235,9 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
             }
             // supports cnl when in js document write
             if (row == null && decryptedJS.contains("127.0.0.1:9666/flash/")) {
-                row = new String[2];
-                row[1] = "cnl";
-                row[0] = decryptedJS.replaceAll("\\'", "'");
-            }
-            if (row != null) {
-                if ("cnl".equalsIgnoreCase(row[1])) {
-                    row[1] = "cnl";
-                    row[0] = decryptedJS;
-                }
-                if (!map.containsKey(row[1])) {
-                    map.put(row[1], row[0]);
-                }
+                // process CnL
+                processCnL(decryptedJS, decryptedLinks, parameter);
+                continue;
             }
             if (row == null) {
                 // containers can have unknown file extensions in URL, but ID which is referenced in HTML. to combat that we need todo the
@@ -266,6 +256,10 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 }
 
             }
+        }
+
+        if (Boolean.TRUE.equals(CnLSuccessful) && !decryptedLinks.isEmpty()) {
+            return decryptedLinks;
         }
 
         final Form preRequest = br.getForm(0);
@@ -287,54 +281,8 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         /* CNL --> Container --> Webdecryption */
         final Form[] webDecryptForms = br.getFormsByActionRegex(".*linkcrypt\\.ws/out\\.html");
         boolean webDecryption = webDecryptForms != null ? true : false;
-        boolean isCnlAvailable = map.containsKey("cnl");
 
-        // CNL
-        if (isCnlAvailable) {
-            final Browser cnlbr = br.cloneBrowser();
-            decryptedJS = map.get("cnl").replaceAll("\\\\", "");
-
-            /* Workaround for the stable and parseInputFields method */
-            String jk = new Regex(decryptedJS, "NAME=\"jk\" VALUE=\"([^\"]+)\">").getMatch(0);
-            decryptedJS = decryptedJS.replaceAll("NAME=\"jk\" VALUE=\"[^\"]+\">", "NAME=\"jk\" VALUE=\"" + Encoding.urlEncode(jk) + "\">");
-
-            cnlbr.getRequest().setHtmlCode(decryptedJS);
-            Form cnlForm = cnlbr.getForm(0);
-
-            if (cnlForm != null) {
-                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                    HashMap<String, String> infos = new HashMap<String, String>();
-                    infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
-                    infos.put("jk", Encoding.urlDecode(cnlForm.getInputField("jk").getValue(), false));
-                    String source = cnlForm.getInputField("source").getValue();
-                    if (StringUtils.isEmpty(source)) {
-                        source = parameter.toString();
-                    } else {
-                        source = Encoding.urlDecode(source, true);
-                    }
-                    infos.put("source", source);
-                    String json = JSonStorage.toString(infos);
-                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-                    decryptedLinks.add(dl);
-                    // first clicknload returns all links and we assume it works!
-                    return decryptedLinks;
-                } else {
-                    try {
-                        submitForm(cnlbr, cnlForm);
-                        if (cnlbr.containsHTML("success")) {
-                            return decryptedLinks;
-                        }
-                        if (cnlbr.containsHTML("^failed")) {
-                            logger.warning("linkcrypt.ws: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
-                            logger.warning("linkcrypt.ws: CNL2 Message: " + cnlbr.toString());
-                        }
-                    } catch (Throwable e) {
-                        logger.info("linkcrypt.ws: ExternInterface(CNL2) is disabled!");
-                    }
-                }
-            }
-            map.remove("cnl");
-        }
+        // CNL proccessed above!
 
         // Container
         for (Entry<String, String> next : map.entrySet()) {
@@ -439,11 +387,11 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.info("No links found, let's see if CNL2 is available!");
-            if (isCnlAvailable) {
-                LocalBrowser.openDefaultURL(new URL(parameter));
-                throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
-            }
+            // logger.info("No links found, let's see if CNL2 is available!");
+            // if (isCnlAvailable) {
+            // LocalBrowser.openDefaultURL(new URL(parameter));
+            // throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+            // }
             logger.warning("Link probably offline: " + parameter);
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -457,6 +405,33 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         } catch (final Throwable e) {
         }
         return decryptedLinks;
+    }
+
+    private Boolean CnLSuccessful = null;
+
+    private void processCnL(final String s, final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws UnsupportedEncodingException {
+        final Browser cnlbr = br.cloneBrowser();
+        String decryptedJS = s.replaceAll("\\\\", "").replaceAll("\\'", "'");
+        cnlbr.getRequest().setHtmlCode(decryptedJS);
+        Form cnlForm = cnlbr.getForm(0);
+        if (cnlForm != null) {
+            HashMap<String, String> infos = new HashMap<String, String>();
+            infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
+            infos.put("jk", Encoding.urlDecode(cnlForm.getInputField("jk").getValue(), false));
+            String source = cnlForm.getInputField("source").getValue();
+            if (StringUtils.isEmpty(source)) {
+                source = parameter.toString();
+            } else {
+                source = Encoding.urlDecode(source, true);
+            }
+            infos.put("source", source);
+            String json = JSonStorage.toString(infos);
+            final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+            decryptedLinks.add(dl);
+            CnLSuccessful = Boolean.TRUE;
+            return;
+        }
+        CnLSuccessful = Boolean.FALSE;
     }
 
     private final String  captchaTypeKeyCaptcha = "<!-- KeyCAPTCHA code|<input [^>]*name=(\"|')capcode\\1";
