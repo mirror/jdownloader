@@ -95,11 +95,15 @@ public class SrfCh extends PluginForHost {
                 final long bandwidth_temp = Long.parseLong(bw);
                 if (bandwidth_temp > bandwidth_highest) {
                     bandwidth_highest = bandwidth_temp;
-                    url_hls = new Regex(media, "https?://[^\r\n]+").getMatch(-1);
+                    url_hls = new Regex(media, "[^\r\n\t]+(.*?\\.m3u8)[^\r\n\t]+").getMatch(0);
                 }
             }
             if (url_hls == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            url_hls = url_hls.trim();
+            if (!url_hls.startsWith("http")) {
+                url_hls = this.br.getBaseURL() + url_hls;
             }
             try {
             } catch (final Throwable e) {
