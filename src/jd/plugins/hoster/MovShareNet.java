@@ -33,9 +33,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movshare.net", "epornik.com" }, urls = { "http://(?:www\\.)?(?:movshare|wholecloud)\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(?:www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
 public class MovShareNet extends PluginForHost {
 
-    private static final String HUMANTEXT = "We need you to prove you\\'re human";
-    private static final String EPORN     = "epornik.com/";
-    private static final String DOMAIN    = "wholecloud.net";
+    private static final String FILE_TRANSFERRED = ">The file is being transfered";
+    private static final String EPORN            = "epornik.com/";
+    private static final String DOMAIN           = "wholecloud.net";
 
     public MovShareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,9 +63,10 @@ public class MovShareNet extends PluginForHost {
     // gets broken please also check the other one!
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         setBrowserExclusive();
+        final String linkid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         br.getHeaders().put("Accept-Encoding", "identity");
         br.getPage(downloadLink.getDownloadURL());
         if (!br.getURL().contains(EPORN)) {
@@ -87,11 +88,11 @@ public class MovShareNet extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<h4 class=\"vidtitle\">([^<>\"]*?)</h4>").getMatch(0);
         }
-        if (br.containsHTML("<strong>Title:</strong> Untitled</p>") && filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        }
+        // if (br.containsHTML("<strong>Title:</strong> Untitled</p>") && filename == null) {
+        // filename = linkid;
+        // }
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = linkid;
         }
         filename = filename.trim();
         if (br.getURL().contains("movshare.net/")) {
@@ -116,22 +117,15 @@ public class MovShareNet extends PluginForHost {
         String dllink = null;
         requestFileInformation(downloadLink);
         if (br.getURL().contains(EPORN)) {
+            if (this.br.containsHTML(FILE_TRANSFERRED)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The file is being transfered'", 15 * 60 * 1000l);
+            }
             dllink = br.getRegex("file: \"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         } else {
-            if (br.containsHTML(HUMANTEXT)) {
-                Form IAmAHuman = br.getForm(0);
-                if (IAmAHuman == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                /*
-                 * needed for stable 09581 working, post without data did not set content length to 0
-                 */
-                br.submitForm(IAmAHuman);
-            }
             if (br.containsHTML("The file is beeing transfered to our other servers")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }

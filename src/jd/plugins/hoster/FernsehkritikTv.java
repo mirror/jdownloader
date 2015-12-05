@@ -433,6 +433,9 @@ public class FernsehkritikTv extends PluginForHost {
         br.getPage("/u/");
         String expire = br.getRegex("bis (\\d{1,2}\\. [A-Za-z]+ \\d{4})").getMatch(0);
         if (expire == null) {
+            expire = br.getRegex("(\\d{1,2}\\. (?:Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember) 20\\d{2})").getMatch(0);
+        }
+        if (expire == null) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         } else {
