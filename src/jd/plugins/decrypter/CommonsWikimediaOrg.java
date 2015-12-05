@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/Category:Pictures_by_User:[^<>\"/:]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/Category:Pictures_by_User:[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class CommonsWikimediaOrg extends PluginForDecrypt {
 
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
@@ -40,12 +40,13 @@ public class CommonsWikimediaOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String username = new Regex(parameter, "Category:Pictures_by_User:(.+)").getMatch(0);
+
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String username = new Regex(parameter, "Category:Pictures_by_User:(.+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
 
