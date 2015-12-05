@@ -47,7 +47,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30118 $", interfaceVersion = 3, names = { "megacry.pt", "megacrypt.cc" }, urls = { "http://(?:www\\.)?megacry\\.pt/([A-Za-z0-9]{12})", "http://(?:www\\.)?megacrypt\\.cc/([A-Za-z0-9]{20})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 30118 $", interfaceVersion = 3, names = { "megacrypt.cc" }, urls = { "http://(?:www\\.)?megacrypt\\.cc/([A-Za-z0-9]{20})" }, flags = { 0 })
 public class MegaCryPt extends PluginForDecrypt {
 
     public MegaCryPt(PluginWrapper wrapper) {

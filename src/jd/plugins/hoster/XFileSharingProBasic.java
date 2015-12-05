@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
@@ -26,6 +25,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -49,11 +53,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
@@ -336,9 +335,11 @@ public class XFileSharingProBasic extends PluginForHost {
      * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
      * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
      * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ABUSE</b> is <b>true</b>!<br />
-     * */
-    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
-        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+     *
+     * @throws Exception
+     */
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
+        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
         return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -347,12 +348,12 @@ public class XFileSharingProBasic extends PluginForHost {
      * E.g. needed if officially only logged in users can see filesize or filesize is missing for whatever reason.<br />
      * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
      * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ALT</b> is <b>true</b>!<br />
-     * */
+     */
     @SuppressWarnings("deprecation")
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            br.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()));
+            postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
             filesize = br.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
@@ -380,7 +381,7 @@ public class XFileSharingProBasic extends PluginForHost {
             try {
                 logger.info("Trying to get link via mp3embed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/mp3embed-" + fuid);
+                getPage(brv, "/mp3embed-" + fuid, false);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
@@ -399,7 +400,7 @@ public class XFileSharingProBasic extends PluginForHost {
             try {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/vidembed-" + fuid);
+                getPage(brv, "/vidembed-" + fuid, false);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     logger.info("Failed to get link via vidembed because: " + br.toString());
@@ -455,7 +456,9 @@ public class XFileSharingProBasic extends PluginForHost {
             final Form download1 = this.br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+                /*
+                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                 */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -805,22 +808,41 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     private void getPage(final String page) throws Exception {
-        br.getPage(page);
-        correctBR();
+        getPage(br, page, true);
     }
 
-    @SuppressWarnings("unused")
+    private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
+        br.getPage(page);
+        if (correctBr) {
+            correctBR();
+        }
+    }
+
     private void postPage(final String page, final String postdata) throws Exception {
+        postPage(br, page, postdata, true);
+    }
+
+    private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
         br.postPage(page, postdata);
-        correctBR();
+        if (correctBr) {
+            correctBR();
+        }
     }
 
     private void submitForm(final Form form) throws Exception {
-        br.submitForm(form);
-        correctBR();
+        submitForm(br, form, true);
     }
 
-    /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
+    private void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
+        br.submitForm(form);
+        if (correctBr) {
+            correctBR();
+        }
+    }
+
+    /**
+     * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
+     */
     @SuppressWarnings("unused")
     private void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
         int wait = 0;
@@ -862,7 +884,7 @@ public class XFileSharingProBasic extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -877,7 +899,7 @@ public class XFileSharingProBasic extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -907,7 +929,9 @@ public class XFileSharingProBasic extends PluginForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            /*
+             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
