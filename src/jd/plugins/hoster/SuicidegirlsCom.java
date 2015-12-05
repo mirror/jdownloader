@@ -78,6 +78,7 @@ public class SuicidegirlsCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         login(this.br);
+        this.br = prepBR(this.br);
         String filename = null;
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
             this.br.getPage(link.getDownloadURL());
@@ -174,7 +175,6 @@ public class SuicidegirlsCom extends PluginForHost {
                     br.setCookies(MAINPAGE, cookies);
                     return;
                 }
-                br.setFollowRedirects(false);
                 br.getPage("https://www.suicidegirls.com");
                 final Form loginform = br.getFormbyProperty("id", "login-form");
                 if (loginform == null) {
@@ -299,6 +299,7 @@ public class SuicidegirlsCom extends PluginForHost {
     public static Browser prepBR(final Browser br) {
         br.setCookie(MAINPAGE, "burlesque_ad_closed", "True");
         br.setCookie(MAINPAGE, "django_language", "en");
+        br.setFollowRedirects(true);
         return br;
     }
 
