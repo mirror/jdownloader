@@ -15,8 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.logging.Level;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -35,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(www\\.)?((divxstage\\.(net|eu|to)|cloudtime\\.to)/video/|embed\\.(divxstage\\.(net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(?:www\\.)?(?:(?:divxstage\\.(?:net|eu|to)|cloudtime\\.to)/video/|embed\\.(?:divxstage\\.(?:net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0, 0 })
 public class DivxStageNet extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, DivxStageNet */
@@ -85,13 +83,11 @@ public class DivxStageNet extends PluginForHost {
         correctDownloadLink(downloadLink);
         br.setFollowRedirects(true);
         setBrowserExclusive();
+        // final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("We need you to prove you're human")) {
-            Form IAmAHuman = br.getForm(0);
-            if (IAmAHuman == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.submitForm(IAmAHuman);
+        final Form humanform = br.getFormbyKey("stepkey");
+        if (humanform != null) {
+            br.submitForm(humanform);
         }
         if (br.containsHTML("The file is beeing transfered to our other servers")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -206,7 +202,7 @@ public class DivxStageNet extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;

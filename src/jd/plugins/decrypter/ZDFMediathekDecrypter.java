@@ -72,7 +72,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         PARAMETER = PARAMETER_ORIGINAL.replace("ZDFmediathek#/", "ZDFmediathek/");
         this.fastlinkcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
         // Check for invalid links
-        if (PARAMETER.contains("/live/")) {
+        if (PARAMETER.contains("beitrag/live/") && !PARAMETER.matches(".+beitrag/video/\\d+.+")) {
             decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
             return decryptedLinks;
         }

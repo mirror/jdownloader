@@ -129,7 +129,7 @@ public class ShareSixCom extends PluginForHost {
         prepBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches() || br.getURL().equals(COOKIE_HOST + "/")) {
+        if (isOffline(this.br, correctedBR)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (correctedBR.contains(MAINTENANCE)) {
@@ -157,6 +157,10 @@ public class ShareSixCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br, final String correctedBR) {
+        return (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches() || br.getURL().equals(COOKIE_HOST + "/") || br.getHttpConnection().getResponseCode() == 404);
     }
 
     private final static String flname_pt1          = "class=\"[A-Za-z0-9\\-_]+\">Download File ";

@@ -225,25 +225,26 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     });
                 } catch (Throwable ebr) {
                 }
-            }
-            try {
-                e.printStackTrace();
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            String title = "Save.tv Archiv-Crawler - Archiv nicht komplett gefunden (Unbekannter Fehler)";
-                            String message = "Save.tv - leider wurden nicht alle Links des Archives gefunden!\r\n";
-                            message += "Während dem Crawlen ist es zu einem unbekannten Fehler gekommen!\r\n";
-                            message += "Wir empfehlen, es zu einem späteren Zeitpunkt nochmals zu versuchen und uns den Fehler ggf. zu melden.\r\n";
-                            message += "Es wurden nur " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!";
-                            message += getDialogEnd();
-                            JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
-                        } catch (Throwable e) {
+            } else {
+                try {
+                    e.printStackTrace();
+                    SwingUtilities.invokeAndWait(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                String title = "Save.tv Archiv-Crawler - Archiv nicht komplett gefunden (Unbekannter Fehler)";
+                                String message = "Save.tv - leider wurden nicht alle Links des Archives gefunden!\r\n";
+                                message += "Während dem Crawlen ist es zu einem unbekannten Fehler gekommen!\r\n";
+                                message += "Wir empfehlen, es zu einem späteren Zeitpunkt nochmals zu versuchen und uns den Fehler ggf. zu melden.\r\n";
+                                message += "Es wurden nur " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!";
+                                message += getDialogEnd();
+                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
+                            } catch (Throwable e) {
+                            }
                         }
-                    }
-                });
-            } catch (Throwable ebr) {
+                    });
+                } catch (Throwable ebr) {
+                }
             }
             return decryptedLinks;
         }

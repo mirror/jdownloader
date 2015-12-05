@@ -131,7 +131,7 @@ public class FileNukeCom extends antiDDoSForHost {
         prepBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches() || br.getURL().equals(COOKIE_HOST + "/")) {
+        if (jd.plugins.hoster.ShareSixCom.isOffline(this.br, correctedBR)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (correctedBR.contains(MAINTENANCE)) {

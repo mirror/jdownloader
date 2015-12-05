@@ -44,7 +44,7 @@ public class RggwrldcrwNet extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
 
-        ReggaeWorldCrewNet.login(br);
+        ReggaeWorldCrewNet.login(this.br);
         br.getPage(parameter);
 
         // String befoire = br.toString();
