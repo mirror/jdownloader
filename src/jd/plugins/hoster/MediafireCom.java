@@ -533,6 +533,11 @@ public class MediafireCom extends PluginForHost {
                 }
             }
 
+            logger.info("url: " + url);
+            logger.info("br.getRedirectLocation(): " + br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) {
+                url = br.getRedirectLocation();
+            }
             this.br.setFollowRedirects(true);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (this.dl.getConnection().getContentType().contains("html")) {
