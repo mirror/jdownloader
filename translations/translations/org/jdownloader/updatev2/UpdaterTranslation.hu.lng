@@ -69,5 +69,6 @@ update_dialog_news_button=Változási napló megnyitása
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Frissítés(ek) állnak rendelkezésre.
 update_dialog_yes=Igen(alapértelmezett)
+update_done_close_in_TIME=Telepítés kész. Kilépés a %s1
 update_in_next_session=Mégsem, és ne kérdezee meg a következő újraindításig
 updatedplugins=A beépülő modulok frissítve lettek.\nÖn a legfrissebb JDownloader verziót használja.
