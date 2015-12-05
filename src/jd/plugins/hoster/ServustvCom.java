@@ -96,7 +96,14 @@ public class ServustvCom extends PluginForHost {
             if (bandwidth_temp > bandwidth_highest) {
                 bandwidth_highest = bandwidth_temp;
                 url_hls = new Regex(media, "https?://[^\r\n]+").getMatch(-1);
+                if (url_hls == null) {
+                    url_hls = new Regex(media, "[^\t\n\r]+(.+\\.m3u8)[^\t\n\r]+").getMatch(0);
+                }
             }
+        }
+        url_hls = url_hls.trim();
+        if (!url_hls.startsWith("http")) {
+            url_hls = this.br.getBaseURL() + url_hls;
         }
         if (url_hls == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
