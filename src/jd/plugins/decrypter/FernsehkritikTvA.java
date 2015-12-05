@@ -31,6 +31,7 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -121,7 +122,8 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             Iterator<Account> it = accounts.iterator();
             while (it.hasNext()) {
                 Account n = it.next();
-                if (n.isEnabled() && n.isValid()) {
+                /* Premium needed to watch/download fernsehkritik.tv on massengeschmack.tv! */
+                if (n.isEnabled() && n.isValid() && n.getType() == AccountType.PREMIUM) {
                     account = n;
                     break;
                 }
@@ -165,10 +167,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         dlLink.setProperty("directepisodenumber", EPISODENUMBER);
         dlLink.setProperty("directtype", ".mp4");
         dlLink.setProperty("mainlink", playurl);
-        final String finallink = br.getRegex("type=\"video/mp4\" src=\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
-        if (finallink != null) {
-            dlLink.setProperty("directlink", finallink);
-        }
         final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVFormattedFilename(dlLink);
         dlLink.setFinalFileName(formattedFilename);
         if (FASTCHECKENABLED) {

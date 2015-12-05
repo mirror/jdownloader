@@ -15,8 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.logging.Level;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -32,12 +30,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movshare.net", "epornik.com" }, urls = { "http://(?:www\\.)?(?:movshare|wholecloud)\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(?:www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
 public class MovShareNet extends PluginForHost {
 
     private static final String HUMANTEXT = "We need you to prove you\\'re human";
     private static final String EPORN     = "epornik.com/";
-    private static final String DOMAIN    = "movshare.net";
+    private static final String DOMAIN    = "wholecloud.net";
 
     public MovShareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,7 +54,7 @@ public class MovShareNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().contains("movshare.net/")) {
-            link.setUrlDownload("http://www.movshare.net/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            link.setUrlDownload("http://www.wholecloud.net/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         }
     }
 
@@ -71,24 +69,20 @@ public class MovShareNet extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "identity");
         br.getPage(downloadLink.getDownloadURL());
         if (!br.getURL().contains(EPORN)) {
-            if (br.containsHTML(HUMANTEXT)) {
-                Form IAmAHuman = br.getForm(0);
-                if (IAmAHuman == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                /*
-                 * needed for stable 09581 working, post without data did not set content length to 0
-                 */
-                IAmAHuman.put("submit", "");
-                br.submitForm(IAmAHuman);
+            final Form humanform = br.getFormbyKey("stepkey");
+            if (humanform != null) {
+                br.submitForm(humanform);
             }
         }
         if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0);
+        String filename = br.getRegex("Title:[\t\n\r ]*?</strong>([^<>\"]+)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| MovShare</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("name=\"title\" content=\"Watch ([^<>\"]*?) online \\| WholeCloud").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("<h4 class=\"vidtitle\">([^<>\"]*?)</h4>").getMatch(0);
@@ -221,7 +215,7 @@ public class MovShareNet extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;

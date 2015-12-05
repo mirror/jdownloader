@@ -92,7 +92,7 @@ public class FileMoneyCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.7
-    // mods:
+    // mods: 2015-12-05: slightly modified, might needs an upgrade soon!
     // limit-info: free account unchecked, set FREE limits
     // protocol: no https
     // captchatype: null
@@ -168,6 +168,10 @@ public class FileMoneyCom extends PluginForHost {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
+            }
+            this.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+            if (correctedBR.contains(">Not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
