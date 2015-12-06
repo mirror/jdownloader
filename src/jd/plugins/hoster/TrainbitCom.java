@@ -23,6 +23,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -42,7 +43,7 @@ public class TrainbitCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://trainbit.com/";
     }
 
     /* Connection stuff */
@@ -68,7 +69,7 @@ public class TrainbitCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Desired file is removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex finfo = br.getRegex("class=\"en ltr\">([^<>\"]*?) \\( (\\d+(?:\\.\\d+)? [A-Za-z]+) \\)</");
+        final Regex finfo = br.getRegex("class=\"en ltr\">([^<>\"]*?) \\( *?(\\d+(?:\\.\\d+)? [A-Za-z]+) *?\\)</");
         final String filename = finfo.getMatch(0);
         final String filesize = finfo.getMatch(1);
         if (filename == null || filesize == null) {
@@ -88,7 +89,18 @@ public class TrainbitCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            Form dlform = this.br.getFormbyProperty("id", "form1");
+            if (dlform == null) {
+                dlform = this.br.getForm(0);
+            }
+            if (dlform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.submitForm(dlform);
             dllink = br.getRegex("\"(http[^<>\"]*?)\" id=\"downloadlink\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("href=\"(http[^<>\"]*?)\">Download</a>").getMatch(0);
+            }
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://[^/]+/files/\\d+/[^<>\"]*?)\"").getMatch(0);
             }
