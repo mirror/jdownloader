@@ -44,7 +44,7 @@ public class SuicidegirlsCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         String fpName = null;
-        jd.plugins.hoster.SuicidegirlsCom.login(this.br);
+        final boolean loggedin = jd.plugins.hoster.SuicidegirlsCom.login(this.br);
         jd.plugins.hoster.SuicidegirlsCom.prepBR(this.br);
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -66,6 +66,11 @@ public class SuicidegirlsCom extends PluginForDecrypt {
             fpName = username + " - " + fpName;
 
             final String[] links = br.getRegex(" <li class=\"photo\\-container\" id=\"thumb\\-\\d+\" data\\-index=\"\\d+\">[\t\n\r ]*<a href=\"(http[^<>\"]*?)\"").getColumn(0);
+            if ((links == null || links.length == 0) && !loggedin) {
+                /* Account is needed most times */
+                logger.info("Account needed to crawl link: " + parameter);
+                return decryptedLinks;
+            }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -95,6 +100,11 @@ public class SuicidegirlsCom extends PluginForDecrypt {
                     this.br.getPage("/girls/" + username + "/photos/?partial=true&offset=" + addedlinks_total);
                 }
                 final String[] links = br.getRegex("\"(/girls/[^/]+/album/\\d+/[A-Za-z0-9\\-_]+/)[^<>\"]*?\"").getColumn(0);
+                if ((links == null || links.length == 0) && !loggedin) {
+                    /* Account is needed most times */
+                    logger.info("Account needed to crawl link: " + parameter);
+                    return decryptedLinks;
+                }
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;

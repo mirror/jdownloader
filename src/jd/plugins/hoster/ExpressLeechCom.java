@@ -261,6 +261,10 @@ public class ExpressLeechCom extends antiDDoSForHost {
                 if (captcha && !success) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+                /* Not yet identified problem. */
+                if (!this.br.getURL().matches("https?://4upld\\.com/[A-Za-z0-9]+")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                }
                 handleErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

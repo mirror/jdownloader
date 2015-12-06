@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -75,9 +76,9 @@ public class AlphatvGr extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String url_hls = this.br.getRegex("(?:\\'|\")(http://[^<>\"]*?\\.m3u8)(?:\\'|\")").getMatch(0);
+        final String hls_master = this.br.getRegex("(?:\\'|\")(http://[^<>\"]*?\\.m3u8)(?:\\'|\")").getMatch(0);
         final String url_rtmp = this.br.getRegex("(?:\\'|\")(rtmp://[^<>\"]*?\\.mp4)(?:\\'|\")").getMatch(0);
-        if (url_hls == null && url_rtmp == null) {
+        if (hls_master == null && url_rtmp == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (url_rtmp != null) {
@@ -103,28 +104,14 @@ public class AlphatvGr extends PluginForHost {
             rtmp.setResume(true);
         } else {
             /* If no rtmp url is available, download HLS */
-            br.getPage(url_hls);
-            String url_hls_final = null;
-            final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
-            if (medias == null) {
+            br.getPage(hls_master);
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            long bandwidth_highest = 0;
-            for (final String media : medias) {
-                // name = quality
-                // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
-                final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-                final long bandwidth_temp = Long.parseLong(bw);
-                if (bandwidth_temp > bandwidth_highest) {
-                    url_hls_final = new Regex(media, "chunklist[^\r\n]+").getMatch(-1);
-                }
-            }
-            if (url_hls == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            url_hls_final = url_hls.replace("/playlist.m3u8", "/" + url_hls_final);
+            final String url_hls = hlsbest.downloadurl;
             checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls_final);
+            dl = new HLSDownloader(downloadLink, br, url_hls);
         }
         dl.startDownload();
     }

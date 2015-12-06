@@ -17,8 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,29 +32,45 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vvvvid.it" }, urls = { "http://vvvviddecrypted\\.it/\\d+" }, flags = { 0 })
-public class VvvvidIt extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aljazeera.com" }, urls = { "https?://(?:www\\.)?aljazeera\\.com/[^<>\"]+\\.html" }, flags = { 0 })
+public class AljazeeraCom extends PluginForHost {
 
-    public VvvvidIt(PluginWrapper wrapper) {
+    public AljazeeraCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://vvvvid.it/";
+        return "http://www.aljazeera.com/aboutus/2011/01/20111168582648190.html";
     }
 
-    /* Example hls master: http://vvvvid-vh.akamaihd.net/i/Dynit/KekkaiSensen/KekkaiSensen_Ep01m.mp4/master.m3u8 */
+    private String videoid = null;
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = link.getStringProperty("filename", null);
-        if (filename == null) {
+        br.getPage(link.getDownloadURL());
+        this.videoid = this.br.getRegex(">RenderPagesVideo\\(\\'(\\d+)'").getMatch(0);
+        /* 404 --> Offline, No videoid --> Probably no video on page --> Offline */
+        if (br.getHttpConnection().getResponseCode() == 404 || this.videoid == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String date = br.getRegex("datetime=\"([^<>\"]*?)\"").getMatch(0);
+        String title = br.getRegex("<title>([^<>\"]*?) - Al Jazeera English</title>").getMatch(0);
+        if (title == null) {
+            title = new Regex(link.getDownloadURL(), "([^<>\"/]+)\\.html").getMatch(0);
+        }
+        if (title == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        title = Encoding.htmlDecode(title.trim());
+        final String date_formatted = formatDate(date);
+        String filename = date_formatted + "_aljazeeracom_" + title + ".mp4";
         filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
@@ -58,14 +79,7 @@ public class VvvvidIt extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String hls_master = downloadLink.getStringProperty("directlink", null);
-        if (hls_master == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.br.getPage(hls_master);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        this.br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + this.videoid);
         final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -74,6 +88,24 @@ public class VvvvidIt extends PluginForHost {
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();
+    }
+
+    private String formatDate(final String input) {
+        if (input == null) {
+            return null;
+        }
+        final long date = TimeFormatter.getMilliSeconds(input, "dd MMM yyyy HH:mm Z", Locale.ENGLISH);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */

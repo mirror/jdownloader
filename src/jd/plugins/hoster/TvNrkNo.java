@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
@@ -111,46 +112,32 @@ public class TvNrkNo extends PluginForHost {
         if (!isAvailable) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content is not downloadable or has not aired yet");
         }
-        String url_hls = null;
+        String hls_master = null;
         String url_hds = getJson("mediaUrl");
-        if (url_hds == null || url_hls == null) {
+        if (url_hds == null || hls_master == null) {
             this.br.getPage(downloadLink.getDownloadURL());
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 /* 404 handling is enough to determine offline state (via API AND website)! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             url_hds = this.br.getRegex("data\\-media=\"(http[^<>\"]*?)\"").getMatch(0);
-            url_hls = this.br.getRegex("data\\-hls\\-media=\"(http[^<>\"]*?)\"").getMatch(0);
+            hls_master = this.br.getRegex("data\\-hls\\-media=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (url_hds == null && url_hls == null) {
+        if (url_hds == null && hls_master == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (url_hls == null && url_hds != null) {
+        if (hls_master == null && url_hds != null) {
             /* This is a rare case - convert hds urls --> hls urls */
-            url_hls = url_hds.replace("akamaihd.net/z/", "akamaihd.net/i/").replace("/manifest.f4m", "/master.m3u8");
+            hls_master = url_hds.replace("akamaihd.net/z/", "akamaihd.net/i/").replace("/manifest.f4m", "/master.m3u8");
         }
-        this.br.getPage(url_hls);
-        final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
-        if (medias == null) {
+        this.br.getPage(hls_master);
+        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String url_hls_download = null;
-        long bandwidth_highest = 0;
-        for (final String media : medias) {
-            // name = quality
-            // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
-            final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-            final long bandwidth_temp = Long.parseLong(bw);
-            if (bandwidth_temp > bandwidth_highest) {
-                bandwidth_highest = bandwidth_temp;
-                url_hls_download = new Regex(media, "https?://[^\r\n]+").getMatch(-1);
-            }
-        }
-        if (url_hls_download == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String url_hls = hlsbest.downloadurl;
         checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, url_hls_download);
+        dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();
     }
 

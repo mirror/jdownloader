@@ -43,6 +43,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -145,6 +146,7 @@ public class FernsehkritikTv extends PluginForHost {
      * */
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        this.is_premiumonly_content = false;
         DLLINK = null;
         long filesize = -1;
 
@@ -538,26 +540,11 @@ public class FernsehkritikTv extends PluginForHost {
     public void downloadHLS(final DownloadLink link) throws Exception {
         /* hls download */
         this.br.getPage(DLLINK);
-        DLLINK = null;
-        final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
-        if (medias == null) {
+        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String url_hls = null;
-        long bandwidth_highest = 0;
-        for (final String media : medias) {
-            // name = quality
-            // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
-            final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-            final long bandwidth_temp = Long.parseLong(bw);
-            if (bandwidth_temp > bandwidth_highest) {
-                bandwidth_highest = bandwidth_temp;
-                url_hls = new Regex(media, "([^/\n\t\r]+\\.m3u8)").getMatch(0);
-            }
-        }
-        if (url_hls == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String url_hls = hlsbest.downloadurl;
         URLConnectionAdapter con = null;
         try {
             con = this.br.openGetConnection(url_hls);
@@ -567,9 +554,8 @@ public class FernsehkritikTv extends PluginForHost {
         if (con != null && con.getLongContentLength() < 100) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - stream is not available");
         }
-        url_hls = this.br.getBaseURL() + url_hls;
         checkFFmpeg(link, "Download a HLS Stream");
-        dl = new HLSDownloader(link, this.br, url_hls);
+        dl = new HLSDownloader(link, br, url_hls);
         dl.startDownload();
     }
 

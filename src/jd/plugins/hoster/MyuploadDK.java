@@ -48,28 +48,37 @@ public class MyuploadDK extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL().replace("/showfile/", "/download/"), false, 1);
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://www.myupload.dk", "lang", "en");
         br.getPage(parameter.getDownloadURL());
         String filename = br.getRegex(">File name:</td><td class=\"downloadTblRight\">([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"]*?) \\| myUpload\\.dk</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Download ([^<>\"]*?) \\| myUpload\\.dk</title>").getMatch(0);
+        }
         String filesize = br.getRegex(">Size:</td><td class=\"downloadTblRight\">([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         parameter.setName(filename);
-        String md5 = br.getRegex(">MD5 value:</td><td class=\"downloadTblRight\">([a-z0-9]{32})</td>").getMatch(0);
-        if (md5 != null) parameter.setMD5Hash(md5);
+        /* 2015-12-06: Seems like md5 hashes given serverside are wrong so don't set them */
+        // final String md5 = br.getRegex(">MD5 value:</td><td class=\"downloadTblRight\">([a-z0-9]{32})</td>").getMatch(0);
+        // if (md5 != null) {
+        // parameter.setMD5Hash(md5);
+        // }
         return AvailableStatus.TRUE;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL().replace("/showfile/", "/download/"), false, 1);
+        dl.startDownload();
     }
 
     @Override
