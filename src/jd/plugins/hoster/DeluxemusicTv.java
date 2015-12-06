@@ -35,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
@@ -146,30 +147,13 @@ public class DeluxemusicTv extends PluginForHost {
             final String hls_Server = streamer.replaceAll("rtmpe?://", "http://");
             final String url_hls_playlist = hls_Server + location + "/playlist.m3u8";
             this.br.getPage(url_hls_playlist);
-            final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
-            if (medias == null) {
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /* Find highest quality */
-            /* 2015-11-09: Their servers seem to be configured to always only return the best quality - that is very good for us! */
-            String url_hlsdownload = null;
-            long bandwidth_highest = 0;
-            for (final String media : medias) {
-                // name = quality
-                // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
-                final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-                final long bandwidth_temp = Long.parseLong(bw);
-                if (bandwidth_temp > bandwidth_highest) {
-                    bandwidth_highest = bandwidth_temp;
-                    url_hlsdownload = new Regex(media, "(chunklist_[^<>\"/]*?\\.m3u8)").getMatch(0);
-                }
-            }
-            if (url_hlsdownload == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            url_hlsdownload = hls_Server + location + "/" + url_hlsdownload;
+            final String url_hls = hlsbest.downloadurl;
             checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hlsdownload);
+            dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
         } else {
             final String url_playpath = "mp4:" + location;

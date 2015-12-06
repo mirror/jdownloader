@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
@@ -82,26 +83,11 @@ public class FacecastNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.getPage("/public/" + videoid_intern + ".m3u8?_=" + System.currentTimeMillis());
-        final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
-        if (medias == null) {
+        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String url_hls = null;
-        long bandwidth_highest = 0;
-        for (final String media : medias) {
-            // name = quality
-            // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
-            final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-            final long bandwidth_temp = Long.parseLong(bw);
-            if (bandwidth_temp > bandwidth_highest) {
-                bandwidth_highest = bandwidth_temp;
-                url_hls = new Regex(media, "(\\d+/[^/]+\\.m3u8)").getMatch(0);
-            }
-        }
-        if (url_hls == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        url_hls = server_default + "/public/" + url_hls;
+        final String url_hls = hlsbest.downloadurl;
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -69,5 +70,95 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
     @Override
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
+    }
+
+    /** Finds the highest video quality based on the max filesize. */
+    public static HlsContainer findBestVideoByBandwidth(final ArrayList<HlsContainer> media) {
+        if (media == null) {
+            return null;
+        }
+        HlsContainer best = null;
+        long bandwidth_highest = 0;
+        for (final HlsContainer hls : media) {
+            final long bandwidth_temp = hls.bandwidth;
+            if (bandwidth_temp > bandwidth_highest) {
+                bandwidth_highest = bandwidth_temp;
+                best = hls;
+            }
+        }
+        return best;
+    }
+
+    public static ArrayList<HlsContainer> getHlsQualities(final Browser br) {
+        final ArrayList<HlsContainer> hlsqualities = new ArrayList<HlsContainer>();
+        final String[] medias = br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
+        if (medias == null) {
+            return null;
+        }
+        for (final String media : medias) {
+            // name = quality
+            // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
+            String hlsurl = null;
+            final String bandwidth = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
+            final String resolution = new Regex(media, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
+            final String codecs = new Regex(media, "CODECS=\"([^<>\"]+)\"").getMatch(0);
+            final String[] lines = Regex.getLines(media);
+            for (final String line : lines) {
+                if (line.contains(".m3u8")) {
+                    hlsurl = line;
+                    break;
+                }
+            }
+            if (bandwidth == null || resolution == null || hlsurl == null) {
+                continue;
+            }
+            hlsurl = hlsurl.trim();
+            if (!hlsurl.startsWith("http")) {
+                hlsurl = br.getBaseURL() + hlsurl;
+            }
+            final String[] resolution_info = resolution.split("x");
+            final String width = resolution_info[0];
+            final String height = resolution_info[1];
+            final HlsContainer hls = new HlsContainer();
+            hls.bandwidth = Long.parseLong(bandwidth);
+            hls.width = Integer.parseInt(width);
+            hls.height = Integer.parseInt(height);
+            hls.codecs = codecs;
+            hls.downloadurl = hlsurl;
+            /* TODO: Add audio */
+            hls.type = "video";
+
+            hlsqualities.add(hls);
+        }
+        return hlsqualities;
+    }
+
+    public static class HlsContainer {
+
+        public static final String ext = ".mp4";
+        public String              codecs;
+        public String              downloadurl;
+        public String              type;
+        public int                 width;
+        public int                 height;
+        public long                bandwidth;
+
+        public HlsContainer() {
+        }
+
+        @Override
+        public String toString() {
+            return codecs + "_" + width + "x" + height;
+        }
+
+        public String getStandardFilename() {
+            String filename = width + "x" + height;
+            if (codecs != null) {
+                filename += "_" + codecs;
+            }
+            filename += ext;
+            return filename;
+        }
+
     }
 }

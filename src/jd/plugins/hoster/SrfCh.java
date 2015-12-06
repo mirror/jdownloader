@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
@@ -84,31 +85,15 @@ public class SrfCh extends PluginForHost {
         if (url_hls_master != null) {
             logger.info("Downloading hls");
             this.br.getPage(url_hls_master);
-            final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
-            if (medias == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            String url_hls = null;
-            long bandwidth_highest = 0;
-            for (final String media : medias) {
-                final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-                final long bandwidth_temp = Long.parseLong(bw);
-                if (bandwidth_temp > bandwidth_highest) {
-                    bandwidth_highest = bandwidth_temp;
-                    url_hls = new Regex(media, "[^\r\n\t]+(.*?\\.m3u8)[^\r\n\t]+").getMatch(0);
-                }
-            }
-            if (url_hls == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            url_hls = url_hls.trim();
-            if (!url_hls.startsWith("http")) {
-                url_hls = this.br.getBaseURL() + url_hls;
-            }
             try {
             } catch (final Throwable e) {
                 this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/" + videoid + "/clicked.xml");
             }
+            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String url_hls = hlsbest.downloadurl;
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();

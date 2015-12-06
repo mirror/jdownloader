@@ -230,19 +230,19 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     public static class BrightcoveClipData {
 
-        public String ext = ".mp4";
-        public String displayName;
-        public String shortDescription;
-        public String publisherName;
-        public String videoCodec;
-        public String downloadurl;
-        public long   width;
-        public long   height;
-        public long   length;
-        public long   creationDate;
-        public long   encodingRate;
-        public long   size;
-        public long   mediaDeliveryType;
+        public static final String ext = ".mp4";
+        public String              displayName;
+        public String              shortDescription;
+        public String              publisherName;
+        public String              videoCodec;
+        public String              downloadurl;
+        public long                width;
+        public long                height;
+        public long                length;
+        public long                creationDate;
+        public long                encodingRate;
+        public long                size;
+        public long                mediaDeliveryType;
 
         public BrightcoveClipData() {
             //
