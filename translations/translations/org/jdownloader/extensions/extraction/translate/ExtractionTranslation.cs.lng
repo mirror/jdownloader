@@ -29,6 +29,7 @@ context_password_msg=Nastavit heslo pro rozbalení %s1.
 context_password_msg2=Nastavte heslo pro rozbalení %s1.\r\nNavrhovaná hesla:\r\n%s2
 context_password_msg2_multi=Nastavte heslo.\nNavrhovaná hesla:\n%s1
 context_password_msg_multi=Nastavit heslo
+contextmenu_abort=Přerušit rozbalování
 contextmenu_autodeletefiles='Odstranit soubory archivů' povoleno
 contextmenu_autodeletelinks='Odebrat odkazy ze seznamu stahování' povoleno
 contextmenu_autoextract=Automatické rozbalení povoleno

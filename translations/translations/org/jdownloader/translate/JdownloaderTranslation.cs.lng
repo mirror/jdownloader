@@ -192,6 +192,7 @@ UrlDisplayType_ORIGIN=Zdroj
 UrlDisplayType_ORIGIN_description=Váš skutečný vstup - co jste vložili do JDownloaderu
 UrlDisplayType_REFERRER=Odkazující server
 UrlDisplayType_REFERRER_description=Webová stránka, kde jste našli odkazy. Dostupná pouze pokud jste přidávali pomocí rozšíření prohlížeče nebo Click'n'Load
+WaitForTrackerSlotPluginProcess=Čekat na %s1: %s2
 YoutubeDash_GroupLogic_BY_FILE_TYPE=Přípona souboru (MP4, AAC, MP3, ...
 YoutubeDash_GroupLogic_BY_MEDIA_TYPE=Typ média (video, audio, obrázek, titulky, ...
 YoutubeDash_GroupLogic_NO_GROUP=Zakázáno - Neseskupovat
