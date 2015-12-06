@@ -32,9 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtviggy.com", "mtv.com", "southpark.de", "southpark.cc.com", "tvland.com", "spike.com", "vh1.com", "nickmom.com", "cmt.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com", "mtv.com.au", "logotv.com", "mtvnservices.com" }, urls = { "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://www\\.mtviggy_jd_decrypted_jd_\\.com/videos/[a-z0-9\\-]+/|http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+",
-        "http://viacommgid/mgid.+", "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+|http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+", "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios_jd_decrypted_jd_\\.com:[a-z0-9\\-]+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.vh1_jd_decrypted_jd_\\.com/.+", "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml", "http://thedailyshow\\.cc\\.com/(videos|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://tosh\\.cc\\.com/((full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+|segments/[a-z0-9\\-]+/[a-z0-9]+)", "http://www\\.mtvu\\.com/(music|shows)/[a-z0-9\\-]+/",
-        "http://intl\\.mtvnservices\\.com/mrss/mgid:(?:arc|uma):video:mtv\\.com\\.au:[a-z0-9\\-]+/", "http://media\\.mtvnservices\\.com/mgid:uma:video:logotv\\.com:\\d+", "http://media\\.mtvnservices\\.com/mgid:uma:content:mtv\\.com:\\d+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.com", "tvland.com", "spike.com", "nickmom.com", "cmt.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com", "mtv.com.au", "logotv.com", "mtvnservices.com" }, urls = { "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://viacommgid/mgid.+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+",
+        "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml", "http://thedailyshow\\.cc\\.com/(videos|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://tosh\\.cc\\.com/((full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+|segments/[a-z0-9\\-]+/[a-z0-9]+)", "http://www\\.mtvu\\.com/(music|shows)/[a-z0-9\\-]+/", "http://intl\\.mtvnservices\\.com/mrss/mgid:(?:arc|uma):video:mtv\\.com\\.au:[a-z0-9\\-]+/", "http://media\\.mtvnservices\\.com/mgid:uma:video:logotv\\.com:\\d+", "http://media\\.mtvnservices\\.com/mgid:uma:content:mtv\\.com:\\d+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
 public class VivaTv extends PluginForHost {
 
     public VivaTv(PluginWrapper wrapper) {
@@ -51,6 +50,7 @@ public class VivaTv extends PluginForHost {
     public static final String   url_service_feed_mtvnservices           = "http://media.mtvnservices.com/video/feed.jhtml?ref=None&type=error&uri=%s&geo=DE&orig=&franchise=&dist=";
     public static final String   url_service_feed_intl_mtvnservices      = "http://intl.mtvnservices.com/mrss/%s";
     public static final String   url_service_feed_COMEDYCENTRAL          = "http://www.cc.com/feeds/mrss?uri=%s";
+    public static final String   url_service_feed_SOUTHPARKSTUDIOS       = "http://southpark.cc.com/feeds/video-player/mrss/%s";
     public static final String   url_service_mediagen_mtvnservices       = "http://intl.mtvnservices.com/mediagen/%s/?device={device}";
     /*
      * E.g. json-version:
@@ -59,7 +59,7 @@ public class VivaTv extends PluginForHost {
      */
     public static final String   url_service_mediagen_media_utils_api    = "http://media-utils-api.mtvnservices.com/services/MediaGenerator/%s";
     public static final String   url_service_mediagen_mtv_com            = "http://www.mtv.com/meta/context/mediaGen?uri=%s";
-    public static final String   url_service_feedn_mtv_com               = "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None";
+    public static final String   url_service_feed_mtv_com                = "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None";
 
     /* The linktypes */
     private static final String  type_funnyclips                         = "http://de\\.funnyclips\\.cc/.+";
@@ -76,13 +76,6 @@ public class VivaTv extends PluginForHost {
     private static final String  type_mtv_com_embedded                   = "http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+";
     private static final String  subtype_mtv_com_embedded_as3            = "http://www\\.mtv\\.com/player/embed/AS3/rss/\\?uri=mgid:uma:video:mtv\\.com:\\d+";
 
-    private static final String  type_mtviggy                            = "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/";
-    private static final String  type_mtviggy_embedded                   = "http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtviggy\\.com:\\d+";
-
-    private static final String  type_southpark_de_clips                 = "http://www\\.southpark\\.de/clips/[a-z0-9]+/[a-z0-9\\-]+";
-    /* Links come from the decrypter */
-    private static final String  type_southpark_de_embed                 = "http://media\\.mtvnservices\\.com/mgid:arc:video:southparkstudios\\.com:[a-z0-9\\-]+";
-
     private static final String  type_tvland                             = "http://www\\.tvland\\.com/.+";
     private static final String  subtype_tvland_episodes                 = "http://www\\.tvland\\.com/episodes/[a-z0-9]+/[a-z0-9\\-]+";
     private static final String  subtype_tvland_clips                    = "http://www\\.tvland\\.com/video\\-clips/[a-z0-9]+/[a-z0-9\\-]+";
@@ -90,12 +83,6 @@ public class VivaTv extends PluginForHost {
     private static final String  type_spike                              = "http://www\\.spike\\.com/.+";
     private static final String  subtype_spike_episodes                  = "http://www\\.spike\\.com/full\\-episodes/[a-z0-9]+/[a-z0-9\\-]+";
     private static final String  subtype_spike_clips                     = "http://www\\.spike\\.com/video\\-clips/[a-z0-9]+/[a-z0-9\\-]+";
-
-    /* Links come from the decrypter */
-    private static final String  type_vh1                                = "http://www\\.vh1.com/.+";
-    private static final String  subtype_vh1_episodes                    = "http://www\\.vh1\\.com/shows/.+";
-    private static final String  subtype_vh1_videos                      = "http://www\\.vh1\\.com/video/.+";
-    private static final String  subtype_vh1_events                      = "http://www\\.vh1\\.com/events/.+";
 
     /* Links come from the decrypter */
     private static final String  type_nickmom_com                        = "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/";
@@ -204,7 +191,7 @@ public class VivaTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             description = feedGetDescription();
-            ext = ".flv";
+            ext = default_ext;
         } else if (browser_url.matches(type_funnyclips)) {
             try {
                 br.getPage(browser_url);
@@ -296,16 +283,6 @@ public class VivaTv extends PluginForHost {
             title = doFilenameEncoding(title);
             filename = show + " - " + title;
             ext = ".flv";
-        } else if (browser_url.matches(type_mtviggy)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("class=\"video\\-box\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = getFilenameMTVIGGY(this.br);
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            ext = ".flv";
         }
         if (browser_url.matches(type_mtv_com_embedded) || browser_url.matches(subtype_mtv_com_embedded_as3)) {
             mgid = getMGIDOutOfURL(browser_url);
@@ -315,51 +292,6 @@ public class VivaTv extends PluginForHost {
             filename = feedGetTitle();
             description = feedGetDescription();
             ext = ".mp4";
-        } else if (browser_url.matches(type_mtviggy_embedded)) {
-            /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
-            mgid = getMGIDOutOfURL(browser_url);
-            feed_url = getFEEDurl("mtvworldwide");
-            br.getPage(feed_url);
-            checkFeedAvailibility();
-            filename = feedGetTitle();
-            description = feedGetDescription();
-            ext = default_ext;
-        } else if (browser_url.matches(type_southpark_de_clips)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("\"name\":\"mtvnPlayer\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String season = br.getRegex("<h2 class=\"clips_thumb_season\">([^<>]*?)</h2>").getMatch(0);
-            final String episodename = br.getRegex("<h2>([^<>]*?)</h2>").getMatch(0);
-            String clipname = br.getRegex("<h1 itemprop=\"name\">([^<>]*?)</h1>").getMatch(0);
-            if (season == null || episodename == null || clipname == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            clipname = doFilenameEncoding(clipname);
-            filename = doFilenameEncoding(season) + " - " + doFilenameEncoding(episodename) + " - " + clipname;
-            /* 'Akt?' because sometimes they simply forgot the 't' */
-            if (clipname.matches(".+\\- (\\d\\. Akt?|Act \\d)$") && !rtmpe_supported) {
-                /* Special case: Define the mediagenURL here because we need to enforce usage of the http protocol. */
-                find_mgid("southparkstudios.com");
-                if (this.mgid == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                this.mediagen_url = String.format(mediagenURLs.get("southpark.de_episode"), this.mgid, possibleAcceptMethodsValues.get("http"));
-            }
-            ext = default_ext;
-        } else if (browser_url != null && browser_url.matches(type_southpark_de_embed)) {
-            /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
-            mgid = getMGIDOutOfURL(browser_url);
-            feed_url = getFEEDurl("southpark.de");
-            br.getPage(feed_url);
-            checkFeedAvailibility();
-            filename = feedGetTitle();
-            description = feedGetDescription();
-            ext = default_ext;
-            if (!rtmpe_supported) {
-                /* Special case: Define the mediagenURL here because we need to enforce usage of the http protocol. */
-                this.mediagen_url = String.format(mediagenURLs.get("southpark.de_episode"), this.mgid, possibleAcceptMethodsValues.get("http"));
-            }
         } else if (browser_url.matches(type_tvland)) {
             br.getPage(browser_url);
             if (!br.containsHTML("id=\"video_player_box\"") || br.getHttpConnection().getResponseCode() == 404) {
@@ -381,16 +313,6 @@ public class VivaTv extends PluginForHost {
             } else {
                 filename = br.getRegex("<title>([^<>\"]*?) \\- Video Clip \\| SPIKE\\.com</title>").getMatch(0);
             }
-            ext = default_ext;
-        } else if (browser_url.matches(type_vh1)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("MTVN\\.VIDEO\\.PLAYER\\.instance") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = getFilenameVH1(this.br);
-            /* Special: Set the mediagen url here already */
-            this.find_mgid("vh1.com");
-            this.mediagen_url = this.getMEDIAGENurl("vh1.com");
             ext = default_ext;
         } else if (browser_url.matches(type_nickmom_com)) {
             br.getPage(browser_url);
@@ -632,14 +554,6 @@ public class VivaTv extends PluginForHost {
                 /* Should never be needed */
                 feed_url = br.getRegex("mrss[\t\n\r ]+:[\t\n\r ]+(?:\\'|\")(https?://[^<>\"]*?)(?:\\'|\"),").getMatch(0);
             }
-        } else if (downloadLink.getDownloadURL().matches(type_mtviggy)) {
-            /* Special: This domain has it's own feed-URL. */
-            find_mgid(downloadLink.getHost());
-            feed_url = getFEEDurl("mtvworldwide");
-        } else if (downloadLink.getDownloadURL().matches(type_southpark_de_clips)) {
-            /* Special: This domain has it's own feed-URL. */
-            find_mgid("southparkstudios.com");
-            feed_url = getFEEDurl("southpark.de");
         } else if (downloadLink.getDownloadURL().matches(type_tvland) || downloadLink.getDownloadURL().matches(type_spike) || downloadLink.getDownloadURL().matches(type_cmt)) {
             /* Special: This domain has it's own feed-URL. */
             final String current_host = downloadLink.getHost();
@@ -695,31 +609,31 @@ public class VivaTv extends PluginForHost {
         String rtmphost;
         String playpath;
         String swfurl;
-        if (downloadLink.getDownloadURL().matches(type_mtviggy)) {
-            /* Usually the convertRTMPtoHTTP will work and this code is never executed. */
-            /* Original swfurl contains a lof more info but it's not needed! */
-            swfurl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.2.5.3.swf?uri=" + mgid;
-            app = "viacommtvstrm";
-            rtmphost = "rtmpe://viacommtvstrmfs.fplive.net:1935/viacommtvstrm";
-            playpath = new Regex(rtmp_src, "/(gsp\\..+)").getMatch(0);
-            if (playpath == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!rtmpe_supported) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
-            }
-            rtmp_src = rtmp_src.replace("rtmp://", "rtmpe://");
-        } else {
-            swfurl = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
-            app = new Regex(rtmp_src, "(ondemand/(?:(mtviestor|riptide)/)?)").getMatch(0);
-            final Regex host_app = new Regex(rtmp_src, "(rtmp://[^/]*?/)ondemand/(.+)");
-            rtmphost = host_app.getMatch(0);
-            playpath = new Regex(rtmp_src, app + "(.+)").getMatch(0);
-            if (rtmphost == null || playpath == null || app == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            rtmphost += app;
+        // if (downloadLink.getDownloadURL().matches(type_mtviggy)) {
+        // /* Usually the convertRTMPtoHTTP will work and this code is never executed. */
+        // /* Original swfurl contains a lof more info but it's not needed! */
+        // swfurl = "http://media.mtvnservices.com/player/prime/mediaplayerprime.2.5.3.swf?uri=" + mgid;
+        // app = "viacommtvstrm";
+        // rtmphost = "rtmpe://viacommtvstrmfs.fplive.net:1935/viacommtvstrm";
+        // playpath = new Regex(rtmp_src, "/(gsp\\..+)").getMatch(0);
+        // if (playpath == null) {
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // if (!rtmpe_supported) {
+        // throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
+        // }
+        // rtmp_src = rtmp_src.replace("rtmp://", "rtmpe://");
+        // }
+        //
+        swfurl = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
+        app = new Regex(rtmp_src, "(ondemand/(?:(mtviestor|riptide)/)?)").getMatch(0);
+        final Regex host_app = new Regex(rtmp_src, "(rtmp://[^/]*?/)ondemand/(.+)");
+        rtmphost = host_app.getMatch(0);
+        playpath = new Regex(rtmp_src, app + "(.+)").getMatch(0);
+        if (rtmphost == null || playpath == null || app == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        rtmphost += app;
         playpath = ext + ":" + playpath;
         /* Small fix for serverside wrong rtmp urls */
         playpath = playpath.replace("_od_flv.flv", "_od_flv");
@@ -906,23 +820,6 @@ public class VivaTv extends PluginForHost {
         }
     }
 
-    public static String getFilenameVH1(final Browser br) {
-        String title;
-        if (br.getURL().matches(subtype_vh1_episodes)) {
-            title = br.getRegex("<title>([^<>]*?) \\| VH1</title>").getMatch(0);
-        } else if (br.getURL().matches(subtype_vh1_events)) {
-            final String artist = br.getRegex("<header>([^<>]*?)</header></a> <span class=\"clearfix\"").getMatch(0);
-            final String ftitle = br.getRegex("class=\"unbold headline\"><h1>([^<>]*?)</h1></header>").getMatch(0);
-            if (artist == null || ftitle == null) {
-                return null;
-            }
-            title = doFilenameEncoding(artist) + " - " + doFilenameEncoding(ftitle);
-        } else {
-            title = br.getRegex("<title>([^<>]*?) \\| Music Video \\| VH1\\.com</title").getMatch(0);
-        }
-        return title;
-    }
-
     public static String getFilenameNickmomCom(final Browser br) {
         return br.getRegex("<h1 class=\"dtitle\">([^<>]*?)</h1>").getMatch(0);
     }
@@ -938,9 +835,10 @@ public class VivaTv extends PluginForHost {
             put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
             put("mtv.de", "http://movies.mtv.de/mrss/%s");
             put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
-            put("mtv.com", url_service_feedn_mtv_com);
+            put("mtv.com", url_service_feed_mtv_com);
             put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
-            put("southpark.cc.com", "http://southpark.cc.com/feeds/video-player/mrss/%s");
+            put("southpark.cc.com", url_service_feed_SOUTHPARKSTUDIOS);
+            put("southparkstudios.com", url_service_feed_SOUTHPARKSTUDIOS);
             put("gameone.de", "http://www.gameone.de/api/mrss/%s");
             put("gameone.de_2", "https://gameone.de/api/mrss/%s");
             put("vh1.com", "http://www.vh1.com/player/embed/AS3/rss/?uri=%s");
@@ -987,8 +885,9 @@ public class VivaTv extends PluginForHost {
              */
             put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s");
             put("mtv.com", url_service_mediagen_mtv_com);
-            put("southpark.de_episode", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
-            put("southpark.de_clips", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s");
+            put("southpark.de", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
+            put("southpark.cc.com", url_service_mediagen_media_utils_api);
+            put("southparkstudios.com", url_service_mediagen_media_utils_api);
             put("vh1.com", "http://www.vh1.com/player/embed/AS3/includes/mediaGen.jhtml?uri=%s");
             put("vh1.com_episodes", "http://www.vh1.com/meta/context/mediaGen?uri=%s");
             put("tvland.com", "http://www.tvland.com/feeds/mediagen/?uri=%s&device=None");
@@ -1091,7 +990,7 @@ public class VivaTv extends PluginForHost {
         } else if (mgid_type.equalsIgnoreCase("sensei")) {
             feedurl = url_service_feed_api_mtvnn_v2;
         } else if (mgid_type.equalsIgnoreCase("uma")) {
-            feedurl = url_service_feedn_mtv_com;
+            feedurl = url_service_feed_mtv_com;
         } else {
             feedurl = feedURLs.get(host);
         }
@@ -1103,7 +1002,7 @@ public class VivaTv extends PluginForHost {
 
     /** TODO: finish this! */
     /** Returns a mediagen-feed URL based on the domain. */
-    private String getMediagenurlForMgid(final String mgid) throws PluginException {
+    public static String getMediagenurlForMgid(final String mgid) throws PluginException {
         if (mgid == null) {
             return null;
         }
@@ -1116,6 +1015,16 @@ public class VivaTv extends PluginForHost {
             mediagenurl = null;
         } else if (mgid_type.equalsIgnoreCase("uma")) {
             mediagenurl = url_service_mediagen_mtv_com;
+        } else if (host.equals("southpark.de")) {
+            if (!rtmpe_supported) {
+                /*
+                 * Special case: In germany they only have lower quality http urls so we have to enforce http because if we convert rtmpe to
+                 * http we will get the english version!
+                 */
+                mediagenurl = String.format(mediagenURLs.get(host), mgid, possibleAcceptMethodsValues.get("http"));
+            } else {
+                mediagenurl = String.format(mediagenURLs.get(host), mgid, possibleAcceptMethodsValues.get("default"));
+            }
         } else {
             mediagenurl = mediagenURLs.get(host);
         }
