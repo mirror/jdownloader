@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photo.qip.ru" }, urls = { "http://(?:www\\.)?photo\\.qip\\.ru/users/[^/]+/\\d+/\\d+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photo.qip.ru" }, urls = { "http://(?:www\\.)?photo\\.qipdecrypted\\.ru/users/[^/]+/\\d+/\\d+/?" }, flags = { 0 })
 public class PhotoQipRu extends PluginForHost {
 
     public PhotoQipRu(PluginWrapper wrapper) {
@@ -43,14 +43,22 @@ public class PhotoQipRu extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("qipdecrypted.ru/", "qip.ru/"));
+    }
 
-    private String               DLLINK            = null;
+    public static final String   LINKTYPE_HOSTER    = "http://(?:www\\.)?photo\\.qip\\.ru/users/[^/]+/\\d+/\\d+/?";
+    public static final String   LINKTYPE_DECRYPTER = "http://(?:www\\.)?photo\\.qip\\.ru/users/[^/]+/\\d+/";
+
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension  = ".jpg";
+    /* Connection stuff */
+    private static final boolean free_resume        = true;
+    private static final int     free_maxchunks     = 1;
+    private static final int     free_maxdownloads  = -1;
+
+    private String               DLLINK             = null;
 
     @Override
     public String getAGBLink() {
