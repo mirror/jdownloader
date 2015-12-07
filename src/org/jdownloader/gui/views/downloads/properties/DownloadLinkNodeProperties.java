@@ -11,6 +11,7 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
@@ -108,8 +109,17 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected void saveFilename(String text) {
-        DownloadWatchDog.getInstance().renameLink(currentLink, text);
+    protected void saveFilename(final String name) {
+        final String curForced = currentLink.getForcedFileName();
+        if (StringUtils.equals(name, curForced)) {
+            return;
+        }
+        final String curName = currentLink.getName(false, true);
+        if (StringUtils.equals(name, curName) && curForced == null) {
+            // name equals normal name
+            return;
+        }
+        DownloadWatchDog.getInstance().renameLink(currentLink, curName);
     }
 
     @Override
