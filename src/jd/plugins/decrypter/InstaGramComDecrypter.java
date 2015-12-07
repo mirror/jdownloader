@@ -45,7 +45,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // https and www. is required!
-        final String parameter = param.toString().replaceFirst("https?://in", "https://www.in");
+        final String parameter = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("instagram.com");
         boolean logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
