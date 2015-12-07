@@ -57,7 +57,7 @@ public class InstaGramCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/").replace("http://", "https://").replaceFirst("://in", "www.in"));
+        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/").replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in"));
     }
 
     /* Connection stuff */
