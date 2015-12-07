@@ -10,11 +10,16 @@ import javax.swing.Icon;
 import jd.gui.swing.jdgui.Flashable;
 import jd.gui.swing.jdgui.JDGui;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
@@ -30,11 +35,9 @@ public class UpdateAction extends AbstractToolBarAction {
         setIconKey("update");
         setEnabled(true);
         setAccelerator(KeyEvent.VK_U);
-
     }
 
     public void actionPerformed(ActionEvent e) {
-
         /* WebUpdate is running in its own Thread */
         new Thread() {
             public void run() {
@@ -43,7 +46,6 @@ public class UpdateAction extends AbstractToolBarAction {
                 UpdateController.getInstance().runUpdateChecker(true);
             }
         }.start();
-
     }
 
     @Override
@@ -51,17 +53,36 @@ public class UpdateAction extends AbstractToolBarAction {
         return _GUI._.action_start_update_tooltip();
     }
 
-    public class Button extends ExtButton implements UpdaterListener, Flashable {
+    public class Button extends ExtButton implements UpdaterListener, Flashable, GenericConfigEventListener<Boolean> {
+
+        private final BooleanKeyHandler booleanKeyHandler = CFG_GUI.UPDATE_BUTTON_FLASHING_ENABLED;
 
         public Button() {
             super(UpdateAction.this);
             setIcon(NewTheme.I().getIcon(getIconKey(), 24));
             setHideActionText(true);
             UpdateController.getInstance().getEventSender().addListener(this, true);
-
-            if (UpdateController.getInstance().hasPendingUpdates()) {
+            booleanKeyHandler.getEventSender().addListener(this, true);
+            if (booleanKeyHandler.isEnabled() && UpdateController.getInstance().hasPendingUpdates()) {
                 JDGui.getInstance().getFlashController().register(this);
+            } else {
+                JDGui.getInstance().getFlashController().unregister(this);
             }
+        }
+
+        @Override
+        public void onConfigValueModified(final KeyHandler<Boolean> keyHandler, Boolean newValue) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    if (booleanKeyHandler.isEnabled() && UpdateController.getInstance().hasPendingUpdates()) {
+                        JDGui.getInstance().getFlashController().register(Button.this);
+                    } else {
+                        JDGui.getInstance().getFlashController().unregister(Button.this);
+                    }
+                }
+            };
         }
 
         @Override
@@ -75,18 +96,15 @@ public class UpdateAction extends AbstractToolBarAction {
         }
 
         @Override
-        public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
+        public void onUpdatesAvailable(final boolean selfupdate, final InstallLog installlog) {
             new EDTRunner() {
 
                 @Override
                 protected void runInEDT() {
-                    if (UpdateController.getInstance().hasPendingUpdates()) {
+                    if (booleanKeyHandler.isEnabled() && UpdateController.getInstance().hasPendingUpdates()) {
                         JDGui.getInstance().getFlashController().register(Button.this);
-                        // setFlashing(true);
-                        // setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK));
                     } else {
                         JDGui.getInstance().getFlashController().unregister(Button.this);
-                        // setFlashing(false);
                     }
 
                 }
@@ -121,15 +139,16 @@ public class UpdateAction extends AbstractToolBarAction {
             } else {
                 Button.this.setIcon(NewTheme.I().getIcon(getIconKey(), 24));
             }
-
             return true;
+        }
+
+        @Override
+        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
         }
     }
 
     public AbstractButton createButton() {
-
-        Button bt = new Button();
-
+        final Button bt = new Button();
         return bt;
     }
 
