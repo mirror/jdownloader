@@ -711,9 +711,11 @@ public class SecondLevelLaunch {
         try {
             System.setProperty("jna.debug_load", "true");
             System.setProperty("jna.debug_load.jna", "true");
-            System.setProperty("jna.nosystrue", "true");
+            final String jnaNoSysKey = "jna.nosys";
+            if (StringUtils.isEmpty(System.getProperty(jnaNoSysKey))) {
+                System.setProperty(jnaNoSysKey, "true");
+            }
             Application.getResource("tmp/jna").mkdir();
-
             System.setProperty("jna.tmpdir", Application.getResource("tmp/jna").getAbsolutePath());
             com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
                 @Override
@@ -735,13 +737,11 @@ public class SecondLevelLaunch {
                     }
                 };
                 UIOManager.I().show(ExceptionDialogInterface.class, d);
-
             } else {
                 StatsManager.I().track("UnsatisfiedLinkError/Diff");
             }
             LOG.log(e);
         } catch (final Throwable e1) {
-
             LOG.log(e1);
         }
         UJCECheck.check();
