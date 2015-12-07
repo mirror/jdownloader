@@ -189,9 +189,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
                     dlsubtitle.setProperty("mainlink", parameter);
                     dl.setLinkID(String.format(linkdupeid, "subtitle", quality));
                     dlsubtitle.setFinalFileName(finalfilename);
-                    if (fastlinkcheck) {
-                        dlsubtitle.setAvailable(true);
-                    }
+                    dlsubtitle.setAvailable(true);
                     decryptedLinks.add(dlsubtitle);
                 }
             }

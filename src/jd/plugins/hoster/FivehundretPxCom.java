@@ -74,16 +74,26 @@ public class FivehundretPxCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = this.br.getRegex("PxInitialData\\[\"photo\"\\] = (\\{.*?\\});\n").getMatch(0);
+        String json = this.br.getRegex("PxInitialData\\[\"photo\"\\] = (\\{.*?\\});\n").getMatch(0);
+        if (json == null) {
+            json = this.br.getRegex("window\\.PxPreloadedData = (\\{.*?\\});\n").getMatch(0);
+        }
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        final Object photoo = entries.get("photo");
+        if (photoo != null && photoo instanceof LinkedHashMap) {
+            entries = (LinkedHashMap<String, Object>) photoo;
+        }
         final String title = (String) entries.get("name");
         final String user_firstname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/firstname");
         final String user_lastname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/lastname");
         final String ext = (String) entries.get("image_format");
         DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{4}/https_url");
+        if (DLLINK == null) {
+            DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{3}/https_url");
+        }
         if (title == null || user_firstname == null || user_lastname == null || ext == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
