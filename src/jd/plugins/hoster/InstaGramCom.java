@@ -45,19 +45,19 @@ public class InstaGramCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public InstaGramCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://instagram.com/accounts/login/");
+        this.enablePremium(MAINPAGE + "/accounts/login/");
     }
 
     private String DLLINK = null;
 
     @Override
     public String getAGBLink() {
-        return "http://instagram.com/about/legal/terms/#";
+        return MAINPAGE + "/about/legal/terms/#";
     }
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/").replace("http://", "https://"));
+        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/").replace("http://", "https://").replaceFirst("://in", "www.in"));
     }
 
     /* Connection stuff */
@@ -67,7 +67,7 @@ public class InstaGramCom extends PluginForHost {
     private static final int     MAXCHUNKS_videos   = 0;
     private static final int     MAXDOWNLOADS       = -1;
 
-    private static final String  MAINPAGE           = "http://instagram.com";
+    private static final String  MAINPAGE           = "https://www.instagram.com";
     private static Object        LOCK               = new Object();
 
     private boolean              is_private_url     = false;
@@ -80,7 +80,7 @@ public class InstaGramCom extends PluginForHost {
          * Decrypter can set this status - basically to be able to handfle private urls correctly in host plugin in case users' account gets
          * disabled for whatever reason.
          */
-        this.br = prepBR(this.br);
+        prepBR(this.br);
         is_private_url = downloadLink.getBooleanProperty("private_url", false);
         boolean is_logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -193,7 +193,7 @@ public class InstaGramCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage("https://instagram.com/accounts/login/");
+                br.getPage(MAINPAGE + "/accounts/login/");
                 try {
                     br.setHeader("X-Instagram-AJAX", "1");
                     br.setHeader("X-CSRFToken", br.getCookie("instagram.com", "csrftoken"));
@@ -240,7 +240,7 @@ public class InstaGramCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }

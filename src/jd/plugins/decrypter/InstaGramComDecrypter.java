@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -41,8 +42,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        br = new Browser();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // https and www. is required!
+        final String parameter = param.toString().replaceFirst("https?://in", "https://www.in");
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("instagram.com");
         boolean logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
@@ -54,7 +57,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
-        this.br = jd.plugins.hoster.InstaGramCom.prepBR(this.br);
+        jd.plugins.hoster.InstaGramCom.prepBR(this.br);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("user\\?username=.+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -93,6 +96,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (page > 0) {
+                final Browser br = this.br.cloneBrowser();
                 final String csrftoken = br.getCookie("instagram.com", "csrftoken");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("X-Instagram-AJAX", "1");
@@ -105,24 +109,23 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     br.getHeaders().put("X-CSRFToken", csrftoken);
                 }
                 if (maxid != null) {
-                    this.br.getHeaders().put("Referer", "https://instagram.com/" + username_url + "/?max_id=" + maxid);
-                } else {
-                    this.br.getHeaders().put("Referer", "https://www.instagram.com/" + username_url);
+                    br.getHeaders().put("Referer", "https://www.instagram.com/" + username_url + "/?max_id=" + maxid);
                 }
-                this.br.setCookie(this.getHost(), "ig_vw", "1680");
+                br.setCookie(this.getHost(), "ig_vw", "1680");
                 int retrycounter = 1;
 
                 /* Access next page - 403 error may happen once for logged in users - reason unknown - will work fine on 2nd request! */
                 do {
-                    this.br.postPage("https://instagram.com/query/", "q=ig_user(" + id_owner + ")+%7B+media.after(" + nextid + "%2C+12)+%7B%0A++count%2C%0A++nodes+%7B%0A++++caption%2C%0A++++code%2C%0A++++comments+%7B%0A++++++count%0A++++%7D%2C%0A++++date%2C%0A++++dimensions+%7B%0A++++++height%2C%0A++++++width%0A++++%7D%2C%0A++++display_src%2C%0A++++id%2C%0A++++is_video%2C%0A++++likes+%7B%0A++++++count%0A++++%7D%2C%0A++++owner+%7B%0A++++++id%0A++++%7D%2C%0A++++thumbnail_src%0A++%7D%2C%0A++page_info%0A%7D%0A+%7D&ref=users%3A%3Ashow");
+                    final String p = "q=ig_user(" + id_owner + ")+%7B+media.after(" + nextid + "%2C+12)+%7B%0A++count%2C%0A++nodes+%7B%0A++++caption%2C%0A++++code%2C%0A++++comments+%7B%0A++++++count%0A++++%7D%2C%0A++++date%2C%0A++++dimensions+%7B%0A++++++height%2C%0A++++++width%0A++++%7D%2C%0A++++display_src%2C%0A++++id%2C%0A++++is_video%2C%0A++++likes+%7B%0A++++++count%0A++++%7D%2C%0A++++owner+%7B%0A++++++id%0A++++%7D%2C%0A++++thumbnail_src%0A++%7D%2C%0A++page_info%0A%7D%0A+%7D&ref=users%3A%3Ashow";
+                    br.postPage("/query/", p);
                     retrycounter++;
-                } while (this.br.getHttpConnection().getResponseCode() == 403 && retrycounter <= 3);
+                } while (br.getHttpConnection().getResponseCode() == 403 && retrycounter <= 3);
 
-                if (this.br.getHttpConnection().getResponseCode() == 439) {
+                if (br.getHttpConnection().getResponseCode() == 439) {
                     logger.info("Seems like user is using an unverified account - cannot grab more items");
                     break;
                 }
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "media/nodes");
                 nextid = (String) DummyScriptEnginePlugin.walkJson(entries, "media/page_info/end_cursor");
             }
@@ -140,7 +143,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 } else {
                     filename = username_url + " - " + linkid + ".jpg";
                 }
-                final String content_url = "https://instagram.com/p/" + linkid;
+                final String content_url = "https://www.instagram.com/p/" + linkid;
                 final DownloadLink dl = this.createDownloadlink(content_url);
                 dl.setContentUrl(content_url);
                 dl.setLinkID(linkid);
