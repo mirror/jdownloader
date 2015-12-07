@@ -124,7 +124,7 @@ public class PromptFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             }
             br.followConnection();
-            if (br.containsHTML("file unavailable")) {
+            if (br.containsHTML("file unavailable|file not ready")) {
                 if (failed_once) {
                     /* Cycle through download/stream-download! --> Reset our errorhandling-boolean for broken downloadlinks */
                     downloadLink.setProperty("failed_once", false);

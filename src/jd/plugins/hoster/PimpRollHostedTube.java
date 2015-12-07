@@ -104,6 +104,7 @@ public class PimpRollHostedTube extends PluginForHost {
         return "http://(?:(?:www|m)\\.)?" + Pattern.quote(host) + "/(?![^/]*(?:models|stars|categories|channels|tags)[^/]*)[\\w\\-]+/\\d+";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         if (link.getDownloadURL().contains("wankz.com/")) {
@@ -205,6 +206,10 @@ public class PimpRollHostedTube extends PluginForHost {
                     downloadLink.setName(Encoding.htmlDecode(filename) + ".mp4");
                 }
                 return AvailableStatus.TRUE;
+            } else if (!br.containsHTML("flowplayer\\.pseudostreaming")) {
+                /* No video content available */
+                /* http://www.110percentamateur.com/horny-amateur-sluts-fucking/49459 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

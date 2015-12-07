@@ -32,7 +32,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com", "logotv.com", "cc.com" }, urls = { "https?://(?:www\\.)?viva\\.tv/.+", "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?mtviggy\\.com/videos/[a-z0-9\\-]+/|https?://(?:www\\.)?mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|https?://(?:www\\.)?mtvk\\.com/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?vh1\\.com/.+", "https?://(?:www\\.)?nickmom\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+", "https?://(?:www\\.)?mtv\\.com/.+", "https?://(?:www\\.)logotv\\.com/.+", "https?://(?:www\\.)?cc\\.com/.+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "nicktoons.nick.com", "teennick.com", "nickatnite.com", "mtv.com.au", "mtv.com", "logotv.com", "cc.com", "funnyclips.cc", "comedycentral.tv", "nick.de", "nickjr.de", "nicknight.de", "tvland.com", "spike.com", "cmt.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://(?:www\\.)?viva\\.tv/.+", "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?(?:mtviggy|mtvdesi|mtvk)\\.com/.+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?vh1\\.com/.+", "https?://(?:www\\.)?nickmom\\.com/.+", "https?://nicktoons\\.nick\\.com/.+", "https?://(?:www\\.)?teennick\\.com/.+", "https?://(?:www\\.)?nickatnite\\.com/.+",
+        "https?://(?:www\\.)?mtv\\.com\\.au/.+", "https?://(?:www\\.)?mtv\\.com/.+", "https?://(?:www\\.)logotv\\.com/.+", "https?://(?:www\\.)?cc\\.com/.+", "https?://de\\.funnyclips\\.cc/.+", "https?://(?:www\\.)?comedycentral\\.tv/.+", "https?://(?:www\\.)?nick\\.de/.+", "https?://(?:www\\.)?nickjr\\.de/.+", "https?://(?:www\\.)?nicknight\\.de/.+", "https?://(?:www\\.)?tvland\\.com/.+", "https?://(?:www\\.)?spike\\.com/.+", "https?://(?:www\\.)?cmt\\.com/.+", "https?://thedailyshow\\.cc\\.com/.+", "https?://tosh\\.cc\\.com/.+", "https?://(?:www\\.)?mtvu\\.com/.+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class VivaTvDecrypt extends PluginForDecrypt {
 
     public VivaTvDecrypt(PluginWrapper wrapper) {
@@ -50,13 +51,15 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private static final String     type_southpark_de_episode    = "http://www\\.southpark\\.de/alle\\-episoden/.+";
     private static final String     type_southpark_cc_episode    = "http://southpark\\.cc\\.com/full\\-episodes/.+";
 
-    private static final String     type_nickmom_com             = "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/";
+    private static final String     type_nickmom_com             = "https?://(?:www\\.)?nickmom\\.com/.+";
 
     private static final String     type_mtv_com                 = "https?://(?:www\\.)?mtv\\.com/.+";
 
     private static final String     type_logotv_com              = "http://www\\.logotv\\.com/.+";
 
     private static final String     hosterplugin_url_viacom_mgid = "http://viacommgid/";
+
+    private static final String     PATTERN_MGID                 = "mgid:[A-Za-z]+:[A-Za-z0-9_\\-]+:[A-Za-z0-9\\.\\-]+:[A-Za-z0-9_\\-]+";
 
     private ArrayList<DownloadLink> decryptedLinks               = new ArrayList<DownloadLink>();
     private String                  default_ext                  = null;
@@ -120,7 +123,6 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             if (url_mrss == null || title == null || video_token == null || mgid == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
-            final String url_hosterplugin = getViacomHostUrl(mgid);
             final String contenturl;
             if (path != null) {
                 contenturl = "http://" + this.br.getHost() + path;
@@ -133,7 +135,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
             temp_filename += jd.plugins.hoster.VivaTv.default_ext;
 
-            final DownloadLink dl = this.createDownloadlink(url_hosterplugin);
+            final DownloadLink dl = mgidSingleVideoGetDownloadLink(mgid);
             dl.setLinkID(video_token);
             dl.setName(temp_filename);
             dl.setAvailable(true);
@@ -226,18 +228,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(extern_ID));
             return;
         }
-        logger.info("Current link is NO extern link");
-        final DownloadLink main = createDownloadlink(parameter.replace("nickmom.com/", "nickmom_jd_decrypted_jd_.com/"));
-        if (!br.containsHTML("class=\"video-player-wrapper\"") || br.getHttpConnection().getResponseCode() == 404) {
-            main.setAvailable(false);
-        } else {
-            String filename = jd.plugins.hoster.VivaTv.getFilenameNickmomCom(this.br);
-            if (filename != null) {
-                main.setName(filename + default_ext);
-                main.setAvailable(true);
-            }
-        }
-        decryptedLinks.add(main);
+        vivaUniversalCrawler();
     }
 
     private void decryptMtvCom() throws Exception {
@@ -333,7 +324,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     }
 
     private void crawlMgids() throws IOException, DecrypterException {
-        final String[] mgids = this.br.getRegex("(mgid:[A-Za-z0-9_:%\\-\\.]+)").getColumn(0);
+        final String[] mgids = this.br.getRegex("(" + PATTERN_MGID + ")").getColumn(0);
         if (mgids != null) {
             for (final String mgid : mgids) {
                 addMgid(mgid);
@@ -375,7 +366,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                         fpName = doFilenameEncoding(partname);
                     }
                     final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
-                    final DownloadLink fina = addSingleMgid(mgid);
+                    final DownloadLink fina = mgidSingleVideoGetDownloadLink(mgid);
                     fina.setFinalFileName(final_filename);
                     fina.setProperty("decryptedfilename", final_filename);
                     fina.setAvailable(true);
@@ -394,7 +385,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                         continue;
                     }
                     final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
-                    final DownloadLink fina = addSingleMgid(mgid);
+                    final DownloadLink fina = mgidSingleVideoGetDownloadLink(mgid);
                     fina.setFinalFileName(final_filename);
                     fina.setProperty("decryptedfilename", final_filename);
                     fina.setAvailable(true);
@@ -418,29 +409,37 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
         if (mgidIsPlaylist(mgid)) {
             /* Episode (maybe with multiple segments) */
-            final String feed_url = jd.plugins.hoster.VivaTv.getFeedurlForMgid(mgid);
+            final String feed_url = jd.plugins.hoster.VivaTv.mgidGetFeedurlForMgid(mgid);
             if (feed_url == null) {
                 return;
             }
             this.br.getPage(feed_url);
             decryptFeed();
         } else {
-            final DownloadLink dl = addSingleMgid(mgid);
-            dl.setContentUrl(this.parameter);
-            this.decryptedLinks.add(dl);
+            final DownloadLink dl = mgidSingleVideoGetDownloadLink(mgid);
+            if (dl != null) {
+                dl.setContentUrl(this.parameter);
+                this.decryptedLinks.add(dl);
+            }
         }
     }
 
     /** Used to make downloadlink objects out of mgids of which we know they are single videos. */
-    private DownloadLink addSingleMgid(String mgid) {
+    private DownloadLink mgidSingleVideoGetDownloadLink(String mgid) {
         /* Additional errorhandling - make sure we only accept valid video content! */
-        if (mgidIsPlaylist(mgid) || !isValidMgid(mgid)) {
+        if (!isValidMgid(mgid) || !mgidIsSingleVideo(mgid)) {
             return null;
         }
         mgid = cleanMgid(mgid);
         final String url_hosterplugin = getViacomHostUrl(mgid);
         final DownloadLink dl = this.createDownloadlink(url_hosterplugin);
         return dl;
+    }
+
+    private boolean mgidIsSingleVideo(final String mgid) {
+        final String type = jd.plugins.hoster.VivaTv.mgidGetType(mgid);
+        final boolean isvideo = type.equals("video");
+        return isvideo;
     }
 
     private String cleanMgid(String mgid) {
@@ -457,13 +456,11 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         if (mgid == null) {
             return false;
         }
-        final String[] mgid_info = jd.plugins.hoster.VivaTv.getMgidInformation(mgid);
-        if (mgid.contains(":image:") || mgid.contains(":drupal:")) {
-            return false;
-        } else if (mgid_info.length != 5) {
-            return false;
+        boolean isValidMgid = mgid.matches(PATTERN_MGID);
+        if (isValidMgid && mgid.contains(":image:") || mgid.contains(":drupal:")) {
+            isValidMgid = false;
         }
-        return true;
+        return isValidMgid;
     }
 
     private boolean mgidIsPlaylist(final String mgid) {
@@ -501,7 +498,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
             title = doFilenameEncoding(title);
             title = title + this.default_ext;
-            final DownloadLink dl = addSingleMgid(item_mgid);
+            final DownloadLink dl = mgidSingleVideoGetDownloadLink(item_mgid);
             dl.setProperty("decryptedfilename", title);
             dl.setProperty("mainlink", this.parameter);
             dl.setName(title);

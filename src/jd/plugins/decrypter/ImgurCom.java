@@ -158,18 +158,19 @@ public class ImgurCom extends PluginForDecrypt {
                     }
                     AUTHOR = this.br.getRegex("property=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
                     galleryTitle = br.getRegex("<title>([^<>\"]*?) \\- Imgur</title>").getMatch(0);
-                    final String album_info = br.getRegex("\"album_images\":\\{(.+)").getMatch(0);
-                    if (album_info != null) {
-                        final String count_pics_str = new Regex(album_info, "\"count\":(\\d+)").getMatch(0);
-                        /* Only load that if needed - it won't work for galleries with only 1 picture e.g. */
-                        if (count_pics_str != null && Long.parseLong(count_pics_str) >= 10) {
-                            logger.info("siteDecrypt: loading json to get all pictures");
-                            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                            br.getPage("http://imgur.com/gallery/" + LID + "/album_images/hit.json?all=true");
-                            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                        }
-                    }
+                    /* 2015-12-07: The few lines of code below seem not to work anymore/not needed anymore. */
+                    // final String album_info = br.getRegex("\"album_images\":\\{(.+)").getMatch(0);
+                    // if (album_info != null) {
+                    // final String count_pics_str = new Regex(album_info, "\"count\":(\\d+)").getMatch(0);
+                    // /* Only load that if needed - it e.g. won't work for galleries with only 1 picture. */
+                    // if (count_pics_str != null && Long.parseLong(count_pics_str) >= 10) {
+                    // logger.info("siteDecrypt: loading json to get all pictures");
+                    // br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    // br.getPage("http://imgur.com/gallery/" + LID + "/album_images/hit.json?all=true");
+                    // br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+                    // }
+                    // }
                     site_decrypt();
                 }
 
@@ -237,7 +238,7 @@ public class ImgurCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
                 throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
             }
-            if (title != null && !title.equals("")) {
+            if (!inValidate(title)) {
                 title = Encoding.htmlDecode(title);
                 title = HTMLEntities.unhtmlentities(title);
                 title = HTMLEntities.unhtmlAmpersand(title);
@@ -309,7 +310,7 @@ public class ImgurCom extends PluginForDecrypt {
             if (ext.contains("?")) {
                 ext = ext.substring(0, ext.lastIndexOf("?"));
             }
-            if (title != null && !title.equals("")) {
+            if (!inValidate(title)) {
                 title = Encoding.htmlDecode(title);
                 title = HTMLEntities.unhtmlentities(title);
                 title = HTMLEntities.unhtmlAmpersand(title);
@@ -354,6 +355,22 @@ public class ImgurCom extends PluginForDecrypt {
             result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
         }
         return result;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     */
+    protected boolean inValidate(final String s) {
+        if (s == null || s.matches("\\s+") || s.equals("")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
