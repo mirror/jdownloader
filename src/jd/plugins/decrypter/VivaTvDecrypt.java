@@ -30,10 +30,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com", "logotv.com", "cc.com" }, urls = { "https?://(?:www\\.)?viva\\.tv/.+", "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?mtviggy\\.com/videos/[a-z0-9\\-]+/|https?://(?:www\\.)?mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|https?://(?:www\\.)?mtvk\\.com/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?vh1\\.com/.+", "https?://(?:www\\.)?nickmom\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?mtv\\.com/.+", "https?://(?:www\\.)logotv\\.com/.+", "https?://(?:www\\.)?cc\\.com/.+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viva.tv", "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com", "logotv.com", "cc.com" }, urls = { "https?://(?:www\\.)?viva\\.tv/.+", "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?mtviggy\\.com/videos/[a-z0-9\\-]+/|https?://(?:www\\.)?mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|https?://(?:www\\.)?mtvk\\.com/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?vh1\\.com/.+", "https?://(?:www\\.)?nickmom\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+", "https?://(?:www\\.)?mtv\\.com/.+", "https?://(?:www\\.)logotv\\.com/.+", "https?://(?:www\\.)?cc\\.com/.+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class VivaTvDecrypt extends PluginForDecrypt {
 
     public VivaTvDecrypt(PluginWrapper wrapper) {
@@ -52,8 +51,6 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     private static final String     type_southpark_cc_episode    = "http://southpark\\.cc\\.com/full\\-episodes/.+";
 
     private static final String     type_nickmom_com             = "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/";
-
-    private static final String     type_mtv_com_au              = "https?://(?:www\\.)?mtv\\.com\\.au/.+";
 
     private static final String     type_mtv_com                 = "https?://(?:www\\.)?mtv\\.com/.+";
 
@@ -82,8 +79,6 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             decryptSouthparkCc();
         } else if (parameter.matches(type_nickmom_com)) {
             decryptNickmomCom();
-        } else if (parameter.matches(type_mtv_com_au)) {
-            decryptMtvComAu();
         } else if (parameter.matches(type_mtv_com)) {
             decryptMtvCom();
         } else if (parameter.matches(type_logotv_com)) {
@@ -187,35 +182,6 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
     }
 
-    private void vivaUniversalCrawler() throws IOException, DecrypterException {
-        if (decryptVevo()) {
-            return;
-        }
-        final String[] mgids = this.br.getRegex("(mgid:[A-Za-z0-9_:%\\-\\.]+)").getColumn(0);
-        if (mgids != null) {
-            for (final String mgid : mgids) {
-                /* Skip image-mgids - we don't need them! */
-                if (mgid.contains(":image:")) {
-                    continue;
-                }
-                if (mgid.contains("episode")) {
-                    /* Episode (maybe with multiple segments) */
-                    final String feed_url = jd.plugins.hoster.VivaTv.getFeedurlForMgid(mgid);
-                    if (feed_url == null) {
-                        continue;
-                    }
-                    this.br.getPage(feed_url);
-                    decryptFeed();
-                } else {
-                    final String url_hosterplugin = getViacomHostUrl(mgid);
-                    final DownloadLink dl = this.createDownloadlink(url_hosterplugin);
-                    dl.setContentUrl(this.parameter);
-                    this.decryptedLinks.add(dl);
-                }
-            }
-        }
-    }
-
     private void decryptSouthparkDe() throws IOException, DecrypterException {
         br.getPage(parameter);
         this.mgid = br.getRegex("media\\.mtvnservices\\.com/(mgid[^<>\"]*?)\"").getMatch(0);
@@ -272,73 +238,6 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
         }
         decryptedLinks.add(main);
-    }
-
-    /** This function should be able to decrypt any playlist- and single video from mtv.com.au. */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void decryptMtvComAu() throws Exception {
-        br.getPage(parameter);
-        final String playlist_id = br.getRegex("name=\"vimn:entity_uuid\" content=\"([a-z0-9\\-:]*?)\"").getMatch(0);
-        final String js = br.getRegex("jQuery\\.extend\\(Drupal\\.settings, (\\{.*?)\\);.*?</script>").getMatch(0);
-        if (js == null || playlist_id == null) {
-            decryptedLinks = null;
-            return;
-        }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
-        final LinkedHashMap<String, Object> vimn_video = (LinkedHashMap<String, Object>) entries.get("vimn_video");
-        final Object playlist_o = vimn_video.get("playlists");
-        if (playlist_o instanceof ArrayList) {
-            /* Single video */
-            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "vimn_videoplayer/" + playlist_id);
-            final String part_mgid = (String) entries.get("video_id");
-            final String partname = (String) entries.get("title");
-            final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
-            final String url_hosterplugin = getViacomHostUrl(part_mgid);
-            final DownloadLink fina = createDownloadlink(url_hosterplugin);
-            fina.setFinalFileName(final_filename);
-            fina.setProperty("decryptedfilename", final_filename);
-            fina.setAvailable(true);
-            fina.setContentUrl(this.parameter);
-            decryptedLinks.add(fina);
-        } else {
-            /* Playlist */
-            entries = (LinkedHashMap<String, Object>) playlist_o;
-            entries = (LinkedHashMap<String, Object>) entries.get(playlist_id);
-            final ArrayList<Object> parts = (ArrayList) entries.get("items");
-            final Object title_object = entries.get("title");
-            if (title_object instanceof String) {
-                fpName = (String) entries.get("title");
-            }
-            if (fpName == null) {
-                fpName = new Regex(parameter, "mtv\\.com\\.au/([a-z0-9\\-_]+)/videos/.+").getMatch(0);
-            }
-            if (fpName == null) {
-                logger.warning("fpName is null");
-                decryptedLinks = null;
-                return;
-            }
-            fpName = fpName != null ? doFilenameEncoding(fpName) : null;
-            for (final Object pt : parts) {
-                final LinkedHashMap<String, Object> playlistentry = (LinkedHashMap<String, Object>) pt;
-                final String part_mgid = (String) playlistentry.get("guid");
-                final String partname = (String) playlistentry.get("title");
-                if (fpName == null) {
-                    fpName = doFilenameEncoding(partname);
-                }
-                final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
-                final String url_hosterplugin = getViacomHostUrl(part_mgid);
-                final DownloadLink fina = createDownloadlink(url_hosterplugin);
-                fina.setFinalFileName(final_filename);
-                fina.setProperty("decryptedfilename", final_filename);
-                fina.setAvailable(true);
-                fina.setContentUrl(this.parameter);
-                decryptedLinks.add(fina);
-            }
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fpName = Encoding.htmlDecode(fpName.trim());
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
     }
 
     private void decryptMtvCom() throws Exception {
@@ -407,11 +306,168 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
     }
 
+    /** This function is able to crawl content of most viacom/mtv websites. */
+    private void vivaUniversalCrawler() throws IOException, DecrypterException {
+        if (decryptVevo()) {
+            return;
+        }
+        crawlDrupal();
+        crawlMgids();
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fpName = Encoding.htmlDecode(fpName.trim());
+            fp.setName(fpName);
+            fp.addLinks(decryptedLinks);
+        }
+    }
+
+    /** In case a video is not hosted by mtv but by vimeo, this function should find- and return that vimeo url. */
     private boolean decryptVevo() {
         final String vevo_ID = br.getRegex("MTVN\\.Player\\.vevoVideoId = \"([A-Za-z0-9]+)\";").getMatch(0);
         if (vevo_ID != null) {
             logger.info("Current link is a VEVO link");
             decryptedLinks.add(createDownloadlink("http://www.vevo.com/watch/" + vevo_ID));
+            return true;
+        }
+        return false;
+    }
+
+    private void crawlMgids() throws IOException, DecrypterException {
+        final String[] mgids = this.br.getRegex("(mgid:[A-Za-z0-9_:%\\-\\.]+)").getColumn(0);
+        if (mgids != null) {
+            for (final String mgid : mgids) {
+                addMgid(mgid);
+            }
+        }
+    }
+
+    /** Finds mgids inside drupal json */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void crawlDrupal() {
+        final String playlist_id = br.getRegex("name=\"vimn:entity_uuid\" content=\"([a-z0-9\\-:]*?)\"").getMatch(0);
+        final String js = br.getRegex("jQuery\\.extend\\(Drupal\\.settings, (\\{.*?)\\);.*?</script>").getMatch(0);
+        if (js == null || playlist_id == null) {
+            return;
+        }
+        try {
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
+            final LinkedHashMap<String, Object> vimn_video = (LinkedHashMap<String, Object>) entries.get("vimn_video");
+            ArrayList<Object> resources = null;
+            final Object playlist_o = vimn_video.get("playlists");
+            final Object embedded_videos_o = vimn_video.get("embedded_videos");
+            if (!(playlist_o instanceof ArrayList)) {
+                /* Playlist */
+                entries = (LinkedHashMap<String, Object>) playlist_o;
+                entries = (LinkedHashMap<String, Object>) entries.get(playlist_id);
+                resources = (ArrayList) entries.get("items");
+                final Object title_object = entries.get("title");
+                if (title_object instanceof String) {
+                    fpName = (String) entries.get("title");
+                }
+                for (final Object pt : resources) {
+                    final LinkedHashMap<String, Object> playlistentry = (LinkedHashMap<String, Object>) pt;
+                    final String mgid = (String) playlistentry.get("guid");
+                    final String partname = (String) playlistentry.get("title");
+                    if (mgid == null || partname == null) {
+                        continue;
+                    }
+                    if (fpName == null) {
+                        fpName = doFilenameEncoding(partname);
+                    }
+                    final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
+                    final DownloadLink fina = addSingleMgid(mgid);
+                    fina.setFinalFileName(final_filename);
+                    fina.setProperty("decryptedfilename", final_filename);
+                    fina.setAvailable(true);
+                    fina.setContentUrl(this.parameter);
+                    decryptedLinks.add(fina);
+                }
+            }
+            if (embedded_videos_o instanceof ArrayList) {
+                resources = (ArrayList) embedded_videos_o;
+                for (final Object pt : resources) {
+                    final LinkedHashMap<String, Object> playlistentry = (LinkedHashMap<String, Object>) pt;
+                    final String mgid = (String) playlistentry.get("video_id");
+                    final String partname = (String) playlistentry.get("video_title");
+                    final String url = (String) playlistentry.get("video_url");
+                    if (mgid == null || partname == null || url == null) {
+                        continue;
+                    }
+                    final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
+                    final DownloadLink fina = addSingleMgid(mgid);
+                    fina.setFinalFileName(final_filename);
+                    fina.setProperty("decryptedfilename", final_filename);
+                    fina.setAvailable(true);
+                    fina.setContentUrl("http://" + this.br.getHost() + url);
+                    decryptedLinks.add(fina);
+                }
+            }
+        } catch (final Throwable e) {
+        }
+    }
+
+    /** Validates- and adds mgids. */
+    private void addMgid(String mgid) throws IOException, DecrypterException {
+        if (mgid == null) {
+            return;
+        }
+        mgid = cleanMgid(mgid);
+        /* Skip image-mgids - we don't need them! */
+        if (!isValidMgid(mgid)) {
+            return;
+        }
+        if (mgidIsPlaylist(mgid)) {
+            /* Episode (maybe with multiple segments) */
+            final String feed_url = jd.plugins.hoster.VivaTv.getFeedurlForMgid(mgid);
+            if (feed_url == null) {
+                return;
+            }
+            this.br.getPage(feed_url);
+            decryptFeed();
+        } else {
+            final DownloadLink dl = addSingleMgid(mgid);
+            dl.setContentUrl(this.parameter);
+            this.decryptedLinks.add(dl);
+        }
+    }
+
+    /** Used to make downloadlink objects out of mgids of which we know they are single videos. */
+    private DownloadLink addSingleMgid(String mgid) {
+        /* Additional errorhandling - make sure we only accept valid video content! */
+        if (mgidIsPlaylist(mgid) || !isValidMgid(mgid)) {
+            return null;
+        }
+        mgid = cleanMgid(mgid);
+        final String url_hosterplugin = getViacomHostUrl(mgid);
+        final DownloadLink dl = this.createDownloadlink(url_hosterplugin);
+        return dl;
+    }
+
+    private String cleanMgid(String mgid) {
+        if (mgid == null) {
+            return null;
+        }
+        mgid = Encoding.htmlDecode(mgid);
+        mgid = mgid.replace(" ", "");
+        return mgid;
+    }
+
+    /** Validates mgids */
+    private boolean isValidMgid(final String mgid) {
+        if (mgid == null) {
+            return false;
+        }
+        final String[] mgid_info = jd.plugins.hoster.VivaTv.getMgidInformation(mgid);
+        if (mgid.contains(":image:") || mgid.contains(":drupal:")) {
+            return false;
+        } else if (mgid_info.length != 5) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean mgidIsPlaylist(final String mgid) {
+        if (mgid.contains("episode")) {
             return true;
         }
         return false;
@@ -445,9 +501,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
             title = doFilenameEncoding(title);
             title = title + this.default_ext;
-            // feedURL_plain
-            final String url_hosterplugin = getViacomHostUrl(item_mgid);
-            final DownloadLink dl = createDownloadlink(url_hosterplugin);
+            final DownloadLink dl = addSingleMgid(item_mgid);
             dl.setProperty("decryptedfilename", title);
             dl.setProperty("mainlink", this.parameter);
             dl.setName(title);
