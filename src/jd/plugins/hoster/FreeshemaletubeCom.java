@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeshemaletube.com", "ballbustingtube.com", "freegrannytube.com", "crossdresserstube.com" }, urls = { "http://(www\\.)?freeshemaletube\\.com/video/\\d+", "http://(www\\.)?ballbustingtube\\.com/video/\\d+", "http://(www\\.)?freegrannytube\\.com/video/\\d+", "http://(www\\.)?crossdresserstube\\.com/video/\\d+" }, flags = { 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freeshemaletube.com", "ballbustingtube.com", "freegrannytube.com", "crossdresserstube.com" }, urls = { "http://(?:www\\.)?freeshemaletube\\.com/video/\\d+", "http://(?:www\\.)?ballbustingtube\\.com/video/\\d+", "http://(?:www\\.)?freegrannytube\\.com/video/\\d+", "http://(?:www\\.)?crossdresserstube\\.com/video/\\d+" }, flags = { 0, 0, 0, 0 })
 public class FreeshemaletubeCom extends PluginForHost {
 
     public FreeshemaletubeCom(PluginWrapper wrapper) {
@@ -60,13 +61,23 @@ public class FreeshemaletubeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie(downloadLink.getHost(), "googtrans", "/en/en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found|id=\"video_access_message\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"content\\-title\">[\t\n\r ]*?<h3>([^<>\"]*?)</h3>").getMatch(0);
+        }
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        }
         final String token = br.getRegex("\\'token\\', ?\\'([^<>\"]*?)\\'").getMatch(0);
         DLLINK = br.getRegex("\\'file\\', ?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null || token == null) {
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
@@ -80,11 +91,13 @@ public class FreeshemaletubeCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        DLLINK += "?ec_seek=0&token=" + token;
+        if (token != null) {
+            DLLINK += "?ec_seek=0&token=" + token;
+        }
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br.openGetConnection(DLLINK);
+                con = br.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

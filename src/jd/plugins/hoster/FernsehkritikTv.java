@@ -89,40 +89,38 @@ public class FernsehkritikTv extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
-    private static final String  TYPE_FOLGE_NEW                              = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
-    private static final String  TYPE_MASSENGESCHMACK_GENERAL                = "https?://(?:www\\.)?massengeschmack\\.tv/play/[a-z0-9\\-]+";
-    private static final String  TYPE_MASSENGESCHMACK_LIVE                   = "https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+";
-    private static final String  TYPE_MASSENGESCHMACK_DIRECT_PREMIUM         = "https?://massengeschmack\\.tv/dl/.+";
+    private static final String  TYPE_FOLGE_NEW                            = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
+    private static final String  TYPE_MASSENGESCHMACK_GENERAL              = "https?://(?:www\\.)?massengeschmack\\.tv/play/[a-z0-9\\-]+";
+    private static final String  TYPE_MASSENGESCHMACK_LIVE                 = "https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+";
+    private static final String  TYPE_MASSENGESCHMACK_DIRECT_PREMIUM       = "https?://massengeschmack\\.tv/dl/.+";
 
-    public static final String   HTML_MASSENGESCHMACK_OFFLINE                = ">Clip nicht gefunden|>Error 404<|>Die angeforderte Seite wurde nicht gefunden";
-    private static final String  HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY       = ">Clip nicht kostenlos verfügbar";
-    private static final String  HTML_MASSENGESCHMACK_LIVESTREAM_PREMIUMONLY = "Dieser Livestream benötigt ein Abo";
+    public static final String   HTML_MASSENGESCHMACK_OFFLINE              = ">Clip nicht gefunden|>Error 404<|>Die angeforderte Seite wurde nicht gefunden";
+    private static final String  HTML_MASSENGESCHMACK_CLIP_PREMIUMONLY     = ">Clip nicht kostenlos verfügbar";
 
     /* API stuff */
-    private static final boolean VIDEOS_ENABLE_API                           = true;
-    public static final String   API_BASE_URL                                = "https://massengeschmack.tv/api/v1/";
-    public static final String   API_LIST_SUBSCRIPTIONS                      = "?action=listSubscriptions";
-    public static final String   API_GET_CLIP                                = "?action=getClip&identifier=%s";
-    public static final int      API_RESPONSECODE_ERROR_CONTENT_OFFLINE      = 400;
-    public static final int      API_RESPONSECODE_ERROR_LOGIN_WRONG          = 401;
-    public static final int      API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED   = 500;
+    private static final boolean VIDEOS_ENABLE_API                         = true;
+    public static final String   API_BASE_URL                              = "https://massengeschmack.tv/api/v1/";
+    public static final String   API_LIST_SUBSCRIPTIONS                    = "?action=listSubscriptions";
+    public static final String   API_GET_CLIP                              = "?action=getClip&identifier=%s";
+    public static final int      API_RESPONSECODE_ERROR_CONTENT_OFFLINE    = 400;
+    public static final int      API_RESPONSECODE_ERROR_LOGIN_WRONG        = 401;
+    public static final int      API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED = 500;
 
-    private static final String  HOST_MASSENGESCHMACK                        = "massengeschmack.tv";
-    private static final String  HTML_NO_FREE_VERSION_FOUND                  = ">Keine kostenlose Version gefunden";
-    private static final String  GRAB_POSTECKE                               = "GRAB_POSTECKE";
-    private static final String  CUSTOM_DATE                                 = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME_FKTV                        = "CUSTOM_FILENAME_FKTV_2";
-    private static final String  CUSTOM_FILENAME_MASSENGESCHMACK_OTHER       = "CUSTOM_FILENAME_MASSENGESCHMACK_OTHER_4";
-    private static final String  CUSTOM_PACKAGENAME                          = "CUSTOM_PACKAGENAME";
-    private static final String  FASTLINKCHECK                               = "FASTLINKCHECK";
+    private static final String  HOST_MASSENGESCHMACK                      = "massengeschmack.tv";
+    private static final String  GRAB_POSTECKE                             = "GRAB_POSTECKE";
+    private static final String  CUSTOM_DATE                               = "CUSTOM_DATE_2";
+    private static final String  CUSTOM_FILENAME_FKTV                      = "CUSTOM_FILENAME_FKTV_2";
+    private static final String  CUSTOM_FILENAME_MASSENGESCHMACK_OTHER     = "CUSTOM_FILENAME_MASSENGESCHMACK_OTHER_5";
+    private static final String  CUSTOM_PACKAGENAME                        = "CUSTOM_PACKAGENAME";
+    private static final String  FASTLINKCHECK                             = "FASTLINKCHECK";
 
-    private static final String  EMPTY_FILENAME_INFORMATION                  = "-";
-    private static final String  default_EXT                                 = ".mp4";
+    private static final String  EMPTY_FILENAME_INFORMATION                = "-";
+    private static final String  default_EXT                               = ".mp4";
 
-    private static Object        LOCK                                        = new Object();
-    private String               DLLINK                                      = null;
-    private boolean              loggedin                                    = false;
-    private boolean              is_premiumonly_content                      = false;
+    private static Object        LOCK                                      = new Object();
+    private String               DLLINK                                    = null;
+    private boolean              loggedin                                  = false;
+    private boolean              is_premiumonly_content                    = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -325,9 +323,11 @@ public class FernsehkritikTv extends PluginForHost {
                 if (episodenumber == null && !inValidate(episodename)) {
                     episodenumber = new Regex(episodename, "Folge (\\d+)").getMatch(0);
                 }
-                if (!inValidate(episodename) && episodename.contains("Folge " + episodenumber) && (!inValidate(channel) && episodename.contains(channel))) {
-                    /* We don't need that information twice! */
-                    episodename = null;
+                if (!inValidate(episodename) && !inValidate(episodenumber)) {
+                    final String episodetext = "Folge " + episodenumber;
+                    final String episodetext2 = episodetext + ": ";
+                    episodename = episodename.replace(episodetext2, "");
+                    episodename = episodename.replace(episodetext, "");
                 }
             }
 
@@ -874,9 +874,9 @@ public class FernsehkritikTv extends PluginForHost {
     }
 
     private final static String defaultCustomFilename                       = "Fernsehkritik-TV Folge *episodenumber* vom *date**ext*";
-    private final static String defaultCustomFilename_massengeschmack_other = "*channel* *episodename* Folge *episodenumber* vom *date**ext*";
+    private final static String defaultCustomFilename_massengeschmack_other = "*date*_*channel*_Folge *episodenumber* - *episodename**ext*";
     private final static String defaultCustomPackagename                    = "Fernsehkritik.tv Folge *episodenumber* vom *date*";
-    private final static String defaultCustomDate                           = "dd MMMMM yyyy";
+    private final static String defaultCustomDate                           = "yyyy-MM-dd";
     private static final String default_empty_tag_separation_mark           = "-";
     private static final String inputDateformat_1                           = "dd. MMMMM yyyy";
 

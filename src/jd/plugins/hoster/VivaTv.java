@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -32,8 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funnyclips.cc", "comedycentral.tv", "nick.de", "nicknight.de", "nickjr.de", "mtv.com", "tvland.com", "spike.com", "nickmom.com", "cmt.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com", "logotv.com", "mtvnservices.com" }, urls = { "http://de\\.funnyclips\\.cc/(listen/.+|[A-Za-z0-9\\-]+/\\d+[A-Za-z0-9\\-]+)", "http://www\\.comedycentral\\.tv/(shows|neuigkeiten)/\\d+([a-z0-9\\-]+)?", "http://www\\.nick\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nicknight\\.de/shows/\\d+[a-z0-9\\-]+(/videos/\\d+[a-z0-9\\-]+)?", "http://www\\.nickjr\\.de/videos/\\d+([a-z0-9\\-]+)?", "http://viacommgid/mgid.+", "http://www\\.tvland\\.com/(video\\-clips|episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://www\\.spike\\.com/(video\\-clips|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+",
-        "http://www\\.nickmom_jd_decrypted_jd_\\.com/.+", "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml", "http://thedailyshow\\.cc\\.com/(videos|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+", "http://tosh\\.cc\\.com/((full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+|segments/[a-z0-9\\-]+/[a-z0-9]+)", "http://www\\.mtvu\\.com/(music|shows)/[a-z0-9\\-]+/", "http://media\\.mtvnservices\\.com/mgid:uma:video:logotv\\.com:\\d+", "http://media\\.mtvnservices\\.com/mgid:uma:content:mtv\\.com:\\d+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.com" }, urls = { "http://viacommgid/mgid:.+" }, flags = { 32 })
 public class VivaTv extends PluginForHost {
 
     public VivaTv(PluginWrapper wrapper) {
@@ -46,77 +43,29 @@ public class VivaTv extends PluginForHost {
     }
 
     /* Important data */
-    public static final String   url_service_feed_api_mtvnn_v2            = "http://api.mtvnn.com/v2/mrss.xml?uri=%s";
-    public static final String   url_service_feed_mtvnservices            = "http://media.mtvnservices.com/video/feed.jhtml?ref=None&type=error&uri=%s&geo=DE&orig=&franchise=&dist=";
-    public static final String   url_service_feed_intl_mtvnservices       = "http://intl.mtvnservices.com/mrss/%s";
-    public static final String   url_service_feed_COMEDYCENTRAL           = "http://www.cc.com/feeds/mrss?uri=%s";
-    public static final String   url_service_feed_SOUTHPARKSTUDIOS        = "http://southpark.cc.com/feeds/video-player/mrss/%s";
-    public static final String   url_service_mediagen_mtvnservices_device = "http://intl.mtvnservices.com/mediagen/%s/?device={device}";
-    public static final String   url_service_mediagen_mtvnservices        = "http://intl.mtvnservices.com/mediagen/%s/";
+    public static final String   url_service_feed_api_mtvnn_v2                       = "http://api.mtvnn.com/v2/mrss.xml?uri=%s";
+    public static final String   url_service_feed_mtvnservices                       = "http://media.mtvnservices.com/video/feed.jhtml?ref=None&type=error&uri=%s&geo=DE&orig=&franchise=&dist=";
+    public static final String   url_service_feed_intl_mtvnservices                  = "http://intl.mtvnservices.com/mrss/%s";
+    public static final String   url_service_feed_COMEDYCENTRAL                      = "http://www.cc.com/feeds/mrss?uri=%s";
+    public static final String   url_service_feed_SOUTHPARKSTUDIOS                   = "http://southpark.cc.com/feeds/video-player/mrss/%s";
+    public static final String   url_service_feed_NICK_COM                           = "http://www.nick.com/dynamo/video/data/mrssGen.jhtml?mgid=%s";
+    public static final String   url_service_mediagen_mtvnservices_device            = "http://intl.mtvnservices.com/mediagen/%s/?device={device}";
+    public static final String   url_service_mediagen_intl_mtvnservices              = "http://intl.mtvnservices.com/mediagen/%s/";
+    public static final String   url_service_mediagen_mediautils_mtvnservices_device = "http://media-utils.mtvnservices.com/services/MediaGenerator/%s?device={device}";
     /*
      * E.g. json-version:
      * http://media-utils.mtvnservices.com/services/MediaGenerator/mgid:arc:episode:comedycentral.com:0e9587e2-d682-4c1d-a20c
      * -7e14e868ed59?device=iPad&context=mgid:arc:episode:comedycentral.com:c99b887e-5162-4c75-a691-04d1fc1c916f&format=json
      */
-    public static final String   url_service_mediagen_media_utils_api     = "http://media-utils-api.mtvnservices.com/services/MediaGenerator/%s";
-    public static final String   url_service_mediagen_mtv_com             = "http://www.mtv.com/meta/context/mediaGen?uri=%s";
-    public static final String   url_service_feed_mtv_com                 = "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None";
-
-    /* The linktypes */
-    private static final String  type_funnyclips                          = "http://de\\.funnyclips\\.cc/.+";
-
-    private static final String  type_comedycentral                       = "http://www\\.comedycentral\\.tv/.+";
-    private static final String  subtype_shows_comedycentral              = "http://www\\.comedycentral\\.tv/shows/\\d+([a-z0-9\\-]+)?";
-    private static final String  subtype_neuigkeiten_comedycentral        = "http://www\\.comedycentral\\.tv/neuigkeiten/\\d+([a-z0-9\\-]+)?";
-
-    private static final String  type_nick_de                             = "http://www\\.nick\\.de/.+";
-    private static final String  type_nicknight                           = "http://www\\.nicknight\\.de/.+";
-    private static final String  type_nickjr                              = "http://www\\.nickjr\\.de/.+";
-
-    private static final String  type_mtv_com_mgid                        = "http://viacommgid/mgid.+";
-    private static final String  type_mtv_com_embedded                    = "http://media\\.mtvnservices\\.com/embed/mgid:uma:video:mtv\\.com:\\d+";
-    private static final String  subtype_mtv_com_embedded_as3             = "http://www\\.mtv\\.com/player/embed/AS3/rss/\\?uri=mgid:uma:video:mtv\\.com:\\d+";
-
-    private static final String  type_tvland                              = "http://www\\.tvland\\.com/.+";
-    private static final String  subtype_tvland_episodes                  = "http://www\\.tvland\\.com/episodes/[a-z0-9]+/[a-z0-9\\-]+";
-    private static final String  subtype_tvland_clips                     = "http://www\\.tvland\\.com/video\\-clips/[a-z0-9]+/[a-z0-9\\-]+";
-
-    private static final String  type_spike                               = "http://www\\.spike\\.com/.+";
-    private static final String  subtype_spike_episodes                   = "http://www\\.spike\\.com/full\\-episodes/[a-z0-9]+/[a-z0-9\\-]+";
-    private static final String  subtype_spike_clips                      = "http://www\\.spike\\.com/video\\-clips/[a-z0-9]+/[a-z0-9\\-]+";
-
-    /* Links come from the decrypter */
-    private static final String  type_nickmom_com                         = "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/";
-
-    private static final String  type_cmt                                 = "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.jhtml";
-    private static final String  subtype_cmt_episodes                     = "http://www\\.cmt\\.com/videos/[a-z0-9\\-]+/\\d+/full\\-episode\\.jhtml";
-
-    private static final String  type_cc_com                              = "http://www\\.cc\\.com/(full\\-episodes|video\\-clips)/[a-z0-9]+/[a-t0-9\\-]+";
-    private static final String  subtype_cc_episodes                      = "http://www\\.cc\\.com/full\\-episodes/[a-z0-9]+/[a-t0-9\\-]+";
-    private static final String  subtype_cc_videoclips                    = "http://www\\.cc\\.com/video\\-clips/[a-z0-9]+/[a-t0-9\\-]+";
-
-    private static final String  type_thedailyshow_cc_com                 = "http://thedailyshow\\.cc\\.com/(videos|full\\-episodes)/[a-z0-9]+/[a-z0-9\\-]+";
-    private static final String  subtype_thedailyshow_cc_com_episodes     = "http://thedailyshow\\.cc\\.com/full\\-episodes/[a-z0-9]+/[a-z0-9\\-]+";
-    private static final String  subtype_thedailyshow_cc_com_videoclips   = "http://thedailyshow\\.cc\\.com/videos/[a-z0-9]+/[a-z0-9\\-]+";
-
-    private static final String  type_tosh_cc_com                         = "http://tosh\\.cc\\.com/.+";
-    private static final String  subtype_tosh_cc_com_episodes             = "http://tosh\\.cc\\.com/full\\-episodes/[a-z0-9]+/[a-t0-9\\-]+";
-    private static final String  subtype_tosh_cc_com_videoclips           = "http://tosh\\.cc\\.com/video\\-clips/[a-z0-9]+/[a-z0-9\\-]+";
-    private static final String  subtype_tosh_cc_com_videoclips_segments  = "http://tosh\\.cc\\.com/segments/[a-z0-9\\-]+/[a-z0-9]+";
-
-    private static final String  type_mtvu_com                            = "http://www\\.mtvu\\.com/.+";
-    private static final String  subtype_mtvu_com_episodes                = "http://www\\.mtvu\\.com/shows/[a-z0-9\\-]+/";
-    private static final String  subtype_mtvu_com_music                   = "http://www\\.mtvu\\.com/music/[a-z0-9\\-]+/";
-
-    private static final String  type_logotv_com                          = "http://media\\.mtvnservices\\.com/mgid:uma:video:logotv\\.com:\\d+";
-
-    private static final String  type_mediamtvnservices_com               = "http://media\\.mtvnservices\\.com/mgid:uma:content:mtv\\.com:\\d+";
+    public static final String   url_service_mediagen_media_utils_api                = "http://media-utils-api.mtvnservices.com/services/MediaGenerator/%s";
+    public static final String   url_service_mediagen_mtv_com                        = "http://www.mtv.com/meta/context/mediaGen?uri=%s";
+    public static final String   url_service_feed_mtv_com                            = "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None";
     /**
-     * NOT using mtv networks for streaming: bet.com, icarly.com
+     * NOT using mtv networks for streaming: bet.com
      *
      * NOT important/contains no(important) content: epixhd.com, centrictv.com, unplugged.mtvla.com
      *
-     * Sites that did not work serverside: nick.com, nicktoons.nick.com, teennick.com, nickatnite.com, nickjr.com
+     * Sites that did not work serverside: nick.com, nickjr.com
      *
      * Implementation not (yet) possible because of geoblock (germany): mtvla.com, mtv.ca
      */
@@ -138,14 +87,14 @@ public class VivaTv extends PluginForHost {
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/mtv.py */
 
     /* Plugin related things */
-    private static final String  player_url                               = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
+    private static final String  player_url                                          = "http://player.mtvnn.com/g2/g2player_2.2.1.swf";
     /* Obey german law - very important! */
-    private static final boolean rtmpe_supported                          = false;
-    public static final String   default_ext                              = ".mp4";
+    private static final boolean rtmpe_supported                                     = false;
+    public static final String   default_ext                                         = ".mp4";
 
-    private String               mgid                                     = null;
-    private String               feed_url                                 = null;
-    private String               mediagen_url                             = null;
+    private String               mgid                                                = null;
+    private String               feed_url                                            = null;
+    private String               mediagen_url                                        = null;
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -165,263 +114,28 @@ public class VivaTv extends PluginForHost {
         String description = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String main_url = link.getStringProperty("mainlink", null);
-        final String browser_url = link.getDownloadURL();
-        if (browser_url.matches(type_mtv_com_mgid)) {
-            this.mgid = getMGIDOutOfURL(browser_url);
-            this.feed_url = getFeedurlForMgid(this.mgid);
-            /* Try this as by using other mediagen-urls than they expect we can sometimes get around GEO-blocks. */
-            this.mediagen_url = getMediagenurlForMgid(this.mgid);
+        // final String main_url = link.getStringProperty("mainlink", null);
+        this.mgid = getMGIDOutOfURL(link.getDownloadURL());
+        this.feed_url = mgidGetFeedurlForMgid(this.mgid);
+        this.mediagen_url = mgidGetMediagenurlForMgid(this.mgid);
 
-            if (this.feed_url == null || this.mediagen_url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-
-            if (filename == null) {
-                /* Maybe filename was set in decypter already --> No reason to access feed here! */
-                br.getPage(this.feed_url);
-                if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() < 300) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                filename = feedGetFilename();
-            }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            description = feedGetDescription();
-            ext = default_ext;
-        } else if (browser_url.matches(type_funnyclips)) {
-            try {
-                br.getPage(browser_url);
-            } catch (final BrowserException e) {
-                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                throw e;
-            }
-            if (!br.containsHTML("class=\\'player\\'>") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String show = br.getRegex("class=\\'franchise_title\\'>([^<>\"]*?)<").getMatch(0);
-            String title = br.getRegex("<h2 class=\\'title\\'>([^<>\"]*?)</h2>").getMatch(0);
-            if (show == null || title == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            show = doFilenameEncoding(show);
-            title = doFilenameEncoding(title);
-            filename = show + " - " + title;
-            ext = default_ext;
-        } else if (browser_url.matches(type_comedycentral)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("<title>([^<>]*?) \\- Musikvideo \\- VIVA\\.tv</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("title: \\'([^<>]*?)\\',").getMatch(0);
-            }
-            if (filename == null) {
-                filename = br.getRegex("<h1 class=\\'title\\'>([^<>]*?)</h1>").getMatch(0);
-            }
-            if (browser_url.matches(subtype_shows_comedycentral)) {
-                String h2 = br.getRegex("class=\\'now_playing\\'.*?<h2>([^<>]*?)</h2>.+class=\\'kobra-watch-count\\'").getMatch(0);
-                if (h2 == null) {
-                    h2 = br.getRegex("\">([^<>]*?)</a></h2>").getMatch(0);
-                }
-                String h3 = br.getRegex("class=\\'now_playing\\'.*?<h3>([^<>]*?)</h3>").getMatch(0);
-                if (h3 == null) {
-                    h3 = br.getRegex("\">([^<>]*?)</a></h3>").getMatch(0);
-                }
-                if (filename == null || h2 == null || h3 == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                filename += " - " + doFilenameEncoding(h2) + " - " + doFilenameEncoding(h3);
-            }
-            ext = ".mp4";
-        } else if (browser_url.matches(type_nicknight)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("<title>([^<>]*?)\\- Nicknight</title>").getMatch(0);
-            final String sub_title = br.getRegex("<h4 class=\\'title\\'>([^<>\"]*?)</h4>").getMatch(0);
-            if (sub_title != null) {
-                filename += " - " + doFilenameEncoding(sub_title);
-            }
-            ext = ".flv";
-        } else if (browser_url.matches(type_nickjr)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("<title>([^<>\"]*?)\\- kostenlose Videos \\- NickJR\\.de</title>").getMatch(0);
-            ext = ".flv";
-        } else if (browser_url.matches(type_nick_de)) {
-            String vid = new Regex(browser_url, "/videos/(\\d+)").getMatch(0);
-            br.getPage(browser_url);
-            if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("id=\\'video\\-player'")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (vid == null) {
-                vid = br.getRegex("data\\-key=\\'local_playlist\\-(\\d+)'").getMatch(0);
-            }
-            String show = br.getRegex("data\\-name=\\'([^<>\"]*?)\\'").getMatch(0);
-            if (show == null) {
-                /* Assuming we're on a playlist */
-                show = br.getRegex("<h2 class=(?:\\'|\")row\\-title videos(?:\\'|\")>[\t\n\r ]+([^<>]*?) Videos[\t\n\r ]+</h2>").getMatch(0);
-            }
-            if (show == null && vid != null) {
-                show = br.getRegex("data\\-item\\-id=\\'" + vid + "\\'>.*?class=\\'title\\'>([^<>]*?)</p>").getMatch(0);
-            }
-            String title = br.getRegex("playlist\\-\\d+\\' data\\-title=(?:\\'|\")([^<>\"]*?)(?:\\'|\")").getMatch(0);
-            if (show == null || title == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            show = doFilenameEncoding(show);
-            title = doFilenameEncoding(title);
-            filename = show + " - " + title;
-            ext = ".flv";
-        }
-        if (browser_url.matches(type_mtv_com_embedded) || browser_url.matches(subtype_mtv_com_embedded_as3)) {
-            mgid = getMGIDOutOfURL(browser_url);
-            feed_url = getFEEDurl("mtv.com");
-            br.getPage(feed_url);
-            checkFeedAvailibility();
-            filename = feedGetTitle();
-            description = feedGetDescription();
-            ext = ".mp4";
-        } else if (browser_url.matches(type_tvland)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("id=\"video_player_box\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (browser_url.matches(subtype_tvland_episodes)) {
-                filename = br.getRegex("<title>([^<>]*?) \\| Free Full Episodes \\| TV Land</title>").getMatch(0);
-            } else {
-                filename = br.getRegex("class=\"clipTitle\">([^<>\"]*?)</div>").getMatch(0);
-            }
-            ext = default_ext;
-        } else if (browser_url.matches(type_spike)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("class=\"player_holder\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (browser_url.matches(subtype_spike_episodes)) {
-                filename = br.getRegex("<title>([^<>\"]*?)- Full Episode \\| SPIKE\\.com</title>").getMatch(0);
-            } else {
-                filename = br.getRegex("<title>([^<>\"]*?) \\- Video Clip \\| SPIKE\\.com</title>").getMatch(0);
-            }
-            ext = default_ext;
-        } else if (browser_url.matches(type_nickmom_com)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("class=\"video-player-wrapper\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("<meta content=\"([^<>]*?)\" itemprop=\"name\"/>").getMatch(0);
-            /* Special: Set the mediagen url here already as the RegEx later and getMGID RegEx would fail for sure in this case */
-            this.mgid = br.getRegex("data-contenturi=\"([a-z0-9:\\-\\.]*?)\"").getMatch(0);
-            this.mediagen_url = this.getMEDIAGENurl("nickmom.com");
-            ext = default_ext;
-        } else if (browser_url.matches(type_cmt)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("MTVN\\.Player\\.") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (browser_url.matches(subtype_cmt_episodes)) {
-                filename = br.getRegex("ame=\"mtvn_title\"[\t\n\r ]+content=\"([^<>]*?)\"/>").getMatch(0);
-            } else {
-                filename = br.getRegex("class=\"group-abc\">[\t\n\r ]+<div>([^<>]*?)</div>").getMatch(0);
-                /* Maybe we have a music video */
-                if (filename == null) {
-                    filename = br.getRegex("<title>CMT : Music Video :([^<>]*?)</title>").getMatch(0);
-                }
-                /* Maybe we have a 'videos' link */
-                if (filename == null) {
-                    filename = br.getRegex("<title>CMT : Videos :([^<>]*?): </title>").getMatch(0);
-                }
-            }
-            ext = default_ext;
-        } else if (browser_url.matches(type_cc_com)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("\"video_player\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (browser_url.matches(subtype_cc_episodes)) {
-                filename = br.getRegex("<title>([^<>]*?)\\| Comedy Central</title>").getMatch(0);
-            } else {
-                filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
-            }
-            ext = default_ext;
-        } else if (browser_url.matches(type_thedailyshow_cc_com)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("\"video_player\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (browser_url.matches(subtype_thedailyshow_cc_com_episodes)) {
-                filename = br.getRegex("<title>([^<<]*?)\\- Full Episode \\| Comedy Central</title>").getMatch(0);
-            } else {
-                filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
-            }
-            ext = default_ext;
-        } else if (browser_url.matches(type_tosh_cc_com)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("\"video_player\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (browser_url.matches(subtype_tosh_cc_com_episodes)) {
-                filename = br.getRegex("<title>([^<>]*?)\\-  Full Episode \\| Comedy Central</title>").getMatch(0);
-            } else if (browser_url.matches(subtype_tosh_cc_com_videoclips_segments)) {
-                filename = br.getRegex("<title>Video Breakdown \\-([^<>\"]*?) \\| Comedy Central</title>").getMatch(0);
-            } else {
-                filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
-            }
-            ext = default_ext;
-        } else if (browser_url.matches(type_mtvu_com)) {
-            br.getPage(browser_url);
-            if (!br.containsHTML("plugins\\.MTVNMediaPlayer") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("<title>([^<>]*?)\\| mtvu\\.com[\t\n\r ]*?</title>").getMatch(0);
-            ext = default_ext;
-        } else if (browser_url.matches(type_logotv_com)) {
-            /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
-            this.mgid = getMGIDOutOfURL(browser_url);
-            /* Special: Set the mediagen url here already */
-            this.mediagen_url = this.getMEDIAGENurl("logotv.com");
-            this.feed_url = this.getFEEDurl("logotv.com");
-            if (main_url != null) {
-                br.getPage(main_url);
-                if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("MTVN\\.Player\\.")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } else {
-                /* Cheap workaround */
-                br.getPage(this.feed_url);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                filename = feedGetTitle();
-            }
-            ext = default_ext;
-        } else if (browser_url.matches(type_mediamtvnservices_com)) {
-            /* Handle embedded links just like they are - we do not even want to try to find/use the original video url. */
-            this.mgid = getMGIDOutOfURL(browser_url);
-            this.feed_url = "http://media.mtvnservices.com/video/feed.jhtml?ref=None&type=error&uri=" + Encoding.urlEncode(this.mgid) + "&geo=DE&orig=&franchise=&dist=";
-            br.getPage(this.feed_url);
-            this.mgid = br.getRegex("<guid isPermaLink=\"false\">([^<>\"]*?)</guid>").getMatch(0);
-            if (br.getHttpConnection().getResponseCode() == 404 || this.mgid == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Special: Set the mediagen url here already */
-            /* Special 2: In some cases, using this as it is without additional parameters, we can avoid GEO blocks. */
-            this.mediagen_url = "http://www.mtv.com/player/includes/mediaGen.jhtml?uri=" + this.mgid;
-            filename = feedGetTitle();
-            ext = default_ext;
-        }
-        if (filename == null) {
-            logger.warning("Unsupported url format or plugin broken");
+        if (this.feed_url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+
+        if (filename == null) {
+            /* Maybe filename was set in decypter already --> No reason to access feed here! */
+            br.getPage(this.feed_url);
+            if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() < 300) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = feedGetFilename();
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        description = feedGetDescription();
+        ext = default_ext;
         filename = doFilenameEncoding(filename);
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -447,12 +161,9 @@ public class VivaTv extends PluginForHost {
          * In case we got embedded links, we are already on the feed_url. Find- and access it if still needed.
          */
         if (feed_url == null && mediagen_url == null) {
-            findFEEDurl(downloadLink);
-            if (feed_url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getHeaders().put("Referer", player_url);
-            br.getPage(feed_url);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // br.getHeaders().put("Referer", player_url);
+            // br.getPage(feed_url);
         }
         if (mediagen_url == null) {
             /* Find- and access mediagen. */
@@ -489,7 +200,8 @@ public class VivaTv extends PluginForHost {
         /* Chose highest quality available */
         final String[] srcs = br.getRegex("([a-z]+://[^<>\"]*?)</src>").getColumn(0);
         if (srcs == null || srcs.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Very very rare case! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 60 * 1000l);
         }
         /* Now get the best quality (highest width) */
         String src_url = null;
@@ -527,46 +239,6 @@ public class VivaTv extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void findFEEDurl(final DownloadLink downloadLink) throws PluginException {
-        if (downloadLink.getDownloadURL().matches(type_funnyclips) || downloadLink.getDownloadURL().matches(type_comedycentral) || downloadLink.getDownloadURL().matches(type_nick_de) || downloadLink.getDownloadURL().matches(type_nicknight) || downloadLink.getDownloadURL().matches(type_nickjr)) {
-            find_mgid("mtvnn.com");
-            if (this.mgid != null) {
-                feed_url = getFEEDurl("ALL_OTHERS");
-            } else {
-                /* Should never be needed */
-                feed_url = br.getRegex("mrss[\t\n\r ]+:[\t\n\r ]+(?:\\'|\")(https?://[^<>\"]*?)(?:\\'|\"),").getMatch(0);
-            }
-        } else if (downloadLink.getDownloadURL().matches(type_tvland) || downloadLink.getDownloadURL().matches(type_spike) || downloadLink.getDownloadURL().matches(type_cmt)) {
-            /* Special: This domain has it's own feed-URL. */
-            final String current_host = downloadLink.getHost();
-            find_mgid(current_host);
-            feed_url = getFEEDurl(current_host);
-        } else if (downloadLink.getDownloadURL().matches(type_thedailyshow_cc_com)) {
-            /* Special: This domain has it's own feed-URL. */
-            find_mgid("thedailyshow.com");
-            feed_url = getFEEDurl("cc.com");
-        } else if (downloadLink.getDownloadURL().matches(type_tosh_cc_com)) {
-            /* Special: This domain has it's own feed-URL. */
-            find_mgid("tosh.comedycentral.com");
-            feed_url = getFEEDurl("cc.com");
-        } else if (downloadLink.getDownloadURL().matches(type_mtvu_com)) {
-            /* Special: This domain has it's own feed-URL. */
-            find_mgid("mtvu.com");
-            feed_url = this.getFEEDurl("mtv.com");
-        } else {
-            /* Unknown URL format - should never happen! */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Usually we'll have the correct feedurl here */
-        if (feed_url == null) {
-            feed_url = br.getRegex("(https?://api\\.mtvnn\\.com/v2/mrss\\.xml\\?uri=[^<>\"\\'/]+)").getMatch(0);
-        }
-        if (feed_url == null) {
-            feed_url = br.getRegex("\\&mrss=(https?://api\\.mtvnn\\.com/[^<>\"]*?)\"").getMatch(0);
-        }
-    }
-
     private void downloadHTTP(final DownloadLink downloadLink, final String http_src) throws Exception {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, http_src, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -581,7 +253,6 @@ public class VivaTv extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     private void downloadRTMP(final DownloadLink downloadLink, String rtmp_src) throws Exception {
         if (!rtmpe_supported) {
             /* Works in most cases. */
@@ -703,10 +374,6 @@ public class VivaTv extends PluginForHost {
         return mediagen_url;
     }
 
-    private void find_mgid(final String host) {
-        mgid = br.getRegex("(mgid[a-z:]+" + host + ":[A-Za-z0-9_\\-]+)").getMatch(0);
-    }
-
     public static String getMGIDOutOfURL(final String url) {
         String mgid = null;
         if (url != null) {
@@ -787,24 +454,12 @@ public class VivaTv extends PluginForHost {
         return filename;
     }
 
-    public static String getFilenameMTVIGGY(final Browser br) {
-        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (title != null) {
-            title = doFilenameEncoding(title);
-        }
-        return title;
-    }
-
     /** Checks if a feed is online. */
     private void checkFeedAvailibility() throws PluginException {
         /* Check for invalid XML --> Video must be offline then */
         if (!br.containsHTML("</channel>") || br.getHttpConnection().getResponseCode() == 404 || (feedGetTitle() == null && br.containsHTML("<media:title/>"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-    }
-
-    public static String getFilenameNickmomCom(final Browser br) {
-        return br.getRegex("<h1 class=\"dtitle\">([^<>]*?)</h1>").getMatch(0);
     }
 
     /** Static list of FEED-urls. If one is missing they can be found by accessing the correct player-URL (see list below). */
@@ -819,6 +474,7 @@ public class VivaTv extends PluginForHost {
             put("mtv.de", "http://movies.mtv.de/mrss/%s");
             put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
             put("mtv.com", url_service_feed_mtv_com);
+            put("mtvu.com", url_service_feed_mtv_com);
             put("southpark.de", "http://www.southpark.de/feeds/video-player/mrss/%s");
             put("southpark.cc.com", url_service_feed_SOUTHPARKSTUDIOS);
             put("southparkstudios.com", url_service_feed_SOUTHPARKSTUDIOS);
@@ -828,13 +484,18 @@ public class VivaTv extends PluginForHost {
             put("vh1.com_2", "http://www.vh1.com/player/embed/AS3/fullepisode/rss/?uri=%s&ref={ref}&instance=vh1shows");
             put("tvland.com", "http://www.tvland.com/feeds/mrss/?uri=%s&tvlandSyndicated=true");
             put("spike.com", "http://www.spike.com/feeds/mrss/?uri=%s");
-            put("nick.com", "http://www.nick.com/dynamo/video/data/mrssGen.jhtml?mgid=%s");
+            put("nick.com", url_service_feed_NICK_COM);
+            put("nicktoons.com", url_service_feed_NICK_COM);
+            put("teennick.com", url_service_feed_NICK_COM);
+            put("nickatnite.com", url_service_feed_NICK_COM);
             put("nickmom.com", "http://www.nickmom.com/services/mrss/?mgid=%s");
             put("cmt.com", "http://www.cmt.com/sitewide/apps/player/embed/rss/?uri=%s");
             put("cc.com", url_service_feed_COMEDYCENTRAL);
+            put("tosh.comedycentral.com", url_service_feed_COMEDYCENTRAL);
             put("comedycentral.com", url_service_feed_COMEDYCENTRAL);
             put("mtv.com.au", "http://www.mtv.com.au/mrss/");
             put("logotv.com", "http://www.logotv.com/player/includes/rss.jhtml?uri=%s");
+            put("mtvnn.com", "http://api.mtvnn.com/v2/mrss.xml?uri=%s");
         }
     };
 
@@ -868,6 +529,7 @@ public class VivaTv extends PluginForHost {
              */
             put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s");
             put("mtv.com", url_service_mediagen_mtv_com);
+            put("mtvu.com", url_service_mediagen_mtv_com);
             put("southpark.de", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");
             put("southpark.cc.com", url_service_mediagen_media_utils_api);
             put("southparkstudios.com", url_service_mediagen_media_utils_api);
@@ -878,11 +540,33 @@ public class VivaTv extends PluginForHost {
             put("nick.com", "http://www.nick.com/dynamo/video/data/mediaGen.jhtml?mgid=%s");
             put("nickmom.com", url_service_mediagen_media_utils_api);
             put("cc.com", url_service_mediagen_media_utils_api);
+            put("tosh.comedycentral.com", url_service_mediagen_mediautils_mtvnservices_device);
             put("comedycentral.com", url_service_mediagen_media_utils_api);
             put("cmt.com", "http://www.cmt.com/sitewide/apps/player/embed/includes/mediaGen.jhtml?uri=%s");
             put("cc.com", "http://www.cc.com/feeds/mediagen/?uri=%s&device={device}");
-            put("mtv.com.au", url_service_mediagen_mtvnservices);
-            put("logotv.com", "http://www.logotv.com/player/includes/mediaGen.jhtml?uri=%s");
+            put("mtv.com.au", url_service_mediagen_intl_mtvnservices);
+            /*
+             * Prefer mediautils api url as this can avoid geo-blocks more
+             * often
+             */
+            put("nicktoons.com", url_service_mediagen_mediautils_mtvnservices_device);
+            /*
+             * Prefer mediautils api url as this can avoid geo-blocks more
+             * often
+             */
+            put("teennick.com", url_service_mediagen_mediautils_mtvnservices_device);
+            /*
+             * Prefer mediautils api url as this can avoid geo-blocks more
+             * often
+             */
+            put("nickatnite.com", url_service_mediagen_mediautils_mtvnservices_device);
+            /*
+             * Prefer mediautils api url as this can avoid geo-blocks more
+             * often
+             */
+            put("logotv.com", url_service_mediagen_mediautils_mtvnservices_device);
+            // put("logotv.com",
+            // "http://www.logotv.com/player/includes/mediaGen.jhtml?uri=%s");
         }
     };
 
@@ -961,12 +645,12 @@ public class VivaTv extends PluginForHost {
 
     /** TODO: finish this! */
     /** Returns a mediagen-feed URL based on the domain. */
-    public static String getFeedurlForMgid(final String mgid) {
+    public static String mgidGetFeedurlForMgid(final String mgid) {
         if (mgid == null) {
             return null;
         }
-        final String host = getHostFromMgid(mgid);
-        final String mgid_type = getTypeFromMgid(mgid);
+        final String host = mgidGetHost(mgid);
+        final String mgid_type = mgidGetType(mgid);
         String feedurl;
         if (mgid_type == null) {
             feedurl = null;
@@ -985,17 +669,15 @@ public class VivaTv extends PluginForHost {
 
     /** TODO: finish this! */
     /** Returns a mediagen-feed URL based on the domain. */
-    public static String getMediagenurlForMgid(final String mgid) throws PluginException {
+    public static String mgidGetMediagenurlForMgid(final String mgid) throws PluginException {
         if (mgid == null) {
             return null;
         }
         boolean mediagenurl_formatted = false;
-        final String host = getHostFromMgid(mgid);
-        final String mgid_type = getTypeFromMgid(mgid);
+        final String host = mgidGetHost(mgid);
+        final String mgid_type = mgidGetType(mgid);
         String mediagenurl;
         if (mgid_type == null) {
-            mediagenurl = null;
-        } else if (mgid_type.equalsIgnoreCase("sensei")) {
             mediagenurl = null;
         } else if (host.equals("southpark.de")) {
             if (!rtmpe_supported) {
@@ -1017,16 +699,16 @@ public class VivaTv extends PluginForHost {
         return mediagenurl;
     }
 
-    public static String getHostFromMgid(final String mgid) {
-        final String[] mgid_info = getMgidInformation(mgid);
+    public static String mgidGetHost(final String mgid) {
+        final String[] mgid_info = mgidGetInformation(mgid);
         return mgid_info[mgid_info.length - 2];
     }
 
-    public static String getTypeFromMgid(final String mgid) {
-        return new Regex(mgid, "mgid:([^<>\"/:]+):").getMatch(0);
+    public static String mgidGetType(final String mgid) {
+        return mgidGetInformation(mgid)[2];
     }
 
-    public static String[] getMgidInformation(final String mgid) {
+    public static String[] mgidGetInformation(final String mgid) {
         final String[] mgid_info;
         if (mgid == null) {
             mgid_info = null;
