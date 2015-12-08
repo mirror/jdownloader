@@ -29,15 +29,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "https?://(?:www\\.)?suicidegirls\\.com/girls/[A-Za-z0-9\\-_]+/(?:album/\\d+/[A-Za-z0-9\\-_]+/)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/(?:album/\\d+/[A-Za-z0-9\\-_]+/)?" }, flags = { 0 })
 public class SuicidegirlsCom extends PluginForDecrypt {
 
     public SuicidegirlsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ALBUM = "https?://(?:www\\.)?suicidegirls\\.com/girls/[A-Za-z0-9\\-_]+/album/\\d+/[A-Za-z0-9\\-_]+/";
-    private static final String TYPE_USER  = "https?://(?:www\\.)?suicidegirls\\.com/girls/[A-Za-z0-9\\-_]+/";
+    private static final String TYPE_ALBUM = "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/album/\\d+/[A-Za-z0-9\\-_]+/";
+    private static final String TYPE_USER  = "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<String> dupecheck = new ArrayList<String>();
@@ -56,7 +56,7 @@ public class SuicidegirlsCom extends PluginForDecrypt {
             logger.info("User added member-only url but has no (valid) account");
             return decryptedLinks;
         }
-        final String username = new Regex(parameter, "girls/([A-Za-z0-9\\-_]+)/").getMatch(0);
+        final String username = new Regex(parameter, "(?:girls|members)/([A-Za-z0-9\\-_]+)/").getMatch(0);
         if (parameter.matches(TYPE_ALBUM)) {
             fpName = br.getRegex("<h2 class=\"title\">([^<>\"]*?)</h2>").getMatch(0);
             if (fpName == null) {
@@ -85,8 +85,7 @@ public class SuicidegirlsCom extends PluginForDecrypt {
             }
         } else {
             /* TYPE_USER */
-            fpName = username;
-
+            this.br.getPage("/girls/" + username + "/photos/view/photosets/");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             int addedlinks_total = 0;
             int addedlinks = 0;
@@ -99,7 +98,7 @@ public class SuicidegirlsCom extends PluginForDecrypt {
                 if (addedlinks_total > 0) {
                     this.br.getPage("/girls/" + username + "/photos/?partial=true&offset=" + addedlinks_total);
                 }
-                final String[] links = br.getRegex("\"(/girls/[^/]+/album/\\d+/[A-Za-z0-9\\-_]+/)[^<>\"]*?\"").getColumn(0);
+                final String[] links = br.getRegex("\"(/(?:girls|members)/[^/]+/album/\\d+/[A-Za-z0-9\\-_]+/)[^<>\"]*?\"").getColumn(0);
                 if ((links == null || links.length == 0) && !loggedin) {
                     /* Account is needed most times */
                     logger.info("Account needed to crawl link: " + parameter);
