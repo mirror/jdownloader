@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -38,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filesloop.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filesloop.com" }, urls = { "https?://(?:www\\.)?filesloop\\.com/myfiles/(?:zip|download)/.+" }, flags = { 2 })
 public class FilesloopCom extends PluginForHost {
 
     /* Using similar API (and same owner): esoubory.cz, filesloop.com */
@@ -101,9 +102,27 @@ public class FilesloopCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
-        return AvailableStatus.UNCHECKABLE;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException, IOException {
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa == null) {
+            return AvailableStatus.UNCHECKABLE;
+        }
+        try {
+            login(false);
+        } catch (final Throwable e) {
+            return AvailableStatus.UNCHECKABLE;
+        }
+        this.getAPISafe(DOMAIN + "exists?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+        final String filename = getJson("filename");
+        final String filesize = getJson("filesize");
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        link.setName(filename);
+        link.setDownloadSize(Long.parseLong(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("deprecation")
@@ -138,17 +157,32 @@ public class FilesloopCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        this.setConstants(account, link);
+        handleDL(account, link);
     }
 
     @SuppressWarnings("deprecation")
-    private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
+    private void handleDL(final Account account, final DownloadLink link) throws Exception {
+        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        if (dllink == null) {
+            /* request creation of downloadlink */
+            br.setFollowRedirects(true);
+            /* Make sure that the file exists - unnecessary step in my opinion but admin wanted to have it implemented this way. */
+            this.getAPISafe(DOMAIN + "exists?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            /* Create downloadlink */
+            this.getAPISafe(DOMAIN + "filelink?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            dllink = getJson("link");
+            if (dllink == null) {
+                logger.warning("Final downloadlink is null");
+                handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
+            }
+        }
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         boolean resume = account.getBooleanProperty("resume", defaultRESUME);
@@ -235,21 +269,7 @@ public class FilesloopCom extends PluginForHost {
         this.setConstants(account, link);
         login(false);
 
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
-        if (dllink == null) {
-            /* request creation of downloadlink */
-            br.setFollowRedirects(true);
-            /* Make sure that the file exists - unnecessary step in my opinion but admin wanted to have it implemented this way. */
-            this.getAPISafe(DOMAIN + "exists?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
-            /* Create downloadlink */
-            this.getAPISafe(DOMAIN + "filelink?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = getJson("link");
-            if (dllink == null) {
-                logger.warning("Final downloadlink is null");
-                handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
-            }
-        }
-        handleDL(account, link, dllink);
+        handleDL(account, link);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -409,6 +429,8 @@ public class FilesloopCom extends PluginForHost {
     private void tempUnavailableHoster(final long timeout) throws PluginException {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        } else if (this.currDownloadLink.getHost().equals(this.getHost())) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);

@@ -38,17 +38,17 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu" }, urls = { "https?://(?:www\\.)?arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+", "https?://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "https?://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "https?://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "https?://(?:www\\.)?theoperaplatform\\.eu/(?:de|fr|en)/[^/]+/[a-z0-9\\-]+" }, flags = { 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+" }, flags = { 0, 0, 0, 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
 
     private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
     private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/(?:de|fr)/.+";
-    private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/.+";
     private static final String     TYPE_GUIDE                                  = "https?://(?:www\\.)?arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+";
-    private static final String     TYPE_CINEMA                                 = "https?://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String     TYPE_THEOPERAPLATFORM                       = "https?://(?:www\\.)?theoperaplatform\\.eu/(?:de|fr|en)/[^/]+/[a-z0-9\\-]+";
+    private static final String     TYPE_CINEMA                                 = "https?://cinema\\.arte\\.tv/.+";
+    private static final String     TYPE_THEOPERAPLATFORM                       = "https?://(?:www\\.)?theoperaplatform\\.eu/.+";
 
     private static final String     API_TYPE_GUIDE                              = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/[ADF]/.+\\.json$";
     private static final String     API_TYPE_CINEMA                             = "^https?://api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)\\?vector=.+";
