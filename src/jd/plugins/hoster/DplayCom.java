@@ -153,11 +153,23 @@ public class DplayCom extends PluginForHost {
         requestFileInformation(downloadLink);
         boolean isFree = false;
         try {
-            final ArrayList<Object> video_metadata_package = (ArrayList) entries.get("video_metadata_package");
-            for (final Object video_metadata_object : video_metadata_package) {
-                final String video_metadata_string = (String) video_metadata_object;
+            String video_metadata_string = null;
+            final Object video_metadata_packageo = entries.get("video_metadata_package");
+            if (video_metadata_packageo == null) {
+                /* No package-information given --> Video should be free */
+                isFree = true;
+            } else if (video_metadata_packageo instanceof String) {
+                video_metadata_string = (String) video_metadata_packageo;
                 if (video_metadata_string.equals("Packages-Free")) {
                     isFree = true;
+                }
+            } else {
+                final ArrayList<Object> video_metadata_package = (ArrayList) video_metadata_packageo;
+                for (final Object video_metadata_object : video_metadata_package) {
+                    video_metadata_string = (String) video_metadata_object;
+                    if (video_metadata_string.equals("Packages-Free")) {
+                        isFree = true;
+                    }
                 }
             }
         } catch (final Throwable e) {

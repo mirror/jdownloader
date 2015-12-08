@@ -27,6 +27,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -74,6 +75,8 @@ public class NicoVideoJp extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPremium                           = new AtomicInteger(1);
     private static AtomicInteger maxFree                              = new AtomicInteger(1);
+
+    private static Object        LOCK                                 = new Object();
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
@@ -152,7 +155,7 @@ public class NicoVideoJp extends PluginForHost {
             }
         }
         try {
-            login(account);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -285,7 +288,7 @@ public class NicoVideoJp extends PluginForHost {
         String dllink = null;
         final String linkid_url = getLID(link);
         requestFileInformation(link);
-        login(account);
+        login(account, false);
         br.setFollowRedirects(true);
         // Important, without accessing the link we cannot get the downloadurl!
         br.getPage(link.getDownloadURL());
@@ -377,12 +380,30 @@ public class NicoVideoJp extends PluginForHost {
         return dllink;
     }
 
-    private void login(final Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.postPage("https://secure.nicovideo.jp/secure/login?site=niconico", "next_url=&mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie(MAINPAGE, "user_session") == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null && !force) {
+                this.br.setCookies(this.getHost(), cookies);
+                this.br.getPage("http://www.nicovideo.jp/");
+                if (this.br.containsHTML("/logout\">Log out</a>")) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                /* Full login needed */
+                this.br = new Browser();
+                this.br.setFollowRedirects(true);
+            }
+            br.postPage("https://account.nicovideo.jp/api/v1/login?show_button_twitter=1&site=niconico&show_button_facebook=1", "mail_tel=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            // br.postPage("https://secure.nicovideo.jp/secure/login?site=niconico", "next_url=&mail=" +
+            // Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.getCookie(MAINPAGE, "user_session") == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            // br.getCookies(MAINPAGE).remove("user_session_secure");
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
         }
     }
 

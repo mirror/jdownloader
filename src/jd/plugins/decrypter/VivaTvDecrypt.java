@@ -47,14 +47,10 @@ public class VivaTvDecrypt extends PluginForDecrypt {
 
     private static final String     type_viva                    = "https?://(?:www\\.)?viva\\.tv/.+";
     private static final String     type_mtv_de                  = "https?://(?:www\\.)?mtv\\.de/.+";
-
     private static final String     type_southpark_de_episode    = "http://www\\.southpark\\.de/alle\\-episoden/.+";
     private static final String     type_southpark_cc_episode    = "http://southpark\\.cc\\.com/full\\-episodes/.+";
-
     private static final String     type_nickmom_com             = "https?://(?:www\\.)?nickmom\\.com/.+";
-
     private static final String     type_mtv_com                 = "https?://(?:www\\.)?mtv\\.com/.+";
-
     private static final String     type_logotv_com              = "http://www\\.logotv\\.com/.+";
 
     private static final String     hosterplugin_url_viacom_mgid = "http://viacommgid/";
