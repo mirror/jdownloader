@@ -66,7 +66,7 @@ public class FirstplanetEu extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
 
-    // private static final boolean api_use_api_availablecheck = true;
+    private static final boolean api_use_api_availablecheck   = false;
     private static final boolean api_use_api_free             = true;
     private static final boolean api_use_api_premium          = true;
 
@@ -87,23 +87,38 @@ public class FirstplanetEu extends PluginForHost {
         final String url_name = fid + "_" + slug;
         link.setLinkID(fid);
         link.setName(url_name);
-        this.setBrowserExclusive();
-        this.br.setAllowedResponseCodes(500);
-        this.br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename, filesize, md5 = null;
+        if (api_use_api_availablecheck) {
+            this.prepBRAPI(this.br);
+            this.postPage(API_ENDPOINT, "{\"method\":\"file.getInfo\",\"params\":{\"link\":\"" + link.getDownloadURL() + "\"}}");
+            filename = getJson("name");
+            filesize = getJson("size");
+            md5 = getJson("m5sha");
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            this.setBrowserExclusive();
+            this.br.setAllowedResponseCodes(500);
+            this.br.setFollowRedirects(true);
+            br.getPage(link.getDownloadURL());
+            if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("class=\"sto\">[\t\n\r ]*?<h1>([^<>\"]*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = url_name;
+            }
+            filesize = br.getRegex("class=\"size\">([^<>\"]*?)<").getMatch(0);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        String filename = br.getRegex("class=\"sto\">[\t\n\r ]*?<h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = url_name;
+        if (md5 != null) {
+            link.setMD5Hash(md5);
         }
-        String filesize = br.getRegex("class=\"size\">([^<>\"]*?)<").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -129,7 +144,7 @@ public class FirstplanetEu extends PluginForHost {
                 // rc.setId(this.br.toString());
                 // rc.load();
                 // final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                // final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                // final String recaptchaV2Response = getCaptchaCode("recaptcha", cf, downloadLink);
                 this.postPage(API_ENDPOINT, "{\"method\":\"file.requestFreeDownload\",\"params\":{\"accessToken\":\"" + this.api_token + "\",\"link\":\"" + downloadLink.getDownloadURL() + "\",\"captcha\":\"" + recaptchaV2Response + "\"}}");
                 dllink = this.br.getRedirectLocation();
             }
@@ -408,6 +423,8 @@ public class FirstplanetEu extends PluginForHost {
                 }
             case -32004:
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            case -32602:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             default:
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
