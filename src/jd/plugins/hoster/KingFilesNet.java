@@ -121,7 +121,7 @@ public class KingFilesNet extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -1;
+            chunks = 0;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -360,6 +360,9 @@ public class KingFilesNet extends PluginForHost {
             alt.setFollowRedirects(true);
             alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=report_file&id=" + fuid);
             fileInfo[0] = alt.getRegex(">Filename:</b></td><td>([^<]+)</td>").getMatch(0);
+            if (inValidate(fileInfo[0])) {
+                fileInfo[0] = alt.getRegex("<b>Filename</b></td><td>([^<>\"]*?)<").getMatch(0);
+            }
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = fuid;
             }

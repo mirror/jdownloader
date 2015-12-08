@@ -124,6 +124,10 @@ public class VivaTv extends PluginForHost {
         }
 
         if (filename == null) {
+            if (this.mgid.contains("nick")) {
+                /* Very strange but this is needed for all "nick" websites */
+                this.br.setCookie("nick.com", "Visited", "Yes");
+            }
             /* Maybe filename was set in decypter already --> No reason to access feed here! */
             br.getPage(this.feed_url);
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() < 300) {
@@ -385,6 +389,8 @@ public class VivaTv extends PluginForHost {
     /** Converts rtmp urls to http urls */
     private String convertRTMPtoHTTP(final String rtmpurl) {
         String httpurl = null;
+        /* Small information from the gameone.de plugin */
+        // startUrl = startUrl.replaceAll("media/mediaGen\\.jhtml\\?uri.*?\\.de:", "flv/flvgen.jhtml?vid=");
         /*
          * E.g.rtmp(e): rtmpe://viacomccstrmfs.fplive.net/viacomccstrm/gsp.comedystor/com/dailyshow/TDS/Season_21/21031/
          * ds_21_031_act1_55d2de0e05_512x288_750_m30.mp4

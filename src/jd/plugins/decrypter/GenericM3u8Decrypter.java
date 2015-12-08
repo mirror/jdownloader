@@ -25,6 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.Regex;
 
@@ -160,5 +161,10 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             return filename;
         }
 
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null;// SiteTemplate.GenericM3u8Decrypter;
     }
 }

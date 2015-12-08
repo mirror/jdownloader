@@ -30,6 +30,14 @@ public class SiteType {
          */
         GemPixel_PremiumURLShortener,
         /**
+         * Script for link anonymizers.<br />
+         * <b>Example that suits main decrypter class:</b> <a href="http:/l.moapi.net/">l.moapi.net</a><br />
+         * <b>Main decrypter class:</b> GeneralLinkAnonymizer<br />
+         * <b>Requirements to be added to main class:</b> CryptedLink must NOT be accessed - final links can be build using the information
+         * we have in the urls which the user added.<br />
+         */
+        GeneralLinkAnonymizer,
+        /**
          * Decrypter to auto download- and add these linkcontainers: DLC, RSDF, CCF<br />
          * <b>Main decrypter class:</b> GenericAutoContainer<br />
          * */
@@ -43,13 +51,10 @@ public class SiteType {
          */
         GenericBase64Decrypter,
         /**
-         * Script for link anonymizers.<br />
-         * <b>Example that suits main decrypter class:</b> <a href="http:/l.moapi.net/">l.moapi.net</a><br />
-         * <b>Main decrypter class:</b> GeneralLinkAnonymizer<br />
-         * <b>Requirements to be added to main class:</b> CryptedLink must NOT be accessed - final links can be build using the information
-         * we have in the urls which the user added.<br />
+         * Script for .m38u (master) hls URLs.<br />
+         * <b>Main decrypter class:</b> GenericM3u8Decrypter<br />
          */
-        GeneralLinkAnonymizer,
+        GenericM3u8Decrypter,
         /**
          * Script to be used for all kinds of direct-redirect (http response 302) websites.<br />
          * <b>Main decrypter class:</b> Rdrctr<br />

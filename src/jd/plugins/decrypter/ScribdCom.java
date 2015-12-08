@@ -63,6 +63,7 @@ public class ScribdCom extends PluginForDecrypt {
             final int documentsNum = Integer.parseInt(documentsnum_str);
             int page = 0;
             int decryptedLinksNum = 0;
+            boolean has_more = false;
             do {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user: " + parameter);
@@ -94,6 +95,7 @@ public class ScribdCom extends PluginForDecrypt {
                 logger.info("Decrypted page: " + page);
                 logger.info("Decrypted " + decryptedLinksNum + " / " + documentsNum);
                 page++;
+                has_more = this.br.containsHTML("\"has_more\":true");
             } while (decryptedLinksNum < documentsNum);
             if (decryptedLinksNum == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);

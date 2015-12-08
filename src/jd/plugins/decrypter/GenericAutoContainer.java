@@ -72,7 +72,7 @@ public class GenericAutoContainer extends PluginForDecrypt {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return null;// SiteTemplate.GenericAutoContainer;
+        return SiteTemplate.GenericAutoContainer;
     }
 
 }

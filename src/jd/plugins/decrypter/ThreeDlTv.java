@@ -57,8 +57,10 @@ public class ThreeDlTv extends PluginForDecrypt {
             }
             final String password = br.getRegex("<th>Passwort:</th><td colspan=\"3\"><input type=\"text\" value=\"([^<>\"]*?)\"").getMatch(0);
             String fpName = br.getRegex("<th>Titel:</th><td>([^<>\"]*?)<br").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<table cellpadding=\"0\" cellspacing=\"0\"><tr><td><div>([^<>\"]*?)</div></td><td").getMatch(0);
-            final String[] folders = br.getRegex("(/folder/[a-z0-9]+)\"").getColumn(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<table cellpadding=\"0\" cellspacing=\"0\"><tr><td><div>([^<>\"]*?)</div></td><td").getMatch(0);
+            }
+            final String[] folders = br.getRegex("(/folder/[a-z0-9]+)").getColumn(0);
             if (folders == null || folders.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -66,7 +68,9 @@ public class ThreeDlTv extends PluginForDecrypt {
             for (String folder : folders) {
                 DownloadLink linkl = createDownloadlink(currentdomain + folder);
                 passwords.add(password);
-                if (password != null) linkl.setSourcePluginPasswordList(passwords);
+                if (password != null) {
+                    linkl.setSourcePluginPasswordList(passwords);
+                }
                 decryptedLinks.add(linkl);
             }
             if (fpName != null) {
@@ -97,7 +101,9 @@ public class ThreeDlTv extends PluginForDecrypt {
                 }
                 break;
             }
-            if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
             // Add links via CNL
             Form cnlform = br.getForm(0);
             if (cnlform != null) {
@@ -106,12 +112,18 @@ public class ThreeDlTv extends PluginForDecrypt {
                 cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
                 try {
                     cnlbr.submitForm(cnlform);
-                    if (cnlbr.containsHTML("success")) { return decryptedLinks; }
+                    if (cnlbr.containsHTML("success")) {
+                        return decryptedLinks;
+                    }
                 } catch (final Throwable e) {
                 }
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            if (this.br.containsHTML(">Der Zugriff auf diesen Link Ordner wurde aus Sicherheitsgründen")) {
+                logger.info("IP Limit reached - cannot decrypt links from this website at the moment ...");
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
