@@ -121,6 +121,7 @@ public class FernsehkritikTv extends PluginForHost {
     private String               DLLINK                                    = null;
     private boolean              loggedin                                  = false;
     private boolean              is_premiumonly_content                    = false;
+    private String               url_videoid                               = null;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -153,7 +154,6 @@ public class FernsehkritikTv extends PluginForHost {
         String dllink_temp = null;
 
         String filesize_string = null;
-        String url_videoid = null;
         String url_videoid_without_episodenumber = null;
         String final_filename = null;
         String episodenumber = null;
@@ -237,6 +237,19 @@ public class FernsehkritikTv extends PluginForHost {
                 channel = url_videoid_without_episodenumber;
             }
 
+            if (inValidate(DLLINK) && account.getType() == AccountType.FREE) {
+                /*
+                 * Rare special case: User has a free account, video is NOT downloadable for freeusers but is watchable. In this case we
+                 * cannot get any downloadlinks via API --> Website handling needed! This could also be used as a fallback for API failures
+                 * but it is not intended to be that ;)
+                 */
+                try {
+                    this.br.getPage("http://massengeschmack.tv/play/" + this.url_videoid);
+                    getStreamDllinkMassengeschmackWebsite();
+                } catch (final Throwable e) {
+                }
+            }
+
             if (!inValidate(DLLINK)) {
                 ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             } else {
@@ -300,30 +313,15 @@ public class FernsehkritikTv extends PluginForHost {
                             this.DLLINK = dllink_temp;
                         }
                     }
-                    if (this.DLLINK != null) {
+                    if (!inValidate(DLLINK)) {
                         filesize = filesize_max;
+                        if (!DLLINK.startsWith("http")) {
+                            DLLINK = "http://" + HOST_MASSENGESCHMACK + DLLINK;
+                        }
                     }
                 }
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("(/dl/[^<>\"]*?\\.mp4[^<>\"/]*?)\"").getMatch(0);
-                }
-                /* Sometimes different qualities are available - prefer webm, highest quality */
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("type=\"video/webm\" src=\"(http://[^<>\"]*?\\.webm)\"").getMatch(0);
-                }
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("type=\"video/mp4\" src=\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
-                }
-                /* Nothing there? Download stream! */
                 if (inValidate(DLLINK)) {
-                    DLLINK = getMassengeschmackStreamDLLINK();
-                }
-
-                if (inValidate(DLLINK)) {
-                    /* Lets overwrite DLLINK with an url of which we definitly know that we will get the highest quality */
-                    DLLINK = "https://massengeschmack.tv/dlr/" + url_videoid + "/best.mp4";
-                } else if (!DLLINK.startsWith("http")) {
-                    DLLINK = "http://" + HOST_MASSENGESCHMACK + DLLINK;
+                    getStreamDllinkMassengeschmackWebsite();
                 }
 
                 channel = br.getRegex("<li><a href=\"/mag\\-cover\\.php\\?pid=\\d+\">([^<<\"]*?)</a>").getMatch(0);
@@ -418,19 +416,39 @@ public class FernsehkritikTv extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    /** Get the (highest quality) stream-url of a massengeschmack video. */
-    private String getMassengeschmackStreamDLLINK() throws PluginException {
-        String dllink = null;
-        final String base = br.getRegex("var base = \\'(http://[^<>\"]*?)\\';").getMatch(0);
-        final String link = br.getRegex("playlist = \\[\\{url: base \\+ \\'([^<>\"]*?)\\'").getMatch(0);
-        if (base == null || link == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    private void getStreamDllinkMassengeschmackWebsite() {
+        /* Next try hls. */
+        if (inValidate(DLLINK)) {
+            DLLINK = br.getRegex("type=\"application/x\\-mpegurl\" src=\"(http://[^<>\"]*?\\.m3u8)\"").getMatch(0);
         }
-        if (base != null && link != null) {
-            dllink = base + link;
+        /* Sometimes different hls qualities are available - prefer webm, highest quality */
+        if (inValidate(DLLINK)) {
+            DLLINK = br.getRegex("type=\"video/webm\" src=\"(http://[^<>\"]*?\\.webm)\"").getMatch(0);
+        }
+        if (inValidate(DLLINK)) {
+            DLLINK = br.getRegex("type=\"video/mp4\" src=\"(http://[^<>\"]*?\\.mp4)\"").getMatch(0);
+        }
+        if (inValidate(DLLINK)) {
+            DLLINK = br.getRegex("(/dl/[^<>\"]*?\\.mp4[^<>\"/]*?)\"").getMatch(0);
+        }
+        /* Nothing there? Try to download stream! */
+        if (inValidate(DLLINK)) {
+            final String base = br.getRegex("var base = \\'(http://[^<>\"]*?)\\';").getMatch(0);
+            final String link = br.getRegex("playlist = \\[\\{url: base \\+ \\'([^<>\"]*?)\\'").getMatch(0);
+            if (base != null && link != null) {
+                DLLINK = base + link;
+            }
         }
 
-        return dllink;
+        if (inValidate(DLLINK)) {
+            /*
+             * Nothing found? Lets overwrite DLLINK with an url of which we definitly know that we will get the highest quality (kind of
+             * like an API).
+             */
+            DLLINK = "https://massengeschmack.tv/dlr/" + url_videoid + "/best.mp4";
+        } else if (!DLLINK.startsWith("http")) {
+            DLLINK = "http://" + HOST_MASSENGESCHMACK + DLLINK;
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -690,9 +708,7 @@ public class FernsehkritikTv extends PluginForHost {
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.getHeaders().put("Accept-Encoding", "gzip");
-        br.setAllowedResponseCodes(FernsehkritikTv.API_RESPONSECODE_ERROR_CONTENT_OFFLINE);
-        br.setAllowedResponseCodes(FernsehkritikTv.API_RESPONSECODE_ERROR_LOGIN_WRONG);
-        br.setAllowedResponseCodes(API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED);
+        br.setAllowedResponseCodes(new int[] { FernsehkritikTv.API_RESPONSECODE_ERROR_CONTENT_OFFLINE, FernsehkritikTv.API_RESPONSECODE_ERROR_LOGIN_WRONG, FernsehkritikTv.API_RESPONSECODE_ERROR_RATE_LIMIT_REACHED });
         return br;
     }
 
