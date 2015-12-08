@@ -961,7 +961,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         final FilePackageStorable packageStorable = new FilePackageStorable(pkg);
                         final List<DownloadLinkStorable> linkStorables = new ArrayList<DownloadLinkStorable>(packageStorable.getLinks());
                         packageStorable.getLinks().clear();
-                        zip.addByteArry(JSonStorage.serializeToJson(packageStorable).getBytes("UTF-8"), true, "", packageEntryID);
+                        zip.addByteArry(JSonStorage.serializeToJsonByteArray(packageStorable), true, "", packageEntryID);
                         final String childFormat;
                         if (linkStorables.size() >= 10) {
                             childFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
@@ -971,7 +971,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         int childIndex = 0;
                         for (final DownloadLinkStorable linkStorable : linkStorables) {
                             final String childEntryID = String.format(childFormat, childIndex++);
-                            zip.addByteArry(JSonStorage.serializeToJson(linkStorable).getBytes("UTF-8"), true, "", packageEntryID + "_" + childEntryID);
+                            zip.addByteArry(JSonStorage.serializeToJsonByteArray(linkStorable), true, "", packageEntryID + "_" + childEntryID);
                         }
                     }
                     DownloadControllerStorable dcs = new DownloadControllerStorable();
@@ -984,7 +984,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         /* the method above can throw exceptions, eg in SVN */
                         logger.log(e);
                     }
-                    zip.addByteArry(JSonStorage.serializeToJson(dcs).getBytes("UTF-8"), true, "", "extraInfo");
+                    zip.addByteArry(JSonStorage.serializeToJsonByteArray(dcs), true, "", "extraInfo");
                     /* close ZipIOWriter */
                     zip.close();
                     fos = null;

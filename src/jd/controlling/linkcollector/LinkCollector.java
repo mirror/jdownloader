@@ -1114,9 +1114,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1999,7 +1999,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             final List<CrawledLinkStorable> linkStorables = new ArrayList<CrawledLinkStorable>(packageStorable.getLinks());
                             packageStorable.getLinks().clear();
                             final String packageEntryID = String.format(packageFormat, packageIndex++);
-                            zip.addByteArry(JSonStorage.serializeToJson(packageStorable).getBytes("UTF-8"), true, "", packageEntryID);
+                            zip.addByteArry(JSonStorage.serializeToJsonByteArray(packageStorable), true, "", packageEntryID);
                             final String childFormat;
                             if (linkStorables.size() >= 10) {
                                 childFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
@@ -2009,7 +2009,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             int childIndex = 0;
                             for (final CrawledLinkStorable linkStorable : linkStorables) {
                                 final String childEntryID = String.format(childFormat, childIndex++);
-                                zip.addByteArry(JSonStorage.serializeToJson(linkStorable).getBytes("UTF-8"), true, "", packageEntryID + "_" + childEntryID);
+                                zip.addByteArry(JSonStorage.serializeToJsonByteArray(linkStorable), true, "", packageEntryID + "_" + childEntryID);
                             }
                         }
                         LinkCollectorStorable lcs = new LinkCollectorStorable();
@@ -2022,7 +2022,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             /* the method above can throw exceptions, eg in SVN */
                             logger.log(e);
                         }
-                        zip.addByteArry(JSonStorage.serializeToJson(lcs).getBytes("UTF-8"), true, "", "extraInfo");
+                        zip.addByteArry(JSonStorage.serializeToJsonByteArray(lcs), true, "", "extraInfo");
                         /* close ZipIOWriter */
                         zip.close();
                         fos = null;
