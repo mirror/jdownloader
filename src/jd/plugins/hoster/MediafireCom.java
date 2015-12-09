@@ -501,7 +501,7 @@ public class MediafireCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getPage("http://www.mediafire.com/download/" + fileID);
                 /* url should be downloadlink when directDownload is enabled */
-                url = getURL(br);
+                url = getURL(br); // getRedirectLocation
                 if (url == null) {
                     handleNonAPIErrors(downloadLink, br);
                 }
@@ -510,9 +510,10 @@ public class MediafireCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
+            logger.info("Checking final url: " + url);
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(url);
+                con = br.openHeadConnection(url);
                 if (con.getContentType().contains("html")) {
                     handleNonAPIErrors(downloadLink, this.br);
                     this.br.followConnection();
@@ -533,10 +534,13 @@ public class MediafireCom extends PluginForHost {
                 }
             }
 
-            logger.info("url: " + url);
-            logger.info("br.getRedirectLocation(): " + br.getRedirectLocation());
-            if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation() != null) { // Special handling, intercepted by ISP
                 url = br.getRedirectLocation();
+                if (url == "http://www.mediafire.com/?" + fileID) {
+                    logger.info("False RedirectLocation: " + br.getRedirectLocation());
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "False redirect, retry later", 30 * 60 * 1000l);
+                }
+                logger.info("RedirectLocation: " + url);
             }
             this.br.setFollowRedirects(true);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
@@ -548,6 +552,9 @@ public class MediafireCom extends PluginForHost {
                 handleNonAPIErrors(downloadLink, this.br);
                 lastChangeErrorhandling(downloadLink, account, passwordprotected);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (con.getResponseCode() == 401) { // Special handling, intercepted by ISP
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unauthorized, retry later", 30 * 60 * 1000l);
             }
             this.dl.startDownload();
         }
