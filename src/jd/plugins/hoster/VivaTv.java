@@ -49,9 +49,13 @@ public class VivaTv extends PluginForHost {
     public static final String   url_service_feed_COMEDYCENTRAL                      = "http://www.cc.com/feeds/mrss?uri=%s";
     public static final String   url_service_feed_SOUTHPARKSTUDIOS                   = "http://southpark.cc.com/feeds/video-player/mrss/%s";
     public static final String   url_service_feed_NICK_COM                           = "http://www.nick.com/dynamo/video/data/mrssGen.jhtml?mgid=%s";
+    public static final String   url_service_feed_ESPERANTO                          = "http://intl.esperanto.mtvi.com/www/xml/video.jhtml?uri=%s";
+    public static final String   url_service_feed_ESPERANTO_AS3                      = "http://intl.esperanto.mtvi.com/www/xml/video.jhtml?uri=%s&version=as3";
     public static final String   url_service_mediagen_mtvnservices_device            = "http://intl.mtvnservices.com/mediagen/%s/?device={device}";
     public static final String   url_service_mediagen_intl_mtvnservices              = "http://intl.mtvnservices.com/mediagen/%s/";
     public static final String   url_service_mediagen_mediautils_mtvnservices_device = "http://media-utils.mtvnservices.com/services/MediaGenerator/%s?device={device}";
+    public static final String   url_service_mediagen_ESPERANTO                      = "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s";
+
     /*
      * E.g. json-version:
      * http://media-utils.mtvnservices.com/services/MediaGenerator/mgid:arc:episode:comedycentral.com:0e9587e2-d682-4c1d-a20c
@@ -61,29 +65,28 @@ public class VivaTv extends PluginForHost {
     public static final String   url_service_mediagen_mtv_com                        = "http://www.mtv.com/meta/context/mediaGen?uri=%s";
     public static final String   url_service_feed_mtv_com                            = "http://www.mtv.com/player/embed/AS3/rss/?uri=%s&ref=None";
     /**
-     * NOT using mtv networks for streaming: bet.com
-     *
-     * NOT important/contains no(important) content: epixhd.com, centrictv.com, unplugged.mtvla.com
-     *
-     * Sites that did not work serverside: nick.com, nickjr.com
-     *
-     * Implementation not (yet) possible because of geoblock (germany): mtvla.com, mtv.ca
+     * NOT using mtv networks for streaming: bet.com<br />
+     * NOT important/contains no(important) content: epixhd.com, centrictv.com, unplugged.mtvla.com<br />
+     * Sites that did not work serverside: nick.com, nickjr.com<br />
+     * Implementation not (yet) possible because of geoblock (germany): mtvla.com, mtv.ca<br />
+     * Description of possible parameters in feed-urls:<br />
+     * Possible values for "version": "as3"<br />
      */
 
-    /*
+    /**
      * EVERY MTV project has mgid strings! Core of this is either a (6-7 digits?) long ID or a hash-like id e.g. xxx-yyy-ggg-hhh-ttt. Only
      * mgids with the short IDs can be embedded into other websites (as far as I've seen it).
      */
-    /*
+    /**
      * About feeds: Feeds are the comon way to get the video urls. Each MTV site has different feed-URLs. The easiest way to find them is
      * accessing the "players" page e.g.:
      * http://media.mtvnservices.com/pmt-arc/e1/players/mgid:arc:video:mtvmovies.com:/context16/context2/config
      * .xml?uri=<MGID_GOES_HERE>&type=network&ref=movies.mtv.de&geo=DE&group=intl&network=None&device=Othe. Feed url will be in the <feed>
      * XML tag.
      */
-    /* Note: There might also be a way to get mobile (http) links, see YT-dl project. */
+    /** Note: There might also be a way to get mobile (http) links, see YT-dl project. */
 
-    /** Tags: Viacom International Media Networks Northern Europe, mrss, gameone.de */
+    /** Tags: Viacom International Media Networks Northern Europe, mrss */
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/mtv.py */
 
     /* Plugin related things */
@@ -371,9 +374,21 @@ public class VivaTv extends PluginForHost {
     }
 
     private String feedGetMediagenURL() {
+        String flvgen_url = br.getRegex("(https?://[^<>\"]*?/www/xml/flv/flvgen\\.jhtml\\?[^<>\"]*?hiLoPref=hi)").getMatch(0);
+        if (flvgen_url == null) {
+            flvgen_url = br.getRegex("(https?://[^<>\"]*?/www/xml/flv/flvgen\\.jhtml\\?[^<>\"]*?hiLoPref=lo)").getMatch(0);
+        }
+        if (flvgen_url != null) {
+            flvgen_url = Encoding.htmlDecode(flvgen_url);
+        }
+
         String mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?mediaGen[^<>\"]*?)(?:\\'|\")").getMatch(0);
         if (mediagen_url == null) {
             mediagen_url = br.getRegex("(?:\\'|\")(https?://[^<>\"]*?/mediagen/[^<>\"/]*?)(?:\\'|\")").getMatch(0);
+        }
+        /* flvgen - special cases e.g. for uk.viva.tv and gameone.de */
+        if (mediagen_url == null) {
+            mediagen_url = flvgen_url;
         }
         return mediagen_url;
     }
@@ -475,7 +490,8 @@ public class VivaTv extends PluginForHost {
             /*
              * Seems like this one is used for most big mtv sites as well
              */
-            put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/video.jhtml?uri=%s&version=as3");
+            put("nick.de", url_service_feed_ESPERANTO_AS3);
+            put("uk.viva.tv", url_service_feed_ESPERANTO);
             put("mtvworldwide", "http://all.mtvworldverticals.com/feed-xml/?uri=%s");
             put("mtv.de", "http://movies.mtv.de/mrss/%s");
             put("mtvmovies.com", "http://movies.mtv.de/mrss/%s");
@@ -533,7 +549,12 @@ public class VivaTv extends PluginForHost {
             /*
              * Seems like this one is used for most big mtv sites as well
              */
-            put("nick.de", "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=%s");
+            put("nick.de", url_service_mediagen_ESPERANTO);
+            /*
+             * Do not use pre-defined mediagen for uk.viva.tv to increase
+             * chances of avoiding their GEO-block!
+             */
+            // put("uk.viva.tv", url_service_mediagen_ESPERANTO);
             put("mtv.com", url_service_mediagen_mtv_com);
             put("mtvu.com", url_service_mediagen_mtv_com);
             put("southpark.de", "http://www.southpark.de/feeds/video-player/mediagen?uri=%s&suppressRegisterBeacon=true&lang=de&acceptMethods=%s");

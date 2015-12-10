@@ -104,9 +104,18 @@ public class CopiapopEsDecrypter extends PluginForDecrypt {
                 return null;
             }
             for (final String lnkinfo : linkinfo) {
+                String filename = null;
                 final String fid = new Regex(lnkinfo, "data\\-file\\-id=\"(\\d+)\"").getMatch(0);
-                String filename = new Regex(lnkinfo, ">([^<>\"]*?)</a>").getMatch(0);
                 String filesize = new Regex(lnkinfo, "class=\"file_size\">([^<>\"]*?)<").getMatch(0);
+                filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" data-action-before").getMatch(0);
+                if (filename != null) {
+                    final String remove_me = new Regex(filename, "(,\\d+,gallery,\\d+,\\d+)\\.[A-Za-z0-9]{2,5}$").getMatch(0);
+                    if (remove_me != null) {
+                        filename = filename.replace(remove_me, "");
+                    }
+                } else {
+                    filename = new Regex(lnkinfo, ">([^<>\"]*?)</a>").getMatch(0);
+                }
                 if (fid == null || filename == null || filesize == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
