@@ -48,7 +48,7 @@ import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/#N?|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+(=###n=[a-zA-Z0-9]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+(=###n=[a-zA-Z0-9]+)?" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL   = "USE_SSL_V2";
@@ -67,9 +67,14 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String url = link.getPluginPatternMatcher();
+        String url = link.getPluginPatternMatcher();
+        final String linkID = link.getSetLinkID();
+        if (url.contains(".nz/$!")) {
+            url = url.replaceFirst("nz/\\$!", "nz/#!");
+            link.setUrlDownload(url);
+        }
         final String fileID = getPublicFileID(link);
-        if (link.getSetLinkID() == null) {
+        if (linkID == null) {
             if (fileID != null) {
                 link.setLinkID(getHost() + "F" + fileID);
             } else {
