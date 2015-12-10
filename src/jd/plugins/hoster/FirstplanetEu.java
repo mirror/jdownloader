@@ -66,7 +66,7 @@ public class FirstplanetEu extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
 
-    private static final boolean api_use_api_availablecheck   = false;
+    private static final boolean api_use_api_availablecheck   = true;
     private static final boolean api_use_api_free             = true;
     private static final boolean api_use_api_premium          = true;
 
@@ -87,16 +87,18 @@ public class FirstplanetEu extends PluginForHost {
         final String url_name = fid + "_" + slug;
         link.setLinkID(fid);
         link.setName(url_name);
-        String filename, filesize, md5 = null;
+        String filename, filesize, hashes = null;
         if (api_use_api_availablecheck) {
             this.prepBRAPI(this.br);
             this.postPage(API_ENDPOINT, "{\"method\":\"file.getInfo\",\"params\":{\"link\":\"" + link.getDownloadURL() + "\"}}");
             filename = getJson("name");
             filesize = getJson("size");
-            md5 = getJson("m5sha");
+            hashes = getJson("md5sha1");
             if (filename == null || filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            link.setFinalFileName(filename);
+            link.setDownloadSize(Long.parseLong(filesize));
         } else {
             this.setBrowserExclusive();
             this.br.setAllowedResponseCodes(500);
@@ -116,8 +118,13 @@ public class FirstplanetEu extends PluginForHost {
             link.setName(Encoding.htmlDecode(filename.trim()));
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (md5 != null) {
-            link.setMD5Hash(md5);
+        if (hashes != null && hashes.length() >= 32) {
+            if (hashes.length() == 32) {
+                link.setMD5Hash(hashes);
+            } else {
+                link.setMD5Hash(hashes.substring(0, 32));
+                link.setSha1Hash(hashes.substring(32, hashes.length()));
+            }
         }
         return AvailableStatus.TRUE;
     }

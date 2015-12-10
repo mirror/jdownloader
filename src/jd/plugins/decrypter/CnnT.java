@@ -44,7 +44,7 @@ public class CnnT extends PluginForDecrypt {
         final String host = new Regex(parameter, "https?://([^/]+)/").getMatch(0);
         final String kat_id = new Regex(parameter, "kat_id=(\\d+)").getMatch(0);
         final String fid = new Regex(parameter, "fileid=(\\d+)").getMatch(0);
-        parameter = "http://ru.canna.to/cpuser/links.php?action=popup&kat_id=" + kat_id + "&fileid=" + fid;
+        parameter = "http://uu.canna.to/links.php?action=popup&kat_id=" + kat_id + "&fileid=" + fid;
         boolean valid = false;
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -58,8 +58,14 @@ public class CnnT extends PluginForDecrypt {
         }
         synchronized (LOCK) {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                final Form captchaForm = br.getFormbyProperty("name", "download_form");
-                captchaForm.setAction("/cpuser/links.php?action=load&fileid=" + fid);
+                final Form[] allforms = br.getForms();
+                Form captchaForm = br.getFormbyProperty("name", "download_form");
+                if (captchaForm == null) {
+                    captchaForm = br.getFormbyProperty("name", "download_form");
+                }
+                if (captchaForm == null) {
+                    captchaForm = allforms[allforms.length - 1];
+                }
                 final String captchaUrlPart = br.getRegex("\"(securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
                 if (captchaUrlPart == null || captchaForm == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -67,8 +73,10 @@ public class CnnT extends PluginForDecrypt {
                 }
                 final String captchaurl;
                 if (this.br.getURL().contains("/cpuser/")) {
+                    captchaForm.setAction("/cpuser/links.php?action=load&fileid=" + fid);
                     captchaurl = "http://" + host + "/cpuser/" + captchaUrlPart;
                 } else {
+                    captchaForm.setAction("/links.php?action=load&fileid=" + fid);
                     captchaurl = "http://" + host + "/" + captchaUrlPart;
                 }
                 final String captchaCode = getCaptchaCode(captchaurl, param);
