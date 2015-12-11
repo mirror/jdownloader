@@ -88,6 +88,9 @@ public class N24Mediathek extends PluginForHost {
         } else if (!br.containsHTML("n24VideoCfg\\.")) {
             /* Not a video (offline or maybe picture gallery) */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("video:livestream")) {
+            /* Livestreams cannot be downloaded (by us) */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (titleName == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

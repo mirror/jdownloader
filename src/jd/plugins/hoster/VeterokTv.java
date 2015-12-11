@@ -48,22 +48,38 @@ public class VeterokTv extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/v/", "/video/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("type=video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"viewvideo\\-title\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://veterok.tv/v/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        final String vid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (br.getURL().contains("type=video_missing") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("id=\"viewvideo-title\">([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = vid;
+        }
+        br.getPage("http://veterok.tv/v/" + vid);
         DLLINK = br.getRegex("\"file\":\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\.veterok\\.tv/video/[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("files\\[\"\\d+\"\\]=\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://cdn\\.veterok\\.tv/video/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -71,10 +87,11 @@ public class VeterokTv extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

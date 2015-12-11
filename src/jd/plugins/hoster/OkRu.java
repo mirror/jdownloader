@@ -65,10 +65,9 @@ public class OkRu extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         prepBR(this.br);
-        String mainlink = downloadLink.getStringProperty("mainlink", null);
+        final String mainlink = downloadLink.getStringProperty("mainlink", null);
         if (mainlink == null) {
-            /* Leave this in for older URLs added <= rev 31219 */
-            mainlink = downloadLink.getDownloadURL();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(mainlink);
         /* Offline or private video */

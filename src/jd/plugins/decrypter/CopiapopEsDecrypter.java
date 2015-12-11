@@ -97,50 +97,89 @@ public class CopiapopEsDecrypter extends PluginForDecrypt {
 
             decryptedLinks.add(dl);
         } else {
-            final String fpName = br.getRegex("class=\"scrollTop\">([^<>\"]*?)</a></h1>").getMatch(0);
-            final String[] linkinfo = br.getRegex("(<li data\\-file\\-id=\"\\d+\".*?</li>)").getColumn(0);
-            if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            String fpName = br.getRegex("class=\"scrollTop\">([^<>\"]*?)</a></h1>").getMatch(0);
+            if (fpName == null) {
+                fpName = new Regex(parameter, "copiapop\\.com/(.+)").getMatch(0);
             }
-            for (final String lnkinfo : linkinfo) {
-                String filename = null;
-                final String fid = new Regex(lnkinfo, "data\\-file\\-id=\"(\\d+)\"").getMatch(0);
-                String filesize = new Regex(lnkinfo, "class=\"file_size\">([^<>\"]*?)<").getMatch(0);
-                filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" data-action-before").getMatch(0);
-                if (filename != null) {
-                    final String remove_me = new Regex(filename, "(,\\d+,gallery,\\d+,\\d+)\\.[A-Za-z0-9]{2,5}$").getMatch(0);
-                    if (remove_me != null) {
-                        filename = filename.replace(remove_me, "");
-                    }
-                } else {
-                    filename = new Regex(lnkinfo, ">([^<>\"]*?)</a>").getMatch(0);
-                }
-                if (fid == null || filename == null || filesize == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                filesize = Encoding.htmlDecode(filesize).trim();
-                filename = Encoding.htmlDecode(filename).trim();
-
-                final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-
-                dl.setProperty("plain_filename", filename);
-                dl.setProperty("plain_filesize", filesize);
-                dl.setProperty("plain_fid", fid);
-                dl.setProperty("mainlink", parameter);
-                dl.setProperty("LINKDUPEID", fid + filename);
-
-                dl.setName(filename);
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                dl.setAvailable(true);
-
-                decryptedLinks.add(dl);
-            }
-
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+
+            final short max_entries_per_page = 24;
+            int addedlinks = 0;
+            int page = 1;
+            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            boolean stop_after_one_page = false;
+            String nextpage = null;
+
+            final String decrypt_specified_page_only_str = new Regex(this.br.getURL(), "(/gallery,\\d+,\\d+)").getMatch(0);
+            if (decrypt_specified_page_only_str != null) {
+                page = Integer.parseInt(new Regex(decrypt_specified_page_only_str, "gallery,\\d+,(\\d+)").getMatch(0));
+                if (page == 1) {
+                    /* Remove that part of the url for our calls later! */
+                    this.br.getPage(this.br.getURL().replace(decrypt_specified_page_only_str, ""));
+                } else {
+                    stop_after_one_page = true;
+                }
+            }
+
+            do {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return decryptedLinks;
+                }
+                addedlinks = 0;
+                if (decryptedLinks.size() > 0 && nextpage != null) {
+                    this.br.getPage(nextpage);
+                }
+                final String[] linkinfo = br.getRegex("(<li data\\-file\\-id=\"\\d+\".*?</li>)").getColumn(0);
+                if (linkinfo == null || linkinfo.length == 0) {
+                    break;
+                }
+                for (final String lnkinfo : linkinfo) {
+                    String filename = null;
+                    final String fid = new Regex(lnkinfo, "data\\-file\\-id=\"(\\d+)\"").getMatch(0);
+                    String filesize = new Regex(lnkinfo, "class=\"file_size\">([^<>\"]*?)<").getMatch(0);
+                    filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" data-action-before").getMatch(0);
+                    if (filename != null) {
+                        final String remove_me = new Regex(filename, "(,\\d+,gallery,\\d+,\\d+)\\.[A-Za-z0-9]{2,5}$").getMatch(0);
+                        if (remove_me != null) {
+                            filename = filename.replace(remove_me, "");
+                        }
+                    } else {
+                        filename = new Regex(lnkinfo, ">([^<>\"]*?)</a>").getMatch(0);
+                    }
+                    if (fid == null || filename == null || filesize == null) {
+                        break;
+                    }
+                    filesize = Encoding.htmlDecode(filesize).trim();
+                    filename = Encoding.htmlDecode(filename).trim();
+
+                    final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+
+                    dl.setProperty("plain_filename", filename);
+                    dl.setProperty("plain_filesize", filesize);
+                    dl.setProperty("plain_fid", fid);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setLinkID(fid + filename);
+                    dl._setFilePackage(fp);
+
+                    dl.setName(filename);
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                    dl.setAvailable(true);
+
+                    decryptedLinks.add(dl);
+
+                    distribute(dl);
+                    addedlinks++;
+                }
+
+                page++;
+                nextpage = this.br.getRegex("data-nextpage-number=\"" + page + "\" data\\-nextpage\\-url=\"(/[^<>\"]*?)\"").getMatch(0);
+            } while (addedlinks >= max_entries_per_page && !stop_after_one_page && nextpage != null);
+
+            if (decryptedLinks.size() == 0) {
+                return null;
+            }
         }
 
         return decryptedLinks;

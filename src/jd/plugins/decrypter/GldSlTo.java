@@ -31,6 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9]+)?/\\d+.{2,}" }, flags = { 0 })
 public class GldSlTo extends PluginForDecrypt {
@@ -138,6 +139,9 @@ public class GldSlTo extends PluginForDecrypt {
                     logger.info("Captcha failed for decryptID: " + decryptID);
                     continue;
                 }
+            } else if (br.containsHTML("\"g\\-recaptcha\"")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
             }
             if (br.containsHTML(HTML_LIMIT_REACHED)) {
                 logger.info("Probably hourly limit is reached --> Stopping decryption");
@@ -147,11 +151,7 @@ public class GldSlTo extends PluginForDecrypt {
             for (final String finallink : finallinks) {
                 final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(finallink));
                 fp.add(dl);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
-                }
+                distribute(dl);
                 decryptedLinks.add(dl);
             }
             counter++;

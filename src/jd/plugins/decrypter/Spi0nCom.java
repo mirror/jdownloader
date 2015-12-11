@@ -38,6 +38,7 @@ public class Spi0nCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        this.br.setAllowedResponseCodes(405);
         final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             final DownloadLink dl = this.createOfflinelink(parameter);
@@ -88,8 +89,8 @@ public class Spi0nCom extends PluginForDecrypt {
                 pictures = br.getRegex("src=\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads/[^<>\"]*?)\" alt=\"").getColumn(0);
             }
             if (fpName == null || pictures == null || pictures.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Could not find any downloadable content!");
+                return decryptedLinks;
             }
             for (final String pic : pictures) {
                 final DownloadLink fina = createDownloadlink("directhttp://" + pic);
