@@ -310,7 +310,7 @@ public class SaveTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> sourcelist = (ArrayList) entries.get("ARRALLOWDDOWNLOADFORMATS");
+            final ArrayList<Object> sourcelist = getVideoSourcelist(entries);
             entries = (LinkedHashMap<String, Object>) entries.get("TELECASTDETAILS");
             parseFilenameInformation_site(link, entries);
             parseQualityTag(link, sourcelist);
@@ -580,7 +580,6 @@ public class SaveTv extends PluginForHost {
         dl.setProperty(PROPERTY_site_runtime_minutes, site_runtime_minutes);
     }
 
-    @SuppressWarnings("unchecked")
     public static void parseQualityTag(final DownloadLink dl, final ArrayList<Object> sourcelist) {
         final int selected_video_format = getConfiguredVideoFormat();
         /*
@@ -592,8 +591,7 @@ public class SaveTv extends PluginForHost {
                 dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
             }
         } else {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
-            final String quality_best = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("RECORDINGFORMATID"), API_FORMAT_HQ_L));
+            final String quality_best = getBestQualityId(sourcelist);
             final boolean isHDAvailable = sourcelist.size() == 3 || quality_best.equals("");
             switch (selected_video_format) {
             case 0:
@@ -741,9 +739,24 @@ public class SaveTv extends PluginForHost {
             }
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
         } else {
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            /*
+             * TODO: Maybe add a check here so that we do not have to perform anywebsite request(s) to find out of the desired quality is
+             * available.
+             */
+            // final ArrayList<Object> sourcelist = getVideoSourcelist(entries);
+            // final String best_quality_id = getBestQualityId(sourcelist);
             stv_request_selected_format_value = site_get_format_request_value();
-            site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
-            /* TODO: Check if their new system still has this particular errormessage */
+
+            try {
+                site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
+            } catch (final PluginException e) {
+                /* Hmmmm strange! */
+                if (this.br.containsHTML("Interner Serverfehler. Kommt dieser kontinuierlich, bitten wir Sie Ihre Aktion erst später zu wiederholen.")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
+                }
+                throw e;
+            }
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
             }
@@ -767,7 +780,7 @@ public class SaveTv extends PluginForHost {
                     }
                 }
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList) entries.get("ARRVIDEOURL");
             final Object dllink_object = ressourcelist.get(2);
             if (dllink_object instanceof String) {
@@ -1376,6 +1389,21 @@ public class SaveTv extends PluginForHost {
             break;
         }
         return run_time_calculated;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static String getBestQualityId(final ArrayList<Object> sourcelist) {
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
+        return Long.toString(DummyScriptEnginePlugin.toLong(entries.get("RECORDINGFORMATID"), API_FORMAT_HQ_L));
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static ArrayList<Object> getVideoSourcelist(final LinkedHashMap<String, Object> sourcemap) {
+        if (sourcemap == null) {
+            return null;
+        }
+        final ArrayList<Object> sourcelist = (ArrayList) sourcemap.get("ARRALLOWDDOWNLOADFORMATS");
+        return sourcelist;
     }
 
     /**
