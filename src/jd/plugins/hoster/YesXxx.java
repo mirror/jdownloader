@@ -23,6 +23,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/(global\\.php)?\\?(v|id)=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/(global\\.php)?\\?(v|id)=[A-Z0-9]+" }, flags = { 0 })
 public class YesXxx extends PluginForHost {
 
     public YesXxx(PluginWrapper wrapper) {
@@ -55,14 +56,21 @@ public class YesXxx extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        final String url_filename = new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Requested video not ") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>]*?)\\- YES\\.XXX</title>").getMatch(0);
+        if (filename == null) {
+            filename = url_filename;
+        }
         dllink = br.getRegex("type=\"video/(?:mp4|flash)\" src=\"(http[^<>\"]*?)\">").getMatch(0);
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
+            dllink = br.getRegex("video_url:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
@@ -84,13 +92,7 @@ public class YesXxx extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                try {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(dllink);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(dllink);
-                }
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

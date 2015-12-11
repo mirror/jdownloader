@@ -288,9 +288,9 @@ public class NicoVideoJp extends PluginForHost {
         String dllink = null;
         final String linkid_url = getLID(link);
         requestFileInformation(link);
+        this.br = new Browser();
         login(account, false);
         br.setFollowRedirects(true);
-        // Important, without accessing the link we cannot get the downloadurl!
         br.getPage(link.getDownloadURL());
         /* Can happen if its not clear whether the video is private or offline */
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -383,7 +383,6 @@ public class NicoVideoJp extends PluginForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             this.setBrowserExclusive();
-            br.setFollowRedirects(true);
             final Cookies cookies = account.loadCookies("");
             if (cookies != null && !force) {
                 this.br.setCookies(this.getHost(), cookies);
@@ -394,15 +393,34 @@ public class NicoVideoJp extends PluginForHost {
                 }
                 /* Full login needed */
                 this.br = new Browser();
-                this.br.setFollowRedirects(true);
             }
-            br.postPage("https://account.nicovideo.jp/api/v1/login?show_button_twitter=1&site=niconico&show_button_facebook=1", "mail_tel=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            // this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:42.0) Gecko/20100101 Firefox/42.0");
+            this.br.setFollowRedirects(true);
+            this.br.getPage("http://www.nicovideo.jp/");
+            this.br.getPage("https://account.nicovideo.jp/login");
+            this.br.postPage("https://account.nicovideo.jp/api/v1/login?show_button_twitter=1&site=niconico&show_button_facebook=1", "mail_tel=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             // br.postPage("https://secure.nicovideo.jp/secure/login?site=niconico", "next_url=&mail=" +
             // Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (br.getCookie(MAINPAGE, "user_session") == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // final String user_session = this.br.getCookie(this.br.getHost(), "user_session");
+            if (br.getCookie(MAINPAGE, "user_session") == null || br.getCookie(MAINPAGE, "user_session").equals("deleted")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             // br.getCookies(MAINPAGE).remove("user_session_secure");
+            br.getHeaders().put("Referer", null);
+            this.br.getPage("http://notification.nicovideo.jp/v1/sessions.json?callback=NNotify.handshakeCallback&timestamp=" + System.currentTimeMillis());
+            /* Double-check login! */
+            if (this.br.containsHTML("user session not found|user session required")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            // this.br.getPage("http://notification.nicovideo.jp/v1/notifications/jsevents.json?notify_session=ZwBq_029QIgYRMGl982Yr7-TUYDMQuw3Ah1Dpgj46Ko8xC5pZAOpCxx-gNTDaWhVoJK2bAJfsgEhQTDYShlzeLDXI4jo-DhM5WhI_t0JBQQ&last_polling_time=0&callback=NNotify.pollingCallback");
             account.saveCookies(this.br.getCookies(this.getHost()), "");
         }
     }

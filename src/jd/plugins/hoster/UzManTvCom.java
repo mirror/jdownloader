@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.util.logging.Level;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -51,7 +49,7 @@ public class UzManTvCom extends PluginForHost {
         try {
             result = engine.eval(fun);
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (result == null) {
@@ -161,6 +159,9 @@ public class UzManTvCom extends PluginForHost {
         if (br.containsHTML("(\">Sayfa bulunamadı|Buraya gelmek için tıkladığınız linkte bir sorun var gibi görünüyor\\. Çünkü maalesef UZMANTV'de böyle bir sayfa yok\\.)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getURL().contains("/kategori/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.containsHTML("itemprop=\"playerType\"")) {
+            /* Whatever the user added - it is not a video! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"clear\"></div></div><h5>(.*?)</h5>").getMatch(0);

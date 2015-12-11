@@ -60,6 +60,8 @@ public class VipTubeCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
+        final String url_filename = new Regex(downloadLink.getDownloadURL(), "viptube\\.com/(.+)").getMatch(0).replace("/", "_");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -67,22 +69,28 @@ public class VipTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-        String cfgurl = br.getRegex("\\'(http://(www\\.)?viptube\\.com/player_config/[^<>\"]*?)\\'").getMatch(0);
-        final String vkey = br.getRegex("vkey=([a-z0-9]+)").getMatch(0);
-        if (cfgurl == null || vkey == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = url_filename;
         }
-        cfgurl = Encoding.htmlDecode(cfgurl);
-        br.getPage(cfgurl + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)));
-        final String[] qualities = { "hq_video_file", "video_file" };
-        for (final String quality : qualities) {
-            DLLINK = br.getRegex("<" + quality + "><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></" + quality + ">").getMatch(0);
-            if (DLLINK != null) {
-                break;
+        DLLINK = this.br.getRegex("src=\"(http://[^/]+/mp4/[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            String cfgurl = br.getRegex("\\'(http://(www\\.)?viptube\\.com/player_config/[^<>\"]*?)\\'").getMatch(0);
+            final String vkey = br.getRegex("vkey=([a-z0-9]+)").getMatch(0);
+            if (cfgurl == null || vkey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            cfgurl = Encoding.htmlDecode(cfgurl);
+            br.getPage(cfgurl + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)));
+            final String[] qualities = { "hq_video_file", "video_file" };
+            for (final String quality : qualities) {
+                DLLINK = br.getRegex("<" + quality + "><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></" + quality + ">").getMatch(0);
+                if (DLLINK != null) {
+                    break;
+                }
             }
         }
 
-        if (filename == null || DLLINK == null) {
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);

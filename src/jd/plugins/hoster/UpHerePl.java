@@ -47,10 +47,14 @@ public class UpHerePl extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Wskazany plik nie istnieje")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Wskazany plik nie istnieje|został usunięty z serwera|nie został odnaleziony na serwerze")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<title>([^<>\"]*?)\\- UpHere\\.pl \\- Pobierz</title>").getMatch(0);
         final String filesize = br.getRegex("<strong>Rozmiar:</strong>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -60,7 +64,9 @@ public class UpHerePl extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String probierz = br.getRegex("name=\"pobierz\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (probierz == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (probierz == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{32})$").getMatch(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://uphere.pl/dl.php?d=" + fid, "link=" + fid + "&pobierz=" + Encoding.urlEncode(probierz), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

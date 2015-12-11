@@ -143,8 +143,17 @@ public class SpiegelDe extends PluginForHost {
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String videoserver = br.getRegex("var server[\t\n\r ]*?=[\t\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
-                final String file = br.getRegex("spStartVideo\\d+\\([^<>\"\\)]+\\'([^<>\"]*?\\.(mp4|flv))\\'").getMatch(0);
+                String videoserver = br.getRegex("var server[\t\n\r ]*?=[\t\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
+                if (videoserver == null) {
+                    videoserver = br.getRegex("server:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+                }
+                String file = br.getRegex("spStartVideo\\d+\\([^<>\"\\)]+\\'([^<>\"]*?\\.(mp4|flv))\\'").getMatch(0);
+                if (file == null) {
+                    file = br.getRegex("hq:[\t\n\r ]*?\\'([^<>\"]*?)\\'").getMatch(0);
+                }
+                if (file == null) {
+                    file = br.getRegex("sq:[\t\n\r ]*?\\'([^<>\"]*?)\\'").getMatch(0);
+                }
                 filename = br.getRegex("class=\"module\\-title\">([^<>]*?)</div>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("property=\"og:title\"[\t\n\r ]*?content=\"([^<>\"]*?) \\- SPIEGEL ONLINE \\- Video\"").getMatch(0);

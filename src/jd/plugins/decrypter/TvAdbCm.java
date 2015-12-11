@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,6 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "http://(www\\.)?tv\\.adobe\\.com/watch/[a-z0-9\\-]+/[a-z0-9\\-]+/?" }, flags = { 0 })
 public class TvAdbCm extends PluginForDecrypt {
@@ -46,9 +48,11 @@ public class TvAdbCm extends PluginForDecrypt {
         return false;
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        final String url_name = new Regex(parameter, "adobe\\.com/watch/(.+)").getMatch(0).replace("/", "_");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("/player/player\\.swf")) {
@@ -67,20 +71,22 @@ public class TvAdbCm extends PluginForDecrypt {
             return null;
         }
         br.getPage("https://tv.adobe.com/embed/" + embedurl);
-        final String html5player = br.getRegex(",html5player:[^\r\n]+").getMatch(-1);
+        final String html5player = br.getRegex("var bridge = (\\{.*?\\});").getMatch(0);
         if (html5player == null) {
             return null;
         }
         // parse for qualities
-        String[] qualities = new Regex(html5player, "\\{\"quality\".*?\\}").getColumn(-1);
-        final String name = getJson(html5player, "title");
-        if (qualities == null || name == null) {
-            return null;
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(html5player);
+        final ArrayList<Object> sources = (ArrayList) entries.get("sources");
+        String name = (String) entries.get("title");
+        if (name == null) {
+            name = url_name;
         }
-        for (final String qual : qualities) {
-            final String q = getJson(qual, "quality");
-            final String u = getJson(qual, "src");
-            if (q == null || u == null) {
+        for (final Object videoo : sources) {
+            entries = (LinkedHashMap<String, Object>) videoo;
+            final String q = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("bitrate"), -1));
+            final String u = (String) entries.get("fsrc");
+            if (q == null || u == null || !u.startsWith("http")) {
                 continue;
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + u);

@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtbf.be" }, urls = { "http://(www\\.)?rtbf\\.be/video/detail_[a-z0-9}\\-_]+\\?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://(www\\.)?rtbf\\.be/video/detail_[a-z0-9}\\-_]+\\?id=\\d+" }, flags = { 0 })
 public class RtbfBe extends PluginForHost {
 
     public RtbfBe(PluginWrapper wrapper) {
@@ -71,6 +71,9 @@ public class RtbfBe extends PluginForHost {
             vid_text = this.br.getRegex("data\\-video=\"(.*?)\"").getMatch(0);
         }
         if (vid_text == null) {
+            vid_text = this.br.getRegex("data\\-media=\"(.*?)\"></div>").getMatch(0);
+        }
+        if (vid_text == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         vid_text = Encoding.htmlDecode(vid_text).replaceAll("\\\\/", "/");
@@ -92,7 +95,7 @@ public class RtbfBe extends PluginForHost {
         downloadLink.setFinalFileName(filename + ext);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(DLLINK);
+            con = br.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
