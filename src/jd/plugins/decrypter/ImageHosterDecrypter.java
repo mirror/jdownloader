@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -219,36 +220,39 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
         } else if (new Regex(parameter, ".+postim(age|g)\\.org/.+").matches()) {
             // they use cloudflare
             if (new Regex(parameter, ".+://s\\d{1,2}\\.postimg\\.org/.+").matches()) {
-                // these are finallinks and not direct downloadable...
+                // these could be either direct downloadable OR contain redirects...
                 br.setFollowRedirects(false);
-                getPage(parameter);
-                // this will redirect within html (old fashion meta refresh or javascript to the proper uid
-                final String newparm = br.getRegex("http-equiv=('|\")refresh\\1 content=('|\")\\d+; url=(.*?)\\2").getMatch(2);
-                if (newparm != null) {
-                    parameter = newparm;
+                final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createGetRequest(parameter));
+                if (con.getContentType().startsWith("image/")) {
+                    finallink = parameter;
+                } else {
+                    br.followConnection();
+                    // this will redirect within html (old fashion meta refresh or javascript to the proper uid
+                    final String newparm = br.getRegex("http-equiv=('|\")refresh\\1 content=('|\")\\d+; url=(.*?)\\2").getMatch(2);
+                    if (newparm != null) {
+                        parameter = newparm;
+                    }
                 }
             }
-            br.setFollowRedirects(true);
-            getPage(parameter.replace("postimage/", "postimg/") + (parameter.endsWith("/") ? "" : "/") + "full/");
-            if (!br.getURL().contains("/full")) {
-                try {
+            if (finallink == null) {
+                br.setFollowRedirects(true);
+                getPage(parameter.replace("postimage/", "postimg/") + (parameter.endsWith("/") ? "" : "/") + "full/");
+                if (!br.getURL().contains("/full")) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
+                    return decryptedLinks;
                 }
-                return decryptedLinks;
-            }
-            finallink = br.getRegex("rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("<img src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
-            }
-            if (finallink == null) {
-                finallink = br.getRegex("\\'(http://s\\d+\\.postim(age|g)\\.org/[a-z0-9]+/[^<> \"/]*?)\\'").getMatch(0);
-            }
-            if (finallink != null) {
-                String fuid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
-                String filename = new Regex(finallink, "/([^/]+)$").getMatch(0);
-                finalfilename = fuid + "-" + filename;
+                finallink = br.getRegex("rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("<img src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
+                }
+                if (finallink == null) {
+                    finallink = br.getRegex("\\'(http://s\\d+\\.postim(age|g)\\.org/[a-z0-9]+/[^<> \"/]*?)\\'").getMatch(0);
+                }
+                if (finallink != null) {
+                    String fuid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+                    String filename = new Regex(finallink, "/([^/]+)$").getMatch(0);
+                    finalfilename = fuid + "-" + filename;
+                }
             }
         } else if (parameter.contains("imagetwist.com/")) {
             br.getPage(parameter);
