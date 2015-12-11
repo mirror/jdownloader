@@ -466,29 +466,26 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private void decryptLikes() throws Exception {
         br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(parameter.replace("/likes", "")) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
-        Map<String, Object> data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+        data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
         String user_id = getString(data, "id");
+        String nextPage = null;
         final long items_count = ((Number) data.get("likes_count")).intValue();
         final long pages = items_count / max_entries_per_request;
         int page = 1;
         setFilePackage(username, playlistname);
         while (true) {
             logger.info("Decrypting page " + page + " of probably " + pages);
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return;
             }
-            String next_page_url = "https://api.soundcloud.com/e1/users/" + user_id + "/likes?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + ((page - 1) * max_entries_per_request) + "&order=favorited_at&page_number=" + page + "&page_size=" + max_entries_per_request + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+            final String next_page_url = nextPage != null ? nextPage : "https://api.soundcloud.com/e1/users/" + user_id + "/likes?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + ((page - 1) * max_entries_per_request) + "&order=favorited_at&page_number=" + page + "&page_size=" + max_entries_per_request + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
 
             br.getPage(next_page_url);
 
             List<Map<String, Object>> collection = parseCollection();
             page++;
-            if (collection == null || collection.size() < max_entries_per_request) {
+            if (collection == null || (nextPage = (String) data.get("next_href")) == null) {
                 break;
             }
 
@@ -500,7 +497,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
         url_username = new Regex(parameter, "/groups/(.+)").getMatch(0);
         resolve(parameter);
-        Map<String, Object> data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+        data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
 
         final String group_id = getString(data, "id");
         if (group_id == null) {
@@ -515,13 +512,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         setFilePackage(username, playlistname);
         while (true) {
             logger.info("Decrypting page " + current_page + " of probably " + pages);
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return;
             }
             final String next_page_url = "https://api.soundcloud.com/groups/" + group_id + "/tracks?app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + offset + "&order=approved_at";
             br.getPage(next_page_url);
@@ -540,10 +533,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         logger.info("Seems like we decrypted all likes-pages - stopping");
     }
 
-    public List<Map<String, Object>> parseCollection() throws Exception, DecrypterException, ParseException, IOException {
-        Map<String, Object> response = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
-        List<Map<String, Object>> collection = (List<Map<String, Object>>) response.get("collection");
+    private Map<String, Object> data = null;
 
+    public List<Map<String, Object>> parseCollection() throws Exception, DecrypterException, ParseException, IOException {
+        data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+        final List<Map<String, Object>> collection = (List<Map<String, Object>>) data.get("collection");
         return parseTracklist(collection);
     }
 
