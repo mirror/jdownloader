@@ -201,9 +201,15 @@ public class SaveTv extends PluginForHost {
     private static final long     API_FORMAT_HQ_L                           = 5;
     private static final long     API_FORMAT_LQ_L                           = 4;
     /* Save.tv internal quality/format constants (IDs) for the website */
-    private static final String   SITE_FORMAT_HD                            = "2";
-    private static final String   SITE_FORMAT_HQ                            = "0";
-    private static final String   SITE_FORMAT_LQ                            = "1";
+    private static final String   SITE_FORMAT_HD                            = "6";
+    private static final String   SITE_FORMAT_HQ                            = "5";
+    private static final String   SITE_FORMAT_LQ                            = "4";
+    /*
+     * In some cases it is good to have these values in Long.
+     */
+    private static final long     SITE_FORMAT_HD_L                          = 6;
+    private static final long     SITE_FORMAT_HQ_L                          = 5;
+    private static final long     SITE_FORMAT_LQ_L                          = 4;
 
     /* Other */
     private static Object         LOCK                                      = new Object();
@@ -310,7 +316,7 @@ public class SaveTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> sourcelist = getVideoSourcelist(entries);
+            final ArrayList<Object> sourcelist = jsonGetVideoSourcelist(entries);
             entries = (LinkedHashMap<String, Object>) entries.get("TELECASTDETAILS");
             parseFilenameInformation_site(link, entries);
             parseQualityTag(link, sourcelist);
@@ -591,7 +597,7 @@ public class SaveTv extends PluginForHost {
                 dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
             }
         } else {
-            final String quality_best = getBestQualityId(sourcelist);
+            final String quality_best = jsonGetBestQualityId(sourcelist);
             final boolean isHDAvailable = sourcelist.size() == 3 || quality_best.equals("");
             switch (selected_video_format) {
             case 0:
@@ -606,7 +612,7 @@ public class SaveTv extends PluginForHost {
                 break;
             case 2:
                 if (sourcelist.size() == 2) {
-                    /* Mobile available (should alyways be the case) */
+                    /* Mobile version available (should alyways be the case!) */
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_LQ);
                 } else {
                     dl.setProperty(PROPERTY_quality, STATE_QUALITY_HQ);
@@ -618,14 +624,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
@@ -740,24 +739,18 @@ public class SaveTv extends PluginForHost {
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
         } else {
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            /*
-             * TODO: Maybe add a check here so that we do not have to perform anywebsite request(s) to find out of the desired quality is
-             * available.
-             */
-            // final ArrayList<Object> sourcelist = getVideoSourcelist(entries);
-            // final String best_quality_id = getBestQualityId(sourcelist);
+            final ArrayList<Object> sourcelist = jsonGetVideoSourcelist(entries);
+            final String best_quality_id = jsonGetBestQualityId(sourcelist);
             stv_request_selected_format_value = site_get_format_request_value();
-
-            try {
-                site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
-            } catch (final PluginException e) {
-                /* Hmmmm strange! */
-                if (this.br.containsHTML("Interner Serverfehler. Kommt dieser kontinuierlich, bitten wir Sie Ihre Aktion erst später zu wiederholen.")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
-                }
-                throw e;
+            final boolean desired_format_is_available = jsonIsDesiredFormatAvailable(sourcelist, Long.parseLong(stv_request_selected_format_value));
+            if (!desired_format_is_available) {
+                logger.info("Desired format is not available - falling back to highest format/quality possible");
+                stv_request_selected_format_value = best_quality_id;
             }
+
+            site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
+                /* Extremely rare case */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
             }
             /* Ads-Free version not available - handle it */
@@ -1392,18 +1385,49 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public static String getBestQualityId(final ArrayList<Object> sourcelist) {
+    public static String jsonGetBestQualityId(final ArrayList<Object> sourcelist) {
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
-        return Long.toString(DummyScriptEnginePlugin.toLong(entries.get("RECORDINGFORMATID"), API_FORMAT_HQ_L));
+        return Long.toString(jsonGetRecordingformatid(entries));
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static ArrayList<Object> getVideoSourcelist(final LinkedHashMap<String, Object> sourcemap) {
+    public static ArrayList<Object> jsonGetVideoSourcelist(final LinkedHashMap<String, Object> sourcemap) {
         if (sourcemap == null) {
             return null;
         }
         final ArrayList<Object> sourcelist = (ArrayList) sourcemap.get("ARRALLOWDDOWNLOADFORMATS");
         return sourcelist;
+    }
+
+    public static long jsonGetRecordingformatid(final LinkedHashMap<String, Object> entries) {
+        final long recordingformatid;
+        final Object recordingformatido = entries.get("RECORDINGFORMATID");
+        if (recordingformatido == null) {
+            recordingformatid = API_FORMAT_HQ_L;
+        } else if (recordingformatido instanceof Double) {
+            recordingformatid = (long) ((Double) recordingformatido).doubleValue();
+        } else {
+            recordingformatid = ((Long) recordingformatido).longValue();
+        }
+        return recordingformatid;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static boolean jsonIsDesiredFormatAvailable(final ArrayList<Object> sourcelist, final long desiredFormat) {
+        if (sourcelist == null) {
+            return false;
+        }
+        LinkedHashMap<String, Object> entries = null;
+        long format_id = -1;
+
+        for (final Object vsorceo : sourcelist) {
+            entries = (LinkedHashMap<String, Object>) vsorceo;
+            format_id = jsonGetRecordingformatid(entries);
+            if (format_id == desiredFormat) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1868,6 +1892,22 @@ public class SaveTv extends PluginForHost {
             result = (String) jsonobject;
         }
         return result;
+    }
+
+    private static long websiteGetLowestRecordingormatid() {
+        return SITE_FORMAT_LQ_L;
+    }
+
+    private static long websiteGetHighestRecordingormatid() {
+        return SITE_FORMAT_HD_L;
+    }
+
+    private static long apiGetLowestRecordingormatid() {
+        return API_FORMAT_LQ_L;
+    }
+
+    private static long apiGetHighestRecordingormatid() {
+        return API_FORMAT_LQ_L;
     }
 
     @Override
