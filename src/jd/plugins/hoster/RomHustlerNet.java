@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/file/\\d+/[A-Za-z0-9/\\+=%]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/(?:file|download)/\\d+/[A-Za-z0-9/\\+=%]+" }, flags = { 0 })
 public class RomHustlerNet extends PluginForHost {
 
     public RomHustlerNet(PluginWrapper wrapper) {
@@ -63,16 +63,13 @@ public class RomHustlerNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
         prepBrowser(br);
-        if (downloadLink.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         final String decrypterLink = downloadLink.getStringProperty("decrypterLink", null);
         br.getPage(decrypterLink);
         String jslink = br.getRegex("\"(/js/cache[a-z0-9\\-]+\\.js)\"").getMatch(0);
         if (jslink != null) {
             try {
                 br.cloneBrowser().getPage("http://romhustler.net" + jslink);
-            } catch (final Throwable e) {
+            } catch (final Exception e) {
             }
         }
         // don't worry about filename... set within decrypter should be good until download starts.
