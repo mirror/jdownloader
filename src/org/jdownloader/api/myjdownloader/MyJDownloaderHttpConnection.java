@@ -237,19 +237,19 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     }
                     this.sendResponseHeaders();
                     if (useDeChunkingOutputStream) {
-                        this.os = new DeChunkingOutputStream(new GZIPOutputStream(new CipherOutputStream(new ChunkedOutputStream(clientSocket.getOutputStream(), 16384), cipher)));
+                        this.os = new DeChunkingOutputStream(new GZIPOutputStream(new CipherOutputStream(new ChunkedOutputStream(getRawOutputStream(), 16384), cipher)));
                     } else {
-                        this.os = new GZIPOutputStream(new CipherOutputStream(new ChunkedOutputStream(clientSocket.getOutputStream(), 16384), cipher));
+                        this.os = new GZIPOutputStream(new CipherOutputStream(new ChunkedOutputStream(getRawOutputStream(), 16384), cipher));
                     }
                 } else {
                     this.sendResponseHeaders();
                     this.os = new OutputStream() {
-                        private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
+                        private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getRawOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                            // public void close() throws IOException {
-                            // };
+                                                                  // public void close() throws IOException {
+                                                                  // };
 
-                        };
+                                                              };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
                         {
@@ -288,7 +288,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
             if (sendHeaders) {
                 this.sendResponseHeaders();
             }
-            this.os = super.os;
+            this.os = getRawOutputStream();
         }
         return this.os;
     }

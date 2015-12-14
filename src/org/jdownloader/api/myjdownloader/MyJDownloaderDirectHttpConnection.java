@@ -19,7 +19,9 @@ public class MyJDownloaderDirectHttpConnection extends MyJDownloaderHttpConnecti
         try {
             return super.parseRequestLine();
         } catch (IOException e) {
-            clientSocket.close();
+            if (clientSocket != null) {
+                clientSocket.close();
+            }
             throw e;
         }
     }
@@ -28,7 +30,9 @@ public class MyJDownloaderDirectHttpConnection extends MyJDownloaderHttpConnecti
     protected String preProcessRequestLine(String requestLine) throws IOException {
         final RequestLineParser parser = RequestLineParser.parse(requestLine.getBytes("UTF-8"));
         if (parser == null || parser.getSessionToken() == null || !StringUtils.equals(CFG_MYJD.CFG.getUniqueDeviceIDV2(), parser.getDeviceID())) {
-            clientSocket.close();
+            if (clientSocket != null) {
+                clientSocket.close();
+            }
             throw new IOException("Invalid direct my.jdownloader.org request: " + requestLine);
         }
         return super.preProcessRequestLine(requestLine);
