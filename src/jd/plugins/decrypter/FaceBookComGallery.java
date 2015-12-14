@@ -663,7 +663,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (fpName == null) {
             fpName = "Facebook_photos_stream_of_user_" + user;
         }
-        fpName = Encoding.htmlDecode(fpName.trim());
+        fpName = Encoding.htmlDecode(fpName.trim().replaceFirst("\\s*\\|\\s*Facebook$", ""));
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
 
@@ -1164,15 +1164,19 @@ public class FaceBookComGallery extends PluginForDecrypt {
         String profileid = br.getRegex("data\\-gt=\"\\&#123;\\&quot;profile_owner\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
         if (profileid == null) {
             profileid = br.getRegex("PageHeaderPageletController_(\\d+)\"").getMatch(0);
-        }
-        if (profileid == null) {
-            profileid = br.getRegex("data\\-profileid=\"(\\d+)\"").getMatch(0);
+            if (profileid == null) {
+                profileid = br.getRegex("data\\-profileid=\"(\\d+)\"").getMatch(0);
+                if (profileid == null) {
+                    profileid = br.getRegex("\\\\\"profile_id\\\\\":(\\d+)").getMatch(0);
+                }
+            }
         }
         return profileid;
     }
 
     private String getajaxpipeToken() {
-        return br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
+        final String ajaxpipe = br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
+        return ajaxpipe;
     }
 
     public static String getRev(final Browser br) {
