@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "https?://(?:www\\.)?vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "https?://(?:www\\.)?vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+(?:/\\d+/\\d+)?" }, flags = { 0 })
 public class VvvvidIt extends PluginForDecrypt {
 
     public VvvvidIt(PluginWrapper wrapper) {
@@ -48,9 +48,22 @@ public class VvvvidIt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final Regex urlinfo = new Regex(parameter, "vvvvid\\.it/#\\!show/(\\d+)/([a-z0-9\\-]+)");
+        final Regex urlinfo_2 = new Regex(parameter, "vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+/(\\d+)/(\\d+)");
         final String show_id_str = urlinfo.getMatch(0);
+        final String season_id_str = urlinfo_2.getMatch(0);
+        final String episode_videoid = urlinfo_2.getMatch(1);
+
+        long episode_videoid_target = 0;
+        if (episode_videoid != null) {
+            episode_videoid_target = Long.parseLong(episode_videoid);
+        }
         final long show_id = Long.parseLong(show_id_str);
-        final long season_id = show_id - 10;
+        final long season_id;
+        if (season_id_str != null) {
+            season_id = Long.parseLong(season_id_str);
+        } else {
+            season_id = show_id - 10;
+        }
         this.br.getPage("http://www.vvvvid.it/vvvvid/ondemand/" + show_id + "/info/");
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getHttpConnection().getContentType().contains("json")) {
             /* Offline or geo-blocked */
@@ -85,14 +98,20 @@ public class VvvvidIt extends PluginForDecrypt {
             final String source_type = (String) entries.get("source_type");
             final String hls_master = (String) entries.get("embed_info");
 
+            final long videoid = DummyScriptEnginePlugin.toLong(entries.get("video_id"), -1);
             final long season = DummyScriptEnginePlugin.toLong(entries.get("season_number"), -1);
             final long episode = DummyScriptEnginePlugin.toLong(entries.get("number"), -1);
 
-            if (inValidate(show_title) || inValidate(title) || inValidate(source_type) || inValidate(hls_master) || season == -1 || episode == -1) {
+            if (inValidate(show_title) || inValidate(title) || inValidate(source_type) || inValidate(hls_master) || season == -1 || episode == -1 || videoid == -1) {
                 return null;
             }
 
             if (!source_type.equals("video")) {
+                continue;
+            }
+
+            if (episode_videoid_target > 0 && videoid != episode_videoid_target) {
+                /* User wants one specified episode only --> Skip all others! */
                 continue;
             }
 

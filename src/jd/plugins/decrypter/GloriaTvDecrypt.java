@@ -171,14 +171,7 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
 
             dl.setProperty("decryptedfilename", filename);
             dl.setProperty("LINKDUPEID", "gloriatv_" + fid + "_" + filename);
-
-            try {
-                dl.setContentUrl(parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(parameter);
-            }
-
+            dl.setContentUrl(parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
@@ -191,7 +184,7 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
     }
 
     /** Log in the account of the hostplugin */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "static-access" })
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("gloria.tv");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
