@@ -58,9 +58,15 @@ public class VvvvidIt extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String hls_master = downloadLink.getStringProperty("directlink", null);
+        String hls_master = downloadLink.getStringProperty("directlink", null);
         if (hls_master == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Workaround for very old content e.g. http://www.vvvvid.it/#!show/52/gto-great-teacher-onizuka/50/392657/lesson-1 */
+        /* Thanks: http://andrealazzarotto.com/2014/02/22/scaricare-i-contenuti-audio-e-video-presenti-nelle-pagine-web/comment-page-7/ */
+        if (!hls_master.startsWith("http")) {
+            /* http://wowzaondemand.top-ix.org/videomg/_definst_/mp4:Dynit/GTO/GTO_Ep01.mp4/playlist.m3u8 */
+            hls_master = "http://wowzaondemand.top-ix.org/videomg/_definst_/mp4:" + hls_master + "/playlist.m3u8";
         }
         this.br.getPage(hls_master);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
