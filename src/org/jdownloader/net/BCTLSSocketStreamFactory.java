@@ -66,7 +66,8 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
             if (clientExtensions == null) {
                 clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
             }
-            if (StringUtils.isNotEmpty(hostName)) {
+            // rfc3546
+            if (StringUtils.isNotEmpty(hostName) && !hostName.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
                 final ByteArrayOutputStream extBaos = new ByteArrayOutputStream();
                 final DataOutputStream extOS = new DataOutputStream(extBaos);
                 final byte[] hostnameBytes = this.hostName.getBytes("UTF-8");
