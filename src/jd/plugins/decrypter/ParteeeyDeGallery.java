@@ -18,57 +18,62 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parteeey.de" }, urls = { "https?://(www\\.)?parteeey\\.de/galerie/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/[A-Za-z0-9\\-_]+\\d+$" }, flags = { 0 })
 public class ParteeeyDeGallery extends PluginForDecrypt {
 
     public ParteeeyDeGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static Object LOCK = new Object();
-
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String gal_ID = new Regex(param.toString(), "(\\d+)$").getMatch(0);
         if (gal_ID == null) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + param.toString());
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
+            final DownloadLink offline = this.createOfflinelink(param.toString());
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("parteeey.de"));
+        if (aa == null) {
+            return decryptedLinks;
+        }
+
+        try {
+            jd.plugins.hoster.ParteeeyDe.login(this.br, aa, false);
+        } catch (final Throwable e) {
+            return decryptedLinks;
+        }
+
         /* Show 1000 links per page --> Usually we'll only get one page */
         final String parameter = param.toString() + "?oF=f.date&oD=asc&eP=1000";
-        if (!getUserLogin(param, true)) {
-            logger.info("Invalid logindata, stopping... " + parameter);
-            return decryptedLinks;
-        }
         br.getPage(parameter);
-        if (br.containsHTML(">Seite nicht gefunden<")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
+        if (br.containsHTML(">Seite nicht gefunden<") || this.br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        final String url_name = new Regex(parameter, "parteeey\\.de/galerie/(.+)").getMatch(0);
+        String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (fpName == null) {
+            fpName = url_name;
+        }
         int currentMaxPage = 1;
-        final String[] pages = br.getRegex("p=\\d+\">(\\d+)</a>").getColumn(0);
+        final String[] pages = br.getRegex("\\?p=(\\d+)").getColumn(0);
         if (pages != null && pages.length != 0) {
             for (final String page : pages) {
                 final int p = Integer.parseInt(page);
@@ -77,17 +82,15 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 }
             }
         }
+        /* TODO: Fix that: currentMaxPage */
+        currentMaxPage = 1;
+
         int counter = 1;
         final DecimalFormat df = new DecimalFormat("0000");
         for (int i = 1; i <= currentMaxPage; i++) {
-
-            try {
-                if (this.isAbort()) {
-                    logger.info("User aborted decryption for link: " + parameter);
-                    return decryptedLinks;
-                }
-            } catch (final Throwable e) {
-
+            if (this.isAbort()) {
+                logger.info("User aborted decryption for link: " + parameter);
+                return decryptedLinks;
             }
 
             logger.info("Decrypting site " + i + " / " + currentMaxPage);
@@ -95,70 +98,43 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 br.getPage(parameter + "&p=" + i);
             }
             /* Grab thumbnails and build finallinks --> Is very fast */
-            final String[] links = br.getRegex("data\\-src=\"(tmp/thumb/[^<>\"]*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            final String[] htmls = this.br.getRegex("<div class=\"thumbnail\">(.*?)</ul> </div> </div>").getColumn(0);
+            if (htmls == null || htmls.length == 0) {
+                break;
             }
-            for (final String singleLink : links) {
-                final String fname = new Regex(singleLink, "[a-z0-9]{32}/[a-z0-9]+_[a-z0-9]+_[a-z0-9]+_(.+)").getMatch(0);
-                if (fname == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+            for (final String html : htmls) {
+                final String linkid = new Regex(html, "filId:[\t\n\r ]*?(\\d+)").getMatch(0);
+                final String url_thumb = new Regex(html, "img data\\-src=\"(tmp/[^<>\"]*?)\"").getMatch(0);
+                if (linkid == null) {
                     return null;
                 }
-                final String finallink = "directhttp://https://www.parteeey.de/files/mul/galleries/" + gal_ID + "/" + fname;
-                final String finalfilename = df.format(counter) + "_" + new Regex(finallink, "([^<>\"/]*?)$").getMatch(0);
-                final DownloadLink dl = createDownloadlink(finallink);
-                dl.setFinalFileName(finalfilename);
+                // final String finallink = "directhttp://https://www.parteeey.de/files/mul/galleries/" + gal_ID + "/" + url_fname;
+                final String url_fname = jd.plugins.hoster.ParteeeyDe.getFilenameFromDirecturl(url_thumb);
+                final String finalname;
+                if (url_fname != null) {
+                    finalname = df.format(counter) + "_" + url_fname;
+                } else {
+                    finalname = df.format(counter) + "_" + linkid;
+                }
+                final DownloadLink dl = createDownloadlink("http://parteeeydecrypted/" + linkid);
+                dl.setName(finalname);
+                dl.setProperty("decrypterfilename", finalname);
+                dl.setProperty("thumburl", url_thumb);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
                 counter++;
             }
         }
 
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        if (decryptedLinks.size() == 0) {
+            return null;
         }
+
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
-    private boolean getUserLogin(final CryptedLink param, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            final Object ret = this.getPluginConfig().getProperty("cookies", null);
-            if (ret != null && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                    final String key = cookieEntry.getKey();
-                    final String value = cookieEntry.getValue();
-                    this.br.setCookie("https://www.parteeey.de/", key, value);
-                }
-            } else {
-                String username = this.getPluginConfig().getStringProperty("username", null);
-                String password = this.getPluginConfig().getStringProperty("password", null);
-                if (username == null || password == null) {
-                    username = getUserInput("Username for parteeey.de?", param);
-                    password = getUserInput("Password for parteeey.de?", param);
-                }
-                br.postPage("https://www.parteeey.de/login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(username) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(password));
-                if (br.containsHTML("Ihre Login\\-Daten sind ungültig") || br.getCookie("http://www.parteeey.de/", "identifier") == null) {
-                    return false;
-                }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies("http://www.parteeey.de/");
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                this.getPluginConfig().setProperty("cookies", cookies);
-                this.getPluginConfig().setProperty("username", username);
-                this.getPluginConfig().setProperty("password", password);
-            }
-            this.getPluginConfig().save();
-            return true;
-        }
-    }
 }

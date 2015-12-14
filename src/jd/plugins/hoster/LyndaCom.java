@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -44,28 +47,51 @@ public class LyndaCom extends PluginForHost {
         return "http://www.lynda.com/aboutus/lotterms.aspx";
     }
 
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String videoid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        downloadLink.setName(videoid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().endsWith(".html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex ids = br.getRegex("ucPlayerNew_player\\.uSId=\\'0,\\\\\\'([^<>\"]*?)\\\\\\',\\\\\\'([^<>\"]*?)\\\\\\'\\';");
-        final String var1 = ids.getMatch(0);
-        final String var2 = ids.getMatch(1);
+        br.getPage("http://www.lynda.com/player/popup?lpk4=" + videoid);
+        final String courseid = this.br.getRegex("var courseId = (\\d+);").getMatch(0);
+        if (courseid == null || courseid.equals("0")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null || var1 == null || var2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = courseid + "_" + videoid;
+        }
         br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
-        final String postData = "{\"args\":[" + fid + ",1,0,\"" + var1 + "\",\"" + var2 + "\",15,2]}";
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPageRaw("http://www.lynda.com/WebServices/Public/P.asmx/M2", postData);
-        DLLINK = br.getRegex("\"u\":\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        this.br.getPage("http://www.lynda.com/ajax/player?videoId=" + videoid + "&courseId=" + courseid + "&type=video&_=" + System.currentTimeMillis());
+        try {
+            long max_bitrate = 0;
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("PrioritizedStreams");
+            entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+            for (final Map.Entry<String, Object> entry : entries.entrySet()) {
+                final String bitrate_str = entry.getKey();
+                final String url = (String) entry.getValue();
+                final long bitrate_temp = Long.parseLong(bitrate_str);
+                if (bitrate_temp > max_bitrate) {
+                    max_bitrate = bitrate_temp;
+                    DLLINK = url;
+                }
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".f4v";
+        if (ext == null || ext.length() > 5) {
+            ext = ".f4v";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -73,10 +99,11 @@ public class LyndaCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

@@ -49,11 +49,9 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         /* Article offline | no video (only text) */
-        if (br.containsHTML("class=\"missing\"") || (!br.containsHTML("videojs\\(") && !br.containsHTML("jplayer\\-audio\\-"))) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        if (br.containsHTML("class=\"missing\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
@@ -66,8 +64,8 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
         String[][] finfo = null;
         final String fid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         if (getUserLogin(false)) {
-            br.getPage("http://gloria.tv/?media=" + fid + "&action=download&language=KiaLEJq2fBR&particular=&_=" + System.currentTimeMillis());
-            final String[] temp = br.getRegex("<div class=\"paragraph lines1 strong(.*?)</a></div>").getColumn(0);
+            br.getPage("http://gloria.tv/?media=" + fid + "&mission=download&language=KiaLEJq2fBR&particular=&_=" + System.currentTimeMillis());
+            final String[] temp = br.getRegex("(<li><a href=\".*?</a></li>)").getColumn(0);
             finfo = new String[temp.length][4];
             int counter = 0;
             for (String info : temp) {
@@ -75,7 +73,13 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
                 String lengtscale = null;
                 String downloadlink = new Regex(info, "href=\"([^<>\"]*?)\"").getMatch(0);
                 if (info.contains("Download video")) {
-                    final String filesize = new Regex(info, "(\\d{1,5}(?:\\.\\d{1,3})? (?:MB|GB))").getMatch(0);
+                    String filesize = new Regex(info, "(\\d{1,5}(?:\\.\\d{1,3})?(?:MB|GB))").getMatch(0);
+                    if (filesize == null) {
+                        filesize = new Regex(info, "(\\d{1,5}(?:\\.\\d{1,3})?(?:M|G))").getMatch(0);
+                        if (filesize != null) {
+                            filesize += "B";
+                        }
+                    }
                     lengtscale = new Regex(info, "(\\d{2,3}x\\d{2,3})\\)").getMatch(0);
                     qualinfo[1] = "mp4";
                     qualinfo[3] = filesize;
@@ -149,8 +153,12 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
             }
             final String finallink = Encoding.htmlDecode(sinfo[0]);
             final String type = sinfo[1];
-            final String lengtscale = sinfo[2];
+            String lengtscale = sinfo[2];
             final String fsize = sinfo[3];
+            /* E.g. for mp3s */
+            if (lengtscale == null) {
+                lengtscale = "0";
+            }
             final String filename = videotitle + "_" + type + "_" + lengtscale + "." + type;
             final DownloadLink dl = createDownloadlink("http://gloriadecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000));
             dl.setProperty("free_directlink", finallink);

@@ -44,6 +44,7 @@ public class VvvvidIt extends PluginForDecrypt {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        this.br.setFollowRedirects(true);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final Regex urlinfo = new Regex(parameter, "vvvvid\\.it/#\\!show/(\\d+)/([a-z0-9\\-]+)");
