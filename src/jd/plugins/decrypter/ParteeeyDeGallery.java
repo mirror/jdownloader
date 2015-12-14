@@ -116,10 +116,12 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 } else {
                     finalname = df.format(counter) + "_" + linkid;
                 }
-                final DownloadLink dl = createDownloadlink("http://parteeeydecrypted/" + linkid);
+                final String contenturl = "https://www.parteeey.de/#mulFile-" + linkid;
+                final DownloadLink dl = createDownloadlink(contenturl);
                 dl.setName(finalname);
                 dl.setProperty("decrypterfilename", finalname);
                 dl.setProperty("thumburl", url_thumb);
+                dl.setContentUrl(contenturl);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
                 counter++;

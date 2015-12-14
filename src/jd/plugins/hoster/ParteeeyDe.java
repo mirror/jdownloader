@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "http://parteeeydecrypted/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/(?:#mulFile\\-|galerie/datei\\?p=)\\d+" }, flags = { 2 })
 public class ParteeeyDe extends PluginForHost {
 
     public ParteeeyDe(PluginWrapper wrapper) {
@@ -72,9 +72,10 @@ public class ParteeeyDe extends PluginForHost {
         // }
         prepBR(this.br);
         String url_thumb = link.getStringProperty("thumburl", null);
-        String filename = link.getStringProperty("decrypterfilename", null);
+        String filename = null;
+        String filename_decrypter = link.getStringProperty("decrypterfilename", null);
         final String linkid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        if (filename == null || linkid == null || url_thumb == null) {
+        if (linkid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.br.postPage("https://www.parteeey.de/Ajax/mulFileInfo", "filId=" + linkid + "&width=1119&height=690&filIdPrevious=&filIdNext=&_iconPath=images%2Ficons%2FLumina");
@@ -84,7 +85,7 @@ public class ParteeeyDe extends PluginForHost {
         } catch (final Throwable e) {
         }
         if (DLLINK == null) {
-            if (!url_thumb.startsWith("http")) {
+            if (url_thumb != null && !url_thumb.startsWith("http")) {
                 url_thumb = "https://www.parteeey.de/" + url_thumb;
             }
             DLLINK = url_thumb;
@@ -93,9 +94,16 @@ public class ParteeeyDe extends PluginForHost {
                 DLLINK = "https://www.parteeey.de/" + DLLINK;
             }
         }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String url_filename = getFilenameFromDirecturl(DLLINK);
         if (url_filename != null) {
             filename = url_filename;
+        } else if (filename_decrypter != null) {
+            filename = filename_decrypter;
+        } else {
+            filename = linkid + ".jpg";
         }
         // DLLINK = "" + linkid;
         link.setFinalFileName(filename);
