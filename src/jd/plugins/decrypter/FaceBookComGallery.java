@@ -254,6 +254,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             fpName = "Facebook_video_albums_of_user_" + new Regex(PARAMETER, "facebook\\.com/(.*?)/photos_albums").getMatch(0);
         }
         fpName = Encoding.htmlDecode(fpName.trim());
+        fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         boolean dynamicLoadAlreadyDecrypted = false;
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
@@ -310,6 +312,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             for (String link : links) {
                 link = Encoding.htmlDecode(link);
                 final DownloadLink dl = createDownloadlink(link);
+                fp.add(dl);
                 decryptedLinks.add(dl);
                 distribute(dl);
             }
@@ -319,11 +322,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 break;
             }
         }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
-
     }
 
     private void decryptPhotosAll() throws Exception {
@@ -347,7 +345,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             fpName = "Facebook_photos_of_of_user_" + user;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        final FilePackage fp = FilePackage.getInstance();
+        fp = FilePackage.getInstance();
         fp.setName(fpName);
         boolean dynamicLoadAlreadyDecrypted = false;
         String lastfirstID = "";
@@ -405,7 +403,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 break;
             }
         }
-        fp.addLinks(decryptedLinks);
 
     }
 
@@ -438,7 +435,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             fpName = "Facebook_profile_of_user_" + user;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        final FilePackage fp = FilePackage.getInstance();
+        fp = FilePackage.getInstance();
         fp.setName(fpName);
         // Use this as default as an additional fail safe
         long totalPicsNum = MAX_PICS_DEFAULT;
@@ -452,15 +449,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
         prepBrPhotoGrab();
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption stopped at request " + i);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not supported in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption stopped at request " + i);
+                return;
             }
-
             int currentMaxPicCount = 20;
 
             String[] links;
@@ -532,7 +524,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 break;
             }
         }
-        fp.addLinks(decryptedLinks);
         logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
         if (decryptedPicsNum < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
             logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
@@ -664,7 +655,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             fpName = "Facebook_photos_stream_of_user_" + user;
         }
         fpName = Encoding.htmlDecode(fpName.trim().replaceFirst("\\s*\\|\\s*Facebook$", ""));
-        final FilePackage fp = FilePackage.getInstance();
+        fp = FilePackage.getInstance();
         fp.setName(fpName);
 
         boolean dynamicLoadAlreadyDecrypted = false;
@@ -765,7 +756,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 timesNochange = 0;
             }
         }
-        fp.addLinks(decryptedLinks);
         if (this.decryptedLinks.size() < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
             logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
         }
@@ -779,6 +769,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         for (final String picID : photoids) {
             final DownloadLink dl = createPicDownloadlink(picID);
             distribute(dl);
+            fp.add(dl);
             decryptedLinks.add(dl);
         }
     }
@@ -796,6 +787,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             dl.setLinkID(videoid);
             dl.setName(videoid + ".mp4");
             dl.setAvailable(true);
+            fp.add(dl);
             decryptedLinks.add(dl);
         }
     }
@@ -809,6 +801,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
     }
+
+    private FilePackage fp = null;
 
     private void decryptGroupsPhotos() throws Exception {
         String fpName = getPageTitle();
@@ -827,7 +821,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             fpName = "Facebook__groups_photos_of_user_" + user;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        final FilePackage fp = FilePackage.getInstance();
+        fp = FilePackage.getInstance();
         fp.setName(fpName);
         boolean dynamicLoadAlreadyDecrypted = false;
         final ArrayList<String> allids = new ArrayList<String>();
@@ -843,13 +837,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
         prepBrPhotoGrab();
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption stopped at request " + i);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not supported in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption stopped at request " + i);
+                return;
             }
 
             int currentMaxPicCount = 20;
@@ -930,7 +920,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 break;
             }
         }
-        fp.addLinks(decryptedLinks);
         logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
         if (decryptedPicsNum < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
             logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
@@ -973,6 +962,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
             final DownloadLink dl = createPicDownloadlink(image_id);
             dl.setProperty("is_private", true);
             dl.setProperty("thread_fbid", thread_fbid);
+            if (fp != null) {
+                fp.add(dl);
+            }
             this.decryptedLinks.add(dl);
         }
         // entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "payload/imagesData");
@@ -1018,7 +1010,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             fpName = "Facebook_photos_of_of_user_" + user;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        final FilePackage fp = FilePackage.getInstance();
+        fp = FilePackage.getInstance();
         fp.setName(fpName);
         boolean dynamicLoadAlreadyDecrypted = false;
         final ArrayList<String> allids = new ArrayList<String>();
@@ -1034,13 +1026,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
         prepBrPhotoGrab();
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption stopped at request " + i);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not supported in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption stopped at request " + i);
+                return;
             }
 
             int currentMaxPicCount = 20;
@@ -1081,11 +1069,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     allids.add(picID);
                     final DownloadLink dl = createPicDownloadlink(picID);
                     fp.add(dl);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not supported in old 0.9.581 Stable
-                    }
+                    distribute(dl);
                     decryptedLinks.add(dl);
                     decryptedPicsNum++;
                 }
@@ -1114,7 +1098,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 break;
             }
         }
-        fp.addLinks(decryptedLinks);
         logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
         if (decryptedPicsNum < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
             logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
