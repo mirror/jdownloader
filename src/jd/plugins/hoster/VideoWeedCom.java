@@ -16,15 +16,15 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,6 +34,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -44,8 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class VideoWeedCom extends PluginForHost {
@@ -93,12 +92,13 @@ public class VideoWeedCom extends PluginForHost {
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setConnectTimeout(180 * 1000);
         br.setReadTimeout(180 * 1000);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        checkForThis();
         if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -144,6 +144,14 @@ public class VideoWeedCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         return AvailableStatus.TRUE;
+    }
+
+    private final void checkForThis() throws Exception {
+        // some bullshit here 20151121
+        final Form f = br.getFormbyKey("stepkey");
+        if (f != null) {
+            br.submitForm(f);
+        }
     }
 
     @Override
@@ -266,7 +274,7 @@ public class VideoWeedCom extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;
