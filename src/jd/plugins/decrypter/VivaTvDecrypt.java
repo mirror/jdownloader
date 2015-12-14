@@ -98,45 +98,44 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             /* Fallback to url-packagename */
             fpName = new Regex(this.parameter, "https?://[^/]+/(.+)").getMatch(0);
         }
-        final String json = this.br.getRegex("window\\.pagePlaylist = (\\[\\{.*?\\}\\])").getMatch(0);
         ArrayList<Object> ressourcelist = null;
         LinkedHashMap<String, Object> entries = null;
         try {
+            final String json = this.br.getRegex("window\\.pagePlaylist = (\\[\\{.*?\\}\\])").getMatch(0);
             ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+
+            for (final Object object : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) object;
+                final String path = (String) entries.get("path");
+                final String url_mrss = (String) entries.get("mrss");
+                final String title = (String) entries.get("title");
+                final String subtitle = (String) entries.get("subtitle");
+                final String video_token = (String) entries.get("video_token");
+                final String mgid = jd.plugins.hoster.VivaTv.getMGIDOutOfURL(url_mrss);
+                if (url_mrss == null || title == null || video_token == null || mgid == null) {
+                    throw new DecrypterException("Decrypter broken for link: " + parameter);
+                }
+                final String contenturl;
+                if (path != null) {
+                    contenturl = "http://" + this.br.getHost() + path;
+                } else {
+                    contenturl = this.parameter;
+                }
+                String temp_filename = title;
+                if (subtitle != null) {
+                    temp_filename += " - " + subtitle;
+                }
+                temp_filename += jd.plugins.hoster.VivaTv.default_ext;
+
+                final DownloadLink dl = mgidSingleVideoGetDownloadLink(mgid);
+                dl.setLinkID(video_token);
+                dl.setName(temp_filename);
+                dl.setAvailable(true);
+                dl.setContentUrl(contenturl);
+                this.decryptedLinks.add(dl);
+            }
         } catch (final Throwable e) {
-            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
             return;
-        }
-
-        for (final Object object : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) object;
-            final String path = (String) entries.get("path");
-            final String url_mrss = (String) entries.get("mrss");
-            final String title = (String) entries.get("title");
-            final String subtitle = (String) entries.get("subtitle");
-            final String video_token = (String) entries.get("video_token");
-            final String mgid = jd.plugins.hoster.VivaTv.getMGIDOutOfURL(url_mrss);
-            if (url_mrss == null || title == null || video_token == null || mgid == null) {
-                throw new DecrypterException("Decrypter broken for link: " + parameter);
-            }
-            final String contenturl;
-            if (path != null) {
-                contenturl = "http://" + this.br.getHost() + path;
-            } else {
-                contenturl = this.parameter;
-            }
-            String temp_filename = title;
-            if (subtitle != null) {
-                temp_filename += " - " + subtitle;
-            }
-            temp_filename += jd.plugins.hoster.VivaTv.default_ext;
-
-            final DownloadLink dl = mgidSingleVideoGetDownloadLink(mgid);
-            dl.setLinkID(video_token);
-            dl.setName(temp_filename);
-            dl.setAvailable(true);
-            dl.setContentUrl(contenturl);
-            this.decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fpName = Encoding.htmlDecode(fpName.trim());
@@ -494,7 +493,9 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             }
             title = doFilenameEncoding(title);
             title = title + this.default_ext;
-            final DownloadLink dl = mgidSingleVideoGetDownloadLink(item_mgid);
+            // final DownloadLink dl = mgidSingleVideoGetDownloadLink(item_mgid);
+            final String url_hosterplugin = getViacomHostUrl(item_mgid);
+            final DownloadLink dl = this.createDownloadlink(url_hosterplugin);
             dl.setProperty("decryptedfilename", title);
             dl.setProperty("mainlink", this.parameter);
             dl.setName(title);

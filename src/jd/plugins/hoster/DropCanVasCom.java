@@ -65,11 +65,17 @@ public class DropCanVasCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML(">The file you requested could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">The file you requested could not be found") || this.br.containsHTML("class=\"canvasNotAvailable\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex(">Please wait while we fetch your download</h3>([^<>\"]*?)<br />").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
-        if (filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setName(Encoding.htmlDecode(filename));
         return AvailableStatus.TRUE;
     }
@@ -88,14 +94,18 @@ public class DropCanVasCom extends PluginForHost {
                 final Regex dlInfo = new Regex(downloadLink.getDownloadURL(), "dropcanvas\\.com/([a-z0-9]+)/(\\d+)");
                 br.postPage("http://dropcanvas.com/download/getDownloadLink", "albumId=" + dlInfo.getMatch(0) + "&indx=" + dlInfo.getMatch(1));
                 DLLINK = br.getRegex("\"downloadLink\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (DLLINK == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 DLLINK = DLLINK.replace("\\", "");
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("\"error\":\"Unknown error\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "Waittime error, please contact our support!");
+            if (br.containsHTML("\"error\":\"Unknown error\"")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Waittime error, please contact our support!");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", DLLINK);

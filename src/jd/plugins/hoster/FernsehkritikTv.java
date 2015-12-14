@@ -788,6 +788,8 @@ public class FernsehkritikTv extends PluginForHost {
             url_videoid = "Pantoffel-TV";
         } else if (url_videoid.matches("ps\\d+")) {
             url_videoid = "Pressesch(l)au";
+        } else if (url_videoid.matches("studio(?:\\-)?\\d+")) {
+            url_videoid = "Das Studio";
         } else {
             /* url_name_without_episodenumber should already be okay - simply remove '-' and that's it. */
             url_videoid = url_videoid.replace("-", "");
@@ -795,6 +797,9 @@ public class FernsehkritikTv extends PluginForHost {
                 url_videoid = url_videoid.substring(0, url_videoid.length() - url_episodenumber.length());
             }
         }
+        /* Should start uppercase */
+        final String first_char_uppercase = url_videoid.substring(0, 1).toUpperCase();
+        url_videoid = first_char_uppercase + url_videoid.substring(1);
         return url_videoid;
     }
 
@@ -836,7 +841,9 @@ public class FernsehkritikTv extends PluginForHost {
                 formattedFilename = formattedFilename.replace("*date*", EMPTY_FILENAME_INFORMATION);
             }
         }
-        if (formattedFilename.contains("*episodenumber*") && episodenumber != null) {
+        if (episodenumber.equals(EMPTY_FILENAME_INFORMATION)) {
+            formattedFilename = formattedFilename.replace("Folge *episodenumber* -", EMPTY_FILENAME_INFORMATION);
+        } else if (formattedFilename.contains("*episodenumber*")) {
             formattedFilename = formattedFilename.replace("*episodenumber*", episodenumber);
         }
         if (formattedFilename.contains("*date*") && formattedDate != null) {
