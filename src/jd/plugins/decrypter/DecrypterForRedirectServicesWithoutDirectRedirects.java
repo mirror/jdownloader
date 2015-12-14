@@ -654,6 +654,12 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 }
             } else if (parameter.contains("xxxporn88.com/")) {
                 finallink = this.br.getRegex("loading_player\\(\\'([^<>\"]*?)\\'").getMatch(0);
+                if (finallink == null) {
+                    finallink = this.br.getRegex("source[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"/]*?)\\',[\t\n\r ]*?redirect").getMatch(0);
+                }
+                if (finallink == null) {
+                    finallink = this.br.getRegex("source[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"/]{15,})\\'").getMatch(0);
+                }
                 if (finallink != null) {
                     finallink = Encoding.Base64Decode(finallink);
                 }

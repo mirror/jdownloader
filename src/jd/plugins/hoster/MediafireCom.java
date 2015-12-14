@@ -554,7 +554,7 @@ public class MediafireCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (con.getResponseCode() == 401) { // Special handling, intercepted by ISP
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unauthorized, retry later", 30 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "401 Unauthorized (possible ISP blockade), retry later", 30 * 60 * 1000l);
             }
             this.dl.startDownload();
         }

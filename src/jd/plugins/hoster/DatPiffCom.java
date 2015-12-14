@@ -101,6 +101,9 @@ public class DatPiffCom extends PluginForHost {
             filename = br.getRegex("<span>Download Track<em>([^<>\"]*?)</em>").getMatch(0);
         }
         if (filename == null) {
+            filename = br.getRegex("name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
             final String downloadButton = br.getRegex("(?-s)iframe src=\"(https?://.*?embed/.*?/\\?downloadbutton=\\d+)").getMatch(0);
             if (downloadButton != null) {
                 filename = br.getRegex("property=\"og:url\" content=\".*?\\.com/(.*?)\\.\\d+\\.html?").getMatch(0);
@@ -112,10 +115,6 @@ public class DatPiffCom extends PluginForHost {
             }
         }
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!link.getDownloadURL().contains(".php?id=")) {
-            logger.warning("downID not found, link is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -134,6 +133,9 @@ public class DatPiffCom extends PluginForHost {
         if (dllink == null) {
             if (br.containsHTML(CURRENTLYUNAVAILABLE)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, CURRENTLYUNAVAILABLETEXT, 3 * 60 * 60 * 1000l);
+            }
+            if (!downloadLink.getDownloadURL().contains(".php?id=")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable");
             }
             String downloadButton = br.getRegex("(?-s)iframe src=\"(https?://.*?embed/.*?/\\?downloadbutton=\\d+)").getMatch(0);
             if (downloadButton != null) {

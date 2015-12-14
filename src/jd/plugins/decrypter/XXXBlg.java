@@ -26,8 +26,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
@@ -56,9 +54,7 @@ public class XXXBlg extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "xxx\\-blog\\.to/(.+)").getMatch(0));
             decryptedLinks.add(offline);
             return decryptedLinks;
@@ -71,7 +67,7 @@ public class XXXBlg extends PluginForDecrypt {
             } else {
                 Form form = br.getForm(0);
                 if (form == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    return null;
                 }
                 dLink = createDownloadlink(form.getAction(null));
                 if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/)")) {
@@ -117,8 +113,8 @@ public class XXXBlg extends PluginForDecrypt {
                 }
             }
             if (decryptedLinks.size() == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Failed to find any downloadable content");
+                return decryptedLinks;
             }
 
             if (fpname != null) {

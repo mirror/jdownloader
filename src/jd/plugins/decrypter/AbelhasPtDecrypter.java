@@ -116,30 +116,13 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
 
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
-            final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            try {
-                dl.setContentUrl(parameter);
-            } catch (Throwable e1) {
-                // jd09
-            }
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("ico/adult_medium\\.png\"")) {
             /* Adult link */
             final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
+            dl.setContentUrl(param.getCryptedUrl());
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -147,15 +130,7 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         } else if (!br.containsHTML("class=\"fileinfo tab\"|id=\"fileDetails\"")) {
             /* Link redirected to mainpage or category page --> Offline */
-            final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -226,6 +201,9 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                 String[] linkinfo = br.getRegex(" class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
                 if (linkinfo == null || linkinfo.length == 0) {
                     linkinfo = br.getRegex("class=\"filename\">(.*?)class=\"directFileLink\"").getColumn(0);
+                }
+                if (linkinfo == null || linkinfo.length == 0) {
+                    linkinfo = br.getRegex("class=\"filerow fileItemContainer\"(.*?)</ul>[\t\n\r ]*?</div>[\t\n\r ]*?</div>").getColumn(0);
                 }
                 if (linkinfo == null || linkinfo.length == 0) {
                     linkinfo = br.getRegex("class=\"filerow fileItemContainer\"(.*?)class=\"fileCommentsAction\"").getColumn(0);

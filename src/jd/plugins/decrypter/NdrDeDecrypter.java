@@ -80,10 +80,8 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         br.getPage(url_json);
         /* Offline | livestream | no stream */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("cid:[\t\n\r ]*?\"livestream")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
@@ -96,8 +94,8 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             title = getJson("trackTitle");
         }
         if (title == null || date == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Failed to find any downloadable content");
+            return decryptedLinks;
         }
         final String date_formatted = formatDate(date);
         final String availablequalitiestext = br.getRegex("\\.,([a-z,]+),\\.mp4\\.csmil/master\\.m3u8").getMatch(0);

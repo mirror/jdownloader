@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -54,8 +54,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megafile.org" }, urls = { "https?://(www\\.)?megafile\\.org/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class MegafileOrg extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -63,11 +63,11 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://ForDevsToPlayWith.com";
+    private static final String            COOKIE_HOST                     = "http://megafile.org";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(ForDevsToPlayWith\\.com)";
+    private static final String            DOMAINS                         = "(megafile\\.org)";
 
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
@@ -90,7 +90,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
     private static final boolean           ENABLE_RANDOM_UA                = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = false;
 
     /* Waittime stuff */
     private static final boolean           WAITFORCED                      = false;
@@ -99,15 +99,15 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final int               WAITSECONDSFORCED               = 5;
 
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                     = true;
-    private static final int               FREE_MAXCHUNKS                  = 0;
-    private static final int               FREE_MAXDOWNLOADS               = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME             = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS          = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
+    private static final boolean           FREE_RESUME                     = false;
+    private static final int               FREE_MAXCHUNKS                  = 1;
+    private static final int               FREE_MAXDOWNLOADS               = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME             = false;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS          = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 1;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME          = false;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 1;
 
     /* Supported linktypes */
     private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
@@ -138,14 +138,14 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                            = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.1.6<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.1.5<br />
      * Tags: Script, template<br />
-     * mods:<br />
+     * mods: doFree[small change on 'download1' Form]<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia recaptcha<br />
+     * captchatype: solvemedia<br />
      * other:<br />
      */
 
@@ -175,7 +175,7 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public MegafileOrg(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -299,9 +299,6 @@ public class XFileSharingProBasic extends PluginForHost {
                     }
                 }
             }
-        }
-        if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
@@ -472,6 +469,8 @@ public class XFileSharingProBasic extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
+                download1.remove("method_free");
+                download1.put("method_free", "Free Download >>");
                 submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
