@@ -29,6 +29,7 @@ context_password_msg=Ange lösenord för att extrahera %s1.
 context_password_msg2=Ange lösenord för att extrahera %s1. Föreslagna lösenord: %s2
 context_password_msg2_multi=Ange lösenord. Föreslagna lösenord: %s1
 context_password_msg_multi=Ange lösenord
+contextmenu_abort=Avbryt Extrahering
 contextmenu_autodeletefiles='Radera akrivfiler' är aktiverad
 contextmenu_autodeletelinks='Ta bort länkar från nerladdningslistan' aktiverad
 contextmenu_autoextract=Autoextrahering aktiverad
