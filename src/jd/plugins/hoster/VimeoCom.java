@@ -47,6 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -411,6 +412,10 @@ public class VimeoCom extends PluginForHost {
         // qx[5] = fileSize (\d [a-zA-Z]{2})
         // qx[6] = Codec
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
+        if (configURL == null) {
+            // can be within json on the given page now.. but this is easy to just request again raz20151215
+            configURL = JSonUtils.getJson(ibr, "config_url");
+        }
         if (ibr.containsHTML("iconify_down_b")) {
             /* E.g. video 1761235 */
             /* download button.. does this give you all qualities? If not we should drop this. */
