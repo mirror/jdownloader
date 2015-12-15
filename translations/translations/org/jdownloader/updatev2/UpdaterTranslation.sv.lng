@@ -69,5 +69,6 @@ update_dialog_news_button=Öppna ändringslogg
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Uppdatering(ar) tillgängliga
 update_dialog_yes=Ja (rekommenderas)
+update_done_close_in_TIME=Installation klar. Avsluta om %s1
 update_in_next_session=Avbryt och fråga inte igen förän efter nästa omstart
 updatedplugins=Tillägg har uppdaterats.\nDu kör redan den senaste versionen av JDownloader.
