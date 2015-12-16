@@ -331,7 +331,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             extPws.add(query.getExtractPassword());
         }
         final HashSet<String> finalExtPws = extPws;
-        final BooleanStatus finalExtractStatus = query.isAutoExtract() ? BooleanStatus.TRUE : BooleanStatus.FALSE;
+        final BooleanStatus finalExtractStatus = BooleanStatus.convert(query.isAutoExtract());
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
             @Override
@@ -369,9 +369,17 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                         dlLink.setDownloadPassword(query.getDownloadPassword());
                     }
                 }
-                if (query.isAutostart()) {
+                switch (BooleanStatus.convert(query.isAutostart())) {
+                case TRUE:
                     link.setAutoConfirmEnabled(true);
                     link.setAutoStartEnabled(true);
+                    break;
+                case FALSE:
+                    link.setAutoConfirmEnabled(false);
+                    link.setAutoStartEnabled(false);
+                    break;
+                default:
+                    break;
                 }
 
                 if (!BooleanStatus.UNSET.equals(finalExtractStatus)) {
@@ -387,8 +395,15 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         };
         lcj.setCrawledLinkModifierPrePackagizer(modifier);
 
-        if (query.isDeepDecrypt()) {
+        switch (BooleanStatus.convert(query.isDeepDecrypt())) {
+        case TRUE:
             lcj.setDeepAnalyse(true);
+            break;
+        case FALSE:
+            lcj.setDeepAnalyse(false);
+            break;
+        default:
+            break;
         }
 
         if (StringUtils.isNotEmpty(query.getDestinationFolder()) || StringUtils.isNotEmpty(query.getPackageName())) {
