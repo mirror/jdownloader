@@ -120,6 +120,7 @@ public class PornerBrosCom extends PluginForHost {
             }
         }
         if (DLLINK == null) {
+            final String[] qualities = { "1080", "720", "480", "360", "240" };
             String availablequalities = br.getRegex("\\}\\)\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
             final String lid = br.getRegex("<button data-id=\"(\\d+)\"").getMatch(0);
             if (lid == null) {
@@ -128,12 +129,27 @@ public class PornerBrosCom extends PluginForHost {
             if (availablequalities != null) {
                 availablequalities = availablequalities.replace(",", "+");
             } else {
-                /* fallback */
-                availablequalities = "480+360+240";
+                availablequalities = "";
+                /* fallback - first try to find possible qualities */
+                for (final String quality : qualities) {
+                    if (this.br.containsHTML(">" + quality + "p") && !this.br.containsHTML(quality + "p • N//A")) {
+                        if (!availablequalities.equals("")) {
+                            availablequalities += "+";
+                        }
+                        availablequalities += quality;
+                    }
+                }
+                /*
+                 * We failed completely - fallback to the basic qualities only. 480p does NOT belong to the basic qualities. NEVER use
+                 * values if which you do not know whther the video is available in them or not! If you do that, corresponding final URLs
+                 * will end up in 404.
+                 */
+                if (availablequalities.equals("")) {
+                    availablequalities = "360+240";
+                }
             }
             this.br.getHeaders().put("Origin", "http://www.pornerbros.com");
             br.postPage("http://tkn.pornerbros.com/" + lid + "/desktop/" + availablequalities, "");
-            final String[] qualities = { "1080", "720", "480", "360", "240" };
             for (final String quality : qualities) {
                 DLLINK = br.getRegex("\"" + quality + "\".*?\"token\":\"(http:[^<>\"]*?)\"").getMatch(0);
                 if (DLLINK != null) {
