@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -116,7 +117,7 @@ public class VivaTv extends PluginForHost {
         String ext = null;
         String description = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        prepBR(this.br);
         // final String main_url = link.getStringProperty("mainlink", null);
         this.mgid = getMGIDOutOfURL(link.getDownloadURL());
         this.feed_url = mgidGetFeedurlForMgid(this.mgid);
@@ -133,7 +134,8 @@ public class VivaTv extends PluginForHost {
             }
             /* Maybe filename was set in decypter already --> No reason to access feed here! */
             br.getPage(this.feed_url);
-            if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() < 300) {
+            final int responsecode = this.br.getHttpConnection().getResponseCode();
+            if (responsecode == 404 || responsecode == 500 || this.br.toString().length() < 300) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = feedGetFilename();
@@ -318,6 +320,12 @@ public class VivaTv extends PluginForHost {
         /* Our rtmp resuming isn't the best plus we got a lot of different servers so better disable resume to prevent errors. */
         rtmp.setResume(false);
         ((RTMPDownload) dl).startDownload();
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.setAllowedResponseCodes(500);
+        br.setFollowRedirects(true);
+        return br;
     }
 
     private String feedGetTitle() {

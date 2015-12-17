@@ -69,7 +69,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         JDUtilities.getPluginForHost("viva.tv");
         default_ext = jd.plugins.hoster.VivaTv.default_ext;
         parameter = param.toString();
-        br.setFollowRedirects(true);
+        jd.plugins.hoster.VivaTv.prepBR(this.br);
         if (parameter.matches(type_viva) || parameter.matches(type_mtv_de)) {
             decryptMtvGermanyPlaylists();
         } else if (parameter.matches(type_southpark_de_episode)) {
