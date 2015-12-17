@@ -86,7 +86,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
 
         if (id_owner == null) {
-            return null;
+            // this isn't a error persay! check https://www.instagram.com/israbox/
+            return decryptedLinks;
         }
 
         int page = 0;
