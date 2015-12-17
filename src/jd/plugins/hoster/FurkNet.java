@@ -51,24 +51,35 @@ public class FurkNet extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (br.containsHTML("Slots limit for free downloads")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        if (br.containsHTML("servers for direct downloading:<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible for registered users");
+        if (br.containsHTML("Slots limit for free downloads")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
+        if (br.containsHTML("servers for direct downloading:<")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible for registered users");
+        }
         Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         form.remove(null);
         String waittime = br.getRegex("id=\"free_dl_countdown\">(\\d+)</div>").getMatch(0);
         if (waittime != null) {
             // waittime
             int tt = Integer.parseInt(waittime);
             sleep(tt * 1001l, link);
-        } else
+        } else {
             sleep(60001l, link);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
-            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.followConnection();
-            if (br.containsHTML(">File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">File not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.containsHTML("Slots limit for free downloads")) {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60000);
@@ -77,14 +88,21 @@ public class FurkNet extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("This torrent is not ready for")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This is NO VALID LINK!"); }
-        if (br.getURL().contains("https://www.furk.net/login?url=/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File not found") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("This torrent is not ready for")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This is NO VALID LINK!");
+        }
+        if (br.getURL().contains("furk.net/login")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) :: Furk.net</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("document\\.location\\.href='/registration\\?pfile=(.*?)'\"").getMatch(0);
@@ -96,10 +114,16 @@ public class FurkNet extends PluginForHost {
             }
         }
         String filesize = br.getRegex("align=\"center\">File size: <b>(.*?)</b><br").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

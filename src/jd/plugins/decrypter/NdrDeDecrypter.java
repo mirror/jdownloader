@@ -114,8 +114,8 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             v_rest = afneg_replacement.getMatch(2);
         }
         if (availablequalitiestext == null || v_id == null || v_year == null || v_id == null || v_rest == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Found no downloadable content: " + parameter);
+            return decryptedLinks;
         }
         String subtitle_url = br.getRegex("\"(/media/ut\\d+\\.xml)\"").getMatch(0);
         if (subtitle_url != null) {

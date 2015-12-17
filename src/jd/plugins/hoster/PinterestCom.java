@@ -122,6 +122,9 @@ public class PinterestCom extends PluginForHost {
 
                 prepAPIBR(this.br);
                 br.getPage(pin_ressource_url);
+                if (isOffline(this.br, pin_id)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("page_info");
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("resource_data_cache");
@@ -131,7 +134,7 @@ public class PinterestCom extends PluginForHost {
                 br.clearCookies(MAINPAGE);
             } else {
                 br.getPage(link.getDownloadURL());
-                if (br.getHttpConnection().getResponseCode() == 404) {
+                if (isOffline(this.br, pin_id)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 /*
@@ -207,6 +210,16 @@ public class PinterestCom extends PluginForHost {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         br.getHeaders().put("X-CSRFToken", csrftoken);
+    }
+
+    private static boolean isOffline(final Browser br, final String pin_id) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (!br.getURL().contains(pin_id)) {
+            /* Pin redirected to other pin --> initial pin is offline! */
+            return true;
+        }
+        return false;
     }
 
     @Override
