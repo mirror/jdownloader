@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:www\\.)?chip\\.de/video/[^/]+_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html" }, flags = { 0 })
 public class ChipDe extends PluginForHost {
 
     public ChipDe(PluginWrapper wrapper) {
@@ -57,21 +57,22 @@ public class ChipDe extends PluginForHost {
         return -1;
     }
 
-    private static final String           type_chip_de_file  = "http://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
-    private static final String           type_chip_eu_file  = "http://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
-    private static final String           type_chip_de_video = "https?://(?:www\\.)?chip\\.de/video/[^/]+_\\d+\\.html";
+    private static final String           type_chip_de_file         = "https?://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
+    private static final String           type_chip_eu_file         = "https?://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
+    private static final String           type_chip_de_video        = "https?://(?:www\\.)?chip\\.de/video/[^/]+_\\d+\\.html";
+    private static final String           type_chip_de_video_others = "https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html";
 
-    private static final boolean          video_use_API      = true;
+    private static final boolean          video_use_API             = true;
 
     /* Tags: kaltura player, medianac, api.medianac.com */
     /* Static values of their kaltura player configuration */
-    private static final String           kaltura_partner_id = "1741931";
-    private static final String           kaltura_uiconf_id  = "30910812";
-    private static final String           kaltura_sp         = "174193100";
-    private static final String           host_chip_de       = "chip.de";
+    private static final String           kaltura_partner_id        = "1741931";
+    private static final String           kaltura_uiconf_id         = "30910812";
+    private static final String           kaltura_sp                = "174193100";
+    private static final String           host_chip_de              = "chip.de";
 
-    private String                        DLLINK             = null;
-    private LinkedHashMap<String, Object> entries            = null;
+    private String                        DLLINK                    = null;
+    private LinkedHashMap<String, Object> entries                   = null;
 
     /**
      * <b>Information for file (software)-downloads:</b> <br />
@@ -128,7 +129,56 @@ public class ChipDe extends PluginForHost {
         link.setName(filename_url + "_" + linkid);
         /* Set linkid right away to avoid/identify duplicates! */
         link.setLinkID(linkid);
-        if (link.getDownloadURL().matches(type_chip_de_video)) {
+        if (link.getDownloadURL().matches(type_chip_de_file) || link.getDownloadURL().matches(type_chip_eu_file)) {
+
+            set_final_filename = false;
+            accessURL(link.getDownloadURL());
+            if (link.getDownloadURL().matches(type_chip_eu_file) && !this.br.containsHTML("class=\"downloadnow_button")) {
+                /* chip.eu url without download button --> No downloadable content --> URL is offline for us */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("\"pagetitle\":\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("\"dachzeile\":\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (filename == null) {
+                filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            String filesize_str = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
+            if (filesize_str == null) {
+                /* For the international chip websites! */
+                filesize_str = br.getRegex("<dt>(?:File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
+            }
+            if (filesize_str == null) {
+                filesize_str = br.getRegex("itemprop=\"fileSize\" content=\"([0-9\\.]+)\"").getMatch(0);
+            }
+            if (filesize_str != null) {
+                filesize_str = filesize_str.replace("GByte", "GB");
+                filesize = SizeFormatter.getSize(filesize_str);
+            }
+
+            /* Checksum is usually only available for chip.eu downloads! */
+            md5 = br.getRegex("<dt>(?:Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:|Kontrolní součet:|Szumma:|Suma kontrolna|Checksum|Kontrol toplamı:|校验码：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
+            date = this.br.getRegex("itemprop=\"datePublished\" datetime=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})\"").getMatch(0);
+            description = this.br.getRegex("description:\"([^<>\"]*?)\"").getMatch(0);
+
+            /*
+             * Include linkid in this case because otherwise links could be identified as duplicates / mirrors wrongly e.g.
+             * 
+             * http://download.chip.eu/en/Firefox_115074.html
+             * 
+             * http://download.chip.eu/en/Firefox_106534.html
+             */
+            if (filename == null) {
+                /* Last chance! */
+                filename = filename_url + "_" + linkid;
+            } else {
+                filename += "_" + linkid;
+            }
+
+        } else {
+            /* type_chip_de_video and type_chip_de_video_others */
+
             set_final_filename = true;
             String ext = null;
             if (video_use_API) {
@@ -137,7 +187,7 @@ public class ChipDe extends PluginForHost {
                 /* Not necessarily needed! */
                 br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
                 br.getHeaders().put("User-Agent", "Dalvik/2.1.0 (Linux; U; Android 5.0; Nexus 5 Build/LRX21O)");
-                accessURL("https://apps-rest.chip.de/api/v2/containerIdBeitrag/" + linkid + "/");
+                accesscontainerIdBeitrag(linkid);
                 if (this.br.containsHTML("\"error_message\"")) {
                     /*
                      * Usually that should be covered already as API will return 404 on offline content but let's double-check by this
@@ -146,6 +196,12 @@ public class ChipDe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                final String source_videoid = (String) DummyScriptEnginePlugin.walkJson(entries, "videos/{0}/containerIdBeitrag");
+                if (!link.getDownloadURL().matches(type_chip_de_video) && source_videoid != null) {
+                    /* User added an article which may or may not contain one (or multiple) videos. */
+                    accesscontainerIdBeitrag(source_videoid);
+                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                }
                 /*
                  * The directlinks returned by their API are quality-wise not the best (middle) but in case everysthing fails, we still have
                  * them and our users can still download the video :)
@@ -169,6 +225,10 @@ public class ChipDe extends PluginForHost {
                 if (inValidate(DLLINK)) {
                     logger.warning("Failed to find highest quality final downloadlink via kaltura player --> Fallback to API downloadlink");
                     DLLINK = dllink_fallback;
+                }
+                if (!link.getDownloadURL().matches(type_chip_de_video) && inValidate(DLLINK)) {
+                    /* Whatever the user added - there is no downloadable content! */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
                 accessURL(link.getDownloadURL());
@@ -212,51 +272,7 @@ public class ChipDe extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            set_final_filename = false;
-            accessURL(link.getDownloadURL());
-            if (link.getDownloadURL().matches(type_chip_eu_file) && !this.br.containsHTML("class=\"downloadnow_button")) {
-                /* chip.eu url without download button --> No downloadable content --> URL is offline for us */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("\"pagetitle\":\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("\"dachzeile\":\"([^<>\"]*?)\"").getMatch(0);
-            }
-            if (filename == null) {
-                filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            }
-            String filesize_str = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
-            if (filesize_str == null) {
-                /* For the international chip websites! */
-                filesize_str = br.getRegex("<dt>(?:File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
-            }
-            if (filesize_str == null) {
-                filesize_str = br.getRegex("itemprop=\"fileSize\" content=\"([0-9\\.]+)\"").getMatch(0);
-            }
-            if (filesize_str != null) {
-                filesize_str = filesize_str.replace("GByte", "GB");
-                filesize = SizeFormatter.getSize(filesize_str);
-            }
 
-            /* Checksum is usually only available for chip.eu downloads! */
-            md5 = br.getRegex("<dt>(?:Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:|Kontrolní součet:|Szumma:|Suma kontrolna|Checksum|Kontrol toplamı:|校验码：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
-            date = this.br.getRegex("itemprop=\"datePublished\" datetime=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})\"").getMatch(0);
-            description = this.br.getRegex("description:\"([^<>\"]*?)\"").getMatch(0);
-
-            /*
-             * Include linkid in this case because otherwise links could be identified as duplicates / mirrors wrongly e.g.
-             *
-             * http://download.chip.eu/en/Firefox_115074.html
-             *
-             * http://download.chip.eu/en/Firefox_106534.html
-             */
-            if (filename == null) {
-                /* Last chance! */
-                filename = filename_url + "_" + linkid;
-            } else {
-                filename += "_" + linkid;
-            }
         }
         date_formatted = formatDate(date);
         if (date_formatted != null) {
@@ -474,6 +490,10 @@ public class ChipDe extends PluginForHost {
             }
         }
         return dllink_temp;
+    }
+
+    private void accesscontainerIdBeitrag(final String containerIdBeitrag) throws PluginException, IOException {
+        accessURL("https://apps-rest.chip.de/api/v2/containerIdBeitrag/" + containerIdBeitrag + "/");
     }
 
     private void accessURL(final String url) throws PluginException, IOException {

@@ -65,17 +65,12 @@ public class MxCloudCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("<title>404 Error page|class=\"message\\-404\"|class=\"record\\-error record\\-404") || br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Offline link: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
@@ -97,9 +92,11 @@ public class MxCloudCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String previewLink = br.getRegex("\"(https?://stream\\d+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
-        if (previewLink != null) {
-            final String mp3link = previewLink.replace("/previews/", "/c/originals/");
+        final Regex originalinfo = this.br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]*?\\.mp3)\"");
+        final String previewLinkpart = originalinfo.getMatch(1);
+        if (previewLinkpart != null) {
+            /* TODO: Find a way to get that server dynamically */
+            final String mp3link = "https://stream19.mixcloud.com/c/originals/" + previewLinkpart;
             tempLinks.add(mp3link);
         }
 

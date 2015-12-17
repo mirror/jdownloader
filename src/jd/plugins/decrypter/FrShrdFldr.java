@@ -73,28 +73,22 @@ public class FrShrdFldr extends PluginForDecrypt {
 
         if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("This folder was deleted") || br.containsHTML("This folder is no longer available because of a claim")) {
             logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML(">You need owner\\'s permission to access this folder")) {
             logger.info("Link offline (no permissions): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("class=\"emptyFolderPlaceholder\"")) {
             logger.info("Link offline (empty): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
@@ -173,23 +167,33 @@ public class FrShrdFldr extends PluginForDecrypt {
                         logger.info("Decrypting page " + pagecounter + " of " + pages.size());
                         br.getPage(page);
                     }
-                    final String[] linkInfo = br.getRegex("<tr align=\"center\">(.*?)</tr>").getColumn(0);
+                    String[] linkInfo = br.getRegex("<tr align=\"center\">(.*?)</tr>").getColumn(0);
+                    if (linkInfo == null || linkInfo.length == 0) {
+                        /* E.g. video */
+                        linkInfo = br.getRegex("<div class=\"simpleTumbItem thumbWithPreview\">(.*?)</div>[\t\n\r ]*?</div>").getColumn(0);
+                    }
                     if (linkInfo == null || linkInfo.length == 0) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
                     for (final String singleInfo : linkInfo) {
                         final String dlink = new Regex(singleInfo, "\"(http://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?)\"").getMatch(0);
-                        final String filename = new Regex(singleInfo, "data\\-element=\"72\">([^<>\"]*?)<").getMatch(0);
+                        String filename = new Regex(singleInfo, "data\\-element=\"72\">([^<>\"]*?)<").getMatch(0);
+                        if (filename == null) {
+                            /* E.g. video */
+                            filename = new Regex(singleInfo, "class=\"bluelink\" target=\"_blank\">([^<>\"]*?)<").getMatch(0);
+                        }
                         final String filesize = new Regex(singleInfo, "<div class=\"itemSizeInfo\">([^<>\"]*?)</div>").getMatch(0);
-                        if (dlink == null || filename == null || filesize == null) {
+                        if (dlink == null || filename == null) {
                             logger.warning("Decrypter broken for link: " + parameter);
                             return null;
                         }
                         final DownloadLink fina = createDownloadlink(dlink);
                         fina.setName(Encoding.htmlDecode(filename.trim()));
                         fina.setProperty("decrypterfilename", filename);
-                        fina.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()).replace(",", "")));
+                        if (filesize != null) {
+                            fina.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()).replace(",", "")));
+                        }
                         /* Do NOT set available true because status is not known! */
                         // fina.setAvailable(true);
                         decryptedLinks.add(fina);

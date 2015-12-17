@@ -79,7 +79,7 @@ public class Porn5Com extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        if (filename == null) {
+        if (filename == null || "PORN5".equals(filename)) {
             filename = url_filename;
         }
         /* Check for multiple videoqualities --> Find highest quality */
