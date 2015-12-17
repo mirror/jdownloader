@@ -46,6 +46,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     private static final String     unsupported_urls                    = "https://(?:www\\.)?pinterest\\.com/(business/create/|android\\-app:/.+|ios\\-app:/.+)";
+    private static final boolean    force_api_usage                     = true;
 
     private ArrayList<DownloadLink> decryptedLinks                      = new ArrayList<DownloadLink>();
     private String                  parameter                           = null;
@@ -96,9 +97,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         }
         fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-        if (loggedIN) {
+        if (loggedIN || force_api_usage) {
             /* First, get the first 25 pictures from their site. */
-            decryptSite();
+            // decryptSite();
             final String board_id = br.getRegex("\"board_id\":[\t\n\r ]+\"(\\d+)\"").getMatch(0);
             String nextbookmark = br.getRegex("\"bookmarks\": \\[\"([^<>\"]{6,})\"").getMatch(0);
             final String source_url = new Regex(parameter, "pinterest\\.com(/.+)").getMatch(0);
@@ -112,9 +113,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 prepAPIBR(br);
-                String getpage = "http://www.pinterest.com/resource/BoardFeedResource/get/?source_url%s&data={\"options\":{\"board_id\":\"%s\",\"board_url\":\"%s\",\"page_size\":null,\"prepend\":true,\"access\":[],\"board_layout\":\"default\",\"bookmarks\":[\"%s\"]},\"context\":{}}";
-                getpage = String.format(getpage, source_url, board_id, source_url, nextbookmark);
-                getpage += "&_=" + System.currentTimeMillis();
+                String getpage = "https://www.pinterest.com/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22add_pin_rep_with_place%22%3Afalse%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22page_size%22%3A25%2C%22add_vase%22%3Atrue%2C%22access%22%3A%5B%5D%2C%22board_layout%22%3A%22default%22%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22prepend%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                 br.getPage(getpage);
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final ArrayList<Object> resource_data_list = (ArrayList) entries.get("resource_data_cache");
