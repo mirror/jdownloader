@@ -919,7 +919,7 @@ public class FernsehkritikTv extends PluginForHost {
         output = output.replace("\\", "∖");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
+        // output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
     }
