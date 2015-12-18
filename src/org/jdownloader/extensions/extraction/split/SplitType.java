@@ -40,7 +40,7 @@ public enum SplitType {
 
         @Override
         public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
+            final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches) + "$";
             return Pattern.compile(pattern);
         }
 
@@ -108,7 +108,7 @@ public enum SplitType {
 
         @Override
         public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
+            final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches) + "$";
             return Pattern.compile(pattern);
         }
 
@@ -185,7 +185,7 @@ public enum SplitType {
 
         @Override
         public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
+            final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches) + "$";
             return Pattern.compile(pattern);
         }
 
@@ -291,7 +291,7 @@ public enum SplitType {
 
         @Override
         public Pattern buildArchivePattern(String[] matches) {
-            final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches) + "$";
+            final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches) + "$";
             return Pattern.compile(pattern);
         }
 
@@ -352,6 +352,14 @@ public enum SplitType {
             return true;
         }
     };
+
+    protected String escapeRegex(String input) {
+        if (input.length() == 0) {
+            return "";
+        } else {
+            return Regex.escape(input);
+        }
+    }
 
     public abstract boolean matches(final String filePathOrName);
 

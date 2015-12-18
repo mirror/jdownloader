@@ -12,12 +12,13 @@ import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -46,7 +47,37 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         throw new WTFException("Archive should always have at least one link");
     }
 
-    public List<ArchiveFile> createPartFileList(String file, String pattern) {
+    protected String modifyPartFilePattern(String pattern) {
+        final HashSet<Character> unsafeChars = new HashSet<Character>();
+        for (final CrawledLink crawledLink : getLinks()) {
+            final PluginForHost defaultPlugin = crawledLink.gethPlugin();
+            if (defaultPlugin != null) {
+                final char[] fileNameReplaceMap = defaultPlugin.getFilenameReplaceMap();
+                if (fileNameReplaceMap != null) {
+                    for (final char replace : fileNameReplaceMap) {
+                        unsafeChars.add(Character.valueOf(replace));
+                    }
+                }
+            }
+        }
+        if (unsafeChars.size() > 0) {
+            final String filePathPattern = new Regex(pattern, "\\^\\\\Q(.*?)\\\\E").getMatch(0);
+            final File filePath = new File(filePathPattern);
+            final String fileNamePattern = filePath.getName();
+            String modifiedFilaNamePattern = fileNamePattern;
+            for (final Character unsafeChar : unsafeChars) {
+                modifiedFilaNamePattern = modifiedFilaNamePattern.replace(unsafeChar.toString(), "\\\\E.\\\\Q");
+            }
+            final String modifiedFilePathPattern = filePathPattern.replaceFirst(Pattern.quote(fileNamePattern) + "$", modifiedFilaNamePattern);
+            final String ret = pattern.replace("^\\Q" + filePathPattern + "\\E", "^\\Q" + modifiedFilePathPattern + "\\E");
+            return ret;
+        } else {
+            return pattern;
+        }
+    }
+
+    public List<ArchiveFile> createPartFileList(final String file, final String archivePartFilePattern) {
+        final String pattern = modifyPartFilePattern(archivePartFilePattern);
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         final CrawledPackage parentNode = getFirstPart().getParentNode();
         if (parentNode == null) {

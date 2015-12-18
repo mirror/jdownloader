@@ -51,7 +51,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\." + matches[1] + Regex.escape(matches[2]) + "\\d{" + matches[3].length() + "}" + Regex.escape(matches[4]) + "\\.rar";
+                return "\\." + matches[1] + escapeRegex(matches[2]) + "\\d{" + matches[3].length() + "}" + escapeRegex(matches[4]) + "\\.rar";
             }
         }
 
@@ -60,7 +60,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -133,7 +133,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -223,7 +223,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -326,7 +326,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, isMultiPart) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -453,7 +453,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -520,7 +520,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -587,7 +587,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -654,7 +654,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -720,7 +720,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -786,7 +786,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -852,7 +852,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -917,7 +917,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -982,7 +982,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -1047,7 +1047,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -1112,7 +1112,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -1173,7 +1173,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                final String pattern = "^" + Regex.escape(matches[0]) + buildIDPattern(matches, null) + "$";
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
                 return Pattern.compile(pattern);
             }
         }
@@ -1235,6 +1235,14 @@ public enum ArchiveType {
         }
 
     };
+
+    protected String escapeRegex(String input) {
+        if (input.length() == 0) {
+            return "";
+        } else {
+            return Regex.escape(input);
+        }
+    }
 
     public abstract ArchiveFormat getArchiveFormat();
 
