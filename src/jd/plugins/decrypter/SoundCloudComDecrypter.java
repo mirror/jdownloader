@@ -55,8 +55,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private final String            EXCEPTION_LINKOFFLINE         = "EXCEPTION_LINKOFFLINE";
+    private final String            EXCEPTION_LINKINVALID         = "EXCEPTION_LINKINVALID";
 
-    private final String            TYPE_INVALID                  = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
+    private final String            TYPE_INVALID                  = "https?://(www\\.)?soundcloud\\.com/(you|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/)($|/.*?)";
     private final Pattern           TYPE_API_PLAYLIST             = Pattern.compile("https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+");
     private final Pattern           TYPE_API_TRACK                = Pattern.compile("https?://(www\\.|m\\.)?api\\.soundcloud\\.com/tracks/\\d+(\\?secret_token=[A-Za-z0-9\\-_]+)?");
     private final Pattern           TYPE_SINGLE_SET               = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets/[A-Za-z0-9\\-_]+");
@@ -209,7 +210,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     }
                 }
             } catch (final DecrypterException e) {
-                if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
+                if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKINVALID)) {
+                    return decryptedLinks;
+                } else if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                     logger.info("Link offline (empty set-link): " + parameter);
                     final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
                     dl.setAvailable(false);
@@ -238,7 +241,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         parameter = originalLink.replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
         if (parameter.matches(TYPE_INVALID)) {
             logger.info("Invalid link: " + parameter);
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            throw new DecrypterException(EXCEPTION_LINKINVALID);
         }
         if (TYPE_SHORT.matcher(parameter).find()) {
             br.setFollowRedirects(false);
