@@ -164,15 +164,17 @@ public class VimeoComDecrypter extends PluginForDecrypt {
              * accessed via their 'player'-link with a specified Referer - if the referer is not given in such a case the site will say that
              * our video would be a private video.
              */
-            if ((parameter.matches(type_player_private) || parameter.matches(type_player)) && new_way_allowed) {
+            final String orgParam = param.toString();
+            if ((orgParam.matches(type_player_private) || orgParam.matches(type_player)) && new_way_allowed) {
                 if (vimeo_forced_referer != null) {
                     br.getHeaders().put("Referer", vimeo_forced_referer);
                 }
-                br.getPage(parameter);
+                br.getPage(orgParam);
                 if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(getJson("message"))) {
-                    decryptedLinks.add(createOfflinelink(parameter, ID, null));
+                    decryptedLinks.add(createOfflinelink(orgParam, ID, null));
                     return decryptedLinks;
                 }
+                parameter = orgParam;
                 final String owner_json = br.getRegex("\"owner\":\\{(.*?)\\}").getMatch(0);
                 if (owner_json != null) {
                     channelName = getJson(owner_json, "name");

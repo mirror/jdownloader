@@ -43,7 +43,11 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
     }
 
     public BlacklistEntry matches(Challenge<?> c) {
-        return matches(c, false);
+        if (c.isAccountLogin() || c.isCreatedInsideAccountChecker()) {
+            return null;
+        } else {
+            return matches(c, false);
+        }
     }
 
     private BlacklistEntry matches(Challenge<?> c, boolean bypasswhitelist) {

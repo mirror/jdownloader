@@ -152,14 +152,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[]   PATTERNS       = new Pattern[] {
 
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+                                                    /**
+                                                     * these patterns should split filename and fileextension (extension must include the
+                                                     * point)
+                                                     */
+                                                    // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin           lazyP          = null;
     /**
@@ -342,17 +342,15 @@ public abstract class PluginForHost extends Plugin {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
-        final int ct = getCaptchaTimeout();
-        c.setTimeout(ct);
+        c.setTimeout(getCaptchaTimeout());
         invalidateLastChallengeResponse();
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         link.addPluginProgress(progress);
-
+        final boolean isAccountLogin = c.isCreatedInsideAccountChecker() || c.isAccountLogin() || Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage());
         try {
-            final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+            if (isAccountLogin) {
                 /**
                  * account login -> do not use anticaptcha services
                  */
@@ -378,7 +376,7 @@ public abstract class PluginForHost extends Plugin {
             throw e;
         } catch (SkipException e) {
             LogSource.exception(logger, e);
-            if (getDownloadLink() != null) {
+            if (getDownloadLink() != null && !isAccountLogin) {
                 switch (e.getSkipRequest()) {
                 case BLOCK_ALL_CAPTCHAS:
                     CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
@@ -392,7 +390,6 @@ public abstract class PluginForHost extends Plugin {
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                     }
                     break;
-
                 case BLOCK_PACKAGE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(getDownloadLink().getParentNode()));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
@@ -903,16 +900,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
