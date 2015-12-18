@@ -59,6 +59,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
         final DownloadLink main = this.createDownloadlink("http://okdecrypted" + System.currentTimeMillis() + new Random().nextInt(1000000000));
         main.setLinkID(vid);
         main.setContentUrl(parameter);
+        main.setName(vid);
         if (jd.plugins.hoster.OkRu.isOffline(this.br)) {
             main.setAvailable(false);
         }

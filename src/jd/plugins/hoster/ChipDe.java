@@ -59,7 +59,8 @@ public class ChipDe extends PluginForHost {
 
     private static final String           type_chip_de_file         = "https?://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
     private static final String           type_chip_eu_file         = "https?://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
-    private static final String           type_chip_de_video        = "https?://(?:www\\.)?chip\\.de/video/[^/]+_\\d+\\.html";
+    public static final String            type_chip_de_video        = "https?://(?:www\\.)?chip\\.de/video/[^/]+_\\d+\\.html";
+    public static final String            type_chip_de_pictures     = "https?://(?:www\\.)?chip\\.de/bildergalerie/[^/]+_\\d+\\.html";
     private static final String           type_chip_de_video_others = "https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html";
 
     private static final boolean          video_use_API             = true;
@@ -132,7 +133,7 @@ public class ChipDe extends PluginForHost {
         if (link.getDownloadURL().matches(type_chip_de_file) || link.getDownloadURL().matches(type_chip_eu_file)) {
 
             set_final_filename = false;
-            accessURL(link.getDownloadURL());
+            accessURL(this.br, link.getDownloadURL());
             if (link.getDownloadURL().matches(type_chip_eu_file) && !this.br.containsHTML("class=\"downloadnow_button")) {
                 /* chip.eu url without download button --> No downloadable content --> URL is offline for us */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -164,9 +165,9 @@ public class ChipDe extends PluginForHost {
 
             /*
              * Include linkid in this case because otherwise links could be identified as duplicates / mirrors wrongly e.g.
-             * 
+             *
              * http://download.chip.eu/en/Firefox_115074.html
-             * 
+             *
              * http://download.chip.eu/en/Firefox_106534.html
              */
             if (filename == null) {
@@ -182,12 +183,8 @@ public class ChipDe extends PluginForHost {
             set_final_filename = true;
             String ext = null;
             if (video_use_API) {
-                /* Needed! */
-                br.setCustomCharset("UTF-8");
-                /* Not necessarily needed! */
-                br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
-                br.getHeaders().put("User-Agent", "Dalvik/2.1.0 (Linux; U; Android 5.0; Nexus 5 Build/LRX21O)");
-                accesscontainerIdBeitrag(linkid);
+                prepBRAPI(this.br);
+                accesscontainerIdBeitrag(this.br, linkid);
                 if (this.br.containsHTML("\"error_message\"")) {
                     /*
                      * Usually that should be covered already as API will return 404 on offline content but let's double-check by this
@@ -199,7 +196,7 @@ public class ChipDe extends PluginForHost {
                 final String source_videoid = (String) DummyScriptEnginePlugin.walkJson(entries, "videos/{0}/containerIdBeitrag");
                 if (!link.getDownloadURL().matches(type_chip_de_video) && source_videoid != null) {
                     /* User added an article which may or may not contain one (or multiple) videos. */
-                    accesscontainerIdBeitrag(source_videoid);
+                    accesscontainerIdBeitrag(this.br, source_videoid);
                     entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
                 }
                 /*
@@ -231,7 +228,7 @@ public class ChipDe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
-                accessURL(link.getDownloadURL());
+                accessURL(this.br, link.getDownloadURL());
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
                 date = this.br.getRegex("\"publishDateTime\":\"(\\d{4}\\-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+\\d{2}:\\d{2})\"").getMatch(0);
                 DLLINK = videos_kaltura_getDllink();
@@ -492,11 +489,11 @@ public class ChipDe extends PluginForHost {
         return dllink_temp;
     }
 
-    private void accesscontainerIdBeitrag(final String containerIdBeitrag) throws PluginException, IOException {
-        accessURL("https://apps-rest.chip.de/api/v2/containerIdBeitrag/" + containerIdBeitrag + "/");
+    public static void accesscontainerIdBeitrag(final Browser br, final String containerIdBeitrag) throws PluginException, IOException {
+        accessURL(br, "https://apps-rest.chip.de/api/v2/containerIdBeitrag/" + containerIdBeitrag + "/");
     }
 
-    private void accessURL(final String url) throws PluginException, IOException {
+    public static void accessURL(final Browser br, final String url) throws PluginException, IOException {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(url);
@@ -511,6 +508,15 @@ public class ChipDe extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    public static final Browser prepBRAPI(final Browser br) {
+        /* Needed! */
+        br.setCustomCharset("UTF-8");
+        /* Not necessarily needed! */
+        br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
+        br.getHeaders().put("User-Agent", "Dalvik/2.1.0 (Linux; U; Android 5.0; Nexus 5 Build/LRX21O)");
+        return br;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

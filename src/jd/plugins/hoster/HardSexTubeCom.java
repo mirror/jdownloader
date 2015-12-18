@@ -38,17 +38,27 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hardsextube.com" }, urls = { "http://(www\\.)?hardsextube\\.com/(video|embed)/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotporn.com", "hardsextube.com" }, urls = { "http://(www\\.)?hardsextube\\.com/(video|embed)/\\d+|https?://(?:www\\.)?gotporn\\.com/[a-z0-9\\-]+/video\\-\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
 public class HardSexTubeCom extends PluginForHost {
 
     public HardSexTubeCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.hardsextube.com/");
+        this.enablePremium("http://www.gotporn.com/");
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("hardsextube.com".equals(getHost())) {
+            if (host == null || "hardsextube.com".equals(host)) {
+                return "gotporn.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.hardsextube.com/register/";
+        return "http://www.gotporn.com/register/";
     }
 
     @Override
@@ -58,15 +68,15 @@ public class HardSexTubeCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.hardsextube.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
+        link.setUrlDownload("http://www.gotporn.com/video/video-" + new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0));
     }
 
     private static final String NORESUME                           = "NORESUME";
     private boolean             only_downloadable_via_free_account = false;
-    private final boolean       enable_site                        = false;
+    private final boolean       enable_site                        = true;
     private final boolean       enable_embed                       = false;
     private final boolean       enable_embed_2                     = false;
-    private final boolean       enable_mobile                      = true;
+    private final boolean       enable_mobile                      = false;
     private String              dllink                             = null;
 
     /*
@@ -82,6 +92,8 @@ public class HardSexTubeCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        /* Make sure to correct old urls! */
+        correctDownloadLink(downloadLink);
         dllink = null;
         final String vid = getVID(downloadLink);
         String ext = null;
@@ -92,7 +104,7 @@ public class HardSexTubeCom extends PluginForHost {
         if (!br.containsHTML("video-player-wrap") || !br.getURL().contains("/video/") || br.getRedirectLocation() != null || br.getHttpConnection().getResponseCode() == 302 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>Hardsextube: ([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1 class=\"title-block\">([^<>\"]*?)</h1>").getMatch(0);
         }
@@ -102,12 +114,10 @@ public class HardSexTubeCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         downloadLink.setProperty("plain_title", filename);
         if (enable_site) {
-            final String name = br.getRegex("\\&flvserver=(http[^<>\"]*?)\\&").getMatch(0);
-            final String path = br.getRegex("\\&flv=((?:/|%2F)content[^<>\"]*?)\\&").getMatch(0);
-            if (name == null || path == null) {
+            dllink = this.br.getRegex("\"(http[^<>\"]*?)\" type=\\'video/mp4\\'").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = Encoding.htmlDecode(name + path) + "?mp4mod=1";
         }
         if (enable_mobile && dllink == null) {
             this.br = new Browser();
@@ -213,7 +223,7 @@ public class HardSexTubeCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://hardsextube.com";
+    private static final String MAINPAGE = "http://gotporn.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -239,7 +249,7 @@ public class HardSexTubeCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://www.hardsextube.com/login", "remember-me=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://www.gotporn.com/login", "remember-me=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "hstauth") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -273,12 +283,8 @@ public class HardSexTubeCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        try {
-            account.setType(AccountType.FREE);
-            account.setConcurrentUsePossible(false);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.FREE);
+        account.setConcurrentUsePossible(false);
         ai.setStatus("Registered (free) user");
         account.setValid(true);
         return ai;
@@ -339,7 +345,9 @@ public class HardSexTubeCom extends PluginForHost {
         String ext = null;
         if (finallink != null) {
             ext = new Regex(finallink, ".+(\\..*?)$").getMatch(0);
-            if (ext == null) {
+            if (ext == null || !ext.matches("\\.[A-Za-z]{2,5}")) {
+                ext = ".mp4";
+            } else if (ext.contains(".flv")) {
                 ext = ".flv";
             } else if (ext.contains(".mp4")) {
                 ext = ".mp4";
