@@ -19,10 +19,20 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.JPanel;
+
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialogInterface;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -61,10 +71,35 @@ public class DnsCz extends PluginForDecrypt {
     /**
      * @param decryptedLinks
      * @param parameter
-     * @throws IOException
+     * @throws Exception
      */
-    protected void parsePage(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
+    protected void parsePage(ArrayList<DownloadLink> decryptedLinks, String parameter) throws Exception {
         br.getPage(parameter);
+
+        while (br.containsHTML("<div class=\"album-login\">")) {
+            Form form = br.getFormbyKey("login");
+            String error = br.getRegex("<div class=\"error\">([^<]+)").getMatch(0);
+            String userName = new Regex(parameter, "http://([^\\.]+)").getMatch(0);
+            String album = new Regex(parameter, "\\.cz/([^/]+)").getMatch(0);
+            LoginDialogInterface d = UIOManager.I().show(LoginDialogInterface.class, new LoginDialog(LoginDialog.DISABLE_REMEMBER, "Gallery Password for " + album + " by " + userName, "The gallery " + album + " by " + userName + " requires logins." + (StringUtils.isEmpty(error) ? "" : "  Error: " + error), null) {
+                @Override
+                protected void addSave(JPanel contentpane) {
+
+                }
+            });
+            if (d.getCloseReason() != CloseReason.OK) {
+                return;
+            }
+            String user = d.getUsername();
+            String pass = d.getPassword();
+            if (StringUtils.isEmpty(user) || StringUtils.isEmpty(pass)) {
+                return;
+            }
+            form.getInputField("login").setValue(Encoding.urlEncode(user));
+            form.getInputField("password").setValue(Encoding.urlEncode(pass));
+            br.submitForm(form);
+
+        }
         decryptAlbumPage(decryptedLinks, br);
 
         String[] albums = br.getRegex("<a class=\"albumName\" href=\"(https?://.*?.rajce.idnes.cz/[^/]+/)\">").getColumn(0);
