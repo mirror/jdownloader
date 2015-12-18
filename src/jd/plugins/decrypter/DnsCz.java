@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.swing.JPanel;
-
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
@@ -81,12 +79,7 @@ public class DnsCz extends PluginForDecrypt {
             String error = br.getRegex("<div class=\"error\">([^<]+)").getMatch(0);
             String userName = new Regex(parameter, "http://([^\\.]+)").getMatch(0);
             String album = new Regex(parameter, "\\.cz/([^/]+)").getMatch(0);
-            LoginDialogInterface d = UIOManager.I().show(LoginDialogInterface.class, new LoginDialog(LoginDialog.DISABLE_REMEMBER, "Gallery Password for " + album + " by " + userName, "The gallery " + album + " by " + userName + " requires logins." + (StringUtils.isEmpty(error) ? "" : "  Error: " + error), null) {
-                @Override
-                protected void addSave(JPanel contentpane) {
-
-                }
-            });
+            LoginDialogInterface d = UIOManager.I().show(LoginDialogInterface.class, new LoginDialog(LoginDialog.DISABLE_REMEMBER, "Gallery Password for " + album + " by " + userName, "The gallery " + album + " by " + userName + " requires logins." + (StringUtils.isEmpty(error) ? "" : "  Error: " + error), null));
             if (d.getCloseReason() != CloseReason.OK) {
                 return;
             }
