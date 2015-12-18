@@ -40,12 +40,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -74,6 +68,12 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
 
@@ -93,7 +93,8 @@ public class Uploadedto extends PluginForHost {
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
 
     private static AtomicInteger           maxPrem                                   = new AtomicInteger(1);
-    private char[]                         FILENAMEREPLACES                          = new char[] { '_', '[', ']' };
+    // spaces will be '_'(checkLinks) and ' '(requestFileInformation), '_' stay '_'
+    private char[]                         FILENAMEREPLACES                          = new char[] { ' ', '_', '[', ']' };
     private final String                   ACTIVATEACCOUNTERRORHANDLING              = "ACTIVATEACCOUNTERRORHANDLING";
     private final String                   EXPERIMENTALHANDLING                      = "EXPERIMENTALHANDLING";
     private Pattern                        IPREGEX                                   = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
