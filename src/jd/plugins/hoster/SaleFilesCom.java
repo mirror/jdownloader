@@ -102,20 +102,20 @@ public class SaleFilesCom extends PluginForHost {
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileShare Version 3.0.8.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: reCaptchaV1
     // other: no redirects
     // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -127,7 +127,7 @@ public class SaleFilesCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";

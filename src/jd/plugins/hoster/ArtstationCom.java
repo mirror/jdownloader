@@ -16,14 +16,10 @@
 
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/artwork/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/images/.+" }, flags = { 0 })
 public class ArtstationCom extends PluginForHost {
 
     public ArtstationCom(PluginWrapper wrapper) {
@@ -44,7 +40,7 @@ public class ArtstationCom extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
+    public static final String   default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
@@ -57,51 +53,16 @@ public class ArtstationCom extends PluginForHost {
         return "http://artstation.com/";
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        setHeaders(this.br);
-        /* This time we'll get a json answer. */
-        br.getPage("/projects/" + fid + ".json");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            /* Double check for offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final String full_name = downloadLink.getStringProperty("full_name", null);
-        final String title = (String) json.get("title");
-        String filename = "";
-        if (!inValidate(title)) {
-            filename += fid + "_" + title;
-        } else {
-            filename += fid;
-        }
-        DLLINK = (String) DummyScriptEnginePlugin.walkJson(json, "assets/{0}/image_url");
+        final String filename = downloadLink.getStringProperty("decrypterfilename", null);
+        DLLINK = downloadLink.getDownloadURL();
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        if (full_name != null) {
-            filename = full_name + "_" + filename;
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
         }
         downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
@@ -147,22 +108,6 @@ public class ArtstationCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /** Sets correct json headers */

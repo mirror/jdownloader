@@ -59,7 +59,6 @@ public class OkRu extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         DLLINK = null;
@@ -134,7 +133,11 @@ public class OkRu extends PluginForHost {
             return true;
         }
         /* Offline or private video */
-        if (br.containsHTML(">Access to this video has been restricted") || br.getURL().contains("/main/st.redirect/")) {
+        if (br.containsHTML(">Access to this video has been restricted|>Access to the video has been restricted") || br.getURL().contains("/main/st.redirect/")) {
+            return true;
+        }
+        if (br.getURL().contains("?")) {
+            /* Redirect --> Offline! */
             return true;
         }
         // offline due to copyright claim

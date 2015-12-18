@@ -46,7 +46,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
     private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/(?:de|fr)/.+";
     private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/.+";
-    private static final String     TYPE_GUIDE                                  = "https?://(?:www\\.)?arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+.*?";
+    private static final String     TYPE_ARTETV_GUIDE                           = "https?://(?:www\\.)?arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+.*?";
+    private static final String     TYPE_ARTETV_EMBED                           = "https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/.+";
     private static final String     TYPE_CINEMA                                 = "https?://cinema\\.arte\\.tv/.+";
     private static final String     TYPE_THEOPERAPLATFORM                       = "https?://(?:www\\.)?theoperaplatform\\.eu/.+";
 
@@ -125,7 +126,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
 
             /* First we need to have some basic data - this part is link-specific. */
-            if (parameter.matches(TYPE_GUIDE)) {
+            if (parameter.matches(TYPE_ARTETV_GUIDE) || parameter.matches(TYPE_ARTETV_EMBED)) {
                 int status = br.getHttpConnection().getResponseCode();
                 if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
                     decryptedLinks.add(createofflineDownloadLink(parameter));
@@ -136,9 +137,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
-                final String video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
+                String video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
                 if (video_section == null) {
-                    return null;
+                    video_section = this.br.toString();
                 }
                 this.example_arte_vp_url = getArteVPUrl(video_section);
                 if (this.example_arte_vp_url == null) {
@@ -399,7 +400,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private void scanForExternalUrls() {
         /* Return external links if existant */
         final String currentHost = new Regex(this.br.getURL(), "https?://([^/]*?)/.+").getMatch(0);
-        final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+)", "(youtube\\.com/embed/[^<>\"]*?)\"" };
+        final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+)", "(youtube\\.com/embed/[^<>\"]*?)\"", "(https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/[^/\"]+/[^/\"]+)" };
         for (final String externURLRegex : externURLsRegexes) {
             final String[] externURLs = br.getRegex(externURLRegex).getColumn(0);
             if (externURLs != null && externURLs.length > 0) {
