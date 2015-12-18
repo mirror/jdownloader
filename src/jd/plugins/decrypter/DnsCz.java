@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 0 $", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "http://.*\\.rajce\\.idnes\\.cz/([^/]+/$|[^/]*\\?.+|/?$)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 0 $", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "http://.*\\.rajce\\.idnes\\.cz/([^/]+/$|[^/]+/?#.*|[^/]*\\?.+|/?$)" }, flags = { 0 })
 public class DnsCz extends PluginForDecrypt {
 
     public DnsCz(PluginWrapper wrapper) {
