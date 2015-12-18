@@ -27,7 +27,6 @@ public class HashCheckPluginProgress extends PluginProgress {
         } else {
             message = _JDT._.system_download_doCRC2_waiting();
         }
-
     }
 
     @Override
