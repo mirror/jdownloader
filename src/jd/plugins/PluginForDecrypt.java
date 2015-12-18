@@ -460,8 +460,7 @@ public abstract class PluginForDecrypt extends Plugin {
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
         }
-        final int ct = getCaptchaTimeout();
-        c.setTimeout(ct);
+        c.setTimeout(getCaptchaTimeout());
         invalidateLastChallengeResponse();
         final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
