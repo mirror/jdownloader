@@ -18,13 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.LoginDialog;
-import org.appwork.utils.swing.dialog.LoginDialogInterface;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -37,6 +31,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialogInterface;
 
 @DecrypterPlugin(revision = "$Revision: 0 $", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "http://.*\\.rajce\\.idnes\\.cz/([^/]+/$|[^/]+/?#.*|[^/]*\\?.+|/?$)" }, flags = { 0 })
 public class DnsCz extends PluginForDecrypt {
@@ -55,15 +56,15 @@ public class DnsCz extends PluginForDecrypt {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
-
-        while (parameter != null) {
-            parsePage(decryptedLinks, parameter);
-
-            parameter = br.getRegex("<a href=\"([^\"<>]*?page=\\d+[^\"<>]*?)\">[^<>]*?\\»</a>").getMatch(0);
-
+        final HashSet<String> dupCheck = new HashSet<String>();
+        while (parameter != null && dupCheck.add(parameter)) {
+            if (parsePage(decryptedLinks, parameter)) {
+                parameter = br.getRegex("<a href=\"([^\"<>]*?page=\\d+[^\"<>]*?)\">[^<>]*?\\»</a>").getMatch(0);
+            } else {
+                break;
+            }
         }
         return decryptedLinks;
-
     }
 
     /**
@@ -71,9 +72,8 @@ public class DnsCz extends PluginForDecrypt {
      * @param parameter
      * @throws Exception
      */
-    protected void parsePage(ArrayList<DownloadLink> decryptedLinks, String parameter) throws Exception {
+    protected boolean parsePage(ArrayList<DownloadLink> decryptedLinks, String parameter) throws Exception {
         br.getPage(parameter);
-
         while (br.containsHTML("<div class=\"album-login\">")) {
             Form form = br.getFormbyKey("login");
             String error = br.getRegex("<div class=\"error\">([^<]+)").getMatch(0);
@@ -81,28 +81,27 @@ public class DnsCz extends PluginForDecrypt {
             String album = new Regex(parameter, "\\.cz/([^/]+)").getMatch(0);
             LoginDialogInterface d = UIOManager.I().show(LoginDialogInterface.class, new LoginDialog(LoginDialog.DISABLE_REMEMBER, "Gallery Password for " + album + " by " + userName, "The gallery " + album + " by " + userName + " requires logins." + (StringUtils.isEmpty(error) ? "" : "  Error: " + error), null));
             if (d.getCloseReason() != CloseReason.OK) {
-                return;
+                return false;
             }
-            String user = d.getUsername();
-            String pass = d.getPassword();
+            final String user = d.getUsername();
+            final String pass = d.getPassword();
             if (StringUtils.isEmpty(user) || StringUtils.isEmpty(pass)) {
-                return;
+                return false;
             }
             form.getInputField("login").setValue(Encoding.urlEncode(user));
             form.getInputField("password").setValue(Encoding.urlEncode(pass));
             br.submitForm(form);
-
         }
         decryptAlbumPage(decryptedLinks, br);
-
-        String[] albums = br.getRegex("<a class=\"albumName\" href=\"(https?://.*?.rajce.idnes.cz/[^/]+/)\">").getColumn(0);
+        final String[] albums = br.getRegex("<a class=\"albumName\" href=\"(https?://.*?.rajce.idnes.cz/[^/]+/)\">").getColumn(0);
         if (albums != null) {
-            for (String albumUrl : albums) {
-                Browser clone = br.cloneBrowser();
+            for (final String albumUrl : albums) {
+                final Browser clone = br.cloneBrowser();
                 clone.getPage(albumUrl);
                 decryptAlbumPage(decryptedLinks, clone);
             }
         }
+        return true;
     }
 
     /**
@@ -111,18 +110,14 @@ public class DnsCz extends PluginForDecrypt {
      * @throws IOException
      */
     protected void decryptAlbumPage(ArrayList<DownloadLink> decryptedLinks, Browser br) throws IOException {
-
         String albumUserName = br.getRegex("<h1.*?id=\"albumlistUserName\">(.*?)<").getMatch(0);
-
         String albumName = br.getRegex("<h2 id=\"albumName\">(.*?)</h2>").getMatch(0);
         if (albumName != null && albumUserName != null) {
             albumName = albumName.trim();
             albumUserName = albumUserName.trim();
             String[][] galleryLinks = br.getRegex("<a id=\"p_(\\d+)\" href=\"(https?://img\\d+.rajce.idnes.cz[^\"]+)\".*?title=\"([^\"]*)").getMatches();
-
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(albumName) + " by " + Encoding.htmlDecode(albumUserName));
-
             for (String[] link : galleryLinks) {
                 DownloadLink dl = createDownloadlink(link[1]);
                 dl.setProperty("album", albumName);
