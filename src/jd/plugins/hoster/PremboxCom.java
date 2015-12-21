@@ -355,8 +355,15 @@ public class PremboxCom extends PluginForHost {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
         final LinkedHashMap<String, Object> traffic_standard = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "traffic/standard");
-        final long expire_timestamp = DummyScriptEnginePlugin.toLong(traffic_standard.get("expireTstamp"), -1);
-        final long traffic_left = DummyScriptEnginePlugin.toLong(traffic_standard.get("left"), 0);
+        final LinkedHashMap<String, Object> traffic_daily = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "traffic/daily");
+
+        long expire_timestamp = DummyScriptEnginePlugin.toLong(traffic_standard.get("expireTstamp"), -1);
+        long traffic_left = DummyScriptEnginePlugin.toLong(traffic_standard.get("left"), 0);
+        if (traffic_left <= 0) {
+            /* Maybe user only has daily traffic --> Display that */
+            traffic_left = DummyScriptEnginePlugin.toLong(traffic_daily.get("left"), 0);
+            expire_timestamp = DummyScriptEnginePlugin.toLong(traffic_daily.get("expireTstamp"), -1);
+        }
         final String accounttype = (String) entries.get("accountType");
         if ("premium".equals(accounttype)) {
             account.setType(AccountType.PREMIUM);
