@@ -11,6 +11,8 @@ public interface SevenZipArchiveWrapper {
 
     int getNumberOfItems();
 
+    boolean isSlowDownWorkaroundNeeded();
+
     ArchiveFormat getArchiveFormat();
 
     Boolean isEncrypted(int index);

@@ -2,7 +2,6 @@ package org.jdownloader.extensions.extraction.multi;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractAskMode;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
@@ -31,7 +30,7 @@ public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetText
         } else {
             this.password = password;
         }
-        if (ArchiveFormat.SEVEN_ZIP == archive.getArchiveFormat()) {
+        if (archive.isSlowDownWorkaroundNeeded()) {
             signatureOutStream = new SignatureCheckingOutStream(ctrl, passwordfound, filesignatures, buffer, maxPWCheckSize, optimized) {
                 @Override
                 public int write(byte[] data) throws SevenZipException {

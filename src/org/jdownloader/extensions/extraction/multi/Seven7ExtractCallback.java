@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractAskMode;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
@@ -66,7 +65,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         results = new ExtractOperationResult[numberOfItems];
         items = new ISimpleInArchiveItem[numberOfItems];
         this.archiveWrapper = archiveWrapper;
-        slowDownWorkaroundNeeded = ArchiveFormat.SEVEN_ZIP == archiveWrapper.getArchiveFormat();
+        slowDownWorkaroundNeeded = archiveWrapper.isSlowDownWorkaroundNeeded();
         this.ctrl = ctrl;
         this.archive = archive;
         if (StringUtils.isEmpty(archive.getFinalPassword())) {
