@@ -51,7 +51,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\." + matches[1] + escapeRegex(matches[2]) + "\\d{" + matches[3].length() + "}" + escapeRegex(matches[4]) + "\\.rar";
+                return "\\." + matches[1] + escapeRegex(matches[2]) + "\\d{" + matches[3].length() + "}" + escapeRegex(matches[4]) + "\\.(?i)rar";
             }
         }
 
@@ -124,7 +124,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.\\d{3}\\.rar";
+                return "\\.\\d{3}\\.(?i)rar";
             }
         }
 
@@ -214,7 +214,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.(r\\d{2,}|rar)";
+                return "\\.(?i)(r\\d{2,}|rar)";
             }
         }
 
@@ -317,7 +317,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.rar";
+                return "\\.(?i)rar";
             }
         }
 
@@ -444,7 +444,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.7z\\.\\d{" + matches[1].length() + "}";
+                return "\\.(?i)7z\\.\\d{" + matches[1].length() + "}";
             }
         }
 
@@ -511,7 +511,7 @@ public enum ArchiveType {
             if (Boolean.FALSE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.zip\\.\\d{" + matches[1].length() + "}";
+                return "\\.(?i)zip\\.\\d{" + matches[1].length() + "}";
             }
         }
 
@@ -578,7 +578,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.7z";
+                return "\\.(?i)7z";
             }
         }
 
@@ -645,7 +645,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.zip";
+                return "\\.(?i)zip";
             }
         }
 
@@ -777,7 +777,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.tar";
+                return "\\.(?i)tar";
             }
         }
 
@@ -843,7 +843,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.arj";
+                return "\\.(?i)arj";
             }
         }
 
@@ -908,7 +908,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.cpio";
+                return "\\.(?i)cpio";
             }
         }
 
@@ -973,7 +973,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.tgz";
+                return "\\.(?i)tgz";
             }
         }
 
@@ -1038,7 +1038,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.gz";
+                return "\\.(?i)gz";
             }
         }
 
@@ -1103,7 +1103,7 @@ public enum ArchiveType {
             if (Boolean.TRUE.equals(isMultiPart)) {
                 return null;
             } else {
-                return "\\.bz2";
+                return "\\.(?i)bz2";
             }
         }
 

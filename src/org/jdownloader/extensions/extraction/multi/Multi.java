@@ -485,6 +485,9 @@ public class Multi extends IExtraction {
                             callback.close();
                             ctrl.setCurrentActiveItem(null);
                         }
+                        if (ctrl.gotKilled()) {
+                            throw new SevenZipException("Extraction has been aborted");
+                        }
                         if (callback.hasError()) {
                             throw new SevenZipException("callback encountered an error!");
                         }
@@ -791,6 +794,7 @@ public class Multi extends IExtraction {
                 }
             }
             propIDLastWriteTime = propID;
+            final boolean slowDownWorkaroundNeeded = propID != null && !"LAST_MODIFICATION_TIME".equals(propID.name());
             final Method extract = o.getClass().getMethod("extract", new Class[] { int[].class, boolean.class, IArchiveExtractCallback.class });
 
             return new SevenZipArchiveWrapper() {
@@ -891,6 +895,11 @@ public class Multi extends IExtraction {
                 @Override
                 public ISimpleInArchive getSimpleInterface() {
                     return (ISimpleInArchive) invoke(getSimpleInterface);
+                }
+
+                @Override
+                public boolean isSlowDownWorkaroundNeeded() {
+                    return slowDownWorkaroundNeeded && ArchiveFormat.SEVEN_ZIP == getArchiveFormat();
                 }
 
             };
@@ -1091,25 +1100,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         *
+                         * 
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         *
+                         * 
                          * 0x0004 Archive lock attribute
-                         *
+                         * 
                          * 0x0008 Solid attribute (solid archive)
-                         *
+                         * 
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         *
+                         * 
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         *
+                         * 
                          * 0x0040 Recovery record present
-                         *
+                         * 
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         *
+                         * 
                          * 0x0200 EncryptedVerion
                          */
                         final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);

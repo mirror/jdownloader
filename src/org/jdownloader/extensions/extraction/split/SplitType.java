@@ -35,7 +35,7 @@ public enum SplitType {
 
         @Override
         protected String buildIDPattern(String[] matches) {
-            return "\\.\\d{" + matches[1].length() + "}\\.xtm";
+            return "\\.\\d{" + matches[1].length() + "}\\.(?i)xtm";
         }
 
         @Override
