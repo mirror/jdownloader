@@ -24,12 +24,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.BasicJDTable;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
@@ -49,6 +43,12 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.BasicJDTable;
 
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
 
@@ -719,14 +719,26 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
         if (stroke.equals(KEY_STROKE_KP_LEFT) || stroke.equals(KEY_STROKE_LEFT)) {
             AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
-            if (element != null && element instanceof AbstractPackageNode) {
-                tableModel.setFilePackageExpand(false, (AbstractPackageNode<?, ?>) element);
-                return true;
+            if (element != null) {
+                if (element instanceof AbstractPackageNode) {
+                    // collapse package
+                    tableModel.setFilePackageExpand(false, (AbstractPackageNode<?, ?>) element);
+                    return true;
+                } else {
+                    // select package containing selected file
+                    for (int i = this.getSelectedRow() - 1; i >= 0; i--) {
+                        if (this.getModel().getElementAt(i) instanceof AbstractPackageNode) {
+                            this.changeSelection(i, 0, false, false);
+                            return true;
+                        }
+                    }
+                }
             }
         }
         if (stroke.equals(KEY_STROKE_KP_RIGHT) || stroke.equals(KEY_STROKE_RIGHT)) {
             AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
             if (element != null && element instanceof AbstractPackageNode) {
+                // expand package
                 tableModel.setFilePackageExpand(true, (AbstractPackageNode<?, ?>) element);
                 return true;
             }
