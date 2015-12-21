@@ -8,8 +8,6 @@ import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
 import net.sf.sevenzipjbinding.ICryptoGetTextPassword;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
-import net.sf.sevenzipjbinding.ISevenZipInArchive;
-import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 
 import org.appwork.utils.ReusableByteArrayOutputStream;
@@ -20,20 +18,20 @@ import org.jdownloader.extensions.extraction.FileSignatures;
 public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetTextPassword {
 
     private final AtomicBoolean              passwordfound;
-    private final ISevenZipInArchive         inArchive;
+    private final SevenZipArchiveWrapper     archive;
     private final String                     password;
     private final SignatureCheckingOutStream signatureOutStream;
     protected final static long              SLOWDOWNWORKAROUNDTIMEOUT = 150;
 
-    public Seven7PWCallback(final ExtractionController ctrl, ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
+    public Seven7PWCallback(final ExtractionController ctrl, SevenZipArchiveWrapper archive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
         this.passwordfound = passwordfound;
-        this.inArchive = inArchive;
+        this.archive = archive;
         if (StringUtils.isEmpty(password)) {
             this.password = "";
         } else {
             this.password = password;
         }
-        if (ArchiveFormat.SEVEN_ZIP == inArchive.getArchiveFormat()) {
+        if (ArchiveFormat.SEVEN_ZIP == archive.getArchiveFormat()) {
             signatureOutStream = new SignatureCheckingOutStream(ctrl, passwordfound, filesignatures, buffer, maxPWCheckSize, optimized) {
                 @Override
                 public int write(byte[] data) throws SevenZipException {
@@ -71,24 +69,24 @@ public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetText
             //
             throw new SevenZipException("Password wrong");
         }
-        skipExtraction = (Boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
+        skipExtraction = archive.isFolder(i);
         if (skipExtraction || extractaskmode != ExtractAskMode.EXTRACT) {
             skipExtraction = true;
             return null;
         }
-        final String name = (String) inArchive.getProperty(i, PropID.PATH);
+        final String name = archive.getPath(i);
         if (StringUtils.isEmpty(name)) {
             skipExtraction = false;
             return null;
         }
-        final Boolean itemEncrypted = (Boolean) inArchive.getProperty(i, PropID.ENCRYPTED);
+        final Boolean itemEncrypted = archive.isEncrypted(i);
         if (Boolean.FALSE.equals(itemEncrypted)) {
             skipExtraction = true;
             return null;
         }
         skipExtraction = false;
         signatureOutStream.reset();
-        final Long size = (Long) inArchive.getProperty(i, PropID.SIZE);
+        final Long size = archive.getSize(i);
         signatureOutStream.setSignatureLength(name, size);
         return signatureOutStream;
     }

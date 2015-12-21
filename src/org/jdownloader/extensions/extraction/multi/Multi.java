@@ -23,6 +23,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -35,9 +37,9 @@ import java.util.regex.Pattern;
 import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IArchiveExtractCallback;
 import net.sf.sevenzipjbinding.IArchiveOpenCallback;
 import net.sf.sevenzipjbinding.IInStream;
-import net.sf.sevenzipjbinding.ISevenZipInArchive;
 import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.SevenZipException;
@@ -83,12 +85,12 @@ import org.jdownloader.settings.IfFileExistsAction;
  */
 public class Multi extends IExtraction {
 
-    private volatile int        crack;
-    private final List<Pattern> filter = new ArrayList<Pattern>();
+    private volatile int           crack;
+    private final List<Pattern>    filter = new ArrayList<Pattern>();
 
-    private ISevenZipInArchive  inArchive;
-    private IInStream           inStream;
-    private Closeable           closable;
+    private SevenZipArchiveWrapper inArchive;
+    private IInStream              inStream;
+    private Closeable              closable;
 
     public Multi() {
         crack = 0;
@@ -454,7 +456,7 @@ public class Multi extends IExtraction {
             if (ArchiveFormat.SEVEN_ZIP == format || ArchiveFormat.BZIP2 == format) {
                 ArrayList<Integer> allItems = new ArrayList<Integer>();
                 for (int i = 0; i < inArchive.getNumberOfItems(); i++) {
-                    final Boolean isFolder = (Boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
+                    final Boolean isFolder = inArchive.isFolder(i);
                     if (Boolean.TRUE.equals(isFolder)) {
                         continue;
                     }
@@ -769,6 +771,134 @@ public class Multi extends IExtraction {
         }
     }
 
+    private SevenZipArchiveWrapper createSevenZipArchiveWrapper(final Object o) throws SevenZipException {
+        try {
+            final Method getArchiveFormat = o.getClass().getMethod("getArchiveFormat");
+            final Method getNumberOfItems = o.getClass().getMethod("getNumberOfItems");
+            final Method getProperty = o.getClass().getMethod("getProperty", new Class[] { int.class, PropID.class });
+            final Method getSimpleInterface = o.getClass().getMethod("getSimpleInterface");
+            final Method close = o.getClass().getMethod("close");
+            final Object propIDLastWriteTime;
+            PropID propID = null;
+            try {
+                // older sevenzipjbinding
+                propID = PropID.valueOf("LAST_WRITE_TIME");
+            } catch (final IllegalArgumentException e) {
+                try {
+                    // new sevenzipjbinding
+                    propID = PropID.valueOf("LAST_MODIFICATION_TIME");
+                } catch (final IllegalArgumentException e2) {
+                }
+            }
+            propIDLastWriteTime = propID;
+            final Method extract = o.getClass().getMethod("extract", new Class[] { int[].class, boolean.class, IArchiveExtractCallback.class });
+
+            return new SevenZipArchiveWrapper() {
+
+                private final AtomicBoolean closedFlag = new AtomicBoolean(false);
+
+                @Override
+                public int getNumberOfItems() {
+                    final Integer ret = (Integer) invoke(getNumberOfItems);
+                    if (ret == null) {
+                        return 0;
+                    }
+                    return ret.intValue();
+                }
+
+                @Override
+                public ArchiveFormat getArchiveFormat() {
+                    return (ArchiveFormat) invoke(getArchiveFormat);
+                }
+
+                @Override
+                public Boolean isEncrypted(int index) {
+                    return (Boolean) invoke(getProperty, index, PropID.ENCRYPTED);
+                }
+
+                protected Object invoke(Method method, Object... args) {
+                    try {
+                        return method.invoke(o, args);
+                    } catch (IllegalAccessException e) {
+                        logger.log(e);
+                    } catch (IllegalArgumentException e) {
+                        logger.log(e);
+                    } catch (InvocationTargetException e) {
+                        logger.log(e);
+                    }
+                    return null;
+                }
+
+                @Override
+                public Boolean isFolder(int index) {
+                    return (Boolean) invoke(getProperty, index, PropID.IS_FOLDER);
+                }
+
+                @Override
+                public Long getSize(int index) {
+                    return (Long) invoke(getProperty, index, PropID.SIZE);
+                }
+
+                @Override
+                public long getPackedSize(int index) {
+                    return (Long) invoke(getProperty, index, PropID.PACKED_SIZE);
+                }
+
+                @Override
+                public String getPath(int index) {
+                    return (String) invoke(getProperty, index, PropID.PATH);
+                }
+
+                @Override
+                public String getMethod(int index) {
+                    return (String) invoke(getProperty, index, PropID.METHOD);
+                }
+
+                @Override
+                public Integer getAttributes(int index) {
+                    return (Integer) invoke(getProperty, index, PropID.ATTRIBUTES);
+                }
+
+                @Override
+                public Date getLastWriteTime(int index) {
+                    if (propIDLastWriteTime != null) {
+                        return (Date) invoke(getProperty, index, propIDLastWriteTime);
+                    }
+                    return null;
+                }
+
+                @Override
+                public void close() throws SevenZipException {
+                    if (closedFlag.compareAndSet(false, true)) {
+                        // it is important to call close only once, because new sevenzipjbinding will crash on second close call
+                        try {
+                            if (o instanceof Closeable) {
+                                ((Closeable) o).close();
+                            } else {
+                                invoke(close);
+                            }
+                        } catch (IOException e) {
+                            throw new SevenZipException(e);
+                        }
+                    }
+                }
+
+                @Override
+                public void extract(int[] indices, boolean testMode, IArchiveExtractCallback extractCallback) throws SevenZipException {
+                    invoke(extract, indices, testMode, extractCallback);
+                }
+
+                @Override
+                public ISimpleInArchive getSimpleInterface() {
+                    return (ISimpleInArchive) invoke(getSimpleInterface);
+                }
+
+            };
+        } catch (NoSuchMethodException e) {
+            throw new SevenZipException(e);
+        }
+    }
+
     @Override
     public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
         final Archive archive = getExtractionController().getArchive();
@@ -820,7 +950,7 @@ public class Multi extends IExtraction {
                 }
             }
             if (inStream != null && closable != null) {
-                inArchive = SevenZip.openInArchive(format, inStream, callBack);
+                inArchive = createSevenZipArchiveWrapper(SevenZip.openInArchive(format, inStream, callBack));
             } else {
                 return false;
             }
@@ -834,10 +964,10 @@ public class Multi extends IExtraction {
                 }
                 final ArrayList<Integer> allItems = new ArrayList<Integer>();
                 for (int i = 0; i < numberOfItems; i++) {
-                    final Boolean isFolder = (Boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
-                    final Boolean itemEncrypted = (Boolean) inArchive.getProperty(i, PropID.ENCRYPTED);
-                    final Long size = (Long) inArchive.getProperty(i, PropID.SIZE);
-                    final Long packedSize = (Long) inArchive.getProperty(i, PropID.PACKED_SIZE);
+                    final Boolean isFolder = inArchive.isFolder(i);
+                    final Boolean itemEncrypted = inArchive.isEncrypted(i);
+                    final Long size = inArchive.getSize(i);
+                    final Long packedSize = inArchive.getPackedSize(i);
                     if (!itemEncrypted || isFolder || size == null || (size == 0 && (packedSize == null || packedSize == 0))) {
                         /*
                          * we also check for items with size ==0, they should have a packedsize>0
@@ -961,25 +1091,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
@@ -1067,7 +1197,7 @@ public class Multi extends IExtraction {
                 }
             }
             if (inStream != null && closable != null) {
-                inArchive = SevenZip.openInArchive(format, inStream, callBack);
+                inArchive = createSevenZipArchiveWrapper(SevenZip.openInArchive(format, inStream, callBack));
             } else {
                 return false;
             }
@@ -1082,7 +1212,7 @@ public class Multi extends IExtraction {
             }
             updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
-            if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
+            if (e.getMessage() != null && (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided"))) {
                 /* password required */
                 archive.setProtected(true);
                 archive.setPasswordRequiredToOpen(true);

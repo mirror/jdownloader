@@ -10,8 +10,6 @@ import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
 import net.sf.sevenzipjbinding.ICryptoGetTextPassword;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
-import net.sf.sevenzipjbinding.ISevenZipInArchive;
-import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
@@ -27,7 +25,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
 
     protected final ISequentialOutStream[]   outStreams;
     protected final ExtractionController     ctrl;
-    protected final ISevenZipInArchive       inArchive;
+    protected final SevenZipArchiveWrapper   archiveWrapper;
     protected final String                   password;
     protected final Archive                  archive;
     protected final ExtractionConfig         config;
@@ -62,12 +60,13 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         return false;
     }
 
-    public Seven7ExtractCallback(Multi multi, ISevenZipInArchive inArchive, ExtractionController ctrl, Archive archive, ExtractionConfig config) throws SevenZipException {
-        outStreams = new ISequentialOutStream[inArchive.getNumberOfItems()];
-        results = new ExtractOperationResult[inArchive.getNumberOfItems()];
-        items = new ISimpleInArchiveItem[inArchive.getNumberOfItems()];
-        this.inArchive = inArchive;
-        slowDownWorkaroundNeeded = ArchiveFormat.SEVEN_ZIP == inArchive.getArchiveFormat();
+    public Seven7ExtractCallback(Multi multi, SevenZipArchiveWrapper archiveWrapper, ExtractionController ctrl, Archive archive, ExtractionConfig config) throws SevenZipException {
+        final int numberOfItems = archiveWrapper.getNumberOfItems();
+        outStreams = new ISequentialOutStream[numberOfItems];
+        results = new ExtractOperationResult[numberOfItems];
+        items = new ISimpleInArchiveItem[numberOfItems];
+        this.archiveWrapper = archiveWrapper;
+        slowDownWorkaroundNeeded = ArchiveFormat.SEVEN_ZIP == archiveWrapper.getArchiveFormat();
         this.ctrl = ctrl;
         this.archive = archive;
         if (StringUtils.isEmpty(archive.getFinalPassword())) {
@@ -120,13 +119,13 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         }
         ISequentialOutStream ret = outStreams[index];
         if (ret == null) {
-            final Integer attributes = (Integer) inArchive.getProperty(index, PropID.ATTRIBUTES);
-            final Boolean isFolder = (Boolean) inArchive.getProperty(index, PropID.IS_FOLDER);
-            final String path = (String) inArchive.getProperty(index, PropID.PATH);
-            final Long itemSize = (Long) inArchive.getProperty(index, PropID.SIZE);
-            final Date lastWriteTime = (Date) inArchive.getProperty(index, PropID.LAST_WRITE_TIME);
-            final Boolean itemEncrypted = (Boolean) inArchive.getProperty(index, PropID.ENCRYPTED);
-            final String method = (String) inArchive.getProperty(index, PropID.METHOD);
+            final Integer attributes = archiveWrapper.getAttributes(index);
+            final Boolean isFolder = archiveWrapper.isFolder(index);
+            final String path = archiveWrapper.getPath(index);
+            final Long itemSize = archiveWrapper.getSize(index);
+            final Date lastWriteTime = archiveWrapper.getLastWriteTime(index);
+            final Boolean itemEncrypted = archiveWrapper.isEncrypted(index);
+            final String method = archiveWrapper.getMethod(index);
             ISimpleInArchiveItem item = new ISimpleInArchiveItem() {
 
                 @Override

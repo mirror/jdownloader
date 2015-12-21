@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.extraction.multi;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +11,7 @@ import net.sf.sevenzipjbinding.IInStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 
-public class ModdedVolumedArchiveInStream implements IInStream {
+public class ModdedVolumedArchiveInStream implements IInStream, Closeable {
 
     private long                             absoluteOffset;
     private long                             absoluteLength  = -1;
@@ -23,7 +25,7 @@ public class ModdedVolumedArchiveInStream implements IInStream {
 
     /**
      * Creates instance of {@link VolumedArchiveInStream} using {@link IArchiveOpenVolumeCallback}.
-     * 
+     *
      * @param firstVolumeFilename
      *            the file name of the first volume.
      * @param archiveOpenVolumeCallback
@@ -149,5 +151,9 @@ public class ModdedVolumedArchiveInStream implements IInStream {
             openVolume(currentIndex + 1, true);
         }
         return read;
+    }
+
+    @Override
+    public void close() throws IOException {
     }
 }
