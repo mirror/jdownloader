@@ -1,7 +1,6 @@
 package org.jdownloader.api.logs;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -10,12 +9,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.zip.ZipIOException;
 import org.appwork.utils.zip.ZipIOWriter;
@@ -28,7 +28,7 @@ public class LogAPIImpl implements LogAPI {
 
     @Override
     public List<LogFolderStorable> getAvailableLogs() {
-        final ArrayList<LogFolder> folders = getLogFolders();
+        final ArrayList<LogFolder> folders = (ArrayList<LogFolder>) LogAction.getLogFolders();
         final ArrayList<LogFolderStorable> result = new ArrayList<LogFolderStorable>();
         for (final LogFolder folder : folders) {
             result.add(LogFolderStorable.create(folder));
@@ -41,7 +41,7 @@ public class LogAPIImpl implements LogAPI {
         if (selectedFolders == null || selectedFolders.length == 0) {
             throw new BadParameterException("selection empty or null");
         }
-        final ArrayList<LogFolder> logFolders = getLogFolders();
+        final ArrayList<LogFolder> logFolders = LogAction.getLogFolders();
         final ArrayList<LogFolder> selectedLogFolders = new ArrayList<LogFolder>();
 
         for (final LogFolderStorable storable : selectedFolders) {
@@ -137,39 +137,4 @@ public class LogAPIImpl implements LogAPI {
         }
         return zip;
     }
-
-    private boolean isCurrentLogFolder(long timestamp) {
-        final long startup = LogController.getInstance().getInitTime();
-        return startup == timestamp;
-    }
-
-    private ArrayList<LogFolder> getLogFolders() {
-        final ArrayList<LogFolder> result = new ArrayList<LogFolder>();
-        final File[] logs = Application.getResource("logs").listFiles();
-
-        if (logs != null) {
-            for (final File f : logs) {
-                final String timestampString = new Regex(f.getName(), "(\\d+)_\\d\\d\\.\\d\\d").getMatch(0);
-                if (timestampString != null) {
-                    final long timestamp = Long.parseLong(timestampString);
-                    final LogFolder lf = new LogFolder(f, timestamp);
-                    if (this.isCurrentLogFolder(timestamp)) {
-                        lf.setNeedsFlush(true);
-                        lf.setCurrent(true);
-                    }
-                    if (Files.getFiles(new FileFilter() {
-                        @Override
-                        public boolean accept(final File pathname) {
-                            return pathname.isFile() && pathname.length() > 0;
-                        }
-                    }, f).size() == 0) {
-                        continue;
-                    }
-                    result.add(lf);
-                }
-            }
-        }
-        return result;
-    }
-
 }
