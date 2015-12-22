@@ -92,17 +92,17 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         AudioCodec.MP3.setRating(cfg.getRatingContainerMP3() / 10000d);
     }
 
-    public static final String    PAID_VIDEO        = "Paid Video:";
+    public static final String PAID_VIDEO = "Paid Video:";
 
-    protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
+    protected static final String YT_CHANNEL_ID = "YT_CHANNEL_ID";
 
-    protected static final String YT_DURATION       = "YT_DURATION";
+    protected static final String YT_DURATION = "YT_DURATION";
 
-    protected static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
+    protected static final String YT_DATE_UPDATE = "YT_DATE_UPDATE";
 
     protected static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
 
-    private Browser               br;
+    private Browser br;
 
     public Browser getBr() {
         return br;
@@ -112,7 +112,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.br = br;
     }
 
-    private final YoutubeConfig           cfg;
+    private final YoutubeConfig cfg;
 
     private final LogInterface            logger;
     private String                        base;
@@ -676,6 +676,107 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     private HashMap<String, HashMap<String, String>> jsCache = new HashMap<String, HashMap<String, String>>();
 
+    String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
+        if (sig == null) {
+            return null;
+        }
+        String ret = descrambleSignatureNew(sig, jsUrl, id);
+        if (StringUtils.isNotEmpty(ret)) {
+            return ret;
+        }
+        return descrambleSignatureOld(sig, jsUrl, id);
+
+    }
+
+    String descrambleSignatureNew(final String sig, String jsUrl, final String id) throws IOException, PluginException {
+
+        if (sig == null) {
+            return null;
+        }
+
+        String all = null;
+        String descrambler = null;
+        String des = null;
+        String jsContent = null;
+        Object result = null;
+
+        HashMap<String, String> cache = jsCache.get(id);
+        if (cache != null && !cache.isEmpty()) {
+            all = cache.get("all");
+            descrambler = cache.get("descrambler");
+            des = cache.get("des");
+        }
+        if (all == null || descrambler == null || des == null) {
+            cache = new HashMap<String, String>();
+            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
+            descrambler = new Regex(jsContent, "set\\(\"signature\",([\\$\\w]+)\\([\\w]+\\)").getMatch(0);
+
+            final String func = Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}";
+            des = new Regex(jsContent, Pattern.compile(func, Pattern.DOTALL)).getMatch(1);
+            all = new Regex(jsContent, Pattern.compile(Pattern.quote(descrambler) + "=function\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?", Pattern.DOTALL)).getMatch(-1);
+
+            String requiredObjectName = new Regex(des, "([\\w\\d]+)\\.([\\w\\d]{2})\\(").getMatch(0);
+            String requiredObject = new Regex(jsContent, Pattern.compile("var " + Pattern.quote(requiredObjectName) + "=\\{.*?\\}\\};", Pattern.DOTALL)).getMatch(-1);
+            all += ";";
+            all += requiredObject;
+        }
+        while (true) {
+            try {
+                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
+                if (result != null) {
+                    if (cache.isEmpty()) {
+                        cache.put("all", all);
+                        cache.put("descrambler", descrambler);
+                        // not used by js but the failover.
+                        cache.put("des", des);
+                        jsCache.put(id, cache);
+                    }
+                    return result.toString();
+                }
+            } catch (final Throwable e) {
+                if (e.getMessage() != null) {
+                    // do not use language components of the error message. Only static identifies, otherwise other languages will fail!
+                    // -raztoki
+                    final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
+                    // should only be needed on the first entry, then on after 'cache' should get result the first time!
+                    if (ee != null) {
+                        if (jsContent == null) {
+                            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
+                        }
+                        // lets look for missing reference
+                        final String ref = new Regex(jsContent, "var\\s+" + Pattern.quote(ee) + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
+                        if (ref != null) {
+                            all = ref + "\r\n" + all;
+                            continue;
+                        } else {
+                            logger.warning("Could not find missing var/function");
+                        }
+                    } else {
+                        logger.warning("Could not find reference Error");
+                    }
+                }
+                logger.log(e);
+            }
+            break;
+        }
+        String s = sig;
+        try {
+            logger.info("Des: " + des);
+            final String[] t = new Regex(des, "[^;]+").getColumn(-1);
+            logger.info("Des " + Arrays.toString(t));
+            for (final String line : t) {
+                s = YoutubeHelper.handleRule(s, line);
+            }
+            return s;
+        } catch (final PluginException e) {
+            logger.log(e);
+            throw e;
+        }
+
+    }
+
     /**
      * *
      *
@@ -688,7 +789,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
      * @throws IOException
      * @throws PluginException
      */
-    String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
+    String descrambleSignatureOld(final String sig, String jsUrl, final String id) throws IOException, PluginException {
         if (sig == null) {
             return null;
         }
@@ -1672,9 +1773,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";     // Update YoutubeSubtitleName
     public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
-    public static final String YT_BEST_VIDEO         = "YT_BEST_VIDEO";
+    public static final String YT_BEST_VIDEO = "YT_BEST_VIDEO";
 
-    public static final String YT_DESCRIPTION        = "YT_DESCRIPTION";
+    public static final String YT_DESCRIPTION = "YT_DESCRIPTION";
 
     public String createFilename(DownloadLink link) {
 
