@@ -101,10 +101,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
             @Override
             protected void runInEDT() {
-                final AbstractNodeProperties currentNodeProperties = getAbstractNodeProperties();
-                if (currentNodeProperties != null) {
-                    saveInEDT(currentNodeProperties);
-                }
+                save();
                 AbstractNodePropertiesPanel.this.abstractNodeProperties = abstractNodeProperties;
                 if (abstractNodeProperties != null) {
                     loadInEDT(true, abstractNodeProperties);
@@ -158,7 +155,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             }
 
         };
-        updateDelayer = new DelayedRunnable(SERVICE, 1000l, 2000l) {
+        updateDelayer = new DelayedRunnable(SERVICE, 100l, 2000l) {
 
             @Override
             public void delayedrun() {
