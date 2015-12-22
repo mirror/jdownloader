@@ -116,6 +116,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
@@ -652,7 +653,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             private void newPackage(final java.util.List<CrawledLink> links, String newPackageName, final String downloadFolder, final CrawledPackageMappingID crawledPackageMappingID) {
                 final CrawledPackage pkg = new CrawledPackage();
-                pkg.setExpanded(JsonConfig.create(LinkCollectorConfig.class).isPackageAutoExpanded());
+                pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
                 pkg.setName(newPackageName);
                 if (downloadFolder != null) {
                     pkg.setDownloadFolder(downloadFolder);
@@ -942,7 +943,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return lpermanentofflinePackage;
         }
         lpermanentofflinePackage = new CrawledPackage();
-        lpermanentofflinePackage.setExpanded(true);
+        lpermanentofflinePackage.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
         lpermanentofflinePackage.setName(_GUI._.Permanently_Offline_Package());
         lpermanentofflinePackage.setType(TYPE.POFFLINE);
         permanentofflinePackage = lpermanentofflinePackage;
@@ -955,7 +956,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return lvariousPackage;
         }
         lvariousPackage = new CrawledPackage();
-        lvariousPackage.setExpanded(true);
+        lvariousPackage.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
         lvariousPackage.setName(_JDT._.LinkCollector_addCrawledLink_variouspackage());
         lvariousPackage.setType(TYPE.VARIOUS);
         variousPackage = lvariousPackage;
@@ -968,7 +969,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return lofflinePackage;
         }
         lofflinePackage = new CrawledPackage();
-        lofflinePackage.setExpanded(true);
+        lofflinePackage.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
         lofflinePackage.setName(_JDT._.LinkCollector_addCrawledLink_offlinepackage());
         lofflinePackage.setType(TYPE.OFFLINE);
         offlinePackage = lofflinePackage;
@@ -1114,9 +1115,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
