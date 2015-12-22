@@ -318,7 +318,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 return null;
             }
             String whoAmI = account.getUser() + "->" + account.getHoster();
-            LogSource logger = LogController.getFastPluginLogger("accountCheck:" + plugin.getHost());
+            LogSource logger = LogController.getFastPluginLogger("accountCheck:" + plugin.getHost() + "_" + plugin.getLazyP().getClassName());
             logger.info("Account Update: " + whoAmI);
             plugin.setLogger(logger);
             Thread currentThread = Thread.currentThread();
