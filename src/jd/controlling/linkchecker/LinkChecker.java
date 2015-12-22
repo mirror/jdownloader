@@ -305,7 +305,7 @@ public class LinkChecker<E extends CheckableLink> {
                                             PluginClassLoader.setThreadPluginClassLoaderChild(cl, null);
                                             final LazyHostPlugin lazyp = HostPluginController.getInstance().get(first.getDefaultPlugin().getHost());
                                             plg = lazyp.newInstance(cl);
-                                            plg.setLogger(logger = LogController.getFastPluginLogger(plg.getHost()));
+                                            plg.setLogger(logger = LogController.getFastPluginLogger(plg.getHost() + "_" + lazyp.getClassName()));
                                             logger.info("LinkChecker: " + threadHost);
                                             ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
                                             plg.setBrowser(new Browser());

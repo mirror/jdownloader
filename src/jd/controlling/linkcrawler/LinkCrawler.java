@@ -1676,7 +1676,7 @@ public class LinkCrawler {
                     boolean oldVerbose = false;
                     LogInterface oldLogger = null;
                     try {
-                        LogInterface logger = LogController.getFastPluginLogger(wplg.getHost());
+                        LogInterface logger = LogController.getFastPluginLogger(wplg.getHost() + "_" + pHost.getClassName());
                         logger.info("Processing: " + possibleCryptedLink.getURL());
                         if (lct != null) {
                             /* mark thread to be used by crawler plugin */
@@ -2259,7 +2259,7 @@ public class LinkCrawler {
                 LogInterface oldLogger = null;
                 boolean oldVerbose = false;
                 boolean oldDebug = false;
-                logger = LogController.getFastPluginLogger(wplg.getHost());
+                logger = LogController.getFastPluginLogger(wplg.getHost() + "_" + lazyC.getClassName());
                 logger.info("Crawling: " + cryptedLink.getURL());
                 wplg.setLogger(logger);
                 /* now we run the plugin and let it find some links */

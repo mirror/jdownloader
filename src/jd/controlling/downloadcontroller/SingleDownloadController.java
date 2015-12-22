@@ -559,7 +559,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     }
                 });
             }
-            String logID = downloadLink.getDefaultPlugin().getHost();
+            String logID = downloadLink.getDefaultPlugin().getHost() + "_" + downloadLink.getDefaultPlugin().getLazyP().getClassName();
             if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
                 logID = logID + "_" + candidate.getCachedAccount().getPlugin().getHost();
             }
