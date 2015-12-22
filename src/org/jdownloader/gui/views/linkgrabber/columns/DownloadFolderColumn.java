@@ -28,6 +28,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
+import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.translate._JDT;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
@@ -133,7 +134,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             }
 
             final CrawledPackage pkg = new CrawledPackage();
-            pkg.setExpanded(true);
+            pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
             if (TYPE.NORMAL != p.getType()) {
                 final String pkgName;
                 if (object instanceof AbstractPackageNode) {

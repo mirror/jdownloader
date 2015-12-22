@@ -17,6 +17,7 @@ import org.jdownloader.gui.views.BadContextException;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFolderAction;
+import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 
 public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderAction<CrawledPackage, CrawledLink> {
 
@@ -60,7 +61,7 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     @Override
     protected CrawledPackage createNewByPrototype(SelectionInfo<CrawledPackage, CrawledLink> si, CrawledPackage entry) {
         final CrawledPackage pkg = new CrawledPackage();
-        pkg.setExpanded(true);
+        pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
         if (TYPE.NORMAL != entry.getType()) {
             final String pkgName = LinknameCleaner.cleanFileName(getSelection().getPackageView(entry).getChildren().get(0).getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
             pkg.setName(pkgName);
