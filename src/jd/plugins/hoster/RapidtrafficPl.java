@@ -205,8 +205,11 @@ public class RapidtrafficPl extends PluginForHost {
             showMessage(link, "Phase 2/4: Checking Link");
             br.postPage(MAINPAGE + "index.php", postData);
             sleep(2 * 1000l, link);
+            if (br.containsHTML("<td class='file_error' id='linkstatus_1'>Błędny link</td>")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("BAD_LINK"), 10 * 60 * 1000l);
+            }
             if (!br.containsHTML("<td class='file_ok' id='linkstatus_1'>OK</td>")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("PLUGIN_BROKEN"));
             }
             if (br.containsHTML("Rozmiar pobieranych plików przekracza dostępny transfer")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -313,8 +316,7 @@ public class RapidtrafficPl extends PluginForHost {
                     boolean resetGeneratedLink = true;
                     String redirectConnection = br2.getRedirectLocation();
                     if (redirectConnection != null) {
-                        if (redirectConnection.contains("rapidtraffic.pl") ||
-                        (redirectConnection.contains("pobierz.biz"))){
+                        if (redirectConnection.contains("rapidtraffic.pl") || (redirectConnection.contains("pobierz.biz"))) {
                             con = br2.openGetConnection(redirectConnection);
                             if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                                 resetGeneratedLink = true;
@@ -396,6 +398,7 @@ public class RapidtrafficPl extends PluginForHost {
             put("TRAFFIC_LEFT", "Traffic Left");
             put("PREMIUM_EXPIRED", "Premium expired");
             put("ACCOUNT_TYPE", "Account type");
+            put("BAD_LINK", "Multihoster rapidtraffic.pl reports: Bad link!");
         }
     };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
@@ -412,6 +415,7 @@ public class RapidtrafficPl extends PluginForHost {
             put("TRAFFIC_LEFT", "Pozostały transfer");
             put("PREMIUM_EXPIRED", "Konto Premium wygasło");
             put("ACCOUNT_TYPE", "Typ konta");
+            put("BAD_LINK", "Serwis rapidtraffic.pl zgłasza: Błędny Link!");
         }
     };
 
