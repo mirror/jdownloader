@@ -242,6 +242,10 @@ public abstract class PluginForDecrypt extends Plugin {
         return false;
     }
 
+    public ArrayList<DownloadLink> decryptIt(CrawledLink link) throws Exception {
+        return decryptIt(link.getCryptedLink(), dummyProgressController);
+    }
+
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
      * Vector<String> mit den decoded Links setzen
@@ -251,9 +255,8 @@ public abstract class PluginForDecrypt extends Plugin {
      *
      * @return Ein Vector mit Klartext-links
      */
-    public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
-        final CryptedLink cryptLink = source.getCryptedLink();
-        if (cryptLink == null) {
+    public ArrayList<DownloadLink> decryptLink(CrawledLink link) {
+        if (link.getCryptedLink() == null) {
             return null;
         }
         ArrayList<DownloadLink> tmpLinks = null;
@@ -262,7 +265,7 @@ public abstract class PluginForDecrypt extends Plugin {
         boolean captchafailed = false;
         try {
             lastSolverJob = null;
-            setCurrentLink(source);
+            setCurrentLink(link);
             /*
              * we now lets log into plugin specific loggers with all verbose/debug on
              */
@@ -270,7 +273,7 @@ public abstract class PluginForDecrypt extends Plugin {
             br.setVerbose(true);
             br.setDebug(true);
             /* now we let the decrypter do its magic */
-            tmpLinks = decryptIt(cryptLink, dummyProgressController);
+            tmpLinks = decryptIt(link);
             validateLastChallengeResponse();
         } catch (final Throwable e) {
             throwable = e;
@@ -306,16 +309,16 @@ public abstract class PluginForDecrypt extends Plugin {
             /*
              * null as return value? something must have happened, do not clear log
              */
-            errLog(throwable, br, source);
+            errLog(throwable, br, link);
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
-            logger.severe("URL was: " + source.getURL());
+            logger.severe("URL was: " + link.getURL());
             /*
              * we can effectively create generic offline link here. For custom message/comments this must be done within the plugin.
              * -raztoki
              */
             if (tmpLinks == null && LinkCrawler.getConfig().isAddDefectiveCrawlerTasksAsOfflineInLinkgrabber()) {
                 tmpLinks = new ArrayList<DownloadLink>();
-                tmpLinks.add(createOfflinelink(source.getURL()));
+                tmpLinks.add(createOfflinelink(link.getURL()));
             }
 
             /* lets forward the log */
