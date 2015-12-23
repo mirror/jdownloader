@@ -48,6 +48,8 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.rmi.ConnectException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
@@ -74,6 +76,17 @@ public class SimpleFTP {
     private String           host;
     private LogInterface     logger             = LogController.CL();
     private String           latestResponseLine = null;
+    private String           user               = null;
+
+    public String getUser() {
+        return user;
+    }
+
+    public String getPass() {
+        return pass;
+    }
+
+    private String pass = null;
 
     public LogInterface getLogger() {
         return logger;
@@ -176,6 +189,8 @@ public class SimpleFTP {
         if (socket != null) {
             throw new IOException("SimpleFTP is already connected. Disconnect first.");
         }
+        this.user = user;
+        this.pass = pass;
         socket = new Socket(host, port);
         this.host = host;
         socket.setSoTimeout(TIMEOUT);
@@ -678,6 +693,86 @@ public class SimpleFTP {
             dataSocket.close();
         } catch (Throwable e) {
         }
+    }
+
+    public static class SimpleFTPListEntry {
+
+        private final boolean isFile;
+
+        public final boolean isFile() {
+            return isFile;
+        }
+
+        public final String getName() {
+            return name;
+        }
+
+        public final long getSize() {
+            return size;
+        }
+
+        private final String name;
+        private final long   size;
+        private final String cwd;
+
+        private SimpleFTPListEntry(boolean isFile, String name, String cwd, long size) {
+            this.isFile = isFile;
+            this.name = name;
+            this.size = size;
+            this.cwd = cwd;
+        }
+
+        public final String getCwd() {
+            return cwd;
+        }
+
+        public final String getFullPath() {
+            if (getCwd().endsWith("/")) {
+                return getCwd() + getName();
+            } else {
+                return getCwd() + "/" + getName();
+            }
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            if (isFile) {
+                sb.append("File:");
+            } else {
+                sb.append("Directory:");
+            }
+            sb.append(getFullPath());
+            if (isFile) {
+                sb.append("|Size:").append(getSize());
+            }
+            return sb.toString();
+        }
+
+    }
+
+    public SimpleFTPListEntry[] listEntries() throws IOException {
+        final String[][] entries = list();
+        if (entries != null) {
+            final String cwd = getDir();
+            final List<SimpleFTPListEntry> ret = new ArrayList<SimpleFTPListEntry>();
+            for (final String[] entry : entries) {
+                if (entry.length == 4) {
+                    throw new IOException("Fixme");
+                } else if (entry.length == 7) {
+                    final boolean isFile = entry[0].startsWith("-");
+                    String name = entry[6];
+                    if (name.contains(" -> ")) {
+                        // symlink
+                        name = new Regex(name, "->\\s*(.+)").getMatch(0);
+                    }
+                    final long size = isFile ? Long.parseLong(entry[4]) : -1;
+                    ret.add(new SimpleFTPListEntry(isFile, name, cwd, size));
+                }
+            }
+            return ret.toArray(new SimpleFTPListEntry[0]);
+        }
+        return null;
     }
 
     /**
