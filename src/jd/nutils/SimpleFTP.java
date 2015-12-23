@@ -50,10 +50,10 @@ import java.net.URL;
 import java.rmi.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.StringTokenizer;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.auth.AuthenticationController;
@@ -291,9 +291,9 @@ public class SimpleFTP {
     }
 
     public boolean wasLatestOperationNotPermitted() {
-        String latest = getLastestResponseLine();
+        final String latest = getLastestResponseLine();
         if (latest != null) {
-            return latest.toLowerCase(Locale.ENGLISH).contains("operation not permitted");
+            return StringUtils.containsIgnoreCase(latest, "operation not permitted") || StringUtils.containsIgnoreCase(latest, "Access is denied");
         }
         return false;
     }
@@ -758,7 +758,10 @@ public class SimpleFTP {
             final List<SimpleFTPListEntry> ret = new ArrayList<SimpleFTPListEntry>();
             for (final String[] entry : entries) {
                 if (entry.length == 4) {
-                    throw new IOException("Fixme");
+                    final boolean isFile = !"<DIR>".equalsIgnoreCase(entry[2]);
+                    final String name = entry[3];
+                    final long size = isFile ? Long.parseLong(entry[2]) : -1;
+                    ret.add(new SimpleFTPListEntry(isFile, name, cwd, size));
                 } else if (entry.length == 7) {
                     final boolean isFile = entry[0].startsWith("-");
                     String name = entry[6];
@@ -810,7 +813,7 @@ public class SimpleFTP {
         String[][] matches = new Regex(sb.toString(), "([-dxrw]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
         if (matches == null || matches.length == 0) {
             /* date,time,size,name */
-            matches = new Regex(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(.*?)[$\r\n]+").getMatches();
+            matches = new Regex(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(<DIR>|\\d+)\\s+(.*?)[$\r\n]+").getMatches();
         }
         return matches;
     }

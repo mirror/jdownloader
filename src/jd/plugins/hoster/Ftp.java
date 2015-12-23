@@ -83,6 +83,7 @@ public class Ftp extends PluginForHost {
                     filePath = currentDir + filePath;
                 }
             }
+
             long size = ftp.getSize(Encoding.urlDecode(filePath, false));
             if (size == -1) {
                 if (ftp.wasLatestOperationNotPermitted()) {
@@ -101,7 +102,9 @@ public class Ftp extends PluginForHost {
                 }
             }
             if (size != -1) {
-                downloadLink.setVerifiedFileSize(size);
+                if (downloadLink.getVerifiedFileSize() < 0) {
+                    downloadLink.setVerifiedFileSize(size);
+                }
                 /* cut off all ?xyz at the end */
                 name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
                 if (name == null) {
@@ -109,11 +112,14 @@ public class Ftp extends PluginForHost {
                     name = downloadLink.getName();
                 }
                 name = Encoding.urlDecode(name, false);
-                downloadLink.setFinalFileName(name);
+                if (downloadLink.getFinalFileName() == null) {
+                    downloadLink.setFinalFileName(name);
+                }
             }
             if (name == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+
             dl = new SimpleFTPDownloadInterface(ftp, downloadLink, Encoding.urlDecode(filePath, false));
             dl.startDownload();
         } catch (IOException e) {
@@ -189,7 +195,9 @@ public class Ftp extends PluginForHost {
                 }
             }
             if (size != -1) {
-                downloadLink.setVerifiedFileSize(size);
+                if (downloadLink.getVerifiedFileSize() < 0) {
+                    downloadLink.setVerifiedFileSize(size);
+                }
                 /* cut off all ?xyz at the end */
                 name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
                 if (name == null) {
@@ -197,7 +205,9 @@ public class Ftp extends PluginForHost {
                     name = downloadLink.getName();
                 }
                 name = Encoding.urlDecode(name, false);
-                downloadLink.setFinalFileName(name);
+                if (downloadLink.getFinalFileName() == null) {
+                    downloadLink.setFinalFileName(name);
+                }
             }
             if (name == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
