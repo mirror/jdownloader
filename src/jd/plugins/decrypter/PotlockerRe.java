@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "potlocker.me" }, urls = { "http://(www\\.)?potlocker\\.(net/[a-z0-9\\-]+/\\d{4}/[a-z0-9\\-]+|(re|me)/[a-z0-9\\-_]+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "potlocker.me" }, urls = { "http://(www\\.)?potlocker\\.(net/[a-z0-9\\-]+/\\d{4}/[a-z0-9\\-]+|(re|me)/[a-z0-9\\-_]+)\\.html" }, flags = { 0 })
 public class PotlockerRe extends antiDDoSForDecrypt {
 
     public PotlockerRe(PluginWrapper wrapper) {
@@ -37,19 +37,15 @@ public class PotlockerRe extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("potlocker.re/", "potlocker.me/");
         String finallink = null;
         if (parameter.matches("http://(www\\.)?potlocker\\.(re|net)/(newvideos|browse\\-.*?|login|index|contact_us|register|topvideos)\\.html")) {
-            try {
-                decryptedLinks.add(createOfflinelink(parameter));
-            } catch (final Throwable t) {
-                logger.info("Link offline: " + parameter);
-            }
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         getPage(parameter);
-        final String potlockerdirect = br.getRegex("file:\\s*'(http://potlocker\\.re/videos\\.php\\?vid=[a-z0-9]+)'").getMatch(0);
+        final String potlockerdirect = br.getRegex("file:\\s*'(http://potlocker\\.(?:re|me)/videos\\.php\\?vid=[a-z0-9]+)'").getMatch(0);
         if (potlockerdirect != null) {
             getPage(potlockerdirect);
             finallink = br.getRedirectLocation();
