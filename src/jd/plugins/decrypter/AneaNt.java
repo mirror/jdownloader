@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animea.net" }, urls = { "http://((www\\.)?animea\\.net/download/[\\d\\-]+/[\\w\\-]+episode\\-[\\d+\\.]+\\.html|manga\\.animea\\.net/[\\w\\-]+chapter\\-[\\d+\\.]+(\\-page\\-[\\d+\\.]+)?\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animea.net" }, urls = { "http://((www\\.)?animea\\.net/download/[\\d\\-]+/[\\w\\-]+episode\\-[\\d\\.]+\\.html|manga\\.animea\\.net/[\\w\\-]+chapter\\-[\\d\\.]+(\\-page\\-[\\d\\.]+)?\\.html)" }, flags = { 0 })
 public class AneaNt extends PluginForDecrypt {
 
     /**
@@ -54,10 +54,10 @@ public class AneaNt extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        if (parameter.matches("http://manga\\.animea\\.net/[\\w\\-]+chapter\\-[\\d+\\.]+(\\-page\\-[\\d+\\.]+)?\\.html")) {
-            parameter = parameter.replaceAll("chapter\\-\\d+(\\-page\\-\\d+)\\.html", "chapter-1.html");
+        if (parameter.matches("http://manga\\.animea\\.net/[\\w\\-]+chapter\\-[\\d\\.]+(\\-page\\-[\\d\\.]+)?\\.html")) {
+            parameter = parameter.replaceAll("(chapter\\-[\\d\\.]+)(\\-page\\-\\d+)?\\.html", "$1.html");
             param.setCryptedUrl(parameter);
         }
         br.setFollowRedirects(false);
@@ -90,6 +90,10 @@ public class AneaNt extends PluginForDecrypt {
             // We get the title
             String[][] title = br.getRegex("(?i)<title>(.+) (chapter ([\\d\\.]+)) - Page 1 of (\\d+)(?:\\s*-\\s*AnimeA)?</title>").getMatches();
             if (title == null || title.length == 0) {
+                if (true) {
+                    // not a error.. bad url
+                    return decryptedLinks;
+                }
                 logger.warning("Title not found! : " + parameter);
                 return null;
             }
@@ -138,12 +142,8 @@ public class AneaNt extends PluginForDecrypt {
                 link.setAvailable(true);
                 link.setProperty("fastAdd", "true");
                 fp.add(link);
-                try {
-                    distribute(link);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                }
                 decryptedLinks.add(link);
+                distribute(link);
                 if (i != numberOfPages) {
                     // load next page for the 'for' loop.
                     br.getPage(parameter.replace(".html", "-page-" + (i + 1) + ".html"));
