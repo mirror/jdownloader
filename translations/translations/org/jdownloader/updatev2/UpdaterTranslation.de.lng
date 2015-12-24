@@ -69,5 +69,6 @@ update_dialog_news_button=Änderungen ansehen
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Aktualisierung(en) verfügbar
 update_dialog_yes=Ja (empfohlen)
+update_done_close_in_TIME=Installation abgeschlossen. Beende in %s1
 update_in_next_session=Abbrechen und bis zum nächsten Neustart nicht mehr fragen
 updatedplugins=Plugins wurden aktualisiert. \nDu hast jetzt die neueste JDownloader-Version.
