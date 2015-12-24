@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai2read.com" }, urls = { "http://(www\\.)?hentai2read.com/[a-z0-9\\-_]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai2read.com" }, urls = { "http://(www\\.)?hentai2read.com/(?!latest)[a-z0-9\\-_]+/\\d+" }, flags = { 0 })
 public class Hentai2ReadCom extends PluginForDecrypt {
 
     public Hentai2ReadCom(PluginWrapper wrapper) {
@@ -37,14 +37,14 @@ public class Hentai2ReadCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter + "/1/");
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(getOffline(parameter));
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (br.containsHTML(">Sorry, this chapter is no longer available due to")) {
-            decryptedLinks.add(getOffline(parameter));
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("itemprop=\"itemreviewed\">([^<>]*?)</span>").getMatch(0);
@@ -81,14 +81,6 @@ public class Hentai2ReadCom extends PluginForDecrypt {
         }
 
         return decryptedLinks;
-    }
-
-    private DownloadLink getOffline(final String parameter) {
-        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-        offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-        offline.setAvailable(false);
-        offline.setProperty("offline", true);
-        return offline;
     }
 
 }
