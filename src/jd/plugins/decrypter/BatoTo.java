@@ -115,8 +115,24 @@ public class BatoTo extends PluginForDecrypt {
             // even though the cookie is set... they don't always respect this for small page count
             // http://www.batoto.net/read/_/249050/useful-good-for-nothing_ch1_by_suras-place
             /* TODO: Check if this is still working ... */
-            br.getPage("?supress_webtoon=t");
-            pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
+            // br.getPage("?supress_webtoon=t"); // Gets 405.
+            // pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
+            // Temporary fix:
+            String imglist = br.getRegex("(<div style=\"text-align:center\\;\"><img.*?<div)").getMatch(0);
+            if (imglist != null) {
+                logger.info("imglist: " + imglist);
+                String[] imgs = br.getRegex("<img src='(.*?)'").getColumn(0);
+                for (final String img : imgs) {
+                    final DownloadLink link = createDownloadlink(img);
+                    String imgname = new Regex(img, "([^/]*)$").getMatch(0);
+                    link.setFinalFileName(title_comic + " - " + tag_title + " - " + imgname);
+                    link.setAvailable(true);
+                    fp.add(link);
+                    distribute(link);
+                    decryptedLinks.add(link);
+                }
+                return decryptedLinks;
+            }
         }
         if (pages == null) {
             logger.warning("Decrypter broken for: " + parameter + " @ pages");
