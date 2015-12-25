@@ -30,10 +30,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "http://(www\\.)?8muses\\.com/picture/.+" }, flags = { 0 })
-public class EightMusesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(www\\.)?8muses\\.com/picture/.+" }, flags = { 0 })
+public class EightMusesCom extends antiDDoSForHost {
 
     public EightMusesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,14 +43,7 @@ public class EightMusesCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-
-    private String               DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -60,28 +52,30 @@ public class EightMusesCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
+        br = new Browser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<b>Notice</b>:")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/picture/(?:\\d+\\-)?(.+)").getMatch(0);
         filename = filename.replace("/", "_");
-        DLLINK = br.getRegex("\"(//s\\.8muses\\.com/../_data/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("\"(//s\\.8muses\\.com/(?:.{2}/_?data|data/.{2})/[^<>\"]*?)\"").getMatch(0);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = "http:" + DLLINK.replace("/../_data/", "/_data/");
+        // jd Request.getLocation is stupid! urls starting with // are base!
+        dllink = new Regex(br.getURL(), "https?:").getMatch(-1) + dllink;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+            ext = ".jpg";
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -93,7 +87,7 @@ public class EightMusesCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = openConnection(br2, dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -102,7 +96,7 @@ public class EightMusesCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -115,7 +109,7 @@ public class EightMusesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -174,7 +168,7 @@ public class EightMusesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return -1;
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {

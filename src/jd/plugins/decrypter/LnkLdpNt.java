@@ -92,7 +92,7 @@ public class LnkLdpNt extends antiDDoSForDecrypt {
         Form captcha = br2.getForm(0);
         for (int i = 1; i < retry; i++) {
             if (captcha == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                return;
             }
             if (br2.containsHTML("google\\.com/recaptcha")) {
                 // recaptcha v1
