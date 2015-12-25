@@ -43,12 +43,7 @@ public class FivehundretPxCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Connection stuff */
-    private static final boolean free_resume       = false;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-
-    private String               DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -67,7 +62,7 @@ public class FivehundretPxCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -90,15 +85,15 @@ public class FivehundretPxCom extends PluginForHost {
         final String user_firstname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/firstname");
         final String user_lastname = (String) DummyScriptEnginePlugin.walkJson(entries, "user/lastname");
         final String ext = (String) entries.get("image_format");
-        DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{4}/https_url");
-        if (DLLINK == null) {
-            DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{3}/https_url");
+        dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{4}/https_url");
+        if (dllink == null) {
+            dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "images/{3}/https_url");
         }
-        if (title == null || user_firstname == null || user_lastname == null || ext == null || DLLINK == null) {
+        if (title == null || ext == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String filename = user_firstname + " " + user_lastname + " - " + title + "." + ext;
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        String filename = (user_firstname != null ? user_firstname + " ": "") + (user_lastname  != null ? user_lastname  + " - ": "") + title + "." + ext;
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -112,7 +107,7 @@ public class FivehundretPxCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -121,7 +116,7 @@ public class FivehundretPxCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -134,7 +129,7 @@ public class FivehundretPxCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -169,7 +164,7 @@ public class FivehundretPxCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return -1;
     }
 
     @Override
