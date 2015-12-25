@@ -105,7 +105,7 @@ public class AbcNtAu extends antiDDoSForDecrypt {
             }
         }
         // lets look for external links? youtube etc.
-        final String[] externlinks = br.getRegex("<div class=\"inline-content (?:full|left|right)\">(.*?)</div>").getColumn(0);
+        final String[] externlinks = br.getRegex("<div class=\"inline-content (?:interactive )?(?:full|left|right)\">(.*?)</div>").getColumn(0);
         if (externlinks != null) {
             for (final String externlink : externlinks) {
                 final String[] links = HTMLParser.getHttpLinks(externlink, null);
