@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -29,10 +27,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropcanvas.com" }, urls = { "http://(www\\.)?dropcanvas\\.com/[a-z0-9]+/\\d+" }, flags = { 0 })
-public class DropCanVasCom extends PluginForHost {
+public class DropCanVasCom extends antiDDoSForHost {
 
     public DropCanVasCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,26 +43,25 @@ public class DropCanVasCom extends PluginForHost {
     private String DLLINK = null;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getDownloadURL());
+            con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getDownloadURL()));
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 DLLINK = link.getDownloadURL();
                 return AvailableStatus.TRUE;
             }
-            br.followConnection();
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML(">The file you requested could not be found") || this.br.containsHTML("class=\"canvasNotAvailable\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">The file you requested could not be found|class=\"canvasNotAvailable\"|>File not found\\.\\.\\.</div>") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Please wait while we fetch your download</h3>([^<>\"]*?)<br />").getMatch(0);
