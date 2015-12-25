@@ -71,7 +71,6 @@ public class FoxPlayInfo extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "http://foxplay.info" + dllink;
         // Can be skipped
         // int wait = 30;
         // final String waittime = br.getRegex("class=\\'counter_digits\\'>(\\d+)</div>").getMatch(0);

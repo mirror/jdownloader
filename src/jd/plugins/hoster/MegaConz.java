@@ -20,6 +20,12 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.FileStateManager;
+import org.jdownloader.controlling.FileStateManager.FILESTATE;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.PluginTaskID;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,13 +48,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.FileStateManager;
-import org.jdownloader.controlling.FileStateManager.FILESTATE;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.PluginTaskID;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+(=###n=[a-zA-Z0-9]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+(=###n=[a-zA-Z0-9]+)?|mega:///#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9]+" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL   = "USE_SSL_V2";
@@ -84,7 +84,7 @@ public class MegaConz extends PluginForHost {
                 }
             }
         }
-        if (url.startsWith("chrome://")) {
+        if (url.startsWith("chrome://") || url.startsWith("mega:///")) {
             final String keyString = getPublicFileKey(link);
             if (fileID != null && keyString != null) {
                 link.setUrlDownload("https://mega.co.nz/#!" + fileID + "!" + keyString);
