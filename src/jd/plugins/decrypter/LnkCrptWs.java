@@ -362,6 +362,10 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     if (link == null) {
                         // 20151116
                         link = clone.getRegex("var url = ('|\")(.*?)\\1").getMatch(1);
+                        if (link == null) {
+                            // 20151226
+                            link = clone.getRegex("top\\.location\\.href\\s*\\=\\s*doNotTrack\\('(.*?)'\\)").getMatch(0);
+                        }
                     }
                     if (link != null) {
                         final DownloadLink dl = createDownloadlink(link);
