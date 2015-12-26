@@ -71,7 +71,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     /**
      * 24.11.15 Update by Bilal Ghouri:
-     *
+     * 
      * - Host has removed captcha and added attempts-account based system. API calls have been updated as well. - Cookies are valid for 30
      * days after last use. After that, Session Expired error will occur. In which case, Login() should be called to get new cookies and
      * store them for further use. - Better Error handling through exceptions.
@@ -152,7 +152,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + getJson("error"), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}\\}").getMatch(0);
+        final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}").getMatch(0);
         if (hostText == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
