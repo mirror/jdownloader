@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -54,21 +53,7 @@ public class PeekVidsCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension         = ".mp4";
-    /* Connection stuff */
-    /* Connection stuff */
-    private static final boolean FREE_RESUME               = true;
-    private static final int     FREE_MAXCHUNKS            = 0;
-    private static final int     FREE_MAXDOWNLOADS         = 20;
-    private static final boolean ACCOUNT_FREE_RESUME       = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
-
-    private String               dllink                    = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -103,7 +88,15 @@ public class PeekVidsCom extends PluginForHost {
             logger.info("No account available --> Continuing without account");
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Video not found<|class=\"play\\-error\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("Video not found<|class=\"play\\-error\"|>This video was deleted<") || br.getHttpConnection().getResponseCode() == 404) {
+            // filename can be present with offline links, so lets set it!
+            String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename);
+                filename = filename.trim();
+                filename = encodeUnicode(filename);
+                downloadLink.setFinalFileName(filename + ".mp4");
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -138,7 +131,7 @@ public class PeekVidsCom extends PluginForHost {
         ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+            ext = ".mp4";
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -178,7 +171,7 @@ public class PeekVidsCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, true, 0, "free_directlink");
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -196,11 +189,7 @@ public class PeekVidsCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        return -1;
     }
 
     private static final String MAINPAGE = "http://peekvids.com";
@@ -275,16 +264,11 @@ public class PeekVidsCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-        try {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(false);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
-        ai.setStatus("Registered (free) user");
+        account.setType(AccountType.FREE);
+        /* free accounts can still have captcha */
+        account.setMaxSimultanDownloads(-1);
+        account.setConcurrentUsePossible(false);
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
@@ -293,7 +277,7 @@ public class PeekVidsCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         /* No need to log in here as we're already logged in in availablecheck. */
-        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        doFree(link, true, 0, "account_free_directlink");
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
@@ -317,15 +301,9 @@ public class PeekVidsCom extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br, key);
     }
 
     @Override

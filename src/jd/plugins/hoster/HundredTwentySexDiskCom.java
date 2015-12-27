@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,9 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(www\\.)?126disk\\.com/(file|rf)view_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(?:www\\.)?126(?:disk|xy)\\.com)/(file|rf)view_\\d+\\.html" }, flags = { 0 })
 public class HundredTwentySexDiskCom extends PluginForHost {
 
     public HundredTwentySexDiskCom(PluginWrapper wrapper) {
@@ -51,7 +51,7 @@ public class HundredTwentySexDiskCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.126disk.com/error.php") || br.getHttpConnection().getResponseCode() == 403 || br.containsHTML(">你访问的文件不存在。现在将转入首页！")) {
+        if (br.getURL().endsWith("/error.php") || br.getHttpConnection().getResponseCode() == 403 || br.containsHTML(">你访问的文件不存在。现在将转入首页！|>\\s*你访问的文件包含违规内容…\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1><img src=\\'[^<>\"]*?\\'>([^<>\"]*?)</h1>").getMatch(0);
@@ -80,8 +80,8 @@ public class HundredTwentySexDiskCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getPage("http://www.126disk.com/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=0&type=wt&t=" + System.currentTimeMillis());
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.126disk\\.com/[^<>\"]*?)\"").getMatch(0);
+        br.getPage("/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=0&type=wt&t=" + System.currentTimeMillis());
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.126(?:disk|xy)\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
