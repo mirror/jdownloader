@@ -76,7 +76,7 @@ public class FastStoreOrg extends PluginForHost {
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
-    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = false;
+    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private static final boolean           ENABLE_HTML_FILESIZE_CHECK   = false;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);

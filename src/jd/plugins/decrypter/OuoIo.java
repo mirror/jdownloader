@@ -18,16 +18,15 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.io/[A-Za-z0-9]+" }, flags = { 0 })
 public class OuoIo extends PluginForDecrypt {
@@ -52,13 +51,18 @@ public class OuoIo extends PluginForDecrypt {
         final String token = br.getRegex("name=\"_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         br.postPage("http://ouo.io/go/" + fid, "_token=" + Encoding.urlEncode(token) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-        final String finallink = br.getRegex("\"(http://[^<>\"]*?)\" id=\"btn-main\"").getMatch(0);
+        final String finallink = getFinalLink();
         if (finallink == null) {
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
+    }
+
+    private String getFinalLink() {
+        final String finallink = br.getRegex("\"\\s*(.*?)\\s*\"\\s+id=\"btn-main\"").getMatch(0);
+        return finallink;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
