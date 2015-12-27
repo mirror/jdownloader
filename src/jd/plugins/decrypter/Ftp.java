@@ -4,6 +4,9 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -14,12 +17,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
 public class Ftp extends PluginForDecrypt {
@@ -64,7 +62,7 @@ public class Ftp extends PluginForDecrypt {
                 name = null;
             }
             filePath = filePath.substring(0, filePath.lastIndexOf("/") + 1);
-            final String packageName = new Regex(filePath, "/([^/]+)(/$|$)").getMatch(0);
+            String packageName = new Regex(filePath, "/([^/]+)(/$|$)").getMatch(0);
             if (ftp.cwd(filePath)) {
                 final SimpleFTPListEntry[] entries = ftp.listEntries();
                 if (entries != null) {
@@ -74,20 +72,30 @@ public class Ftp extends PluginForDecrypt {
                     } else {
                         auth = "";
                     }
+                    /*
+                     * logic for only adding a given file, ie. ftp://domain/directory/file.exe, you could also have subdirectory of the same
+                     * name ftp.../file.exe/file.exe -raztoki
+                     */
                     for (final SimpleFTPListEntry entry : entries) {
-                        if (name != null) {
-                            // specific file is requested
-                            if (StringUtils.equals(entry.getName(), name) && entry.isFile()) {
-                                final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
-                                link.setAvailable(true);
-                                if (entry.getSize() >= 0) {
-                                    link.setVerifiedFileSize(entry.getSize());
-                                }
-                                link.setFinalFileName(entry.getName());
-                                ret.add(link);
-                                break;
+                        if (entry.isFile() && StringUtils.equals(entry.getName(), name)) {
+                            final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
+                            link.setAvailable(true);
+                            if (entry.getSize() >= 0) {
+                                link.setVerifiedFileSize(entry.getSize());
                             }
-                        } else {
+                            link.setFinalFileName(entry.getName());
+                            ret.add(link);
+                        }
+                    }
+                    /*
+                     * logic for complete directory! will not walk aka recursive! - raztoki
+                     */
+                    if (ret.isEmpty()) {
+                        /*
+                         * if 'name' == file then packagename == correct, ELSE if name != file then it should be packagename! -raztoki
+                         */
+                        packageName = name;
+                        for (final SimpleFTPListEntry entry : entries) {
                             if (entry.isFile()) {
                                 final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
                                 link.setAvailable(true);
@@ -102,7 +110,10 @@ public class Ftp extends PluginForDecrypt {
                 }
             }
             if (name != null && ret.size() == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /*
+                 * wrong, folder could be empty, or contain sub directories this shouldn't be a defect! -raztoki
+                 */
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (packageName != null) {
                 final FilePackage fp = FilePackage.getInstance();
