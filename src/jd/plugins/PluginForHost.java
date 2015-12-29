@@ -152,14 +152,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[]   PATTERNS       = new Pattern[] {
 
-                                                    /**
-                                                     * these patterns should split filename and fileextension (extension must include the
-                                                     * point)
-                                                     */
-                                                    // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin           lazyP          = null;
     /**
@@ -877,7 +877,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void postHandle(final DownloadLink downloadLink, final Account account, final PluginForHost pluginForHost) throws Exception {
         if (pluginForHost != null && downloadLink != null && StringUtils.equalsIgnoreCase(downloadLink.getHost(), pluginForHost.getHost())) {
-            if (downloadLink.getBooleanProperty("GENERIC_VARIANTS", false) && downloadLink.hasVariantSupport()) {
+            if (downloadLink.isGenericVariantSupport() && downloadLink.hasVariantSupport()) {
                 final GenericVariants var = downloadLink.getVariant(GenericVariants.class);
                 if (var != null) {
                     var.runPostDownload(this, downloadLink, account);
@@ -888,7 +888,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void preHandle(final DownloadLink downloadLink, final Account account, final PluginForHost pluginForHost) throws Exception {
         if (pluginForHost != null && downloadLink != null && StringUtils.equalsIgnoreCase(downloadLink.getHost(), pluginForHost.getHost())) {
-            if (downloadLink.getBooleanProperty("GENERIC_VARIANTS", false) && downloadLink.hasVariantSupport()) {
+            if (downloadLink.isGenericVariantSupport() && downloadLink.hasVariantSupport()) {
                 final GenericVariants var = downloadLink.getVariant(GenericVariants.class);
                 if (var != null) {
                     var.runPreDownload(this, downloadLink, account);
@@ -900,16 +900,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1652,7 +1652,7 @@ public abstract class PluginForHost extends Plugin {
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
         downloadLink.setVariant(variant);
         if (variant instanceof GenericVariants) {
-            GenericVariants v = (GenericVariants) variant;
+            final GenericVariants v = (GenericVariants) variant;
             switch (v) {
             case ORIGINAL:
                 downloadLink.setCustomExtension(null);
@@ -1705,11 +1705,9 @@ public abstract class PluginForHost extends Plugin {
                     HashSet<GenericVariants> map = new HashSet<GenericVariants>();
                     final ArrayList<GenericVariants> list = new ArrayList<GenericVariants>();
                     for (CrawledLink cl : pv.getChildren()) {
-
                         if (cl.getDownloadLink() == null || !cl.getDownloadLink().getBooleanProperty("GENERIC_VARIANTS", false) || !cl.getDownloadLink().hasVariantSupport()) {
                             continue;
                         }
-
                         List<GenericVariants> v = cl.getDownloadLink().getVariants(GenericVariants.class);
                         if (v != null) {
                             for (LinkVariant lv : v) {
@@ -1731,7 +1729,6 @@ public abstract class PluginForHost extends Plugin {
                             return o1.name().compareTo(o2.name());
                         }
                     });
-
                     new EDTRunner() {
 
                         @Override
@@ -1751,7 +1748,6 @@ public abstract class PluginForHost extends Plugin {
                                     @Override
                                     public void actionPerformed(ActionEvent e) {
                                         java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
                                         for (CrawledLink cl : pv.getChildren()) {
                                             // List<GenericVariants> variants = new ArrayList<GenericVariants>();
                                             for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
@@ -1761,13 +1757,10 @@ public abstract class PluginForHost extends Plugin {
                                                     break;
                                                 }
                                             }
-
                                         }
-
                                         LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                                         linkChecker.check(checkableLinks);
                                     }
-
                                 }));
 
                                 addVariants.add(new JMenuItem(new BasicAction() {
@@ -1784,7 +1777,6 @@ public abstract class PluginForHost extends Plugin {
                                             for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
                                                 if (v.equals(gv)) {
                                                     CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, gv);
-
                                                     if (newLink != null) {
                                                         checkableLinks.add(newLink);
                                                     } else {
@@ -1793,9 +1785,7 @@ public abstract class PluginForHost extends Plugin {
                                                     break;
                                                 }
                                             }
-
                                         }
-
                                         LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                                         linkChecker.check(checkableLinks);
                                     }
@@ -1803,12 +1793,9 @@ public abstract class PluginForHost extends Plugin {
                                 }));
                             }
                         }
-
                     };
-
                 };
             }.start();
-
             parent.add(setVariants);
             parent.add(addVariants);
         }
@@ -2217,24 +2204,23 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public List<GenericVariants> getGenericVariants(DownloadLink downloadLink) {
-        List<String> converts = getConvertToList(downloadLink);
+        final List<String> converts = getConvertToList(downloadLink);
         if (converts != null && converts.size() > 0) {
-            List<GenericVariants> variants = new ArrayList<GenericVariants>();
+            final List<GenericVariants> variants = new ArrayList<GenericVariants>();
             variants.add(GenericVariants.ORIGINAL);
-            for (String v : converts) {
+            for (final String v : converts) {
                 try {
                     variants.add(GenericVariants.valueOf(v));
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
-
             }
             if (variants.size() > 1) {
                 return variants;
             }
         } else {
-            String name = downloadLink.getName();
-            String exten = Files.getExtension(name);
+            final String name = downloadLink.getName();
+            final String exten = Files.getExtension(name);
             if (exten != null) {
                 boolean isVideo = false;
                 for (final ExtensionsFilterInterface extension : VideoExtensions.values()) {
@@ -2244,13 +2230,10 @@ public abstract class PluginForHost extends Plugin {
                     }
                 }
                 if (isVideo) {
-                    List<GenericVariants> variants = new ArrayList<GenericVariants>();
-
+                    final List<GenericVariants> variants = new ArrayList<GenericVariants>();
                     variants.add(GenericVariants.DEMUX_GENERIC_AUDIO);
-
                     return variants;
                 }
-
             }
         }
         return null;

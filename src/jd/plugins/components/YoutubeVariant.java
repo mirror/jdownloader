@@ -12,7 +12,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.youtube.AudioBitrate;
 import jd.plugins.components.youtube.AudioCodec;
 
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public enum YoutubeVariant implements YoutubeVariantInterface {
@@ -2210,7 +2212,26 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         return ret;
     }
 
+    private static final Icon VIDEO = new AbstractIcon(IconKey.ICON_VIDEO, 16);
+    private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
+    private static final Icon IMAGE = new AbstractIcon(IconKey.ICON_IMAGE, 16);
+    private static final Icon TEXT  = new AbstractIcon(IconKey.ICON_TEXT, 16);
+
     public Icon _getIcon() {
+        final VariantGroup lGroup = getGroup();
+        if (lGroup != null) {
+            switch (lGroup) {
+            case AUDIO:
+                return AUDIO;
+            case VIDEO:
+            case VIDEO_3D:
+                return VIDEO;
+            case IMAGE:
+                return IMAGE;
+            default:
+                return TEXT;
+            }
+        }
         return null;
     }
 

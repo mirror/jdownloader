@@ -35,8 +35,7 @@ public class ConnectedDevice {
         return info;
     }
 
-    private String  id;
-    private boolean jdanywhere = false;
+    private String id;
 
     public String getId() {
         return id;
@@ -54,35 +53,62 @@ public class ConnectedDevice {
         return 5 * 60 * 1000l;
     }
 
+    private String deviceName = null;
+    private String frontEnd   = null;
+
     public void setLatestRequest(RemoteAPIRequest request) {
         latestRequest = request;
         this.lastPing = System.currentTimeMillis();
         if (latestRequest.getRequestedPath().contains("anywhere")) {
-
             // workaround. jdanywhere does not use a user agent
-            this.jdanywhere = true;
+            deviceName = "IPhone/IPad";
+            frontEnd = "JDAnywhere";
+        } else {
+            deviceName = _getDeviceName();
+            frontEnd = _getFrontendName();
         }
     }
 
-    public String getDeviceName() {
-        if (jdanywhere) {
-            return "IPhone/IPad";
+    private String _getFrontendName() {
+        final String origin = latestRequest.getRequestHeaders().getValue("Origin");
+        if (StringUtils.equals(origin, "http://my.jdownloader.org") || StringUtils.equals(origin, "https://my.jdownloader.org")) {
+            return "Webinterface http://my.jdownloader.org by AppWork";
+        } else if (StringUtils.startsWithCaseInsensitive(origin, "chrome-extension://")) {
+            return "Chrome Extension by AppWork";
+        } else if (StringUtils.equals(origin, "null")) {
+            // TODO: add proper detection
+            return "Firefox Extension by AppWork";
         } else if (isAndroidApp(getUserAgentString())) {
-            Matcher matcher = ANDROID_USERAGENT_PATTERN.matcher(getUserAgentString());
+            return "MyJDownloader by AppWork";
+        } else if (isFileReconApp(getUserAgentString())) {
+            return "file.recon by Pseudocode";
+        } else if (isJDUniversalApp(getUserAgentString())) {
+            return "JD Universal by Pseudocode";
+        }
+        if (StringUtils.isNotEmpty(origin) && !"null".equals(origin)) {
+            return origin;
+        }
+        return "Unknown";
+    }
+
+    private String _getDeviceName() {
+        final String uA = getUserAgentString();
+        if (isAndroidApp(uA)) {
+            final Matcher matcher = ANDROID_USERAGENT_PATTERN.matcher(uA);
             if (matcher.matches()) {
                 return matcher.group(4).replace(" ", "") + matcher.group(5).replace(" ", "") + "@Android" + matcher.group(3);
             } else {
                 return "Android";
             }
-        } else if (isFileReconApp(getUserAgentString())) {
-            Matcher matcher = WINMOB_FILERECON_USERAGENT_PATTERN.matcher(getUserAgentString());
+        } else if (isFileReconApp(uA)) {
+            final Matcher matcher = WINMOB_FILERECON_USERAGENT_PATTERN.matcher(uA);
             if (matcher.matches()) {
                 return "file.recon" + matcher.group(1).replace(" ", "") + "(" + matcher.group(2).replace(" ", "") + ")" + "@WindowsMobile";
             } else {
                 return "file.recon@WindowsMobile";
             }
-        } else if (isJDUniversalApp(getUserAgentString())) {
-            Matcher matcher = WIN_UNIVERSAL_USERAGENT_PATTERN.matcher(getUserAgentString());
+        } else if (isJDUniversalApp(uA)) {
+            final Matcher matcher = WIN_UNIVERSAL_USERAGENT_PATTERN.matcher(uA);
             if (matcher.matches()) {
                 return "JDUniversal" + matcher.group(1).replace(" ", "") + "(" + matcher.group(2).replace(" ", "") + ")" + "@Win10";
             } else {
@@ -94,7 +120,10 @@ public class ConnectedDevice {
         } else {
             return getUserAgentString();
         }
+    }
 
+    public String getDeviceName() {
+        return deviceName;
     }
 
     public String getUserAgentString() {
@@ -106,42 +135,22 @@ public class ConnectedDevice {
     }
 
     public String getFrontendName() {
-        if (jdanywhere) {
-            return "JDAnywhere";
-        }
-        String origin = latestRequest.getRequestHeaders().getValue("Origin");
-
-        if (StringUtils.equals(origin, "http://my.jdownloader.org") || StringUtils.equals(origin, "https://my.jdownloader.org")) {
-            return "Webinterface http://my.jdownloader.org";
-        } else if (origin != null && origin.startsWith("chrome-extension://")) {
-            return "Chrome Extension";
-        } else if (isAndroidApp(getUserAgentString())) {
-            return "MyJDownloader by AppWork";
-        } else if (isFileReconApp(getUserAgentString())) {
-            return "file.recon by Pseudocode";
-        } else if (isJDUniversalApp(getUserAgentString())) {
-            return "JD Universal by Pseudocode";
-        }
-        if (origin != null) {
-            return origin;
-        }
-        return "Unknown";
-
+        return frontEnd;
     }
 
-    public boolean isAndroidApp(final String userAgent) {
+    private boolean isAndroidApp(final String userAgent) {
         return StringUtils.startsWithCaseInsensitive(userAgent, "MyJDownloader Android App");
     }
 
-    public boolean isFileReconApp(final String userAgent) {
+    private boolean isFileReconApp(final String userAgent) {
         return StringUtils.startsWithCaseInsensitive(userAgent, "MyJDownloader file.recon App");
     }
 
-    public boolean isJDUniversalApp(final String userAgent) {
+    private boolean isJDUniversalApp(final String userAgent) {
         return StringUtils.startsWithCaseInsensitive(userAgent, "MyJDownloader JD Universal App");
     }
 
-    public static boolean isThisMyIpAddress(InetAddress addr) {
+    private static boolean isThisMyIpAddress(InetAddress addr) {
         // Check if the address is a valid special local or loop back
         if (addr.isAnyLocalAddress() || addr.isLoopbackAddress()) {
             return true;
@@ -159,11 +168,11 @@ public class ConnectedDevice {
         final List<MyJDownloaderHttpConnection> list = MyJDownloaderHttpConnection.getConnectionsByToken(getConnectToken());
         final int num;
         if (list == null) {
-            num = 0;
+            return "0 Connections";
         } else {
             num = list.size();
         }
-        HttpConnection con = latestRequest.getHttpRequest().getConnection();
+        final HttpConnection con = latestRequest.getHttpRequest().getConnection();
         if (con instanceof MyJDownloaderDirectHttpConnection) {
             if (num == 0) {
                 return "0 Direct Connections via my.jdownloader";

@@ -57,6 +57,7 @@ import org.jdownloader.controlling.DownloadLinkView;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
+import org.jdownloader.controlling.linkcrawler.GenericVariants;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
@@ -2259,6 +2260,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public <T extends LinkVariant> T getVariant(Class<T> type) {
+        if (getBooleanProperty("GENERIC_VARIANTS", false) && !GenericVariants.class.equals(type)) {
+            return null;
+        }
         try {
             final Object variant = getTempProperties().getProperty("VARIANT");
             if (variant != null && type.isAssignableFrom(variant.getClass())) {
@@ -2287,10 +2291,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     }
 
+    public boolean isGenericVariantSupport() {
+        return getBooleanProperty("GENERIC_VARIANTS", false);
+    }
+
     public <T extends LinkVariant> List<T> getVariants(final Class<T> type) {
+        if (isGenericVariantSupport() && !GenericVariants.class.equals(type)) {
+            return null;
+        }
         try {
             final List<LinkVariant> variants = (List<LinkVariant>) getTempProperties().getProperty("VARIANTS");
-            if (variants != null && false) {
+            if (variants != null && variants.size() > 0) {
                 final LinkVariant castTest = variants.get(0);
                 if (type.isAssignableFrom(castTest.getClass())) {
                     return (List<T>) variants;

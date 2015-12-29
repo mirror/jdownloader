@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
-import javax.swing.JComponent;
-
 import jd.PluginWrapper;
 import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
@@ -57,12 +55,17 @@ public class DailyMotionComV2 extends DailyMotionCom {
     // }
 
     public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
-
+        if (downloadLink.isGenericVariantSupport()) {
+            return super.getVariantsByLink(downloadLink);
+        }
         return downloadLink.getVariants(DailyMotionVariant.class);
     }
 
     @Override
     public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
+        if (downloadLink.isGenericVariantSupport()) {
+            return super.getActiveVariantByLink(downloadLink);
+        }
         return downloadLink.getVariant(DailyMotionVariant.class);
     }
 
@@ -123,7 +126,6 @@ public class DailyMotionComV2 extends DailyMotionCom {
                 }
             }
             dl.setVariants(variants);
-
         }
     }
 
@@ -216,24 +218,20 @@ public class DailyMotionComV2 extends DailyMotionCom {
 
     public class NoAudioException extends PluginException {
 
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+
         public NoAudioException() {
             super(LinkStatus.ERROR_FILE_NOT_FOUND, "No Audio Stream available");
         }
 
     }
 
-    @Override
-    public JComponent getVariantPopupComponent(DownloadLink downloadLink) {
-        return super.getVariantPopupComponent(downloadLink);
-    }
-
-    @Override
-    public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
-        if (variant != null && variant instanceof DailyMotionVariant) {
-            DailyMotionVariant dmv = (DailyMotionVariant) variant;
-
+    public static void setActiveVariant(DownloadLink downloadLink, DailyMotionVariant dmv) {
+        if (dmv != null) {
             try {
-
                 downloadLink.setProperty("directlink", dmv.getLink());
                 downloadLink.setProperty("qualityvalue", dmv.getqValue());
                 downloadLink.setProperty("qualityname", dmv.getqName());
@@ -243,12 +241,9 @@ public class DailyMotionComV2 extends DailyMotionCom {
                     downloadLink.setProperty("plain_ext", "." + dmv.getConvertTo());
                 }
                 final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(downloadLink);
-
                 downloadLink.setFinalFileName(formattedFilename);
                 downloadLink.setLinkID("dailymotioncom" + downloadLink.getStringProperty("plain_videoid") + "_" + dmv.getDisplayName());
-
-                downloadLink.setVariant(variant);
-
+                downloadLink.setVariant(dmv);
                 if (dmv.getConvertTo() != null) {
                     downloadLink.setInternalTmpFilenameAppend(".tmp");
                 } else {
@@ -257,6 +252,15 @@ public class DailyMotionComV2 extends DailyMotionCom {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    @Override
+    public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
+        if (variant != null && variant instanceof DailyMotionVariant) {
+            setActiveVariant(downloadLink, (DailyMotionVariant) variant);
+        } else if (variant != null) {
+            super.setActiveVariantByLink(downloadLink, variant);
         }
     }
 

@@ -4,9 +4,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -18,6 +15,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
 public class Ftp extends PluginForDecrypt {
@@ -94,7 +94,9 @@ public class Ftp extends PluginForDecrypt {
                         /*
                          * if 'name' == file then packagename == correct, ELSE if name != file then it should be packagename! -raztoki
                          */
-                        packageName = name;
+                        if (name != null) {
+                            packageName = name;
+                        }
                         for (final SimpleFTPListEntry entry : entries) {
                             if (entry.isFile()) {
                                 final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
@@ -126,4 +128,5 @@ public class Ftp extends PluginForDecrypt {
         }
         return ret;
     }
+
 }
