@@ -51,8 +51,13 @@ import jd.plugins.PluginProgress;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.neerdi\\.com|encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
 public class MegaCrypterCom extends antiDDoSForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "megacrypter.neerdi.com", "encrypterme.ga", "megacrypter.noestasinvitado.com", "youpaste.co", "linkcrypter.net", "megacrypter.linkcrypter.net" };
+    }
 
     // note: hosts removed due to be down.
     // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server.
@@ -68,7 +73,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
     }
 
     private void setUrl(final DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().contains("encrypterme.ga/")) {
+        if (downloadLink.getDownloadURL().contains("encrypterme.ga/") || downloadLink.getDownloadURL().contains("megacrypter.neerdi.com/")) {
             // https seems to some soccer sports page
             supportsHTTPS = false;
             enforcesHTTPS = false;
@@ -485,8 +490,4 @@ public class MegaCrypterCom extends antiDDoSForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "encrypterme.ga", "megacrypter.noestasinvitado.com", "youpaste.co", "linkcrypter.net", "megacrypter.linkcrypter.net" };
-    }
 }
