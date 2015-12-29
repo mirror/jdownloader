@@ -2334,7 +2334,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public boolean hasConverer(DownloadLink downloadLink) {
+    public boolean hasConverter(DownloadLink downloadLink) {
         return converter != null;
     }
 

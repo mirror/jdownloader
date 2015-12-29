@@ -60,7 +60,7 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public boolean hasConverer(DownloadLink downloadLink) {
+    public boolean hasConverter(DownloadLink downloadLink) {
         return converter != null;
     }
 

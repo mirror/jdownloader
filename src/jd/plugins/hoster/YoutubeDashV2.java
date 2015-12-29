@@ -784,7 +784,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
         downloadLink.setInternalTmpFilenameAppend(null);
         YoutubeVariantInterface v = getVariant(downloadLink);
-        if (v.hasConverer(downloadLink)) {
+        if (v.hasConverter(downloadLink)) {
             downloadLink.setInternalTmpFilenameAppend(".tmp");
         }
 
@@ -1631,7 +1631,7 @@ public class YoutubeDashV2 extends PluginForHost {
             break;
 
         }
-        if (variant.hasConverer(downloadLink)) {
+        if (variant.hasConverter(downloadLink)) {
             long lastMod = new File(downloadLink.getFileOutput()).lastModified();
 
             variant.convert(downloadLink, this);
@@ -2022,7 +2022,7 @@ public class YoutubeDashV2 extends PluginForHost {
         }
 
         @Override
-        public boolean hasConverer(DownloadLink downloadLink) {
+        public boolean hasConverter(DownloadLink downloadLink) {
             return false;
         }
 

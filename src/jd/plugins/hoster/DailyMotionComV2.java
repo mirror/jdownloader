@@ -77,7 +77,9 @@ public class DailyMotionComV2 extends DailyMotionCom {
             if (var == null || var.getConvertTo() == null) {
                 super.downloadDirect(downloadLink);
             } else {
-
+                if (var.getConvertTo() != null) {
+                    downloadLink.setInternalTmpFilenameAppend(".tmp");
+                }
                 checkFFmpeg(downloadLink, _JDT._.plugin_for_host_reason_for_ffmpeg_demux());
                 super.downloadDirect(downloadLink);
 
