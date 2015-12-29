@@ -90,7 +90,7 @@ public interface YoutubeVariantInterface extends LinkVariant {
 
     String modifyFileName(String formattedFilename, DownloadLink link);
 
-    boolean hasConverer(DownloadLink downloadLink);
+    boolean hasConverter(DownloadLink downloadLink);
 
     List<File> listProcessFiles(DownloadLink link);
 
