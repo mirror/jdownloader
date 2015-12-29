@@ -1922,9 +1922,9 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     public class SubtitleVariant implements YoutubeVariantInterface {
-
-        private Locale locale;
-        private String code;
+        private final Icon TEXT = new AbstractIcon(IconKey.ICON_TEXT, 16);
+        private Locale     locale;
+        private String     code;
 
         public SubtitleVariant(String code) {
             this.code = code;
@@ -1954,7 +1954,7 @@ public class YoutubeDashV2 extends PluginForHost {
         }
 
         public Icon _getIcon() {
-            return null;
+            return TEXT;
         }
 
         @Override

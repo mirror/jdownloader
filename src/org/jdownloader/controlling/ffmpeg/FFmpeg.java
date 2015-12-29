@@ -51,81 +51,37 @@ public class FFmpeg extends AbstractFFmpegBinary {
     }
 
     public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
-        logger.info("Merging " + videoIn + " + " + audioIn + " = " + out);
-
-        long lastModifiedVideo = new File(videoIn).lastModified();
-        long lastModifiedAudio = new File(audioIn).lastModified();
-
-        ArrayList<String> commandLine = fillCommand(out, videoIn, audioIn, null, config.getMuxToMp4Command());
-        if (runCommand(progress, commandLine) != null) {
-
-            try {
-
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(Math.max(lastModifiedAudio, lastModifiedVideo));
-                }
-            } catch (final Throwable e) {
-                LoggerFactory.log(logger, e);
-            }
-            return true;
-        }
-        return false;
-
+        return mux(progress, out, videoIn, audioIn, config.getMuxToMp4Command());
     }
 
     public boolean generateM4a(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
-
-        long lastModifiedAudio = new File(audioIn).lastModified();
-
-        ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDash2M4aCommand());
-        if (runCommand(progress, commandLine) != null) {
-
-            try {
-
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(lastModifiedAudio);
-                }
-            } catch (final Throwable e) {
-                LoggerFactory.log(logger, e);
-            }
-            return true;
-        }
-        return false;
-
+        return demux(progress, out, audioIn, config.getDash2M4aCommand());
     }
 
     public boolean generateAac(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
-
-        long lastModifiedAudio = new File(audioIn).lastModified();
-
-        ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDash2AacCommand());
-        if (runCommand(progress, commandLine) != null) {
-
-            try {
-
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(lastModifiedAudio);
-                }
-            } catch (final Throwable e) {
-                LoggerFactory.log(logger, e);
-            }
-            return true;
-        }
-        return false;
-
+        return demux(progress, out, audioIn, config.getDash2AacCommand());
     }
 
     public boolean demuxAAC(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
+        return demux(progress, out, audioIn, config.getDemux2AacCommand());
+    }
 
-        long lastModifiedAudio = new File(audioIn).lastModified();
+    public boolean demuxMp3(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
+        return demux(progress, out, audioIn, config.getDemux2Mp3Command());
+    }
 
-        ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDemux2AacCommand());
-        if (runCommand(progress, commandLine) != null) {
-            //
+    private boolean demux(FFMpegProgress progress, String out, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
+        logger.info("Demux:Input=" + audioIn + "|Output=" + out);
+        if (StringUtils.equals(out, audioIn)) {
+            throw new FFMpegException("demux failed because input file equals output file!");
+        }
+        final long lastModifiedAudio = new File(audioIn).lastModified();
+        final File outFile = new File(out);
+        final ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, demuxCommand);
+        if (runCommand(progress, commandLine) != null && outFile.exists() && outFile.isFile()) {
             try {
-
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(lastModifiedAudio);
+                if (lastModifiedAudio > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                    outFile.setLastModified(lastModifiedAudio);
                 }
             } catch (final Throwable e) {
                 LoggerFactory.log(logger, e);
@@ -135,14 +91,20 @@ public class FFmpeg extends AbstractFFmpegBinary {
         return false;
     }
 
-    public boolean demuxMp3(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
-        long lastModifiedAudio = new File(audioIn).lastModified();
-
-        ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDemux2Mp3Command());
-        if (runCommand(progress, commandLine) != null) {
+    private boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
+        logger.info("Mux:Video=" + videoIn + "|Audio=" + audioIn + "|Output=" + out);
+        if (StringUtils.equals(out, videoIn) || StringUtils.equals(out, audioIn)) {
+            throw new FFMpegException("demux failed because input file equals output file!");
+        }
+        final long lastModifiedVideo = new File(videoIn).lastModified();
+        final long lastModifiedAudio = new File(audioIn).lastModified();
+        final File outFile = new File(out);
+        final ArrayList<String> commandLine = fillCommand(out, videoIn, audioIn, null, demuxCommand);
+        if (runCommand(progress, commandLine) != null && outFile.exists() && outFile.isFile()) {
             try {
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(lastModifiedAudio);
+                final long lastModified = Math.max(lastModifiedAudio, lastModifiedVideo);
+                if (lastModified > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                    outFile.setLastModified(lastModified);
                 }
             } catch (final Throwable e) {
                 LoggerFactory.log(logger, e);
@@ -153,40 +115,8 @@ public class FFmpeg extends AbstractFFmpegBinary {
     }
 
     public boolean demuxM4a(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
-        long lastModifiedAudio = new File(audioIn).lastModified();
-
-        ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDemux2M4aCommand());
-        if (runCommand(progress, commandLine) != null) {
-
-            try {
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(lastModifiedAudio);
-                }
-            } catch (final Throwable e) {
-                LoggerFactory.log(logger, e);
-            }
-            return true;
-        }
-        return false;
+        return demux(progress, out, audioIn, config.getDemux2M4aCommand());
     }
-
-    // public boolean demuxAndConvertToOgg(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException,
-    // FFMpegException {
-    // long lastModifiedAudio = new File(audioIn).lastModified();
-    //
-    // ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDemuxAndConvert2Ogg());
-    // if (runCommand(progress, commandLine) != null) {
-    // try {
-    // if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-    // new File(out).setLastModified(lastModifiedAudio);
-    // }
-    // } catch (final Throwable e) {
-    // LoggerFactory.log(logger, e);
-    // }
-    // return true;
-    // }
-    // return false;
-    // }
 
     public List<File> demuxAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
         long lastModifiedAudio = new File(audioIn).lastModified();
@@ -252,45 +182,11 @@ public class FFmpeg extends AbstractFFmpegBinary {
     }
 
     public boolean muxToWebm(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
-        logger.info("Merging " + videoIn + " + " + audioIn + " = " + out);
-
-        long lastModifiedVideo = new File(videoIn).lastModified();
-        long lastModifiedAudio = new File(audioIn).lastModified();
-
-        ArrayList<String> commandLine = fillCommand(out, videoIn, audioIn, null, config.getMuxToWebmCommand());
-        if (runCommand(progress, commandLine) != null) {
-
-            try {
-
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(Math.max(lastModifiedAudio, lastModifiedVideo));
-                }
-            } catch (final Throwable e) {
-                LoggerFactory.log(logger, e);
-            }
-            return true;
-        }
-        return false;
-
+        return mux(progress, out, videoIn, audioIn, config.getMuxToWebmCommand());
     }
 
     public boolean generateOggAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
-        long lastModifiedAudio = new File(audioIn).lastModified();
-
-        ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDash2OggAudioCommand());
-        if (runCommand(progress, commandLine) != null) {
-
-            try {
-
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(lastModifiedAudio);
-                }
-            } catch (final Throwable e) {
-                LoggerFactory.log(logger, e);
-            }
-            return true;
-        }
-        return false;
+        return demux(progress, out, audioIn, config.getDash2OggAudioCommand());
     }
 
 }

@@ -6,11 +6,16 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 
 public class DailyMotionVariant implements Storable, LinkVariant {
-    private String link;
-    private String qValue;
-    private String qName;
+
+    private static final Icon VIDEO = new AbstractIcon(IconKey.ICON_VIDEO, 16);
+    private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
+    private String            link;
+    private String            qValue;
+    private String            qName;
 
     public String getLink() {
         return link;
@@ -117,7 +122,10 @@ public class DailyMotionVariant implements Storable, LinkVariant {
 
     @Override
     public Icon _getIcon() {
-        return null;
+        if ("m4a".equals(getConvertTo()) || "aac".equals(getConvertTo())) {
+            return AUDIO;
+        }
+        return VIDEO;
     }
 
     @Override

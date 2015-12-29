@@ -2,8 +2,12 @@ package org.jdownloader.controlling.ffmpeg;
 
 public class FFMpegException extends Exception {
 
-    private String std;
-    private String error;
+    private final String std;
+    private final String error;
+
+    public FFMpegException(final String string) {
+        this(string, null, null);
+    }
 
     public FFMpegException(String string, String std, String error) {
         super(string);
