@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -26,9 +28,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u-file.net" }, urls = { "http://[\\w\\.]*?u-file\\.net/f-[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u-file.net" }, urls = { "http://[\\w\\.]*?(?:u-file\\.net|uf\\.pe)/f-[a-z0-9]+" }, flags = { 0 })
 public class UFileNet extends PluginForHost {
 
     public UFileNet(PluginWrapper wrapper) {
@@ -48,16 +48,27 @@ public class UFileNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final Form d = br.getFormbyKey("checkcode");
+        if (d == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.submitForm(d);
         String dllink = br.getRegex("\\\\\"(download\\.php\\?call=.*?)\\\\\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://www.u-file.net/" + dllink;
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = "/" + dllink;
         sleep(16 * 1000l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         long size = dl.getConnection().getLongContentLength();
-        if (size == 23056508) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error or file offline!");
+        if (size == 23056508) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error or file offline!");
+        }
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Server is now very busy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            if (br.containsHTML("Server is now very busy")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -67,8 +78,12 @@ public class UFileNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         String passCode = null;
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("FILE NOT FOUND")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setFollowRedirects(false);
+        if (br.containsHTML("FILE NOT FOUND")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("Server is now very busy")) {
             logger.info("Server sais it is very busy!");
             return AvailableStatus.UNCHECKABLE;
@@ -90,7 +105,9 @@ public class UFileNet extends PluginForHost {
                 pwform.put("cpasske", passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the passform.");
                 br.submitForm(pwform);
-                if (br.containsHTML("(This file was protected by password|Please enter the password below)")) continue;
+                if (br.containsHTML("(This file was protected by password|Please enter the password below)")) {
+                    continue;
+                }
                 break;
             }
             if (br.containsHTML("(This file was protected by password|Please enter the password below)")) {
@@ -102,11 +119,11 @@ public class UFileNet extends PluginForHost {
                 link.setProperty("pass", passCode);
             }
         }
-        String filename = br.getRegex("Click HERE to download(.*?)</a>").getMatch(0);
+        String filename = br.getRegex("<h2>(.*?)\\s*<br/").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<li class=\"navItemHighlight\"><h2><img src=\"icon/341\\.gif\">(.*?)</h2>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>UfiLe -(.*?)\\(U-fiLe 2010\\)</title>").getMatch(0);
+                filename = br.getRegex("<title>(.*?)\\s*-\\s* You file[^<]+</title>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("<br>Download Name:(.*?)<br>").getMatch(0);
                     if (filename == null) {
@@ -115,13 +132,15 @@ public class UFileNet extends PluginForHost {
                 }
             }
         }
-        String filesize = br.getRegex("<br>File Size:(.*?)<br>").getMatch(0);
+        String filesize = br.getRegex("<small>(.*?)</small>").getMatch(0);
         if (filename == null) {
             logger.info("Browsercontent is: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
