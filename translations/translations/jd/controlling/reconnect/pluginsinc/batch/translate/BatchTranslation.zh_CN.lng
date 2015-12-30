@@ -1,0 +1,4 @@
+interaction_batchreconnect_batch=批量脚本
+interaction_batchreconnect_executein=开始于(应用程序文件夹)
+interaction_batchreconnect_terminal=解释器
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=外置批量重新连接
