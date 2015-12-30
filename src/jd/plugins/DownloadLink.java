@@ -35,6 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -46,6 +47,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -65,6 +67,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 /**
@@ -1384,6 +1387,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
             if (finalLinkState != FinalLinkState.FAILED_FATAL) {
                 setProperty(PROPERTY_CUSTOM_MESSAGE, Property.NULL);
+            }
+            if (finalLinkState != null && JsonConfig.create(GeneralSettings.class).isHashRetryEnabled() && finalLinkState.isFailedHash()) {
+                final List<DownloadLink> link = Arrays.asList(this);
+                DownloadWatchDog.getInstance().reset(link);
             }
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.FINAL_STATE, finalLinkState));
