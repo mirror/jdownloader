@@ -33,10 +33,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -65,25 +69,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "treefiles.com" }, urls = { "https?://(www\\.)?((treefiles|treesfile)\\.com|treefile\\.org)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "treefiles.com" }, urls = { "https?://(www\\.)?((treefiles|treesfile|trefiles)\\.com|treefile\\.org)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class TreeFilesCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://treesfile.com";
+    private final String               COOKIE_HOST                  = "http://trefiles.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(treefiles\\.com|treesfile\\.com|treefile\\.org)";
+    private final String               DOMAINS                      = "(treefiles\\.com|treesfile\\.com|trefiles\\.com|treefile\\.org)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
@@ -167,7 +165,7 @@ public class TreeFilesCom extends PluginForHost {
      * @author raztoki
      *
      * @category 'Experimental', Mods written July 2012 - 2013
-     * */
+     */
     public TreeFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -176,7 +174,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * defines custom browser requirements.
-     * */
+     */
     private Browser prepBrowser(final Browser prepBr) {
         HashMap<String, String> map = null;
         synchronized (cloudflareCookies) {
@@ -336,7 +334,7 @@ public class TreeFilesCom extends PluginForHost {
      * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
      * method doesn't give filename...
      *
-     * */
+     */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
@@ -1059,7 +1057,7 @@ public class TreeFilesCom extends PluginForHost {
     /**
      * Rules to prevent new downloads from commencing
      *
-     * */
+     */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
             // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account
@@ -1093,7 +1091,7 @@ public class TreeFilesCom extends PluginForHost {
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
      *
      * @author raztoki
-     * */
+     */
     @SuppressWarnings("unused")
     @Override
     public void correctDownloadLink(final DownloadLink downloadLink) {
@@ -1174,69 +1172,7 @@ public class TreeFilesCom extends PluginForHost {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            br.getPage(page);
-        } catch (Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-            // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-                logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else {
-                throw e;
-            }
-        }
-        // prevention is better than cure
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-            Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) {
-                cloudflare = br.getFormbyProperty("id", "challenge-form");
-            }
-            if (cloudflare != null) {
-                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) {
-                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                }
-                if (math == null) {
-                    String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) {
-                        variableName = variableName.trim();
-                    }
-                    math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                }
-                if (math == null) {
-                    logger.warning("Couldn't find 'math'");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                // author.
-                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-                ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                cloudflare.put("jschl_answer", value + "");
-                Thread.sleep(5500);
-                br.submitForm(cloudflare);
-                if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                    logger.warning("Possible plugin error within cloudflare handling");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
-                synchronized (cloudflareCookies) {
-                    cloudflareCookies.clear();
-                    cloudflareCookies.putAll(cookies);
-                }
-            }
-        }
+        br.getPage(page);
         correctBR();
     }
 
@@ -1315,7 +1251,7 @@ public class TreeFilesCom extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -1400,7 +1336,7 @@ public class TreeFilesCom extends PluginForHost {
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
      *
      * @author raztoki
-     * */
+     */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
         if (form.containsHTML(";background:#ccc;text-align")) {
@@ -1508,7 +1444,7 @@ public class TreeFilesCom extends PluginForHost {
      * @param source
      *            for the Regular Expression match against
      * @return String result
-     * */
+     */
     private String regexDllink(final String source) {
         if (inValidate(source)) {
             return null;
@@ -1537,7 +1473,7 @@ public class TreeFilesCom extends PluginForHost {
      * @param source
      *            String for decoder to process
      * @return String result
-     * */
+     */
     private void decodeDownloadLink(final String s) {
         String decoded = null;
 
@@ -1577,7 +1513,7 @@ public class TreeFilesCom extends PluginForHost {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
@@ -1599,7 +1535,7 @@ public class TreeFilesCom extends PluginForHost {
      * @param account
      *
      * @category 'Experimental', Mod written February 2013
-     * */
+     */
     private void controlSimHost(final Account account) {
         synchronized (CTRLLOCK) {
             if (usedHost == null) {
@@ -1641,7 +1577,7 @@ public class TreeFilesCom extends PluginForHost {
      * @param action
      *            To add or remove slot, true == adds, false == removes
      * @throws Exception
-     * */
+     */
     private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
         synchronized (CTRLLOCK) {
             // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
@@ -1744,7 +1680,7 @@ public class TreeFilesCom extends PluginForHost {
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
-     * */
+     */
     private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
         if (usedHost == null || x == null) {
             return;
@@ -1787,7 +1723,7 @@ public class TreeFilesCom extends PluginForHost {
      *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private synchronized String getHashedHashedKey(final Account account) {
         if (usedHost == null) {
             return null;
@@ -1809,7 +1745,7 @@ public class TreeFilesCom extends PluginForHost {
      *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private synchronized Integer getHashedHashedValue(final Account account) {
         if (usedHost == null) {
             return null;
@@ -1833,7 +1769,7 @@ public class TreeFilesCom extends PluginForHost {
      *            Account that's been used, can be null
      * @param key
      *            String of what ever you want to find
-     * */
+     */
     private synchronized boolean isHashedHashedKey(final Account account, final String key) {
         if (key == null) {
             return false;
@@ -1858,7 +1794,7 @@ public class TreeFilesCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -1877,7 +1813,7 @@ public class TreeFilesCom extends PluginForHost {
      *            expected value
      * @param ibr
      *            import browser
-     * */
+     */
     private Form getFormByKey(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();
         if (workaround != null) {
@@ -1904,7 +1840,7 @@ public class TreeFilesCom extends PluginForHost {
      * TODO: remove after JD2 goes stable!
      *
      * @author raztoki
-     * */
+     */
     private Form cleanForm(Form form) {
         if (form == null) {
             return null;
@@ -1938,7 +1874,7 @@ public class TreeFilesCom extends PluginForHost {
      * @param t
      *            Provided replacement string output browser
      * @author raztoki
-     * */
+     */
     private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
         String dMD5 = JDHash.getMD5(ibr.toString());
         // preserve valuable original request components.
