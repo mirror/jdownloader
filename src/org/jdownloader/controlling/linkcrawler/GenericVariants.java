@@ -210,7 +210,6 @@ public enum GenericVariants implements LinkVariant {
             downloadLink.setDownloadSize(finalFile.length());
             downloadLink.setDownloadCurrent(finalFile.length());
             try {
-
                 downloadLink.setInternalTmpFilenameAppend(null);
                 // downloadLink.setInternalTmpFilename(null);
             } catch (final Throwable e) {
