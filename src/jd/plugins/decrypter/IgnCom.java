@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 
-import javax.swing.Icon;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -39,12 +38,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.IgnVariant;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.Storable;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -171,7 +167,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -181,7 +177,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -191,7 +187,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -201,7 +197,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -211,7 +207,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -221,7 +217,7 @@ public class IgnCom extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     * 
+     *
      * @author raztoki
      * @param source
      * @return
@@ -232,7 +228,7 @@ public class IgnCom extends PluginForDecrypt {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -264,93 +260,6 @@ public class IgnCom extends PluginForDecrypt {
     private String uid = null;
     private String vid = null;
 
-    public static class IgnVariant implements LinkVariant, Storable {
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof IgnVariant)) {
-                return false;
-            }
-            return _getUniqueId().equals(((IgnVariant) obj)._getUniqueId());
-        }
-
-        private String width;
-
-        public String getWidth() {
-            return width;
-        }
-
-        public void setWidth(String width) {
-            this.width = width;
-        }
-
-        @Override
-        public String _getTooltipDescription() {
-            return _getExtendedName();
-        }
-
-        public String getBitrate() {
-            return bitrate;
-        }
-
-        public void setBitrate(String bitrate) {
-            this.bitrate = bitrate;
-        }
-
-        public String getHeight() {
-            return height;
-        }
-
-        public void setHeight(String height) {
-            this.height = height;
-        }
-
-        public String getStreamID() {
-            return streamID;
-        }
-
-        public void setStreamID(String streamID) {
-            this.streamID = streamID;
-        }
-
-        private String       bitrate;
-        private String       height;
-        private String       streamID;
-        private AbstractIcon icon;
-
-        public IgnVariant(/* storable */) {
-
-        }
-
-        public IgnVariant(String width, String height, String bitrate, String streamID) {
-            this.width = width;
-            this.height = height;
-            this.bitrate = bitrate;
-            this.streamID = streamID;
-            icon = new AbstractIcon(IconKey.ICON_VIDEO, 16);
-        }
-
-        @Override
-        public String _getUniqueId() {
-            return width + "x" + height + "_bitrate_" + streamID;
-        }
-
-        @Override
-        public String _getName() {
-            return height + "p";
-        }
-
-        @Override
-        public Icon _getIcon() {
-            return icon;
-        }
-
-        @Override
-        public String _getExtendedName() {
-            return height + "p (" + bitrate + "bps)";
-        }
-
-    }
-
     @Override
     protected DownloadLink createDownloadlink(String id) {
         DownloadLink ret = super.createDownloadlink("http://video.decryptedrutube.ru/" + id);
@@ -379,7 +288,7 @@ public class IgnCom extends PluginForDecrypt {
 
                 NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
                 Node best = f4mUrls.item(f4mUrls.getLength() - 1);
-                ArrayList<IgnVariant> variantsVideo = new ArrayList<IgnCom.IgnVariant>();
+                ArrayList<IgnVariant> variantsVideo = new ArrayList<IgnVariant>();
                 IgnVariant bestVariant = null;
                 for (int i = 0; i < f4mUrls.getLength(); i++) {
                     best = f4mUrls.item(i);
@@ -427,7 +336,7 @@ public class IgnCom extends PluginForDecrypt {
 
     /**
      * lets try and prevent possible NPE from killing the progress.
-     * 
+     *
      * @author raztoki
      * @param n
      * @param item

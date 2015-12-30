@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -50,6 +49,7 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
+import jd.plugins.components.SubtitleVariant;
 import jd.plugins.components.YoutubeClipData;
 import jd.plugins.components.YoutubeCustomConvertVariant;
 import jd.plugins.components.YoutubeCustomVariantStorable;
@@ -1921,123 +1921,6 @@ public class YoutubeDashV2 extends PluginForHost {
         return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getiTagVideo() + "_" + var.getiTagAudio() + ".dashVideo";
     }
 
-    public class SubtitleVariant implements YoutubeVariantInterface {
-        private final Icon TEXT = new AbstractIcon(IconKey.ICON_TEXT, 16);
-        private Locale     locale;
-        private String     code;
-
-        public SubtitleVariant(String code) {
-            this.code = code;
-            locale = TranslationFactory.stringToLocale(code);
-        }
-
-        @Override
-        public String _getTooltipDescription() {
-            return _getExtendedName();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof SubtitleVariant)) {
-                return false;
-            }
-            return code.equals(((SubtitleVariant) obj).code);
-        }
-
-        @Override
-        public int hashCode() {
-            return code.hashCode();
-        }
-
-        public String _getName() {
-            return _GUI._.YoutubeDash_getName_subtitles_(locale.getDisplayName());
-        }
-
-        public Icon _getIcon() {
-            return TEXT;
-        }
-
-        @Override
-        public String getFileExtension() {
-            return "srt";
-        }
-
-        @Override
-        public String _getUniqueId() {
-            return code;
-        }
-
-        @Override
-        public String getMediaTypeID() {
-            return VariantGroup.SUBTITLES.name();
-        }
-
-        @Override
-        public YoutubeITAG getiTagVideo() {
-            return null;
-        }
-
-        @Override
-        public YoutubeITAG getiTagAudio() {
-            return null;
-        }
-
-        @Override
-        public YoutubeITAG getiTagData() {
-            return null;
-        }
-
-        @Override
-        public double getQualityRating() {
-            return 0;
-        }
-
-        @Override
-        public String getTypeId() {
-            return code;
-        }
-
-        @Override
-        public DownloadType getType() {
-            return DownloadType.SUBTITLES;
-        }
-
-        @Override
-        public VariantGroup getGroup() {
-            return VariantGroup.SUBTITLES;
-        }
-
-        @Override
-        public void convert(DownloadLink downloadLink, PluginForHost plugin) {
-        }
-
-        @Override
-        public String getQualityExtension() {
-            return code;
-        }
-
-        @Override
-        public String modifyFileName(String formattedFilename, DownloadLink link) {
-            return formattedFilename;
-        }
-
-        @Override
-        public boolean hasConverter(DownloadLink downloadLink) {
-            return false;
-        }
-
-        @Override
-        public List<File> listProcessFiles(DownloadLink link) {
-            return null;
-        }
-
-        @Override
-        public String _getExtendedName() {
-            return _GUI._.YoutubeDash_getName_subtitles_(locale.getDisplayName());
-        }
-
-    }
-
     @Override
     public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
         Object variant = downloadLink.getTempProperties().getProperty(YoutubeHelper.YT_VARIANT, null);
@@ -2090,7 +1973,7 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, Property.NULL);
             downloadLink.setProperty(YoutubeHelper.YT_VARIANT, YoutubeVariant.SUBTITLES.name());
             downloadLink.setProperty(YoutubeHelper.YT_EXT, YoutubeVariant.SUBTITLES.getFileExtension());
-            downloadLink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, ((SubtitleVariant) variant).code);
+            downloadLink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, ((SubtitleVariant) variant)._getCode());
             String filename;
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
             downloadLink.setPluginPatternMatcher("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
