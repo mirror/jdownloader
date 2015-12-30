@@ -14,6 +14,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
@@ -64,7 +66,7 @@ public class Ftp extends PluginForDecrypt {
             filePath = filePath.substring(0, filePath.lastIndexOf("/") + 1);
             String packageName = new Regex(filePath, "/([^/]+)(/$|$)").getMatch(0);
             if (ftp.cwd(filePath)) {
-                final SimpleFTPListEntry[] entries = ftp.listEntries();
+                SimpleFTPListEntry[] entries = ftp.listEntries();
                 if (entries != null) {
                     final String auth;
                     if (!StringUtils.equals("anonymous", ftp.getUser()) || !StringUtils.equals("anonymous", ftp.getUser())) {
@@ -77,14 +79,24 @@ public class Ftp extends PluginForDecrypt {
                      * name ftp.../file.exe/file.exe -raztoki
                      */
                     for (final SimpleFTPListEntry entry : entries) {
-                        if (entry.isFile() && StringUtils.equals(entry.getName(), name)) {
-                            final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
-                            link.setAvailable(true);
-                            if (entry.getSize() >= 0) {
-                                link.setVerifiedFileSize(entry.getSize());
+                        if (StringUtils.equals(entry.getName(), name)) {
+                            if (entry.isFile()) {
+                                final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
+                                link.setAvailable(true);
+                                if (entry.getSize() >= 0) {
+                                    link.setVerifiedFileSize(entry.getSize());
+                                }
+                                link.setFinalFileName(entry.getName());
+                                ret.add(link);
+                                break;
+                            } else {
+                                if (ftp.cwd(entry.getName())) {
+                                    entries = ftp.listEntries();
+                                    break;
+                                } else {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
                             }
-                            link.setFinalFileName(entry.getName());
-                            ret.add(link);
                         }
                     }
                     /*
@@ -110,6 +122,8 @@ public class Ftp extends PluginForDecrypt {
                         }
                     }
                 }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (name != null && ret.size() == 0) {
                 /*
@@ -128,5 +142,4 @@ public class Ftp extends PluginForDecrypt {
         }
         return ret;
     }
-
 }
