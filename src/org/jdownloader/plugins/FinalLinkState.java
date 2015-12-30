@@ -81,6 +81,18 @@ public enum FinalLinkState {
         return !isFinished();
     }
 
+    public boolean isFailedHash() {
+        switch (this) {
+        case FAILED_CRC32:
+        case FAILED_MD5:
+        case FAILED_SHA1:
+        case FAILED_SHA256:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     public static boolean CheckFinished(FinalLinkState state) {
         return state != null && state.isFinished();
     }

@@ -65,6 +65,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
     private Spinner                            startDownloadTimeout;
     private Checkbox                           subfolder;
     private Checkbox                           autoCRC;
+    private Checkbox                           restartFailedCRC;
     private Checkbox                           simpleContainer;
     private Checkbox                           linkGrabberFilesPackages;
 
@@ -148,6 +149,9 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         this.addDescription(_JDT._.gui_settings_filewriting_description());
         this.addPair(_GUI._.gui_config_download_crc(), null, autoCRC);
 
+        restartFailedCRC = new Checkbox();
+        this.addPair(_GUI._.gui_config_restart_crc(), null, restartFailedCRC);
+
         /* Miscellaneous */
 
         simpleContainer = new Checkbox();
@@ -222,6 +226,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         GeneralSettings st = JsonConfig.create(GeneralSettings.class);
         st.setDefaultDownloadFolder(downloadFolder.getText());
         st.setHashCheckEnabled(autoCRC.isSelected());
+        st.setHashRetryEnabled(restartFailedCRC.isSelected());
         st.setAutoOpenContainerAfterDownload(simpleContainer.isSelected());
         config.setCleanupAfterDownloadAction(remove.getValue());
         config.setIfFileExistsAction(this.ifFileExists.getValue());
@@ -232,6 +237,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         GeneralSettings st = JsonConfig.create(GeneralSettings.class);
         downloadFolder.setText(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         autoCRC.setSelected(st.isHashCheckEnabled());
+        restartFailedCRC.setSelected(st.isHashRetryEnabled());
         simpleContainer.setSelected(st.isAutoOpenContainerAfterDownload());
         this.remove.setValue(config.getCleanupAfterDownloadAction());
         this.ifFileExists.setValue(config.getIfFileExistsAction());

@@ -1652,6 +1652,7 @@ gui_config_menumanager_linkgrabberBottom=Untere Bedienungsleiste: Linksammler
 gui_config_menumanager_mainmenu=Hauptmenü
 gui_config_menumanager_toolbar=Werkzeugleiste
 gui_config_menumanager_traymenu=Kontextmenü: Infosymbol
+gui_config_restart_crc=Den Download bei SVF/CRC Fehlern automatisch neustarten
 gui_config_simple_container=Geladene Link Container (dlc, ccf,...) automatisch öffnen
 gui_config_various=Verschiedenes
 gui_dialogs_message_title=Nachricht

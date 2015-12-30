@@ -284,6 +284,10 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
+    boolean isHashRetryEnabled();
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
     boolean isMaxDownloadsPerHostEnabled();
 
     boolean isShowCountdownonAutoStartDownloads();
@@ -357,6 +361,8 @@ public interface GeneralSettings extends ConfigInterface {
     void setForcedFreeSpaceOnDisk(int mb);
 
     void setHashCheckEnabled(boolean b);
+
+    void setHashRetryEnabled(boolean b);
 
     void setIfFileExistsAction(IfFileExistsAction action);
 

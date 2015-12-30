@@ -148,6 +148,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "when package is ready" })
     String gui_config_general_toDoWithDownloads_packageready();
 
+    @Default(lngs = { "en" }, values = { "Restart Download when SFV/CRC check fails" })
+    String gui_config_restart_crc();
+
     @Default(lngs = { "en" }, values = { "Auto open Link Containers (dlc,ccf,...)" })
     String gui_config_simple_container();
 
