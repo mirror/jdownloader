@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co)/pictures/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co|avxhome\\.se)/pictures/\\d+" }, flags = { 0 })
 public class PixhstCom extends PluginForHost {
 
     public PixhstCom(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class PixhstCom extends PluginForHost {
     // note: pixhst.com is parked.
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        final String l = link.getPluginPatternMatcher().replace("pixhst.com/", "pxhst.co/");
+        final String l = link.getPluginPatternMatcher().replaceFirst("(pixhst\\.com|pxhst.co)/", "avxhome.se/");
         link.setPluginPatternMatcher(l);
         link.setContentUrl(l);
     }

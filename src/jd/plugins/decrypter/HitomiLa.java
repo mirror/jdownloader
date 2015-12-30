@@ -26,28 +26,23 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/galleries/\\d+\\.html" }, flags = { 0 })
-public class HitomiLa extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/galleries/\\d+\\.html" }, flags = { 0 })
+public class HitomiLa extends antiDDoSForDecrypt {
 
     public HitomiLa(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Avoid https, prefer http */
         final String parameter = param.toString().replace("https://", "http://");
         final String gid = new Regex(parameter, "galleries/(\\d+)").getMatch(0);
-        this.br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.setFollowRedirects(true);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
