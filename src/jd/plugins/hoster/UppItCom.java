@@ -23,6 +23,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,16 +41,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uppit.com" }, urls = { "http://(www\\.)?uppit\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class UppItCom extends PluginForHost {
+public class UppItCom extends antiDDoSForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
@@ -66,6 +65,7 @@ public class UppItCom extends PluginForHost {
     // protocol: no https
     // captchatype: null
     // other: no redirects
+    // NOTE: upx.nz in Rdrctr belongs to this site!
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -87,17 +87,18 @@ public class UppItCom extends PluginForHost {
         return true;
     }
 
-    public void prepBrowser() {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        return prepBr;
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        prepBrowser();
         getPage(link.getDownloadURL());
         if (StringUtils.endsWithCaseInsensitive(br.getRedirectLocation(), "uppit.com/404") || new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -107,29 +108,33 @@ public class UppItCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-        if (filename == null) {
+        if (inValidate(filename)) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (filename == null) {
+            if (inValidate(filename)) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
+                if (inValidate(filename)) {
                     filename = new Regex(correctedBR, "<font size=\"20\">([^<>]+)").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(correctedBR, "<title>Download (.+) @").getMatch(0);
+                    if (inValidate(filename)) {
+                        filename = new Regex(correctedBR, "<title>Download ([^<]+) @").getMatch(0);
                     }
                 }
             }
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
+        if (inValidate(filesize)) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) {
+            if (inValidate(filesize)) {
                 filesize = new Regex(correctedBR, ">\\s*\\(([\\d+\\.]+ (:?B|KB|MB|GB))\\)\\s*<").getMatch(0);
-                if (filesize == null) {
+                if (inValidate(filesize)) {
                     filesize = new Regex(correctedBR, "([\\d\\.]+ ?(:?B|KB|MB|GB))").getMatch(0);
                 }
             }
         }
-        if (filename == null || filename.equals("")) {
+        if (inValidate(filename) && inValidate(filesize)) {
+            // at times they don't show offline, you can go through the download steps and get a generated link without a filename...
+            return AvailableStatus.FALSE;
+        }
+        if (inValidate(filename)) {
             if (correctedBR.contains("You have reached the download\\-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
@@ -144,7 +149,7 @@ public class UppItCom extends PluginForHost {
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
-        if (filesize != null && !filesize.equals("")) {
+        if (inValidate(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
@@ -258,7 +263,7 @@ public class UppItCom extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
@@ -344,18 +349,21 @@ public class UppItCom extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void postPage(String page, String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(String page, String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -562,6 +570,14 @@ public class UppItCom extends PluginForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
+    }
+
+    @Override
+    protected boolean inValidate(final String s) {
+        if (": <br>()".equals(s) || "12232b".equals(s)) {
+            return true;
+        }
+        return super.inValidate(s);
     }
 
 }

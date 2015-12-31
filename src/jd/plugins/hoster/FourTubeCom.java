@@ -69,7 +69,7 @@ public class FourTubeCom extends PluginForHost {
         if (br.getHttpConnection() == null) {
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("Page not found|This Video Is No Longer Available") || new Regex(br.getURL(), "/videos\\?error=\\d+").matches() || (br.containsHTML("<title>\\s*Video not found\\s*</title>") && isEmbed)) {
+        if (br.containsHTML("Page not found|>\\s*This\\s+Video\\s+Is\\s+No\\s+Longer\\s+Available\\s*<") || new Regex(br.getURL(), "/videos\\?error=\\d+").matches() || (br.containsHTML("<title>\\s*Video not found\\s*</title>") && isEmbed)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\| 4tube\"").getMatch(0);
