@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co|avxhome\\.se)/pictures/\\d+" }, flags = { 0 })
-public class PixhstCom extends PluginForHost {
+public class PixhstCom extends antiDDoSForHost {
 
     public PixhstCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,15 +39,13 @@ public class PixhstCom extends PluginForHost {
     // note: pixhst.com is parked.
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        final String l = link.getPluginPatternMatcher().replaceFirst("(pixhst\\.com|pxhst.co)/", "avxhome.se/");
+        // some times pxhost redirects to avxhome other times not!
+        final String l = link.getPluginPatternMatcher().replaceFirst("(pixhst\\.com)/", "pxhst.co/");
         link.setPluginPatternMatcher(l);
         link.setContentUrl(l);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".jpeg";
-
-    private String              DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -59,18 +54,14 @@ public class PixhstCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(downloadLink.getDownloadURL());
-        } catch (final BrowserException e) {
-            /* Their way to tell a file is offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        getPage(downloadLink.getDownloadURL());
         final String linkid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setLinkID(linkid);
-        String filename = br.getRegex("<td colspan=\\'3\\'>([^<>\"]*?)</td>").getMatch(0);
+        String filename = br.getRegex("<td colspan='3'>([^<>\"]*?)</td>").getMatch(0);
         if (filename != null) {
             /* Avoid duplicate filenames for different files */
             filename = Encoding.htmlDecode(filename);
@@ -80,18 +71,19 @@ public class PixhstCom extends PluginForHost {
         } else {
             filename = linkid;
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(http://pi?xhst\\.[a-z0-9]+/avaxhome/[^<>\"]*?)\\'").getMatch(0);
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            dllink = br.getRegex("\\'(http://pi?xhst\\.[a-z0-9]+/avaxhome/[^<>\"]*?)\\'").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        dllink = Encoding.htmlDecode(dllink);
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+            // default extension
+            ext = ".jpeg";
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -103,7 +95,7 @@ public class PixhstCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = openAntiDDoSRequestConnection(br2, br.createHeadRequest(dllink));
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -112,7 +104,7 @@ public class PixhstCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -125,7 +117,7 @@ public class PixhstCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
