@@ -26,6 +26,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,13 +49,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class TheVideoMe extends antiDDoSForHost {
@@ -125,7 +125,7 @@ public class TheVideoMe extends antiDDoSForHost {
         br.setFollowRedirects(true);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|>Video encoding error)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>The file was removed by|Reason for deletion:\n|>Video encoding error)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -227,7 +227,7 @@ public class TheVideoMe extends antiDDoSForHost {
         if (dllink == null && VIDEOHOSTER) {
             try {
                 logger.info("Trying to get link via vidembed");
-                brv.getPage("/vidembed-" + fuid);
+                getPage(brv, "/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     logger.info("Failed to get link via embed because: " + br.toString());
@@ -259,8 +259,8 @@ public class TheVideoMe extends antiDDoSForHost {
         }
         if (dllink == null && VIDEOHOSTER_3) {
             try {
-                brv.getPage("/download/" + fuid);
-                brv.getPage("/cgi-bin/index_dl.cgi?op=get_vid_versions&file_code=" + fuid);
+                getPage(brv, "/download/" + fuid);
+                getPage(brv, "/cgi-bin/index_dl.cgi?op=get_vid_versions&file_code=" + fuid);
                 final Regex videoinfo = brv.getRegex("onclick=\"download_video\\(\\'([a-z0-9]+)\\',\\'([^<>\"\\']*?)\\',\\'([^<>\"\\']*?)\\'");
                 final String vid = videoinfo.getMatch(0);
                 final String q = videoinfo.getMatch(1);
@@ -269,7 +269,7 @@ public class TheVideoMe extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 for (int i = 0; i <= 3; i++) {
-                    brv.getPage("http://thevideo.me/download/" + vid + "/" + q + "/" + dlid);
+                    getPage(brv, "http://thevideo.me/download/" + vid + "/" + q + "/" + dlid);
                     dllink = this.getDllink(brv.toString());
                     if (dllink == null) {
                         dllink = brv.getRegex("\"(https?://[^<>\"]+\\.thevideo\\.[^/]+/[^<>\"]*?)\"").getMatch(0);
@@ -1062,14 +1062,14 @@ public class TheVideoMe extends antiDDoSForHost {
                 if (dllink == null) {
                     String link = br.getRegex("\"(https?://thevideo\\.me/download/.*?)\"").getMatch(0);
                     if (link != null) {
-                        br.getPage(link);
+                        getPage(br, link);
                         link = br.getRegex("url: \"(/cgi-bin/.*?)\"").getMatch(0);
                         if (link != null) {
-                            br.getPage(link);
+                            getPage(br, link);
                             link = br.getRegex("video\\(\\'(.*?)\\'\\)").getMatch(0);
                             if (link != null) {
                                 link = "http://thevideo.me/download/" + link.replace("','", "/");
-                                br.getPage(link);
+                                getPage(br, link);
                                 dllink = br.getRegex("\"(https?://d\\d*.\\.thevideo\\.me.*?)\"").getMatch(0);
                             }
                         }

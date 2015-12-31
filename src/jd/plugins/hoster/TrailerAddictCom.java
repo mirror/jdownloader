@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,7 +36,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "traileraddict.com" }, urls = { "http://(www\\.)?traileraddict\\.com/trailer/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
 public class TrailerAddictCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public TrailerAddictCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,7 +55,7 @@ public class TrailerAddictCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -65,7 +68,9 @@ public class TrailerAddictCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("traileraddict.com/error") || br.containsHTML("(404\\.png\" alt=\"404 Error\"|<title>Page Not Found\\- Trailer Addict</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("traileraddict.com/error") || br.containsHTML("(404\\.png\" alt=\"404 Error\"|<title>Page Not Found- Trailer Addict</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) \\- Trailer Addict</title>").getMatch(0);
         String vid = br.getRegex("/emd/(\\d+)").getMatch(0);
         if (vid == null) {
@@ -77,12 +82,21 @@ public class TrailerAddictCom extends PluginForHost {
                 }
             }
         }
-        br.getPage("http://www.traileraddict.com/fvar.php?tid=" + vid);
-        DLLINK = new Regex(Encoding.htmlDecode(br.toString()), "fileurl=(http://.*?)\\&vidwidth=").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        final String unwise = unWise();
+        if (unwise != null) {
+            dllink = new Regex(unwise, "file:'(.*?)'").getMatch(0);
+        } else {
+            br.getPage("http://www.traileraddict.com/fvar.php?tid=" + vid);
+            dllink = new Regex(Encoding.htmlDecode(br.toString()), "fileurl=(http://.*?)\\&vidwidth=").getMatch(0);
+            if (filename == null || dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.htmlDecode(dllink);
+        }
         String ext = ".mp4";
-        if (DLLINK.contains(".flv")) ext = ".flv";
+        if (dllink.contains(".flv")) {
+            ext = ".flv";
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
@@ -90,11 +104,12 @@ public class TrailerAddictCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -102,6 +117,30 @@ public class TrailerAddictCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    private String unWise() {
+        String result = null;
+        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
+        if (fn == null) {
+            return null;
+        }
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval("var res = " + fn);
+            result = (String) engine.get("res");
+            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
+            engine.eval("res = " + result);
+            result = (String) engine.get("res");
+            String res[] = result.split(";\\s;");
+            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
+            result = (String) engine.get("res");
+        } catch (final Exception e) {
+            logger.log(e);
+            return null;
+        }
+        return result;
     }
 
     @Override

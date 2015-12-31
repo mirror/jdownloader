@@ -19,8 +19,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,9 +31,11 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideos.net" }, urls = { "http://(www\\.)?(?:moevideos|moevideo|videochart)\\.net/((?:\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideos.net" }, urls = { "http://(www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/((?:\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
 public class MoeVideosNetDecrypter extends PluginForDecrypt {
 
     public MoeVideosNetDecrypter(PluginWrapper wrapper) {
@@ -38,7 +43,8 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br = new Browser();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         /* uid */
         String uid = new Regex(parameter, "uid=(.*?)$").getMatch(0);
@@ -101,9 +107,17 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
             }
 
         }
-        br.postPage("http://api.letitbit.net/", "r=[\"tVL0gjqo5\",[\"preview/flv_image\",{\"uid\":\"" + uid + "\"}],[\"preview/flv_link\",{\"uid\":\"" + uid + "\"}]]");
+        // no longer to api.letitbit.net/
+        // br.postPage("http://api.letitbit.net/", "r=[\"tVL0gjqo5\",[\"preview/flv_image\",{\"uid\":\"" + uid +
+        // "\"}],[\"preview/flv_link\",{\"uid\":\"" + uid + "\"}]]");
 
-        String letilink = br.getRegex("\"link\":\"([^\"]+)").getMatch(0);
+        // we should do some gets otherwise cookies and post request could turn up wrong!
+        if (br.getURL() == null) {
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
+        }
+        br.postPage("/data", "r=[[\"file/flv_image\",{\"uid\":\"" + uid + "\"}],[\"file/flv_link2\",{\"uid\":\"" + uid + "\"}]]");
+        String letilink = br.getRegex("\"link\":\\[\"([^\"]+)").getMatch(0);
         if (br.containsHTML("\"not_found\"") && (letilink == null || letilink.equals(""))) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -113,12 +127,15 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
             return null;
         }
         letilink = letilink.replaceAll("\\\\", "");
+        if (StringUtils.contains(letilink, "/video/404.mp4")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         DownloadLink fina;
-        if (letilink.contains("moevideo.net/")) {
+        if (letilink.contains("moevideo.net/") || letilink.contains("videochart.net/")) {
             fina = createDownloadlink("directhttp://" + letilink);
         } else {
-            filename = new Regex(letilink, "/[0-9a-f]+_\\d+_(.*?)\\.flv").getMatch(0);
+            filename = new Regex(letilink, "/[0-9a-f]+_\\d+_(.*?)\\.(?:mp4|flv)\\?").getMatch(0);
             if (filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
