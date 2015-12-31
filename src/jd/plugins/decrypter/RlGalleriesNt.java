@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -41,7 +43,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String parameter = param.toString();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
         // br.setCookie(".urlgalleries.net", "popundr", "1");
@@ -54,7 +56,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
-        if (br.containsHTML("<title> \\- urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE")) {
+        if (br.containsHTML("<title> \\- urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || StringUtils.endsWithCaseInsensitive(br.getRedirectLocation(), "/not_found_adult.php")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -73,12 +75,9 @@ public class RlGalleriesNt extends PluginForDecrypt {
         int counter = 1;
         final Browser brc = br.cloneBrowser();
         for (final String aLink : links) {
-            try {
-                if (isAbort()) {
-                    logger.info("Decryption process aborted by user, stopping...");
-                    break;
-                }
-            } catch (final Throwable e) {
+            if (isAbort()) {
+                logger.info("Decryption process aborted by user, stopping...");
+                break;
             }
             logger.info("Decrypting link " + counter + " of " + links.length);
             sleep(new Random().nextInt(3) + 1000, param);
@@ -102,11 +101,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
                 fp.add(lol);
             }
             decryptedLinks.add(lol);
-            try {
-                distribute(lol);
-            } catch (final Throwable e) {
-                // No available in old Stable
-            }
+            distribute(lol);
             logger.info(finallink);
             counter++;
         }
