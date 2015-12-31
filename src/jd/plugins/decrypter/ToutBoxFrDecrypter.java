@@ -19,9 +19,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,9 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toutbox.fr" }, urls = { "http://(www\\.)?toutbox\\.fr/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "toutbox.fr" }, urls = { "http://(www\\.)?toutbox\\.fr/.+" }, flags = { 0 })
 public class ToutBoxFrDecrypter extends PluginForDecrypt {
 
     /* DEV NOTES */
@@ -60,17 +61,13 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
             final DownloadLink dl = createDecrypterURL();
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
+            dl.setContentUrl(param.getCryptedUrl());
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -81,16 +78,7 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
             final DownloadLink dl = createDecrypterURL();
-            try {
-                dl.setContentUrl(parameter);
-            } catch (Throwable e1) {
-                // jd09
-            }
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
+            dl.setContentUrl(param.getCryptedUrl());
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -99,11 +87,7 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
         } else if (br.containsHTML("ico/adult_medium\\.png\"")) {
             /* Adult link */
             final DownloadLink dl = createDecrypterURL();
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
+            dl.setContentUrl(param.getCryptedUrl());
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -112,11 +96,7 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
         } else if (!br.containsHTML("class=\"fileinfo tab\"|id=\"fileDetails\"")) {
             /* Link redirected to mainpage or category page --> Offline */
             final DownloadLink dl = createDecrypterURL();
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
+            dl.setContentUrl(param.getCryptedUrl());
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -125,11 +105,7 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
         } else if (br.containsHTML("id=\"ProtectedFolderChomikLogin\"")) {
             /* Password protected link --> Not yet supported --> Offline */
             final DownloadLink dl = createDecrypterURL();
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
+            dl.setContentUrl(param.getCryptedUrl());
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -148,25 +124,19 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
             }
             filename = Encoding.htmlDecode(filename).trim();
             final DownloadLink dl = createDecrypterURL();
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
+            dl.setContentUrl(param.getCryptedUrl());
             dl.setProperty("plain_filename", filename);
             dl.setProperty("plain_filesize", filesize);
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("LINKDUPEID", fid + filename);
-
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setAvailable(true);
-
             decryptedLinks.add(dl);
         } else {
             int maxPage = 1;
-            final String[] pageNums = br.getRegex("rel=\"(\\d+)\" title=\"página seguinte").getColumn(0);
+            final String[] pageNums = br.getRegex("rel=\"(\\d+)\" title=\"\\d+").getColumn(0);
             for (final String pageNum : pageNums) {
                 final int curpgnum = Integer.parseInt(pageNum);
                 if (curpgnum > maxPage) {
@@ -182,18 +152,17 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
                 if (i > 1) {
                     br.getPage(parameter + "," + i);
                 }
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
                 }
 
-                String[] linkinfo = br.getRegex(" class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+                String[] linkinfo = br.getRegex("<div class=\"filerow fileItemContainer\">.*?</ul>\\s*</div>\\s*</div>").getColumn(-1);
                 if (linkinfo == null || linkinfo.length == 0) {
-                    linkinfo = br.getRegex("class=\"filename\">(.*?)class=\"directFileLink\"").getColumn(0);
+                    linkinfo = br.getRegex(" class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+                    if (linkinfo == null || linkinfo.length == 0) {
+                        linkinfo = br.getRegex("class=\"filename\">(.*?)class=\"directFileLink\"").getColumn(0);
+                    }
                 }
                 if (linkinfo == null || linkinfo.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -219,34 +188,21 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
-                    if (mainlink.startsWith("/")) {
-                        mainlink = "http://" + domain + mainlink;
-                    }
+                    mainlink = Request.getLocation(mainlink, br.getRequest());
                     filesize = Encoding.htmlDecode(filesize).trim();
                     filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
 
                     final DownloadLink dl = createDecrypterURL();
-                    try {
-                        dl.setContentUrl(mainlink);
-                        dl.setContainerUrl(param.getCryptedUrl());
-                    } catch (Throwable e1) {
-                        // jd09
-                    }
+                    dl.setContentUrl(mainlink);
+                    dl.setContainerUrl(param.getCryptedUrl());
                     dl.setProperty("plain_filename", filename);
                     dl.setProperty("plain_filesize", filesize);
                     dl.setProperty("plain_fid", fid);
                     dl.setProperty("mainlink", mainlink);
                     dl.setProperty("LINKDUPEID", fid + filename);
-                    try {/* JD2 only */
-                        dl.setContentUrl(mainlink);
-                    } catch (Throwable e) {/* Stable */
-                        dl.setBrowserUrl(mainlink);
-                    }
-
                     dl.setName(filename);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);
-
                     decryptedLinks.add(dl);
                 }
             }
