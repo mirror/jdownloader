@@ -25,8 +25,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+" }, flags = { 0 })
 public class RevisionThreeCom extends PluginForDecrypt {
 
     public RevisionThreeCom(PluginWrapper wrapper) {
@@ -39,29 +40,20 @@ public class RevisionThreeCom extends PluginForDecrypt {
     private static final String TYPE_NORMAL   = "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2)) {
             logger.info("Invalid link: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         br.getPage(parameter);
         if (br.containsHTML("ey there\\! You look a little lo|404: Page Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (!br.getURL().matches(TYPE_NORMAL)) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -82,10 +74,15 @@ public class RevisionThreeCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http:" + externID));
             return decryptedLinks;
         }
-        final String videoID = br.getRegex("\\'video_id\\', (\\d+)\\);").getMatch(0);
+        String videoID = br.getRegex("\\'video_id\\', (\\d+)\\);").getMatch(0);
         if (videoID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            // JSON
+            final String json = br.getRegex("(\"dataForPage\"\\s*:\\s*\\{.*?)</script>").getMatch(0);
+            videoID = JSonUtils.getJson(json, "id");
+            if (videoID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
         br.getPage("http://revision3.com/api/getPlaylist.json?api_key=ba9c741bce1b9d8e3defcc22193f3651b8867e62&codecs=h264,vp8,theora&video_id=" + videoID + "&jsonp=parseResponse&_=" + System.currentTimeMillis());
         final String[] allLinks = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getColumn(0);
