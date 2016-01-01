@@ -18,12 +18,16 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -31,15 +35,14 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -49,23 +52,14 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
 
-    private static final boolean ACCOUNT_PREMIUM_RESUME          = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
-
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS       = 10;
-
     /** Settings stuff */
-    private static final String  FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
+    private static final String FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
 
     public static String stringUserAgent() {
         return UserAgents.stringUserAgent();
@@ -83,18 +77,8 @@ public class MediafireCom extends PluginForHost {
 
     /** end of random agents **/
 
-    private static final String                              PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
-    private static AtomicInteger                             maxPrem               = new AtomicInteger(1);
-    private static final String                              PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
-    private String                                           SESSIONTOKEN          = null;
-    private String                                           errorCode             = null;
-    /* keep updated with decrypter */
-    private final String                                     APPLICATIONID         = "27112";
-    private final String                                     APIKEY                = "czQ1cDd5NWE3OTl2ZGNsZmpkd3Q1eXZhNHcxdzE4c2Zlbmt2djdudw==";
-    /**
-     * Map to cache the configuration keys
-     */
-    private static HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS    = new HashMap<Account, HashMap<String, String>>();
+    private static final String PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
+    private static final String PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
 
     public static abstract class PasswordSolver {
 
@@ -147,18 +131,14 @@ public class MediafireCom extends PluginForHost {
 
     private static AtomicReference<String> agent                      = new AtomicReference<String>(stringUserAgent());
 
-    static private final String            offlinelink                = "tos_aup_violation";
-
-    /** The name of the error page used by MediaFire */
-    private static final String            ERROR_PAGE                 = "error.php";
     /**
      * The number of retries to be performed in order to determine if a file is availableor to try captcha/password.
      */
     private int                            max_number_of_free_retries = 3;
 
-    private String                         fileID;
-
     private String                         dlURL;
+    private Browser                        api                        = null;
+    private String                         session_token              = null;
 
     @SuppressWarnings("deprecation")
     public MediafireCom(final PluginWrapper wrapper) {
@@ -181,12 +161,7 @@ public class MediafireCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        // old setter - remove after next stable update 20130918
-        account.setProperty("freeaccount", Property.NULL);
-
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(br, account, true);
         } catch (final PluginException e) {
@@ -194,36 +169,20 @@ public class MediafireCom extends PluginForHost {
             throw e;
         }
         account.setValid(true);
-        if (account.getBooleanProperty("free")) {
-            ai.setStatus("Registered (free) User");
+        final String usedSpace = JSonUtils.getJson(api, "used_storage_size");
+        ai.setUsedSpace(usedSpace != null ? Long.parseLong(usedSpace) : 0);
+        if (account.getType() == AccountType.FREE) {
+            ai.setStatus("Free Account");
             ai.setUnlimitedTraffic();
-            try {
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            account.setMaxSimultanDownloads(10);
+            account.setConcurrentUsePossible(true);
         } else {
-            br.setFollowRedirects(true);
-            br.getPage("/myaccount/");
-            String trafficleft = br.getRegex("View Statistics</a></span>.+</div>.+class=\"lg-txt\">([^<>]+)</div>").getMatch(0);
-            if (trafficleft != null) {
-                trafficleft = trafficleft.trim();
-                if (Regex.matches(trafficleft, Pattern.compile("(tb|tbyte|terabyte|tib)", Pattern.CASE_INSENSITIVE))) {
-                    String[] trafficleftArray = trafficleft.split(" ");
-                    double trafficsize = Double.parseDouble(trafficleftArray[0]);
-                    trafficsize *= 1024;
-                    trafficleft = Double.toString(trafficsize) + " GB";
-                }
-                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
-            }
-            ai.setStatus("Premium User");
-            try {
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            // assume its in bytes.
+            final String bandwidth = JSonUtils.getJson(api, "bandwidth");
+            ai.setTrafficLeft(bandwidth != null ? Long.parseLong(bandwidth) : 0);
+            ai.setStatus("Premium Account");
+            account.setMaxSimultanDownloads(20);
+            account.setConcurrentUsePossible(true);
         }
         return ai;
     }
@@ -239,12 +198,6 @@ public class MediafireCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
-    }
-
-    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (downloadLink.getBooleanProperty("privatefolder")) {
@@ -255,11 +208,12 @@ public class MediafireCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        br = new Browser();
         String url = null;
         int trycounter = 0;
         boolean captchaCorrect = false;
         if (account == null) {
-            this.br.getHeaders().put("User-Agent", MediafireCom.agent.get());
+            br.getHeaders().put("User-Agent", MediafireCom.agent.get());
         }
         do {
             if (url != null) {
@@ -389,21 +343,21 @@ public class MediafireCom extends PluginForHost {
             logger.info("PluginError 721");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.br.setFollowRedirects(true);
-        this.br.setDebug(true);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
-        if (this.dl.getConnection().getContentType().contains("html")) {
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
             handleServerErrors();
             logger.info("Error (3)");
             logger.info(dl.getConnection() + "");
-            this.br.followConnection();
-            handleNonAPIErrors(downloadLink, this.br);
+            br.followConnection();
+            handleNonAPIErrors(downloadLink, br);
             if (br.containsHTML("We apologize, but we are having difficulties processing your download request")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Please be patient while we try to repair your download request", 2 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.dl.startDownload();
+        dl.startDownload();
     }
 
     private void handleServerErrors() throws PluginException {
@@ -426,11 +380,13 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private String getID(DownloadLink link) {
+    private String getFUID(DownloadLink link) {
         String fileID = new Regex(link.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
         if (fileID == null) {
             fileID = new Regex(link.getDownloadURL(), "(file|download)/([a-zA-Z0-9]+)").getMatch(1);
+            if (fileID == null) {
+                fileID = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            }
         }
         return fileID;
     }
@@ -442,202 +398,45 @@ public class MediafireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFOLDERUSERTEXT);
         }
         login(br, account, false);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             doFree(downloadLink, account);
         } else {
-            // TODO: See if there is a way to implement the premium API again: http://developers.mediafire.com/index.php/REST_API
-            /**
-             * Problem: This API doesn't (yet) work with password protected links...
-             */
-            // getSessionToken(this.br, account);
-            // apiRequest(this.br, "http://www.mediafire.com/api/file/get_links.php", "?link_type=direct_download&session_token=" +
-            // this.SESSIONTOKEN + "&quick_key=" + getFID(downloadLink) + "&response_format=json");
-            String url = dlURL;
             boolean passwordprotected = false;
-            boolean useAPI = false;
-            // the below if statement is always false by the above: useAPI = false
-            if (url == null && useAPI) {
-                this.fileID = getID(downloadLink);
-                this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + this.fileID);
-                url = this.br.getRegex("<url>(http.*?)</url>").getMatch(0);
-                if ("-202".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
-                    br.setFollowRedirects(false);
-                    br.getPage("http://www.mediafire.com/?" + fileID);
-                    url = br.getRedirectLocation();
-                    if (url == null || !url.contains("download")) {
-                        this.handlePW(downloadLink);
-                        url = br.getRedirectLocation();
-                    }
-                    if (url == null) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible");
-                    }
-                }
-                if ("-204".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
-                    passwordprotected = true;
-                    new PasswordSolver(this, this.br, downloadLink) {
-
-                        @Override
-                        protected void handlePassword(final String password) throws Exception {
-                            this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "file_1=" + MediafireCom.this.fileID + "&password_1=" + password + "&premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + MediafireCom.this.fileID);
-
-                        }
-
-                        @Override
-                        protected boolean isCorrect() {
-                            return this.br.getRegex("<url>(http.*?)</url>").getMatch(0) != null;
-                        }
-
-                    }.run();
-
-                    url = this.br.getRegex("<url>(http.*?)</url>").getMatch(0);
-
-                }
-                if ("-105".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
-                    logger.info("Insufficient bandwidth");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-            } else if (url == null && useAPI == false) {
-                this.fileID = getID(downloadLink);
-                br.setFollowRedirects(false);
-                br.getPage("http://www.mediafire.com/download/" + fileID);
-                /* url should be downloadlink when directDownload is enabled */
-                url = getURL(br); // getRedirectLocation
-                if (url == null) {
-                    handleNonAPIErrors(downloadLink, br);
-                }
-            }
-            if (url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-
-            logger.info("Checking final url: " + url);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(url);
-                if (con.getContentType().contains("html")) {
-                    handleNonAPIErrors(downloadLink, this.br);
-                    this.br.followConnection();
-                    if (br.containsHTML("class=\"downloadpassword\"")) {
-                        this.handlePremiumPassword(downloadLink, account);
-                        return;
-                    }
-                    url = br.getRegex("kNO = \"(http://[^<>\"]*?)\"").getMatch(0);
-                    if (url == null) {
-                        lastChangeErrorhandling(downloadLink, account, passwordprotected);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-
-            if (br.getRedirectLocation() != null) { // Special handling, intercepted by ISP
-                url = br.getRedirectLocation();
-                if (url == "http://www.mediafire.com/?" + fileID) {
-                    logger.info("False RedirectLocation: " + br.getRedirectLocation());
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "False redirect, retry later", 30 * 60 * 1000l);
-                }
-                logger.info("RedirectLocation: " + url);
-            }
-            this.br.setFollowRedirects(true);
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (this.dl.getConnection().getContentType().contains("html")) {
+            apiCommand(account, "file/get_links.php", "link_type=direct_download&quick_key=" + getFUID(downloadLink));
+            final String url = JSonUtils.getJson(api, "direct_download");
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
                 logger.info("Error (4)");
                 logger.info(dl.getConnection() + "");
-                this.br.followConnection();
-                handleNonAPIErrors(downloadLink, this.br);
-                lastChangeErrorhandling(downloadLink, account, passwordprotected);
+                br.followConnection();
+                handleNonAPIErrors(downloadLink, br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (con.getResponseCode() == 401) { // Special handling, intercepted by ISP
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "401 Unauthorized (possible ISP blockade), retry later", 30 * 60 * 1000l);
-            }
-            this.dl.startDownload();
+            dl.startDownload();
         }
-    }
-
-    private void lastChangeErrorhandling(final DownloadLink downloadLink, final Account account, final boolean passwordprotected) throws Exception {
-        if (this.br.getRequest().getHttpConnection().getResponseCode() == 403) {
-            logger.info("Error (3)");
-        } else if (this.br.getRequest().getHttpConnection().getResponseCode() == 200 && passwordprotected) {
-            // workaround for api error: try website password solving
-            this.handlePremiumPassword(downloadLink, account);
-            return;
-        }
-    }
-
-    private void handlePremiumPassword(final DownloadLink downloadLink, final Account account) throws Exception {
-        String url = null;
-        if (br.getURL().contains("/download/")) {
-            url = br.getURL();
-        } else {
-            br.getPage("http://www.mediafire.com/download/" + fileID);
-            url = br.getRedirectLocation();
-            if (url != null) {
-                br.getPage(url);
-            }
-        }
-        this.handlePW(downloadLink);
-        url = getURL(br);
-        if (url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.br.setFollowRedirects(true);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-
-        if (this.dl.getConnection().getContentType().contains("html")) {
-
-            logger.info("Error (3)");
-            logger.info(dl.getConnection() + "");
-            this.br.followConnection();
-            if (br.containsHTML("class=\"downloadpassword\"")) {
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.dl.startDownload();
-    }
-
-    private String getURL(Browser br) throws IOException {
-        String url = br.getRedirectLocation();
-        if (url == null) {
-            url = br.getRegex("kNO = \"(http://.*?)\"").getMatch(0);
-        }
-        if (url == null) {
-            /* try the same */
-            Browser brc = br.cloneBrowser();
-            brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
-            url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
-            if (url != null) {
-                url = url.replaceAll("\\\\", "");
-            }
-        }
-        return url;
     }
 
     private void handlePW(final DownloadLink downloadLink) throws Exception {
-        if (this.br.containsHTML("dh\\(''\\)")) {
-            new PasswordSolver(this, this.br, downloadLink) {
+        if (br.containsHTML("dh\\(''\\)")) {
+            new PasswordSolver(this, br, downloadLink) {
                 String curPw = null;
 
                 @Override
                 protected void handlePassword(final String password) throws Exception {
                     curPw = password;
-                    final Form form = this.br.getFormbyProperty("name", "form_password");
+                    final Form form = br.getFormbyProperty("name", "form_password");
                     if (form == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     form.put("downloadp", Encoding.urlEncode(curPw));
-                    this.br.submitForm(form);
+                    br.submitForm(form);
                 }
 
                 @Override
                 protected boolean isCorrect() {
-                    Form form = this.br.getFormbyProperty("name", "form_password");
+                    Form form = br.getFormbyProperty("name", "form_password");
                     if (form != null) {
                         return false;
                     } else {
@@ -657,183 +456,260 @@ public class MediafireCom extends PluginForHost {
 
     public void login(final Browser lbr, final Account account, boolean force) throws Exception {
         boolean red = lbr.isFollowingRedirects();
-        synchronized (CONFIGURATION_KEYS) {
-            try {
-                HashMap<String, String> cookies = null;
-                if (force == false && (cookies = MediafireCom.CONFIGURATION_KEYS.get(account)) != null) {
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            lbr.setCookie("http://www.mediafire.com/", key, value);
-                        }
-                        return;
-                    }
-                }
-                this.setBrowserExclusive();
-                final String lang = System.getProperty("user.language");
-                lbr.setFollowRedirects(true);
-                if (!isValidMailAdress(account.getUser())) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte trage deine E-Mail Adresse in das 'Name'-Feld ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the 'Name'-field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                lbr.getPage("http://www.mediafire.com/");
-                Form form = lbr.getFormbyProperty("name", "form_login1");
-                if (form == null) {
-                    form = lbr.getFormBySubmitvalue("login_email");
-                }
-                if (form == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                form.put("login_email", Encoding.urlEncode(account.getUser()));
-                form.put("login_pass", Encoding.urlEncode(account.getPass()));
-                lbr.submitForm(form);
-                lbr.getPage("/myfiles.php");
-                final String cookie = lbr.getCookie("http://www.mediafire.com", "user");
-                if ("x".equals(cookie) || cookie == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                lbr.setFollowRedirects(false);
-                lbr.getPage("https://www.mediafire.com/myaccount/download_options.php");
-                if (lbr.getRedirectLocation() != null && lbr.getRedirectLocation().contains("mediafire.com/upgrade")) {
-                    account.setProperty("free", true);
+        try {
+            // at this stage always trusting cookies
+            final Cookies cookies = account.loadCookies("");
+            if (!force && cookies != null) {
+                lbr.setCookies(this.getHost(), cookies);
+                return;
+            }
+            this.setBrowserExclusive();
+            final String lang = System.getProperty("user.language");
+            lbr.setFollowRedirects(true);
+            if (!isValidMailAdress(account.getUser())) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte trage deine E-Mail Adresse in das 'Name'-Feld ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    account.setProperty("free", false);
-                    String di = lbr.getRegex("di='(.*?)'").getMatch(0);
-                    lbr.getPage("/dynamic/download_options.php?enable_me_from_me=0&nocache=" + new Random().nextInt(1000) + "&di=" + di);
-                    // String configurationKey = getAPIKEY(lbr);
-                    // if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM,
-                    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the 'Name'-field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                cookies = new HashMap<String, String>();
-                final Cookies add = lbr.getCookies("http://www.mediafire.com");
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+            }
+            lbr.getPage("https://www.mediafire.com/");
+            // some shit that happens in javascript.
+            final Browser lbr2 = lbr.cloneBrowser();
+            lbr2.getPage("/templates/login_signup/login_signup.php?dc=loginPath");
+            Form form = lbr2.getFormbyProperty("id", "form_login1");
+            if (form == null) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                MediafireCom.CONFIGURATION_KEYS.put(account, cookies);
-            } catch (final PluginException e) {
-                MediafireCom.CONFIGURATION_KEYS.remove(account);
-                throw e;
-            } finally {
-                lbr.setFollowRedirects(red);
+            }
+            form.put("login_email", Encoding.urlEncode(account.getUser()));
+            form.put("login_pass", Encoding.urlEncode(account.getPass()));
+            // submit via the same browser
+            lbr2.submitForm(form);
+            final String cookie = lbr2.getCookie("http://www.mediafire.com", "user");
+            if ("x".equals(cookie) || cookie == null) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            // now with session token we can get info about the account from the web-api hybrid
+            lbr.setFollowRedirects(false);
+            lbr.getPage("/myaccount/");
+            initApi(account);
+            apiCommand(account, "user/get_info.php", null);
+            // to determine free | premium this is done via above request
+            final String accounType = JSonUtils.getJson(api, "premium");
+            if (StringUtils.equalsIgnoreCase(accounType, "no")) {
+                account.setType(AccountType.FREE);
+            } else {
+                account.setType(AccountType.PREMIUM);
+            }
+            account.saveCookies(lbr.getCookies(this.getHost()), "");
+        } catch (final PluginException e) {
+            throw e;
+        } finally {
+            lbr.setFollowRedirects(red);
+        }
+    }
+
+    private void initApi(final Account account) throws Exception {
+        if (api == null) {
+            api = br.cloneBrowser();
+        }
+        if (session_token == null) {
+            session_token = api.getRegex("parent\\.bqx\\(\"([a-f0-9]+)\"\\)").getMatch(0);
+            if (session_token == null && br.getRequest() != null) {
+                session_token = br.getRegex("LoadIframeLightbox\\('/templates/tos\\.php\\?token=([a-f0-9]+)").getMatch(0);
+            }
+            if (session_token == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            account.setProperty("session_token", session_token);
+        }
+        apiCommand(account, "device/get_status.php", null);
+    }
+
+    private void apiCommand(final Account account, final String command, final String args) throws Exception {
+        if (session_token == null) {
+            if (account != null) {
+                session_token = account.getStringProperty("session_token", null);
+                if (session_token == null) {
+                    // relogin
+                    login(br, account, true);
+                    session_token = account.getStringProperty("session_token", null);
+                }
+            }
+            if (session_token == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        api = br.cloneBrowser();
+        api.setAllowedResponseCodes(403);
+        api.getHeaders().put("Accept", "*/*");
+        api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // website still uses 1.4, api is up to 1.5 at this stage -raztoki20160101
+        String a = "https://www.mediafire.com/api/1.4/" + command + "?r=" + getRandomFourLetters() + (args != null ? "&" + args : "") + "&session_token=" + session_token + "&response_format=json";
+        api.getPage(a);
+        // is success ?
+        handleApiError(account);
+    }
+
+    private void handleApiError(final Account account) throws PluginException {
+        if (!StringUtils.equalsIgnoreCase(JSonUtils.getJson(api, "result"), "Success")) {
+            if (StringUtils.equalsIgnoreCase(JSonUtils.getJson(api, "result"), "Error")) {
+                // error handling
+                final String error = JSonUtils.getJson(api, "error");
+                switch (Integer.parseInt(error)) {
+                case 105:
+                    session_token = null;
+                    if (account != null) {
+                        account.setProperty("session_token", Property.NULL);
+                        account.clearCookies("");
+                    }
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                case 110:
+                    // offline file, to file/get_info as a single file... we need to return so the proper
+                    return;
+                default:
+                    // unknown error!
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
     }
 
-    // private String getAPIKEY(Browser br) {
-    // if (br == null) return null;
-    // String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
-    // if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
-    // return configurationKey;
-    // }
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
+    private String getRandomFourLetters() {
+        final Random r = new Random();
+        final String soup = "abcdefghijklmnopqrstuvwxyz";
+        String v = "";
+        for (int i = 0; i < 4; i++) {
+            v = v + soup.charAt(r.nextInt(soup.length()));
+        }
+        return v;
+    }
+
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        br.setFollowRedirects(false);
-        br.setCustomCharset("utf-8");
-
-        downloadLink.setProperty("type", Property.NULL);
-        if (downloadLink.getBooleanProperty("offline")) {
-            return AvailableStatus.FALSE;
-        }
-        final String fid = getFID(downloadLink);
-        if (downloadLink.getBooleanProperty("privatefolder")) {
-            downloadLink.getLinkStatus().setStatusText(PRIVATEFOLDERUSERTEXT);
-            downloadLink.setName(fid);
-            return AvailableStatus.TRUE;
-        }
-        downloadLink.setLinkID(fid);
-        final Browser apiBR = br.cloneBrowser();
+    public boolean checkLinks(final DownloadLink[] urls) {
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            getSessionToken(apiBR, aa);
-        }
-        apiRequest(apiBR, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + fid);
-        if ("114".equals(errorCode)) {
-            downloadLink.setProperty("privatefile", true);
-            return AvailableStatus.TRUE;
-        }
+        return checkLinks(urls, aa);
+    }
 
-        if ("110".equals(errorCode)) {
-            // <response><action>file/get_info</action><message>Unknown or Invalid
-            // QuickKey</message><error>110</error><result>Error</result><current_api_version>2.15</current_api_version></response>
+    public boolean checkLinks(final DownloadLink[] urls, final Account account) {
+        try {
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    // maximum number of quickkeys allowed is 500.
+                    if (links.size() > 100 || index == urls.length) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("quick_key=");
+                for (final DownloadLink dl : links) {
+                    sb.append(getFUID(dl));
+                    sb.append(",");
+                }
+                // lets remove last ","
+                sb.replace(sb.length() - 1, sb.length(), "");
+                if (account != null) {
+                    apiCommand(account, "file/get_info.php", sb.toString());
+                } else {
+                    api = br.cloneBrowser();
+                    api.setAllowedResponseCodes(403);
+                    api.getHeaders().put("Accept", "*/*");
+                    api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    api.getPage("https://www.mediafire.com/api/1.4/file/get_info.php" + "?r=" + getRandomFourLetters() + "&" + sb.toString() + "&response_format=json");
+                    handleApiError(account);
+                }
+                final String json = JSonUtils.getJsonArray(api.toString(), "file_infos");
+                final String[] jsonResults = JSonUtils.getJsonResultsFromArray(json);
+                // because they have a shite api and do things illogically...
+                final String skipped = JSonUtils.getJson(api.toString(), "skipped");
+                final HashSet<String> offline = new HashSet<String>();
+                if (skipped != null) {
+                    offline.addAll(Arrays.asList(skipped));
+                }
+                for (final DownloadLink dl : links) {
+                    if (json == null && jsonResults == null && links.size() == 1) {
+                        // single result....
+                        dl.setAvailableStatus(AvailableStatus.TRUE);
+                        return true;
+                    }
+                    final String fuid = getFUID(dl);
+                    if (skipped.contains(fuid)) {
+                        dl.setAvailable(false);
+                        continue;
+                    }
+                    for (final String result : jsonResults) {
+                        final String quickkey = JSonUtils.getJson(result, "quickkey");
+                        if (StringUtils.equals(quickkey, fuid)) {
+                            dl.setAvailable(true);
+                            final String name = JSonUtils.getJson(result, "filename");
+                            final String size = JSonUtils.getJson(result, "size");
+                            final String sha256 = JSonUtils.getJson(result, "hash");
+                            final String privacy = JSonUtils.getJson(result, "privacy");
+                            final String pass = JSonUtils.getJson(result, "password_protected");
+                            if (StringUtils.isNotEmpty(name)) {
+                                dl.setName(name);
+                            }
+                            if (size != null && size.matches("^\\d+$")) {
+                                dl.setVerifiedFileSize(Long.parseLong(size));
+                            }
+                            if (StringUtils.isNotEmpty(sha256)) {
+                                dl.setSha256Hash(sha256);
+                            }
+                            if (privacy != null) {
+                                dl.setProperty("privacy", privacy);
+                            }
+                            if (pass != null) {
+                                dl.setProperty("passwordRequired", JSonUtils.parseBoolean(pass));
+                            }
+                            break;
+                        }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
+        if (!checkLinks(new DownloadLink[] { link }) || !link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setDownloadSize(SizeFormatter.getSize(getXML("size", apiBR.toString() + "b")));
-        // stable has issues with utf-8 filenames provided from Content-Disposition, even when customcharset is used..
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getXML("filename", apiBR.toString())));
-        return AvailableStatus.TRUE;
-    }
-
-    private String getXML(final String parameter, final String source) {
-        return new Regex(source, "<" + parameter + ">([^<>\"]*?)</" + parameter + ">").getMatch(0);
-    }
-
-    private void apiRequest(final Browser br, final String url, final String data) throws IOException {
-        if (SESSIONTOKEN == null) {
-            br.getPage(url + data);
-        } else {
-            br.getPage(url + data + "&session_token=" + SESSIONTOKEN);
-        }
-        errorCode = getXML("error", br.toString());
-    }
-
-    private void getSessionToken(final Browser apiBR, final Account aa) throws IOException {
-        // Try to re-use session token as long as possible (it's valid for 10 minutes)
-        final String savedusername = this.getPluginConfig().getStringProperty("username");
-        final String savedpassword = this.getPluginConfig().getStringProperty("password");
-        final String sessiontokenCreateDateObject = this.getPluginConfig().getStringProperty("sessiontokencreated2");
-        long sessiontokenCreateDate = -1;
-        if (sessiontokenCreateDateObject != null && sessiontokenCreateDateObject.length() > 0) {
-            sessiontokenCreateDate = Long.parseLong(sessiontokenCreateDateObject);
-        }
-        if ((savedusername != null && savedusername.matches(aa.getUser())) && (savedpassword != null && savedpassword.matches(aa.getPass())) && System.currentTimeMillis() - sessiontokenCreateDate < 600000) {
-            SESSIONTOKEN = this.getPluginConfig().getStringProperty("sessiontoken");
-        } else {
-            // Get token for user account
-            apiRequest(apiBR, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + APPLICATIONID + Encoding.Base64Decode(APIKEY)) + "&version=1");
-            SESSIONTOKEN = getXML("session_token", apiBR.toString());
-            this.getPluginConfig().setProperty("username", aa.getUser());
-            this.getPluginConfig().setProperty("password", aa.getPass());
-            this.getPluginConfig().setProperty("sessiontoken", SESSIONTOKEN);
-            this.getPluginConfig().setProperty("sessiontokencreated2", "" + System.currentTimeMillis());
-            this.getPluginConfig().save();
-        }
-    }
-
-    private String getFID(final DownloadLink downloadLink) {
-        // http://www.mediafire.com/file/dyvzdsdsasdg1y4d/myfile format
-        String id = new Regex(downloadLink.getDownloadURL(), "file/([a-z0-9]+)/").getMatch(0);
-        if (id != null) {
-            return id;
-        }
-        return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        return getAvailableStatus(link);
     }
 
     private void handleNonAPIErrors(final DownloadLink dl, Browser imported) throws PluginException, IOException {
-        // imported browser affects this.br so lets make a new browser just for error checking.
+        // imported browser affects br so lets make a new browser just for error checking.
         Browser eBr = new Browser();
         // catch, and prevent a null imported browser
         if (imported == null) {
-            imported = this.br.cloneBrowser();
+            imported = br.cloneBrowser();
         }
         if (imported != null) {
             eBr = imported.cloneBrowser();
@@ -896,11 +772,6 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-        link.setProperty("type", Property.NULL);
-    }
-
-    @Override
-    public void resetPluginGlobals() {
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -909,10 +780,24 @@ public class MediafireCom extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
         return false;
     }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
+    }
+
 }
