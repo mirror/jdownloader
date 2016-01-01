@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
  * @author psp
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.io/(s/)?([A-Za-z0-9]+)(?:\\?s=((?:http|ftp).+))?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.io/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})" }, flags = { 0 })
 public class OuoIo extends PluginForDecrypt {
 
     public OuoIo(PluginWrapper wrapper) {
@@ -44,17 +44,16 @@ public class OuoIo extends PluginForDecrypt {
 
     private String parameter = null;
     private String fuid      = null;
-    private String s_fuid    = null;
-    private String s_value   = null;
+    private String slink     = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         set(param.toString());
-        if (s_value != null && s_fuid != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.urlDecode(s_value, false)));
+        if (slink != null) {
+            decryptedLinks.add(createDownloadlink(Encoding.urlDecode(slink, false)));
             return decryptedLinks;
-        } else if (s_fuid != null && s_value == null) {
-            // fid is just a URL owner identifier, the sv is the end url! Without proper sv value you can't get the end URL!
+        } else if (fuid == null && slink == null) {
+            // fuid is just a URL owner identifier! slink value is needed, without it you can't get the end URL!
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -86,14 +85,13 @@ public class OuoIo extends PluginForDecrypt {
 
     private void set(final String downloadLink) {
         parameter = downloadLink;
-        fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        s_fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        s_value = new Regex(parameter, this.getSupportedLinks()).getMatch(2);
+        fuid = new Regex(parameter, ".+\\.io/([A-Za-z0-9]{4,})$").getMatch(0);
+        slink = new Regex(parameter, "\\.io/s/[A-Za-z0-9]{4,}\\?s=((?:http|ftp).+)").getMatch(0);
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         set(link.getDownloadURL());
-        if (s_value != null && s_fuid != null) {
+        if (slink != null) {
             return false;
         }
         return true;
