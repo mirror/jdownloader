@@ -24,5 +24,3 @@ jd_plugins_optional_jdshutdown=JD Desligar
 jd_plugins_optional_jdshutdown_description=Encerra, suspende ou hiberna o computador ou o JD automaticamente quando o download for finalizado.
 lit_shutdownn=Encerrar
 show_admin=É necessário executar como administrador  para permitir que o JDownloader coloque o sistema em estado de Hibernação ou em Modo de Espera.
-shutdown_toggle_action_disabled2=Encerrar depois de baixar
-shutdown_toggle_action_enabled2=Encerrar depois de baixar
