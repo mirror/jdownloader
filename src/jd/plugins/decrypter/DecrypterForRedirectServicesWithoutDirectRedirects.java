@@ -680,7 +680,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                     br.setFollowRedirects(true);
                     getPage(br.getRedirectLocation());
                 }
-                finallink = br.getRegex("href=\"(http[^<>\"]*?)\" target=\"_blank\">Download</a>").getMatch(0);
+                finallink = br.getRegex("href=\"(http:[^<>\"]+/)?(http[^<>\"]*?)\" target=\"_blank\"\\s?>Download</a>").getMatch(1);
                 if (finallink == null) {
                     if (br.containsHTML(">Il file che stai provando a scaricare non esiste,<br>oppure deve essere ancora caricato<|>o semplicemente hai cliccato/digitato un link sbagliato\\s*<")) {
                         return decryptedLinks;
