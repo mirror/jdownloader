@@ -3985,7 +3985,7 @@ public interface GuiTranslation extends TranslateInterface {
     // String lit_please_wait_dotdotdot();
 
     // TODO Remove unused code found by UCDetector
-    // @Default(lngs = { "en" }, values = { "Please choose the correct path to the  FFmpeg™ binary..." })
+    // @Default(lngs = { "en" }, values = { "Please choose the correct path to the FFmpeg™ binary..." })
     // String FFMpegInstallTypeChooserDialog_layoutDialogContent_help_();
 
     @Default(lngs = { "en" }, values = { "FFmpeg™ Setup" })
@@ -4066,7 +4066,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = {
-    // "<html><b>JDownloader</b> has partnered with the <b>Open Source Research Group at Friedrich-Alexander University Erlangen-Nürnberg</b> to conduct a series of surveys.  The research is intended to improve the JDownloader experience and/or promote academic research into applied software development. There is no financial motivation behind this collaboration, but the whole JDownloader Project will profit from the survey results.<br>Please consider taking a moment to support this research.</html>"
+    // "<html><b>JDownloader</b> has partnered with the <b>Open Source Research Group at Friedrich-Alexander University
+    // Erlangen-Nürnberg</b> to conduct a series of surveys. The research is intended to improve the JDownloader experience and/or promote
+    // academic research into applied software development. There is no financial motivation behind this collaboration, but the whole
+    // JDownloader Project will profit from the survey results.<br>Please consider taking a moment to support this research.</html>"
     // })
     // String osr_dialog_message();
 
@@ -4918,7 +4921,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = {
-    // "If this proxy does not work with certain domains, JDownloader will ban the proxy for a few minutes. If the proxy is banned right now, you will see an entry here."
+    // "If this proxy does not work with certain domains, JDownloader will ban the proxy for a few minutes. If the proxy is banned right
+    // now, you will see an entry here."
     // })
     // String proxyDetailsDialog_white_bans_explain();
 
@@ -5992,4 +5996,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Stop all running downloads" })
     String StopDownloadsAction();
+
+    @Default(lngs = { "en" }, values = { "CaptchaSolutions.com" })
+
+    String CaptchaSolutionsSolver_gettypeName_();
 }

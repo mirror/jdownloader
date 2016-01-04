@@ -1,0 +1,250 @@
+package org.jdownloader.captcha.v2.solver.captchasolutions;
+
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.ChallengeResponseValidation;
+import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
+import org.jdownloader.captcha.v2.solver.CESSolverJob;
+import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA_SOLUTIONS;
+
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+import jd.nutils.encoding.Encoding;
+
+public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation, GenericConfigEventListener<String> {
+
+    private CaptchaSolutionsConfigInterface     config;
+    private static final CaptchaSolutionsSolver INSTANCE   = new CaptchaSolutionsSolver();
+    private ThreadPoolExecutor                  threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
+    private LogSource                           logger;
+
+    public static CaptchaSolutionsSolver getInstance() {
+        return INSTANCE;
+    }
+
+    @Override
+    public Class<String> getResultType() {
+        return String.class;
+    }
+
+    @Override
+    public CaptchaSolutionsSolverService getService() {
+        return (CaptchaSolutionsSolverService) super.getService();
+    }
+
+    private CaptchaSolutionsSolver() {
+        super(new CaptchaSolutionsSolverService(), Math.max(1, Math.min(25, JsonConfig.create(CaptchaSolutionsConfigInterface.class).getThreadpoolSize())));
+        getService().setSolver(this);
+        config = JsonConfig.create(CaptchaSolutionsConfigInterface.class);
+        logger = LogController.getInstance().getLogger(CaptchaSolutionsSolver.class.getName());
+
+        threadPool.allowCoreThreadTimeOut(true);
+        CFG_CAPTCHA_SOLUTIONS.USER_NAME.getEventSender().addListener(this);
+        CFG_CAPTCHA_SOLUTIONS.PASSWORD.getEventSender().addListener(this);
+
+    }
+
+    @Override
+    public boolean canHandle(Challenge<?> c) {
+        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
+    }
+
+    protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
+
+        solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) job.getChallenge());
+
+    }
+
+    private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
+
+        // job.showBubble(this);
+        checkInterruption();
+        try {
+
+            Browser br = new Browser();
+            br.setReadTimeout(5 * 60000);
+            // Put your CAPTCHA image file, file object, input stream,
+            // or vector of bytes here:
+            job.setStatus(SolverStatus.SOLVING);
+            long startTime = System.currentTimeMillis();
+            PostFormDataRequest r = new PostFormDataRequest("http://api.captchasolutions.com/solve");
+            ensureAPIKey();
+            r.addFormData(new FormData("p", "upload"));
+            r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
+            r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
+            FormData fd;
+            byte[] bytes = IO.readFile(challenge.getImageFile());
+            boolean png = bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G';
+            if (png) {
+
+                r.addFormData(fd = new FormData("captcha", "image.jpg", "image/png", bytes));
+            } else {
+                r.addFormData(fd = new FormData("captcha", "image.png", "image/jpeg", bytes));
+
+            }
+
+            URLConnectionAdapter conn = br.openRequestConnection(r);
+            br.loadConnection(conn);
+
+            String decaptcha = br.getRegex("<decaptcha>(.*?)</decaptcha>").getMatch(0);
+            if (StringUtils.isEmpty(decaptcha)) {
+                throw new SolverException("API Error");
+            }
+
+            if (decaptcha.trim().startsWith("Error:")) {
+                // do poll
+                String error = decaptcha.trim().substring(6);
+                throw new SolverException(error);
+            }
+            job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + decaptcha.trim());
+            job.setAnswer(new CaptchaSolutionsResponse(challenge, this, null, decaptcha.trim()));
+            return;
+
+        } catch (Exception e) {
+            job.getLogger().log(e);
+        }
+
+    }
+
+    protected boolean validateLogins() {
+        if (!CFG_CAPTCHA_SOLUTIONS.ENABLED.isEnabled()) {
+            return false;
+        }
+        if (StringUtils.isNotEmpty(config.getAPIKey()) && StringUtils.isNotEmpty(config.getAPISecret())) {
+            return true;
+        }
+        if (StringUtils.isEmpty(CFG_CAPTCHA_SOLUTIONS.USER_NAME.getValue())) {
+            return false;
+        }
+        if (StringUtils.isEmpty(CFG_CAPTCHA_SOLUTIONS.PASSWORD.getValue())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void setUnused(AbstractResponse<?> response, SolverJob<?> job) {
+    }
+
+    @Override
+    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
+        // if (config.isFeedBackSendingEnabled() && response instanceof CaptchaSolutionsResponse) {
+        // threadPool.execute(new Runnable() {
+        //
+        // @Override
+        // public void run() {
+        // try {
+        // String captcha = ((CaptchaSolutionsResponse) response).getCaptchaID();
+        // Challenge<?> challenge = response.getChallenge();
+        // if (challenge instanceof BasicCaptchaChallenge) {
+        // Browser br = new Browser();
+        // PostFormDataRequest r = new PostFormDataRequest(" http://api.CaptchaSolutions.com/api/captcha/" + captcha + "/report");
+        //
+        // r.addFormData(new FormData("username", (config.getUserName())));
+        // r.addFormData(new FormData("password", (config.getPassword())));
+        //
+        // URLConnectionAdapter conn = br.openRequestConnection(r);
+        // br.loadConnection(conn);
+        // System.out.println(conn);
+        // }
+        //
+        // // // Report incorrectly solved CAPTCHA if neccessary.
+        // // // Make sure you've checked if the CAPTCHA was in fact
+        // // // incorrectly solved, or else you might get banned as
+        // // // abuser.
+        // // Client client = getClient();
+        //
+        // } catch (final Throwable e) {
+        // logger.log(e);
+        // }
+        // }
+        // });
+        // }
+
+    }
+
+    public CaptchaSolutionsAccount loadAccount() {
+
+        CaptchaSolutionsAccount ret = new CaptchaSolutionsAccount();
+        Browser br = new Browser();
+        br.setFollowRedirects(false);
+
+        try {
+            ensureAPIKey();
+
+            br.getPage("http://api.captchasolutions.com/solve?p=balance&key=" + Encoding.urlEncode(config.getAPIKey()));
+
+            String tokens = br.getRegex("<tokens>\\s*(\\d+)\\s*</tokens>").getMatch(0);
+            ret.setTokens(Integer.parseInt(tokens));
+            ret.setUserName(config.getUserName());
+        } catch (Exception e) {
+            logger.log(e);
+            ret.setError(e.getMessage());
+        }
+        return ret;
+
+    }
+
+    private void ensureAPIKey() throws IOException {
+        if (StringUtils.isNotEmpty(config.getAPIKey()) && !StringUtils.isNotEmpty(config.getAPISecret())) {
+            return;
+        }
+        Browser br = new Browser();
+        br.setFollowRedirects(false);
+
+        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+        map.put("email", Encoding.urlEncode((config.getUserName().trim())));
+        map.put("password", Encoding.urlEncode((config.getPassword().trim())));
+        map.put("submit", "submit");
+        //
+        URLConnectionAdapter conn = br.openPostConnection("http://www.captchasolutions.com/clients/login/", map);
+        br.loadConnection(conn);
+        if (br.getRequest().getHttpConnection().getResponseCode() != 302) {
+            throw new WTFException(StringUtils.trim(br.getRegex("<strong>Oh snap!</strong>(.*?)<").getMatch(0)));
+        }
+        br.getPage("http://www.captchasolutions.com/clients/home/generatekeys/");
+        String key = br.getRegex("<strong>API KEY</strong>.*?<p>(.*?)</p>").getMatch(0);
+        String secret = br.getRegex("<strong>API SECRET</strong>.*?<p>(.*?)</p>").getMatch(0);
+        config.setAPIKey(key);
+        config.setAPISecret(secret);
+
+    }
+
+    @Override
+    public void setValid(AbstractResponse<?> response, SolverJob<?> job) {
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
+        config.setAPIKey(null);
+        config.setAPISecret(null);
+    }
+
+}
