@@ -25,16 +25,23 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -42,15 +49,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" }, flags = { 2 })
-public class ZeveraCom extends PluginForHost {
+public class ZeveraCom extends antiDDoSForHost {
 
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
@@ -77,14 +79,16 @@ public class ZeveraCom extends PluginForHost {
         return mProt + mName + "/terms";
     }
 
-    public void prepBrowser() {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(mProt + mName, "lang", "english");
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.setCustomCharset("utf-8");
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
+        prepBr.setCookie(mProt + mName, "lang", "english");
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setCustomCharset("utf-8");
+        prepBr.setConnectTimeout(60 * 1000);
+        prepBr.setReadTimeout(60 * 1000);
+        return prepBr;
     }
 
     /**
@@ -95,7 +99,6 @@ public class ZeveraCom extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-        prepBrowser();
         if (urls == null || urls.length == 0) {
             return false;
         }
@@ -114,7 +117,7 @@ public class ZeveraCom extends PluginForHost {
             for (DownloadLink dl : urls) {
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openGetConnection(dl.getDownloadURL());
+                    con = openAntiDDoSRequestConnection(br, br.createGetRequest(dl.getDownloadURL()));
                     if (con.isContentDisposition()) {
                         dl.setFinalFileName(getFileNameFromHeader(con));
                         dl.setDownloadSize(con.getLongContentLength());
@@ -310,8 +313,6 @@ public class ZeveraCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        prepBrowser();
-
         synchronized (hostUnavailableMap) {
             HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
             UnavailableHost nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
@@ -350,14 +351,14 @@ public class ZeveraCom extends PluginForHost {
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
         if (link.getStringProperty("pass", null) != null) {
-            br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+            getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
         } else {
-            br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()));
+            getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()));
         }
         // handleErrors();
         br.setFollowRedirects(false);
         final String continuePage = br.getRedirectLocation();
-        br.getPage(continuePage);
+        getPage(continuePage);
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             // not defect, zevera will respond with invalid redirect
@@ -420,7 +421,7 @@ public class ZeveraCom extends PluginForHost {
         // doesn't contain useful info....
         // br.getPage(mServ + "/jDownloader.ashx?cmd=accountinfo");
         // grab website page instead.
-        br.getPage(mServ + "/Member/Dashboard.aspx");
+        getPage(mServ + "/Member/Dashboard.aspx");
         final String expire = br.getRegex(">Expiration date:</label>.+?txExpirationDate\">(.*?)</label").getMatch(0);
         final String server = br.getRegex(">Server time:</label>.+?txServerTime\">(.*?)</label").getMatch(0);
         String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
@@ -461,8 +462,8 @@ public class ZeveraCom extends PluginForHost {
         }
         ai.setStatus("Premium User");
         try {
-            String hostsSup = br.cloneBrowser().getPage(mServ + "/jDownloader.ashx?cmd=gethosters");
-            String[] hosts = new Regex(hostsSup, "([^,]+)").getColumn(0);
+            getPage(mServ + "/jDownloader.ashx?cmd=gethosters");
+            String[] hosts = br.getRegex("([^,]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             /*
              * set ArrayList<String> with all supported multiHosts of this service
@@ -480,7 +481,6 @@ public class ZeveraCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -497,14 +497,21 @@ public class ZeveraCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage(mServ);
-                br.getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                getPage(mServ);
+                getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
-                    final String lang = System.getProperty("user.language");
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // they can make more steps here.
+                    final Form more = getMoreForm(account);
+                    if (more != null) {
+                        submitForm(more);
+                    }
+                    if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
+                        final String lang = System.getProperty("user.language");
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 /** Save cookies */
@@ -521,6 +528,11 @@ public class ZeveraCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private Form getMoreForm(final Account account) {
+        final Form more = br.getFormbyActionRegex("OfferLogin\\.aspx\\?login=" + Pattern.quote(Encoding.urlEncode(account.getUser())) + "&(?:amp;)?pass=" + Pattern.quote(Encoding.urlEncode(account.getPass())));
+        return more;
     }
 
     private void tempUnavailableHoster(final long timeout, final String reason) throws PluginException {
