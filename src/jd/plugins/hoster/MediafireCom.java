@@ -401,9 +401,11 @@ public class MediafireCom extends PluginForHost {
         if (account.getType() == AccountType.FREE) {
             doFree(downloadLink, account);
         } else {
-            boolean passwordprotected = false;
             apiCommand(account, "file/get_links.php", "link_type=direct_download&quick_key=" + getFUID(downloadLink));
             final String url = JSonUtils.getJson(api, "direct_download");
+            if (url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
