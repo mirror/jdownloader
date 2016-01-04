@@ -1108,6 +1108,10 @@ public class UsersCloudCom extends PluginForHost {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
+            /* Use the free method with premium parameters */
+            doFree(downloadLink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "freelink2");
+            // The following code doesn't work any more
+            /*
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
                 br.setFollowRedirects(false);
@@ -1146,6 +1150,7 @@ public class UsersCloudCom extends PluginForHost {
             fixFilename(downloadLink);
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
+            */
         }
     }
 
