@@ -869,13 +869,12 @@ public class SimpleFTP {
                 }
             }
         } catch (IOException e) {
-            if (e.getMessage().contains("was unable to log in with the supplied")) {
-                disconnect();
+            disconnect();
+            if (e.getMessage().contains("was unable to log in with the supplied") || e.getMessage().contains("530 Login or Password incorrect")) {
                 if (autoTry) {
                     connect(host, port);
                 } else {
-                    Login ret = AuthenticationController.getInstance().getBestLogin("ftp://" + url.getHost());
-
+                    final Login ret = AuthenticationController.getInstance().getBestLogin("ftp://" + url.getHost());
                     if (ret == null) {
                         throw e;
                     }

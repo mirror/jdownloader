@@ -1,7 +1,9 @@
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -14,12 +16,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.auth.Login;
 
 @DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
 public class Ftp extends PluginForDecrypt {
@@ -46,7 +47,24 @@ public class Ftp extends PluginForDecrypt {
         ftp.setLogger(logger);
         try {
             final URL url = new URL(cLink.getCryptedUrl());
-            ftp.connect(url);
+            try {
+                ftp.connect(url);
+            } catch (IOException e) {
+                if (e.getMessage().contains("was unable to log in with the supplied") || e.getMessage().contains("530 Login or Password incorrect")) {
+                    final DownloadLink dummyLink = new DownloadLink(null, null, url.getHost(), cLink.getCryptedUrl(), true);
+                    final Login login = requestLogins(org.jdownloader.translate._JDT._.DirectHTTP_getBasicAuth_message(), dummyLink);
+                    if (login != null) {
+                        final String host = url.getHost();
+                        int port = url.getPort();
+                        if (port <= 0) {
+                            port = 21;
+                        }
+                        ftp.connect(host, port, login.getUsername(), login.getPassword());
+                    }
+                } else {
+                    throw e;
+                }
+            }
             final String currentDir = ftp.getDir();
             String filePath = URLDecoder.decode(url.getPath(), "UTF-8");
             if (!filePath.startsWith("/")) {
@@ -59,21 +77,22 @@ public class Ftp extends PluginForDecrypt {
                     filePath = currentDir + filePath;
                 }
             }
+            final String finalFilePath = filePath;
             String name = filePath.substring(filePath.lastIndexOf("/") + 1);
             if (StringUtils.isEmpty(name)) {
                 name = null;
             }
             filePath = filePath.substring(0, filePath.lastIndexOf("/") + 1);
             String packageName = new Regex(filePath, "/([^/]+)(/$|$)").getMatch(0);
+            final String auth;
+            if (!StringUtils.equals("anonymous", ftp.getUser()) || !StringUtils.equals("anonymous", ftp.getUser())) {
+                auth = ftp.getUser() + ":" + ftp.getPass() + "@";
+            } else {
+                auth = "";
+            }
             if (ftp.cwd(filePath)) {
                 SimpleFTPListEntry[] entries = ftp.listEntries();
                 if (entries != null) {
-                    final String auth;
-                    if (!StringUtils.equals("anonymous", ftp.getUser()) || !StringUtils.equals("anonymous", ftp.getUser())) {
-                        auth = ftp.getUser() + ":" + ftp.getPass() + "@";
-                    } else {
-                        auth = "";
-                    }
                     /*
                      * logic for only adding a given file, ie. ftp://domain/directory/file.exe, you could also have subdirectory of the same
                      * name ftp.../file.exe/file.exe -raztoki
@@ -81,7 +100,7 @@ public class Ftp extends PluginForDecrypt {
                     for (final SimpleFTPListEntry entry : entries) {
                         if (StringUtils.equals(entry.getName(), name)) {
                             if (entry.isFile()) {
-                                final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
+                                final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(entry.getFullPath(), "UTF-8"));
                                 link.setAvailable(true);
                                 if (entry.getSize() >= 0) {
                                     link.setVerifiedFileSize(entry.getSize());
@@ -94,7 +113,7 @@ public class Ftp extends PluginForDecrypt {
                                     entries = ftp.listEntries();
                                     break;
                                 } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                    entries = new SimpleFTPListEntry[0];
                                 }
                             }
                         }
@@ -111,7 +130,7 @@ public class Ftp extends PluginForDecrypt {
                         }
                         for (final SimpleFTPListEntry entry : entries) {
                             if (entry.isFile()) {
-                                final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
+                                final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(entry.getFullPath(), "UTF-8"));
                                 link.setAvailable(true);
                                 if (entry.getSize() >= 0) {
                                     link.setVerifiedFileSize(entry.getSize());
@@ -122,14 +141,19 @@ public class Ftp extends PluginForDecrypt {
                         }
                     }
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (name != null && ret.size() == 0) {
-                /*
-                 * wrong, folder could be empty, or contain sub directories this shouldn't be a defect! -raztoki
-                 */
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (ret.size() == 0 && name != null) {
+                // sometimes dir listing/changing is not allowed but direct access is still possible
+                if (ftp.bin()) {
+                    final long size = ftp.getSize(finalFilePath);
+                    if (size >= 0) {
+                        final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(finalFilePath, "UTF-8"));
+                        link.setAvailable(true);
+                        link.setVerifiedFileSize(size);
+                        link.setFinalFileName(name);
+                        ret.add(link);
+                    }
+                }
             }
             if (packageName != null) {
                 final FilePackage fp = FilePackage.getInstance();
