@@ -102,10 +102,26 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
             }
         } else {
             final String resolutions[] = { "686x432", "458x288", "228x144", "256x144" };
-            final String[] qualities = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gloria\\.tv/[a-z0-9\\-]+/mediafile[^<>\"]*?)\"").getColumn(0);
+            String[] qualities = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gloria\\.tv/[a-z0-9\\-]+/mediafile[^<>\"]*?)\"").getColumn(0);
+            if (qualities == null || qualities.length == 0) {
+                qualities = br.getRegex("type=\"video/mp4[^<>\"]+\" src=\"(http://[^<>\"]*?)\"").getColumn(0);
+            }
+            String audiosource = this.br.getRegex("data\\-uikit\\-audio=\"(\\{[^<>\"]+\\})\"").getMatch(0);
             final Regex audioregex = br.getRegex("(mp3|m4a):\\'(http:[^<>\"]*?)\\'");
-            final String audioExt = audioregex.getMatch(0);
+            String audioExt = audioregex.getMatch(0);
             String audiolink = audioregex.getMatch(1);
+            if (audiolink == null && audiosource != null) {
+                audiosource = Encoding.htmlDecode(audiosource).replace("\\", "");
+                audiolink = new Regex(audiosource, "src:\\'(http[^<>\"\\']*?)\\'").getMatch(0);
+                if (audiolink != null) {
+                    audiolink = audiolink.replace("/l&sum=", "%2fl&sum=");
+                }
+                if (audiosource.contains("mp4")) {
+                    audioExt = ".mp4";
+                } else {
+                    audioExt = ".mp3";
+                }
+            }
             if (qualities.length == 0 && audiolink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

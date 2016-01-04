@@ -37,16 +37,21 @@ public class BbcComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private final String vpid_invalid = "(program)";
+
     @SuppressWarnings("unchecked")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         /* Check if maybe we have video-IDs inside our url */
-        final String[] urlids = new Regex(parameter, "([pb][a-z0-9]{7})").getColumn(0);
+        final String[] urlids = new Regex(parameter, "/([pb][a-z0-9]{7})/?").getColumn(0);
         if (urlids != null && urlids.length > 0) {
             for (final String vpid : urlids) {
+                if (vpid.matches(vpid_invalid)) {
+                    /* Skip invalid ids */
+                    continue;
+                }
                 final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);
-                dl.setAvailable(true);
                 dl.setName(vpid + ".mp4");
                 decryptedLinks.add(dl);
             }

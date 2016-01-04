@@ -42,12 +42,11 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("up.4share.vn/", "4share.vn/");
         br.setConnectTimeout(2 * 60 * 1000);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("\\[Empty Folder\\]")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
+        if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("\\[Empty Folder\\]") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
+            final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
-            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<b>Thư mục:\\s*(.*?)\\s*</b>").getMatch(0);
@@ -91,12 +90,7 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
                 final String fid = new Regex(dl, "f/([a-f0-9]{16})/").getMatch(0);
                 if (fid != null) {
                     final DownloadLink dll = createDownloadlink(dl);
-                    try {
-                        dll.setLinkID(fid);
-                    } catch (Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                        dll.setProperty("LINKDUPEID", fid);
-                    }
+                    dll.setLinkID(fid);
                     decryptedLinks.add(dll);
                 }
             }

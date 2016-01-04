@@ -24,9 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -48,13 +45,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novamov.com", "novaup.com" }, urls = { "http://(www\\.)?(nova(up|mov)\\.com/(download|sound|video)/[a-z0-9]+|(embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
-public class NovaUpMovcom extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to", "novamov.com", "novaup.com" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0, 0 })
+public class AuroravidTo extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
     private final String         TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
     private final String         TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
-    private static final String  DOMAIN                       = "novamov.com";
+    private static final String  DOMAIN                       = "auroravid.to";
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -72,16 +72,16 @@ public class NovaUpMovcom extends PluginForHost {
 
     private String               DLLINK                       = "";
 
-    public NovaUpMovcom(final PluginWrapper wrapper) {
+    public AuroravidTo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.novamov.com/premium.php");
     }
 
     @Override
     public String rewriteHost(String host) {
-        if ("novaup.com".equals(getHost())) {
-            if (host == null || "novaup.com".equals(host)) {
-                return "novamov.com";
+        if ("novaup.com".equals(getHost()) || "novamov.com".equals(getHost())) {
+            if (host == null || "novaup.com".equals(host) || "novamov.com".equals(host)) {
+                return "auroravid.to";
             }
         }
         return super.rewriteHost(host);
@@ -89,15 +89,15 @@ public class NovaUpMovcom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String videoID = new Regex(link.getDownloadURL(), "novamov\\.com/embed\\.php.*?v=([a-z0-9]+)$").getMatch(0);
+        final String videoID = new Regex(link.getDownloadURL(), "/embed\\.php.*?v=([a-z0-9]+)$").getMatch(0);
         if (videoID != null) {
-            link.setUrlDownload("http://www.novamov.com/video/" + videoID);
+            link.setUrlDownload("http://www." + DOMAIN + "/video/" + videoID);
         }
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.novamov.com/terms.php";
+        return "http://www." + DOMAIN + "/terms.php";
     }
 
     @Override

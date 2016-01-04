@@ -92,51 +92,67 @@ public class PornCom extends PluginForDecrypt {
         }
         final String originID = new Regex(origin, "(\\d+)(?:\\.html)?$").getMatch(0);
         final boolean best = cfg.getBooleanProperty("ALLOW_BEST", false);
-        final String qualities[][] = br.getRegex("(\\d+p)\",url:\"(https?:.*?)\"").getMatches();
-        if (qualities != null && qualities.length > 0) {
-            final HashMap<String, String> matches = new HashMap<String, String>();
-            for (final String qualitiy[] : qualities) {
-                matches.put(qualitiy[0], qualitiy[1]);
+        final HashMap<String, String> matches = getQualities(this.br);
+        if (best) {
+            if (q720 && matches.containsKey("720p")) {
+                final String url = matches.get("720p");
+                matches.clear();
+                matches.put("720p", url);
             }
-            if (best) {
-                if (q720 && matches.containsKey("720p")) {
-                    final String url = matches.get("720p");
-                    matches.clear();
-                    matches.put("720p", url);
-                }
-                if (q480 && matches.containsKey("480p")) {
-                    final String url = matches.get("480p");
-                    matches.clear();
-                    matches.put("480p", url);
-                }
-                if (q360 && matches.containsKey("360p")) {
-                    final String url = matches.get("360p");
-                    matches.clear();
-                    matches.put("360p", url);
-                }
-                if (q240 && matches.containsKey("240p")) {
-                    final String url = matches.get("240p");
-                    matches.clear();
-                    matches.put("240p", url);
-                }
+            if (q480 && matches.containsKey("480p")) {
+                final String url = matches.get("480p");
+                matches.clear();
+                matches.put("480p", url);
             }
-            for (final Entry<String, String> match : matches.entrySet()) {
-                final String url = match.getValue();
-                final String q = match.getKey();
-                final DownloadLink link = createDownloadlink(origin);
-                final String ext = Files.getExtension(new Regex(url, "/(.*?)(\\?|$)").getMatch(0));
-                if (ext != null) {
-                    link.setFinalFileName(fileName + "_" + q + "." + ext);
-                } else {
-                    link.setFinalFileName(fileName + "_" + q + ".mp4");
-                }
-                link.setLinkID(getHost() + "_" + q + originID);
-                link.setProperty("q", q);
-                link.setAvailable(true);
-                ret.add(link);
+            if (q360 && matches.containsKey("360p")) {
+                final String url = matches.get("360p");
+                matches.clear();
+                matches.put("360p", url);
+            }
+            if (q240 && matches.containsKey("240p")) {
+                final String url = matches.get("240p");
+                matches.clear();
+                matches.put("240p", url);
             }
         }
+        for (final Entry<String, String> match : matches.entrySet()) {
+            final String url = match.getValue();
+            final String q = match.getKey();
+            final DownloadLink link = createDownloadlink(origin);
+            final String ext = Files.getExtension(new Regex(url, "/(.*?)(\\?|$)").getMatch(0));
+            if (ext != null) {
+                link.setFinalFileName(fileName + "_" + q + "." + ext);
+            } else {
+                link.setFinalFileName(fileName + "_" + q + ".mp4");
+            }
+            link.setLinkID(getHost() + "_" + q + originID);
+            link.setProperty("q", q);
+            link.setAvailable(true);
+            ret.add(link);
+        }
         return ret;
+    }
+
+    public static HashMap<String, String> getQualities(final Browser br) {
+        final String qualities[][] = br.getRegex("(\\d+p|low|med|hq|hd)\",url:\"(https?:.*?)\"").getMatches();
+        HashMap<String, String> matches = new HashMap<String, String>();
+        if (qualities != null && qualities.length > 0) {
+            for (final String qualitiy[] : qualities) {
+                String qualityname = qualitiy[0];
+                /* Correct that */
+                if (qualityname.equals("low")) {
+                    qualityname = "240p";
+                } else if (qualityname.equals("med")) {
+                    qualityname = "360p";
+                } else if (qualityname.equals("hq")) {
+                    qualityname = "480p";
+                } else if (qualityname.equals("hd")) {
+                    qualityname = "720p";
+                }
+                matches.put(qualityname, qualitiy[1]);
+            }
+        }
+        return matches;
     }
 
 }

@@ -63,8 +63,9 @@ public class Up4ShareVn extends PluginForHost {
         correctDownloadLink(link);
         prepBR();
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
-        if (br.containsHTML(">FID Không hợp lệ\\!|file not found|(F|f)ile (này)? đã bị xóa|File không tồn tại?| Error: FileLink da bi xoa|>Xin lỗi Bạn, file này không còn tồn tại")) {
+        if (br.containsHTML(">FID Không hợp lệ\\!|file not found|(F|f)ile (này)? đã bị xóa|File không tồn tại?| Error: FileLink da bi xoa|>Xin lỗi Bạn, file này không còn tồn tại") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);

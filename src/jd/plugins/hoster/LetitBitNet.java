@@ -255,12 +255,18 @@ public class LetitBitNet extends PluginForHost {
                     if (br.containsHTML("\"data\":\\[\\[\\]\\]")) {
                         dllink.setAvailable(false);
                     } else {
+                        final String fname = fInfo.getMatch(0);
+                        final String fsize = fInfo.getMatch(2);
                         final String md5 = fInfo.getMatch(5);
-                        dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
-                        dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(2)));
-                        dllink.setAvailable(true);
-                        if (!md5.equals("0")) {
-                            dllink.setMD5Hash(md5);
+                        if (fname == null || fsize == null) {
+                            dllink.setAvailable(false);
+                        } else {
+                            dllink.setFinalFileName(Encoding.htmlDecode(fname));
+                            dllink.setDownloadSize(Long.parseLong(fsize));
+                            dllink.setAvailable(true);
+                            if (md5 != null && !md5.equals("0")) {
+                                dllink.setMD5Hash(md5);
+                            }
                         }
                     }
                 }
