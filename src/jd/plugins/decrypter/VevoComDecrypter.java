@@ -95,7 +95,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
         br.setAllowedResponseCodes(500);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final DownloadLink offline = createDloadlink();
+        final DownloadLink offline = this.createOfflinelink(parameter);
         offline.setProperty("mainlink", parameter);
         offline.setProperty("offline", true);
         offline.setAvailable(false);
@@ -413,7 +413,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -423,7 +423,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {

@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,18 +35,17 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.IgnVariant;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ign.com" }, urls = { "http://(www\\.)?pc\\.ign\\.com/dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "http://(www\\.)?pc\\.ign\\.com/dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" }, flags = { 0 })
 public class IgnCom extends PluginForDecrypt {
 
     public IgnCom(PluginWrapper wrapper) {
@@ -54,58 +54,56 @@ public class IgnCom extends PluginForDecrypt {
 
     private static final String TYPE_NEW = "http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+";
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0");
         br.getPage(parameter);
         String fpName;
         if (parameter.matches(TYPE_NEW)) {
             if (br.getHttpConnection().getResponseCode() == 404) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
+                final DownloadLink offline = this.createOfflinelink(parameter);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-            // final String finallink = br.getRegex("id=\"iPadVideoSource_0\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
-            // if (finallink == null) {
-            // logger.warning("Decrypter broken for link: " + parameter);
-            // return null;
-            // }
-            // final DownloadLink fina = createDownloadlink("directhttp://" + finallink);
-            // fina.setFinalFileName(Encoding.htmlDecode(fpName).trim() + ".mp4");
-            // fina.setAvailable(true);
-            // decryptedLinks.add(fina);
 
-            // HDS
-
-            final String p = "url\\s*\\+=\\s*\"\\?version=([\\d\\.]+)";
-            String aa = br.getRegex("var videoUrl\\s*=\\s*\"([^\"]+)\"").getMatch(0);
-            String bb = br.getRegex("var url\\s*=\\s*\"([^\"]+)\";\\s*if\\(flashvars.cacheBusting\\)\\s*\\{\\s*" + p).getMatch(0);
-            String cc = br.getRegex(p).getMatch(0);
-            if (aa == null || bb == null || cc == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            fpName = this.br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
+            if (fpName == null) {
+                /* Fallback to url-name */
+                fpName = new Regex(parameter, "/([a-z0-9\\-]+)$").getMatch(0);
             }
-            aa = unescape(aa);
-            bb = unescape(bb);
-            Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("Accept", "*/*");
-            br2.getPage(aa + ".config?autoplay=true&windowLocation=" + Encoding.urlEncode(aa) + "&pagetype=mediavideoplayer&playerVersion=" + cc);
-            String zz = br2.getRegex("\"playlist\":\\{(.*?)\\}\\s*,\\s*\"relatedContent\"").getMatch(0);
 
-            // we want playlist > media
+            fpName = Encoding.htmlDecode(fpName).trim();
 
-            String title = getJson(zz, "title");
-            String media = getJson(zz, "url");
-            Browser br3 = br.cloneBrowser();
-            br3.getPage(media);
-            String blah = br3.toString();
-            String[][] ent = new Regex(blah, "<\\s*(bootstrapInfo|metadata)[^>]*>(.*?)</\\1").getMatches();
-            for (String[] e : ent) {
-                blah = blah.replace(e[1], (e[1]));
+            final String json = this.br.getRegex("data\\-video=\\'(\\{.*?\\})\\'[\t\n\r ]+").getMatch(0);
+
+            if (json == null) {
+                return null;
             }
-            String blah2 = "";
+
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+
+            /* HLS */
+            // final String hls = (String) entries.get("m3uUrl");
+
+            final ArrayList<Object> renditions = (ArrayList) entries.get("assets");
+
+            for (final Object rendition : renditions) {
+                entries = (LinkedHashMap<String, Object>) rendition;
+                final String finallink = (String) entries.get("url");
+                final String height = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("height"), -1));
+
+                if (finallink == null || height.equals("-1")) {
+                    continue;
+                }
+
+                final DownloadLink dlink = createDownloadlink("directhttp://" + finallink);
+                dlink.setFinalFileName(fpName + "_" + height + ".mp4");
+                decryptedLinks.add(dlink);
+            }
+
         } else {
             if (br.containsHTML("No htmlCode read")) {
                 final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
@@ -142,7 +140,7 @@ public class IgnCom extends PluginForDecrypt {
                 if (links != null && links.length != 0) {
                     failed = false;
                     for (String singleLink : links) {
-                        DownloadLink dlink = createDownloadlink("directhttp://" + singleLink);
+                        final DownloadLink dlink = createDownloadlink("directhttp://" + singleLink);
                         dlink.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
                         decryptedLinks.add(dlink);
                     }
@@ -154,7 +152,6 @@ public class IgnCom extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName("HAHAHA");
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

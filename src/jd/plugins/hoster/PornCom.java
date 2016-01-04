@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -105,7 +106,8 @@ public class PornCom extends antiDDoSForHost {
         }
         filename = Encoding.htmlDecode(filename.trim());
         if (q != null) {
-            DLLINK = br.getRegex(q + "\",url:\"(https?:.*?)\"").getMatch(0);
+            final HashMap<String, String> matches = jd.plugins.decrypter.PornCom.getQualities(this.br);
+            DLLINK = matches.get(q);
         } else {
             get_dllink(this.br);
         }

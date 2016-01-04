@@ -97,75 +97,107 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         }
         fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
+
+        String json_source = this.br.getRegex("P\\.main\\.start\\((\\{.*?\\})\\);[\t\n\r]+").getMatch(0);
+
         if (loggedIN || force_api_usage) {
             /* First, get the first 25 pictures from their site. */
             // decryptSite();
             final String board_id = br.getRegex("\"board_id\":[\t\n\r ]+\"(\\d+)\"").getMatch(0);
-            String nextbookmark = br.getRegex("\"bookmarks\": \\[\"([^<>\"]{6,})\"").getMatch(0);
+            String nextbookmark = br.getRegex("\"bookmarks\": \\[\"([^<>\"]{5,})\"").getMatch(0);
             final String source_url = new Regex(parameter, "pinterest\\.com(/.+)").getMatch(0);
             if (board_id == null || nextbookmark == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            do {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return decryptedLinks;
-                }
-                prepAPIBR(br);
-                String getpage = "https://www.pinterest.com/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22add_pin_rep_with_place%22%3Afalse%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22page_size%22%3A25%2C%22add_vase%22%3Atrue%2C%22access%22%3A%5B%5D%2C%22board_layout%22%3A%22default%22%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22prepend%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
-                br.getPage(getpage);
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-                final ArrayList<Object> resource_data_list = (ArrayList) entries.get("resource_data_cache");
-                final LinkedHashMap<String, Object> t2 = (LinkedHashMap<String, Object>) resource_data_list.get(0);
-                final ArrayList<Object> t3 = (ArrayList) t2.get("data");
-                for (final Object pint : t3) {
-                    final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
-                    final LinkedHashMap<String, Object> single_pinterest_pinner = (LinkedHashMap<String, Object>) single_pinterest_data.get("pinner");
-                    final LinkedHashMap<String, Object> single_pinterest_images = (LinkedHashMap<String, Object>) single_pinterest_data.get("images");
-                    final LinkedHashMap<String, Object> single_pinterest_images_original = (LinkedHashMap<String, Object>) single_pinterest_images.get("orig");
-                    final String pin_directlink = (String) single_pinterest_images_original.get("url");
-                    final String pin_id = (String) single_pinterest_data.get("id");
-                    final String description = (String) single_pinterest_data.get("description");
-                    final String username = (String) single_pinterest_pinner.get("username");
-                    final String pinner_name = (String) single_pinterest_pinner.get("full_name");
-                    if (pin_id == null || pin_directlink == null || pinner_name == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
+            try {
+                do {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
                     }
-                    String filename = pin_id;
-                    final String content_url = "http://www.pinterest.com/pin/" + pin_id + "/";
-                    final DownloadLink dl = createDownloadlink(content_url);
+                    prepAPIBR(br);
 
-                    if (description != null) {
-                        dl.setComment(description);
-                        dl.setProperty("description", description);
-                        if (enable_description_inside_filenames) {
-                            filename += "_" + description;
+                    if (!loggedIN && json_source == null) {
+                        /* Not logged in ? Sometimes needed json is already given in html code! */
+                        String getpage = "https://www.pinterest.com/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22add_pin_rep_with_place%22%3Afalse%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22page_size%22%3A25%2C%22add_vase%22%3Atrue%2C%22access%22%3A%5B%5D%2C%22board_layout%22%3A%22default%22%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22prepend%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                        br.getPage(getpage);
+                        json_source = this.br.toString();
+                    }
+                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_source);
+                    ArrayList<Object> resource_data_list = (ArrayList) entries.get("resource_data_cache");
+                    if (resource_data_list == null) {
+                        /*
+                         * Not logged in ? Sometimes needed json is already given in html code! It has minor differences compared to the
+                         * API.
+                         */
+                        resource_data_list = (ArrayList) entries.get("resourceDataCache");
+                    }
+
+                    /* Find correct list of PINs */
+                    for (Object o : resource_data_list) {
+                        entries = (LinkedHashMap<String, Object>) o;
+                        o = entries.get("data");
+                        if (o != null && o instanceof ArrayList) {
+                            resource_data_list = (ArrayList) o;
+                            break;
                         }
                     }
-                    filename += jd.plugins.hoster.PinterestCom.default_extension;
-                    filename = encodeUnicode(filename);
+                    for (final Object pint : resource_data_list) {
+                        final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
+                        final String type = (String) single_pinterest_data.get("type");
+                        if (type == null || !type.equals("pin")) {
+                            /* Skip invalid objects! */
+                            continue;
+                        }
 
-                    dl.setContentUrl(content_url);
-                    dl.setLinkID(pin_id);
-                    dl._setFilePackage(fp);
-                    dl.setProperty("free_directlink", pin_directlink);
-                    dl.setProperty("boardid", board_id);
-                    dl.setProperty("source_url", source_url);
-                    dl.setProperty("username", username);
-                    dl.setProperty("decryptedfilename", filename);
-                    dl.setName(filename);
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                }
-                final LinkedHashMap<String, Object> resource_list = (LinkedHashMap<String, Object>) entries.get("resource");
-                final LinkedHashMap<String, Object> options = (LinkedHashMap<String, Object>) resource_list.get("options");
-                final ArrayList<Object> bookmarks_list = (ArrayList) options.get("bookmarks");
-                nextbookmark = (String) bookmarks_list.get(0);
-                logger.info("Decrypter " + decryptedLinks.size() + " of " + lnumberof_pins + " pins");
-            } while (nextbookmark != null && !nextbookmark.equals("-end-"));
+                        final LinkedHashMap<String, Object> single_pinterest_pinner = (LinkedHashMap<String, Object>) single_pinterest_data.get("pinner");
+                        final LinkedHashMap<String, Object> single_pinterest_images = (LinkedHashMap<String, Object>) single_pinterest_data.get("images");
+                        final LinkedHashMap<String, Object> single_pinterest_images_original = (LinkedHashMap<String, Object>) single_pinterest_images.get("orig");
+                        final String pin_directlink = (String) single_pinterest_images_original.get("url");
+                        final String pin_id = (String) single_pinterest_data.get("id");
+                        final String description = (String) single_pinterest_data.get("description");
+                        final String username = (String) single_pinterest_pinner.get("username");
+                        final String pinner_name = (String) single_pinterest_pinner.get("full_name");
+                        if (pin_id == null || pin_directlink == null || pinner_name == null) {
+                            logger.warning("Decrypter broken for link: " + parameter);
+                            return null;
+                        }
+                        String filename = pin_id;
+                        final String content_url = "http://www.pinterest.com/pin/" + pin_id + "/";
+                        final DownloadLink dl = createDownloadlink(content_url);
+
+                        if (description != null) {
+                            dl.setComment(description);
+                            dl.setProperty("description", description);
+                            if (enable_description_inside_filenames) {
+                                filename += "_" + description;
+                            }
+                        }
+                        filename += jd.plugins.hoster.PinterestCom.default_extension;
+                        filename = encodeUnicode(filename);
+
+                        dl.setContentUrl(content_url);
+                        dl.setLinkID(pin_id);
+                        dl._setFilePackage(fp);
+                        dl.setProperty("free_directlink", pin_directlink);
+                        dl.setProperty("boardid", board_id);
+                        dl.setProperty("source_url", source_url);
+                        dl.setProperty("username", username);
+                        dl.setProperty("decryptedfilename", filename);
+                        dl.setName(filename);
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                    }
+                    final LinkedHashMap<String, Object> resource_list = (LinkedHashMap<String, Object>) entries.get("resource");
+                    final LinkedHashMap<String, Object> options = (LinkedHashMap<String, Object>) resource_list.get("options");
+                    final ArrayList<Object> bookmarks_list = (ArrayList) options.get("bookmarks");
+                    nextbookmark = (String) bookmarks_list.get(0);
+                    logger.info("Decrypter " + decryptedLinks.size() + " of " + lnumberof_pins + " pins");
+                } while (nextbookmark != null && !nextbookmark.equals("-end-"));
+            } catch (final Throwable e) {
+            }
         } else {
             decryptSite();
             if (lnumberof_pins > 25) {

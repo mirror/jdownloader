@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -65,12 +64,8 @@ public class SevenNineFiveEightCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.getURL().contains("/404.html")) {
+        br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("/404.html") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">此文件因违反国家相关法律法规，已经被删除并禁止下载")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("/down_\\d+\\.html target=_blank>([^<>\"]*?)</a>").getMatch(0);

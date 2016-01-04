@@ -45,8 +45,17 @@ public class SourceForgeNet extends PluginForDecrypt {
         String parameter = param.toString().replace("https://", "http://");
         /* We get downloadlinks depending on our useragent Update 07.04.2015: Really? Do we? Who added this comment? Me? */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
+        br.setLoadLimit(br.getLoadLimit() * 5);
         br.setFollowRedirects(true);
         br.getPage(parameter);
+
+        if (!this.br.getURL().contains("sourceforge.net/")) {
+            /* Redirect to external website (extremely rare case) */
+            final DownloadLink dl = this.createDownloadlink(this.br.getURL());
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+
         /*
          * RegEx the current url as redirects might happen, especially if users add links to single files, the "/download" which is needed
          * below might be missing in the added CryptedLink (source url) but is then available inside the URL which it redirects to.
