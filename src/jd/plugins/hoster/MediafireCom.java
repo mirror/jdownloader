@@ -25,10 +25,6 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,6 +50,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
@@ -636,10 +636,17 @@ public class MediafireCom extends PluginForHost {
                     api.getPage("https://www.mediafire.com/api/1.4/file/get_info.php" + "?r=" + getRandomFourLetters() + "&" + sb.toString() + "&response_format=json");
                     handleApiError(account);
                 }
-                final String json = JSonUtils.getJsonArray(api.toString(), "file_infos");
+                final String apiResponse = api.toString();
+                String json = JSonUtils.getJsonArray(apiResponse, "file_infos");
+                if (json == null) {
+                    json = JSonUtils.getJsonNested(apiResponse, "file_info");
+                    if (json != null) {
+                        json = "[{" + json + "}]";
+                    }
+                }
                 final String[] jsonResults = JSonUtils.getJsonResultsFromArray(json);
                 // because they have a shite api and do things illogically...
-                final String skipped = JSonUtils.getJson(api.toString(), "skipped");
+                final String skipped = JSonUtils.getJson(apiResponse, "skipped");
                 final HashSet<String> offline = new HashSet<String>();
                 if (skipped != null) {
                     offline.addAll(Arrays.asList(skipped));
@@ -651,7 +658,7 @@ public class MediafireCom extends PluginForHost {
                         return true;
                     }
                     final String fuid = getFUID(dl);
-                    if (skipped.contains(fuid)) {
+                    if (offline.contains(fuid)) {
                         dl.setAvailable(false);
                         continue;
                     }

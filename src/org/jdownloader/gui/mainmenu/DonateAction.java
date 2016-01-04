@@ -123,7 +123,7 @@ public class DonateAction extends CustomizableAppAction {
                     } catch (Throwable e2) {
                         StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                     }
-                    DonateFeedback.reportFailed(oe);
+                    DonateFeedback.reportFailed(oe, null, false);
                 } finally {
 
                 }

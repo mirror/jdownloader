@@ -390,14 +390,12 @@ public abstract class Plugin implements ActionListener {
         prg.setDisplayInProgressColumnEnabled(false);
         try {
             link.addPluginProgress(prg);
-            AskUsernameAndPasswordDialogInterface handle = UIOManager.I().show(AskUsernameAndPasswordDialogInterface.class, new AskForUserAndPasswordDialog(message, link));
+            final AskUsernameAndPasswordDialogInterface handle = UIOManager.I().show(AskUsernameAndPasswordDialogInterface.class, new AskForUserAndPasswordDialog(message, link));
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getPassword();
-
                 if (StringUtils.isEmpty(password)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
                 }
-
                 String username = handle.getUsername();
                 if (StringUtils.isEmpty(username)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongusername());
@@ -406,7 +404,6 @@ public abstract class Plugin implements ActionListener {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
             }
-
         } finally {
             link.removePluginProgress(prg);
         }

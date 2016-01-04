@@ -30,8 +30,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 public class AskForUserAndPasswordDialog extends InputDialog implements AskUsernameAndPasswordDialogInterface {
-    private DownloadLink     downloadLink;
-    private ExtPasswordField password;
+    private final DownloadLink downloadLink;
+    private ExtPasswordField   password;
 
     public AskForUserAndPasswordDialog(String message, DownloadLink link) {
         super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_HIDE_ICON, _GUI._.AskForUserAndPasswordDialog_AskForUserAndPasswordDialog_title_(), message, null, null, _GUI._.lit_continue(), null);
@@ -74,16 +74,15 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
 
         }
 
-        String packagename = downloadLink.getParentNode().getName();
         p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(downloadLink.getView().getDisplayName()));
-        if (downloadLink.getParentNode() != FilePackage.getDefaultFilePackage()) {
+        final String packagename = getPackageName();
+        if (StringUtils.isNotEmpty(packagename)) {
             p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
             p.add(leftLabel(packagename));
         }
-
         p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "split 2,sizegroup left,alignx left");
-        DomainInfo di = downloadLink.getDomainInfo();
+        final DomainInfo di = downloadLink.getDomainInfo();
         JLabel ret = new JLabel(di.getTld());
         ret.setHorizontalAlignment(SwingConstants.LEFT);
         ret.setIcon(di.getFavIcon());
@@ -100,19 +99,21 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
         password.addMouseListener(this);
         p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_password())), "split 2,sizegroup left,alignx left");
         p.add(password, "w 450,pushx,growx");
-        getDialog().addWindowFocusListener(new WindowFocusListener() {
+        if (StringUtils.isNotEmpty(packagename)) {
+            getDialog().addWindowFocusListener(new WindowFocusListener() {
 
-            @Override
-            public void windowLostFocus(WindowEvent e) {
-            }
+                @Override
+                public void windowLostFocus(WindowEvent e) {
+                }
 
-            @Override
-            public void windowGainedFocus(WindowEvent e) {
-                final ArrayList<AbstractNode> selection = new ArrayList<AbstractNode>();
-                selection.add(downloadLink);
-                DownloadsTableModel.getInstance().setSelectedObjects(selection);
-            }
-        });
+                @Override
+                public void windowGainedFocus(WindowEvent e) {
+                    final ArrayList<AbstractNode> selection = new ArrayList<AbstractNode>();
+                    selection.add(downloadLink);
+                    DownloadsTableModel.getInstance().setSelectedObjects(selection);
+                }
+            });
+        }
         return p;
     }
 
@@ -145,10 +146,11 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
 
     @Override
     public String getPackageName() {
-        if (downloadLink.getParentNode() == FilePackage.getDefaultFilePackage()) {
+        final FilePackage parent = downloadLink.getParentNode();
+        if (FilePackage.isDefaultFilePackage(parent) || parent == null) {
             return null;
         }
-        return downloadLink.getParentNode().getName();
+        return parent.getName();
     }
 
     @Override

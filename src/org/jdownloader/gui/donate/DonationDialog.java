@@ -37,7 +37,6 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.URLEncode;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -101,7 +100,7 @@ public class DonationDialog extends AbstractDialog<Object> {
     public void actionPerformed(final ActionEvent e) {
 
         if (e.getSource() == this.okButton) {
-                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.okButton.getText() + ">");
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.okButton.getText() + ">");
             this.setReturnmask(true);
             final double amt = getProviderPanel().getAmount();
             if (amt <= 0) {
@@ -139,13 +138,10 @@ public class DonationDialog extends AbstractDialog<Object> {
 
                 @Override
                 public void run() throws Exception {
-
                     try {
                         // createDonation&String1&String2&double1&boolean1&HashMap1&String[]1&String3
                         String json = br.getPage(DonateAction.SERVER + "payment/createDonation?" + toQuery(provider, cCode, amt, recurringValue, custom, list, noteText));
-
                         transactionID = JSonStorage.restoreFromString(json, TypeRef.STRING);
-
                         StatsManager.I().track("/donation/button/redirect");
                         CrossSystem.openURLOrShowMessage(DonateAction.SERVER + "payment/donationRedirect?" + toQuery(transactionID));
                         started = System.currentTimeMillis();
@@ -153,18 +149,15 @@ public class DonationDialog extends AbstractDialog<Object> {
                             try {
                                 if (System.currentTimeMillis() - started > 10 * 60 * 1000l) {
                                     StatsManager.I().track("/donation/button/timeout/600");
-                                    DonateFeedback.reportFailed(new Exception("Timeout 600"));
+                                    DonateFeedback.reportFailed(new Exception("Timeout 600"), "TransactionID:" + transactionID, true);
                                     Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
                                     close.set(false);
                                     return;
                                 }
-                                String url = DonateAction.SERVER + "payment/getStatus?" + toQuery(transactionID);
-
+                                final String url = DonateAction.SERVER + "payment/getStatus?" + toQuery(transactionID);
                                 final String jsonStatus = br.getPage(url);
-
                                 TransactionStatus enu = JSonStorage.restoreFromString(jsonStatus, new TypeRef<TransactionStatus>() {
                                 });
-
                                 switch (enu) {
                                 case DONE:
                                     StatsManager.I().track("/donation/button/success");
@@ -175,22 +168,19 @@ public class DonationDialog extends AbstractDialog<Object> {
                                     return;
                                 case FAILED:
                                     StatsManager.I().track("/donation/button/failed");
-                                    DonateFeedback.reportFailed(null);
+                                    DonateFeedback.reportFailed(null, "TransactionID:" + transactionID, true);
                                     Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
                                     close.set(false);
                                     return;
                                 case CANCELED:
                                     StatsManager.I().track("/donation/button/canceled");
-                                    DonateFeedback.reportCanceled();
+                                    DonateFeedback.reportCanceled("TransactionID:" + transactionID);
                                     Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
                                     close.set(false);
                                     return;
-
                                 case PENDING:
                                 case UNKNOWN:
-
                                 }
-
                             } catch (Throwable e) {
                                 logger.log(e);
                             }
@@ -207,7 +197,6 @@ public class DonationDialog extends AbstractDialog<Object> {
                             }
                             final StringBuilder sb = new StringBuilder();
                             final String[] lines = Regex.getLines(Exceptions.getStackTrace(e));
-
                             for (String line : lines) {
                                 if (sb.length() > 0) {
                                     sb.insert(0, "/");
@@ -223,7 +212,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                         } catch (Throwable e2) {
                             StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                         }
-                        DonateFeedback.reportFailed(e);
+                        DonateFeedback.reportFailed(e, "TransactionID:" + transactionID, false);
                         logger.log(e);
                         custom.put("source", "buttonFallback");
 
@@ -231,21 +220,16 @@ public class DonationDialog extends AbstractDialog<Object> {
 
                             @Override
                             protected void runInEDT() {
-
                                 try {
                                     CrossSystem.openURLOrShowMessage(DonateAction.SERVER + "payment/fallbackDonation?" + toQuery(provider, cCode, amt, recurringValue, custom, list, noteText));
                                 } catch (Throwable e1) {
                                     logger.log(e1);
-
                                 }
                                 // Util.showErrorMessage(getInstallerContext().getMessage("donate_failed"));
-
                             }
                         };
                     } finally {
-
                     }
-
                 }
             }, UIOManager.BUTTONS_HIDE_OK, _GUI._.DonationDialog_layoutDialogContent_please_wait_title(), _GUI._.DonationDialog_layoutDialogContent_please_wait_progress_msg(), null, null, null);
 
@@ -263,7 +247,7 @@ public class DonationDialog extends AbstractDialog<Object> {
             }
 
         } else if (e.getSource() == this.cancelButton) {
-                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<CANCEL:" + this.cancelButton.getText() + ">");
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<CANCEL:" + this.cancelButton.getText() + ">");
             this.setReturnmask(false);
         }
 
@@ -412,58 +396,45 @@ public class DonationDialog extends AbstractDialog<Object> {
 
     public void startFallbackWaiter(final String[] list, final String noteText, final double amt, final String provider, final String cCode) {
         StatsManager.I().track("/donation/button/startfallbackwait");
+        final String transactionID = this.transactionID;
         new Thread("Wait for Donation") {
             public void run() {
                 long start = System.currentTimeMillis();
-
                 while (true) {
                     try {
-
                         if (System.currentTimeMillis() - start > 30 * 60 * 1000l) {
                             StatsManager.I().track("/donation/button/timeout/1800");
-                            DonateFeedback.reportFailed(new Exception("Timeout 1800"));
+                            DonateFeedback.reportFailed(new Exception("Timeout 1800"), "TransactionID:" + transactionID, true);
                             Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
-
                             return;
                         }
-                        String url;
-
-                        url = DonateAction.SERVER + "payment/getStatus?" + toQuery(transactionID);
-
+                        final String url = DonateAction.SERVER + "payment/getStatus?" + toQuery(transactionID);
                         final String jsonStatus = br.getPage(url);
-
                         TransactionStatus enu = JSonStorage.restoreFromString(jsonStatus, new TypeRef<TransactionStatus>() {
                         });
-
                         switch (enu) {
                         case DONE:
                             StatsManager.I().track("/donation/button/success/fallbackwait");
                             writeTransactionFile(amt, list, noteText, cCode, provider);
                             DonationManager.getInstance().autoHide();
                             Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_thanks_());
-
                             return;
                         case FAILED:
                             StatsManager.I().track("/donation/button/failed/fallbackwait");
-                            DonateFeedback.reportFailed(null);
+                            DonateFeedback.reportFailed(null, "TransactionID:" + transactionID, true);
                             Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
-
                             return;
                         case CANCELED:
                             StatsManager.I().track("/donation/button/canceled/fallbackwait");
-                            DonateFeedback.reportCanceled();
+                            DonateFeedback.reportCanceled("TransactionID:" + transactionID);
                             Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
-
                             return;
-
                         case PENDING:
                         case UNKNOWN:
-
                         }
                     } catch (Throwable e) {
                         logger.log(e);
                     }
-
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
