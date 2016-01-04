@@ -357,23 +357,44 @@ public class PremboxCom extends PluginForHost {
         final LinkedHashMap<String, Object> traffic_standard = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "traffic/standard");
         final LinkedHashMap<String, Object> traffic_daily = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "traffic/daily");
 
+        String status = null;
+        long traffic_left_total = 0;
         long expire_timestamp = DummyScriptEnginePlugin.toLong(traffic_standard.get("expireTstamp"), -1);
-        long traffic_left = DummyScriptEnginePlugin.toLong(traffic_standard.get("left"), 0);
-        if (traffic_left <= 0) {
-            /* Maybe user only has daily traffic --> Display that */
-            traffic_left = DummyScriptEnginePlugin.toLong(traffic_daily.get("left"), 0);
+        long traffic_left_standard = DummyScriptEnginePlugin.toLong(traffic_standard.get("left"), 0);
+        long traffic_left_daily = DummyScriptEnginePlugin.toLong(traffic_daily.get("left"), 0);
+        final String accounttype = (String) entries.get("accountType");
+
+        if (traffic_left_daily > 0 && traffic_left_standard > 0) {
+            status = " account with daily & standard traffic";
+            traffic_left_total = traffic_left_daily + traffic_left_standard;
+        } else if (traffic_left_daily > 0) {
+            status = " account with daily traffic";
+            traffic_left_total = traffic_left_daily;
+        } else if (traffic_left_standard > 0) {
+            status = " account with standard traffic";
+            traffic_left_total = traffic_left_standard;
+        } else {
+            status = " account without traffic";
+            traffic_left_total = 0;
+        }
+
+        if (traffic_left_standard <= 0) {
+            /* Maybe user only has daily traffic --> Display corret that */
             expire_timestamp = DummyScriptEnginePlugin.toLong(traffic_daily.get("expireTstamp"), -1);
         }
-        final String accounttype = (String) entries.get("accountType");
+
         if ("premium".equals(accounttype)) {
             account.setType(AccountType.PREMIUM);
+            status = "Premium" + status;
             ai.setStatus("Premium account");
             ai.setValidUntil(expire_timestamp * 1000);
         } else {
             account.setType(AccountType.FREE);
+            status = "Free" + status;
             ai.setStatus("Registered (free) account");
         }
-        ai.setTrafficLeft(traffic_left);
+        ai.setStatus(status);
+        ai.setTrafficLeft(traffic_left_total);
         account.setValid(true);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         this.getAPISafe(API_SERVER + "/supportedHosts");
