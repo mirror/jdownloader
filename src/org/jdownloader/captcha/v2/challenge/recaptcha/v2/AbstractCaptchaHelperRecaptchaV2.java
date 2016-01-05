@@ -26,9 +26,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     protected void runDdosPrevention() throws InterruptedException {
         if (plugin != null) {
-
             plugin.runCaptchaDDosProtection(RecaptchaV2Challenge.RECAPTCHAV2);
-
         }
     }
 

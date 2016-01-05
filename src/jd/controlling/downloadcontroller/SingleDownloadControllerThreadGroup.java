@@ -2,6 +2,15 @@ package jd.controlling.downloadcontroller;
 
 public class SingleDownloadControllerThreadGroup extends ThreadGroup {
 
+    public static SingleDownloadController getControllerFromThreadGroup() {
+        final Thread thread = Thread.currentThread();
+        final ThreadGroup threadGroup = thread.getThreadGroup();
+        if (threadGroup instanceof SingleDownloadControllerThreadGroup) {
+            return ((SingleDownloadControllerThreadGroup) threadGroup).getController();
+        }
+        return null;
+    }
+
     public SingleDownloadController getController() {
         Thread[] threads = new Thread[4];
         while (true) {

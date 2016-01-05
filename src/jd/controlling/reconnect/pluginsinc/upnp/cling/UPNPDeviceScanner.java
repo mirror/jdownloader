@@ -25,6 +25,7 @@ import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.model.types.UDAServiceType;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
+import org.fourthline.cling.transport.impl.StreamClientConfigurationImpl;
 import org.jdownloader.logging.LogController;
 
 public class UPNPDeviceScanner {
@@ -41,7 +42,7 @@ public class UPNPDeviceScanner {
         final AtomicLong lastreceive = new AtomicLong(System.currentTimeMillis());
 
         // final HashSet<RemoteDevice> devices = new HashSet<UpnpRouterDevice>();
-        DefaultUpnpServiceConfiguration config = new DefaultUpnpServiceConfiguration() {
+        final DefaultUpnpServiceConfiguration config = new DefaultUpnpServiceConfiguration() {
             @Override
             public Executor getMulticastReceiverExecutor() {
                 return super.getMulticastReceiverExecutor();
@@ -50,6 +51,11 @@ public class UPNPDeviceScanner {
             @Override
             public Integer getRemoteDeviceMaxAgeSeconds() {
                 return super.getRemoteDeviceMaxAgeSeconds();
+            }
+
+            @Override
+            public StreamClientImpl createStreamClient() {
+                return new StreamClientImpl(new StreamClientConfigurationImpl(getSyncProtocolExecutorService()));
             }
 
         };
