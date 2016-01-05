@@ -36,10 +36,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 2, names = { "mangatraders.org" }, urls = { "http://(www\\.)*?mangatraders\\.org/(?:manga/download\\.php|read-online/dl\\.php)\\?id=[a-f0-9]{10,}" }, flags = { 2 })
-public class MangaTradersOrg extends PluginForHost {
+@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)*?mangatraders\\.org/(?:manga/download\\.php|read-online/dl\\.php)\\?id=[a-f0-9]{10,}" }, flags = { 2 })
+public class MangaTradersOrg extends antiDDoSForHost {
 
     private boolean      weAreAlreadyLoggedIn = false;
 
@@ -52,9 +51,13 @@ public class MangaTradersOrg extends PluginForHost {
 
     /**
      * because stable is lame!
-     * */
+     */
     public void setBrowser(final Browser ibr) {
         this.br = ibr;
+    }
+
+    public void getPage(final String page) throws Exception {
+        super.getPage(page);
     }
 
     public MangaTradersOrg(PluginWrapper wrapper) {
@@ -81,20 +84,15 @@ public class MangaTradersOrg extends PluginForHost {
             for (DownloadLink dl : urls) {
                 br = new Browser();
                 login(aa, false);
-                br.getPage(dl.getDownloadURL());
+                getPage(dl.getDownloadURL());
                 if (br.getRedirectLocation() == null) {
                     dl.setAvailable(false);
                 } else {
                     br.setFollowRedirects(true);
                     URLConnectionAdapter con = null;
                     try {
-                        if (isNewJD()) {
-                            con = br.openHeadConnection(br.getRedirectLocation());
-                            dl.setVerifiedFileSize(con.getLongContentLength());
-                        } else {
-                            con = br.openGetConnection(br.getRedirectLocation());
-                            dl.setDownloadSize(con.getLongContentLength());
-                        }
+                        con = openAntiDDoSRequestConnection(br, br.createHeadRequest(br.getRedirectLocation()));
+                        dl.setVerifiedFileSize(con.getLongContentLength());
                         dl.setFinalFileName(getFileNameFromHeader(con));
                         dl.setAvailable(true);
                     } finally {
@@ -163,7 +161,7 @@ public class MangaTradersOrg extends PluginForHost {
         if (!weAreAlreadyLoggedIn || br.getCookie("http://www.mangatraders.org/", cookieName) == null) {
             login(account, false);
         }
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             if (br.containsHTML(offlineFile)) {
@@ -211,7 +209,7 @@ public class MangaTradersOrg extends PluginForHost {
                 // Clear the Referer or the download could start here which then causes an exception
                 br.getHeaders().put("Referer", "");
                 br.setFollowRedirects(true);
-                br.postPage("http://mangatraders.org/login/process.php", "email_Login=" + Encoding.urlEncode(account.getUser()) + "&password_Login=" + Encoding.urlEncode(account.getPass()) + "&redirect_Login=%2F&rememberMe=checked");
+                postPage("http://mangatraders.org/login/process.php", "email_Login=" + Encoding.urlEncode(account.getUser()) + "&password_Login=" + Encoding.urlEncode(account.getPass()) + "&redirect_Login=%2F&rememberMe=checked");
                 final String userNameCookie = br.getCookie(mainPage, cookieName);
                 if (userNameCookie == null || "deleted".equalsIgnoreCase(userNameCookie)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -257,10 +255,6 @@ public class MangaTradersOrg extends PluginForHost {
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
-    }
-
-    private boolean isNewJD() {
-        return System.getProperty("jd.revision.jdownloaderrevision") != null ? true : false;
     }
 
     @Override
