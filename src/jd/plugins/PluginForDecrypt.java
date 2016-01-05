@@ -36,6 +36,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.timetracker.TimeTracker;
+import org.appwork.timetracker.TrackerJob;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
@@ -47,7 +48,6 @@ import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.CaptchaTrackerJob;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
@@ -579,13 +579,30 @@ public abstract class PluginForDecrypt extends Plugin {
         return null;
     }
 
+    @Override
     public void runCaptchaDDosProtection(String id) throws InterruptedException {
-
-        TimeTracker tracker = ChallengeResponseController.getInstance().getTracker(id);
-
-        CaptchaTrackerJob trackerJob = new CaptchaTrackerJob(id, null);
+        final TimeTracker tracker = ChallengeResponseController.getInstance().getTracker(id);
+        final TrackerJob trackerJob = new TrackerJob(1) {
+            @Override
+            public void waitForNextSlot(long waitFor) throws InterruptedException {
+                while (waitFor > 0 && !isAbort()) {
+                    synchronized (this) {
+                        if (waitFor <= 0) {
+                            return;
+                        }
+                        if (waitFor > 1000) {
+                            wait(1000);
+                        } else {
+                            this.wait(waitFor);
+                        }
+                        waitFor -= 1000;
+                    }
+                }
+                if (isAbort()) {
+                    throw new InterruptedException("PluginForDecrypt is aborting");
+                }
+            };
+        };
         tracker.wait(trackerJob);
-
     }
-
 }

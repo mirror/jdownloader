@@ -211,7 +211,6 @@ public class Recaptcha {
      */
     protected void runDdosProtection() throws PluginException {
         if (plg != null) {
-
             try {
                 plg.runCaptchaDDosProtection("recaptcha");
             } catch (InterruptedException e) {

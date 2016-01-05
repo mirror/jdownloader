@@ -68,11 +68,11 @@ public class ExtensionController implements MenuExtenderHandler {
         return ExtensionController.INSTANCE;
     }
 
-    private List<LazyExtension>            list;
+    private List<LazyExtension>                  list = new ArrayList<LazyExtension>();
 
-    private ExtensionControllerEventSender eventSender;
+    private final ExtensionControllerEventSender eventSender;
 
-    private LogSource                      logger;
+    private final LogSource                      logger;
 
     /**
      * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
@@ -80,9 +80,7 @@ public class ExtensionController implements MenuExtenderHandler {
      */
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
-        list = Collections.unmodifiableList(new ArrayList<LazyExtension>());
         logger = LogController.getInstance().getLogger(ExtensionController.class.getName());
-
     }
 
     private File getCache() {
@@ -93,16 +91,15 @@ public class ExtensionController implements MenuExtenderHandler {
         return eventSender;
     }
 
-    private boolean                    cacheInvalidated = false;
+    private boolean                    cacheInvalidated      = false;
 
-    private List<UninstalledExtension> uninstalledExtensions;
+    private List<UninstalledExtension> uninstalledExtensions = new ArrayList<UninstalledExtension>();
 
     public boolean isCacheInvalidated() {
         return cacheInvalidated;
     }
 
     public void invalidateCache() {
-
         this.cacheInvalidated = true;
     }
 
@@ -721,7 +718,6 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     public List<UninstalledExtension> getUninstalledExtensions() {
-
         return uninstalledExtensions;
     }
 }

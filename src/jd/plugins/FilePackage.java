@@ -499,13 +499,13 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     public void setComment(String comment) {
+        final boolean changed;
         if (comment == null || comment.length() == 0) {
-            this.setProperty(PROPERTY_COMMENT, Property.NULL);
+            changed = this.setProperty(PROPERTY_COMMENT, Property.NULL);
         } else {
-            this.setProperty(PROPERTY_COMMENT, comment);
+            changed = this.setProperty(PROPERTY_COMMENT, comment);
         }
-
-        if (hasNotificationListener()) {
+        if (changed && hasNotificationListener()) {
             nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.COMMENT, getComment()));
         }
     }
@@ -561,7 +561,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @return
      */
     public int size() {
-        boolean readL = getModifyLock().readLock();
+        final boolean readL = getModifyLock().readLock();
         try {
             return downloadLinkList.size();
         } finally {
@@ -653,8 +653,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     public void setEnabled(boolean b) {
-        ArrayList<DownloadLink> links = null;
-        boolean readL = getModifyLock().readLock();
+        final boolean readL = getModifyLock().readLock();
+        final ArrayList<DownloadLink> links;
         try {
             links = new ArrayList<DownloadLink>(getChildren());
         } finally {
@@ -668,7 +668,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     public int indexOf(DownloadLink child) {
-        boolean readL = getModifyLock().readLock();
+        final boolean readL = getModifyLock().readLock();
         try {
             return downloadLinkList.indexOf(child);
         } finally {
@@ -704,7 +704,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     @Override
     public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
-        PackageController<FilePackage, DownloadLink> n = getControlledBy();
+        final PackageController<FilePackage, DownloadLink> n = getControlledBy();
         if (n == null) {
             return;
         }
@@ -713,7 +713,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             lsource = this;
         }
         if (lsource instanceof AbstractPackageChildrenNode) {
-            FilePackageView lfpInfo = fpInfo;
+            final FilePackageView lfpInfo = fpInfo;
             if (lfpInfo != null) {
                 lfpInfo.requestUpdate();
             }
@@ -723,7 +723,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     @Override
     public boolean hasNotificationListener() {
-        PackageController<FilePackage, DownloadLink> n = getControlledBy();
+        final PackageController<FilePackage, DownloadLink> n = getControlledBy();
         if (n != null && n.hasNotificationListener()) {
             return true;
         }

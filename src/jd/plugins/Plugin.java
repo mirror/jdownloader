@@ -53,7 +53,6 @@ import jd.utils.JDUtilities;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.timetracker.TimeTracker;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Exceptions;
@@ -62,8 +61,6 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.auth.Login;
-import org.jdownloader.captcha.v2.CaptchaTrackerJob;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
 import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
 import org.jdownloader.gui.dialog.AskForCryptedLinkPasswordDialog;
@@ -106,12 +103,7 @@ public abstract class Plugin implements ActionListener {
         this.logger = logger;
     }
 
-    public void runCaptchaDDosProtection(String id) throws InterruptedException {
-        TimeTracker tracker = ChallengeResponseController.getInstance().getTracker(id);
-
-        CaptchaTrackerJob trackerJob = new CaptchaTrackerJob(id, null);
-        tracker.wait(trackerJob);
-    }
+    public abstract void runCaptchaDDosProtection(String id) throws InterruptedException;
 
     protected String getBrowserReferrer() {
         final LinkCrawler crawler = getCrawler();

@@ -1530,16 +1530,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @since JD2
      */
     public void setComment(String comment) {
-        final String oldComment = getComment();
-        if (StringUtils.equals(comment, oldComment) || (StringUtils.isEmpty(comment) && StringUtils.isEmpty(oldComment))) {
-            return;
-        }
+        final boolean changed;
         if (comment == null || comment.length() == 0) {
-            this.setProperty(PROPERTY_COMMENT, Property.NULL);
+            changed = this.setProperty(PROPERTY_COMMENT, Property.NULL);
         } else {
-            this.setProperty(PROPERTY_COMMENT, comment);
+            changed = this.setProperty(PROPERTY_COMMENT, comment);
         }
-        if (hasNotificationListener()) {
+        if (changed && hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.COMMENT, comment));
         }
     }
@@ -1698,7 +1695,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, property, param));
         }
-
     }
 
     public String getMD5Hash() {
@@ -1847,12 +1843,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return;
         }
         setDownloadSize(size);
+        final boolean changed;
         if (size < 0) {
-            setProperty(DownloadLink.PROPERTY_VERIFIEDFILESIZE, Property.NULL);
+            changed = setProperty(DownloadLink.PROPERTY_VERIFIEDFILESIZE, Property.NULL);
         } else {
-            setProperty(DownloadLink.PROPERTY_VERIFIEDFILESIZE, size);
+            changed = setProperty(DownloadLink.PROPERTY_VERIFIEDFILESIZE, size);
         }
-        if (hasNotificationListener()) {
+        if (changed && hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.DOWNLOADSIZE_VERIFIED, size));
         }
     }

@@ -32,7 +32,9 @@ public class UJCECheck {
     }
 
     private static boolean isOracleJVM() {
-        return "Java(TM) SE Runtime Environment".equals(System.getProperty("java.runtime.name"));
+        final String name = System.getProperty("java.runtime.name");
+        final String vendor = System.getProperty("java.vendor");
+        return (vendor != null && vendor.contains("Oracle")) || "Java(TM) SE Runtime Environment".equals(name);
     }
 
     private static final AtomicBoolean checked = new AtomicBoolean(false);
@@ -90,7 +92,13 @@ public class UJCECheck {
         try {
             try {
                 final Class<?> jceSecurity = Class.forName("javax.crypto.JceSecurity");
+                final Class<?> cryptoPermissions = Class.forName("javax.crypto.CryptoPermissions");
+                final Class<?> cryptoAllPermission = Class.forName("javax.crypto.CryptoAllPermission");
+
                 final Field isRestrictedField = jceSecurity.getDeclaredField("isRestricted");
+                final Field defaultPolicyField = jceSecurity.getDeclaredField("defaultPolicy");
+                final Field perms = cryptoPermissions.getDeclaredField("perms");
+                final Field instance = cryptoAllPermission.getDeclaredField("INSTANCE");
 
                 /**
                  * JceSecurity.isRestricted = false;
@@ -98,30 +106,33 @@ public class UJCECheck {
                 isRestrictedField.setAccessible(true);
                 isRestrictedField.set(null, false);
 
-                final Field defaultPolicyField = jceSecurity.getDeclaredField("defaultPolicy");
                 defaultPolicyField.setAccessible(true);
                 final PermissionCollection defaultPolicy = (PermissionCollection) defaultPolicyField.get(null);
 
                 /**
                  * JceSecurity.defaultPolicy.perms.clear();
                  */
-                final Class<?> cryptoPermissions = Class.forName("javax.crypto.CryptoPermissions");
-                final Field perms = cryptoPermissions.getDeclaredField("perms");
+
                 perms.setAccessible(true);
                 ((Map<?, ?>) perms.get(defaultPolicy)).clear();
 
                 /**
                  * JceSecurity.defaultPolicy.add(CryptoAllPermission.INSTANCE);
                  */
-                final Class<?> cryptoAllPermission = Class.forName("javax.crypto.CryptoAllPermission");
-                final Field instance = cryptoAllPermission.getDeclaredField("INSTANCE");
+
                 instance.setAccessible(true);
                 defaultPolicy.add((Permission) instance.get(null));
             } catch (final ClassNotFoundException e) {
                 try {
                     // Java 6 has obfuscated JCE classes
                     final Class<?> jceSecurity = Class.forName("javax.crypto.SunJCE_b");
+                    final Class<?> cryptoPermissions = Class.forName("javax.crypto.SunJCE_d");
+                    final Class<?> cryptoAllPermission = Class.forName("javax.crypto.SunJCE_k");
+
+                    final Field defaultPolicyField = jceSecurity.getDeclaredField("c");
+                    final Field perms = cryptoPermissions.getDeclaredField("a");
                     final Field isRestrictedField = jceSecurity.getDeclaredField("g");
+                    final Field instance = cryptoAllPermission.getDeclaredField("b");
 
                     /**
                      * JceSecurity.isRestricted = false;
@@ -129,23 +140,18 @@ public class UJCECheck {
                     isRestrictedField.setAccessible(true);
                     isRestrictedField.set(null, false);
 
-                    final Field defaultPolicyField = jceSecurity.getDeclaredField("c");
                     defaultPolicyField.setAccessible(true);
                     final PermissionCollection defaultPolicy = (PermissionCollection) defaultPolicyField.get(null);
 
                     /**
                      * JceSecurity.defaultPolicy.perms.clear();
                      */
-                    final Class<?> cryptoPermissions = Class.forName("javax.crypto.SunJCE_d");
-                    final Field perms = cryptoPermissions.getDeclaredField("a");
                     perms.setAccessible(true);
                     ((Map<?, ?>) perms.get(defaultPolicy)).clear();
 
                     /**
                      * JceSecurity.defaultPolicy.add(CryptoAllPermission.INSTANCE);
                      */
-                    final Class<?> cryptoAllPermission = Class.forName("javax.crypto.SunJCE_k");
-                    final Field instance = cryptoAllPermission.getDeclaredField("b");
                     instance.setAccessible(true);
                     defaultPolicy.add((Permission) instance.get(null));
                 } catch (final ClassNotFoundException e2) {
