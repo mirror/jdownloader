@@ -59,7 +59,7 @@ import jd.plugins.Plugin;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+(?:\\?hostid=all&clearing=[a-f0-9]+)?" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
 
     /**
@@ -138,7 +138,8 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         String parameter = param.toString();
         setBrowserExclusive();
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
-        parameter = "http://linkcrypt.ws/dir/" + containerId;
+        final String parameters = new Regex(parameter, containerId + "(\\?hostid=all&clearing=[a-f0-9]+)?").getMatch(0);
+        parameter = "http://linkcrypt.ws/dir/" + containerId + (parameters != null ? parameters : "");
         if (!loadAndSolveCaptcha(param, progress, decryptedLinks, parameter, containerId)) {
             return decryptedLinks;
         }

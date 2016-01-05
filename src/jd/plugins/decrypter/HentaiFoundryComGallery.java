@@ -33,22 +33,20 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(/\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(/\\d+)?" }, flags = { 0 })
 public class HentaiFoundryComGallery extends PluginForDecrypt {
 
     public HentaiFoundryComGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_single = "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+";
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         getUserLogin(false);
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         String parameter = param.toString();
-        if (parameter.matches(type_single)) {
+        if (parameter.matches("http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+")) {
             decryptedLinks.add(createDownloadlink(parameter.replace("hentai-foundry.com/", "hentai-foundrydecrypted.com/")));
             return decryptedLinks;
         }
@@ -57,13 +55,9 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
         int page = 1;
         String next = null;
         do {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return decryptedLinks;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return decryptedLinks;
             }
             logger.info("Decrypting page " + page);
             if (page > 1) {
@@ -92,6 +86,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
             next = br.getRegex("class=\"next\"><a href=\"(/pictures/user/[A-Za-z0-9\\-_]+/page/\\d+)\"").getMatch(0);
             page++;
         } while (next != null);
+
         FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);

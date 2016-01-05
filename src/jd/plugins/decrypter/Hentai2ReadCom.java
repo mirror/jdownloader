@@ -43,7 +43,7 @@ public class Hentai2ReadCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (br.containsHTML(">Sorry, this chapter is no longer available due to")) {
+        } else if (br.containsHTML(">Sorry, this chapter is no longer available due to|>Sorry, this chapter is not available yet")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }

@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 2, names = { "mangatraders.org" }, urls = { "http://(www\\.)?mangatraders\\.org/manga/\\?series=\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)?mangatraders\\.org/manga/\\?series=\\w+" }, flags = { 0 })
 public class MngTrdOg extends PluginForDecrypt {
 
     private PluginForHost plugin = null;
@@ -49,33 +49,36 @@ public class MngTrdOg extends PluginForDecrypt {
         return prepBr;
     }
 
+    private void getPage(final String page) throws Exception {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("mangatraders.org");
+            if (plugin == null) {
+                throw new IllegalStateException("mangatraders.org hoster plugin not found!");
+            }
+        }
+        // set cross browser support
+        ((jd.plugins.hoster.MangaTradersOrg) plugin).getPage(page);
+    }
+
     public MngTrdOg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         prepBrowser(br);
         // pages now are just links to download files. We need to be logged in to get this information.
         if (!login()) {
-            try {
-                decryptedLinks.add(createOfflinelink(parameter, "In order to use this website you need an Account!"));
-            } catch (final Throwable t) {
-                logger.info("Login Required! " + parameter);
-            }
+            decryptedLinks.add(createOfflinelink(parameter, "In order to use this website you need an Account!"));
             return decryptedLinks;
         }
 
-        br.getPage(parameter);
+        getPage(parameter);
         // return error message for invalid url
         if (br.containsHTML(">Error - Page Not Found<|This series is on our <a") || br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(createOfflinelink(parameter));
-            } catch (final Throwable t) {
-                logger.warning("Invalid URL: " + parameter);
-            }
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
 

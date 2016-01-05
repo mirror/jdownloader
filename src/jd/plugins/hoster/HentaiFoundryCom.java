@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -53,26 +52,10 @@ public class HentaiFoundryCom extends PluginForHost {
     // protocol: no https
     // other: connections & downloads limites cause we re downloading small files
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension         = ".png";
+    private static final String type_direct_pdf = "http://www\\.hentai\\-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf";
+    private static final String type_picture    = "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+";
 
-    private static final String  type_direct_pdf           = "http://www\\.hentai\\-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf";
-    private static final String  type_picture              = "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+";
-
-    /* Connection stuff */
-    private static final boolean FREE_RESUME               = true;
-    /* Limit chunks to 1 as we re only downloading small files */
-    private static final int     FREE_MAXCHUNKS            = 1;
-    private static final int     FREE_MAXDOWNLOADS         = 5;
-    private static final boolean ACCOUNT_FREE_RESUME       = true;
-    /* Limit chunks to 1 as we re only downloading small files */
-    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 5;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
-
-    private String               DLLINK                    = null;
+    private String              dllink          = null;
 
     @Override
     public String getAGBLink() {
@@ -86,13 +69,13 @@ public class HentaiFoundryCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         String filename = null;
         String ext = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().matches(type_direct_pdf)) {
-            DLLINK = downloadLink.getDownloadURL() + "?enterAgree=1&size=0";
+            dllink = downloadLink.getDownloadURL() + "?enterAgree=1&size=0";
             ext = ".pdf";
             filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+\\.pdf)$").getMatch(0);
         } else {
@@ -101,21 +84,21 @@ public class HentaiFoundryCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>([^<>]*?) - Hentai Foundry</title>").getMatch(0);
-            DLLINK = br.getRegex("(//pictures\\.hentai-foundry\\.com/{1,}[^<>\"]*?)\"").getMatch(0);
-            if (filename == null || DLLINK == null) {
+            dllink = br.getRegex("(//pictures\\.hentai-foundry\\.com/{1,}[^<>\"]*?)\"").getMatch(0);
+            if (filename == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = "http:" + Encoding.htmlDecode(DLLINK);
+            dllink = "http:" + Encoding.htmlDecode(dllink);
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
             filename = encodeUnicode(filename);
         }
         if (ext == null) {
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            ext = dllink.substring(dllink.lastIndexOf("."));
         }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+            ext = ".png";
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -127,7 +110,7 @@ public class HentaiFoundryCom extends PluginForHost {
         URLConnectionAdapter con = null;
 
         try {
-            con = br.openHeadConnection(DLLINK);
+            con = br.openHeadConnection(dllink);
         } catch (final BrowserException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } finally {
@@ -141,18 +124,18 @@ public class HentaiFoundryCom extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setProperty("directlink", DLLINK);
+        downloadLink.setProperty("directlink", dllink);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, true, 1, "free_directlink");
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -164,34 +147,6 @@ public class HentaiFoundryCom extends PluginForHost {
         }
         dl.startDownload();
     }
-
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // if (isJDStable()) {
-    // con = br2.openGetConnection(dllink);
-    // } else {
-    // con = br2.openHeadConnection(dllink);
-    // }
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
@@ -211,11 +166,7 @@ public class HentaiFoundryCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        return 5;
     }
 
     private static final String MAINPAGE = "http://hentai-foundry.com";
@@ -290,15 +241,10 @@ public class HentaiFoundryCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-        try {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(false);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.FREE);
+        /* free accounts can still have captcha */
+        account.setMaxSimultanDownloads(5);
+        account.setConcurrentUsePossible(false);
         ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
@@ -310,13 +256,7 @@ public class HentaiFoundryCom extends PluginForHost {
         login(this.br, account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        doFree(link, true, 1, "account_free_directlink");
     }
 
     @Override
