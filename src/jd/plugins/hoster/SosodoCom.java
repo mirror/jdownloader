@@ -62,7 +62,7 @@ public class SosodoCom extends PluginForHost {
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = "http://mvpdj.com" + Encoding.htmlDecode(DLLINK);
+        DLLINK = "http://www.mvpdj.com" + Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
