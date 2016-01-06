@@ -150,7 +150,7 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
             for (int i = 1; i <= maxPage; i++) {
                 logger.info("Decrypting page " + i + " of " + maxPage);
                 if (i > 1) {
-                    br.getPage(parameter + "," + i);
+                    br.getPage((parameter.endsWith("/") ? parameter.substring(0, parameter.length() - 1) : parameter) + "," + i);
                 }
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user: " + parameter);
