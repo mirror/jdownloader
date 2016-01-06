@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
@@ -30,6 +32,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -406,6 +409,13 @@ public class Srnnks extends PluginForDecrypt {
                                         this.br.submitForm(form);
                                     }
 
+                                } else if (form.containsHTML("=\"g-recaptcha\"")) {
+                                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                                    synchronized (Srnnks.GLOBAL_LOCK) {
+                                        Thread.sleep(FW_WAIT);
+                                        this.br.submitForm(form);
+                                    }
                                 } else {
                                     System.out.println("CAPTCHA SKIP!!!");
                                 }
