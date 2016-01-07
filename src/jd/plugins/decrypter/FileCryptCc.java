@@ -39,6 +39,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
@@ -64,10 +65,9 @@ public class FileCryptCc extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br = new Browser();
-        JDUtilities.getPluginForHost("mediafire.com");
-        String agent = "";
+        String agent = UserAgents.stringUserAgent();
         while (!agent.contains(" Chrome/")) {
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent = UserAgents.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", agent);
         br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
@@ -334,7 +334,7 @@ public class FileCryptCc extends PluginForDecrypt {
         return new Regex(cleanHTML, "class=\"passw\"").matches();
     }
 
-    private final String containsCaptcha = "class=\"safety\">Sicherheitsabfrage<";
+    private final String containsCaptcha = "class=\"safety\">(Sicherheitsabfrage|Security prompt)<";
 
     private String       cleanHTML       = null;
 

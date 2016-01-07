@@ -47,7 +47,12 @@ public class NZB extends PluginsC {
             final DefaultHandler handler = new NZBSAXHandler(downloadLinks);
             final SAXParserFactory factory = SAXParserFactory.newInstance();
             final SAXParser saxParser = factory.newSAXParser();
-            saxParser.parse(new InputSource(fileInputStream), handler);
+            try {
+                saxParser.parse(new InputSource(fileInputStream), handler);
+            } catch (final Throwable e) {
+                // parser can throw exceptions (eg trailing chars)
+                logger.log(e);
+            }
             final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(downloadLinks.size());
             final ArchiveInfo archiveInfo;
             if (StringUtils.isNotEmpty(nzbPassword)) {
@@ -88,15 +93,15 @@ public class NZB extends PluginsC {
         private boolean                             isyEnc            = false;
         private final Comparator<UsenetFileSegment> segmentComparator = new Comparator<UsenetFileSegment>() {
 
-            public int compare(int x, int y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
+                                                                          public int compare(int x, int y) {
+                                                                              return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                          }
 
-            @Override
-            public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
-                return compare(o1.getIndex(), o2.getIndex());
-            }
-        };
+                                                                          @Override
+                                                                          public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
+                                                                              return compare(o1.getIndex(), o2.getIndex());
+                                                                          }
+                                                                      };
 
         private NZBSAXHandler(ArrayList<DownloadLink> downloadLinks) {
             this.downloadLinks = downloadLinks;

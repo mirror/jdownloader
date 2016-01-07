@@ -55,11 +55,11 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     private CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
     private ShutdownEvent                       shutDownEvent   = new ShutdownEvent() {
 
-        @Override
-        public void onShutdown(ShutdownRequest shutdownRequest) {
-            saveScheduleEntries();
-        }
-    };
+                                                                    @Override
+                                                                    public void onShutdown(ShutdownRequest shutdownRequest) {
+                                                                        saveScheduleEntries();
+                                                                    }
+                                                                };
 
     @Override
     public boolean isHeadlessRunnable() {
@@ -173,6 +173,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     }
 
     private void loadScheduleEntries() {
+        // TODO: add eventlistener to CFG_SCHEDULER.CFG to reload on config changes
         List<ScheduleEntryStorable> scheduleStorables = CFG_SCHEDULER.CFG.getEntryList();
         CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
         for (ScheduleEntryStorable storable : scheduleStorables) {
@@ -226,7 +227,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-        break;
+            break;
         case SPECIFICDAYS: {
             Calendar c = Calendar.getInstance();
             // check whether day of week is correct
@@ -239,7 +240,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-        break;
+            break;
 
         case HOURLY: {
             Calendar event = Calendar.getInstance();
@@ -250,7 +251,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-        break;
+            break;
         case CHOOSEINTERVAL: {
             long nowMin = Calendar.getInstance().getTimeInMillis() / (60 * 1000);
             long startMin = plan.getTimestamp() / 60;
@@ -259,7 +260,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-        break;
+            break;
         }
         return false;
     }
