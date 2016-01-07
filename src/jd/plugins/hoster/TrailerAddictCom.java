@@ -68,7 +68,7 @@ public class TrailerAddictCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("traileraddict.com/error") || br.containsHTML("(404\\.png\" alt=\"404 Error\"|<title>Page Not Found- Trailer Addict</title>)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("traileraddict.com/error") || br.containsHTML("(404\\.png\" alt=\"404 Error\"|<title>Page Not Found\\s*-\\s*Trailer Addict</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?) \\- Trailer Addict</title>").getMatch(0);

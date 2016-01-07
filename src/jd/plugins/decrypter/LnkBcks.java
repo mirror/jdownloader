@@ -51,7 +51,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "eafyfsuh.net", "fuestfka.com", "tnabucks.com", "cash4files.com", "megaline.co", "qqc.co", "theseblogs.com", "theseforums.com", "ultrafiles.net", "urlbeat.net", "whackyvidz.com", "yyv.co", "amy.gs", "deb.gs", "drstickyfingers.com", "fapoff.com", "freean.us", "freegaysitepass.com", "galleries.bz", "hornywood.tv", "picbucks.com", "poontown.net", "rqq.co", "sexpalace.gs", "youfap.me", "zff.co", "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "tinylinks.co", "yyv.co", "allanalpass.com", "linkbucks.com" };
+        return new String[] { "sasontnwc.net", "eafyfsuh.net", "fuestfka.com", "tnabucks.com", "cash4files.com", "megaline.co", "qqc.co", "theseblogs.com", "theseforums.com", "ultrafiles.net", "urlbeat.net", "whackyvidz.com", "yyv.co", "amy.gs", "deb.gs", "drstickyfingers.com", "fapoff.com", "freean.us", "freegaysitepass.com", "galleries.bz", "hornywood.tv", "picbucks.com", "poontown.net", "rqq.co", "sexpalace.gs", "youfap.me", "zff.co", "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "tinylinks.co", "yyv.co", "allanalpass.com", "linkbucks.com" };
     }
 
     /**
@@ -134,6 +134,14 @@ public class LnkBcks extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(dl);
             return decryptedLinks;
+        } else if (!inValidate(link)) {
+            final String puid = parameter.substring(parameter.lastIndexOf("/", parameter.length()));
+            final String cuid = link.substring(link.lastIndexOf("/", link.length()));
+            // unsupported site but we should grab the link!
+            if (StringUtils.equals(puid, cuid)) {
+                br.getPage(link);
+                link = null;
+            }
         }
         if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("<div id=\"lb_header\">.*?/a>.*?<a.*?href=\"(.*?)\".*?class=\"lb", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
