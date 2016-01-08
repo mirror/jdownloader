@@ -95,18 +95,25 @@ public class SnelNLUsenet extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String packageType = br.getRegex("item-title\">Account type:</div>.*?item-text\">(.*?)<").getMatch(0);
-            if (StringUtils.contains(packageType, "Slow test")) {
-                // free trial
-                ai.setStatus("Free 3 day Trial");
+            if (packageType != null) {
+                ai.setStatus(packageType);
                 ai.setUnlimitedTraffic();
                 final String endDate = br.getRegex("End date:</div>.*?item-text\">(.*?)<").getMatch(0);
                 if (endDate == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(endDate, "MMM dd yyyy' - 'HH:mm", Locale.ENGLISH));
-                account.setMaxSimultanDownloads(3);
+                if (StringUtils.containsIgnoreCase(packageType, "slow")) {
+                    account.setMaxSimultanDownloads(4);
+                } else if (StringUtils.containsIgnoreCase(packageType, "basic")) {
+                    account.setMaxSimultanDownloads(8);
+                } else if (StringUtils.containsIgnoreCase(packageType, "fast")) {
+                    account.setMaxSimultanDownloads(12);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact JDownloader support");
+                }
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown account type(" + packageType + "), please contact JDownloader support");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact JDownloader support");
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
