@@ -116,6 +116,7 @@ please_confirm_username_change_parameter=您的重连脚本包含用户名值‘
 routerName_help=输入您的路由器的名称...
 routername=路由器名称
 script=%s1 的重连脚本
+script_check=请确认， 下列的脚本不包含任何个人数据，如密码或用户名之类
 script_check_modify=检查或修改下面的原始重连脚本。
 search=搜索
 searching=正在搜索...
