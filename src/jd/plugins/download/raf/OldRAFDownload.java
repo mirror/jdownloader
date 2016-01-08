@@ -760,14 +760,14 @@ public class OldRAFDownload extends DownloadInterface {
             } else {
                 end = Long.toString(verifiedFileSize / chunkProgress.length);
             }
-            logger.info("VerifiedFileSize:" + verifiedFileSize + "|Start:" + start + "|End:" + end);
+            logger.info("VerifiedFileSize: " + verifiedFileSize + "|Start:" + start + "|End:" + end);
         } else {
             if (chunkProgress.length == 1) {
                 end = "";// open end
             } else {
                 end = Long.toString(chunkProgress[1] + 1);// overlap by 1
             }
-            logger.info("FileSize:" + fileSize + "|Start:" + start + "|End:" + end);
+            logger.info("FileSize: " + fileSize + "|Start:" + start + "|End:" + end);
         }
         if (verifiedFileSize < 0 && start.equals("0")) {
             logger.info("rangeless resumable connect");
