@@ -49,8 +49,8 @@ public class SnelNLUsenet extends UseNet {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
         final AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
+        br.setFollowRedirects(true);
         try {
             Form login = null;
             if (cookies != null) {
