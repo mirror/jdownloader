@@ -744,17 +744,29 @@ public class OldRAFDownload extends DownloadInterface {
         long[] chunkProgress = downloadable.getChunksProgress();
         final long verifiedFileSize = downloadable.getVerifiedFileSize();
         final long fileSize = getFileSize();
-        String start, end;
-        start = end = "";
+        String start = "";
+        String end = "";
         boolean rangeRequested = false;
         logger.info("chunksProgress: " + Arrays.toString(chunkProgress));
+        if (chunkProgress[0] == 0) {
+            start = Long.toString(0);
+        } else {
+            start = Long.toString(chunkProgress[0] + 1);
+        }
         if (verifiedFileSize > 0) {
-            start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
-            end = (getFileSize() / chunkProgress.length) + "";
+            if (chunkProgress.length == 1) {
+                // end = Long.toString(verifiedFileSize - 1);
+                end = ""; // prefer open end
+            } else {
+                end = Long.toString(verifiedFileSize / chunkProgress.length);
+            }
             logger.info("VerifiedFileSize:" + verifiedFileSize + "|Start:" + start + "|End:" + end);
         } else {
-            start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
-            end = chunkProgress.length > 1 ? (chunkProgress[1] + 1) + "" : "";
+            if (chunkProgress.length == 1) {
+                end = "";// open end
+            } else {
+                end = Long.toString(chunkProgress[1] + 1);// overlap by 1
+            }
             logger.info("FileSize:" + fileSize + "|Start:" + start + "|End:" + end);
         }
         if (verifiedFileSize < 0 && start.equals("0")) {
