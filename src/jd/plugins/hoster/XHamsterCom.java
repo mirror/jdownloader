@@ -45,8 +45,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 2 })
 public class XHamsterCom extends PluginForHost {
@@ -332,7 +333,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private String getFilename() throws PluginException, IOException {
-        String filename = br.getRegex("gr\"><h1>(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1 itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?), Free Porn: xHamster</title>").getMatch(0);
             if (filename == null) {
