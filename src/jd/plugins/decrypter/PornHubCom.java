@@ -35,6 +35,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Regex;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
 public class PornHubCom extends PluginForDecrypt {
 
@@ -85,6 +87,7 @@ public class PornHubCom extends PluginForDecrypt {
             parameter = newLink;
             br.getPage(parameter);
         }
+        String viewkey = new Regex(parameter, "viewkey=([a-f0-9]+)").getMatch(0);
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this.br);
         if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\'embedSWF\\'") || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -116,6 +119,7 @@ public class PornHubCom extends PluginForDecrypt {
                 dl.setProperty("quality", qualityInfo);
                 dl.setProperty("decryptedfilename", final_filename);
                 dl.setProperty("mainlink", parameter);
+                dl.setLinkID(viewkey + final_filename + qualityInfo + "p.mp4");
                 dl.setFinalFileName(final_filename);
                 dl.setContentUrl(parameter);
                 if (fastlinkcheck) {
