@@ -138,8 +138,8 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
                 String contenturl = new Regex(lnkinfo, "\"(/[^<>\"]*?)\"").getMatch(0);
                 final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
                 final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
-                // String filename = new Regex(lnkinfo, "alt=\"([^<>\"]*?)\" style=\"\"").getMatch(0);
-                String filename = finfo.getMatch(0);
+                String filename = new Regex(lnkinfo, "title=\"([^<>\"]*?)\"").getMatch(0);
+                // String filename = finfo.getMatch(0); // Not correct for long name (not always)
                 if (filename == null || filename.equals("")) {
                     filename = finfo.getMatch(0);
                 }
