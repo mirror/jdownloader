@@ -119,7 +119,7 @@ public class PornHubCom extends PluginForDecrypt {
                 dl.setProperty("quality", qualityInfo);
                 dl.setProperty("decryptedfilename", final_filename);
                 dl.setProperty("mainlink", parameter);
-                dl.setLinkID(viewkey + final_filename + qualityInfo + "p.mp4");
+                dl.setLinkID(getHost() + "://" + viewkey + qualityInfo);
                 dl.setFinalFileName(final_filename);
                 dl.setContentUrl(parameter);
                 if (fastlinkcheck) {
