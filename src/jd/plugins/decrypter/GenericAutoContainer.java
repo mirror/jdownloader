@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
@@ -17,10 +20,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf)$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" }, flags = { 0 })
 public class GenericAutoContainer extends PluginForDecrypt {
 
     public GenericAutoContainer(PluginWrapper wrapper) {
@@ -34,7 +34,7 @@ public class GenericAutoContainer extends PluginForDecrypt {
         if (!JsonConfig.create(LinkCrawlerConfig.class).isAutoImportContainer()) {
             ret.add(createDownloadlink(url));
         } else {
-            final String type = new Regex(url, "(dlc|rsdf|ccf)$").getMatch(0);
+            final String type = new Regex(url, this.getSupportedLinks()).getMatch(0);
             URLConnectionAdapter con = null;
             File containerTemp = null;
             try {

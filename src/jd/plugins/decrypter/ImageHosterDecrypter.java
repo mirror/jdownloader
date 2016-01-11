@@ -34,10 +34,10 @@ import jd.plugins.FilePackage;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-names = { "pic5you.ru", "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "pic4you.ru", "tuspics.net", "imagetwist.com", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
+names = { "pic5you.ru", "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "twitpic.com", "pic4you.ru", "imagetwist.com", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
 
-urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/.+)", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+",
-        "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
+urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://((?:www\\.)?postim(age|g)\\.org/image/[a-z0-9]+|s\\d{1,2}\\.postimg\\.org/[a-z0-9]+/.+)", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+",
+        "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
 
 flags = { 0 })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
@@ -273,21 +273,6 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             if (finallink == null) {
                 finallink = br.getRegex("<p><img src=\"(http://.*?)\"").getMatch(0);
             }
-        } else if (parameter.contains("tuspics.net/")) {
-            br.setFollowRedirects(true);
-            /* define custom browser headers and language settings */
-            br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-            br.setCookie("http://tuspics.net/", "lang", "english");
-            br.getPage(parameter);
-            if (br.containsHTML(">This server is in maintenance mode")) {
-                logger.info("Can't decrypt link, server is currently in maintenance mode: " + parameter);
-                return decryptedLinks;
-            } else if (br.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            finalfilename = br.getRegex("class=\"dotted\\-header\"><span>([^<>\"]*?)</span>").getMatch(0);
-            finallink = br.getRegex("<img src=\"(https?://[^<>\"]*?)\" class=\"pic\"").getMatch(0);
         } else if (parameter.contains("pic4you.ru/")) {
             br.getPage(parameter);
             finallink = br.getRegex("\"(http://s\\d+\\.pic4you\\.ru/[^<>\"]+\\-thumb\\.[A-Za-z]+)\"").getMatch(0);
