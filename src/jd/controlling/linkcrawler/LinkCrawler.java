@@ -230,7 +230,7 @@ public class LinkCrawler {
         threadPool.allowCoreThreadTimeOut(true);
     }
 
-    private static LinkCrawlerEventSender EVENTSENDER = new LinkCrawlerEventSender();
+    private final static LinkCrawlerEventSender EVENTSENDER = new LinkCrawlerEventSender();
 
     public static LinkCrawlerEventSender getGlobalEventSender() {
         return EVENTSENDER;
@@ -368,7 +368,7 @@ public class LinkCrawler {
             LazyHostPlugin ftpPlugin = null;
             LazyHostPlugin httpPlugin = null;
             LazyHostPlugin directPlugin = null;
-            for (LazyHostPlugin lazyHostPlugin : lazyHostPlugins) {
+            for (final LazyHostPlugin lazyHostPlugin : lazyHostPlugins) {
                 if (ftpPlugin != null && httpPlugin != null && directPlugin != null) {
                     this.unsortedLazyHostPlugins.add(lazyHostPlugin);
                 } else {
@@ -455,7 +455,7 @@ public class LinkCrawler {
     }
 
     public void setHostPluginBlacklist(String[] list) {
-        HashSet<String> lhostPluginBlacklist = new HashSet<String>();
+        final HashSet<String> lhostPluginBlacklist = new HashSet<String>();
         if (list != null) {
             for (String s : list) {
                 lhostPluginBlacklist.add(s);
@@ -480,13 +480,14 @@ public class LinkCrawler {
                                     final Long ret = getDefaultAverageRuntime();
                                     if (ret != null) {
                                         return ret;
+                                    } else {
+                                        return super.getAverageRuntime();
                                     }
-                                    return super.getAverageRuntime();
                                 }
 
                                 @Override
                                 void crawling() {
-                                    java.util.List<CrawledLink> links = find(text, url, allowDeep, true);
+                                    final java.util.List<CrawledLink> links = find(text, url, allowDeep, true);
                                     crawl(generation, links);
                                 }
                             });
@@ -585,8 +586,9 @@ public class LinkCrawler {
                                     final Long ret = getDefaultAverageRuntime();
                                     if (ret != null) {
                                         return ret;
+                                    } else {
+                                        return super.getAverageRuntime();
                                     }
-                                    return super.getAverageRuntime();
                                 }
 
                                 @Override
@@ -631,9 +633,13 @@ public class LinkCrawler {
         if (crawler.decrementAndGet() == 0) {
             /* this LinkCrawler instance stopped, notify static counter */
             final boolean event;
-            synchronized (LinkCrawler.this) {
+            synchronized (CRAWLER) {
                 if (crawler.get() == 0 && runningState.compareAndSet(true, false)) {
-                    event = CRAWLER.decrementAndGet() == 0;
+                    if (CRAWLER.get() > 0) {
+                        event = CRAWLER.decrementAndGet() == 0;
+                    } else {
+                        event = false;
+                    }
                 } else {
                     event = false;
                 }
@@ -665,7 +671,7 @@ public class LinkCrawler {
         if (checkAllowStart(generation)) {
             if (crawler.getAndIncrement() == 0) {
                 final boolean event;
-                synchronized (LinkCrawler.this) {
+                synchronized (CRAWLER) {
                     event = runningState.compareAndSet(false, true);
                     if (event) {
                         CRAWLER.incrementAndGet();
@@ -949,8 +955,9 @@ public class LinkCrawler {
                                 final Long ret = getDefaultAverageRuntime();
                                 if (ret != null) {
                                     return ret;
+                                } else {
+                                    return pluginForHost.getAverageParseRuntime();
                                 }
-                                return pluginForHost.getAverageParseRuntime();
                             }
 
                             @Override
@@ -1021,8 +1028,9 @@ public class LinkCrawler {
                                             final Long ret = getDefaultAverageRuntime();
                                             if (ret != null) {
                                                 return ret;
+                                            } else {
+                                                return pDecrypt.getAverageCrawlRuntime();
                                             }
-                                            return pDecrypt.getAverageCrawlRuntime();
                                         }
 
                                         @Override
@@ -1108,8 +1116,9 @@ public class LinkCrawler {
                                         final Long ret = getDefaultAverageRuntime();
                                         if (ret != null) {
                                             return ret;
+                                        } else {
+                                            return super.getAverageRuntime();
                                         }
-                                        return super.getAverageRuntime();
                                     }
 
                                     @Override
@@ -1160,8 +1169,9 @@ public class LinkCrawler {
                                 final Long ret = getDefaultAverageRuntime();
                                 if (ret != null) {
                                     return ret;
+                                } else {
+                                    return super.getAverageRuntime();
                                 }
-                                return super.getAverageRuntime();
                             }
 
                             @Override
@@ -2189,8 +2199,9 @@ public class LinkCrawler {
                                             final Long ret = getDefaultAverageRuntime();
                                             if (ret != null) {
                                                 return ret;
+                                            } else {
+                                                return super.getAverageRuntime();
                                             }
-                                            return super.getAverageRuntime();
                                         }
 
                                         @Override
@@ -2319,8 +2330,9 @@ public class LinkCrawler {
                                             final Long ret = getDefaultAverageRuntime();
                                             if (ret != null) {
                                                 return ret;
+                                            } else {
+                                                return super.getAverageRuntime();
                                             }
-                                            return super.getAverageRuntime();
                                         }
 
                                         @Override
@@ -2414,8 +2426,9 @@ public class LinkCrawler {
                                             final Long ret = getDefaultAverageRuntime();
                                             if (ret != null) {
                                                 return ret;
+                                            } else {
+                                                return super.getAverageRuntime();
                                             }
-                                            return super.getAverageRuntime();
                                         }
 
                                         @Override
@@ -2656,6 +2669,8 @@ public class LinkCrawler {
                     return "http://".concat(cUrl.substring("httpviajd://".length()));
                 } else if (cUrl.startsWith("httpsviajd://")) {
                     return "https://".concat(cUrl.substring("httpsviajd://".length()));
+                } else if (cUrl.startsWith("ftpviajd://")) {
+                    return "ftp://".concat(cUrl.substring("ftpviajd://".length()));
                 }
             }
         }
