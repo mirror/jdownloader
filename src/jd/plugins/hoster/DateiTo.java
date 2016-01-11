@@ -402,7 +402,7 @@ public class DateiTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(br.getRegex("limit reached;(\\d+)").getMatch(0)));
         }
         if (br.containsHTML("download active")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many free downloads are active, please wait before starting new ones", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many free downloads are active, please wait before starting new ones", 5 * 60 * 1000l);
         }
     }
 

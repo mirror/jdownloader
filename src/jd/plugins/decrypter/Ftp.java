@@ -5,11 +5,12 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.http.Browser;
 import jd.nutils.SimpleFTP;
 import jd.nutils.SimpleFTP.SimpleFTPListEntry;
 import jd.plugins.CryptedLink;
@@ -25,24 +26,38 @@ import org.jdownloader.auth.Login;
 @DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
 public class Ftp extends PluginForDecrypt {
 
+    private static final HashMap<String, Integer> LOCKS = new HashMap<String, Integer>();
+
     public Ftp(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(final CrawledLink link) throws Exception {
-        final CrawledLink source = link.getSourceLink();
-        if (source.getDownloadLink() != null && canHandle(source.getURL())) {
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            ret.add(source.getDownloadLink());
-            return ret;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink cLink, ProgressController progress) throws Exception {
+        final String lockHost = Browser.getHost(cLink.getCryptedUrl());
+        final Integer lock;
+        synchronized (LOCKS) {
+            lock = LOCKS.get(lockHost);
         }
-        return super.decryptIt(link);
+        if (lock == null) {
+            return internalDecryptIt(cLink, progress, -1);
+        } else {
+            synchronized (lock) {
+                return internalDecryptIt(cLink, progress, lock);
+            }
+        }
     }
 
-    @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cLink, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> internalDecryptIt(CryptedLink cLink, ProgressController progress, final int maxFTPConnections) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>() {
+            @Override
+            public boolean add(final DownloadLink link) {
+                if (maxFTPConnections >= 1) {
+                    link.setProperty("MAX_FTP_CONNECTIONS", maxFTPConnections);
+                }
+                return super.add(link);
+            }
+        };
         final SimpleFTP ftp = new SimpleFTP();
         ftp.setLogger(logger);
         try {
@@ -50,7 +65,18 @@ public class Ftp extends PluginForDecrypt {
             try {
                 ftp.connect(url);
             } catch (IOException e) {
-                if (e.getMessage().contains("was unable to log in with the supplied") || e.getMessage().contains("530 Login or Password incorrect")) {
+                if (e.getMessage().contains("Sorry, the maximum number of clients") && maxFTPConnections == -1) {
+                    final String lockHost = Browser.getHost(cLink.getCryptedUrl());
+                    final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
+                    synchronized (LOCKS) {
+                        if (maxConnections != null) {
+                            LOCKS.put(lockHost, Integer.parseInt(maxConnections));
+                        } else {
+                            LOCKS.put(lockHost, new Integer(1));
+                        }
+                    }
+                    return decryptIt(cLink, progress);
+                } else if (e.getMessage().contains("was unable to log in with the supplied") || e.getMessage().contains("530 Login or Password incorrect")) {
                     final DownloadLink dummyLink = new DownloadLink(null, null, url.getHost(), cLink.getCryptedUrl(), true);
                     final Login login = requestLogins(org.jdownloader.translate._JDT._.DirectHTTP_getBasicAuth_message(), dummyLink);
                     if (login != null) {
@@ -100,7 +126,7 @@ public class Ftp extends PluginForDecrypt {
                     for (final SimpleFTPListEntry entry : entries) {
                         if (StringUtils.equals(entry.getName(), name)) {
                             if (entry.isFile()) {
-                                final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(entry.getFullPath(), "UTF-8"));
+                                final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(entry.getFullPath(), "UTF-8"));
                                 link.setAvailable(true);
                                 if (entry.getSize() >= 0) {
                                     link.setVerifiedFileSize(entry.getSize());
@@ -130,7 +156,7 @@ public class Ftp extends PluginForDecrypt {
                         }
                         for (final SimpleFTPListEntry entry : entries) {
                             if (entry.isFile()) {
-                                final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(entry.getFullPath(), "UTF-8"));
+                                final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(entry.getFullPath(), "UTF-8"));
                                 link.setAvailable(true);
                                 if (entry.getSize() >= 0) {
                                     link.setVerifiedFileSize(entry.getSize());
@@ -147,7 +173,7 @@ public class Ftp extends PluginForDecrypt {
                 if (ftp.bin()) {
                     final long size = ftp.getSize(finalFilePath);
                     if (size >= 0) {
-                        final DownloadLink link = createDownloadlink("ftp://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(finalFilePath, "UTF-8"));
+                        final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(finalFilePath, "UTF-8"));
                         link.setAvailable(true);
                         link.setVerifiedFileSize(size);
                         link.setFinalFileName(name);
@@ -166,4 +192,5 @@ public class Ftp extends PluginForDecrypt {
         }
         return ret;
     }
+
 }
