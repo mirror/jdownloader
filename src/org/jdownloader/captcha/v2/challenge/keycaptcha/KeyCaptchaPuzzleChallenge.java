@@ -103,16 +103,16 @@ public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
         return null;
     }
 
-    public Storable getAPIStorable() throws Exception {
+    public Storable getAPIStorable(String format) throws Exception {
 
         APIData ret = new APIData();
         String[] pieces = new String[getHelper().getPuzzleData().getImages().pieces.size()];
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = IconIO.toDataUrl(getHelper().getPuzzleData().getImages().pieces.get(i), "png");
+            pieces[i] = IconIO.toDataUrl(getHelper().getPuzzleData().getImages().pieces.get(i));
         }
         ret.setPieces(pieces);
-        ret.setBackground(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().backgroundImage, "png"));
-        ret.setSample(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().sampleImage, "png"));
+        ret.setBackground(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().backgroundImage));
+        ret.setSample(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().sampleImage));
 
         return ret;
     }

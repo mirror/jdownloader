@@ -164,7 +164,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             try {
 
                 final HashMap<String, Object> captchaResponseData = new HashMap<String, Object>();
-                captchaResponseData.put("data", challenge.getAPIStorable());
+                captchaResponseData.put("data", challenge.getAPIStorable(format));
                 if (request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
                     captchaResponseData.put("rid", ((MyJDownloaderRequestInterface) request.getHttpRequest()).getRid());
                 }

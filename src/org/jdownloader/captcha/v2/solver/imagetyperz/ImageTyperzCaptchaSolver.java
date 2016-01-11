@@ -1,5 +1,6 @@
 package org.jdownloader.captcha.v2.solver.imagetyperz;
 
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.Executors;
@@ -129,8 +130,13 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
             if (challenge instanceof Recaptcha2FallbackChallenge) {
                 BufferedImage img = ((Recaptcha2FallbackChallenge) challenge).getAnnotatedImage();
                 ByteArrayOutputStream bao;
-                // Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(img), null, null);
-                ImageIO.write(img, "png", bao = new ByteArrayOutputStream());
+
+                BufferedImage jpg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
+                Graphics g = jpg.getGraphics();
+                g.drawImage(img, 0, 0, null);
+                g.dispose();
+
+                ImageIO.write(jpg, "jpg", bao = new ByteArrayOutputStream());
 
                 r.addFormData(new FormData("file", org.appwork.utils.encoding.Base64.encodeToString(bao.toByteArray(), false)));
 

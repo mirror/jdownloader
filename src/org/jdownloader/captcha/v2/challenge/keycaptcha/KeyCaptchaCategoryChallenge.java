@@ -104,17 +104,17 @@ public class KeyCaptchaCategoryChallenge extends Challenge<String> {
 
     }
 
-    public Storable getAPIStorable() throws Exception {
+    public Storable getAPIStorable(String format) throws Exception {
         CategoryData data = getHelper().getCategoryData();
 
         APIData ret = new APIData();
         String[] pieces = new String[data.getImages().size()];
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = IconIO.toDataUrl(IconIO.toBufferedImage(data.getImages().get(i)), "png");
+            pieces[i] = IconIO.toDataUrl(IconIO.toBufferedImage(data.getImages().get(i)));
         }
         ret.setPieces(pieces);
 
-        ret.setCategories(IconIO.toDataUrl(data.getBackground(), "png"));
+        ret.setCategories(IconIO.toDataUrl(data.getBackground()));
         return ret;
     }
 

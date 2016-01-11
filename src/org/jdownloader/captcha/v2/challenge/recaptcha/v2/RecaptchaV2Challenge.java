@@ -31,7 +31,6 @@ import org.appwork.utils.IO;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
-import org.appwork.utils.net.httpserver.responses.FileResponse;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -69,11 +68,11 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         private String                        token;
 
         @Override
-        public Object getAPIStorable() throws Exception {
+        public Object getAPIStorable(String format) throws Exception {
 
-            String mime = FileResponse.getMimeType(getImageFile().getName());
+            // String mime = FileResponse.getMimeType(getImageFile().getName());
             BufferedImage newImage = getAnnotatedImage();
-            String du = IconIO.toDataUrl(newImage, mime);
+            String du = IconIO.toDataUrl(newImage);
             return du;
 
         }
