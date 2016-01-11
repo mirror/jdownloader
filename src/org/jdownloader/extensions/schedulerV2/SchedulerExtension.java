@@ -24,12 +24,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import jd.controlling.TaskQueue;
 import jd.plugins.AddonPanel;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -47,31 +52,43 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 
-public class SchedulerExtension extends AbstractExtension<SchedulerConfig, SchedulerTranslation> implements MenuExtenderHandler, Runnable {
+public class SchedulerExtension extends AbstractExtension<SchedulerConfig, SchedulerTranslation> implements MenuExtenderHandler, Runnable, GenericConfigEventListener<Object> {
 
     private SchedulerConfigPanel                configPanel;
     private ScheduledExecutorService            scheduler;
-    private Object                              lock            = new Object();
+    private final Object                        lock            = new Object();
     private CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
-    private ShutdownEvent                       shutDownEvent   = new ShutdownEvent() {
+    private final ShutdownEvent                 shutDownEvent   = new ShutdownEvent() {
 
-                                                                    @Override
-                                                                    public void onShutdown(ShutdownRequest shutdownRequest) {
-                                                                        saveScheduleEntries();
-                                                                    }
-                                                                };
+        @Override
+        public void onShutdown(ShutdownRequest shutdownRequest) {
+            CFG_SCHEDULER.ENTRY_LIST.getEventSender().removeListener(SchedulerExtension.this);
+            saveScheduleEntries(false);
+        }
+    };
 
     @Override
     public boolean isHeadlessRunnable() {
         return true;
     }
 
-    public void saveScheduleEntries() {
-        final List<ScheduleEntryStorable> scheduleStorables = new ArrayList<ScheduleEntryStorable>();
-        for (ScheduleEntry entry : getScheduleEntries()) {
-            scheduleStorables.add(entry.getStorable());
+    public void saveScheduleEntries(final boolean async) {
+        if (async) {
+            TaskQueue.getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    saveScheduleEntries(false);
+                    return null;
+                }
+            });
+        } else {
+            final List<ScheduleEntryStorable> scheduleStorables = new ArrayList<ScheduleEntryStorable>();
+            for (ScheduleEntry entry : getScheduleEntries()) {
+                scheduleStorables.add(entry.getStorable());
+            }
+            CFG_SCHEDULER.CFG.setEntryList(scheduleStorables);
         }
-        CFG_SCHEDULER.CFG.setEntryList(scheduleStorables);
     }
 
     public SchedulerConfigPanel getConfigPanel() {
@@ -97,7 +114,8 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     protected void stop() throws StopException {
-        saveScheduleEntries();
+        CFG_SCHEDULER.ENTRY_LIST.getEventSender().removeListener(this);
+        saveScheduleEntries(false);
         if (!Application.isHeadless()) {
             MenuManagerMainToolbar.getInstance().unregisterExtender(this);
             MenuManagerMainmenu.getInstance().unregisterExtender(this);
@@ -127,9 +145,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
             MenuManagerMainmenu.getInstance().registerExtender(this);
         }
         loadScheduleEntries();
-        if (!Application.isHeadless()) {
-            getConfigPanel().getTableModel().updateDataModel();
-        }
+        updateTable();
         ShutdownController.getInstance().addShutdownEvent(shutDownEvent);
         getLogger().info("Start SchedulerThreadTimer");
         synchronized (lock) {
@@ -137,7 +153,16 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
             // start scheduler and align to second = 0
             scheduler.scheduleAtFixedRate(this, 60 - Calendar.getInstance().get(Calendar.SECOND), 60l, TimeUnit.SECONDS);
         }
+        CFG_SCHEDULER.ENTRY_LIST.getEventSender().addListener(this, true);
+    }
 
+    private void updateTable() {
+        if (!Application.isHeadless()) {
+            final SchedulerConfigPanel panel = getConfigPanel();
+            if (panel != null) {
+                panel.getTableModel().updateDataModel();
+            }
+        }
     }
 
     public void replaceScheduleEntry(long oldID, ScheduleEntry newEntry) {
@@ -151,38 +176,40 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
             }
 
             if (pos > -1) {
-                scheduleEntries.remove(pos);
-                scheduleEntries.add(pos, newEntry);
-                getConfigPanel().getTableModel().updateDataModel();
+                scheduleEntries.set(pos, newEntry);
+                saveScheduleEntries(true);
+                updateTable();
             }
         }
     }
 
     public void removeScheduleEntry(ScheduleEntry entry) {
-        if (entry != null) {
-            scheduleEntries.remove(entry);
-            getConfigPanel().getTableModel().updateDataModel();
+        if (entry != null && scheduleEntries.remove(entry)) {
+            saveScheduleEntries(true);
+            updateTable();
         }
     }
 
     public void addScheduleEntry(ScheduleEntry entry) {
-        if (entry != null) {
-            scheduleEntries.addIfAbsent(entry);
-            getConfigPanel().getTableModel().updateDataModel();
+        if (entry != null && scheduleEntries.addIfAbsent(entry)) {
+            saveScheduleEntries(true);
+            updateTable();
         }
     }
 
     private void loadScheduleEntries() {
         // TODO: add eventlistener to CFG_SCHEDULER.CFG to reload on config changes
-        List<ScheduleEntryStorable> scheduleStorables = CFG_SCHEDULER.CFG.getEntryList();
-        CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
-        for (ScheduleEntryStorable storable : scheduleStorables) {
-            try {
-                ScheduleEntry entry = new ScheduleEntry(storable);
-                scheduleEntries.add(entry);
-                getLogger().info("Avaliable rule \"" + entry.getName() + "\" on " + entry.getTimeType().getReadableName() + " >" + entry.getTimestamp() + " achtion: " + entry.getAction().getReadableName());
-            } catch (Exception e) {
-                getLogger().log(e);
+        final List<ScheduleEntryStorable> scheduleStorables = CFG_SCHEDULER.CFG.getEntryList();
+        final CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
+        if (scheduleStorables != null) {
+            for (ScheduleEntryStorable storable : scheduleStorables) {
+                try {
+                    ScheduleEntry entry = new ScheduleEntry(storable);
+                    scheduleEntries.add(entry);
+                    getLogger().info("Avaliable rule \"" + entry.getName() + "\" on " + entry.getTimeType().getReadableName() + " >" + entry.getTimestamp() + " achtion: " + entry.getAction().getReadableName());
+                } catch (Exception e) {
+                    getLogger().log(e);
+                }
             }
         }
         this.scheduleEntries = scheduleEntries;
@@ -195,7 +222,6 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     public AddonPanel<SchedulerExtension> getGUI() {
-        // if you want an own t
         return null;
     }
 
@@ -227,7 +253,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-            break;
+        break;
         case SPECIFICDAYS: {
             Calendar c = Calendar.getInstance();
             // check whether day of week is correct
@@ -240,7 +266,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-            break;
+        break;
 
         case HOURLY: {
             Calendar event = Calendar.getInstance();
@@ -251,7 +277,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-            break;
+        break;
         case CHOOSEINTERVAL: {
             long nowMin = Calendar.getInstance().getTimeInMillis() / (60 * 1000);
             long startMin = plan.getTimestamp() / 60;
@@ -260,7 +286,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-            break;
+        break;
         }
         return false;
     }
@@ -276,6 +302,18 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                     getLogger().log(e);
                 }
             }
+        }
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+        if (keyHandler == CFG_SCHEDULER.ENTRY_LIST) {
+            loadScheduleEntries();
+            updateTable();
         }
     }
 }
