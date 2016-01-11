@@ -330,9 +330,9 @@ public class LinkCrawler {
 
     public LinkCrawler(boolean connectParentCrawler, boolean avoidDuplicates) {
         setFilter(defaultFilterFactory());
-        if (connectParentCrawler && Thread.currentThread() instanceof LinkCrawlerThread) {
+        final LinkCrawlerThread thread = getCurrentLinkCrawlerThread();
+        if (connectParentCrawler && thread != null) {
             /* forward crawlerGeneration from parent to this child */
-            final LinkCrawlerThread thread = (LinkCrawlerThread) Thread.currentThread();
             parentCrawler = thread.getCurrentLinkCrawler();
             classLoader = parentCrawler.getPluginClassLoaderChild();
             this.unsortedLazyHostPlugins = parentCrawler.unsortedLazyHostPlugins;
@@ -505,7 +505,7 @@ public class LinkCrawler {
 
     protected java.util.List<CrawledLink> find(String text, String url, final boolean allowDeep, final boolean allowInstantCrawl) {
         final HtmlParserResultSet resultSet;
-        if (allowInstantCrawl && Thread.currentThread() instanceof LinkCrawlerThread) {
+        if (allowInstantCrawl && getCurrentLinkCrawlerThread() != null) {
             final int generation = this.getCrawlerGeneration(true);
             resultSet = new HtmlParserResultSet() {
                 private final HashSet<HtmlParserCharSequence> fastResults = new HashSet<HtmlParserCharSequence>();
@@ -1206,7 +1206,7 @@ public class LinkCrawler {
                             continue mainloop;
                         }
                         final boolean isDirect = url.startsWith("directhttp://");
-                        final boolean isFtp = url.startsWith("ftp://");
+                        final boolean isFtp = url.startsWith("ftp://") || url.startsWith("ftpviajd://");
                         final boolean isFile = url.startsWith("file:/");
                         final boolean isHttpJD = url.startsWith("httpviajd://") || url.startsWith("httpsviajd://");
                         if (isFile) {
@@ -1666,10 +1666,7 @@ public class LinkCrawler {
                 wplg = pHost.newInstance(getPluginClassLoaderChild());
                 if (wplg != null) {
                     /* now we run the plugin and let it find some links */
-                    LinkCrawlerThread lct = null;
-                    if (Thread.currentThread() instanceof LinkCrawlerThread) {
-                        lct = (LinkCrawlerThread) Thread.currentThread();
-                    }
+                    final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
                     Object owner = null;
                     LinkCrawler previousCrawler = null;
                     boolean oldDebug = false;
@@ -2137,17 +2134,14 @@ public class LinkCrawler {
                     return;
                 }
                 /* now we run the plugin and let it find some links */
-                LinkCrawlerThread lct = null;
-                if (Thread.currentThread() instanceof LinkCrawlerThread) {
-                    lct = (LinkCrawlerThread) Thread.currentThread();
-                }
+                final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
                 Object owner = null;
                 LinkCrawler previousCrawler = null;
                 boolean oldDebug = false;
                 boolean oldVerbose = false;
                 LogInterface oldLogger = null;
                 try {
-                    LogInterface logger = LogController.getFastPluginLogger(plg.getName());
+                    final LogInterface logger = LogController.getFastPluginLogger(plg.getName());
                     if (lct != null) {
                         /* mark thread to be used by crawler plugin */
                         owner = lct.getCurrentOwner();
@@ -2230,12 +2224,32 @@ public class LinkCrawler {
         }
     }
 
+    private boolean isDuplicatedCrawling(final CrawledLink cryptedLink) {
+        final String url = cryptedLink.getURL();
+        final String urlDecodedURL = Encoding.urlDecode(url, false);
+        if (StringUtils.equals(url, urlDecodedURL)) {
+            return duplicateFinderCrawler.putIfAbsent(url, this) != null;
+        } else {
+            final String urlEncodedURL = Encoding.urlEncode(urlDecodedURL);
+            return duplicateFinderCrawler.putIfAbsent(urlEncodedURL, this) != null;
+        }
+    }
+
+    protected LinkCrawlerThread getCurrentLinkCrawlerThread() {
+        final Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof LinkCrawlerThread) {
+            return (LinkCrawlerThread) currentThread;
+        } else {
+            return null;
+        }
+    }
+
     protected void crawl(final int generation, LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
         final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
         cryptedLink.setCustomCrawledLinkModifier(null);
         final BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
         cryptedLink.setBrokenCrawlerHandler(null);
-        if (lazyC == null || cryptedLink.getCryptedLink() == null || duplicateFinderCrawler.putIfAbsent(cryptedLink.getURL(), this) != null || this.isCrawledLinkFiltered(cryptedLink)) {
+        if (lazyC == null || cryptedLink.getCryptedLink() == null || isDuplicatedCrawling(cryptedLink) || this.isCrawledLinkFiltered(cryptedLink)) {
             return;
         }
         if (checkStartNotify(generation)) {
@@ -2255,18 +2269,14 @@ public class LinkCrawler {
                 final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
                 wplg.setBrowser(new Browser());
                 wplg.init();
-                LogInterface logger = null;
                 LogInterface oldLogger = null;
                 boolean oldVerbose = false;
                 boolean oldDebug = false;
-                logger = LogController.getFastPluginLogger(wplg.getHost() + "_" + lazyC.getClassName());
+                final LogInterface logger = LogController.getFastPluginLogger(wplg.getHost() + "_" + lazyC.getClassName());
                 logger.info("Crawling: " + cryptedLink.getURL());
                 wplg.setLogger(logger);
                 /* now we run the plugin and let it find some links */
-                LinkCrawlerThread lct = null;
-                if (Thread.currentThread() instanceof LinkCrawlerThread) {
-                    lct = (LinkCrawlerThread) Thread.currentThread();
-                }
+                final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
                 Object owner = null;
                 LinkCrawlerDistributer dist = null;
                 LinkCrawler previousCrawler = null;

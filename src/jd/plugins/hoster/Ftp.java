@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.WeakHashMap;
 
 import jd.PluginWrapper;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
@@ -35,10 +37,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.SimpleFTPDownloadInterface;
 
+import org.jdownloader.DomainInfo;
+
 // DEV NOTES:
 // - ftp filenames can contain & characters!
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/[^\"\r\n ]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftpviajd://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/[^\"\r\n ]+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
 
     public Ftp(PluginWrapper wrapper) {
@@ -49,8 +53,17 @@ public class Ftp extends PluginForHost {
     public String getHost(DownloadLink link, Account account) {
         if (link != null) {
             return Browser.getHost(link.getDownloadURL(), true);
+        } else {
+            return super.getHost(link, account);
         }
-        return super.getHost(link, account);
+    }
+
+    @Override
+    public CrawledLink convert(DownloadLink link) {
+        final String url = link.getPluginPatternMatcher();
+        link.setPluginPatternMatcher(url.replace("ftpviajd://", "ftp://"));
+        link.setLinkID(null);
+        return super.convert(link);
     }
 
     @Override
@@ -59,14 +72,27 @@ public class Ftp extends PluginForHost {
     }
 
     public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws Exception {
-        SimpleFTP ftp = new SimpleFTP();
+        final SimpleFTP ftp = new SimpleFTP();
         try {
             ftp.setLogger(logger);
             URL url = new URL(ftpurl);
             /* cut off all ?xyz at the end */
             String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             String name = null;
-            ftp.connect(url);
+            try {
+                ftp.connect(url);
+            } catch (IOException e) {
+                if (e.getMessage().contains("Sorry, the maximum number of clients")) {
+                    final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
+                    if (maxConnections != null) {
+                        downloadLink.setProperty("MAX_FTP_CONNECTIONS", Integer.parseInt(maxConnections));
+                    } else {
+                        downloadLink.setProperty("MAX_FTP_CONNECTIONS", 1);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection limit reached", 30 * 1000l);
+                }
+                throw e;
+            }
             final String currentDir = ftp.getDir();
             /* switch binary mode */
             ftp.bin();
@@ -141,6 +167,30 @@ public class Ftp extends PluginForHost {
         return "http://jdownloader.org";
     }
 
+    private final String                            MAX_FTP_CONNECTIONS    = "MAX_FTP_CONNECTIONS";
+
+    private static WeakHashMap<DomainInfo, Integer> MAX_FTP_CONNECTION_MAP = new WeakHashMap<DomainInfo, Integer>();
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (link != null) {
+            synchronized (MAX_FTP_CONNECTION_MAP) {
+                final Integer ret = MAX_FTP_CONNECTION_MAP.get(link.getDomainInfo());
+                if (ret != null) {
+                    return ret;
+                }
+            }
+            final int max = link.getIntegerProperty(MAX_FTP_CONNECTIONS, -1);
+            if (max >= 1) {
+                synchronized (MAX_FTP_CONNECTION_MAP) {
+                    MAX_FTP_CONNECTION_MAP.put(link.getDomainInfo(), max);
+                }
+                return max;
+            }
+        }
+        return super.getMaxSimultanDownload(link, account);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
@@ -153,13 +203,26 @@ public class Ftp extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        SimpleFTP ftp = new SimpleFTP();
+        final SimpleFTP ftp = new SimpleFTP();
         try {
             ftp.setLogger(logger);
             URL url = new URL(downloadLink.getDownloadURL());
             /* cut off all ?xyz at the end */
             String filePath = new Regex(downloadLink.getDownloadURL(), "://[^/]+/(.+?)(\\?|$)").getMatch(0);
-            ftp.connect(url);
+            try {
+                ftp.connect(url);
+            } catch (IOException e) {
+                if (e.getMessage().contains("Sorry, the maximum number of clients")) {
+                    final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
+                    if (maxConnections != null) {
+                        downloadLink.setProperty("MAX_FTP_CONNECTIONS", Integer.parseInt(maxConnections));
+                    } else {
+                        downloadLink.setProperty("MAX_FTP_CONNECTIONS", 1);
+                    }
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                throw e;
+            }
             final String currentDir = ftp.getDir();
             String name = null;
             /* switch binary mode */
@@ -241,8 +304,12 @@ public class Ftp extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
         link.setProperty("RESUME", true);
+        link.removeProperty(MAX_FTP_CONNECTIONS);
+        synchronized (MAX_FTP_CONNECTION_MAP) {
+            MAX_FTP_CONNECTION_MAP.remove(link.getDomainInfo());
+        }
     }
 
     @Override
