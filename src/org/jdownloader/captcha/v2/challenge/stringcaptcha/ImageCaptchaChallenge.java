@@ -43,9 +43,9 @@ public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
         this.imageFile = imageFile;
     }
 
-    public Object getAPIStorable() throws Exception {
+    public Object getAPIStorable(String format) throws Exception {
         String mime = FileResponse.getMimeType(getImageFile().getName());
-        return IconIO.toDataUrl(ImageIO.read(getImageFile()), mime);
+        return IconIO.toDataUrl(ImageIO.read(getImageFile()));
     }
 
 }

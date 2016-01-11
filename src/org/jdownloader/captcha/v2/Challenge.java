@@ -27,7 +27,7 @@ public abstract class Challenge<T> {
     private volatile boolean      accountLogin = false;
     private final boolean         createdInsideAccountChecker;
 
-    public Object getAPIStorable() throws Exception {
+    public Object getAPIStorable(String format) throws Exception {
         return null;
     }
 
