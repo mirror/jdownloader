@@ -2,8 +2,6 @@ package org.jdownloader.api.captcha;
 
 import java.util.List;
 
-import jd.controlling.captcha.SkipRequest;
-
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
@@ -12,6 +10,8 @@ import org.appwork.remoteapi.annotations.ApiDoc;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.APIError;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+
+import jd.controlling.captcha.SkipRequest;
 
 @ApiNamespace("captcha")
 public interface CaptchaAPI extends RemoteAPIInterface {
@@ -44,13 +44,16 @@ public interface CaptchaAPI extends RemoteAPIInterface {
     @ApiDoc("Returns Captcha Image as Base64 encoded data url")
     public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) throws InternalApiException, InvalidCaptchaIDException;
 
+    @ApiDoc("Returns Captcha Image as Base64 encoded data url")
+    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id, String format) throws InternalApiException, InvalidCaptchaIDException;
+
     @ApiDoc("Returns CaptchaJob Object for the given id")
     public CaptchaJob getCaptchaJob(final long id) throws InvalidCaptchaIDException;
 
     public boolean solve(final long id, String result) throws InvalidCaptchaIDException, InvalidChallengeTypeException;
 
     @Deprecated
-    /**  
+    /**
      * @deprecated use #skip(id,type) instead
      * @param id
      * @return

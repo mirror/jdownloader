@@ -1,14 +1,9 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
-import jd.controlling.captcha.BasicCaptchaDialogHandler;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
@@ -16,6 +11,10 @@ import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+
+import jd.controlling.captcha.BasicCaptchaDialogHandler;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
 
 public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
 
@@ -40,13 +39,12 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
             super.enqueue(job);
         }
-        if (RecaptchaV2Challenge.FALLBACK_ENABLED && job.getChallenge() instanceof RecaptchaV2Challenge) {
-            super.enqueue(job);
-        }
+
     }
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+
         return super.canHandle(c);
     }
 
@@ -60,16 +58,12 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SkipException {
         synchronized (this) {
-
+            if (job.isDone()) {
+                return;
+            }
             if (job.getChallenge() instanceof BasicCaptchaChallenge) {
                 BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
                 String result = solveBasicCaptchaChallenge(job, captchaChallenge);
-                if (result != null) {
-                    job.addAnswer(new CaptchaResponse(captchaChallenge, this, result, 100));
-                }
-            } else if (RecaptchaV2Challenge.FALLBACK_ENABLED && job.getChallenge() instanceof RecaptchaV2Challenge) {
-                RecaptchaV2Challenge captchaChallenge = (RecaptchaV2Challenge) job.getChallenge();
-                String result = solveBasicCaptchaChallenge(job, captchaChallenge.createBasicCaptchaChallenge());
                 if (result != null) {
                     job.addAnswer(new CaptchaResponse(captchaChallenge, this, result, 100));
                 }

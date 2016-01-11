@@ -1,9 +1,5 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.ClickCaptchaDialogHandler;
-import jd.controlling.captcha.SkipException;
-
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
@@ -13,6 +9,10 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.ClickCaptchaDialogHandler;
+import jd.controlling.captcha.SkipException;
 
 public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint> {
 
@@ -70,6 +70,9 @@ public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint>
     @Override
     public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
+            if (solverJob.isDone()) {
+                return;
+            }
             if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
                 solverJob.getLogger().info("Waiting for JAC (Click/Mouse)");
                 solverJob.waitFor(9, JACSolver.getInstance());

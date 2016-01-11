@@ -14,18 +14,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileFilter;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
-import jd.http.Browser;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
@@ -47,12 +35,20 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
+import jd.http.Browser;
+import net.miginfocom.swing.MigLayout;
 
 public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
     private ExtButton                      btnRegister;
@@ -71,8 +67,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
     private ExtButton                      btnUserDebug1file;
     private ExtButton                      btnUserDebug2;
     private ExtButton                      btnUserDebug3;
-    private ExtButton                      btnUserDebug3hoster;
-    private ExtButton                      btnUserDebug3crawler;
+
     private ExtButton                      btnUserDebugStatReset;
     private ExtButton                      btnUserDebugBlacklistReset;
     private ExtButton                      btnUserDebugStatShow;
@@ -107,6 +102,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         Tab1_9kw.add(new SettingsButton(new AppAction() {
             private static final long serialVersionUID = 8804949739472915394L;
+
             {
                 setName(_GUI._.lit_open_website());
             }
@@ -208,6 +204,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         btnUserCheck = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -103695205004891917L;
+
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserCheck());
             }
@@ -506,6 +503,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         btnUserDebug1 = new ExtButton(new AppAction() {
             private static final long serialVersionUID = 1700532687116057633L;
+
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug1());
             }
@@ -530,6 +528,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         btnUserDebug1clipboard = new ExtButton(new AppAction() {
             private static final long serialVersionUID = 1700532687116057633L;
+
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug1clipboard());
             }
@@ -551,6 +550,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
              * Save debuglog as file
              */
             private static final long serialVersionUID = 1700542687116057633L;
+
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug1file());
             }
@@ -602,6 +602,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         btnUserDebug2 = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -4020410143121908004L;
+
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug2());
             }
@@ -619,6 +620,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         MigPanel toolbardebug1ex = new MigPanel("ins 0", "[][][][]", "[]");
         btnUserDebug3 = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -622574297401313782L;
+
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug3());
             }
@@ -641,61 +643,11 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         btnUserDebug3.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebug3());
         toolbardebug1ex.add(btnUserDebug3);
 
-        btnUserDebug3hoster = new ExtButton(new AppAction() {
-            private static final long serialVersionUID = 1700532687116057633L;
-            {
-                setName(_GUI._.NinekwService_createPanel_btnUserDebug3hoster());
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String crazylonglist_hoster = "";
-                crazylonglist_hoster += "Hoster:\n";
-                for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
-                    crazylonglist_hoster += plg.getDisplayName() + "\n";// plg.getAverageParseRuntime()
-                }
-
-                try {
-                    Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, "9kw list", null, crazylonglist_hoster, NewTheme.getInstance().getIcon("proxy", 32), null, null);
-                } catch (DialogClosedException e2) {
-                    e2.printStackTrace();
-                } catch (DialogCanceledException e2) {
-                    e2.printStackTrace();
-                }
-            }
-        });
-        btnUserDebug3hoster.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebug3hoster_tooltiptext());
-        toolbardebug1ex.add(btnUserDebug3hoster);
-
-        btnUserDebug3crawler = new ExtButton(new AppAction() {
-            private static final long serialVersionUID = 1300532687116057633L;
-            {
-                setName(_GUI._.NinekwService_createPanel_btnUserDebug3crawler());
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String crazylonglist_hoster = "";
-                crazylonglist_hoster += "Crawler:\n";
-                for (LazyCrawlerPlugin plg : CrawlerPluginController.getInstance().list()) {
-                    crazylonglist_hoster += plg.getDisplayName() + "\n";// plg.getAverageCrawlRuntime()
-                }
-
-                try {
-                    Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, "9kw list", null, crazylonglist_hoster, NewTheme.getInstance().getIcon("proxy", 32), null, null);
-                } catch (DialogClosedException e2) {
-                    e2.printStackTrace();
-                } catch (DialogCanceledException e2) {
-                    e2.printStackTrace();
-                }
-            }
-        });
-        btnUserDebug3crawler.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebug3crawler_tooltiptext());
-        toolbardebug1ex.add(btnUserDebug3crawler);
         Tab4_9kw.add(toolbardebug1ex, "gapleft 33,spanx,pushx,growx");
 
         btnUserDebugStatReset = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -4020410143121908004L;
+
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebugStatReset());
             }
@@ -728,6 +680,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         btnUserDebugBlacklistReset = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -4020410143121908004L;
+
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebugBlacklistReset());
             }
@@ -744,6 +697,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         btnUserDebugStatShow = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -4020410143121908004L;
+
             {
                 setName("Show Stats");
             }
@@ -773,6 +727,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         btnUserDebugBlacklistShow = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -4020410143121908004L;
+
             {
                 setName("Show Blacklist");
             }
@@ -794,6 +749,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         btnUserDebugBubbleShow = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -4020410143121908004L;
+
             {
                 setName("Show BubbleMap");
             }
@@ -853,6 +809,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
     private ExtButton addClickButton9kw(ExtButton btnTemp, final String title, final String url, String tooltext) {
         btnTemp = new ExtButton(new AppAction() {
             private static final long serialVersionUID = 7195034001951861669L;
+
             {
                 setName(title);
             }

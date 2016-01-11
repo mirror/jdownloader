@@ -1,15 +1,52 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.InputDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
+import org.appwork.utils.images.IconIO;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.responses.FileResponse;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.InputDialog;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
+import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
+import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
+import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
+import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
+import org.jdownloader.controlling.UniqueAlltimeID;
 
 import jd.controlling.captcha.SkipRequest;
 import jd.http.Browser;
@@ -17,27 +54,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Plugin;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
-import org.appwork.remoteapi.exceptions.RemoteAPIException;
-import org.appwork.utils.Application;
-import org.appwork.utils.IO;
-import org.appwork.utils.images.IconIO;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.httpserver.requests.GetRequest;
-import org.appwork.utils.net.httpserver.responses.HttpResponse;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.captcha.v2.AbstractResponse;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
-import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
-import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
-import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
-import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
-import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
@@ -47,8 +63,80 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         private RecaptchaV2Challenge          owner;
         private Browser                       iframe;
         private String                        challenge;
-        private Form                          responseForm;
+
         private LinkedHashMap<String, String> responseMap;
+        private String                        payload;
+        private String                        token;
+
+        @Override
+        public Object getAPIStorable() throws Exception {
+
+            String mime = FileResponse.getMimeType(getImageFile().getName());
+            BufferedImage newImage = getAnnotatedImage();
+            String du = IconIO.toDataUrl(newImage, mime);
+            return du;
+
+        }
+
+        public BufferedImage getAnnotatedImage() throws IOException {
+            BufferedImage img = ImageIO.read(getImageFile());
+            Font font = new Font("Arial", 0, 12);
+            String instructions = "Type 145 if image 1,4 and 5 match the question above.";
+            int explainWidth = img.getGraphics().getFontMetrics(font.deriveFont(Font.BOLD)).stringWidth(getExplain()) + 10;
+            int solutionWidth = img.getGraphics().getFontMetrics(font).stringWidth(instructions) + 10;
+
+            BufferedImage newImage = IconIO.createEmptyImage(Math.max(Math.max(explainWidth, solutionWidth), img.getWidth()), img.getHeight() + 4 * 20);
+            Graphics2D g = (Graphics2D) newImage.getGraphics();
+
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
+            g.setColor(Color.WHITE);
+            g.setFont(font.deriveFont(Font.BOLD));
+            int y = 0;
+            g.drawString(getExplain(), 5, y += 20);
+            g.setFont(font);
+            g.drawString("Instructions:", 5, y += 20);
+            g.drawString(instructions, 5, y += 20);
+            y += 15;
+
+            int xOffset;
+            g.drawImage(img, xOffset = (newImage.getWidth() - img.getWidth()) / 2, y, null);
+            g.setFont(new Font("Arial", 0, 16).deriveFont(Font.BOLD));
+            int columnWidth = img.getWidth() / 3;
+            int rowHeight = img.getHeight() / 3;
+            for (int yslot = 0; yslot < 3; yslot++) {
+                for (int xslot = 0; xslot < 3; xslot++) {
+                    int xx = (xslot) * columnWidth;
+                    int yy = (yslot) * rowHeight;
+                    int num = xslot + yslot * 3 + 1;
+                    g.setColor(Color.WHITE);
+                    g.fillRect(xx + columnWidth - 20 + xOffset, yy + y, 20, 20);
+                    g.setColor(Color.BLACK);
+                    g.drawString(num + "", xx + columnWidth - 20 + xOffset + 5, yy + y + 15);
+
+                }
+            }
+            g.dispose();
+            return newImage;
+        }
+
+        @Override
+        public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
+            json = json.replaceAll("[^\\d]+", "");
+            StringBuilder sb = new StringBuilder();
+            HashSet<String> dupe = new HashSet<String>();
+            for (int i = 0; i < json.length(); i++) {
+                if (dupe.add(json.charAt(i) + "")) {
+                    if (sb.length() > 0) {
+                        sb.append(",");
+                    }
+                    sb.append(Integer.parseInt(json.charAt(i) + "") - 1);
+                }
+            }
+            return new CaptchaResponse(this, solver, sb.toString(), 100);
+        }
 
         public Recaptcha2FallbackChallenge(RecaptchaV2Challenge challenge) {
             super(challenge.getTypeID(), null, null, challenge.getExplain(), challenge.getPlugin(), 0);
@@ -59,97 +147,172 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             iframe = owner.getBr().cloneBrowser();
 
             load();
+
+        }
+
+        @Override
+        public UniqueAlltimeID getId() {
+            return owner.getId();
+        }
+
+        public boolean handle(String challenge, String payload, String message) throws IOException, DialogClosedException, DialogCanceledException {
+            System.out.println(challenge);
+            System.out.println("Challenge length: " + challenge.length());
+
+            final File file = Application.getResource("rc_" + System.currentTimeMillis() + ".jpg");
+            FileOutputStream fos = null;
+            URLConnectionAdapter con = null;
+            try {
+                con = iframe.cloneBrowser().openGetConnection("http://www.google.com" + payload);
+                fos = new FileOutputStream(file);
+                IO.readStreamToOutputStream(-1, con.getInputStream(), fos, true);
+            } finally {
+                try {
+                    fos.close();
+                } catch (final Throwable ignore) {
+                }
+                try {
+                    con.disconnect();
+                } catch (final Throwable ignore) {
+                }
+            }
+            String dataSiteKey = owner.getSiteKey();
+            BufferedImage img = ImageIO.read(file);
+            // iframe.getHeaders().remove("Cookie");
+
+            InputDialog d = new InputDialog(0, "Recaptcha", "Please Enter..." + message, null, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null) {
+                @Override
+                protected JComponent getIconComponent() {
+                    final JComponent ret = super.getIconComponent();
+                    ret.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+
+                            int x = e.getX() / (ret.getWidth() / 3);
+                            int y = e.getY() / (ret.getHeight() / 3);
+                            int num = x + y * 3;
+                            System.out.println("pressed " + num);
+                            input.setText(input.getText() + (input.getText().length() == 0 ? "" : ",") + (num));
+
+                        }
+                    });
+                    return ret;
+                }
+            };
+            String response = UIOManager.I().show(InputDialogInterface.class, d).getText();
+            Form form = iframe.getFormbyKey("c");
+            String responses = "";
+            for (String s : response.split(",")) {
+                responses += "&response=" + s;
+            }
+            // iframe.getHeaders().put(new HTTPHeader("Origin", "http://www.google.com"));
+            iframe.postPageRaw("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey, "c=" + Encoding.urlEncode(form.getInputField("c").getValue()) + responses);
+
+            System.out.println(iframe);
+            String token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
+            if (token != null) {
+                Dialog.getInstance().showConfirmDialog(0, "Result", "OK: " + response, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null);
+                return true;
+            }
+            Dialog.getInstance().showConfirmDialog(0, "Result", "WRONG: " + response, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null);
+            return false;
         }
 
         private void load() {
 
             try {
-                iframe.getPage("http://www.google.com/recaptcha/api2/demo");
                 String dataSiteKey = owner.getSiteKey();
-                iframe.getHeaders().put(new HTTPHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0"));
-                iframe.getHeaders().put(new HTTPHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
-                HTTPHeader cookie;
-                iframe.getPage("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey);
+                if (round == 1) {
+                    iframe.getPage("http://www.google.com/recaptcha/api2/demo");
 
-                boolean first = true;
-                while (true) {
-                    String payload = Encoding.htmlDecode(iframe.getRegex("<img src=\"(/recaptcha/api2/payload[^\"]+)").getMatch(0));
+                    iframe.getHeaders().put(new HTTPHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0"));
+                    iframe.getHeaders().put(new HTTPHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
+                    iframe.getHeaders().put(new HTTPHeader("Accept-Language", TranslationFactory.getDesiredLanguage()));
 
-                    String challenge = iframe.getRegex("name=\"c\"\\s+value=\\s*\"([^\"]+)").getMatch(0);
-                    System.out.println(challenge);
-                    System.out.println("Challenge length: " + challenge.length());
-
-                    final File file = Application.getResource("rc_" + System.currentTimeMillis() + ".jpg");
-                    FileOutputStream fos = null;
-                    URLConnectionAdapter con = null;
-                    try {
-                        con = iframe.cloneBrowser().openGetConnection("http://www.google.com" + payload);
-                        fos = new FileOutputStream(file);
-                        IO.readStreamToOutputStream(-1, con.getInputStream(), fos, true);
-                    } finally {
-                        try {
-                            fos.close();
-                        } catch (final Throwable ignore) {
-                        }
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable ignore) {
-                        }
-                    }
-
-                    BufferedImage img = ImageIO.read(file);
-                    // iframe.getHeaders().remove("Cookie");
-                    String response = Dialog.getInstance().showInputDialog(0, "Recaptcha", first ? "Please Enter..." : "Wrong Captcha Input. Try again...", null, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null);
-                    Form form = iframe.getFormByInputFieldKeyValue("reason", "r");
-                    LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-                    map.put("c", Encoding.urlEncode(form.getInputField("c").getValue()));
-                    map.put("response", Encoding.urlEncode(response));
-                    // iframe.getHeaders().put(new HTTPHeader("Origin", "http://www.google.com"));
-                    iframe.postPage("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey, map);
-                    System.out.println(iframe);
-                    String token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
-                    if (token != null) {
-                        Dialog.getInstance().showConfirmDialog(0, "Result", "OK: " + response, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null);
-                        break;
-                    }
-                    Dialog.getInstance().showConfirmDialog(0, "Result", "WRONG: " + response, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null);
-
-                    first = false;
+                    iframe.getPage("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey);
                 }
-                System.out.println(1);
+                // while (true) {
+                payload = Encoding.htmlDecode(iframe.getRegex("\"(/recaptcha/api2/payload[^\"]+)").getMatch(0));
+                String message = Encoding.htmlDecode(iframe.getRegex("<label .*?class=\"fbc-imageselect-message-text\">(.*?)</label>").getMatch(0));
+                if (message == null) {
+                    message = Encoding.htmlDecode(iframe.getRegex("<div .*?class=\"fbc-imageselect-message-error\">(.*?)</div>").getMatch(0));
+                }
+                if (message != null) {
+                    setExplain("Round #" + round + "/2: " + message.replaceAll("<.*?>", "").replaceAll("\\s+", " "));
+                }
+                challenge = iframe.getRegex("name=\"c\"\\s+value=\\s*\"([^\"]+)").getMatch(0);
+                setImageFile(Application.getResource("rc_" + System.currentTimeMillis() + ".jpg"));
+                FileOutputStream fos = null;
+                URLConnectionAdapter con = null;
+                try {
+                    con = iframe.cloneBrowser().openGetConnection("http://www.google.com" + payload);
+                    fos = new FileOutputStream(getImageFile());
+                    IO.readStreamToOutputStream(-1, con.getInputStream(), fos, true);
+                } finally {
+                    try {
+                        fos.close();
+                    } catch (final Throwable ignore) {
+                    }
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable ignore) {
+                    }
+                }
+
+                // }
 
             } catch (Throwable e) {
                 throw new WTFException(e);
             }
+        }
+
+        public String getChallenge() {
+            return challenge;
         }
 
         @Override
         public boolean validateResponse(AbstractResponse<String> response) {
             try {
 
-                responseMap.put("response", Encoding.urlEncode(response.getValue()));
-                // iframe.getHeaders().put(new HTTPHeader("Origin", "http://www.google.com"));
-                iframe.postPage("http://www.google.com/recaptcha/api/fallback?k=" + owner.getSiteKey(), responseMap);
-                System.out.println(iframe.toString());
-                String token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
-                if (token != null) {
-                    return true;
+                String dataSiteKey = owner.getSiteKey();
+                Form form = iframe.getFormbyKey("c");
+                String responses = "";
+                for (String s : response.getValue().split(",")) {
+                    responses += "&response=" + s;
                 }
+                // iframe.getHeaders().put(new HTTPHeader("Origin", "http://www.google.com"));
+                iframe.postPageRaw("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey, "c=" + Encoding.urlEncode(form.getInputField("c").getValue()) + responses);
+                System.out.println(iframe);
+
+                token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
+
             } catch (Throwable e) {
 
                 throw new WTFException(e);
             }
-            return false;
+            // always return true. recaptchav2 fallback requires several captchas. we need to accept all answers. validation will be done
+            // later
+            return true;
 
+        }
+
+        public String getToken() {
+            return token;
         }
 
         @Override
         public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
             return owner.canBeSkippedBy(skipRequest, solver, challenge);
         }
-    }
 
-    public static final boolean   FALLBACK_ENABLED = false;
+        private int round = 1;
+
+        public void reload(int i, String lastResponse) throws IOException {
+
+            round = i;
+            load();
+        }
+    }
 
     private String                siteKey;
     private BasicCaptchaChallenge basicChallenge;
@@ -235,9 +398,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     @Override
     public boolean validateResponse(AbstractResponse<String> response) {
-        if (response.getSolver() instanceof DialogBasicCaptchaSolver) {
-            return basicChallenge.validateResponse(response);
-        }
+
         return true;
     }
 

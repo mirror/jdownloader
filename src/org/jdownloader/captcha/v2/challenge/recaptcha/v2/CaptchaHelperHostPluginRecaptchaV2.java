@@ -1,5 +1,24 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import java.io.IOException;
+
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.captcha.blacklist.BlacklistEntry;
+import org.jdownloader.captcha.blacklist.BlockAllDownloadCaptchasEntry;
+import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
+import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
+import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.helpdialogs.HelpDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.CaptchaStepProgress;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -12,22 +31,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.captcha.blacklist.BlacklistEntry;
-import org.jdownloader.captcha.blacklist.BlockAllDownloadCaptchasEntry;
-import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
-import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
-import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
-import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.helpdialogs.HelpDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.CaptchaStepProgress;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
 
@@ -80,6 +83,24 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                 throw new CaptchaException(blackListEntry);
             }
             final SolverJob<String> job = ChallengeResponseController.getInstance().handle(c);
+            if (c.getResult().size() == 1 && c.getResult().get(0).getChallenge() instanceof Recaptcha2FallbackChallenge) {
+                Recaptcha2FallbackChallenge challenge = ((Recaptcha2FallbackChallenge) c.getResult().get(0).getChallenge());
+
+                try {
+                    challenge.reload(2, c.getResult().get(0).getValue());
+
+                    ChallengeResponseController.getInstance().handle(challenge);
+                    if (challenge.getToken() != null) {
+                        return challenge.getToken();
+                        // challenge.evaluate()
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                } catch (IOException e) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
+
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

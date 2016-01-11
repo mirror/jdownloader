@@ -24,7 +24,9 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.api.DeprecatedAPIHttpServerController;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public abstract class BrowserReference implements HttpRequestHandler {
@@ -38,6 +40,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
     private BrowserViewport                        viewport;
     private final HashMap<String, URL>             resourceIds;
     private final HashMap<String, String>          types;
+
     {
         resourceIds = new HashMap<String, URL>();
         resourceIds.put("style.css", BrowserReference.class.getResource("html/style.css"));
@@ -111,6 +114,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
             // }
             // }
         }
+
         if (browserCmd == null || browserCmd.length == 0) {
             CrossSystem.openURL(url);
         } else {
@@ -204,6 +208,11 @@ public abstract class BrowserReference implements HttpRequestHandler {
                 }
                 return true;
             } else if ("canClose".equals(pDo)) {
+                SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(challenge.getId().getID());
+                if (challenge.isSolved() || job == null || job.isDone()) {
+                    response.getOutputStream(true).write("true".getBytes("UTF-8"));
+                    return true;
+                }
                 response.getOutputStream(true).write("false".getBytes("UTF-8"));
             } else if (pDo == null) {
                 response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));

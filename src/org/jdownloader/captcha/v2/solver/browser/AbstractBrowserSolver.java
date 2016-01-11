@@ -1,9 +1,5 @@
 package org.jdownloader.captcha.v2.solver.browser;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.gui.swing.jdgui.JDGui;
-
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -14,6 +10,10 @@ import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
+
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.gui.swing.jdgui.JDGui;
 
 public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
 
@@ -73,8 +73,11 @@ public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
 
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SkipException {
+        System.out.println("Browser solver start");
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
-
+            if (job.isDone()) {
+                return;
+            }
             if (job.getChallenge() instanceof AbstractBrowserChallenge) {
 
                 ChallengeSolverJobListener jacListener = null;

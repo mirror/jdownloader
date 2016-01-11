@@ -35,13 +35,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -72,6 +65,13 @@ import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> implements MouseListener, MouseMotionListener {
 
@@ -303,6 +303,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         } else {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
         }
+
         this.explain = explain;
         this.hosterInfo = domainInfo;
         this.type = type;
@@ -415,11 +416,15 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         if (!isInitialized()) {
             return;
         }
+
         if (dialog != null) {
+            // setx and sety store the dimension/size!
             config.setX(getDialog().getWidth());
             config.setValid(true);
             config.setY(getDialog().getHeight());
+
         }
+
         super.dispose();
 
     }
@@ -591,6 +596,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         if (!config.isValid()) {
             return super.getPreferredWidth();
         }
+        System.out.println(config.getX());
         return config.getX();
     }
 
@@ -786,8 +792,9 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
 
             headerPanel.add(header);
         }
+        System.out.println("File " + Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getHost())) + " _ " + getHost());
         config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getHost())), LocationStorage.class);
-
+        System.out.println(config);
         HeaderScrollPane sp;
 
         iconPanel = createCaptchaPanel();
