@@ -49,6 +49,11 @@ public class MangaTradersOrg extends antiDDoSForHost {
 
     public static Object ACCLOCK              = new Object();
 
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
     /**
      * because stable is lame!
      */
@@ -207,7 +212,7 @@ public class MangaTradersOrg extends antiDDoSForHost {
                     }
                 }
                 // Clear the Referer or the download could start here which then causes an exception
-                br.getHeaders().put("Referer", "");
+                br.getHeaders().put("Referer", "http://mangatraders.org/");
                 br.setFollowRedirects(true);
                 postPage("http://mangatraders.org/login/process.php", "email_Login=" + Encoding.urlEncode(account.getUser()) + "&password_Login=" + Encoding.urlEncode(account.getPass()) + "&redirect_Login=%2F&rememberMe=checked");
                 final String userNameCookie = br.getCookie(mainPage, cookieName);
