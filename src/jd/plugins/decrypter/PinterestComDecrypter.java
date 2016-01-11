@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.uio.UIOManager;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -35,8 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.uio.UIOManager;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/)[^/]+/[^/]+/" }, flags = { 0 })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -55,6 +55,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         enable_description_inside_filenames = SubConfiguration.getConfig("pinterest.com").getBooleanProperty(jd.plugins.hoster.PinterestCom.ENABLE_DESCRIPTION_IN_FILENAMES, enable_description_inside_filenames);
         /* Correct link - remove country related language-subdomains (e.g. 'es.pinterest.com'). */
         final String linkpart = new Regex(param.toString(), "pinterest\\.com/(.+)").getMatch(0);
@@ -73,7 +74,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-        /* Don'r proceed with invalid/unsupported links. */
+        /* Don't proceed with invalid/unsupported links. */
         if (!br.containsHTML("class=\"boardName\"")) {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
@@ -118,11 +119,13 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     }
                     prepAPIBR(br);
 
-                    if (!loggedIN && json_source == null) {
+                    if ((!loggedIN && json_source == null) || !decryptedLinks.isEmpty()) {
                         /* Not logged in ? Sometimes needed json is already given in html code! */
                         String getpage = "https://www.pinterest.com/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22add_pin_rep_with_place%22%3Afalse%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22page_size%22%3A25%2C%22add_vase%22%3Atrue%2C%22access%22%3A%5B%5D%2C%22board_layout%22%3A%22default%22%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22prepend%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
-                        br.getPage(getpage);
-                        json_source = this.br.toString();
+                        // referrer should always be of the first request!
+                        final Browser ajax = br.cloneBrowser();
+                        ajax.getPage(getpage);
+                        json_source = ajax.toString();
                     }
                     LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_source);
                     ArrayList<Object> resource_data_list = (ArrayList) entries.get("resource_data_cache");
@@ -179,7 +182,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
                         dl.setContentUrl(content_url);
                         dl.setLinkID(pin_id);
-                        dl._setFilePackage(fp);
                         dl.setProperty("free_directlink", pin_directlink);
                         dl.setProperty("boardid", board_id);
                         dl.setProperty("source_url", source_url);
@@ -187,6 +189,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         dl.setProperty("decryptedfilename", filename);
                         dl.setName(filename);
                         dl.setAvailable(true);
+                        fp.add(dl);
                         decryptedLinks.add(dl);
                         distribute(dl);
                     }
@@ -204,8 +207,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 UIOManager.I().showMessageDialog("Please add your pinterest.com account at Settings->Account manager to find more than 25 images");
             }
         }
-
-        fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }

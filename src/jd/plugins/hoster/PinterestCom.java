@@ -75,7 +75,7 @@ public class PinterestCom extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
     /* Site constants */
-    public static final String   x_app_version             = "e9885e7";
+    public static final String   x_app_version             = "9491270";
     public static final String   default_extension         = ".jpg";
 
     /* don't touch the following! */
