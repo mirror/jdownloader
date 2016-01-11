@@ -27,10 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -50,6 +46,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" }, flags = { 2 })
 public class ZeveraCom extends antiDDoSForHost {
@@ -84,7 +84,7 @@ public class ZeveraCom extends antiDDoSForHost {
         super.prepBrowser(prepBr, host);
         // define custom browser headers and language settings.
         prepBr.setCookie(mProt + mName, "lang", "english");
-        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        // prepBr.getHeaders().put("User-Agent", "JDownloader");
         prepBr.setCustomCharset("utf-8");
         prepBr.setConnectTimeout(60 * 1000);
         prepBr.setReadTimeout(60 * 1000);
@@ -497,7 +497,7 @@ public class ZeveraCom extends antiDDoSForHost {
                         return;
                     }
                 }
-                getPage(mServ);
+                getPage(mServ + "/");
                 getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
                     // they can make more steps here.
