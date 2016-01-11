@@ -24,9 +24,6 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import jd.captcha.utils.GifDecoder;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.utils.URLStream;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
@@ -34,6 +31,11 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractCaptchaDialog;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import com.sun.javafx.geom.Rectangle;
+
+import jd.captcha.utils.GifDecoder;
+import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<Object> {
 
@@ -79,15 +81,15 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
         return null;
     }
 
-    int              fps;
+    int                 fps;
 
-    Image[]          images;
+    Image[]             images;
 
-    protected Point  offset;
-    private int      frame = 0;
-    Timer            paintTimer;
-
-    protected double scaleFaktor;
+    protected Point     offset;
+    private int         frame = 0;
+    Timer               paintTimer;
+    protected Rectangle bounds;
+    protected double    scaleFaktor;
 
     public AbstractImageCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
         super(flags, title, type, domainInfo, explain);
@@ -156,6 +158,8 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
                 g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, col, null);
                 scaleFaktor = images[frame].getWidth(null) / (double) scaled.getWidth();
                 offset = new Point((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2);
+                AbstractImageCaptchaDialog.this.bounds = new Rectangle((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, scaled.getWidth(), scaled.getHeight());
+                paintIconComponent(g, getWidth(), getHeight(), (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, scaled);
 
             }
 
@@ -169,6 +173,9 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
             iconPanel.setPreferredSize(new Dimension(images[0].getWidth(null), images[0].getHeight(null)));
         }
         return iconPanel;
+    }
+
+    protected void paintIconComponent(Graphics g, int width, int height, int xOsset, int yOffset, BufferedImage scaled) {
     }
 
     @Override

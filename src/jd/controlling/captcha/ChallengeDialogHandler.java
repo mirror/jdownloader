@@ -2,12 +2,6 @@ package jd.controlling.captcha;
 
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging2.LogInterface;
@@ -25,6 +19,12 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
+
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
 
@@ -220,6 +220,11 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
             if (countdown <= 0 || pluginTimeout < countdown) {
                 countdown = pluginTimeout;
             }
+        }
+
+        int pluginCaptchaChallengeTimout = captchaChallenge.getPlugin().getChallengeTimeout(captchaChallenge);
+        if (pluginCaptchaChallengeTimout > 0 && pluginCaptchaChallengeTimout < countdown) {
+            countdown = pluginCaptchaChallengeTimout;
         }
         return countdown;
     }

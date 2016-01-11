@@ -10,8 +10,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
@@ -20,7 +18,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
@@ -30,6 +31,8 @@ import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import net.miginfocom.swing.MigLayout;
 
 public class CESBubbleContent extends AbstractBubbleContentPanel {
 
@@ -82,9 +85,21 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         east.add(status = new JLabel(""), "hidemode 3");
         add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,aligny top");
         add(east);
-        if (cesSolverJob.getChallenge() instanceof ImageCaptchaChallenge) {
+        Challenge<?> ic = cesSolverJob.getChallenge();
+        if (ic instanceof RecaptchaV2Challenge) {
+            ic = ((RecaptchaV2Challenge) ic).createBasicCaptchaChallenge();
+        }
+        if (ic instanceof ImageCaptchaChallenge) {
             try {
-                ImageIcon icon = new ImageIcon(ImageProvider.read(((ImageCaptchaChallenge) cesSolverJob.getChallenge()).getImageFile()));
+                ImageIcon icon = null;
+
+                if (ic instanceof Recaptcha2FallbackChallenge) {
+                    icon = new ImageIcon(((Recaptcha2FallbackChallenge) ic).getAnnotatedImage());
+                    ;
+                } else {
+                    icon = new ImageIcon(ImageProvider.read(((ImageCaptchaChallenge) cesSolverJob.getChallenge()).getImageFile()));
+                    ;
+                }
                 if (icon.getIconWidth() > 300 || icon.getIconHeight() > 300) {
 
                     icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), 300, 300));

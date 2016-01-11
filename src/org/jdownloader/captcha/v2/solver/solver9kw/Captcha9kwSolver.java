@@ -1,5 +1,7 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -13,9 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
+import javax.imageio.ImageIO;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -26,6 +26,8 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
@@ -34,6 +36,10 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
 
 public class Captcha9kwSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
@@ -77,6 +83,10 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
+
+            return true;
+        }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
@@ -107,9 +117,18 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         job.getLogger().info(logdata);
     }
 
+    private Challenge<?> getChallenge(SolverJob<?> job) {
+        Challenge<?> challenge = job.getChallenge();
+        if (challenge instanceof RecaptchaV2Challenge) {
+            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+
+        }
+        return challenge;
+    }
+
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
-        BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
+        BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) getChallenge(job.getJob());
 
         int cph = config.gethour();
         int cpm = config.getminute();
@@ -370,7 +389,19 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             job.showBubble(this, getBubbleTimeout(challenge));
             checkInterruption();
 
-            byte[] data = IO.readFile(challenge.getImageFile());
+            byte[] data = null;
+
+            if (challenge instanceof Recaptcha2FallbackChallenge) {
+                BufferedImage img = ((Recaptcha2FallbackChallenge) challenge).getAnnotatedImage();
+                ByteArrayOutputStream bao;
+                ImageIO.write(img, "png", bao = new ByteArrayOutputStream());
+                data = bao.toByteArray();
+
+            } else {
+                data = IO.readFile(challenge.getImageFile());
+
+            }
+
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
             String ret = "";
@@ -431,7 +462,23 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     return;
                 } else if (ret.startsWith("OK-answered-")) {
                     counterSolved.incrementAndGet();
-                    job.setAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
+                    ret = ret.substring("OK-answered-".length());
+                    if (challenge instanceof Recaptcha2FallbackChallenge) {
+                        ret = challenge.parseAPIAnswer(ret, this).getValue();
+                        if (ret.length() > 0) {
+                            job.setAnswer(new Captcha9kwResponse(challenge, this, ret, 100, captchaID));
+                        } else {
+                            setInvalid(new Captcha9kwResponse(challenge, this, ret, 100, captchaID), job.getJob());
+                        }
+
+                    } else {
+
+                        if (ret.length() > 0) {
+                            job.setAnswer(new Captcha9kwResponse(challenge, this, ret, 100, captchaID));
+                        } else {
+                            setInvalid(new Captcha9kwResponse(challenge, this, ret, 100, captchaID), job.getJob());
+                        }
+                    }
                     return;
                 } else if (((System.currentTimeMillis() - startTime) / 1000) > (timeoutthing + 10)) {
                     counterInterrupted.incrementAndGet();

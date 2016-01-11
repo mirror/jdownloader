@@ -5,10 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
-
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -17,7 +13,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderRequestInterface;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
@@ -28,6 +23,8 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.JobRunnable;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaCategoryChallenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
@@ -35,6 +32,10 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
 
@@ -54,10 +55,17 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        if (!validateBlackWhite(c)) {
+            return false;
+        }
         if (c instanceof KeyCaptchaPuzzleChallenge && super.canHandle(c)) {
             return true;
         }
         if (c instanceof KeyCaptchaCategoryChallenge && super.canHandle(c)) {
+            return true;
+        }
+        if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
+
             return true;
         }
         return c instanceof ImageCaptchaChallenge && super.canHandle(c);
@@ -122,19 +130,19 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             if (entry.isDone()) {
                 continue;
             }
-            if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
+            if (getChallenge(entry) instanceof ImageCaptchaChallenge) {
                 final CaptchaJob job = new CaptchaJob();
-                final Challenge<?> challenge = entry.getChallenge();
+                final Challenge<?> challenge = getChallenge(entry);
                 Class<?> cls = challenge.getClass();
                 while (cls != null && StringUtils.isEmpty(job.getType())) {
                     job.setType(cls.getSimpleName());
                     cls = cls.getSuperclass();
                 }
-                job.setID(entry.getChallenge().getId().getID());
-                job.setHoster(((ImageCaptchaChallenge) entry.getChallenge()).getPlugin().getHost());
-                job.setCaptchaCategory(entry.getChallenge().getTypeID());
-                job.setTimeout(entry.getChallenge().getTimeout());
-                job.setCreated(entry.getChallenge().getCreated());
+                job.setID(getChallenge(entry).getId().getID());
+                job.setHoster(getChallenge(entry).getPlugin().getHost());
+                job.setCaptchaCategory(getChallenge(entry).getTypeID());
+                job.setTimeout(getChallenge(entry).getTimeout());
+                job.setCreated(getChallenge(entry).getCreated());
                 ret.add(job);
             }
         }
@@ -142,14 +150,19 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) throws InternalApiException, InvalidCaptchaIDException {
+        get(request, response, id, null);
+    }
+
+    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, String format) throws InternalApiException, InvalidCaptchaIDException {
         final SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();
         }
         try {
-            final Challenge<?> challenge = job.getChallenge();
+            Challenge<?> challenge = getChallenge(job);
             final OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
             try {
+
                 final HashMap<String, Object> captchaResponseData = new HashMap<String, Object>();
                 captchaResponseData.put("data", challenge.getAPIStorable());
                 if (request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
@@ -168,6 +181,15 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
         }
+    }
+
+    private Challenge<?> getChallenge(SolverJob<?> job) {
+        Challenge<?> challenge = job.getChallenge();
+        if (challenge instanceof RecaptchaV2Challenge) {
+            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+
+        }
+        return challenge;
     }
 
     public boolean isJobDone(final SolverJob<?> job) {
@@ -202,7 +224,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();
         }
-        final Challenge<?> challenge = job.getChallenge();
+        Challenge<?> challenge = getChallenge(job);
+
         final AbstractResponse<?> ret = challenge.parseAPIAnswer(result, this);
         if (ret != null) {
             ((SolverJob<Object>) job).addAnswer((AbstractResponse<Object>) ret);
@@ -223,7 +246,9 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         if (job == null) {
             throw new InvalidCaptchaIDException();
         }
-        ChallengeResponseController.getInstance().setSkipRequest(type, this, job.getChallenge());
+        Challenge<Object> challenge = job.getChallenge();
+
+        ChallengeResponseController.getInstance().setSkipRequest(type, this, challenge);
         return true;
     }
 
@@ -239,17 +264,17 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             return null;
         }
         final CaptchaJob ret = new CaptchaJob();
-        final Challenge<?> challenge = entry.getChallenge();
+        final Challenge<?> challenge = getChallenge(entry);
         Class<?> cls = challenge.getClass();
         while (cls != null && StringUtils.isEmpty(ret.getType())) {
             ret.setType(cls.getSimpleName());
             cls = cls.getSuperclass();
         }
-        ret.setID(entry.getChallenge().getId().getID());
-        ret.setHoster(entry.getChallenge().getHost());
-        ret.setCaptchaCategory(entry.getChallenge().getTypeID());
-        ret.setExplain(entry.getChallenge().getExplain());
-        final DownloadLink link = entry.getChallenge().getDownloadLink();
+        ret.setID(getChallenge(entry).getId().getID());
+        ret.setHoster(getChallenge(entry).getHost());
+        ret.setCaptchaCategory(getChallenge(entry).getTypeID());
+        ret.setExplain(getChallenge(entry).getExplain());
+        final DownloadLink link = getChallenge(entry).getDownloadLink();
         if (link != null) {
             ret.setLink(link.getUniqueID().getID());
         }

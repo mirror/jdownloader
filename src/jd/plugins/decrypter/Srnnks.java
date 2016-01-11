@@ -35,7 +35,9 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.CaptchaException;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -410,11 +412,25 @@ public class Srnnks extends PluginForDecrypt {
                                     }
 
                                 } else if (form.containsHTML("=\"g-recaptcha\"")) {
-                                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                                    synchronized (Srnnks.GLOBAL_LOCK) {
-                                        Thread.sleep(FW_WAIT);
-                                        this.br.submitForm(form);
+                                    try {
+                                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+
+                                        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                                        synchronized (Srnnks.GLOBAL_LOCK) {
+                                            Thread.sleep(FW_WAIT);
+                                            this.br.submitForm(form);
+                                            if (br.containsHTML("class=\"g-recaptcha\"")) {
+                                                // it took too long to solve. try again
+                                                continue;
+                                            }
+                                        }
+                                    } catch (CaptchaException de) {
+                                        getLogger().log(de);
+                                        continue;
+
+                                    } catch (DecrypterException de) {
+                                        getLogger().log(de);
+                                        continue;
                                     }
                                 } else {
                                     System.out.println("CAPTCHA SKIP!!!");

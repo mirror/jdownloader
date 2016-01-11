@@ -1,17 +1,14 @@
 package org.jdownloader.captcha.v2.solver.cheapcaptcha;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-import jd.nutils.encoding.Encoding;
+import javax.imageio.ImageIO;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -23,6 +20,8 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
@@ -33,6 +32,13 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CHEAP_CAPTCHA;
+
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+import jd.nutils.encoding.Encoding;
 
 public class CheapCaptchaSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
@@ -67,12 +73,24 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> implements Ch
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        if (!validateBlackWhite(c)) {
+            return false;
+        }
+        if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
+            // does not accept this annoted image yet
+            return false;
+        }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
+        Challenge<?> challenge = job.getChallenge();
+        if (challenge instanceof RecaptchaV2Challenge) {
+            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
 
-        solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) job.getChallenge());
+        }
+
+        solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) challenge);
 
     }
 
@@ -92,7 +110,17 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> implements Ch
 
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
-            r.addFormData(new FormData("captchafile", "ByteData.captcha", IO.readFile(challenge.getImageFile())));
+
+            if (challenge instanceof Recaptcha2FallbackChallenge) {
+                BufferedImage img = ((Recaptcha2FallbackChallenge) challenge).getAnnotatedImage();
+                ByteArrayOutputStream bao;
+                // Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(img), null, null);
+                ImageIO.write(img, "jpeg", bao = new ByteArrayOutputStream());
+                r.addFormData(new FormData("captchafile", "ByteData.captcha", bao.toByteArray()));
+
+            } else {
+                r.addFormData(new FormData("captchafile", "ByteData.captcha", IO.readFile(challenge.getImageFile())));
+            }
 
             URLConnectionAdapter conn = br.openRequestConnection(r);
             // 303 See Other if your CAPTCHA was successfully uploaded: Location HTTP header will point you to the uploaded CAPTCHA status

@@ -13,12 +13,13 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import jd.controlling.captcha.SkipException;
-
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+
+import jd.controlling.captcha.SkipException;
 
 public abstract class ChallengeSolver<T> {
 
@@ -181,6 +182,9 @@ public abstract class ChallengeSolver<T> {
         if (c instanceof AbstractBrowserChallenge) {
             return false;
         }
+        if (c instanceof Recaptcha2FallbackChallenge) {
+            return false;
+        }
         if (!getResultType().isAssignableFrom(c.getResultType())) {
             return false;
         }
@@ -190,7 +194,7 @@ public abstract class ChallengeSolver<T> {
         return true;
     }
 
-    protected boolean validateBlackWhite(Challenge<?> c) {
+    public boolean validateBlackWhite(Challenge<?> c) {
         if (getService().getConfig().isBlackWhiteListingEnabled()) {
             String host = c.getHost();
             ArrayList<String> whitelist = getService().getConfig().getWhitelistEntries();
