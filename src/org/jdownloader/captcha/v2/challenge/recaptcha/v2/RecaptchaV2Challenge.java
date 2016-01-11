@@ -2,6 +2,7 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -12,6 +13,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
@@ -69,7 +72,38 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
         @Override
         public Object getAPIStorable(String format) throws Exception {
+            if ("single".equals(format)) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("instructions", "Type 145 if image 1,4 and 5 match the question above.");
+                data.put("explain", getExplain());
+                ArrayList<String> images = new ArrayList<String>();
+                data.put("images", images);
+                BufferedImage img = ImageIO.read(getImageFile());
+                int columnWidth = img.getWidth() / 3;
+                int rowHeight = img.getHeight() / 3;
+                Font font = new Font("Arial", 0, 12).deriveFont(Font.BOLD);
+                for (int yslot = 0; yslot < 3; yslot++) {
+                    for (int xslot = 0; xslot < 3; xslot++) {
+                        int xx = (xslot) * columnWidth;
+                        int yy = (yslot) * rowHeight;
+                        int num = xslot + yslot * 3 + 1;
+                        BufferedImage jpg = new BufferedImage(columnWidth, rowHeight, BufferedImage.TYPE_INT_RGB);
+                        Graphics g = jpg.getGraphics();
+                        // g.drawImage(img, xx, yy, columnWidth, rowHeight, null);
+                        g.setFont(font);
+                        g.drawImage(img, 0, 0, columnWidth, rowHeight, xx, yy, xx + columnWidth, yy + rowHeight, null);
+                        g.setColor(Color.WHITE);
+                        g.fillRect(columnWidth - 20, 0, 20, 20);
+                        g.setColor(Color.BLACK);
+                        g.drawString(num + "", columnWidth - 20 + 5, 0 + 15);
+                        g.dispose();
 
+                        images.add(IconIO.toDataUrl(jpg));
+
+                    }
+                }
+                return data;
+            }
             // String mime = FileResponse.getMimeType(getImageFile().getName());
             BufferedImage newImage = getAnnotatedImage();
             String du = IconIO.toDataUrl(newImage);
