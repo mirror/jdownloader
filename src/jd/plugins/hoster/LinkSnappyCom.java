@@ -39,6 +39,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
+/**
+ * 24.11.15 Update by Bilal Ghouri:
+ *
+ * - Host has removed captcha and added attempts-account based system. API calls have been updated as well.<br />
+ * - Cookies are valid for 30 days after last use. After that, Session Expired error will occur. In which case, Login() should be called to
+ * get new cookies and store them for further use. <br />
+ * - Better Error handling through exceptions.
+ *
+ * @author raztoki
+ * @author psp
+ * @author bilalghouri
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class LinkSnappyCom extends antiDDoSForHost {
 
@@ -58,8 +70,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
     private static final String USE_API                = "USE_API";
     private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
 
-    private static final String COOKIE_HOST            = "https://linksnappy.com";
-    private static final String HTTP_S                 = "https://";
     private static final int    MAX_DOWNLOAD_ATTEMPTS  = 10;
     private int                 i                      = 1;
 
@@ -68,14 +78,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
     private boolean             resumes                = true;
     private int                 chunks                 = 0;
     private String              dllink                 = null;
-
-    /**
-     * 24.11.15 Update by Bilal Ghouri:
-     * 
-     * - Host has removed captcha and added attempts-account based system. API calls have been updated as well. - Cookies are valid for 30
-     * days after last use. After that, Session Expired error will occur. In which case, Login() should be called to get new cookies and
-     * store them for further use. - Better Error handling through exceptions.
-     */
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -568,12 +570,14 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        prepBr.setConnectTimeout(30 * 1000);
-        prepBr.setReadTimeout(30 * 1000);
-        prepBr.setAllowedResponseCodes(999);
-        prepBr.getHeaders().put("User-Agent", "JDownloader");
-        prepBr.setFollowRedirects(true);
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setConnectTimeout(30 * 1000);
+            prepBr.setReadTimeout(30 * 1000);
+            prepBr.setAllowedResponseCodes(999);
+            prepBr.getHeaders().put("User-Agent", "JDownloader");
+            prepBr.setFollowRedirects(true);
+        }
         return prepBr;
     }
 

@@ -527,9 +527,11 @@ public class AniStreamCom extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        /* define custom browser headers and language settings */
-        super.prepBrowser(prepBr, host);
-        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            /* define custom browser headers and language settings */
+            super.prepBrowser(prepBr, host);
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
         return prepBr;
     }
 

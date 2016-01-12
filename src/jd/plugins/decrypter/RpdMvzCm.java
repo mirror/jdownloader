@@ -37,9 +37,11 @@ public class RpdMvzCm extends antiDDoSForDecrypt {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        // define custom browser headers and language settings.
-        prepBr.getHeaders().put("Cache-Control", null);
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            // define custom browser headers and language settings.
+            prepBr.getHeaders().put("Cache-Control", null);
+        }
         return prepBr;
     }
 
