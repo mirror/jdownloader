@@ -34,7 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOMasdfasdfsadfsdgfd32423" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" }, flags = { 2 })
 public class DebridItaliaCom extends antiDDoSForHost {
 
     public DebridItaliaCom(PluginWrapper wrapper) {
@@ -56,8 +56,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap            = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                       = null;
     private DownloadLink                                   currDownloadLink              = null;
+    private String                                         dllink                        = null;
 
     private void setConstants(final Account acc, final DownloadLink dl) {
+        dllink = null;
         this.currAcc = acc;
         this.currDownloadLink = dl;
     }
@@ -120,7 +122,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override
@@ -129,8 +131,17 @@ public class DebridItaliaCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        setConstants(null, link);
+        requestFileInformation(link);
+        handleDl();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        setConstants(account, link);
+        requestFileInformation(link);
+        handleDl();
     }
 
     /** no override to keep plugin compatible to old stable */
@@ -166,12 +177,12 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
         // since no requests are done with this.br we need to manually set so checkdirectlink is correct
         prepBrowser(br, "https://debriditalia.com/");
-        String dllink = checkDirectLink(link, "debriditaliadirectlink");
+        dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
             String host_downloadlink = link.getDownloadURL();
-            /* Workaround for serverside debriditalia bug. */
+            /* Workaround for server side debriditalia bug. */
             /*
-             * Known hosts for which they do definitly not accept https urls [ last updated 2015-10-05]: share-online.biz, depfile.com,
+             * Known hosts for which they do definitely not accept https urls [ last updated 2015-10-05]: share-online.biz, depfile.com,
              * inclouddrive.com, secureupload.eu
              */
             host_downloadlink = host_downloadlink.replace("https://", "http://");
@@ -189,13 +200,17 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 handleErrorRetries("dllinknull", 20, 5 * 60 * 1000l);
             }
         }
+        handleDl();
+    }
+
+    private void handleDl() throws Exception {
 
         int chunks = 0;
-        if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
+        if (currDownloadLink.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
             chunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, currDownloadLink, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
@@ -208,7 +223,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             handleErrorRetries("unknowndlerror2", maxRetriesOnDownloadError, 5 * 60 * 1000l);
         }
         // Directlinks can be used for up to 2 days
-        link.setProperty("debriditaliadirectlink", dllink);
+        currDownloadLink.setProperty("debriditaliadirectlink", dllink);
 
         try {
             // start the dl
@@ -220,16 +235,16 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
-                    link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
+                if (currDownloadLink.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                    currDownloadLink.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 chunk errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
-                link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && currDownloadLink.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                currDownloadLink.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
 
@@ -239,7 +254,32 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
+        br = new Browser();
+        URLConnectionAdapter con = null;
+        try {
+            br.setFollowRedirects(true);
+            // head connection not possible. -raztoki-20160112
+            con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getDownloadURL()));
+            if (con.isContentDisposition() && con.isOK()) {
+                if (link.getFinalFileName() == null) {
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                }
+                link.setVerifiedFileSize(con.getLongContentLength());
+                link.setAvailable(true);
+                dllink = br.getURL();
+                return AvailableStatus.TRUE;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } catch (final Throwable e) {
+            return AvailableStatus.UNCHECKABLE;
+        } finally {
+            try {
+                /* make sure we close connection */
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     private boolean loginAPI(final Account acc) throws Exception {
@@ -272,11 +312,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
             unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
-        return true;
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -340,19 +375,24 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
+        return false;
+    }
+
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (isDirectLink(downloadLink)) {
+            // generated links do not require an account to download
+            return true;
+        } else if (account == null) {
+            // no non account handleMultiHost support.
+            return false;
+        } else {
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+    }
+
+    private boolean isDirectLink(final DownloadLink downloadLink) {
+        if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
             return true;
         }
         return false;

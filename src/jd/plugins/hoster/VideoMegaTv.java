@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -40,8 +42,6 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
@@ -94,7 +94,7 @@ public class VideoMegaTv extends antiDDoSForHost {
         if (link.getDownloadURL().matches(TYPE_HASH)) {
             // lets set all referrer to home page
             br.getHeaders().put("Referer", "http://videomega.tv/");
-            br.getPage("http://videomega.tv/iframe.php?ref=" + fuid + "&width=800&height=400");
+            getPage("http://videomega.tv/iframe.php?ref=" + fuid + "&width=800&height=400");
             if (br.getHttpConnection().getResponseCode() == 404 | br.containsHTML("<source src=\"http:///v/.mp4?")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
