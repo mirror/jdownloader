@@ -24,34 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.controlling.AccountUpOrDowngradeEvent;
-import jd.controlling.downloadcontroller.AccountCache;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.gui.swing.jdgui.DirectFeedback;
-import jd.gui.swing.jdgui.DownloadFeedBack;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
@@ -69,7 +41,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.LogSourceProvider;
@@ -99,6 +70,34 @@ import org.jdownloader.plugins.tasks.PluginSubTask;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.AccountUpOrDowngradeEvent;
+import jd.controlling.downloadcontroller.AccountCache;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.gui.swing.jdgui.DirectFeedback;
+import jd.gui.swing.jdgui.DownloadFeedBack;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
     public static final String        LID                          = "lid";
@@ -150,7 +149,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private boolean log(StatsLogInterface dl) {
         if (isEnabled()) {
-            if (Math.random() > 0.25d && !(dl instanceof AbstractTrackEntry)) {
+            if (Math.random() > 0.25d && !(dl instanceof AbstractTrackEntry) && Application.isJared(null)) {
                 return false;
             }
             synchronized (list) {
@@ -652,85 +651,71 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private void createAndUploadLog(PostAction action, boolean silent) {
 
-        final File[] logs = Application.getResource("logs").listFiles();
+        /*
+         * this is our current logfolder, flush it before we can upload it
+         */
 
-        if (logs != null) {
-            for (final File f : logs) {
-                final String timestampString = new Regex(f.getName(), "(\\d+)_\\d\\d\\.\\d\\d").getMatch(0);
-                if (timestampString != null) {
-                    final long timestamp = Long.parseLong(timestampString);
-                    LogFolder lf;
-                    lf = new LogFolder(f, timestamp);
-                    if (LogController.getInstance().getInitTime() == timestamp) {
-                        /*
-                         * this is our current logfolder, flush it before we can upload it
-                         */
+        LogFolder lf = new LogFolder(LogController.getInstance().getLogFolder(), LogController.getInstance().getInitTime());
+        SimpleDateFormat df = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
+        // return .format(date);
+        lf.setNeedsFlush(true);
 
-                        SimpleDateFormat df = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
-                        // return .format(date);
-                        lf.setNeedsFlush(true);
+        final File zip = Application.getTempResource("logs/logPackage_" + System.currentTimeMillis() + ".zip");
+        zip.delete();
+        zip.getParentFile().mkdirs();
+        ZipIOWriter writer = null;
 
-                        final File zip = Application.getTempResource("logs/logPackage_" + System.currentTimeMillis() + ".zip");
-                        zip.delete();
-                        zip.getParentFile().mkdirs();
-                        ZipIOWriter writer = null;
-
-                        final String name = lf.getFolder().getName() + "-" + df.format(new Date(lf.getCreated())) + " to " + df.format(new Date(lf.getLastModified()));
-                        final File folder = Application.getTempResource("logs/" + name);
-                        try {
-                            try {
-                                LogSourceProvider.flushAllSinks(true, false);
-                                writer = new ZipIOWriter(zip) {
-                                    @Override
-                                    public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
-                                        if (addFile.getName().endsWith(".lck") || addFile.isFile() && addFile.length() == 0) {
-                                            return;
-                                        }
-                                        if (Thread.currentThread().isInterrupted()) {
-                                            throw new WTFException("INterrupted");
-                                        }
-                                        super.addFile(addFile, compress, fullPath);
-                                    }
-                                };
-
-                                if (folder.exists()) {
-                                    Files.deleteRecursiv(folder);
-                                }
-                                IO.copyFolderRecursive(lf.getFolder(), folder, true);
-                                writer.addDirectory(folder, true, null);
-
-                            } finally {
-                                try {
-                                    writer.close();
-                                } catch (final Throwable e) {
-                                }
-                            }
-
-                            if (Thread.currentThread().isInterrupted()) {
-                                throw new WTFException("INterrupted");
-                            }
-
-                            String id = JDServUtils.upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
-
-                            zip.delete();
-                            if (zip.length() > 1024 * 1024 * 10) {
-                                throw new Exception("Filesize: " + zip.length());
-                            }
-                            sendLogDetails(new LogDetails(id, action.getData()));
-                            if (!silent) {
-                                UIOManager.I().showMessageDialog(_GUI._.StatsManager_createAndUploadLog_thanks_(action.getData()));
-                            }
-
-                        } catch (Exception e) {
-                            logger.log(e);
-
+        final String name = lf.getFolder().getName() + "-" + df.format(new Date(lf.getCreated())) + " to " + df.format(new Date(lf.getLastModified()));
+        final File folder = Application.getTempResource("logs/" + name);
+        try {
+            try {
+                LogSourceProvider.flushAllSinks(true, false);
+                writer = new ZipIOWriter(zip) {
+                    @Override
+                    public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
+                        if (addFile.getName().endsWith(".lck") || addFile.isFile() && addFile.length() == 0) {
+                            return;
                         }
-                        return;
+                        if (Thread.currentThread().isInterrupted()) {
+                            throw new WTFException("INterrupted");
+                        }
+                        super.addFile(addFile, compress, fullPath);
                     }
+                };
 
+                if (folder.exists()) {
+                    Files.deleteRecursiv(folder);
+                }
+                IO.copyFolderRecursive(lf.getFolder(), folder, true);
+                writer.addDirectory(folder, true, null);
+
+            } finally {
+                try {
+                    writer.close();
+                } catch (final Throwable e) {
                 }
             }
+
+            if (Thread.currentThread().isInterrupted()) {
+                throw new WTFException("INterrupted");
+            }
+
+            String id = JDServUtils.upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
+
+            zip.delete();
+            if (zip.length() > 1024 * 1024 * 10) {
+                throw new Exception("Filesize: " + zip.length());
+            }
+            sendLogDetails(new LogDetails(id, action.getData()));
+            if (!silent) {
+                UIOManager.I().showMessageDialog(_GUI._.StatsManager_createAndUploadLog_thanks_(action.getData()));
+            }
+
+        } catch (Exception e) {
+            logger.log(e);
+
         }
+        return;
 
     }
 
@@ -1139,7 +1124,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             }
                         }
                         if (sendTo.size() > 0) {
-                            Thread.sleep(1 * 60 * 1000l);
+                            Thread.sleep(1 * 1000l);
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
                             if (!config.isEnabled()) {
                                 return;
