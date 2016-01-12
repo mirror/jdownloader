@@ -2,6 +2,17 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import java.io.IOException;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.plugins.CaptchaException;
+import jd.plugins.DecrypterException;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
@@ -10,19 +21,6 @@ import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
-
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.plugins.CaptchaException;
-import jd.plugins.DecrypterException;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
 public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForDecrypt> {
 
@@ -36,7 +34,6 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
     }
 
     public String getToken() throws PluginException, InterruptedException, DecrypterException {
-
         runDdosPrevention();
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
@@ -49,12 +46,10 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             }
         }
         final PluginForDecrypt plugin = getPlugin();
-        final LinkCrawler currentCrawler = plugin.getCrawler();
-        final CrawledLink currentOrigin = plugin.getCurrentLink().getOriginLink();
-        RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin);
+        final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin);
         c.setTimeout(plugin.getCaptchaTimeout());
         plugin.invalidateLastChallengeResponse();
-        final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
+        final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
             logger.warning("Cancel. Blacklist Matching");
             throw new CaptchaException(blackListEntry);
@@ -62,11 +57,9 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
         try {
             ChallengeResponseController.getInstance().handle(c);
             if (c.getResult().size() == 1 && c.getResult().get(0).getChallenge() instanceof Recaptcha2FallbackChallenge) {
-                Recaptcha2FallbackChallenge challenge = ((Recaptcha2FallbackChallenge) c.getResult().get(0).getChallenge());
-
+                final Recaptcha2FallbackChallenge challenge = ((Recaptcha2FallbackChallenge) c.getResult().get(0).getChallenge());
                 try {
                     challenge.reload(2, c.getResult().get(0).getValue());
-
                     ChallengeResponseController.getInstance().handle(challenge);
                     if (challenge.getToken() != null) {
                         return challenge.getToken();
@@ -75,13 +68,13 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
                 } catch (IOException e) {
+                    LogSource.exception(logger, e);
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
             }
             if (!c.isSolved()) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-
             if (!c.isCaptchaResponseValid()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Captcha reponse value did not validate!");
             }
