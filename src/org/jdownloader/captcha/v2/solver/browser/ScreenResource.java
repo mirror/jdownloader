@@ -147,7 +147,7 @@ public abstract class ScreenResource {
 
                 // showImage(getRobot().createScreenCapture(ret));
 
-                System.out.println("Found Rectangle in " + (System.currentTimeMillis() - start));
+                System.out.println("Found Rectangle in " + (System.currentTimeMillis() - start) + "ms");
                 return ret;
             }
 
