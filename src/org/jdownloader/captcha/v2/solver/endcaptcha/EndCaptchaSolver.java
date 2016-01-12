@@ -1,17 +1,12 @@
 package org.jdownloader.captcha.v2.solver.endcaptcha;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.imageio.ImageIO;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -79,18 +74,7 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> implements Chal
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
-        Challenge<?> challenge = job.getChallenge();
-        if (challenge instanceof RecaptchaV2Challenge) {
-            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
-
-        }
-
-        solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) challenge);
-
-    }
-
-    private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
 
         job.showBubble(this);
         checkInterruption();
@@ -107,17 +91,7 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> implements Chal
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
 
-            if (challenge instanceof Recaptcha2FallbackChallenge) {
-                BufferedImage img = ((Recaptcha2FallbackChallenge) challenge).getAnnotatedImage();
-                ByteArrayOutputStream bao;
-                // Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(img), null, null);
-                ImageIO.write(img, "jpeg", bao = new ByteArrayOutputStream());
-                r.addFormData(new FormData("image", "ByteData.captcha", bao.toByteArray()));
-
-            } else {
-                r.addFormData(new FormData("image", "ByteData.captcha", IO.readFile(challenge.getImageFile())));
-
-            }
+            r.addFormData(new FormData("image", "ByteData.captcha", challenge.getAnnotatedImageBytes()));
 
             URLConnectionAdapter conn = br.openRequestConnection(r);
             br.loadConnection(conn);

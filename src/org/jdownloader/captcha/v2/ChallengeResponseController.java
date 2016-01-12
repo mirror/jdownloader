@@ -22,6 +22,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaJACSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
+import org.jdownloader.captcha.v2.solver.captchasolutions.CaptchaSolutionsSolver;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolver;
@@ -127,8 +128,11 @@ public class ChallengeResponseController {
             addSolver(DeathByCaptchaSolver.getInstance());
             addSolver(ImageTyperzCaptchaSolver.getInstance());
             addSolver(CheapCaptchaSolver.getInstance());
+
             // Service is too buggy to release
-            // addSolver(CaptchaSolutionsSolver.getInstance());
+            if (!Application.isJared(null)) {
+                addSolver(CaptchaSolutionsSolver.getInstance());
+            }
             addSolver(EndCaptchaSolver.getInstance());
             addSolver(CBSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());

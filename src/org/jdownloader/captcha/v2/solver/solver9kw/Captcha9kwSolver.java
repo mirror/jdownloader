@@ -1,7 +1,5 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -15,9 +13,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.imageio.ImageIO;
-
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
@@ -391,16 +386,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
 
             byte[] data = null;
 
-            if (challenge instanceof Recaptcha2FallbackChallenge) {
-                BufferedImage img = ((Recaptcha2FallbackChallenge) challenge).getAnnotatedImage();
-                ByteArrayOutputStream bao;
-                ImageIO.write(img, "png", bao = new ByteArrayOutputStream());
-                data = bao.toByteArray();
-
-            } else {
-                data = IO.readFile(challenge.getImageFile());
-
-            }
+            data = challenge.getAnnotatedImageBytes();
 
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
@@ -463,22 +449,14 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                 } else if (ret.startsWith("OK-answered-")) {
                     counterSolved.incrementAndGet();
                     ret = ret.substring("OK-answered-".length());
-                    if (challenge instanceof Recaptcha2FallbackChallenge) {
-                        ret = challenge.parseAPIAnswer(ret, this).getValue();
-                        if (ret.length() > 0) {
-                            job.setAnswer(new Captcha9kwResponse(challenge, this, ret, 100, captchaID));
-                        } else {
-                            setInvalid(new Captcha9kwResponse(challenge, this, ret, 100, captchaID), job.getJob());
-                        }
+                    AbstractResponse<String> answer = challenge.parseAPIAnswer(ret, this);
 
+                    if (ret.length() > 0) {
+                        job.setAnswer(new Captcha9kwResponse(challenge, this, answer.getValue(), answer.getPriority(), captchaID));
                     } else {
-
-                        if (ret.length() > 0) {
-                            job.setAnswer(new Captcha9kwResponse(challenge, this, ret, 100, captchaID));
-                        } else {
-                            setInvalid(new Captcha9kwResponse(challenge, this, ret, 100, captchaID), job.getJob());
-                        }
+                        setInvalid(new Captcha9kwResponse(challenge, this, answer.getValue(), answer.getPriority(), captchaID), job.getJob());
                     }
+
                     return;
                 } else if (((System.currentTimeMillis() - startTime) / 1000) > (timeoutthing + 10)) {
                     counterInterrupted.incrementAndGet();
@@ -613,6 +591,11 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     protected boolean validateLogins() {
         return StringUtils.isNotEmpty(config.getApiKey()) && isEnabled();
 
+    }
+
+    @Override
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) {
+        // not used. solveCEs is overwritten
     }
 
 }

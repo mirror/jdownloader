@@ -2,11 +2,11 @@ package org.jdownloader.captcha.v2.challenge.stringcaptcha;
 
 import java.io.File;
 
-import jd.plugins.Plugin;
-
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
+
+import jd.plugins.Plugin;
 
 public class BasicCaptchaChallenge extends ImageCaptchaChallenge<String> {
 

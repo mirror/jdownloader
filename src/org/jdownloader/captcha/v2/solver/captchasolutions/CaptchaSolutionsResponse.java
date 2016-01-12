@@ -11,8 +11,8 @@ public class CaptchaSolutionsResponse extends CaptchaResponse {
         return captchaID;
     }
 
-    public CaptchaSolutionsResponse(BasicCaptchaChallenge challenge, CaptchaSolutionsSolver solver, String id, String text) {
-        super(challenge, solver, text, 100);
+    public CaptchaSolutionsResponse(BasicCaptchaChallenge challenge, CaptchaSolutionsSolver solver, String id, String text, int priority) {
+        super(challenge, solver, text, priority);
         this.captchaID = id;
 
     }

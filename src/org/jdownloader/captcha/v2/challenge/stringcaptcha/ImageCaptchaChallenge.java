@@ -1,14 +1,16 @@
 package org.jdownloader.captcha.v2.challenge.stringcaptcha;
 
+import java.awt.Image;
 import java.io.File;
+import java.io.IOException;
 
 import javax.imageio.ImageIO;
-
-import jd.plugins.Plugin;
 
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.httpserver.responses.FileResponse;
 import org.jdownloader.captcha.v2.Challenge;
+
+import jd.plugins.Plugin;
 
 public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
 
@@ -19,6 +21,29 @@ public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
         this.imageFile = file;
         this.plugin = plugin;
 
+    }
+
+    public byte[] getImageBytes() throws IOException {
+        return IconIO.toJpgBytes(getImage());
+    }
+
+    public Image getImage() throws IOException {
+        return ImageIO.read(getImageFile());
+    }
+
+    public byte[] getAnnotatedImageBytes() throws IOException {
+        return IconIO.toJpgBytes(getAnnotatedImage());
+    }
+
+    /**
+     * The AnnotatedImage may contain instructions that are not in the original image.
+     *
+     *
+     * @return
+     * @throws IOException
+     */
+    public Image getAnnotatedImage() throws IOException {
+        return getImage();
     }
 
     public String toString() {

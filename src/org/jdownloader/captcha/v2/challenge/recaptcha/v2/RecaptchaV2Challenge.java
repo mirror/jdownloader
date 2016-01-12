@@ -6,10 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -19,26 +16,18 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.uio.InputDialogInterface;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -111,6 +100,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
         }
 
+        @Override
         public BufferedImage getAnnotatedImage() throws IOException {
             BufferedImage img = ImageIO.read(getImageFile());
             Font font = new Font("Arial", 0, 12);
@@ -165,10 +155,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                     if (sb.length() > 0) {
                         sb.append(",");
                     }
-                    sb.append(Integer.parseInt(json.charAt(i) + "") - 1);
+                    sb.append(Integer.parseInt(json.charAt(i) + ""));
                 }
             }
-            return new CaptchaResponse(this, solver, sb.toString(), 100);
+            return new CaptchaResponse(this, solver, sb.toString(), sb.toString().length() == 0 || sb.toString().length() > 5 ? 0 : 100);
         }
 
         public Recaptcha2FallbackChallenge(RecaptchaV2Challenge challenge) {
@@ -186,69 +176,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         @Override
         public UniqueAlltimeID getId() {
             return owner.getId();
-        }
-
-        public boolean handle(String challenge, String payload, String message) throws IOException, DialogClosedException, DialogCanceledException {
-            System.out.println(challenge);
-            System.out.println("Challenge length: " + challenge.length());
-
-            final File file = Application.getResource("rc_" + System.currentTimeMillis() + ".jpg");
-            FileOutputStream fos = null;
-            URLConnectionAdapter con = null;
-            try {
-                con = iframe.cloneBrowser().openGetConnection("http://www.google.com" + payload);
-                fos = new FileOutputStream(file);
-                IO.readStreamToOutputStream(-1, con.getInputStream(), fos, true);
-            } finally {
-                try {
-                    fos.close();
-                } catch (final Throwable ignore) {
-                }
-                try {
-                    con.disconnect();
-                } catch (final Throwable ignore) {
-                }
-            }
-            String dataSiteKey = owner.getSiteKey();
-            BufferedImage img = ImageIO.read(file);
-            // iframe.getHeaders().remove("Cookie");
-
-            InputDialog d = new InputDialog(0, "Recaptcha", "Please Enter..." + message, null, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null) {
-                @Override
-                protected JComponent getIconComponent() {
-                    final JComponent ret = super.getIconComponent();
-                    ret.addMouseListener(new MouseAdapter() {
-                        @Override
-                        public void mouseClicked(MouseEvent e) {
-
-                            int x = e.getX() / (ret.getWidth() / 3);
-                            int y = e.getY() / (ret.getHeight() / 3);
-                            int num = x + y * 3;
-                            System.out.println("pressed " + num);
-                            input.setText(input.getText() + (input.getText().length() == 0 ? "" : ",") + (num));
-
-                        }
-                    });
-                    return ret;
-                }
-            };
-            String response = UIOManager.I().show(InputDialogInterface.class, d).getText();
-            Form form = iframe.getFormbyKey("c");
-            String responses = "";
-            for (String s : response.split(",")) {
-                responses += "&response=" + s;
-            }
-            // iframe.getHeaders().put(new HTTPHeader("Origin", "http://www.google.com"));
-            iframe.postPageRaw("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey, "c=" + Encoding.urlEncode(form.getInputField("c").getValue()) + responses);
-
-            System.out.println(iframe);
-            String token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
-            if (token != null) {
-                Dialog.getInstance().showConfirmDialog(0, "Result", "OK: " + response, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null);
-                return true;
-            }
-            Dialog.getInstance().showConfirmDialog(0, "Result", "WRONG: " + response, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null);
-            return false;
         }
 
         private void load() {
@@ -306,12 +233,16 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         @Override
         public boolean validateResponse(AbstractResponse<String> response) {
             try {
-
                 String dataSiteKey = owner.getSiteKey();
                 Form form = iframe.getFormbyKey("c");
                 String responses = "";
-                for (String s : response.getValue().split(",")) {
-                    responses += "&response=" + s;
+                HashSet<String> dupe = new HashSet<String>();
+                String re = response.getValue().replaceAll("[^\\d]+", "");
+                for (int i = 0; i < re.length(); i++) {
+                    int num = Integer.parseInt(response.getValue().replaceAll("[^\\d]+", "").charAt(i) + "") - 1;
+                    if (dupe.add(num + "")) {
+                        responses += "&response=" + num;
+                    }
                 }
                 // iframe.getHeaders().put(new HTTPHeader("Origin", "http://www.google.com"));
                 iframe.postPageRaw("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey, "c=" + Encoding.urlEncode(form.getInputField("c").getValue()) + responses);
@@ -319,7 +250,9 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
                 token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
 
-            } catch (Throwable e) {
+            } catch (Throwable e)
+
+            {
 
                 throw new WTFException(e);
             }
