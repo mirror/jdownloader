@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.se)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -38,16 +38,16 @@ public class AvxHmeW extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avaxhome\\.pro)))[\\S&]+";
+    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avaxhome\\.pro)))[\\S&]+";
 
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // for when you're testing
         br.clearCookies(getHost());
         // two differnet sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com)", "avxhome.se");
+        String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.se)", "avxhome.in");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
