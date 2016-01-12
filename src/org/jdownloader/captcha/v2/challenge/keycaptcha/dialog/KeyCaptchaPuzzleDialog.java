@@ -111,7 +111,7 @@ public class KeyCaptchaPuzzleDialog extends AbstractCaptchaDialog<KeyCaptchaPuzz
         KeyCaptchaDrawBackgroundPanel background;
         // boolean sampleImg = false;
         drawPanel.add(background = new KeyCaptchaDrawBackgroundPanel(imageData.backgroundImage), new Integer(JLayeredPane.DEFAULT_LAYER), new Integer(JLayeredPane.DEFAULT_LAYER));
-        Dialog.getInstance().showImage(imageData.backgroundImage);
+
         mouseArray = new ArrayList<Integer>();
         drawPanel.add(new KeyCaptchaDragPieces(imageData.sampleImage, offset, true, mouseArray, challenge), new Integer(JLayeredPane.DEFAULT_LAYER) + 0, new Integer(JLayeredPane.DEFAULT_LAYER) + 0);
         System.out.println("PIeces " + imageData.pieces.size());

@@ -17,7 +17,6 @@ import javax.swing.Timer;
 import javax.swing.event.MouseInputAdapter;
 
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -36,7 +35,6 @@ class KeyCaptchaDragPieces extends JPanel {
     public KeyCaptchaDragPieces(final BufferedImage image, final int offset, final boolean sampleImg, final ArrayList<Integer> mouseArray, final KeyCaptchaPuzzleChallenge challenge) {
         this.image = IconIO.colorRangeToTransparency(image, Color.WHITE, 0.15d);
 
-        Dialog.getInstance().showImage(image);
         LAFOptions.applyBackground(LAFOptions.getInstance().getColorForPanelBackground(), this);
 
         this.challenge = challenge;
