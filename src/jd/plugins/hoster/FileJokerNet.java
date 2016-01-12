@@ -24,8 +24,12 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -47,57 +51,37 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(www\\.)?filejoker\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class FileJokerNet extends antiDDoSForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filejoker.net" }, urls = { "https?://(www\\.)?filejoker\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class FileJokerNet extends PluginForHost {
-
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR                  = "";
+    private String               passCode                     = null;
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://filejoker.net";
-    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                  = "https://filejoker.net";
+    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(filejoker\\.net)";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = false;
-    private static final boolean           SUPPORTSHTTPS                = true;
-    private final boolean                  ENABLE_RANDOM_UA             = true;
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
-    /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = false;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
-    private static final boolean           ACCOUNT_FREE_RESUME          = false;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+    private static final String  DOMAINS                      = "(filejoker\\.net)";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean VIDEOHOSTER_2                = false;
+    private static final boolean SUPPORTSHTTPS                = true;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
-    private String                         fuid                         = null;
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
+    private String               fuid                         = null;
 
-    private static final String            INVALIDLINKS                 = "https?://(www\\.)?filejoker\\.net/registration";
+    private static final String  INVALIDLINKS                 = "https?://(www\\.)?filejoker\\.net/registration";
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.5.7
@@ -129,7 +113,6 @@ public class FileJokerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
-        prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
@@ -212,7 +195,7 @@ public class FileJokerNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -245,7 +228,7 @@ public class FileJokerNet extends PluginForHost {
             try {
                 logger.info("Trying to get link via embed");
                 final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
-                this.postPage(embed_access, "op=video_embed3&usr_login=&id2=" + fuid + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&file_code=" + fuid + "&method_free=Click+here+to+watch+the+Video");
+                postPage(embed_access, "op=video_embed3&usr_login=&id2=" + fuid + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&file_code=" + fuid + "&method_free=Click+here+to+watch+the+Video");
                 // brv.getPage("http://grifthost.com/embed-" + fuid + ".html");
                 dllink = getDllink();
                 if (dllink == null) {
@@ -266,7 +249,9 @@ public class FileJokerNet extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+                /*
+                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                 */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -277,7 +262,7 @@ public class FileJokerNet extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
@@ -400,7 +385,7 @@ public class FileJokerNet extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
@@ -468,25 +453,24 @@ public class FileJokerNet extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        return prepBr;
     }
 
     /**
@@ -600,19 +584,21 @@ public class FileJokerNet extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    @SuppressWarnings("unused")
-    private void postPage(final String page, final String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(final String page, final String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -660,28 +646,12 @@ public class FileJokerNet extends PluginForHost {
     }
 
     /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -711,7 +681,9 @@ public class FileJokerNet extends PluginForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            /*
+             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
@@ -896,7 +868,6 @@ public class FileJokerNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -930,27 +901,15 @@ public class FileJokerNet extends PluginForHost {
         if (expire != null) {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        if (account.getBooleanProperty("nopremium") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
+        if (account.getType() == AccountType.FREE && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(expire_milliseconds);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium user");
+            account.setMaxSimultanDownloads(10);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -961,7 +920,6 @@ public class FileJokerNet extends PluginForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -981,7 +939,7 @@ public class FileJokerNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 getPage("https://filejoker.net/login");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                this.postPage("https://filejoker.net/login", "recaptcha_response_field=&op=login&redirect=&rand=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage("https://filejoker.net/login", "recaptcha_response_field=&op=login&redirect=&rand=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(COOKIE_HOST, "email") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -993,9 +951,9 @@ public class FileJokerNet extends PluginForHost {
                     getPage("/profile");
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setType(AccountType.PREMIUM);
                 }
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -1018,9 +976,9 @@ public class FileJokerNet extends PluginForHost {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
+            doFree(downloadLink, false, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
@@ -1036,7 +994,7 @@ public class FileJokerNet extends PluginForHost {
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
                 }
@@ -1046,7 +1004,7 @@ public class FileJokerNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
@@ -1061,12 +1019,6 @@ public class FileJokerNet extends PluginForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
