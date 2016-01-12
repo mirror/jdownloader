@@ -8,6 +8,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -24,6 +25,9 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import jd.captcha.utils.GifDecoder;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.utils.URLStream;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
@@ -31,11 +35,6 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractCaptchaDialog;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import com.sun.javafx.geom.Rectangle;
-
-import jd.captcha.utils.GifDecoder;
-import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<Object> {
 
