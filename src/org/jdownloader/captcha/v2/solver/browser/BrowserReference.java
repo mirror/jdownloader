@@ -213,8 +213,9 @@ public abstract class BrowserReference implements HttpRequestHandler {
                 if (challenge.isSolved() || job == null || job.isDone()) {
                     response.getOutputStream(true).write("true".getBytes("UTF-8"));
                     return true;
+                } else {
+                    response.getOutputStream(true).write("false".getBytes("UTF-8"));
                 }
-                response.getOutputStream(true).write("false".getBytes("UTF-8"));
             } else if (pDo == null) {
                 response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));
             } else {

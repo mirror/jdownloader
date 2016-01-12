@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
@@ -31,10 +35,6 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
 
 public class Captcha9kwSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
@@ -113,12 +113,12 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     }
 
     private Challenge<?> getChallenge(SolverJob<?> job) {
-        Challenge<?> challenge = job.getChallenge();
+        final Challenge<?> challenge = job.getChallenge();
         if (challenge instanceof RecaptchaV2Challenge) {
-            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
-
+            return ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+        } else {
+            return challenge;
         }
-        return challenge;
     }
 
     @Override
@@ -383,12 +383,8 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             counter.incrementAndGet();
             job.showBubble(this, getBubbleTimeout(challenge));
             checkInterruption();
-
-            byte[] data = null;
-
-            data = challenge.getAnnotatedImageBytes();
-
-            Browser br = new Browser();
+            byte[] data = challenge.getAnnotatedImageBytes();
+            final Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
             String ret = "";
             job.setStatus(SolverStatus.UPLOADING);
@@ -476,8 +472,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     }
 
     private int getBubbleTimeout(BasicCaptchaChallenge challenge) {
-        HashMap<String, Integer> map = config.getBubbleTimeoutByHostMap();
-
+        final HashMap<String, Integer> map = config.getBubbleTimeoutByHostMap();
         Integer ret = map.get(challenge.getHost().toLowerCase(Locale.ENGLISH));
         if (ret == null || ret < 0) {
             ret = CFG_CAPTCHA.CFG.getCaptchaExchangeChanceToSkipBubbleTimeout();
@@ -503,8 +498,8 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                 @Override
                 public void run() {
                     try {
-                        String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
-                        Browser br = new Browser();
+                        final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                        final Browser br = new Browser();
                         String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
@@ -533,8 +528,8 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                 @Override
                 public void run() {
                     try {
-                        String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
-                        Browser br = new Browser();
+                        final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                        final Browser br = new Browser();
                         String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
@@ -564,8 +559,8 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                 @Override
                 public void run() {
                     try {
-                        String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
-                        Browser br = new Browser();
+                        final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                        final Browser br = new Browser();
                         String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {

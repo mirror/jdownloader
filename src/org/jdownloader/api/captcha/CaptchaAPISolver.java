@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
+
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -32,10 +36,6 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
 
@@ -159,10 +159,9 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             throw new InvalidCaptchaIDException();
         }
         try {
-            Challenge<?> challenge = getChallenge(job);
+            final Challenge<?> challenge = getChallenge(job);
             final OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
             try {
-
                 final HashMap<String, Object> captchaResponseData = new HashMap<String, Object>();
                 captchaResponseData.put("data", challenge.getAPIStorable(format));
                 if (request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
@@ -174,9 +173,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                     out.close();
                 } catch (final Throwable e) {
                 }
-
             }
-
         } catch (Exception e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
@@ -184,12 +181,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     private Challenge<?> getChallenge(SolverJob<?> job) {
-        Challenge<?> challenge = job.getChallenge();
+        final Challenge<?> challenge = job.getChallenge();
         if (challenge instanceof RecaptchaV2Challenge) {
-            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
-
+            return ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+        } else {
+            return challenge;
         }
-        return challenge;
     }
 
     public boolean isJobDone(final SolverJob<?> job) {
@@ -224,8 +221,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();
         }
-        Challenge<?> challenge = getChallenge(job);
-
+        final Challenge<?> challenge = getChallenge(job);
         final AbstractResponse<?> ret = challenge.parseAPIAnswer(result, this);
         if (ret != null) {
             ((SolverJob<Object>) job).addAnswer((AbstractResponse<Object>) ret);
@@ -246,8 +242,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         if (job == null) {
             throw new InvalidCaptchaIDException();
         }
-        Challenge<Object> challenge = job.getChallenge();
-
+        final Challenge<Object> challenge = job.getChallenge();
         ChallengeResponseController.getInstance().setSkipRequest(type, this, challenge);
         return true;
     }
@@ -270,11 +265,11 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             ret.setType(cls.getSimpleName());
             cls = cls.getSuperclass();
         }
-        ret.setID(getChallenge(entry).getId().getID());
-        ret.setHoster(getChallenge(entry).getHost());
-        ret.setCaptchaCategory(getChallenge(entry).getTypeID());
-        ret.setExplain(getChallenge(entry).getExplain());
-        final DownloadLink link = getChallenge(entry).getDownloadLink();
+        ret.setID(challenge.getId().getID());
+        ret.setHoster(challenge.getHost());
+        ret.setCaptchaCategory(challenge.getTypeID());
+        ret.setExplain(challenge.getExplain());
+        final DownloadLink link = challenge.getDownloadLink();
         if (link != null) {
             ret.setLink(link.getUniqueID().getID());
         }
