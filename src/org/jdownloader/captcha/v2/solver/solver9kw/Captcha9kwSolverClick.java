@@ -12,9 +12,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
@@ -25,6 +22,7 @@ import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
@@ -32,6 +30,9 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> implements ChallengeResponseValidation {
 
@@ -527,6 +528,12 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     @Override
     protected boolean validateLogins() {
         return StringUtils.isNotEmpty(config.getApiKey()) && config.ismouse();
+    }
+
+    @Override
+    protected void solveBasicCaptchaChallenge(CESSolverJob<ClickedPoint> job, BasicCaptchaChallenge challenge) {
+
+        // not used solveCES Overwritten
     }
 
 }

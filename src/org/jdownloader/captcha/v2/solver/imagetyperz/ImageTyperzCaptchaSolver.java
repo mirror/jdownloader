@@ -1,18 +1,12 @@
 package org.jdownloader.captcha.v2.solver.imagetyperz;
 
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.imageio.ImageIO;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -68,45 +62,13 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
     @Override
     public boolean canHandle(Challenge<?> c) {
         if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
-            // does not accept this annoted image yet
             return true;
         }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
 
-        Challenge<?> challenge = job.getChallenge();
-        if (challenge instanceof RecaptchaV2Challenge) {
-            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
-
-        }
-
-        solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) challenge);
-    }
-
-    private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
-
-        // if (config.getWhiteList() != null) {
-        // if (config.getWhiteList().length() > 5) {
-        // if (config.getWhiteList().contains(challenge.getTypeID())) {
-        // job.getLogger().info("Hoster on WhiteList for ImageTyperz.com. - " + challenge.getTypeID());
-        // } else {
-        // job.getLogger().info("Hoster not on WhiteList for ImageTyperz.com. - " + challenge.getTypeID());
-        // return;
-        // }
-        // }
-        // }
-        // if (config.getBlackList() != null) {
-        // if (config.getBlackList().length() > 5) {
-        // if (config.getBlackList().contains(challenge.getTypeID())) {
-        // job.getLogger().info("Hoster on BlackList for ImageTyperz.com. - " + challenge.getTypeID());
-        // return;
-        // } else {
-        // job.getLogger().info("Hoster not on BlackList for ImageTyperz.com. - " + challenge.getTypeID());
-        // }
-        // }
-        // }
         job.showBubble(this);
         checkInterruption();
         try {
@@ -116,7 +78,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
             job.setStatus(SolverStatus.SOLVING);
-            long startTime = System.currentTimeMillis();
+
             PostFormDataRequest r = null;
             if (challenge instanceof Recaptcha2FallbackChallenge) {
                 r = new PostFormDataRequest("http://captchatypers.com/Forms/UploadGoogleCaptcha.ashx");
@@ -127,23 +89,9 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
             r.addFormData(new FormData("chkCase", "0"));
-            if (challenge instanceof Recaptcha2FallbackChallenge) {
-                BufferedImage img = ((Recaptcha2FallbackChallenge) challenge).getAnnotatedImage();
-                ByteArrayOutputStream bao;
 
-                BufferedImage jpg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
-                Graphics g = jpg.getGraphics();
-                g.drawImage(img, 0, 0, null);
-                g.dispose();
+            r.addFormData(new FormData("file", org.appwork.utils.encoding.Base64.encodeToString(challenge.getAnnotatedImageBytes(), false)));
 
-                ImageIO.write(jpg, "jpg", bao = new ByteArrayOutputStream());
-
-                r.addFormData(new FormData("file", org.appwork.utils.encoding.Base64.encodeToString(bao.toByteArray(), false)));
-
-            } else {
-                r.addFormData(new FormData("file", org.appwork.utils.encoding.Base64.encodeToString(IO.readFile(challenge.getImageFile()), false)));
-
-            }
             URLConnectionAdapter conn = br.openRequestConnection(r);
 
             // ERROR: INVALID_REQUEST = It will be returned when the program tries to send the invalid request.
@@ -165,16 +113,11 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
             }
             String[] result = br.getRegex("(\\d+)\\|(.*)").getRow(0);
             if (result != null) {
+                AbstractResponse<String> answer = challenge.parseAPIAnswer(result[1], this);
 
-                if (challenge instanceof Recaptcha2FallbackChallenge) {
-                    result[1] = challenge.parseAPIAnswer(result[1], this).getValue();
-                    job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + br.toString());
-                    job.setAnswer(new ImageTyperzResponse(challenge, this, result[0], result[1]));
+                job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + br.toString());
+                job.setAnswer(new ImageTyperzResponse(challenge, this, result[0], answer.getValue(), answer.getPriority()));
 
-                } else {
-                    job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + br.toString());
-                    job.setAnswer(new ImageTyperzResponse(challenge, this, result[0], result[1]));
-                }
             } else {
                 job.getLogger().info("Failed solving CAPTCHA");
                 throw new SolverException("Failed:" + br.toString());

@@ -4,15 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
@@ -38,6 +29,15 @@ import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge.TYPE;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
     private final CaptchaMyJDSolverConfig  config;
@@ -47,6 +47,12 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     private final ArrayList<Request>       lastChallenge;
 
     private static final CaptchaMyJDSolver INSTANCE = new CaptchaMyJDSolver();
+
+    @Override
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) {
+
+        // not used solveCES Overwritten
+    }
 
     public static CaptchaMyJDSolver getInstance() {
         return INSTANCE;

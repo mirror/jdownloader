@@ -136,7 +136,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
                 sb.append(",");
 
             }
-            sb.append(s);
+            sb.append(s + 1);
         }
         return sb.toString();
     }

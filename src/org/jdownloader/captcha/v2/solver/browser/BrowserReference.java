@@ -198,11 +198,12 @@ public abstract class BrowserReference implements HttpRequestHandler {
                     Rectangle elementBounds = null;
                     try {
                         elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
+
+                        this.viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
+                        if (viewport != null) {
+                            viewport.onLoaded();
+                        }
                     } catch (Throwable e) {
-                    }
-                    this.viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
-                    if (viewport != null) {
-                        viewport.onLoaded();
                     }
                     response.getOutputStream(true).write("Thanks".getBytes("UTF-8"));
                 }

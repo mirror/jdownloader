@@ -15,9 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -27,12 +24,16 @@ import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaImages;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaResponse;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
@@ -43,6 +44,12 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implement
 
     public static Captcha9kwSolverPuzzle getInstance() {
         return INSTANCE;
+    }
+
+    @Override
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) {
+
+        // not used solveCES Overwritten
     }
 
     @Override

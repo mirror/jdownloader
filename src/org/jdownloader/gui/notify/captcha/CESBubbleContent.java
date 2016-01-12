@@ -13,7 +13,6 @@ import javax.swing.JSeparator;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
@@ -21,7 +20,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
@@ -93,13 +91,8 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
             try {
                 ImageIcon icon = null;
 
-                if (ic instanceof Recaptcha2FallbackChallenge) {
-                    icon = new ImageIcon(((Recaptcha2FallbackChallenge) ic).getAnnotatedImage());
-                    ;
-                } else {
-                    icon = new ImageIcon(ImageProvider.read(((ImageCaptchaChallenge) cesSolverJob.getChallenge()).getImageFile()));
-                    ;
-                }
+                icon = new ImageIcon(((ImageCaptchaChallenge) cesSolverJob.getChallenge()).getAnnotatedImage());
+
                 if (icon.getIconWidth() > 300 || icon.getIconHeight() > 300) {
 
                     icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), 300, 300));

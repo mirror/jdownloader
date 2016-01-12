@@ -1,18 +1,13 @@
 package org.jdownloader.captcha.v2.solver.cheapcaptcha;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.imageio.ImageIO;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -83,18 +78,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> implements Ch
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
-        Challenge<?> challenge = job.getChallenge();
-        if (challenge instanceof RecaptchaV2Challenge) {
-            challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
-
-        }
-
-        solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) challenge);
-
-    }
-
-    private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
 
         job.showBubble(this);
         checkInterruption();
@@ -111,16 +95,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> implements Ch
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
 
-            if (challenge instanceof Recaptcha2FallbackChallenge) {
-                BufferedImage img = ((Recaptcha2FallbackChallenge) challenge).getAnnotatedImage();
-                ByteArrayOutputStream bao;
-                // Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(img), null, null);
-                ImageIO.write(img, "jpeg", bao = new ByteArrayOutputStream());
-                r.addFormData(new FormData("captchafile", "ByteData.captcha", bao.toByteArray()));
-
-            } else {
-                r.addFormData(new FormData("captchafile", "ByteData.captcha", IO.readFile(challenge.getImageFile())));
-            }
+            r.addFormData(new FormData("captchafile", "ByteData.captcha", challenge.getAnnotatedImageBytes()));
 
             URLConnectionAdapter conn = br.openRequestConnection(r);
             // 303 See Other if your CAPTCHA was successfully uploaded: Location HTTP header will point you to the uploaded CAPTCHA status

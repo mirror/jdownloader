@@ -8,10 +8,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -30,6 +26,10 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CBH;
 
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+
 public class CBSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
     private String                     accountStatusString;
@@ -39,6 +39,12 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
 
     public static CBSolver getInstance() {
         return INSTANCE;
+    }
+
+    @Override
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) {
+
+        // not used solveCES Overwritten
     }
 
     @Override

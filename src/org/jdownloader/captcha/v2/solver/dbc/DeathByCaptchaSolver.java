@@ -66,13 +66,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
-
-        solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) job.getChallenge());
-
-    }
-
-    private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
 
         job.showBubble(this, getBubbleTimeout(challenge));
         checkInterruption();

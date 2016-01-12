@@ -12,13 +12,14 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
@@ -68,18 +69,17 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
+
+            return true;
+        }
+
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
 
-        solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) job.getChallenge());
-
-    }
-
-    private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
-
-        // job.showBubble(this);
+        job.showBubble(this);
         checkInterruption();
         try {
 
@@ -94,16 +94,8 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
             r.addFormData(new FormData("p", "upload"));
             r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
             r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
-            FormData fd;
-            byte[] bytes = IO.readFile(challenge.getImageFile());
-            boolean png = bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G';
-            if (png) {
 
-                r.addFormData(fd = new FormData("captcha", "image.jpg", "image/png", bytes));
-            } else {
-                r.addFormData(fd = new FormData("captcha", "image.png", "image/jpeg", bytes));
-
-            }
+            r.addFormData(new FormData("captcha", "image.jpg", "image/jpg", challenge.getAnnotatedImageBytes()));
 
             URLConnectionAdapter conn = br.openRequestConnection(r);
             br.loadConnection(conn);
@@ -112,14 +104,23 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
             if (StringUtils.isEmpty(decaptcha)) {
                 throw new SolverException("API Error");
             }
+            try {
+                decaptcha = Encoding.urlDecode(decaptcha, false);
+            } catch (Throwable e) {
 
+            }
             if (decaptcha.trim().startsWith("Error:")) {
                 // do poll
                 String error = decaptcha.trim().substring(6);
                 throw new SolverException(error);
             }
             job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + decaptcha.trim());
-            job.setAnswer(new CaptchaSolutionsResponse(challenge, this, null, decaptcha.trim()));
+
+            AbstractResponse<String> answer = challenge.parseAPIAnswer(decaptcha.trim(), this);
+            job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + br.toString());
+
+            job.setAnswer(new CaptchaSolutionsResponse(challenge, this, null, answer.getValue(), answer.getPriority()));
+
             return;
 
         } catch (Exception e) {
