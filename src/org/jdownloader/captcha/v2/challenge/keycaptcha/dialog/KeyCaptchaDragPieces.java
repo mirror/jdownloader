@@ -16,12 +16,13 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.swing.event.MouseInputAdapter;
 
-import jd.http.Browser;
-
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.http.Browser;
 
 class KeyCaptchaDragPieces extends JPanel {
     private static final long         serialVersionUID = 1L;
@@ -34,6 +35,8 @@ class KeyCaptchaDragPieces extends JPanel {
 
     public KeyCaptchaDragPieces(final BufferedImage image, final int offset, final boolean sampleImg, final ArrayList<Integer> mouseArray, final KeyCaptchaPuzzleChallenge challenge) {
         this.image = IconIO.colorRangeToTransparency(image, Color.WHITE, 0.15d);
+
+        Dialog.getInstance().showImage(image);
         LAFOptions.applyBackground(LAFOptions.getInstance().getColorForPanelBackground(), this);
 
         this.challenge = challenge;
@@ -44,10 +47,10 @@ class KeyCaptchaDragPieces extends JPanel {
             private Point loc;
 
             private Timer mArrayTimer = new Timer(1000, new ActionListener() {
-                                          public void actionPerformed(ActionEvent e) {
-                                              marray(loc);
-                                          }
-                                      });
+                public void actionPerformed(ActionEvent e) {
+                    marray(loc);
+                }
+            });
 
             @Override
             public void mouseDragged(final MouseEvent e) {

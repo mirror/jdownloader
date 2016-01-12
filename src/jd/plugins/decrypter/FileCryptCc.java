@@ -21,6 +21,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -42,15 +50,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
+
+    private static AtomicReference<String> LAST_USED_PASSWORD = new AtomicReference<String>();
 
     public FileCryptCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,7 +90,16 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         // Separate password and captcha. this is easier for count reasons!
         int counter = -1;
-        final int retry = 3;
+        final int retry = 10;
+
+        ArrayList<String> tries = new ArrayList<String>();
+        if (StringUtils.isNotEmpty(LAST_USED_PASSWORD.get())) {
+            tries.add(LAST_USED_PASSWORD.get());
+        }
+        if (!StringUtils.equals(LAST_USED_PASSWORD.get(), param.getDecrypterPassword()) && !StringUtils.isNotEmpty(param.getDecrypterPassword())) {
+            tries.add(param.getDecrypterPassword());
+        }
+        String usedPassword = null;
         while (counter++ < retry && containsPassword()) {
             Form passwordForm = null;
             final Form[] allForms = br.getForms();
@@ -101,17 +113,26 @@ public class FileCryptCc extends PluginForDecrypt {
             }
             /* If there is captcha + password, password comes first, then captcha! */
             if (passwordForm != null) {
-                // users can provide password with add links dialog
-                String passCode = param.getDecrypterPassword();
-                // when previous provided password has failed, or not provided we should ask
-                if (passCode == null || counter > 1) {
-                    passCode = getUserInput("Password?", param);
+
+                String passCode = null;
+                if (tries.size() > 0) {
+                    passCode = tries.remove(0);
                 }
+
+                // when previous provided password has failed, or not provided we should ask
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", param);
+
+                }
+                usedPassword = passCode;
                 passwordForm.put("password", Encoding.urlEncode(passCode));
                 submitForm(passwordForm);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find pasword form");
             }
+        }
+        if (usedPassword != null) {
+            LAST_USED_PASSWORD.set(usedPassword);
         }
         if (counter == retry && containsPassword()) {
             throw new DecrypterException(DecrypterException.PASSWORD);
