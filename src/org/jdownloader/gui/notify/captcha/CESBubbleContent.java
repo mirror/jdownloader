@@ -10,8 +10,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
@@ -31,6 +29,8 @@ import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import net.miginfocom.swing.MigLayout;
 
 public class CESBubbleContent extends AbstractBubbleContentPanel {
 
@@ -89,8 +89,12 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         }
         if (ic instanceof ImageCaptchaChallenge) {
             try {
-                ImageIcon icon = new ImageIcon(((ImageCaptchaChallenge) cesSolverJob.getChallenge()).getAnnotatedImage());
+                ImageIcon icon = null;
+
+                icon = new ImageIcon(((ImageCaptchaChallenge) ic).getAnnotatedImage());
+
                 if (icon.getIconWidth() > 300 || icon.getIconHeight() > 300) {
+
                     icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), 300, 300));
                 }
                 add(new JSeparator(), "spanx,pushx,growx");
