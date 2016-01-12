@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.challenge.keycaptcha.jac;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -8,9 +9,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import jd.nutils.Colors;
-
+import org.appwork.utils.images.IconIO;
+import org.appwork.utils.images.Interpolation;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaImages;
+
+import jd.nutils.Colors;
 
 // KeyCaptcha stuff
 /**
@@ -50,31 +54,129 @@ public class KeyCaptchaAutoSolver {
         return mouseArray;
     }
 
+    public static BufferedImage getCroppedImage(BufferedImage source) {
+
+        try {
+
+            // Get our top-left pixel color as our "baseline" for cropping
+
+            final int width = source.getWidth();
+            final int height = source.getHeight();
+            int x0 = 0;
+            int y0 = 0;
+            int x1 = width;
+            int y1 = height; // the new corners of the trimmed image
+            int i, j; // i - horizontal iterator; j - vertical iterator
+            leftLoop: for (i = 0; i < width; i++) {
+                for (j = 0; j < height; j++) {
+
+                    if (Colors.getCMYKColorDifference1(source.getRGB(i, j), Color.WHITE.getRGB()) > 7.0d) {
+                        break leftLoop;
+                    }
+                }
+            }
+            x0 = i;
+
+            topLoop: for (j = 0; j < height; j++) {
+                for (i = 0; i < width; i++) {
+                    if (Colors.getCMYKColorDifference1(source.getRGB(i, j), Color.WHITE.getRGB()) > 7.0d) {
+                        break topLoop;
+                    }
+                }
+            }
+            y0 = j;
+
+            rightLoop: for (i = width - 1; i >= 0; i--) {
+                for (j = 0; j < height; j++) {
+                    if (Colors.getCMYKColorDifference1(source.getRGB(i, j), Color.WHITE.getRGB()) > 7.0d) {
+                        break rightLoop;
+                    }
+                }
+            }
+            x1 = i + 1;
+
+            bottomLoop: for (j = height - 1; j >= 0; j--) {
+                for (i = 0; i < width; i++) {
+                    if (Colors.getCMYKColorDifference1(source.getRGB(i, j), Color.WHITE.getRGB()) > 7.0d) {
+                        break bottomLoop;
+                    }
+                }
+            }
+            y1 = j + 1;
+
+            return source.getSubimage(x0, y0, x1 - x0, y1 - y0);
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+
+        return source;
+    }
+
     public String solve(KeyCaptchaImages images) {
-        HashMap<BufferedImage, Point> imgPosition = new HashMap<BufferedImage, Point>();
-        int limit = images.pieces.size();
+        try {
+            // does not work. update required
+            HashMap<BufferedImage, Point> imgPosition = new HashMap<BufferedImage, Point>();
+            int limit = images.pieces.size();
 
-        LinkedList<BufferedImage> piecesOld = new LinkedList<BufferedImage>(images.pieces);
+            LinkedList<BufferedImage> piecesOld = new LinkedList<BufferedImage>(images.pieces);
+            BufferedImage back = images.backgroundImage;
 
-        for (int i = 0; i < limit; i++) {
-            List<DirectedBorder> borders = getBreakingBordersInImage(images.backgroundImage, borderPixelMin);
-            ImageAndPosition imagePos = getBestPosition(images, borders);
-            marray(new Point((int) (Math.random() * imagePos.position.x), (int) (Math.random() * imagePos.position.y)));
-            marray(imagePos.position);
+            back = getCroppedImage(back);
+            Dialog.getInstance().showImage(back);
+            BufferedImage diff = IconIO.createEmptyImage(back.getWidth(), back.getHeight());
+            Graphics2D g = (Graphics2D) diff.getGraphics();
+            // images.sampleImage
+            BufferedImage sample = IconIO.getScaledInstance(images.sampleImage, diff.getWidth(), diff.getHeight(), Interpolation.NEAREST_NEIGHBOR, false);
+            sample = getCroppedImage(sample);
 
-            imgPosition.put(imagePos.image, imagePos.position);
-            images.integratePiece(imagePos.image, imagePos.position);
+            Dialog.getInstance().showImage(sample);
+
+            for (int x = 0; x < diff.getWidth(); x++) {
+                for (int y = 0; y < diff.getHeight(); y++) {
+                    try {
+                        int samRGB = sample.getRGB(x, y);
+                        int orgRGB = back.getRGB(x, y);
+
+                        boolean samIsWhite = samRGB == Color.WHITE.getRGB();
+                        boolean orgIsWhite = orgRGB == Color.WHITE.getRGB();
+                        if (!samIsWhite && orgIsWhite) {
+                            g.drawLine(x, y, x + 1, y + 1);
+                        }
+                    } catch (Throwable e) {
+
+                    }
+
+                }
+            }
+            g.dispose();
+
+            Dialog.getInstance().showImage(images.backgroundImage);
+            Dialog.getInstance().showImage(sample);
+            Dialog.getInstance().showImage(diff);
+            for (int i = 0; i < limit; i++) {
+
+                List<DirectedBorder> borders = getBreakingBordersInImage(images.backgroundImage, borderPixelMin);
+                ImageAndPosition imagePos = getBestPosition(images, borders);
+                marray(new Point((int) (Math.random() * imagePos.position.x), (int) (Math.random() * imagePos.position.y)));
+                marray(imagePos.position);
+
+                imgPosition.put(imagePos.image, imagePos.position);
+                images.integratePiece(imagePos.image, imagePos.position);
+            }
+
+            String positions = "";
+            int i = 0;
+            for (int c = 0; c < piecesOld.size(); c++) {
+                BufferedImage image = piecesOld.get(c);
+                final Point p = imgPosition.get(image);
+                positions += (i != 0 ? "." : "") + String.valueOf(p.x) + "." + String.valueOf(p.y);
+                i++;
+            }
+            return positions;
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
-
-        String positions = "";
-        int i = 0;
-        for (int c = 0; c < piecesOld.size(); c++) {
-            BufferedImage image = piecesOld.get(c);
-            final Point p = imgPosition.get(image);
-            positions += (i != 0 ? "." : "") + String.valueOf(p.x) + "." + String.valueOf(p.y);
-            i++;
-        }
-        return positions;
+        return null;
     }
 
     /**

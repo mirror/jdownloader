@@ -9,9 +9,6 @@ import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
-import jd.gui.swing.dialog.DialogType;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
@@ -21,6 +18,9 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleResponseData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.dialog.DialogType;
+import net.miginfocom.swing.MigLayout;
 
 public class KeyCaptchaPuzzleDialog extends AbstractCaptchaDialog<KeyCaptchaPuzzleResponseData> implements ActionListener {
     private JLayeredPane              drawPanel;
@@ -111,10 +111,10 @@ public class KeyCaptchaPuzzleDialog extends AbstractCaptchaDialog<KeyCaptchaPuzz
         KeyCaptchaDrawBackgroundPanel background;
         // boolean sampleImg = false;
         drawPanel.add(background = new KeyCaptchaDrawBackgroundPanel(imageData.backgroundImage), new Integer(JLayeredPane.DEFAULT_LAYER), new Integer(JLayeredPane.DEFAULT_LAYER));
-
+        Dialog.getInstance().showImage(imageData.backgroundImage);
         mouseArray = new ArrayList<Integer>();
         drawPanel.add(new KeyCaptchaDragPieces(imageData.sampleImage, offset, true, mouseArray, challenge), new Integer(JLayeredPane.DEFAULT_LAYER) + 0, new Integer(JLayeredPane.DEFAULT_LAYER) + 0);
-
+        System.out.println("PIeces " + imageData.pieces.size());
         for (int i = 0; i < imageData.pieces.size(); i++) {
 
             drawPanel.add(new KeyCaptchaDragPieces(imageData.pieces.get(i), offset, false, mouseArray, challenge), new Integer(JLayeredPane.DEFAULT_LAYER) + (i + 1), new Integer(JLayeredPane.DEFAULT_LAYER) + (i + 1));
