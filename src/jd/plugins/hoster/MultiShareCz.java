@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,6 +33,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/((?:[a-z]{2}/)?stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" }, flags = { 2 })
 public class MultiShareCz extends antiDDoSForHost {
@@ -100,7 +100,7 @@ public class MultiShareCz extends antiDDoSForHost {
         ai.setStatus("Premium User");
         if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
             try {
-                br.getPage("https://www.multishare.cz/api/?sub=supported-hosters");
+                getPage("https://www.multishare.cz/api/?sub=supported-hosters");
                 final String hostsText = br.getRegex("\\{\"server\":\\[(.*?)\\]").getMatch(0);
                 String[] hosts = hostsText.split(",");
                 ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -171,7 +171,7 @@ public class MultiShareCz extends antiDDoSForHost {
         }
         requestFileInformation(downloadLink);
         login(account);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         String dllink = "https://www.multishare.cz/html/download_premium.php?ID=" + getFuid(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
@@ -253,7 +253,7 @@ public class MultiShareCz extends antiDDoSForHost {
         prepBrowser(br);
         br.setFollowRedirects(false);
         /* login to get u_ID and u_HASH */
-        br.getPage("https://www.multishare.cz/api/?sub=download-link&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        getPage("https://www.multishare.cz/api/?sub=download-link&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML("ERR: Invalid password\\.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong password", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
@@ -295,7 +295,7 @@ public class MultiShareCz extends antiDDoSForHost {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
-        br.getPage("https://www.multishare.cz/api/?sub=account-details&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        getPage("https://www.multishare.cz/api/?sub=account-details&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("ERR: User does not exists")) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
@@ -309,7 +309,7 @@ public class MultiShareCz extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches(mhLink)) {
             return requestFileInformationMh(downloadLink);
         }
@@ -317,7 +317,7 @@ public class MultiShareCz extends antiDDoSForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         // support English page as its easier to understand for all our programmers.
-        br.getPage("https://www.multishare.cz/en/stahnout/" + getFuid(downloadLink) + "/");
+        getPage("https://www.multishare.cz/en/stahnout/" + getFuid(downloadLink) + "/");
         // need to find the new error response in English!!
         if (br.containsHTML("(Požadovaný soubor neexistuje|Je možné, že byl již tento soubor vymazán uploaderem nebo porušoval autorská práva)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
