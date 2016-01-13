@@ -25,6 +25,10 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,10 +54,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
@@ -224,103 +224,96 @@ public class MediafireCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFILE);
             }
             // Check for direct link
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                br.setFollowRedirects(true);
-                URLConnectionAdapter con = null;
+                con = br.openGetConnection(downloadLink.getDownloadURL());
+                if (!con.getContentType().contains("html")) {
+                    url = downloadLink.getDownloadURL();
+                } else {
+                    br.followConnection();
+                }
+            } finally {
                 try {
-                    con = br.openGetConnection(downloadLink.getDownloadURL());
-                    if (!con.getContentType().contains("html")) {
-                        url = downloadLink.getDownloadURL();
-                    } else {
-                        br.followConnection();
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
+                    con.disconnect();
+                } catch (Throwable e) {
                 }
-                handleNonAPIErrors(downloadLink, br);
-                if (url == null) {
-                    // TODO: This errorhandling is missing for premium users!
-                    captchaCorrect = false;
-                    Form form = br.getFormbyProperty("name", "form_captcha");
-                    String freeArea = br.getRegex("class=\"nonOwner\\s+nonpro_adslayout\\s+dl-page\\s+dlCaptchaActive\"(.*?)class=\"captchaPromo\"").getMatch(0);
-                    if (freeArea == null) {
-                        freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl-page dlCaptchaActive\"(.*?)class=\"dl\\-utility\\-nav\"").getMatch(0);
-                    }
-                    if (freeArea != null && freeArea.contains("solvemedia.com/papi/")) {
-                        logger.info("Detected captcha method \"solvemedia\" for this host");
-                        handleExtraReconnectSettingOnCaptcha(account);
+            }
+            handleNonAPIErrors(downloadLink, br);
+            if (url == null) {
+                // TODO: This errorhandling is missing for premium users!
+                captchaCorrect = false;
+                Form form = br.getFormbyProperty("name", "form_captcha");
+                String freeArea = br.getRegex("class=\"nonOwner\\s+nonpro_adslayout\\s+dl-page\\s+dlCaptchaActive\"(.*?)class=\"captchaPromo\"").getMatch(0);
+                if (freeArea == null) {
+                    freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl-page dlCaptchaActive\"(.*?)class=\"dl\\-utility\\-nav\"").getMatch(0);
+                }
+                if (freeArea != null && freeArea.contains("solvemedia.com/papi/")) {
+                    logger.info("Detected captcha method \"solvemedia\" for this host");
+                    handleExtraReconnectSettingOnCaptcha(account);
 
-                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                        final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        String code = getCaptchaCode(cf, downloadLink);
-                        String chid = sm.getChallenge(code);
-                        form.put("adcopy_challenge", chid);
-                        form.put("adcopy_response", code.replace(" ", "+"));
-                        br.submitForm(form);
-                        if (br.getFormbyProperty("name", "form_captcha") != null) {
-                            logger.info("solvemedia captcha wrong");
-                            continue;
-                        }
-                    } else if (freeArea != null && new Regex(freeArea, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                        logger.info("Detected captcha method \"Re Captcha\" for this host");
-                        handleExtraReconnectSettingOnCaptcha(account);
-                        final Recaptcha rc = new Recaptcha(br, this);
-                        String id = new Regex(freeArea, "challenge\\?k=(.+?)\"").getMatch(0);
-                        if (id != null) {
-                            logger.info("CaptchaID found, Form found " + (form != null));
-                            rc.setId(id);
-                            final InputField challenge = new InputField("recaptcha_challenge_field", null);
-                            final InputField code = new InputField("recaptcha_response_field", null);
-                            form.addInputField(challenge);
-                            form.addInputField(code);
-                            rc.setForm(form);
-                            rc.load();
-                            final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-                            boolean defect = false;
-                            try {
-                                final String c = this.getCaptchaCode("recaptcha", cf, downloadLink);
-                                rc.setCode(c);
-                                form = br.getFormbyProperty("name", "form_captcha");
-                                id = br.getRegex("challenge\\?k=(.+?)\"").getMatch(0);
-                                if (form != null && id == null) {
-                                    logger.info("Form found but no ID");
-                                    defect = true;
-                                    logger.info("PluginError 672");
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                if (id != null) {
-                                    /* captcha wrong */
-                                    logger.info("reCaptcha captcha wrong");
-                                    continue;
-                                }
-                            } catch (final PluginException e) {
-                                if (defect) {
-                                    throw e;
-                                }
-                                /**
-                                 * captcha input timeout run out.. try to reconnect
-                                 */
-                                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Try reconnect to avoid more captchas", 5 * 60 * 1000l);
-                            }
-                        }
-                    } else if (freeArea != null && freeArea.contains("g-recaptcha-response")) {
-                        handleExtraReconnectSettingOnCaptcha(account);
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        br.submitForm(form);
-                    } else if (freeArea != null && freeArea.contains("for=\"customCaptchaCheckbox\"")) {
-                        /* Mediafire custom checkbox "captcha" */
-                        form.put("mf_captcha_response", "1");
-                        br.submitForm(form);
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    String code = getCaptchaCode(cf, downloadLink);
+                    String chid = sm.getChallenge(code);
+                    form.put("adcopy_challenge", chid);
+                    form.put("adcopy_response", code.replace(" ", "+"));
+                    br.submitForm(form);
+                    if (br.getFormbyProperty("name", "form_captcha") != null) {
+                        logger.info("solvemedia captcha wrong");
+                        continue;
                     }
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
+                } else if (freeArea != null && new Regex(freeArea, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    handleExtraReconnectSettingOnCaptcha(account);
+                    final Recaptcha rc = new Recaptcha(br, this);
+                    String id = new Regex(freeArea, "challenge\\?k=(.+?)\"").getMatch(0);
+                    if (id != null) {
+                        logger.info("CaptchaID found, Form found " + (form != null));
+                        rc.setId(id);
+                        final InputField challenge = new InputField("recaptcha_challenge_field", null);
+                        final InputField code = new InputField("recaptcha_response_field", null);
+                        form.addInputField(challenge);
+                        form.addInputField(code);
+                        rc.setForm(form);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
+                        boolean defect = false;
+                        try {
+                            final String c = this.getCaptchaCode("recaptcha", cf, downloadLink);
+                            rc.setCode(c);
+                            form = br.getFormbyProperty("name", "form_captcha");
+                            id = br.getRegex("challenge\\?k=(.+?)\"").getMatch(0);
+                            if (form != null && id == null) {
+                                logger.info("Form found but no ID");
+                                defect = true;
+                                logger.info("PluginError 672");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            if (id != null) {
+                                /* captcha wrong */
+                                logger.info("reCaptcha captcha wrong");
+                                continue;
+                            }
+                        } catch (final PluginException e) {
+                            if (defect) {
+                                throw e;
+                            }
+                            /**
+                             * captcha input timeout run out.. try to reconnect
+                             */
+                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Try reconnect to avoid more captchas", 5 * 60 * 1000l);
+                        }
+                    }
+                } else if (freeArea != null && freeArea.contains("g-recaptcha-response")) {
+                    handleExtraReconnectSettingOnCaptcha(account);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    br.submitForm(form);
+                } else if (freeArea != null && freeArea.contains("for=\"customCaptchaCheckbox\"")) {
+                    /* Mediafire custom checkbox "captcha" */
+                    form.put("mf_captcha_response", "1");
+                    br.submitForm(form);
                 }
             }
             captchaCorrect = true;
@@ -735,10 +728,12 @@ public class MediafireCom extends PluginForHost {
         }
 
         // error checking below!
-        if (eBr.getURL().matches(".+/error\\.php\\?errno=3(20|78|80|88).*?")) {
+        if (eBr.getURL().matches(".+/error\\.php\\?errno=3(20|23|78|80|86|88).*?")) {
             // 320 = file is removed by the originating user or MediaFire.
+            // 323 = Dangerous File Blocked.
             // 378 = File Removed for Violation (of TOS)
             // 380 = claimed by a copyright holder through a valid DMCA request
+            // 386 = File Blocked for Violation.
             // 388 = identified as copyrighted work
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (eBr.getURL().matches(".+/error\\.php\\?errno=394.*?")) {
