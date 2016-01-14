@@ -165,6 +165,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return null;// SiteTemplate.GenericM3u8Decrypter;
+        return SiteTemplate.GenericM3u8Decrypter;
     }
 }
