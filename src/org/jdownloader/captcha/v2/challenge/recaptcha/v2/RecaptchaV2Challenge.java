@@ -16,13 +16,6 @@ import java.util.HashSet;
 
 import javax.imageio.ImageIO;
 
-import jd.controlling.captcha.SkipRequest;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -44,6 +37,13 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.controlling.UniqueAlltimeID;
+
+import jd.controlling.captcha.SkipRequest;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
@@ -148,7 +148,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                     sb.append(Integer.parseInt(json.charAt(i) + ""));
                 }
             }
-            return new CaptchaResponse(this, solver, sb.toString(), sb.toString().length() == 0 || sb.toString().length() > 5 ? 0 : 100);
+            return new CaptchaResponse(this, solver, sb.toString(), dupe.size() == 0 || dupe.size() > 5 ? 0 : 100);
         }
 
         public Recaptcha2FallbackChallenge(RecaptchaV2Challenge challenge) {
