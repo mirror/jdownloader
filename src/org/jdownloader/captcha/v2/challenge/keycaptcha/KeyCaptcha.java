@@ -798,6 +798,7 @@ public class KeyCaptcha {
         rcBr.cloneBrowser().getPage(mmUrlReq);
 
         out = kcSolver.solve(imgGetter.getKeyCaptchaImage());
+
         marray.addAll(kcSolver.getMouseArray());
         if (out == null) {
             return null;

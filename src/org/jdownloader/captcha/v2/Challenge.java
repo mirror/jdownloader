@@ -3,6 +3,12 @@ package org.jdownloader.captcha.v2;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.controlling.UniqueAlltimeID;
+
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -13,12 +19,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.captcha.v2.solverjob.ResponseList;
-import org.jdownloader.controlling.UniqueAlltimeID;
-
 public abstract class Challenge<T> {
     private final UniqueAlltimeID id           = new UniqueAlltimeID();
     private final Class<T>        resultType;
@@ -26,6 +26,11 @@ public abstract class Challenge<T> {
     private int                   timeout;
     private volatile boolean      accountLogin = false;
     private final boolean         createdInsideAccountChecker;
+    private int                   round        = -1;
+
+    public int getRound() {
+        return round;
+    }
 
     public Object getAPIStorable(String format) throws Exception {
         return null;
@@ -146,6 +151,7 @@ public abstract class Challenge<T> {
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
         created = System.currentTimeMillis();
         timeout = -1;
+
     }
 
     public boolean isCreatedInsideAccountChecker() {
@@ -247,5 +253,16 @@ public abstract class Challenge<T> {
 
     public AbstractResponse<T> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
         return null;
+    }
+
+    public boolean isRefreshTrigger(String result) {
+        return result == getRefreshTrigger();
+    }
+
+    public void initController() {
+        Plugin plg = getPlugin();
+        if (plg != null) {
+            round = plg.addChallenge(this);
+        }
     }
 }

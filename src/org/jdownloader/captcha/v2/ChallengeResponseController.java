@@ -18,6 +18,7 @@ import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.captcha.event.ChallengeResponseEvent;
 import org.jdownloader.captcha.event.ChallengeResponseEventSender;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaDialogSolver;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaJACSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
@@ -151,8 +152,8 @@ public class ChallengeResponseController {
             if (!Application.isHeadless()) {
                 addSolver(RecaptchaChooseFrom3x3Solver.getInstance());
             }
-            // keycaptcha does not work any more
-            // addSolver(KeyCaptchaJACSolver.getInstance());
+
+            addSolver(KeyCaptchaJACSolver.getInstance());
             if (!Application.isHeadless()) {
                 addSolver(KeyCaptchaDialogSolver.getInstance());
 
@@ -237,6 +238,7 @@ public class ChallengeResponseController {
     }
 
     public <T> SolverJob<T> handle(final Challenge<T> c) throws InterruptedException, SkipException {
+        c.initController();
         LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
         if (logger == null) {
             logger = this.logger;

@@ -12,8 +12,8 @@ public class DeathByCaptchaResponse extends CaptchaResponse {
         return captcha;
     }
 
-    public DeathByCaptchaResponse(BasicCaptchaChallenge challenge, DeathByCaptchaSolver deathByCaptchaSolver, Captcha captcha) {
-        super(challenge, deathByCaptchaSolver, captcha.text, 100);
+    public DeathByCaptchaResponse(BasicCaptchaChallenge challenge, DeathByCaptchaSolver deathByCaptchaSolver, Captcha captcha, String value, int priority) {
+        super(challenge, deathByCaptchaSolver, value, priority);
         this.captcha = captcha;
     }
 

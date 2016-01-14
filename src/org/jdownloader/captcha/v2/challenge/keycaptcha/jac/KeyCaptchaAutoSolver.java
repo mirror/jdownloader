@@ -3,16 +3,27 @@ package org.jdownloader.captcha.v2.challenge.keycaptcha.jac;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 
+import javax.imageio.ImageIO;
+
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.images.Interpolation;
-import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaImages;
+import org.jdownloader.logging.LogController;
 
 import jd.nutils.Colors;
 
@@ -24,12 +35,22 @@ import jd.nutils.Colors;
  *
  */
 public class KeyCaptchaAutoSolver {
-    // min line length for border detection
-    private final int           borderPixelMin = 15;
-    // threshold for detection similar pixels
-    private final Double        threshold      = 7.0d;
+    private LogInterface logger;
 
-    private LinkedList<Integer> mouseArray     = new LinkedList<Integer>();
+    public KeyCaptchaAutoSolver() {
+        logger = LogController.getRebirthLogger();
+        if (logger == null) {
+            logger = LoggerFactory.getDefaultLogger();
+        }
+    }
+
+    private static final int     PUNISH_LINES      = 6;
+
+    private static final boolean COLLECT_PIECES    = !Application.isJared(null);
+
+    private static final int     COLOR_SCAN_LENGTH = 3;
+
+    private LinkedList<Integer>  mouseArray        = new LinkedList<Integer>();
 
     private void marray(Point loc) {
         if (loc != null) {
@@ -54,11 +75,16 @@ public class KeyCaptchaAutoSolver {
         return mouseArray;
     }
 
-    public static BufferedImage getCroppedImage(BufferedImage source) {
+    /**
+     * get the rectangle that can be used to crop the background image
+     *
+     * @param source
+     * @param offset
+     * @return
+     */
+    public static Rectangle getCroppedImage(BufferedImage source, int offset) {
 
         try {
-
-            // Get our top-left pixel color as our "baseline" for cropping
 
             final int width = source.getWidth();
             final int height = source.getHeight();
@@ -75,7 +101,7 @@ public class KeyCaptchaAutoSolver {
                     }
                 }
             }
-            x0 = i;
+            x0 = Math.max(i - offset, 0);
 
             topLoop: for (j = 0; j < height; j++) {
                 for (i = 0; i < width; i++) {
@@ -84,7 +110,7 @@ public class KeyCaptchaAutoSolver {
                     }
                 }
             }
-            y0 = j;
+            y0 = Math.max(j - offset, 0);
 
             rightLoop: for (i = width - 1; i >= 0; i--) {
                 for (j = 0; j < height; j++) {
@@ -93,7 +119,8 @@ public class KeyCaptchaAutoSolver {
                     }
                 }
             }
-            x1 = i + 1;
+
+            x1 = Math.min(i + 1 + offset, width);
 
             bottomLoop: for (j = height - 1; j >= 0; j--) {
                 for (i = 0; i < width; i++) {
@@ -102,73 +129,253 @@ public class KeyCaptchaAutoSolver {
                     }
                 }
             }
-            y1 = j + 1;
+            y1 = Math.min(j + 1 + offset, height);
 
-            return source.getSubimage(x0, y0, x1 - x0, y1 - y0);
+            return new Rectangle(x0, y0, x1 - x0, y1 - y0);
         } catch (final Throwable e) {
             e.printStackTrace();
         }
 
-        return source;
+        return null;
     }
 
-    public String solve(KeyCaptchaImages images) {
-        try {
-            // does not work. update required
-            HashMap<BufferedImage, Point> imgPosition = new HashMap<BufferedImage, Point>();
-            int limit = images.pieces.size();
+    public static void main(String[] args) throws IOException {
+        Application.setApplication(".jd_home");
+        // helper method to create masks from pieces
+        // main2(args);
+        File masks = Application.getResource("tmp/masks");
+        if (masks.exists()) {
+            Files.deleteRecursiv(masks);
+        }
+        masks.mkdirs();
+        for (File folder : Application.getResource("tmp").listFiles()) {
 
-            LinkedList<BufferedImage> piecesOld = new LinkedList<BufferedImage>(images.pieces);
-            BufferedImage back = images.backgroundImage;
+            if (folder.isDirectory() && folder.getName().contains(".png_col")) {
+                BufferedImage merge = IconIO.createEmptyImage(60, 60);
+                Graphics2D g = (Graphics2D) merge.getGraphics();
+                g.setColor(Color.BLACK);
+                int files = 0;
+                for (File file : folder.listFiles()) {
+                    if (file.getName().endsWith(".png")) {
+                        BufferedImage image = ImageIO.read(file);
+                        files++;
 
-            back = getCroppedImage(back);
-            Dialog.getInstance().showImage(back);
-            BufferedImage diff = IconIO.createEmptyImage(back.getWidth(), back.getHeight());
-            Graphics2D g = (Graphics2D) diff.getGraphics();
-            // images.sampleImage
-            BufferedImage sample = IconIO.getScaledInstance(images.sampleImage, diff.getWidth(), diff.getHeight(), Interpolation.NEAREST_NEIGHBOR, false);
-            sample = getCroppedImage(sample);
+                        for (int x = 0; x < image.getWidth(); x++) {
+                            for (int y = 0; y < image.getHeight(); y++) {
+                                int rgb = image.getRGB(x, y);
+                                if (rgb == 0) {
+                                    continue;
+                                }
 
-            Dialog.getInstance().showImage(sample);
+                                Color c = new Color(rgb, true);
+                                int tol = 200;
 
-            for (int x = 0; x < diff.getWidth(); x++) {
-                for (int y = 0; y < diff.getHeight(); y++) {
-                    try {
-                        int samRGB = sample.getRGB(x, y);
-                        int orgRGB = back.getRGB(x, y);
+                                if (Colors.getRGBDistance(rgb) == 0 && c.getRed() > tol && c.getGreen() > tol && c.getBlue() > tol && c.getAlpha() > tol) {
 
-                        boolean samIsWhite = samRGB == Color.WHITE.getRGB();
-                        boolean orgIsWhite = orgRGB == Color.WHITE.getRGB();
-                        if (!samIsWhite && orgIsWhite) {
-                            g.drawLine(x, y, x + 1, y + 1);
+                                    g.drawLine(x, y, x, y);
+                                }
+                            }
                         }
-                    } catch (Throwable e) {
+
+                    }
+                }
+                g.dispose();
+                if (files > 5) {
+                    int m = 0;
+
+                    File mask = new File(masks, "mask_" + m + ".png");
+                    while (mask.exists()) {
+                        m++;
+                        mask = new File(masks, "mask_" + m + ".png");
+                    }
+
+                    ImageIO.write(merge, "png", mask);
+                }
+
+            }
+
+        }
+
+    }
+
+    public static void main2(String[] args) throws IOException {
+        // helper funtion to sort puzzle pieces by form
+        Application.setApplication(".jd_home");
+
+        HashSet<File> dupe = new HashSet<File>();
+        orgLoop: for (File orgFile : Application.getResource("").listFiles()) {
+            if (!orgFile.getName().endsWith(".png")) {
+                continue;
+            }
+            BufferedImage org = ImageIO.read(orgFile);
+            if (org == null) {
+                continue;
+            }
+            if (org.getWidth() != 60 || org.getHeight() != 60) {
+                continue;
+            }
+            if (!dupe.add(orgFile)) {
+                continue orgLoop;
+            }
+            File dest = new File(orgFile.getAbsolutePath() + "_col");
+            dest.mkdirs();
+            File copy = new File(dest, orgFile.getName());
+            copy.delete();
+            IO.copyFile(orgFile, copy);
+            fileloop: for (File f : Application.getResource("tmp").listFiles()) {
+                if (dupe.contains(f)) {
+                    continue;
+                }
+                if (f.getName().endsWith(".png")) {
+                    BufferedImage image = ImageIO.read(f);
+                    int count = 0;
+                    if (image != null && image.getWidth() == org.getWidth() && image.getHeight() == org.getHeight()) {
+                        for (int x = 0; x < image.getWidth(); x++) {
+                            for (int y = 0; y < image.getHeight(); y++) {
+
+                                if (org.getRGB(x, y) == 0) {
+                                    if (image.getRGB(x, y) != 0) {
+                                        count++;
+
+                                    }
+
+                                }
+                            }
+                        }
+                        System.out.println(f + " - " + count);
+                        if (count == 0) {
+                            dupe.add(f);
+                            copy = new File(dest, f.getName());
+                            copy.delete();
+                            IO.copyFile(f, copy);
+                        }
 
                     }
 
                 }
             }
-            g.dispose();
 
-            Dialog.getInstance().showImage(images.backgroundImage);
-            Dialog.getInstance().showImage(sample);
-            Dialog.getInstance().showImage(diff);
-            for (int i = 0; i < limit; i++) {
+        }
+    }
 
-                List<DirectedBorder> borders = getBreakingBordersInImage(images.backgroundImage, borderPixelMin);
-                ImageAndPosition imagePos = getBestPosition(images, borders);
-                marray(new Point((int) (Math.random() * imagePos.position.x), (int) (Math.random() * imagePos.position.y)));
-                marray(imagePos.position);
+    public String solve(KeyCaptchaImages images) {
+        try {
+            mouseArray = new LinkedList<Integer>();
+            // does not work. update required
+            HashMap<BufferedImage, Point> imgPosition = new HashMap<BufferedImage, Point>();
 
-                imgPosition.put(imagePos.image, imagePos.position);
-                images.integratePiece(imagePos.image, imagePos.position);
+            collectPIiecesDevOnly(images);
+
+            int stepSize = 2;
+            int stepSizeMask = 2;
+            Rectangle cropping = getCroppedImage(images.backgroundImage, 45);
+            BufferedImage back = images.backgroundImage.getSubimage(cropping.x, cropping.y, cropping.width, cropping.height);
+
+            BufferedImage cropped = IconIO.createEmptyImage(back.getWidth(), back.getHeight());
+            Graphics2D g = (Graphics2D) cropped.getGraphics();
+            g.drawImage(back, 0, 0, null);
+
+            back = cropped;
+            int pieceID = 0;
+            for (BufferedImage piece : images.pieces) {
+                BufferedImage mask = getMask(piece);
+                pieceID++;
+                if (mask != null) {
+
+                    BufferedImage cleanedPiece = applyMask(piece, mask);
+                    // Dialog.getInstance().showImage(cleanedPiece);
+
+                    int best = Integer.MAX_VALUE;
+                    Point bestPoint = null;
+                    for (int x = -cleanedPiece.getWidth() / 2; x < cropped.getWidth() - cleanedPiece.getWidth() / 2; x += stepSize) {
+
+                        for (int y = -cleanedPiece.getHeight() / 2; y < cropped.getHeight() - cleanedPiece.getHeight() / 2; y += stepSize) {
+                            int count = 0;
+                            int max = 50;
+                            maskloop: for (int x2 = 0; x2 < mask.getWidth(); x2 += stepSizeMask) {
+                                for (int y2 = 0; y2 < mask.getHeight(); y2 += stepSizeMask) {
+                                    if (mask.getRGB(x2, y2) != 0) {
+                                        if (x + x2 < 0 || x + x2 >= cropped.getWidth()) {
+                                            continue;
+                                        }
+                                        if (y + y2 < 0 || y + y2 >= cropped.getHeight()) {
+                                            continue;
+                                        }
+
+                                        try {
+                                            int rgb = cropped.getRGB(x + x2, y + y2);
+                                            if (!isWhite(rgb)) {
+                                                count++;
+                                                if (count > max) {
+                                                    break;
+                                                }
+                                            }
+                                        } catch (Throwable e) {
+                                            count += 10000;
+                                            break maskloop;
+                                        }
+
+                                    }
+
+                                }
+                            }
+                            int punLeft;
+                            int punRight;
+                            int punTop;
+                            int punBottom;
+                            int pxCount = count;
+                            if (count < best) {
+                                punLeft = getLeftPunish(x, y, cropped, mask, cleanedPiece);
+                                punRight = getRightPunish(x, y, cropped, mask, cleanedPiece);
+                                punTop = getTopPunish(x, y, cropped, mask, cleanedPiece);
+                                punBottom = getBottomPunish(x, y, cropped, mask, cleanedPiece);
+
+                                count += punLeft / 8;
+                                count += punRight / 12;
+                                count += punTop / 8;
+                                count += punBottom / 12;
+
+                                // if (count < best) {
+                                // System.out.println("xXy " + x + "x" + y);
+                                // System.out.println("Piece " + pieceID);
+                                // System.out.println("pxCount " + pxCount);
+                                // System.out.println("punLeft " + punLeft);
+                                // System.out.println("punRight " + punRight);
+                                // System.out.println("punTop " + punTop);
+                                // System.out.println("punBottom " + punBottom);
+                                // System.out.println("Rate " + count);
+                                // }
+                                if (count < best) {
+
+                                    bestPoint = new Point(x, y);
+                                    // System.out.println(bestPoint);
+                                    best = count;
+                                }
+                            }
+
+                        }
+                    }
+
+                    ImageAndPosition imagePos = new ImageAndPosition(piece, new Point(cropping.x + bestPoint.x, cropping.y + bestPoint.y));
+                    imgPosition.put(imagePos.image, imagePos.position);
+                    g.drawImage(cleanedPiece, bestPoint.x, bestPoint.y, null);
+
+                    marray(new Point((int) (Math.random() * imagePos.position.x), (int) (Math.random() * imagePos.position.y)));
+                    marray(imagePos.position);
+
+                }
+
             }
-
+            // Dialog.getInstance().showImage(cropped);
             String positions = "";
             int i = 0;
-            for (int c = 0; c < piecesOld.size(); c++) {
-                BufferedImage image = piecesOld.get(c);
+            for (int c = 0; c < images.pieces.size(); c++) {
+                BufferedImage image = images.pieces.get(c);
                 final Point p = imgPosition.get(image);
+                if (p == null) {
+                    logger.info("Could Not Map all PIeces");
+                    return null;
+                }
                 positions += (i != 0 ? "." : "") + String.valueOf(p.x) + "." + String.valueOf(p.y);
                 i++;
             }
@@ -179,199 +386,351 @@ public class KeyCaptchaAutoSolver {
         return null;
     }
 
-    /**
-     * Find vertical & horizontal borders within an image
-     *
-     * @param img
-     *            the image to search in
-     * @param min
-     *            line length for border detection
-     * @return a set of directed borders
-     */
-    private List<DirectedBorder> getBreakingBordersInImage(BufferedImage img, int minPixels) {
-        List<DirectedBorder> triples = new LinkedList<DirectedBorder>();
-        // horizontal
-        for (int y = 0; y < img.getHeight() - 1; y++) {
-            int c = -1;
-            boolean whiteToColor = true;
-            for (int x = 0; x < img.getWidth(); x++) {
-                if (Colors.getCMYKColorDifference1(img.getRGB(x, y), Color.WHITE.getRGB()) < threshold && Colors.getCMYKColorDifference1(img.getRGB(x, y + 1), Color.WHITE.getRGB()) > threshold) {
-                    if (!whiteToColor) {
-                        whiteToColor = true;
-                        c = -1;
-                    }
-                    c++;
-                    if (c >= minPixels) {
-                        triples.add(new DirectedBorder(new Point(x - c, y + 1), new Point(x, y + 1), Direction.TOPDOWN));
-                        if (c > minPixels) {
-                            triples.remove(triples.size() - 2);
+    private void collectPIiecesDevOnly(KeyCaptchaImages images) throws IOException {
+        if (COLLECT_PIECES) {
+            // collect_pieces
+            // write images to jd_home
+
+            int j = 0;
+            File backf = Application.getResource("tmp/background_" + Hash.getMD5(IconIO.toJpgBytes(images.backgroundImage)) + "_" + j + ".png");
+
+            while (backf.exists()) {
+                j++;
+                backf = Application.getResource("tmp/background_" + Hash.getMD5(IconIO.toJpgBytes(images.backgroundImage)) + "_" + j + ".png");
+
+            }
+            backf.delete();
+            ImageIO.write(images.backgroundImage, "png", backf);
+            for (int i = 0; i < images.pieces.size(); i++) {
+                j = 0;
+                File file = Application.getResource("tmp/" + "piece_" + j + ".png");
+                while (file.exists()) {
+                    j++;
+                    file = Application.getResource("tmp/" + "piece_" + j + ".png");
+                }
+                file.delete();
+                ImageIO.write(images.pieces.get(i), "png", file);
+            }
+        }
+    }
+
+    private int getRightPunish(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece) {
+        int sum = 0;
+        int num = PUNISH_LINES;
+        int step = cleanedPiece.getHeight() / (num + 1);
+        int stepCount = 0;
+        for (int i = 0; i < num; i++) {
+            int of = getRightPunishByOffset(x, y, cropped, mask, cleanedPiece, (i + 1) * step);
+            if (of >= 0) {
+                sum += of;
+                stepCount++;
+            }
+        }
+
+        return sum / stepCount;
+    }
+
+    private int getTopPunish(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece) {
+
+        int sum = 0;
+        int num = PUNISH_LINES;
+        int step = cleanedPiece.getWidth() / (num + 1);
+        int stepCount = 0;
+        for (int i = 0; i < num; i++) {
+            int of = getTopPunishByOffset(x, y, cropped, mask, cleanedPiece, (i + 1) * step);
+            if (of >= 0) {
+                sum += of;
+                stepCount++;
+            }
+        }
+
+        return sum / stepCount;
+    }
+
+    private int getBottomPunish(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece) {
+        int sum = 0;
+        int num = PUNISH_LINES;
+        int step = cleanedPiece.getWidth() / (num + 1);
+        int stepCount = 0;
+        for (int i = 0; i < num; i++) {
+            int of = getBottomPunishByOffset(x, y, cropped, mask, cleanedPiece, (i + 1) * step);
+            if (of >= 0) {
+                sum += of;
+                stepCount++;
+            }
+        }
+
+        return sum / stepCount;
+    }
+
+    private int getLeftPunish(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece) {
+        int sum = 0;
+        int num = PUNISH_LINES;
+        int step = cleanedPiece.getHeight() / (num + 1);
+        int stepCount = 0;
+        for (int i = 0; i < num; i++) {
+            int of = getLeftPunishbyOffset(x, y, cropped, mask, cleanedPiece, (i + 1) * step);
+            if (of >= 0) {
+                sum += of;
+                stepCount++;
+            }
+        }
+
+        return sum / stepCount;
+
+    }
+
+    private int getLeftPunishbyOffset(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece, int offset) {
+        int punish = 255;
+        try {
+            int y2 = offset;
+            boolean notFoundColor = true;
+            // Dialog.getInstance().showImage(cropped);
+            for (int x2 = 0; x2 < mask.getWidth(); x2++) {
+                if (mask.getRGB(x2, y2) != 0) {
+                    notFoundColor = false;
+                    int rgb = cleanedPiece.getRGB(x2, y2);
+                    // Graphics2D g = (Graphics2D) cleanedPiece.getGraphics();
+                    // g.setColor(Color.RED);
+                    // g.drawLine(x2, y2, x2, y2);
+                    int xx = x + x2 - 1;
+                    int yy = y + y2;
+                    int m = COLOR_SCAN_LENGTH;
+                    double bestDiff = punish;
+                    int bestColor = 0;
+                    while (m-- > 0 && xx >= 0) {
+
+                        int c = cropped.getRGB(xx, yy);
+                        xx--;
+                        // Colors.getColorDifference(color, color2)
+                        double dif = Colors.getColorDifference(c, rgb);
+                        Color col = new Color(c);
+
+                        if (col.getRed() == 255 && col.getGreen() == 255 && col.getBlue() == 255) {
+                            dif *= 3;
                         }
-                    }
-                } else if (Colors.getCMYKColorDifference1(img.getRGB(x, y), Color.WHITE.getRGB()) > threshold && Colors.getCMYKColorDifference1(img.getRGB(x, y + 1), Color.WHITE.getRGB()) < threshold) {
-                    if (whiteToColor) {
-                        whiteToColor = false;
-                        c = -1;
-                    }
-                    c++;
-                    if (c >= minPixels) {
-                        triples.add(new DirectedBorder(new Point(x - c, y), new Point(x, y), Direction.BOTTOMUP));
-                        if (c > minPixels) {
-                            triples.remove(triples.size() - 2);
+                        if (dif < bestDiff) {
+                            bestDiff = dif;
+                            bestColor = c;
                         }
+
                     }
-                } else {
-                    c = -1;
+                    Color pCol = new Color(rgb);
+                    Color bCol = new Color(bestColor);
+                    return (int) bestDiff;
+
+                }
+            }
+            if (notFoundColor) {
+                return -1;
+            }
+        } catch (Throwable e) {
+            // e.printStackTrace();
+            return punish;
+        }
+        return punish;
+    }
+
+    private int getRightPunishByOffset(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece, int offset) {
+        int punish = 255;
+        try {
+            int y2 = offset;
+            boolean notFoundColor = true;
+            for (int x2 = mask.getWidth() - 1; x2 >= 0; x2--) {
+                if (mask.getRGB(x2, y2) != 0) {
+                    notFoundColor = false;
+                    int rgb = cleanedPiece.getRGB(x2, y2);
+
+                    int xx = x + x2 - 1;
+                    int yy = y + y2;
+                    int m = COLOR_SCAN_LENGTH;
+                    double bestDiff = punish;
+                    int bestColor = 0;
+                    while (m-- > 0 && xx < cropped.getWidth()) {
+
+                        int c = cropped.getRGB(xx, yy);
+                        xx++;
+
+                        double dif = Colors.getColorDifference(c, rgb);
+                        Color col = new Color(c);
+
+                        if (col.getRed() == 255 && col.getGreen() == 255 && col.getBlue() == 255) {
+                            dif *= 3;
+                        }
+                        if (dif < bestDiff) {
+                            bestDiff = dif;
+                            bestColor = c;
+                        }
+
+                    }
+                    Color pCol = new Color(rgb);
+                    Color bCol = new Color(bestColor);
+                    return (int) bestDiff;
+
+                }
+            }
+            if (notFoundColor) {
+                return -1;
+            }
+        } catch (Throwable e) {
+            // e.printStackTrace();
+            return punish;
+        }
+        return punish;
+    }
+
+    private int getBottomPunishByOffset(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece, int offset) {
+        int punish = 255;
+        try {
+            boolean notFoundColor = true;
+            int x2 = offset;
+            for (int y2 = mask.getHeight() - 1; y2 >= 0; y2--) {
+                if (mask.getRGB(x2, y2) != 0) {
+                    notFoundColor = false;
+                    int rgb = cleanedPiece.getRGB(x2, y2);
+
+                    int xx = x + x2;
+                    int yy = y + y2 - 1;
+                    int m = COLOR_SCAN_LENGTH;
+                    double bestDiff = punish;
+                    int bestColor = 0;
+                    while (m-- > 0 && yy < cropped.getHeight()) {
+
+                        int c = cropped.getRGB(xx, yy);
+                        yy++;
+
+                        double dif = Colors.getColorDifference(c, rgb);
+                        Color col = new Color(c);
+
+                        if (col.getRed() == 255 && col.getGreen() == 255 && col.getBlue() == 255) {
+                            dif *= 3;
+                        }
+                        if (dif < bestDiff) {
+                            bestDiff = dif;
+                            bestColor = c;
+                        }
+
+                    }
+                    Color pCol = new Color(rgb);
+                    Color bCol = new Color(bestColor);
+                    return (int) bestDiff;
+
+                }
+            }
+            if (notFoundColor) {
+                return -1;
+            }
+        } catch (Throwable e) {
+            // e.printStackTrace();
+            return punish;
+        }
+        return punish;
+    }
+
+    private int getTopPunishByOffset(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece, int offset) {
+
+        int punish = 255;
+        try {
+            int x2 = offset;
+            boolean notFoundColor = true;
+            for (int y2 = 0; y2 < mask.getHeight(); y2++) {
+                if (mask.getRGB(x2, y2) != 0) {
+                    notFoundColor = false;
+                    int rgb = cleanedPiece.getRGB(x2, y2);
+
+                    int xx = x + x2;
+                    int yy = y + y2 - 1;
+                    int m = COLOR_SCAN_LENGTH;
+                    double bestDiff = punish;
+                    int bestColor = 0;
+                    while (m-- > 0 && yy >= 0) {
+
+                        int c = cropped.getRGB(xx, yy);
+                        yy--;
+
+                        double dif = Colors.getColorDifference(c, rgb);
+                        Color col = new Color(c);
+
+                        if (col.getRed() == 255 && col.getGreen() == 255 && col.getBlue() == 255) {
+                            dif *= 3;
+                        }
+                        if (dif < bestDiff) {
+                            bestDiff = dif;
+                            bestColor = c;
+                        }
+
+                    }
+                    Color pCol = new Color(rgb);
+                    Color bCol = new Color(bestColor);
+                    return (int) bestDiff;
+                }
+            }
+            if (notFoundColor) {
+                return -1;
+            }
+        } catch (Throwable e) {
+            // e.printStackTrace();
+            return punish;
+        }
+        return punish;
+    }
+
+    private boolean isWhite(int rgb) {
+        int tol = 250;
+        Color c = new Color(rgb);
+        return Colors.getRGBDistance(rgb) == 0 && c.getRed() > tol && c.getGreen() > tol && c.getBlue() > tol;
+    }
+
+    private BufferedImage applyMask(BufferedImage piece, BufferedImage maskImage) {
+        BufferedImage merge = IconIO.createEmptyImage(60, 60);
+        Graphics2D g = (Graphics2D) merge.getGraphics();
+        g.setColor(Color.BLACK);
+
+        for (int x = 0; x < maskImage.getWidth(); x++) {
+            for (int y = 0; y < maskImage.getHeight(); y++) {
+                if (maskImage.getRGB(x, y) != 0) {
+                    g.setColor(new Color(piece.getRGB(x, y), true));
+                    g.drawLine(x, y, x, y);
                 }
             }
         }
-        // vertical
-        for (int x = 0; x < img.getWidth() - 1; x++) {
-            int c = -1;
-            boolean whiteToColor = true;
-            for (int y = 0; y < img.getHeight(); y++) {
-
-                if (Colors.getCMYKColorDifference1(img.getRGB(x, y), Color.WHITE.getRGB()) < threshold && Colors.getCMYKColorDifference1(img.getRGB(x + 1, y), Color.WHITE.getRGB()) > threshold) {
-                    if (!whiteToColor) {
-                        whiteToColor = true;
-                        c = -1;
-                    }
-                    c++;
-                    if (c >= minPixels) {
-                        triples.add(new DirectedBorder(new Point(x + 1, y - c), new Point(x + 1, y), Direction.LEFTRIGHT));
-                        if (c > minPixels) {
-                            triples.remove(triples.size() - 2);
-                        }
-                    }
-                } else if (Colors.getCMYKColorDifference1(img.getRGB(x, y), Color.WHITE.getRGB()) > threshold && Colors.getCMYKColorDifference1(img.getRGB(x + 1, y), Color.WHITE.getRGB()) < threshold) {
-                    if (whiteToColor) {
-                        whiteToColor = false;
-                        c = -1;
-                    }
-                    c++;
-                    if (c >= minPixels) {
-                        triples.add(new DirectedBorder(new Point(x, y - c), new Point(x, y), Direction.RIGHTLEFT));
-                        if (c > minPixels) {
-                            triples.remove(triples.size() - 2);
-                        }
-                    }
-                } else {
-                    c = -1;
-                }
-
-            }
-        }
-        return triples;
+        g.dispose();
+        return merge;
     }
 
-    /**
-     * Gets the image and its position with highest possible probability to be correct for this puzzle piece
-     *
-     * @param keyCaptchaImages
-     *            all keycaptcha images (background, sample, pieces)
-     * @param borders
-     *            a collection of all borders within the background image
-     * @return one puzzle piece and its position within the puzzle
-     */
-    private ImageAndPosition getBestPosition(KeyCaptchaImages keyCaptchaImages, List<DirectedBorder> borders) {
-        int bestMin = Integer.MAX_VALUE;
-        Point bestPos = new Point();
-        BufferedImage bestPiece = null;
+    private BufferedImage getMask(BufferedImage piece) throws IOException {
+        int i = 0;
+        BufferedImage mask = null;
+        int bestCount = Integer.MAX_VALUE;
 
-        for (BufferedImage piece : keyCaptchaImages.pieces) {
-            for (DirectedBorder border : borders) {
-                if (border.direction == Direction.TOPDOWN || border.direction == Direction.BOTTOMUP) {
-                    // horizontal
-                    if ((border.direction == Direction.TOPDOWN && border.p1.y - piece.getHeight() < 0) || (border.direction == Direction.BOTTOMUP && (border.p1.y + piece.getHeight() > keyCaptchaImages.backgroundImage.getHeight()))) {
-                        continue;
-                    }
+        while (true) {
 
-                    for (int x = Math.max(border.p1.x - piece.getWidth(), 0); x <= Math.min(border.p2.x, keyCaptchaImages.backgroundImage.getWidth() - 1); x++) {
-                        int tmp = rateHorizontalLine(keyCaptchaImages.backgroundImage, piece, new Point(x, border.p1.y), border.direction == Direction.TOPDOWN ? piece.getHeight() - 1 : 0);
-                        tmp /= piece.getWidth();
-                        if (tmp < bestMin) {
-                            bestMin = tmp;
-                            bestPos = new Point(x, border.p1.y + (border.direction == Direction.TOPDOWN ? -piece.getHeight() : 1));
-                            bestPiece = piece;
+            URL url = getClass().getResource("masks/mask_" + i + ".png");
+            i++;
+            if (url == null) {
+                return mask;
+            }
+            BufferedImage maskImage = ImageIO.read(url);
+
+            int count = 0;
+            for (int x = 0; x < maskImage.getWidth(); x++) {
+                for (int y = 0; y < maskImage.getHeight(); y++) {
+
+                    if (maskImage.getRGB(x, y) != 0) {
+
+                        int rgb = piece.getRGB(x, y);
+                        if (rgb == 0) {
+                            count++;
                         }
                     }
-                } else {
-                    // vertical
-                    if ((border.direction == Direction.LEFTRIGHT && border.p1.x - piece.getWidth() < 0) || (border.direction == Direction.RIGHTLEFT && border.p1.x + piece.getWidth() > keyCaptchaImages.backgroundImage.getWidth())) {
-                        continue;
-                    }
 
-                    for (int y = Math.max(border.p1.y - piece.getHeight(), 0); y <= Math.min(border.p2.y, keyCaptchaImages.backgroundImage.getHeight() - 1); y++) {
-                        int tmp = rateVerticalLine(keyCaptchaImages.backgroundImage, piece, new Point(border.p1.x, y), border.direction == Direction.LEFTRIGHT ? piece.getWidth() - 1 : 0);
-                        tmp /= piece.getHeight();
-                        if (tmp < bestMin) {
-                            bestMin = tmp;
-                            bestPos = new Point(border.p1.x + (border.direction == Direction.LEFTRIGHT ? -piece.getWidth() : 1), y);
-                            bestPiece = piece;
-                        }
-                    }
                 }
             }
+            if (count < bestCount) {
+                mask = maskImage;
+                bestCount = count;
+            }
         }
-        return new ImageAndPosition(bestPiece, bestPos);
     }
 
-    /**
-     * Rates probability the puzzle piece fits horizontal to this position
-     *
-     * @param background
-     *            the background image
-     * @param piece
-     *            puzzle piece image
-     * @param backgroundPosition
-     *            the position to rate (within background image)
-     * @param pieceY
-     *            the y offset within puzzle to compare
-     * @return a rating (smaller is better)
-     */
-    private int rateHorizontalLine(BufferedImage background, BufferedImage piece, Point backgroundPosition, int pieceY) {
-        int diff = 0;
-        for (int x = 0; x < piece.getWidth(); x++) {
-            if (backgroundPosition.x + x >= background.getWidth()) {
-                diff += (backgroundPosition.x + piece.getWidth() - background.getWidth()) * 150;
-                break;
-            }
-            int bgColor = background.getRGB(backgroundPosition.x + x, backgroundPosition.y);
-            int pColor = piece.getRGB(x, pieceY);
-            diff += Colors.getColorDifference(bgColor, pColor);
-            if (Colors.getCMYKColorDifference1(pColor, Color.WHITE.getRGB()) < threshold) {
-                diff += 30;
-            }
-        }
-        return diff;
-    }
-
-    /**
-     * Rates probability the puzzle piece fits vertical to this position
-     *
-     * @param background
-     *            the background image
-     * @param piece
-     *            puzzle piece image
-     * @param backgroundPosition
-     *            the position to rate (within background image)
-     * @param pieceX
-     *            the x offset within puzzle to comapre
-     * @return a rating (smaller is better)
-     */
-    private int rateVerticalLine(BufferedImage background, BufferedImage piece, Point backgroundPosition, int pieceX) {
-        int diff = 0;
-        for (int y = 0; y < piece.getHeight(); y++) {
-            if (backgroundPosition.y + y >= background.getHeight()) {
-                diff += (backgroundPosition.y + piece.getHeight() - background.getHeight()) * 150;
-                break;
-            }
-            int bgColor = background.getRGB(backgroundPosition.x, backgroundPosition.y + y);
-            int pColor = piece.getRGB(pieceX, y);
-            diff += Colors.getColorDifference(bgColor, pColor);
-            if (Colors.getCMYKColorDifference1(pColor, Color.WHITE.getRGB()) < threshold) {
-                diff += 30;
-            }
-        }
-        return diff;
-    }
 }
