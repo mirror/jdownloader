@@ -747,6 +747,17 @@ public class MediafireCom extends PluginForHost {
         } else if (eBr.getURL().contains("mediafire.com/error.php?errno=382")) {
             dl.getLinkStatus().setStatusText("File Belongs to Suspended Account.");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (eBr.getURL().contains("mediafire.com/error.php?errno=999") && eBr.containsHTML("<div id=\"privateTitle\">This file is currently set to private.</div>")) {
+            // note: error 999 can redirect into other error messages! eg. http://www.mediafire.com/error.php?errno=999 ->
+            // http://www.mediafire.com/error.php?errno=320, with the file id it will hold it's place
+            // /error.php?errno=999&quickkey=FUID&origin=download.
+            // 999 = ...
+            // 999 = This file is currently set to private.
+            // When a resource is set to private by its owner, only the owner can access it. If you would like to request access to the
+            // file, please log in to your account.
+            // Link; 8609354739341.log; 47049765; jdlog://8609354739341
+            dl.getLinkStatus().setStatusText("File has been set to private, only owner can download.");
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         } else if (eBr.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", 30 * 60 * 1000l);
         } else if (eBr.containsHTML("class=\"error-title\">This download is currently unavailable<")) {
