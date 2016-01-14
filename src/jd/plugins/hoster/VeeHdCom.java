@@ -21,8 +21,6 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veehd.com" }, urls = { "http://(www\\.)?veehd\\.com/video/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veehd.com" }, urls = { "https?://(?:www\\.)?veehd\\.com/video/\\d+" }, flags = { 2 })
 public class VeeHdCom extends antiDDoSForHost {
 
     public VeeHdCom(PluginWrapper wrapper) {
@@ -80,14 +78,7 @@ public class VeeHdCom extends antiDDoSForHost {
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final Account acc) throws Exception, PluginException {
         if (registered_only && acc == null) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         final String ts = br.getRegex("var ts = \"([^<>\"]*?)\"").getMatch(0);
         final String sign = br.getRegex("var sgn = \"([^<>\"]*?)\"").getMatch(0);
@@ -96,13 +87,13 @@ public class VeeHdCom extends antiDDoSForHost {
             // br.cloneBrowser().postPage("http://veehd.com/xhrp", "v=c2&p=1&ts=" + Encoding.urlEncode(ts) + "&sgn=" +
             // Encoding.urlEncode(sign));
             /* Count as view */
-            getPage(br.cloneBrowser(), "http://veehd.com/xhr?h=views." + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".0");
+            getPage(br.cloneBrowser(), "/xhr?h=views." + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".0");
         }
         String dllink = null;
         String way_download = br.getRegex("\"(/vpi\\?[^<>\"/]*?\\&do=d[^<>\"]*?)\"").getMatch(0);
         if (way_download != null) {
             synchronized (LOCK) {
-                getPage("http://veehd.com" + way_download);
+                getPage(way_download);
                 final String iframe = br.getRegex("<iframe id=\"iframe\" src=\"(/va/[^<>\"]*?)\"").getMatch(0);
                 if (iframe != null) {
                     /*
@@ -111,7 +102,7 @@ public class VeeHdCom extends antiDDoSForHost {
                      */
                     getPage(iframe);
                     /* Access downloadlink again - final link should now be in the HTML code */
-                    getPage("http://veehd.com" + way_download);
+                    getPage(way_download);
                 }
             }
             dllink = getDirectlink();
@@ -120,7 +111,7 @@ public class VeeHdCom extends antiDDoSForHost {
             if (frame == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            getPage("http://veehd.com" + frame);
+            getPage(frame);
             if (br.containsHTML("Too Many Requests")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 5 * 60 * 1000l);
             }
@@ -129,7 +120,7 @@ public class VeeHdCom extends antiDDoSForHost {
                 dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
                 // Only available when plugin needed
                 if (dllink == null) {
-                    dllink = br.getRegex("<embed type=\"video/divx\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    dllink = br.getRegex("<embed type=\"video/divx\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 }
             }
         }
@@ -172,7 +163,7 @@ public class VeeHdCom extends antiDDoSForHost {
     }
 
     private String getDirectlink() {
-        return br.getRegex("\"(http://v\\d+\\.veehd\\.com/dl/[^<>\"]*?)\"").getMatch(0);
+        return br.getRegex("\"(https?://v\\d+\\.veehd\\.com/dl/[^<>\"]*?)\"").getMatch(0);
     }
 
     private static final String MAINPAGE = "http://veehd.com";
@@ -201,7 +192,7 @@ public class VeeHdCom extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                postPage("http://veehd.com/login", "submit=Login&terms=on&remember_me=on&login_invisible=on&ref=http%3A%2F%2Fveehd.com%2F&uname=" + Encoding.urlEncode(account.getUser()) + "&pword=" + Encoding.urlEncode(account.getPass()));
+                postPage("https://veehd.com/login", "submit=Login&terms=on&remember_me=on&login_invisible=on&ref=http%3A%2F%2Fveehd.com%2F&uname=" + Encoding.urlEncode(account.getUser()) + "&pword=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "remember") == null || br.getCookie(MAINPAGE, "remember").equals("0")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -209,15 +200,9 @@ public class VeeHdCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(MAINPAGE));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;

@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,13 +28,15 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -45,19 +46,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "http://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" }, flags = { 2 })
-public class MountFileNet extends PluginForHost {
+public class MountFileNet extends antiDDoSForHost {
 
     private final String                   MAINPAGE                   = "http://mountfile.net";
-    private final boolean                  useRUA                     = true;
 
     /* For reconnect special handling */
     private static Object                  CTRLLOCK                   = new Object();
@@ -100,11 +94,10 @@ public class MountFileNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        prepBrowser(br);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found<") || br.getURL().equals("http://mountfile.net/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -152,7 +145,7 @@ public class MountFileNet extends PluginForHost {
             }
         }
         requestFileInformation(downloadLink);
-        br.postPage(br.getURL(), "free=Slow+download&hash=" + fid);
+        postPage(br.getURL(), "free=Slow+download&hash=" + fid);
         final String rcID = br.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
         if (rcID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -167,7 +160,7 @@ public class MountFileNet extends PluginForHost {
             if (i == 1) {
                 waitTime(timeBefore, downloadLink);
             }
-            br.postPage(br.getURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+            postPage(br.getURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
             String reconnectWait = br.getRegex("You should wait (\\d+) minutes before downloading next file").getMatch(0);
             if (reconnectWait == null) {
                 reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file or").getMatch(0);
@@ -235,7 +228,6 @@ public class MountFileNet extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -253,7 +245,7 @@ public class MountFileNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://" + this.getHost() + "/account/login", "url=http%253A%252F%252Fmountfile.net%252Fpremium%252F&send=Login&captcha=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage("http://" + this.getHost() + "/account/login", "url=http%253A%252F%252Fmountfile.net%252Fpremium%252F&send=Login&captcha=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "usid") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -265,15 +257,9 @@ public class MountFileNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(this.getHost()));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -319,7 +305,7 @@ public class MountFileNet extends PluginForHost {
             errorhandlingPremium();
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://mountfile.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            postPage("http://mountfile.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             errorhandlingPremium();
             String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -348,18 +334,9 @@ public class MountFileNet extends PluginForHost {
         return -1;
     }
 
-    private Browser prepBrowser(Browser prepBr) {
-        // define custom browser headers and language settings.
-        if (useRUA) {
-            if (userAgent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            prepBr.getHeaders().put("User-Agent", userAgent.get());
-        }
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        return prepBr;
+    @Override
+    protected boolean useRUA() {
+        return true;
     }
 
     /* Stuff for special reconnect errorhandling */

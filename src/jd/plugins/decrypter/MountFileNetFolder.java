@@ -18,19 +18,19 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "http://(www\\.)?mountfile\\.net/d/[A-Za-z0-9]+" }, flags = { 0 })
-public class MountFileNetFolder extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mountfile.net" }, urls = { "https?://(?:www\\.)?mountfile\\.net/d/[A-Za-z0-9]+" }, flags = { 0 })
+public class MountFileNetFolder extends antiDDoSForDecrypt {
 
     public MountFileNetFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,14 +40,10 @@ public class MountFileNetFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getURL().equals("http://mountfile.net/") || br.containsHTML(">Folder was deleted<")) {
+        getPage(parameter);
+        if (br.getURL().endsWith("://mountfile.net/") || br.containsHTML(">Folder was deleted<")) {
             logger.info("Link offline: " + parameter);
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h2 class=\"center\">Download files from folder ([^<>\"]*?)</h2>").getMatch(0);
@@ -60,7 +56,7 @@ public class MountFileNetFolder extends PluginForDecrypt {
             return null;
         }
         for (final String linkInfo[] : fileInfo) {
-            final DownloadLink dl = createDownloadlink("http://mountfile.net" + linkInfo[0]);
+            final DownloadLink dl = createDownloadlink(Request.getLocation(linkInfo[0], br.getRequest()));
             dl.setName(linkInfo[1]);
             dl.setDownloadSize(SizeFormatter.getSize(linkInfo[2]));
             dl.setAvailable(true);
