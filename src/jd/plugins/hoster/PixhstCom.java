@@ -73,7 +73,7 @@ public class PixhstCom extends antiDDoSForHost {
         }
         dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = br.getRegex("\\'(http://pi?xhst\\.[a-z0-9]+/avaxhome/[^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("'(https?://pi?xhst\\.[a-z0-9]+/(?:avaxhome|share)/[^<>\"]*?)'").getMatch(0);
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
