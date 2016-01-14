@@ -425,7 +425,8 @@ public class Srnnks extends PluginForDecrypt {
                                             }
                                         }
                                     } catch (CaptchaException de) {
-                                        getLogger().log(de);
+
+                                        de.throwMeIfNoRefresh();
                                         continue;
 
                                     } catch (DecrypterException de) {

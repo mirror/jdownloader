@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -39,6 +40,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
+import jd.plugins.CaptchaException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -188,14 +190,28 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("adcopy_challenge", chid);
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
-                final String result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
-                if (StringUtils.isEmpty(result)) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this);
+                try {
+                    final String result = handleCaptchaChallenge(challenge);
+
+                    if (challenge.isRefreshTrigger(result)) {
+                        continue;
+                    }
+
+                    if (StringUtils.isEmpty(result)) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    if ("CANCEL".equals(result)) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    }
+                    captchaForm.put("capcode", result);
+                } catch (CaptchaException e) {
+                    e.throwMeIfNoRefresh();
+                    continue;
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    continue;
                 }
-                if ("CANCEL".equals(result)) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
-                }
-                captchaForm.put("capcode", result);
                 submitForm(captchaForm);
             } else if (captcha != null) {
                 // they use recaptcha response field key for non recaptcha.. math sum and text =

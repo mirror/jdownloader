@@ -14,6 +14,8 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
@@ -63,6 +65,9 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
+            return true;
+        }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
@@ -77,7 +82,8 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
             job.setStatus(SolverStatus.UPLOADING);
-            captcha = client.upload(challenge.getImageFile());
+
+            captcha = client.upload(challenge.getAnnotatedImageBytes());
             if (null != captcha) {
                 job.setStatus(new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " uploaded: " + captcha.id);
@@ -93,7 +99,9 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
 
                 if (captcha.isSolved()) {
                     job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + captcha.text);
-                    job.setAnswer(new DeathByCaptchaResponse(challenge, this, captcha));
+
+                    AbstractResponse<String> answer = challenge.parseAPIAnswer(captcha.text, this);
+                    job.setAnswer(new DeathByCaptchaResponse(challenge, this, captcha, answer.getValue(), answer.getPriority()));
 
                 } else {
                     job.getLogger().info("Failed solving CAPTCHA");

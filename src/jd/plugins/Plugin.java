@@ -21,35 +21,17 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.Icon;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.ConfigInterface;
@@ -73,6 +55,27 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.UserIOProgress;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -698,6 +701,44 @@ public abstract class Plugin implements ActionListener {
 
     public int getChallengeTimeout(Challenge<?> captchaChallenge) {
         return -1;
+    }
+
+    private ArrayList<Challenge<?>> challenges = null;
+
+    /**
+     * returns a unmodifiiable List of all challenges done so far in this plugin
+     * 
+     * @return
+     */
+    public List<Challenge<?>> getChallenges() {
+        if (challenges == null) {
+            return Collections.unmodifiableList(new ArrayList<Challenge<?>>());
+        }
+        return Collections.unmodifiableList(challenges);
+    }
+
+    /**
+     * returns the current challenge round. if there has been 1 captcha so far, this will return 1
+     */
+    public int getChallengeRound() {
+        return challenges == null ? 0 : challenges.size();
+    }
+
+    /**
+     * adds a challenge that has been used in this plugin
+     *
+     * @param challenge
+     */
+    public synchronized int addChallenge(Challenge<?> challenge) {
+
+        ArrayList<Challenge<?>> nchallenges = new ArrayList<Challenge<?>>();
+        ArrayList<Challenge<?>> old = challenges;
+        if (old != null) {
+            nchallenges.addAll(old);
+        }
+        nchallenges.add(challenge);
+        challenges = nchallenges;
+        return nchallenges.size() - 1;
     }
 
 }
