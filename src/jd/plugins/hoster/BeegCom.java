@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "http://(www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" }, flags = { 0 })
 public class BeegCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -63,7 +63,7 @@ public class BeegCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.getPage("http://beeg.com/api/v1/video/" + fid);
+        this.br.getPage("https://api.beeg.com/api/v5/video/" + fid);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -81,7 +81,7 @@ public class BeegCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (DLLINK.startsWith("//")) {
-            DLLINK = "http:" + DLLINK;
+            DLLINK = "https:" + Encoding.urlDecode(DLLINK, false);
         }
         DLLINK = DLLINK.replace("{DATA_MARKERS}", "data=pc.DE");
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -99,7 +99,7 @@ public class BeegCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
+            if (con.isOK() && !con.getContentType().contains("html") && !con.getContentType().contains("text")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -117,7 +117,7 @@ public class BeegCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("text")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
