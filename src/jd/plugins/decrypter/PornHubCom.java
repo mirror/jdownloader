@@ -112,7 +112,7 @@ public class PornHubCom extends PluginForDecrypt {
             final Entry<String, String> next = it.next();
             final String qualityInfo = next.getKey();
             final String finallink = next.getValue();
-            if (cfg.getBooleanProperty(qualityInfo, true)) {
+            if (cfg.getBooleanProperty(qualityInfo, true) || bestonly) {
                 final String final_filename = fpName + "_" + qualityInfo + "p.mp4";
                 final DownloadLink dl = getDecryptDownloadlink();
                 dl.setProperty("directlink", finallink);
@@ -126,18 +126,16 @@ public class PornHubCom extends PluginForDecrypt {
                     dl.setAvailable(true);
                 }
                 decryptedLinks.add(dl);
-            }
-            if (bestonly) {
-                /* Our LinkedHashMap is already in the right order so best = first entry --> Step out of the loop */
-                logger.info("User wants best-only");
-                break;
+                if (bestonly) {
+                    /* Our LinkedHashMap is already in the right order so best = first entry --> Step out of the loop */
+                    logger.info("User wants best-only");
+                    break;
+                }
             }
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
