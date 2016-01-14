@@ -33,6 +33,12 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,12 +64,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends antiDDoSForHost {
@@ -98,27 +98,30 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     public void setMainpage() {
-        if (MAINPAGE.get() == null || userChangedSslSetting()) {
-            try {
-                Browser testBr = new Browser();
-                testBr.setFollowRedirects(true);
-                // NOTE: https requests do not trigger redirects
-                testBr.getPage(fixLinkSSL("http://depositfiles.com"));
-                String baseURL = new Regex(testBr.getURL(), "(https?://[^/]+)").getMatch(0);
-                if (baseURL != null) {
-                    MAINPAGE.set(baseURL);
-                }
-                System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.get());
-            } catch (Throwable e) {
-                e.printStackTrace();
+        synchronized (MAINPAGE) {
+            if (MAINPAGE.get() == null || userChangedSslSetting()) {
                 try {
+                    Browser testBr = new Browser();
+                    testBr.setFollowRedirects(true);
+                    // NOTE: https requests do not trigger redirects
+                    // NOTE: http also get filtered by ISP/Government Policy to the incorrect domain! - raztoki20160114
+                    testBr.getPage(fixLinkSSL("http://depositfiles.com"));
+                    String baseURL = new Regex(testBr.getURL(), "(https?://[^/]+)").getMatch(0);
+                    if (baseURL != null && Browser.getHost(baseURL).matches(DOMAINS)) {
+                        MAINPAGE.set(baseURL);
+                        System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.get());
+                    } else {
+                        // Houston we have a problem!
+                        System.out.println("despostfiles checker failed, setting failover");
+                        MAINPAGE.set(fixLinkSSL("http://depositfiles.com"));
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
                     System.out.println("despostfiles setter failed, setting failover");
                     MAINPAGE.set(fixLinkSSL("http://depositfiles.com"));
-                    System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.get());
-                } catch (final Throwable e2) {
-                    e2.printStackTrace();
                 }
             }
+            System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.get());
         }
     }
 
