@@ -186,10 +186,17 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     if (decrypt500Thumb || decryptOriginalThumb || decryptPurchaseURL) {
                         try {
                             resolve(parameter);
-                            setFilePackage(username, playlistname);
                             /* Add soundcloud link */
                             DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
                             final Map<String, Object> entry = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+                            final String title = (String) entry.get("title");
+                            if (username == null) {
+                                username = title;
+                            }
+                            if (playlistname == null) {
+                                playlistname = "";
+                            }
+                            setFilePackage(username, playlistname);
                             dl = setDlDataJson(dl, entry);
                             addLink(dl);
 
@@ -345,6 +352,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         if (date == null) {
             date = this.br.getRegex("\"last_modified\":\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (usernName == null && playListName == null) {
+            return;
         }
         if (usernName == null) {
             usernName = "Unknown user";
@@ -629,7 +639,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             return true;
         } else if (TYPE_USER_LIKES.matcher(parameter).find()) {
             return true;
-        } else if (parameter.matches(".*?soundcloud\\.com(/[A-Za-z\\-_0-9]+){2,3}/?")) {
+        } else if (parameter.matches(".*?soundcloud\\.com(/[A-Za-z\\-_0-9]+){2,3}/?(\\?.+)?")) {
             return false;
         } else {
             return true;
