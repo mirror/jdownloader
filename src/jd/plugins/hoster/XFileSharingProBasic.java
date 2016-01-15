@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -48,11 +53,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
@@ -98,17 +98,6 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final int               WAITSECONDSMAX                  = 100;
     private static final int               WAITSECONDSFORCED               = 5;
 
-    /* Connection stuff */
-    private static final boolean           FREE_RESUME                     = true;
-    private static final int               FREE_MAXCHUNKS                  = 0;
-    private static final int               FREE_MAXDOWNLOADS               = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME             = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS          = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
-
     /* Supported linktypes */
     private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
@@ -131,10 +120,9 @@ public class XFileSharingProBasic extends PluginForHost {
 
     private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(20);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                         = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                         = new AtomicInteger(1);
     private static Object                  LOCK                            = new Object();
 
     /**
@@ -366,7 +354,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -1123,8 +1111,6 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -1159,18 +1145,16 @@ public class XFileSharingProBasic extends PluginForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(expire_milliseconds);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -1213,7 +1197,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
+                if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
                     account.setType(AccountType.FREE);
                 } else {
                     account.setType(AccountType.PREMIUM);
@@ -1234,7 +1218,7 @@ public class XFileSharingProBasic extends PluginForHost {
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1260,7 +1244,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
@@ -1273,12 +1257,6 @@ public class XFileSharingProBasic extends PluginForHost {
             downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
