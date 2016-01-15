@@ -36,6 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+" }, flags = { 0, 0, 0, 0, 0, 0 })
@@ -120,6 +121,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(503);
         br.getPage(parameter);
+        final boolean isGerman = "de".equalsIgnoreCase(TranslationFactory.getDesiredLanguage());
+        final boolean isFrancais = "fr".equalsIgnoreCase(TranslationFactory.getDesiredLanguage());
         try {
             if (this.br.getHttpConnection().getResponseCode() != 200 && this.br.getHttpConnection().getResponseCode() != 301) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -203,6 +206,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, true) && !selectedLanguages.contains(LANG_FR)) {
                     selectedLanguages.add(LANG_FR);
                 }
+                if (isGerman && selectedLanguages.contains(LANG_DE)) {
+                    selectedLanguages.remove(LANG_DE);
+                    selectedLanguages.add(0, LANG_DE);
+                } else if (isFrancais && selectedLanguages.contains(LANG_FR)) {
+                    selectedLanguages.remove(LANG_FR);
+                    selectedLanguages.add(0, LANG_FR);
+                }
             }
             /* Finally, grab all we can get (in the selected language(s)) */
             for (final String selectedLanguage : selectedLanguages) {
@@ -253,6 +263,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final String vru = (String) videoJsonPlayer.get("VRU");
                 final String vra = (String) videoJsonPlayer.get("VRA");
                 final String vdb = (String) videoJsonPlayer.get("VDB");
+                final String vpi = (String) videoJsonPlayer.get("VPI");
                 if ((vru != null && vra != null) || vdb != null) {
                     date_formatted = formatDate(vra);
                     /*
@@ -304,10 +315,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     final String versionLibelle = (String) qualitymap.get("versionLibelle");
                     final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
                     final String url = (String) qualitymap.get("url");
+                    if (isGerman && !"DE".equalsIgnoreCase(versionShortLibelle) && !"FR".equalsIgnoreCase(versionShortLibelle)) {
+                        continue;
+                    } else if (isFrancais && !"VA".equalsIgnoreCase(versionShortLibelle) && !"VF".equalsIgnoreCase(versionShortLibelle)) {
+                        continue;
+                    }
 
                     final short format_code = getFormatCode(versionShortLibelle, versionCode);
                     final String quality_intern = protocol + "_" + videoBitrate;
-                    final String filename = date_formatted + "_arte_" + title + "_" + get_user_language_from_format_code(format_code) + "_" + get_user_format_from_format_code(format_code) + "_" + versionCode + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
+                    final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + get_user_language_from_format_code(format_code) + "_" + get_user_format_from_format_code(format_code) + "_" + versionCode + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
 
                     /* Lets check if we can add this link / if user wants it. */
                     /* Ignore HLS/RTMP versions */
@@ -355,7 +371,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     link.setComment(description);
                     link.setContentUrl(parameter);
                     /* Use filename as linkid as it is unique! */
-                    link.setLinkID(filename);
+                    link.setLinkID(getHost() + "://" + vpi + "/" + selectedLanguage + "/" + format_code + "/" + quality_intern);
                     if (fastLinkcheck) {
                         link.setAvailable(true);
                     }
