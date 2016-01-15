@@ -33,12 +33,6 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,6 +58,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends antiDDoSForHost {
@@ -406,6 +406,7 @@ public class DepositFiles extends antiDDoSForHost {
             checkErrors();
             String dllink = getDllink();
             if (dllink != null && !dllink.equals("")) {
+                dllink = fixLinkSSL(dllink);
                 // handling for txt file downloadlinks, dunno why they made a completely different page for txt files
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
                 final URLConnectionAdapter con = dl.getConnection();
@@ -504,6 +505,7 @@ public class DepositFiles extends antiDDoSForHost {
             }
         }
         logger.info("finallink = " + finallink);
+        finallink = fixLinkSSL(finallink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
@@ -859,6 +861,7 @@ public class DepositFiles extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            link = fixLinkSSL(link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
             final URLConnectionAdapter con = dl.getConnection();
             if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
@@ -1179,9 +1182,9 @@ public class DepositFiles extends antiDDoSForHost {
             }
         }
         // for now limit to premium accounts
-        if (!account.getBooleanProperty("free", false)) {
-            dllink = fixLinkSSL(dllink);
-        }
+        // if (!account.getBooleanProperty("free", false)) {
+        dllink = fixLinkSSL(dllink);
+        // }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, apiResumes, apiChunks);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
