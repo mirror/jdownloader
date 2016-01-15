@@ -16,12 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.adverigo.Adverigo;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,19 +45,19 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(com|net|ru|su)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
 public class RusfolderCom extends PluginForHost {
 
-    private String ua = null;
+    private String       ua                     = null;
 
     private final String HTML_passWarning       = ">Владелец файла установил пароль для скачивания\\.<";
     private final String HTML_PASSWORDPROTECTED = "Введите пароль:<br";
 
-    private final String HTML_CAPTCHA = "/random/images/|id=\"reklamper\\-captcha\"";
+    private final String HTML_CAPTCHA           = "/random/images/|id=\"reklamper\\-captcha\"";
 
     /**
      * sets primary domain to be used throughout JDownloader!
      *
      * @author raztoki
      */
-    private final String primaryHost = "rusfolder.com";
+    private final String primaryHost            = "rusfolder.com";
 
     public RusfolderCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -192,7 +194,21 @@ public class RusfolderCom extends PluginForHost {
                     logger.warning("captchaForm or captchaurl or ints_session equals null, stopping...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                // captcha!
                 if (newCaptcha) {
+                    br.setCookie(this.getHost(), "_cpathca", result);
+                    final String apiKey = br.getRegex("adVerigo\\.init\\('([a-f0-9]+)'\\);").getMatch(0);
+                    final Adverigo adv = new Adverigo(br, apiKey);
+                    final File captchaimage = adv.downloadCaptcha(getLocalCaptchaFile(".png"));
+                    captchacode = getCaptchaCode(captchaimage, downloadLink);
+                    // dont' submit back to hoster
+                    if (!adv.validateUserResponse(captchacode)) {
+                        if (retry + 1 == 5) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        continue;
+                    }
+                } else if (false && newCaptcha) {
                     br.setCookie(this.getHost(), "_cpathca", result);
                     if (retry == 1) {
                         brc.getPage("http://api.reklamper.com/get/" + result + "&captchaConfig=%7B%22name%22%3A%22reklamper-captcha%22%2C%22domain%22%3A%22rusfolder.net%22%7D&r=0." + System.currentTimeMillis());
@@ -217,6 +233,8 @@ public class RusfolderCom extends PluginForHost {
                     captchacode = getCaptchaCode(captchaurl, downloadLink);
                     captchaForm.put("confirmed_number", "");
                     captchaForm.put("reklamper-captcha", Encoding.urlEncode(captchacode));
+                    // this isn't needed
+                    captchaForm.remove("adverigo_captcha");
                 } else {
                     /* Old captcha */
                     captchaurl = "/random/images/?session=";
@@ -236,7 +254,6 @@ public class RusfolderCom extends PluginForHost {
                     /* This should usually exist! */
                     captchaForm.put("ints_session", ints_session);
                 }
-                captchaForm.remove("adverigo_captcha");
                 captchaForm.setAction(this.br.getURL());
                 /* this hoster checks content encoding */
                 captchaForm.setEncoding("application/x-www-form-urlencoded");
