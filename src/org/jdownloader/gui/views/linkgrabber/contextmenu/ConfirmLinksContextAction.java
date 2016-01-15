@@ -423,8 +423,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                         if (cl.getDownloadLink().isAvailabilityStatusChecked() && !cl.getDownloadLink().isAvailable()) {
                             offline.add(cl);
                             if (handleOfflineLoc == OnOfflineLinksAction.ASK) {
-                                OnOfflineLinksAction[] options = new OnOfflineLinksAction[] { OnOfflineLinksAction.INCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE_AND_REMOVE };
-                                ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_offline_ask_title(), _GUI._.ConfirmLinksContextAction_run_offline_ask_question(), options, 1, null, null, null, null) {
+                                final OnOfflineLinksAction[] options = new OnOfflineLinksAction[] { OnOfflineLinksAction.INCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE_AND_REMOVE };
+                                final ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_offline_ask_title(), _GUI._.ConfirmLinksContextAction_run_offline_ask_question(), options, 1, null, null, null, null) {
                                     protected javax.swing.JComboBox getComboBox(Object[] options2) {
                                         OnOfflineLinksAction s = CFG_LINKGRABBER.CFG.getHandleOfflineOnConfirmLatestSelection();
                                         JComboBox ret = super.getComboBox(options2);
@@ -503,8 +503,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                         if (DownloadController.getInstance().hasDownloadLinkByID(id)) {
                             dupes.add(cl);
                             if (handleDupesLoc == OnDupesLinksAction.ASK) {
-                                OnDupesLinksAction[] options = new OnDupesLinksAction[] { OnDupesLinksAction.INCLUDE, OnDupesLinksAction.EXCLUDE, OnDupesLinksAction.EXCLUDE_AND_REMOVE };
-                                ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_dupes_ask_title(), _GUI._.ConfirmLinksContextAction_run_dupes_ask_question(), options, 0, null, null, null, null) {
+                                final OnDupesLinksAction[] options = new OnDupesLinksAction[] { OnDupesLinksAction.INCLUDE, OnDupesLinksAction.EXCLUDE, OnDupesLinksAction.EXCLUDE_AND_REMOVE };
+                                final ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_dupes_ask_title(), _GUI._.ConfirmLinksContextAction_run_dupes_ask_question(), options, 0, null, null, null, null) {
                                     protected javax.swing.JComboBox getComboBox(Object[] options2) {
                                         OnDupesLinksAction s = CFG_LINKGRABBER.CFG.getHandleDupesOnConfirmLatestSelection();
                                         JComboBox ret = super.getComboBox(options2);
@@ -543,13 +543,13 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                     }
 
                                 };
-                                UIOManager.I().show(null, combo);
+                                final ComboBoxDialogInterface result = UIOManager.I().show(ComboBoxDialogInterface.class, combo);
                                 try {
-                                    combo.throwCloseExceptions();
+                                    result.throwCloseExceptions();
                                 } catch (Exception e) {
                                     return;
                                 }
-                                handleDupesLoc = options[combo.getSelectedIndex()];
+                                handleDupesLoc = options[result.getSelectedIndex()];
                                 CFG_LINKGRABBER.CFG.setHandleDupesOnConfirmLatestSelection(handleDupesLoc);
                             }
                             switch (handleDupesLoc) {
