@@ -8,6 +8,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -25,10 +29,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CBH;
-
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
 
 public class CBSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
@@ -234,8 +234,7 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
                     Browser br = new Browser();
                     br.setDebug(true);
                     br.setVerbose(true);
-                    String ret = "";
-                    ret = br.getPage(new URL("http://www.captchabrotherhood.com/complainCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.8"));
+                    br.getPage(new URL("http://www.captchabrotherhood.com/complainCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.8"));
                 } catch (final Throwable e) {
                     LogController.CL(true).log(e);
                 }

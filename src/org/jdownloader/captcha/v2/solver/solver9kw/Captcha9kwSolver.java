@@ -39,7 +39,7 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 public class Captcha9kwSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
     private static final Captcha9kwSolver INSTANCE           = new Captcha9kwSolver();
-    private ThreadPoolExecutor            threadPool         = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
+    private final ThreadPoolExecutor      threadPool         = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
 
     AtomicInteger                         counterSolved      = new AtomicInteger();
     AtomicInteger                         counterInterrupted = new AtomicInteger();
@@ -58,7 +58,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     private String                        long_debuglog      = "";
     HashMap<DownloadLink, Integer>        captcha_map9kw     = new HashMap<DownloadLink, Integer>();
 
-    private Captcha9kwSettings            config;
+    private final Captcha9kwSettings      config;
 
     public static Captcha9kwSolver getInstance() {
         return INSTANCE;
@@ -500,10 +500,9 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     try {
                         final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
                         final Browser br = new Browser();
-                        String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
-                            ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            final String ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
                                 setdebug_short("CaptchaID " + captchaID + ": OK (Feedback 1)");
                                 counterOK.incrementAndGet();
@@ -530,10 +529,9 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     try {
                         final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
                         final Browser br = new Browser();
-                        String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
-                            ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=3&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            final String ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=3&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
                                 setdebug_short("CaptchaID " + captchaID + ": Unused (Feedback 3)");
                                 counterUnused.incrementAndGet();
@@ -561,10 +559,9 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     try {
                         final String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
                         final Browser br = new Browser();
-                        String ret = "";
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
-                            ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            final String ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
                                 setdebug_short("CaptchaID " + captchaID + ": NotOK (Feedback 2)");
                                 counterNotOK.incrementAndGet();

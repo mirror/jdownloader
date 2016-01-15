@@ -3,8 +3,6 @@ package org.jdownloader.updatev2;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.parser.Regex;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 
@@ -143,11 +141,6 @@ public class FilterList implements Storable {
         default:
             throw new WTFException("Unknown Type: " + type);
         }
-    }
-
-    public static void main(String[] args) {
-        String[] matches = new Regex("premiumize.me", "^(?!premiumize).*$").getColumn(-1);
-        System.out.println(1);
     }
 
     public int size() {

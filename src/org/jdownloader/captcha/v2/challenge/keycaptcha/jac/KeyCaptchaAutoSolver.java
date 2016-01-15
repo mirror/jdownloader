@@ -15,6 +15,8 @@ import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
 
+import jd.nutils.Colors;
+
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
@@ -25,8 +27,6 @@ import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaImages;
 import org.jdownloader.logging.LogController;
 
-import jd.nutils.Colors;
-
 // KeyCaptcha stuff
 /**
  * Solves KeyCaptcha for us
@@ -35,13 +35,14 @@ import jd.nutils.Colors;
  *
  */
 public class KeyCaptchaAutoSolver {
-    private LogInterface logger;
+    private final LogInterface logger;
 
     public KeyCaptchaAutoSolver() {
-        logger = LogController.getRebirthLogger();
+        LogInterface logger = LogController.getRebirthLogger();
         if (logger == null) {
             logger = LoggerFactory.getDefaultLogger();
         }
+        this.logger = logger;
     }
 
     private static final int     PUNISH_LINES      = 6;
