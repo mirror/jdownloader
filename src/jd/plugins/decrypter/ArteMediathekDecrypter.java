@@ -37,6 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+" }, flags = { 0, 0, 0, 0, 0, 0 })
@@ -315,9 +316,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     final String versionLibelle = (String) qualitymap.get("versionLibelle");
                     final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
                     final String url = (String) qualitymap.get("url");
-                    if (isGerman && !"DE".equalsIgnoreCase(versionShortLibelle) && !"FR".equalsIgnoreCase(versionShortLibelle)) {
+                    if (isGerman && !StringUtils.containsIgnoreCase(versionLibelle, "Deutsch")) {
                         continue;
-                    } else if (isFrancais && !"VA".equalsIgnoreCase(versionShortLibelle) && !"VF".equalsIgnoreCase(versionShortLibelle)) {
+                    } else if (isFrancais && !StringUtils.containsIgnoreCase(versionLibelle, "Français")) {
                         continue;
                     }
 
