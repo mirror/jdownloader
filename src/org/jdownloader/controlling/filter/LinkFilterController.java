@@ -2,6 +2,7 @@ package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -14,6 +15,9 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.event.queue.QueueAction;
@@ -49,8 +53,10 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private volatile java.util.List<LinkgrabberFilterRuleWrapper> acceptFileFilter;
     private volatile java.util.List<LinkgrabberFilterRuleWrapper> denyUrlFilter;
     private volatile java.util.List<LinkgrabberFilterRuleWrapper> acceptUrlFilter;
+    private final KeyHandler<Object>                              filterListHandler;
 
     private final ChangeEventSender                               eventSender;
+    private final GenericConfigEventListener<Object>              eventHandler;
     private final boolean                                         testInstance;
 
     /**
@@ -62,12 +68,65 @@ public class LinkFilterController implements LinkCrawlerFilter {
         this.testInstance = testInstance;
         if (isTestInstance() == false) {
             config = JsonConfig.create(LinkFilterSettings.class);
-            filter = config.getFilterList();
+            filterListHandler = config._getStorageHandler().getKeyHandler("FilterList");
+            filter = readConfig();
+            filterListHandler.getEventSender().addListener(eventHandler = new GenericConfigEventListener<Object>() {
+
+                @Override
+                public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                    filter = readConfig();
+                    TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            updateInternal();
+                            return null;
+                        }
+
+                    });
+                }
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+                }
+            });
+            ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+                @Override
+                public void onShutdown(final ShutdownRequest shutdownRequest) {
+                    save(filter);
+                }
+
+                @Override
+                public long getMaxDuration() {
+                    return 0;
+                }
+
+                @Override
+                public String toString() {
+                    return "save filters...";
+                }
+            });
+            updateInternal();
+        } else {
+            this.config = null;
+            filterListHandler = null;
+            eventHandler = null;
+            filter = new ArrayList<LinkgrabberFilterRule>();
+        }
+    }
+
+    public ChangeEventSender getEventSender() {
+        return eventSender;
+    }
+
+    private ArrayList<LinkgrabberFilterRule> readConfig() {
+        final ArrayList<LinkgrabberFilterRule> newList = new ArrayList<LinkgrabberFilterRule>();
+        if (config != null) {
+            ArrayList<LinkgrabberFilterRule> filter = config.getFilterList();
             if (filter == null) {
                 filter = new ArrayList<LinkgrabberFilterRule>();
             }
-
-            ArrayList<LinkgrabberFilterRule> newList = new ArrayList<LinkgrabberFilterRule>();
             boolean dupesView = false;
             boolean offlineRule = false;
             boolean directHttpView = false;
@@ -119,39 +178,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
             if (!dupesView) {
                 newList.add(new DupesView().init());
             }
-
-            filter = newList;
-
-            ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-                @Override
-                public void onShutdown(final ShutdownRequest shutdownRequest) {
-                    synchronized (LinkFilterController.this) {
-                        if (config != null) {
-                            config.setFilterList(filter);
-                        }
-                    }
-                }
-
-                @Override
-                public long getMaxDuration() {
-                    return 0;
-                }
-
-                @Override
-                public String toString() {
-                    return "save filters...";
-                }
-            });
-            updateInternal();
-        } else {
-            this.config = null;
-            filter = new ArrayList<LinkgrabberFilterRule>();
         }
-    }
-
-    public ChangeEventSender getEventSender() {
-        return eventSender;
+        return newList;
     }
 
     private void updateInternal() {
@@ -236,10 +264,25 @@ public class LinkFilterController implements LinkCrawlerFilter {
         }
         synchronized (this) {
             filter.addAll(all);
-            if (config != null) {
+            save(filter);
+            update();
+        }
+    }
+
+    private synchronized final void save(ArrayList<LinkgrabberFilterRule> filter) {
+        if (config != null) {
+            if (filterListHandler != null) {
+                filterListHandler.getEventSender().removeListener(eventHandler);
+                try {
+                    config.setFilterList(filter);
+                } finally {
+                    if (!ShutdownController.getInstance().isShuttingDown()) {
+                        filterListHandler.getEventSender().addListener(eventHandler);
+                    }
+                }
+            } else {
                 config.setFilterList(filter);
             }
-            update();
         }
     }
 
@@ -249,9 +292,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         }
         synchronized (this) {
             filter.add(linkFilter);
-            if (config != null) {
-                config.setFilterList(filter);
-            }
+            save(filter);
         }
         update();
     }
@@ -262,9 +303,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         }
         synchronized (this) {
             filter.remove(lf);
-            if (config != null) {
-                config.setFilterList(filter);
-            }
+            save(filter);
         }
         update();
     }
@@ -392,9 +431,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
     public java.util.List<LinkgrabberFilterRule> listFilters() {
         synchronized (this) {
-            java.util.List<LinkgrabberFilterRule> lst = filter;
-            java.util.List<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
-            for (LinkgrabberFilterRule l : lst) {
+            final List<LinkgrabberFilterRule> lst = filter;
+            final List<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
+            for (final LinkgrabberFilterRule l : lst) {
                 if (!l.isAccept()) {
                     ret.add(l);
                 }
@@ -405,9 +444,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
     public java.util.List<LinkgrabberFilterRule> listExceptions() {
         synchronized (this) {
-            java.util.List<LinkgrabberFilterRule> lst = filter;
-            java.util.List<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
-            for (LinkgrabberFilterRule l : lst) {
+            final List<LinkgrabberFilterRule> lst = filter;
+            final List<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
+            for (final LinkgrabberFilterRule l : lst) {
                 if (l.isAccept()) {
                     ret.add(l);
                 }

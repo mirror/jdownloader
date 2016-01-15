@@ -24,17 +24,16 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 
 public class UserAgentController {
-    private ConcurrentHashMap<String, ConnectedDevice>          map;
-    private UserAgentEventSender                                eventSender;
-    private LogSource                                           logger;
-    private ConcurrentHashMap<ConnectedDevice, DelayedRunnable> timeoutcheck;
+    private final ConcurrentHashMap<String, ConnectedDevice>          map;
+    private final UserAgentEventSender                                eventSender;
+    private final LogSource                                           logger;
+    private final ConcurrentHashMap<ConnectedDevice, DelayedRunnable> timeoutcheck;
 
     public UserAgentController() {
         eventSender = new UserAgentEventSender();
         logger = LogController.getInstance().getLogger("UserAgentController");
         map = new ConcurrentHashMap<String, ConnectedDevice>();
         timeoutcheck = new ConcurrentHashMap<ConnectedDevice, DelayedRunnable>();
-
     }
 
     protected void checkTimeouted() {
@@ -46,16 +45,12 @@ public class UserAgentController {
 
     public void handle(RemoteAPIRequest request) {
         synchronized (this) {
-
             String nuaID = createSessionUAID(request);
-
             ConnectedDevice ua = map.get(nuaID);
-
             if (ua == null) {
                 ua = createNewUserAgent(request, nuaID);
                 final ConnectedDevice fua = ua;
                 map.put(nuaID, ua);
-
                 new Thread("UserAgentCreater") {
                     {
                         setDaemon(true);
@@ -63,15 +58,14 @@ public class UserAgentController {
 
                     public void run() {
                         try {
-                            String json = new Browser().getPage("http://update3.jdownloader.org/jdserv/ua/get?" + Encoding.urlDecode(fua.getUserAgentString(), false));
-
-                            UserAgentInfo info = JSonStorage.restoreFromString(json, new TypeRef<UserAgentInfo>() {
+                            final String json = new Browser().getPage("http://update3.jdownloader.org/jdserv/ua/get?" + Encoding.urlEncode(fua.getUserAgentString()));
+                            final UserAgentInfo info = JSonStorage.restoreFromString(json, new TypeRef<UserAgentInfo>() {
                             });
                             fua.setInfo(info);
                         } catch (Throwable e) {
                             logger.log(e);
                         }
-                        DelayedRunnable delayed;
+                        final DelayedRunnable delayed;
                         timeoutcheck.put(fua, delayed = new DelayedRunnable(fua.getTimeout()) {
 
                             @Override
@@ -94,7 +88,7 @@ public class UserAgentController {
                 }.start();
 
             }
-            DelayedRunnable delayed = timeoutcheck.get(ua);
+            final DelayedRunnable delayed = timeoutcheck.get(ua);
             if (delayed != null) {
                 delayed.resetAndStart();
             }
@@ -103,16 +97,13 @@ public class UserAgentController {
             if (!StringUtils.equals(pre, ua.getConnectionString())) {
                 final ConnectedDevice fua = ua;
                 eventSender.fireEvent(new UserAgentEvent() {
-
                     @Override
                     public void fireTo(UserAgentListener listener) {
-
                         listener.onAPIUserAgentUpdate(fua);
                     }
 
                 });
             }
-
         }
     }
 
@@ -120,13 +111,10 @@ public class UserAgentController {
         timeoutcheck.remove(fua);
         map.remove(fua.getId());
         eventSender.fireEvent(new UserAgentEvent() {
-
             @Override
             public void fireTo(UserAgentListener listener) {
-
                 listener.onRemovedAPIUserAgent(fua);
             }
-
         });
     }
 
@@ -166,11 +154,9 @@ public class UserAgentController {
 
     public void disconnectDecice(final ConnectedDevice device) {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 try {
-
                     MyJDownloaderController.getInstance().terminateSession(device.getConnectToken());
                 } catch (MyJDownloaderException e) {
                     UIOManager.I().showException(e.getMessage(), e);
