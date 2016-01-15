@@ -141,7 +141,8 @@ public class MegaConz extends PluginForDecrypt {
                 }
                 link.setContainerUrl(containerURL);
                 link.setFinalFileName(nodeName);
-                link.setProperty("REL_PATH", path);
+
+                link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
                 link.setAvailable(true);
                 try {
                     link.setVerifiedFileSize(Long.parseLong(nodeSize));

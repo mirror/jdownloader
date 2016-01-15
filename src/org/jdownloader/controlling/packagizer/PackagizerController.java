@@ -11,19 +11,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.PackagizerInterface;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -35,7 +22,6 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
@@ -51,6 +37,19 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.jd1import.JD1Importer;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.PackagizerInterface;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private final PackagizerSettings              config;
@@ -69,7 +68,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     private static final PackagizerController     INSTANCE          = new PackagizerController(false);
     public static final String                    ORGPACKAGENAME    = "orgpackagename";
-    public static final String                    SUBFOLDERBYPLUGIN = "subfolderbyplugin";
     private HashMap<String, PackagizerReplacer>   replacers         = new HashMap<String, PackagizerReplacer>();
     private final boolean                         testInstance;
 
@@ -378,13 +376,16 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
         addReplacer(new PackagizerReplacer() {
 
-            private final Pattern pat = Pattern.compile("<jd:" + SUBFOLDERBYPLUGIN + ">");
+            private final Pattern pat = Pattern.compile("<jd:" + DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH + "/?>");
 
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 String subFolder = null;
                 final DownloadLink dlLink = link.getDownloadLink();
+
                 if (dlLink != null) {
-                    final Object subFolderByPlugin = dlLink.getProperty(SUBFOLDERBYPLUGIN);
+
+                    Object subFolderByPlugin = dlLink.getProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH);
+
                     if (subFolderByPlugin != null && subFolderByPlugin instanceof String) {
                         final String pathParts[] = ((String) subFolderByPlugin).split("/");
                         final StringBuilder sb = new StringBuilder();
@@ -403,15 +404,17 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         }
                     }
                 }
+
                 if (StringUtils.isEmpty(subFolder)) {
                     return pat.matcher(input).replaceAll(Matcher.quoteReplacement(""));
                 } else {
                     return pat.matcher(input).replaceAll(Matcher.quoteReplacement(subFolder));
                 }
+
             }
 
             public String getID() {
-                return SUBFOLDERBYPLUGIN;
+                return DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH;
             }
 
         });
@@ -1001,24 +1004,24 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (!originalFolder.equals(moveToFolder) || !originalFileName.equals(dummyLink.getName())) {
             final File newFile = new File(moveToFolder, dummyLink.getName());
             if (newFile.getParentFile().exists() == false && FileCreationManager.getInstance().mkdir(newFile.getParentFile()) == false) {
-                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer could not create " + newFile.getParentFile());
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer could not create " + newFile.getParentFile());
                 return;
             }
             boolean successful = false;
             if ((successful = file.renameTo(newFile)) == false) {
-                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer rename failed " + file + " to" + newFile);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer rename failed " + file + " to" + newFile);
                 try {
-                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer try copy " + file + " to" + newFile);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer try copy " + file + " to" + newFile);
                     IO.copyFile(file, newFile);
                     FileCreationManager.getInstance().delete(file, null);
                     successful = true;
                 } catch (final Throwable e) {
                     FileCreationManager.getInstance().delete(newFile, null);
-                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer could not move/rename " + file + " to" + newFile);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer could not move/rename " + file + " to" + newFile);
                 }
             }
             if (successful) {
-                      org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Packagizer moved/renamed " + file + " to " + newFile);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Packagizer moved/renamed " + file + " to " + newFile);
                 FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(PackagizerController.this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
             }
         }

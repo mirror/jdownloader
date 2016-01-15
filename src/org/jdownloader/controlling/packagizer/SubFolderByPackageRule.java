@@ -12,6 +12,12 @@ public class SubFolderByPackageRule extends PackagizerRule {
 
     }
 
+    @Override
+    public void setEnabled(boolean enabled) {
+
+        super.setEnabled(enabled);
+    }
+
     public void init() {
         setMatchAlwaysFilter(new BooleanFilter(true));
         setDownloadDestination("<jd:packagename>");

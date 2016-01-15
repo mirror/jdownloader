@@ -193,6 +193,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient List<HistoryEntry>                history                             = null;
 
     private transient Boolean                           partOfAnArchive                     = null;
+    public static final String                    RELATIVE_DOWNLOAD_FOLDER_PATH = "subfolderbyplugin";
 
     public Boolean isPartOfAnArchive() {
         return partOfAnArchive;

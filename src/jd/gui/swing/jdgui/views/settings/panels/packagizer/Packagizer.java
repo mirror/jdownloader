@@ -18,9 +18,6 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import javax.swing.Icon;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.Header;
@@ -30,6 +27,9 @@ import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
 public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
 

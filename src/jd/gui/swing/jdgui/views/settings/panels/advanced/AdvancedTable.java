@@ -6,8 +6,6 @@ import java.util.List;
 
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.jdgui.BasicJDTable;
-
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.uio.UIOManager;
 import org.jdownloader.actions.AppAction;
@@ -15,11 +13,14 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
+import jd.gui.swing.jdgui.BasicJDTable;
+
 public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
 
     public AdvancedTable(AdvancedConfigTableModel model) {
         super(model);
+
     }
 
     public AdvancedTable() {
