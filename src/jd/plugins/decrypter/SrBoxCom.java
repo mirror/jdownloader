@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -30,26 +32,27 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "http(s|)://[\\w\\.]*israbox\\.(com|net|org|info|me|download)/[0-9]+-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|net|org|info|me|download|eu)|isbox\\.net)/[0-9]+-.*?\\.html" }, flags = { 0 })
 public class SrBoxCom extends PluginForDecrypt {
 
     public SrBoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private final String base = "(?i)https?://[\\w\\.]*(?:israbox\\.(?:com|net|org|info|me|download|eu)|isbox\\.net)/";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        // Logger logDebug = JDLogger.getLogger();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("(An error has occurred|The article cannot be found)") || "https://www.israbox.download/".equals(br.getRedirectLocation()) || "http://www.israbox.me/".equals(br.getRedirectLocation()) || "http://www.israbox.info/".equals(br.getRedirectLocation()) || "http://www.israbox.org/".equals(br.getRedirectLocation()) || "http://www.israbox.net/".equals(br.getRedirectLocation()) || "http://www.israbox.com/".equals(br.getRedirectLocation())) {
-            try {
-                decryptedLinks.add(createOfflinelink(parameter));
-            } catch (final Throwable t) {
-                logger.info("Link offline: " + parameter);
-            }
+        final String redirect = br.getRedirectLocation();
+        if (br.containsHTML("(An error has occurred|The article cannot be found)") || (redirect != null && redirect.matches(base))) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (redirect != null) {
+            br.setFollowRedirects(true);
+            br.getPage(redirect);
         }
         String fpName = br.getRegex("<h1><a href[^>]+>(.*?)</a></h1>").getMatch(0);
         if (fpName == null) {
@@ -67,71 +70,43 @@ public class SrBoxCom extends PluginForDecrypt {
         fpName = RemoveCharacter(fpName);
         fpName = CapitalLetterForEachWords(fpName);
 
-        // Array of image to download the cover (It can be usable if the user
-        // want to create a subfolder with the name of the package because
-        // the folder is immediately created because it will download the cover
-        // in it
-        String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
-        String[] TabImage1 = null;
-        String[] TabNet = null;
-        if (TabImage2.length == 0) {
-            TabImage1 = br.getRegex("<img src=\"(http(s|)://[\\w\\.]*?israbox\\.(com|net|org|info|me|download))*?/uploads(.*?)\"").getColumn(2);
-            TabNet = br.getRegex("<img src=\"(http(s|)://[\\w\\.]*?israbox\\.(com|net|org|info|me|download))*?/uploads(.*?)\"").getColumn(1);
-        }
-
-        int iPosition = parameter.indexOf(":");
-        String strHttp = parameter.substring(0, iPosition);
-
-        iPosition = strHttp.length() + 3;
-        String strTemp = parameter.substring(iPosition, parameter.length() - iPosition);
-        iPosition = strTemp.indexOf("/");
-        strTemp = strTemp.substring(0, iPosition);
-        iPosition = strTemp.lastIndexOf(".") + 1;
-        String strNet = strTemp.substring(iPosition, strTemp.length());
-
         // Creation of the array of link that is supported by all plug-in
-        String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
+        String[] links = br.getRegex("<a href=\"((?!javascript.+)[^\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             return null;
         }
 
-        // Number of picture
-        int iImage = TabImage1 == null ? 0 : TabImage1.length;
-        if (TabImage1 != null) {
-            for (String strImageLink : TabImage1) {
-                if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
-                    iImage++;
-                }
-            }
-        }
-        iImage += TabImage2 == null ? 0 : TabImage2.length;
-        if (TabImage2 != null) {
-            for (String strImageLink : TabImage2) {
-                if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
-                    iImage++;
-                }
+        // Added links
+        for (String redirectlink : links) {
+            // prevent null in decryptedLinks
+            final DownloadLink dl = createDownloadlink(redirectlink);
+            if (dl != null) {
+                decryptedLinks.add(dl);
             }
         }
 
         // Some link can be crypted in this site, see if it is the case
-        String[] linksCrypted = br.getRegex("\"(http(s|)://www\\.israbox\\.(com|net|org|info|me|download)/engine/go\\.php\\?url=.*?)\"").getColumn(0);
-
-        progress.setRange(links.length + iImage + linksCrypted.length);
-        // Added links
-        for (String redirectlink : links) {
-            decryptedLinks.add(createDownloadlink(redirectlink));
-            progress.increase(1);
-        }
+        String[] linksCrypted = br.getRegex("\"(" + base + "engine/go\\.php\\?url=.*?)\"").getColumn(0);
 
         // Added crypted links
         for (String redirectlink : linksCrypted) {
-            br.getPage(redirectlink);
-            String finallink = br.getRedirectLocation();
+            final Browser br2 = br.cloneBrowser();
+            br2.getPage(redirectlink);
+            String finallink = br2.getRedirectLocation();
             if (finallink != null) {
                 decryptedLinks.add(createDownloadlink(finallink));
-                progress.increase(1);
             }
         }
+
+        /*
+         * Array of image to download the cover (It can be usable if the user want to create a subfolder with the name of the package
+         * because the folder is immediately created because it will download the cover in it
+         */
+        String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
+        String[] TabImage1 = br.getRegex("<img src=\"" + base + "uploads/(.*?)\"").getColumn(0);
+
+        // Number of pictures
+        int iImage = (TabImage1 != null ? TabImage1.length : 0) + (TabImage2 != null ? TabImage2.length : 0);
 
         // Added Image
         DownloadLink[] TabImageLink = new DownloadLink[iImage];
@@ -141,10 +116,7 @@ public class SrBoxCom extends PluginForDecrypt {
             int iImageNet = 0;
             for (String strImageLink : TabImage1) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
-                    if (TabNet[iImageNet] != null) {
-                        strNet = TabNet[iImageNet];
-                    }
-                    strImageLink = strHttp + "://www.israbox." + strNet + "/uploads/" + strImageLink;
+                    strImageLink = Request.getLocation("/uploads/" + strImageLink, br.getRequest());
 
                     if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
                         DownloadLink DLLink = createDownloadlink(strImageLink, false);
@@ -152,11 +124,10 @@ public class SrBoxCom extends PluginForDecrypt {
                             TabImageLink[iImageIndex++] = DLLink;
                             iImageFinal++;
                         }
-                        strImageLink = strImageLink.replace("thumbs/", "");
-                        strImageLink = strImageLink.replace("medium/", "");
+                        strImageLink = strImageLink.replace("thumbs/", "").replace("medium/", "");
                     }
 
-                    DownloadLink DLLink = createDownloadlink(strImageLink, false);
+                    final DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
                         TabImageLink[iImageIndex++] = DLLink;
                         iImageFinal++;
@@ -203,7 +174,7 @@ public class SrBoxCom extends PluginForDecrypt {
                         if (fpName != null) {
                             String strName = fpName;
 
-                            // Delete the end of the filename only if it represents the year in parenthesis
+                            // Delete the end of the filename only if it represents the year in parenthesis -- why??? raztoki20160115
                             strName = ReplacePattern(strName, "\\([0-9]{4}\\)$").trim();
                             if (iImageFinal > 1) {
                                 strName += "_" + Integer.toString(iImageIndex);
@@ -214,13 +185,6 @@ public class SrBoxCom extends PluginForDecrypt {
                     }
                     decryptedLinks.add(DLLink);
                 }
-            }
-            progress.increase(1);
-        }
-
-        for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
-            if (decryptedLinks.get(i) == null) {
-                decryptedLinks.remove(i);
             }
         }
 
@@ -247,7 +211,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (link.startsWith("http://www.israbox.com/uploads/img/") || link.startsWith("http://www.israbox.net/uploads/img/") || link.startsWith("http://www.israbox.org/uploads/img/") || link.startsWith("http://www.israbox.info/uploads/img/") || link.startsWith("http://www.israbox.me/uploads/img/") || link.startsWith("https://www.israbox.download/uploads/img/")) {
+        if (link.matches("^" + base + "uploads/img/.+$")) {
             return null;
         }
 
@@ -275,7 +239,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (bVerify && (link.startsWith("http://www.israbox.com") || link.startsWith("http://www.israbox.net") || link.startsWith("http://www.israbox.org") || link.startsWith("http://www.israbox.info") || link.startsWith("http://www.israbox.me") || link.startsWith("https://www.israbox.download"))) {
+        if (bVerify && link.matches("^" + base + ".*?")) {
             return null;
         }
 
@@ -287,7 +251,7 @@ public class SrBoxCom extends PluginForDecrypt {
      *
      * @param strName
      *            The name of the package
-     * @return the name of the package normalized.
+     * @return the name of the package normalised.
      */
     private String RemoveCharacter(String strName) {
         strName = strName.replace("", "-");
@@ -402,7 +366,7 @@ public class SrBoxCom extends PluginForDecrypt {
      * Allows to put a capital letter on each words of the title
      *
      * @param strText
-     *            The text that we want to be capitalize
+     *            The text that we want to be capitalise
      * @return the text with a capital letter on each words.
      */
     private String CapitalLetterForEachWords(String strText) {
