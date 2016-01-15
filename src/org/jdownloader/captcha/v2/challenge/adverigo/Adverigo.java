@@ -93,7 +93,6 @@ public class Adverigo {
         abr.getHeaders().put("User-Agent", userAgent);
 
         if (abr.getURL() == null || !Browser.getHost(abr.getURL()).contains("adverigo.com")) {
-            // this prevents solvemedia group from seeing referrer
             if (clearReferer) {
                 abr.getHeaders().put("Referer", "");
             }
@@ -111,20 +110,21 @@ public class Adverigo {
         abr.getHeaders().put("User-Agent", userAgent);
 
         if (abr.getURL() == null || !Browser.getHost(abr.getURL()).contains("adverigo.com")) {
-            // this prevents solvemedia group from seeing referrer
             if (clearReferer) {
                 abr.getHeaders().put("Referer", "");
             }
         }
         abr.getPage(SERVER + "/checkAdriver.json?sid=&hash=" + this.apiKey + "&videoSupport=false&" + System.currentTimeMillis());
         if (abr.getURL() == null || !Browser.getHost(abr.getURL()).contains("adverigo.com")) {
-            // this prevents solvemedia group from seeing referrer
             if (clearReferer) {
                 abr.getHeaders().put("Referer", "");
             }
         }
-        // the SID gets larger after this request, if you don't do this.... then you get 500 response code on the captcha image!
+        abr = br.cloneBrowser();
+        abr.getHeaders().put("Accept", "*/*");
+        abr.getHeaders().put("User-Agent", userAgent);
         abr.getPage(SERVER + "/refresh.json?sid=&hash=" + this.apiKey + "&videoSupport=false&" + System.currentTimeMillis());
+        // the SID gets larger after this request, if you don't do this.... then you get 500 response code on the captcha image!
         setSid();
         setCaptchaAddress();
     }
