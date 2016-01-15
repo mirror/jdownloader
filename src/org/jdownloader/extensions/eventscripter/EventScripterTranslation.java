@@ -189,4 +189,7 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Play a Sound (Wav) when downloads and extraction stopped" })
     String example_play_sound_when_inactive();
 
+    @Default(lngs = { "en" }, values = { "After a Captcha Challenge" })
+    String CAPTCHA_CHALLENGE_AFTER();
+
 }

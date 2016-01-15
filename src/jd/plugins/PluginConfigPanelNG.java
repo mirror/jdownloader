@@ -4,11 +4,11 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+
+import net.miginfocom.swing.MigLayout;
 
 public abstract class PluginConfigPanelNG extends AbstractConfigPanel {
 

@@ -351,8 +351,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Create Subfolder by Packagename" })
     String PackagizerSettings_folderbypackage_rule_name();
 
-    @Default(lngs = { "en" }, values = { "Create Subfolder by Plugin" })
-    String PackagizerSettings_folderbyplugin_rule_name();
+    @Default(lngs = { "en" }, values = { "Adopt folder structure" })
+    String PackagizerSettings_folderbyplugin_rule_name2();
 
     @DescriptionForTranslationEntry("All words and all variants for the word 'password' should be placed here, seperated by a |. Example: passwort|pass|pw")
     @Default(lngs = { "en" }, values = { "пароль|пасс|pa?s?w|passwort|password|passw?|pw" })

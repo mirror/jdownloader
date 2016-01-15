@@ -21,31 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorCrawler;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.reconnect.Reconnecter;
-import jd.controlling.reconnect.ReconnecterEvent;
-import jd.controlling.reconnect.ReconnecterListener;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.plugins.AddonPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.sourceforge.htmlunit.corejs.javascript.Context;
-import net.sourceforge.htmlunit.corejs.javascript.Script;
-import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
-
 import org.appwork.remoteapi.events.EventObject;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -56,6 +31,12 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.RemoteAPIInternalEventListener;
+import org.jdownloader.captcha.event.ChallengeResponseListener;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -95,7 +76,32 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
-public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener, ReconnecterListener {
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.plugins.AddonPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.sourceforge.htmlunit.corejs.javascript.Context;
+import net.sourceforge.htmlunit.corejs.javascript.Script;
+import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
+
+public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener, ReconnecterListener, ChallengeResponseListener {
 
     private EventScripterConfigPanel   configPanel = null;
     private volatile List<ScriptEntry> entries     = new ArrayList<ScriptEntry>();
@@ -122,6 +128,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     protected void stop() throws StopException {
+        ChallengeResponseController.getInstance().getEventSender().removeListener(this);
         Reconnecter.getInstance().getEventSender().removeListener(this);
         PackagizerController.getInstance().getEventSender().removeListener(this);
         DownloadWatchDog.getInstance().getEventSender().removeListener(this);
@@ -153,6 +160,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     protected void start() throws StartException {
+        ChallengeResponseController.getInstance().getEventSender().addListener(this);
         Reconnecter.getInstance().getEventSender().addListener(this);
         PackagizerController.getInstance().getEventSender().addListener(this);
         LinkCollector.getInstance().getEventsender().addListener(this);
@@ -733,6 +741,48 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             }
         }
 
+    }
+
+    @Override
+    public void onNewJobAnswer(SolverJob<?> job, AbstractResponse<?> response) {
+    }
+
+    @Override
+    public void onJobDone(SolverJob<?> job) {
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.CAPTCHA_CHALLENGE_AFTER == script.getEventTrigger()) {
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    ArrayList<String> solver = new ArrayList<String>();
+
+                    for (ChallengeSolver<?> s : job.getSolverList()) {
+                        solver.add(s.getService().getID() + "." + s.getClass().getSimpleName());
+                    }
+                    props.put("solved", job.isSolved());
+                    props.put("solver", solver.toArray(new String[] {}));
+                    ResponseList<?> resp = job.getResponse();
+
+                    props.put("result", resp == null ? null : resp.getValue());
+
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onNewJob(SolverJob<?> job) {
+    }
+
+    @Override
+    public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
+
+    }
+
+    @Override
+    public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
     }
 
 }

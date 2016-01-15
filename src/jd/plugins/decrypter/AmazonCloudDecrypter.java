@@ -31,8 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.packagizer.PackagizerController;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|com|com\\.au|co\\.uk|fr)/clouddrive/share/.+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" }, flags = { 0 })
 public class AmazonCloudDecrypter extends PluginForDecrypt {
 
@@ -167,7 +165,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
                 dl.setProperty("subfolder_id", subfolder_id);
             }
             dl.setProperty("plain_domain", plain_domain);
-            dl.setProperty(PackagizerController.SUBFOLDERBYPLUGIN, path_decrypted);
+            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path_decrypted);
             dl.setAvailable(true);
             dl.setContentUrl(parameter);
             dl.setContainerUrl("https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id);

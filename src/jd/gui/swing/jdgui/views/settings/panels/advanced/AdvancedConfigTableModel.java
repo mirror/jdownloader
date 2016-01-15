@@ -4,14 +4,14 @@ import java.awt.event.MouseEvent;
 import java.util.Iterator;
 import java.util.Locale;
 
-import jd.controlling.ClipboardMonitoring;
-
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+
+import jd.controlling.ClipboardMonitoring;
 
 public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;

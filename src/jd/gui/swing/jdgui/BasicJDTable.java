@@ -185,6 +185,10 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
      *
      */
     protected void initRowHeight() {
+        setRowHeight(calculateAutoRowHeight());
+    }
+
+    protected int calculateAutoRowHeight() {
         // Try to determine the correct auto row height.
         ExtTextColumn<String> col = new ExtTextColumn<String>("Test") {
 
@@ -201,9 +205,9 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         Integer custom = CFG_GUI.CUSTOM_TABLE_ROW_HEIGHT.getValue();
         CFG_GUI.CUSTOM_TABLE_ROW_HEIGHT.getEventSender().addListener(this, true);
         if (custom != null && custom > 0) {
-            this.setRowHeight(custom);
+            return custom;
         } else {
-            this.setRowHeight(prefHeight + 3);
+            return prefHeight + 3;
         }
     }
 

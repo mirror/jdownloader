@@ -25,7 +25,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.packagizer.PackagizerController;
 
 @DecrypterPlugin(revision = "$Revision: 28474 $", interfaceVersion = 2, names = { "premiumize.me" }, urls = { "https?://(www\\.)?premiumize\\.me/browsetorrent\\?hash=[a-f0-9]+" }, flags = { 0 })
 public class PremiumizeMe extends PluginForDecrypt {
@@ -77,7 +76,7 @@ public class PremiumizeMe extends PluginForDecrypt {
                 link.setAvailable(true);
                 link.setLinkID("premiumizetorrent://" + Hash.getSHA256(currentPath + node.getName()) + node.getSize());
                 if (addPath) {
-                    link.setProperty(PackagizerController.SUBFOLDERBYPLUGIN, currentPath);
+                    link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
                 }
                 ret.add(link);
             } else if (node._isDirectory() && node.getChildren() != null) {
