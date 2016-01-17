@@ -104,6 +104,11 @@ public class InstaGramCom extends PluginForHost {
         // Maybe we have a picture
         if (DLLINK == null) {
             DLLINK = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+            String remove = new Regex(DLLINK, "(/[a-z0-9]+?x[0-9]+/)").getMatch(0); // Size
+            if (remove != null) {
+                DLLINK = DLLINK.replace(remove, "/");
+            }
+            downloadLink.setContentUrl(DLLINK);
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
