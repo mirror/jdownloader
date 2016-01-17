@@ -23,6 +23,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -43,14 +51,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10,16})" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
@@ -83,11 +83,7 @@ public class FileCryptCc extends PluginForDecrypt {
         // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
         getPage(parameter);
         if (br.getURL().contains("filecrypt.cc/404.html")) {
-            try {
-                decryptedLinks.add(createOfflinelink(parameter));
-            } catch (final Throwable t) {
-                logger.info("OfflineLink :" + parameter);
-            }
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         // Separate password and captcha. this is easier for count reasons!
@@ -204,7 +200,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     if ("CANCEL".equals(result)) {
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }
-                    captchaForm.put("capcode", result);
+                    captchaForm.put("capcode", Encoding.urlEncode(result));
                 } catch (CaptchaException e) {
                     e.throwMeIfNoRefresh();
                     continue;
@@ -240,8 +236,8 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         final String fpName = br.getRegex("class=\"status (online|offline) shield\">([^<>\"]*?)<").getMatch(1);
 
-        // mirrors
-        String[] mirrors = br.getRegex("\"([^\"]*/Container/" + uid + "\\.html\\?mirror=\\d+)\"").getColumn(0);
+        // mirrors - note: containers no longer have uid within path! -raztoki20160117
+        String[] mirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+\\.html\\?mirror=\\d+)\"").getColumn(0);
         if (mirrors.length < 1) {
             mirrors = new String[1];
             mirrors[0] = parameter + "?mirror=0";
@@ -305,11 +301,13 @@ public class FileCryptCc extends PluginForDecrypt {
                     finallink = br2.getRedirectLocation();
                 }
             }
-            if (finallink != null && finallink.contains("filecrypt.cc/")) {
-                logger.warning("Decrypter broken for link: " + parameter + "->" + finallink);
-            } else if (finallink != null) {
-                decryptedLinks.add(createDownloadlink(finallink));
+            if (finallink == null || finallink.contains("filecrypt.cc/")) {
+                // commented these out so that unhandled ads or what ever don't kill failover.
+                // logger.warning("Decrypter broken for link: " + parameter);
+                // return null;
+                continue;
             }
+            decryptedLinks.add(createDownloadlink(finallink));
         }
 
         if (fpName != null) {
@@ -361,6 +359,7 @@ public class FileCryptCc extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
             decryptedLinks.add(dl);
         }
+
     }
 
     private final boolean containsCaptcha() {
