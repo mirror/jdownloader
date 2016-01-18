@@ -75,7 +75,7 @@ public class XvideosCom extends PluginForHost {
     private static final String type_embed   = "http://\\w+\\.xvideos\\.com/embedframe/\\d+";
     private static final String type_special = "http://(www\\.)?xvideos\\.com/([a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)";
     private static final String NOCHUNKS     = "NOCHUNKS";
-    private String              DLLINK       = null;
+    private String              dllink       = null;
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -106,7 +106,7 @@ public class XvideosCom extends PluginForHost {
             parameter.setUrlDownload(br.getRedirectLocation());
             br.getPage(parameter.getDownloadURL());
         }
-        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")")) {
+        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
@@ -118,17 +118,17 @@ public class XvideosCom extends PluginForHost {
         }
         filename = filename.trim() + ".flv";
         parameter.setFinalFileName(Encoding.htmlDecode(filename));
-        DLLINK = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
+        dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
+        if (dllink == null) {
+            dllink = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(DLLINK);
+            con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 parameter.setDownloadSize(con.getLongContentLength());
             } else {
@@ -151,7 +151,7 @@ public class XvideosCom extends PluginForHost {
         if (link.getBooleanProperty(XvideosCom.NOCHUNKS, false)) {
             chunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, chunks);
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) {

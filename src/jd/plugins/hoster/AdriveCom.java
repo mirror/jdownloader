@@ -46,7 +46,7 @@ public class AdriveCom extends PluginForHost {
     }
 
     private static final String NOCHUNKS = "NOCHUNKS";
-    private String              DLLINK   = null;
+    private String              dllink   = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
@@ -59,7 +59,7 @@ public class AdriveCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(downloadLink.getStringProperty("mainlink", null));
-        DLLINK = downloadLink.getStringProperty("directlink", null);
+        dllink = downloadLink.getStringProperty("directlink", null);
         String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
         if (goToLink != null) {
             br.getPage("http://www.adrive.com" + goToLink);
@@ -75,7 +75,7 @@ public class AdriveCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int maxChunks = -10;
@@ -83,7 +83,7 @@ public class AdriveCom extends PluginForHost {
             maxChunks = 1;
         }
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();
