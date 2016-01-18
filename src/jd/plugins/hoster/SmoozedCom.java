@@ -17,23 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.SmoozedTranslation;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.txtresource.TranslationFactory;
@@ -49,8 +32,24 @@ import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.SmoozedTranslation;
+
 @HostPlugin(revision = "$Revision: 27915 $", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" }, flags = { 2 })
-public class SmoozedCom extends PluginForHost {
+public class SmoozedCom extends antiDDoSForHost {
 
     private final String                                     API                  = "www.smoozed.com";
 
@@ -357,7 +356,7 @@ public class SmoozedCom extends PluginForHost {
                     os.write(log.toString().getBytes("UTF-8"));
                     os.close();
                     final String postString = "api_key=x12GiLzH2bM069rxmLpCcto69&caption=errorLog&content=" + Encoding.urlEncode(bos.toString("UTF-8"));
-                    new Browser().postPage(getProtocol() + "www.smoozed.com/api/debuglog/add/jd", postString);
+                    postPage(new Browser(), getProtocol() + "www.smoozed.com/api/debuglog/add/jd", postString);
                 }
             } catch (final Throwable ignore) {
                 LogSource.exception(logger, ignore);
@@ -368,7 +367,7 @@ public class SmoozedCom extends PluginForHost {
     private void apiDownload(final Account account, final String session_Key, final DownloadLink link, int maxChunks) throws Exception {
         br.setFollowRedirects(false);
         final String postParam = "session_key=" + Encoding.urlEncode(session_Key) + "&" + "url=" + Encoding.urlEncode(link.getDownloadURL()) + "&silent_errors=true";
-        URLConnectionAdapter con = br.openPostConnection(getAPI() + "/api/download", postParam);
+        URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createPostRequest(getAPI() + "/api/download", postParam));
         Request request;
         if (StringUtils.contains(con.getHeaderField("Content-Type"), "application/json") || con.getRequest().getLocation() == null) {
             br.followConnection();
@@ -378,6 +377,7 @@ public class SmoozedCom extends PluginForHost {
             br.followConnection();
             request = br.createRedirectFollowingRequest(br.getRequest());
         }
+        // subquent requests are to download servers, these are not hosted via cloudflare. -raztoki20160118
         int maxRedirect = 15;
         while (--maxRedirect > 0) {
             con = br.openRequestConnection(request, false);
@@ -422,7 +422,7 @@ public class SmoozedCom extends PluginForHost {
     }
 
     private Request apiConfigJS(final Account account, final String session_Key) throws Exception {
-        br.getPage(getAPI() + "/config.js?session_key=" + Encoding.urlEncode(session_Key));
+        getPage(getAPI() + "/config.js?session_key=" + Encoding.urlEncode(session_Key));
         final Request request = br.getRequest();
         errorHandling(request, account, session_Key, "/config.js", null);
         final String responseString = request.getHtmlCode();
@@ -571,7 +571,7 @@ public class SmoozedCom extends PluginForHost {
         } else {
             postParam = param + "&silent_errors=true";
         }
-        br.postPage(getAPI() + method, postParam);
+        postPage(getAPI() + method, postParam);
         final Request request = br.getRequest();
         errorHandling(request, account, session_Key, method, null);
         return request;
@@ -718,10 +718,10 @@ public class SmoozedCom extends PluginForHost {
         final Number user_Premium = get(map, Number.class, "data", "user", "user_premium");
         final long user_Premium_Timestamp = user_Premium.longValue() * 1000l;
         if (user_Premium_Timestamp > 0) {
-            ai.setStatus("Premium account");
+            ai.setStatus("Premium Account");
             ai.setValidUntil(user_Premium_Timestamp);
         } else {
-            ai.setStatus("Free account");
+            ai.setStatus("Free Account");
             ai.setValidUntil(-1);
         }
         final List traffic_Usage = get(map, List.class, "data", "traffic");
