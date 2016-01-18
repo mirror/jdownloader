@@ -307,6 +307,7 @@ DeatchbyCaptcha_Service_createPanel_blacklist=Crna lista
 DeatchbyCaptcha_Service_createPanel_feedback=Prijavi neispravne Captcha-e
 DeathByCaptchaSolver_gettypeName_=deathbycaptcha.eu
 DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer=Rezultat: %s1
+DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer_bad=Neispravan odgovor: %s1
 DeathByCaptchaSolver_solveBasicCaptchaChallenge_failed=Nema Odgovora!
 DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving=Rješavanje...
 DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading=Upload-ovanje...
