@@ -522,9 +522,9 @@ public class SmoozedCom extends antiDDoSForHost {
                 } else if (StringUtils.equalsIgnoreCase(message, "Hoster temporary not available") || StringUtils.equalsIgnoreCase(message, "Internal error")) {
                     // Hoster temporary not available
                     if (seconds != null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not availabl via smoozed.com", Math.max(900, seconds.intValue()) * 1000);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not available via smoozed.com", Math.max(900, seconds.intValue()) * 1000);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not availablevia smoozed.com");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not available via smoozed.com");
                     }
                 } else if (StringUtils.equalsIgnoreCase(message, "Temporary not available")) {
                     // File temporary not available
