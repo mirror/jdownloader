@@ -2,6 +2,8 @@ package org.jdownloader.gui.mainmenu;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
+import java.net.URLEncoder;
 
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -156,14 +158,14 @@ public class DonateAction extends CustomizableAppAction {
      * @param params
      * @return
      */
-    private static String getUrl(String namespace, String method, Object... params) {
+    private static String getUrl(String namespace, String method, Object... params) throws IOException {
         StringBuilder url = new StringBuilder();
         url.append(SERVER).append(namespace).append("/").append(method);
         if (params != null && params.length > 0) {
 
             for (int i = 0; i < params.length; i++) {
                 url.append(i > 0 ? "&" : "?");
-                url.append(JSonStorage.serializeToJson(params[i]));
+                url.append(URLEncoder.encode(JSonStorage.serializeToJson(params[i]), "UTF-8"));
             }
         }
         String u = url.toString();
