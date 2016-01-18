@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -121,9 +122,9 @@ public class AneaNt extends PluginForDecrypt {
             for (int i = 1; i <= numberOfPages; i++) {
                 String pageNumber = String.format(format, (i));
                 // grab the image source
-                String img = br.getRegex("(?i)<img src=\"(http?://[^\"]+)\" onerror").getMatch(0);
+                String img = br.getRegex("(?i)<img src=\"(https?://[^\"]+)\" onerror").getMatch(0);
                 if (img == null) {
-                    img = br.getRegex("(?i)(http?://img.manga.animea.net/[^\"]+)").getMatch(0);
+                    img = br.getRegex("(?i)(https?://img.manga.animea.net/[^\"]+)").getMatch(0);
                 }
                 if (img == null) {
                     logger.warning("No images found for page : " + pageNumber + " : " + parameter);
@@ -136,8 +137,9 @@ public class AneaNt extends PluginForDecrypt {
                     progress.increase(1);
                     continue;
                 }
-                String extension = img.substring(img.lastIndexOf("."));
-                DownloadLink link = createDownloadlink("ANIMEA://" + img);
+                String extension = getFileNameFromURL(new URL(img));
+                extension = extension.contains(".") ? extension.substring(extension.lastIndexOf(".")) : ".jpg";
+                final DownloadLink link = createDownloadlink("ANIMEA://" + img);
                 link.setFinalFileName((useTitle + " – page " + pageNumber + extension).replace(" ", "_"));
                 link.setAvailable(true);
                 link.setProperty("fastAdd", "true");
