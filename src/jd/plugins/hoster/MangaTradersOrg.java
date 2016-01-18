@@ -25,8 +25,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -219,15 +217,9 @@ public class MangaTradersOrg extends antiDDoSForHost {
                 if (userNameCookie == null || "deleted".equalsIgnoreCase(userNameCookie)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(mainPage);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(this.getHost()));
                 weAreAlreadyLoggedIn = true;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);

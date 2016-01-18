@@ -18,9 +18,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -30,10 +31,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://(?:www\\.)?zippyshare\\.com/([a-z0-9\\-_%]+/[a-z0-9\\-_%]+/dir\\.html|[a-z0-9A-Z_-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zippyshare.com" }, urls = { "http://(?:www\\.)?zippyshare\\.com/([a-z0-9\\-_%,]+/[a-z0-9\\-_%]+/dir\\.html|[a-z0-9A-Z_-]+)" }, flags = { 0 })
 public class ZippyShareComFolder extends PluginForDecrypt {
 
     public ZippyShareComFolder(PluginWrapper wrapper) {
@@ -41,24 +41,19 @@ public class ZippyShareComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.getPage(parameter);
-        if (!br.containsHTML("class=\"filerow even\">")) {
-            // this isn't the case.. it can be a user site link since now we listen to /[a-z0-9A-Z_-]+ we don't know until we try!
-            // logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
         // Over 50 links? Maybe there is more...
-        final String[] userDir = new Regex(parameter, "zippyshare\\.com/([a-z0-9\\-_]+)(?:/([a-z0-9\\-_]+)/)?").getRow(0);
+        final String[] userDir = new Regex(parameter, "zippyshare\\.com/([a-z0-9\\-_,]+)(?:/([a-z0-9\\-_]+)/)?").getRow(0);
         final int r = 250;
         while (true) {
             final int dsize = decryptedLinks.size();
             if (dsize == 0) {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             }
-            br.postPage("http://www.zippyshare.com/fragments/publicDir/filetable.jsp", "page=" + (dsize / r) + "&user=" + userDir[0] + "&dir=" + (userDir[1] != null ? userDir[1] : "0") + "&sort=nameasc&pageSize=" + r + "&search=&viewType=default");
+            br.postPage("/fragments/publicDir/filetable.jsp", "page=" + (dsize / r) + "&user=" + userDir[0] + "&dir=" + (userDir[1] != null ? userDir[1] : "0") + "&sort=nameasc&pageSize=" + r + "&search=&viewType=default");
             parseLinks(decryptedLinks);
             if (decryptedLinks.size() != dsize + r) {
                 break;
@@ -75,7 +70,10 @@ public class ZippyShareComFolder extends PluginForDecrypt {
 
     private void parseLinks(final ArrayList<DownloadLink> decryptedLinks) throws PluginException {
         // lets parse each of the results and keep them trusted as online... this will reduce server loads
-        final String[] results = br.getRegex("<tr[^>]+class=(\"|')filerow even\\1.*?</tr>").getColumn(-1);
+        String[] results = br.getRegex("<tr[^>]+class=(\"|')filerow even\\1.*?</tr>").getColumn(-1);
+        if (results == null || results.length == 0) {
+            results = br.getRegex("<div style[^>]+>\\s*<div style.*?</div>\\s*</div>").getColumn(-1);
+        }
         if (results != null) {
             for (final String result : results) {
                 final String link = new Regex(result, "\"(http://www\\d+\\.zippyshare\\.com/v/[a-zA-Z0-9]+/file\\.html)\"").getMatch(0);
