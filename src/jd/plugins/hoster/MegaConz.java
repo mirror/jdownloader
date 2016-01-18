@@ -20,19 +20,12 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.FileStateManager;
-import org.jdownloader.controlling.FileStateManager.FILESTATE;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.PluginTaskID;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
@@ -44,9 +37,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.FileStateManager;
+import org.jdownloader.controlling.FileStateManager.FILESTATE;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.PluginTaskID;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+(=###n=[a-zA-Z0-9]+)?|mega:///#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9]+" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
@@ -282,13 +280,8 @@ public class MegaConz extends PluginForHost {
 
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (oldStyle()) {
-                    /* old 09581 stable only */
-                    dl = createHackedDownloadInterface(this, br, link, downloadURL);
-                } else {
-                    /* mega does not like much connections! */
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
-                }
+                /* mega does not like much connections! */
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
                 if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -379,47 +372,6 @@ public class MegaConz extends PluginForHost {
             return true;
         }
         return false;
-    }
-
-    private RAFDownload createHackedDownloadInterface2(final PluginForHost plugin, final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
-        final RAFDownload dl = new RAFDownload(plugin, downloadLink, request);
-        plugin.setDownloadInterface(dl);
-        dl.setResume(true);
-        dl.setChunkNum(1);
-        return dl;
-    }
-
-    /* Workaround for Bug in old 09581 Downloadsystem bug */
-    private RAFDownload createHackedDownloadInterface(final PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
-        Request r = br.createRequest(url);
-        RAFDownload dl = this.createHackedDownloadInterface2(plugin, downloadLink, r);
-        try {
-            r.getHeaders().remove("Accept-Encoding");
-            dl.connect(br);
-        } catch (final PluginException e) {
-            if (e.getValue() == -1) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = this.createHackedDownloadInterface2(plugin, downloadLink, r = br.createGetRequestRedirectedRequest(r));
-                    try {
-                        r.getHeaders().remove("Accept-Encoding");
-                        dl.connect(br);
-                        break;
-                    } catch (final PluginException e2) {
-                        continue;
-                    }
-                }
-                if (maxRedirects <= 0) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop");
-                }
-
-            }
-        }
-        if (plugin.getBrowser() == br) {
-            plugin.setDownloadInterface(dl);
-        }
-        return dl;
     }
 
     private void setConfigElements() {

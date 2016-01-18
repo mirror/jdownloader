@@ -600,9 +600,10 @@ public class YoutubeDashV2 extends PluginForHost {
             if (linkid != null && !isDownloading) {
                 switch (variant.getType()) {
                 case SUBTITLES: {
-                    if (!("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID)).equals(linkid)) {
+                    final String subtitleID = "youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE);
+                    if (!subtitleID.equals(linkid)) {
                         // update it
-                        downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID));
+                        downloadLink.setLinkID(subtitleID);
                         return AvailableStatus.TRUE;
                     }
                     break;
@@ -610,9 +611,10 @@ public class YoutubeDashV2 extends PluginForHost {
                 case VIDEO:
                 case DASH_AUDIO:
                 case DASH_VIDEO: {
-                    if (!("youtubev2://" + variant._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID)).equals(linkid)) {
+                    final String videoID = "youtubev2://" + variant._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID);
+                    if (!videoID.equals(linkid)) {
                         // update it
-                        downloadLink.setLinkID("youtubev2://" + variant._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID));
+                        downloadLink.setLinkID(videoID);
                         return AvailableStatus.TRUE;
                     }
                     break;
@@ -924,8 +926,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-             * 15.12.2014
-             */"This video is not available.")) {
+                                                                                                                                 * 15.12.2014
+                                                                                                                                 */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1939,7 +1941,6 @@ public class YoutubeDashV2 extends PluginForHost {
 
                 YoutubeVariantInterface v = getCachedHelper().getVariantById(name);
                 if (v == YoutubeVariant.SUBTITLES) {
-
                     SubtitleVariant var = new SubtitleVariant(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE));
                     downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, var);
                     return var;
@@ -1985,8 +1986,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // "&variant=" + variant);
             //
             // }
-
-            downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID));
+            final String subtitleID = "youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE);
+            downloadLink.setLinkID(subtitleID);
 
         } else if (variant instanceof YoutubeVariantInterface) {
             YoutubeVariantInterface v = (YoutubeVariantInterface) variant;

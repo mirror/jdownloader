@@ -90,7 +90,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         return best;
     }
 
-    public static ArrayList<HlsContainer> getHlsQualities(final Browser br) {
+    public static ArrayList<HlsContainer> getHlsQualities(final Browser br) throws Exception {
         final ArrayList<HlsContainer> hlsqualities = new ArrayList<HlsContainer>();
         final String[] medias = br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
         if (medias == null) {

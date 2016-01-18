@@ -20,11 +20,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -43,6 +38,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -214,7 +214,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
-        final PostRequest request = (PostRequest) ibr.createPostRequest(page, new ArrayList<RequestVariable>(), null);
+        final PostRequest request = ibr.createPostRequest(page, new ArrayList<RequestVariable>(), null);
         request.setPostDataString(post);
         setContentType(request, isJson);
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
@@ -415,7 +415,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * @author raztoki
      */
     protected URLConnectionAdapter openAntiDDoSRequestConnection(final Browser ibr, Request request) throws Exception {
-        final String host = Browser.getHost(request.getUrl());
+        final String host = Browser.getHost(request.getURI());
         prepBrowser(ibr, host);
         ibr.openRequestConnection(request);
         antiDDoS(ibr, request);
@@ -523,7 +523,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
                     String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
                     StringBuilder sb = new StringBuilder();
-                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
+                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURI(), true) + "\";\r\n");
                     sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
                     sb.append(line2);
 

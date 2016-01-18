@@ -33,6 +33,27 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.uio.CloseReason;
@@ -56,27 +77,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.UserIOProgress;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -715,8 +715,9 @@ public abstract class Plugin implements ActionListener {
         final List<Challenge<?>> challenges = this.challenges;
         if (challenges == null) {
             return Collections.unmodifiableList(new ArrayList<Challenge<?>>());
+        } else {
+            return Collections.unmodifiableList(challenges);
         }
-        return Collections.unmodifiableList(challenges);
     }
 
     /**
@@ -733,44 +734,41 @@ public abstract class Plugin implements ActionListener {
      * @param challenge
      */
     public synchronized int addChallenge(Challenge<?> challenge) {
-        List<Challenge<?>> nchallenges = new ArrayList<Challenge<?>>();
-        List<Challenge<?>> old = challenges;
+        final List<Challenge<?>> nchallenges = new ArrayList<Challenge<?>>();
+        final List<Challenge<?>> old = this.challenges;
         if (old != null) {
             nchallenges.addAll(old);
         }
         nchallenges.add(challenge);
-        challenges = nchallenges;
+        this.challenges = nchallenges;
         return nchallenges.size() - 1;
     }
 
     public void invalidateLastChallengeResponse() {
-
-        List<Challenge<?>> ch = challenges;
+        final List<Challenge<?>> ch = challenges;
         if (ch != null) {
-            for (Challenge<?> c : ch) {
-                SolverJob<?> job = c.getJob();
+            for (final Challenge<?> c : ch) {
+                final SolverJob<?> job = c.getJob();
                 if (job != null) {
                     job.invalidate();
                 }
             }
         }
-
     }
 
     public void validateLastChallengeResponse() {
-        List<Challenge<?>> ch = challenges;
+        final List<Challenge<?>> ch = challenges;
         if (ch != null && ch.size() > 0) {
-            Challenge<?> latest = ch.get(ch.size() - 1);
-
-            SolverJob<?> job = latest.getJob();
+            final Challenge<?> latest = ch.get(ch.size() - 1);
+            final SolverJob<?> job = latest.getJob();
             if (job != null) {
                 job.validate();
             }
-
         }
     }
 
     public boolean hasChallengeResponse() {
+        final List<Challenge<?>> challenges = this.challenges;
         return challenges != null && challenges.size() > 0;
     }
 }

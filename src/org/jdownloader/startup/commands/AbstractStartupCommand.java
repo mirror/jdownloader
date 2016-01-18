@@ -7,12 +7,12 @@ import org.jdownloader.startup.StartupCommand;
 
 public abstract class AbstractStartupCommand implements StartupCommand {
 
-    private String[]    commands;
-    protected LogSource logger;
+    protected final String[]  commands;
+    protected final LogSource logger;
 
     public AbstractStartupCommand(String... commands) {
         this.commands = commands;
-        logger = LogController.getInstance().getLogger(getClass().getName());
+        logger = LogController.getFastPluginLogger(getClass().getName());
     }
 
     @Override
@@ -30,12 +30,14 @@ public abstract class AbstractStartupCommand implements StartupCommand {
 
     @Override
     public String help() {
-        StringBuilder sb = new StringBuilder();
-        for (String s : getCommandSwitches()) {
+        final StringBuilder sb = new StringBuilder();
+        for (final String s : getCommandSwitches()) {
             if (sb.length() > 0) {
                 sb.append("/");
             }
-            sb.append("-").append(s);
+            if (StringUtils.isNotEmpty(s)) {
+                sb.append("-").append(s);
+            }
         }
         if (getParameterHelp() != null) {
             sb.append(" ").append(getParameterHelp());

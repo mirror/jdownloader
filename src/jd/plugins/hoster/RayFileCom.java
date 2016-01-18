@@ -95,12 +95,7 @@ public class RayFileCom extends PluginForHost {
         // Range: bytes=resuming bytes - resuming bytes + 5242880 -> work
         // resuming limitations: 1 chunk @ max 5242880 bytes Range!
 
-        if (oldStyle()) {
-            /* setup Range-Header for old 09581 stable */
-            dl = createHackedDownloadInterface(this, br, downloadLink, downloadUrl);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
 
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -108,54 +103,6 @@ public class RayFileCom extends PluginForHost {
         }
 
         this.dl.startDownload();
-    }
-
-    private boolean oldStyle() {
-        String style = System.getProperty("ftpStyle", null);
-        if ("new".equalsIgnoreCase(style)) {
-            return false;
-        }
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
-    }
-
-    private RAFDownload createHackedDownloadInterface(PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
-        Request r = br.createRequest(url);
-        RAFDownload dl = this.createHackedDownloadInterface2(plugin, downloadLink, r);
-        try {
-            dl.connect(br);
-        } catch (final PluginException e) {
-            if (e.getValue() == -1) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = this.createHackedDownloadInterface2(plugin, downloadLink, r = br.createGetRequestRedirectedRequest(r));
-                    try {
-                        dl.connect(br);
-                        break;
-                    } catch (final PluginException e2) {
-                        continue;
-                    }
-                }
-                if (maxRedirects <= 0) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop");
-                }
-
-            }
-        }
-        if (plugin.getBrowser() == br) {
-            plugin.setDownloadInterface(dl);
-        }
-        return dl;
     }
 
     private RAFDownload createHackedDownloadInterface2(PluginForHost plugin, final DownloadLink downloadLink, final Request request) throws IOException, PluginException {

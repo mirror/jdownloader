@@ -2648,7 +2648,7 @@ public class LinkCrawler {
     protected void preprocessFinalCrawledLink(CrawledLink link) {
     }
 
-    public static boolean isTempDecryptedURL(String url) {
+    public static boolean isTempDecryptedURL(final String url) {
         if (url != null) {
             final String host = Browser.getHost(url, true);
             return StringUtils.containsIgnoreCase(host, "decrypted") || StringUtils.containsIgnoreCase(host, "yt.not.allowed");

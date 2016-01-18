@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipRequest;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogSource;
@@ -16,9 +19,6 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.ValidationResult;
-
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipRequest;
 
 public class SolverJob<T> {
 
@@ -349,49 +349,39 @@ public class SolverJob<T> {
         final ArrayList<ResponseList<T>> responsesLists = this.getResponses();
         if (responsesLists != null) {
             for (int i = 0; i < responsesLists.size(); i++) {
-                ResponseList<T> responseList = responsesLists.get(0);
+                final ResponseList<T> responseList = responsesLists.get(0);
                 for (final AbstractResponse<T> response : responseList) {
                     if (i == 0) {
                         // used response
-
                         response.setValidation(ValidationResult.VALID);
-
                     } else {
                         // unused responses
                         // maybe send invalid instead?
                         response.setValidation(ValidationResult.UNUSED);
-
                     }
                 }
             }
         }
-
     }
 
     /**
      * call to tell the job, that the result has been INCORRECT
      */
     public void invalidate() {
-
         final ArrayList<ResponseList<T>> responsesLists = this.getResponses();
         if (responsesLists != null) {
             for (int i = 0; i < responsesLists.size(); i++) {
-                ResponseList<T> responseList = responsesLists.get(0);
+                final ResponseList<T> responseList = responsesLists.get(0);
                 for (final AbstractResponse<T> response : responseList) {
                     if (i == 0) {
                         // used response
-
                         response.setValidation(ValidationResult.INVALID);
-
                     } else {
                         // unused responses
-
                         response.setValidation(ValidationResult.UNUSED);
-
                     }
                 }
             }
         }
-
     }
 }
