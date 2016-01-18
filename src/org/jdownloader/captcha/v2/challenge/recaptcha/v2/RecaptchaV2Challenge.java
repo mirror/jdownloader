@@ -116,7 +116,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             Icon icon = null;
             File file = getImageFile();
             try {
-                String filename = new Regex(exeplain, "(?:with|of) (.*)").getMatch(0).replaceAll("[^\\w]", "") + ".png";
+                String filename = new Regex(exeplain, "(?:with|of) (.*)").getMatch(0).replaceAll("[^\\w]", "") + ".jpg";
                 try {
 
                     icon = IconIO.getScaledInstance(new ImageIcon(ImageIO.read(getClass().getResource("example/" + filename))), 80, 55);
