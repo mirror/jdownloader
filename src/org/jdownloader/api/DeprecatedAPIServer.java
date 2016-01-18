@@ -265,109 +265,125 @@ public class DeprecatedAPIServer extends HttpServer {
         }
     }
 
+    public static interface AutoSSLHttpConnectionFactory {
+        HttpConnection create(Socket clientSocket, InputStream is, OutputStream os) throws IOException;
+    }
+
+    public static HttpConnection autoWrapSSLConnection(final Socket clientSocket, AutoSSLHttpConnectionFactory factory) throws IOException {
+        boolean finallyCloseSocket = true;
+        try {
+            clientSocket.setSoTimeout(60 * 1000);
+            final InputStream is = clientSocket.getInputStream();
+            final byte[] guessProtocolBuffer = new byte[8];
+            int index = 0;
+            for (index = 0; index < 8; index++) {
+                final int read = is.read();
+                if (read == -1) {
+                    if (index == 0) {
+                        return null;
+                    } else {
+                        throw new EOFException("guess protocol failed: " + index);
+                    }
+                }
+                guessProtocolBuffer[index] = (byte) read;
+            }
+            final HttpConnectionType httpConnectionType = HttpConnectionType.get(guessProtocolBuffer);
+            final PushbackInputStream clientSocketIS = new PushbackInputStream(is, 8);
+            clientSocketIS.unread(guessProtocolBuffer, 0, index);
+            final InputStream httpIS;
+            final OutputStream httpOS;
+            if (!HttpConnectionType.UNKNOWN.equals(httpConnectionType)) {
+                // http
+                httpIS = clientSocketIS;
+                httpOS = clientSocket.getOutputStream();
+            } else {
+                // https
+                final TlsServerProtocol tlsServerProtocol = new TlsServerProtocol(clientSocketIS, clientSocket.getOutputStream(), new SecureRandom());
+                tlsServerProtocol.accept(new DefaultTlsServer() {
+
+                    private APICert apiCert = null;
+
+                    @Override
+                    public void notifySecureRenegotiation(boolean arg0) throws IOException {
+                    }
+
+                    // rfc3546
+                    protected String getServerName(Hashtable arg0) throws IOException {
+                        final Object serverNameBytes = arg0.get(ExtensionType.server_name);
+                        if (serverNameBytes != null && serverNameBytes instanceof byte[]) {
+                            final DataInputStream is = new DataInputStream(new ByteArrayInputStream((byte[]) serverNameBytes));
+                            final int snl = is.readShort();
+                            if (snl > 0) {
+                                final byte type = is.readByte(); // name type
+                                if (type == 0) {
+                                    // hostname
+                                    final int length = is.readShort(); // name size
+                                    if (length > 0) {
+                                        final byte[] nameBytes = new byte[length];
+                                        is.readFully(nameBytes, 0, length); // name bytes, UTF-8
+                                        return new String(nameBytes, "UTF-8");
+                                    }
+                                }
+                            }
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public void processClientExtensions(Hashtable arg0) throws IOException {
+                        final String serverName = getServerName(arg0);
+                        super.processClientExtensions(arg0);
+                        try {
+                            apiCert = getAPICert(serverName);
+                        } catch (Throwable e) {
+                            LogController.CL(DeprecatedAPIServer.class).log(e);
+                            throw new IOException(e);
+                        }
+                    }
+
+                    protected TlsSignerCredentials getRSASignerCredentials() throws IOException {
+                        // SignatureAndHashAlgorithm needed for TLS1.2
+                        final SignatureAndHashAlgorithm signatureAndHashAlgorithm = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
+                        return new DefaultTlsSignerCredentials(context, apiCert.getCert(), apiCert.getAsymKeyParam(), signatureAndHashAlgorithm);
+                    }
+
+                    protected org.bouncycastle.crypto.tls.ProtocolVersion getMaximumVersion() {
+                        // signal TLS1.2 support
+                        return ProtocolVersion.TLSv12;
+                    };
+
+                });
+                httpIS = tlsServerProtocol.getInputStream();
+                httpOS = tlsServerProtocol.getOutputStream();
+            }
+            finallyCloseSocket = false;
+            return factory.create(clientSocket, httpIS, httpOS);
+        } finally {
+            try {
+                if (finallyCloseSocket) {
+                    clientSocket.close();
+                }
+            } catch (IOException ignore) {
+            }
+        }
+    }
+
     @Override
     protected Runnable createConnectionHandler(final Socket clientSocket) throws IOException {
         return new Runnable() {
 
             @Override
             public void run() {
-                boolean finallyCloseSocket = true;
                 try {
-                    clientSocket.setSoTimeout(60 * 1000);
-                    final InputStream is = clientSocket.getInputStream();
-                    final byte[] guessProtocolBuffer = new byte[8];
-                    int index = 0;
-                    for (index = 0; index < 8; index++) {
-                        final int read = is.read();
-                        if (read == -1) {
-                            if (index == 0) {
-                                return;
-                            } else {
-                                throw new EOFException("guess protocol failed: " + index);
-                            }
+                    autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
+
+                        @Override
+                        public HttpConnection create(Socket clientSocket, InputStream is, OutputStream os) throws IOException {
+                            return new CustomHttpConnection(DeprecatedAPIServer.this, clientSocket, is, os);
                         }
-                        guessProtocolBuffer[index] = (byte) read;
-                    }
-                    final HttpConnectionType httpConnectionType = HttpConnectionType.get(guessProtocolBuffer);
-                    final PushbackInputStream clientSocketIS = new PushbackInputStream(is, 8);
-                    clientSocketIS.unread(guessProtocolBuffer, 0, index);
-                    final InputStream httpIS;
-                    final OutputStream httpOS;
-                    if (!HttpConnectionType.UNKNOWN.equals(httpConnectionType)) {
-                        // http
-                        httpIS = clientSocketIS;
-                        httpOS = clientSocket.getOutputStream();
-                    } else {
-                        // https
-                        final TlsServerProtocol tlsServerProtocol = new TlsServerProtocol(clientSocketIS, clientSocket.getOutputStream(), new SecureRandom());
-                        tlsServerProtocol.accept(new DefaultTlsServer() {
-
-                            private APICert apiCert = null;
-
-                            @Override
-                            public void notifySecureRenegotiation(boolean arg0) throws IOException {
-                            }
-
-                            // rfc3546
-                            protected String getServerName(Hashtable arg0) throws IOException {
-                                final Object serverNameBytes = arg0.get(ExtensionType.server_name);
-                                if (serverNameBytes != null && serverNameBytes instanceof byte[]) {
-                                    final DataInputStream is = new DataInputStream(new ByteArrayInputStream((byte[]) serverNameBytes));
-                                    final int snl = is.readShort();
-                                    if (snl > 0) {
-                                        final byte type = is.readByte(); // name type
-                                        if (type == 0) {
-                                            // hostname
-                                            final int length = is.readShort(); // name size
-                                            if (length > 0) {
-                                                final byte[] nameBytes = new byte[length];
-                                                is.readFully(nameBytes, 0, length); // name bytes, UTF-8
-                                                return new String(nameBytes, "UTF-8");
-                                            }
-                                        }
-                                    }
-                                }
-                                return null;
-                            }
-
-                            @Override
-                            public void processClientExtensions(Hashtable arg0) throws IOException {
-                                final String serverName = getServerName(arg0);
-                                super.processClientExtensions(arg0);
-                                try {
-                                    apiCert = getAPICert(serverName);
-                                } catch (Throwable e) {
-                                    LogController.CL(DeprecatedAPIServer.class).log(e);
-                                    throw new IOException(e);
-                                }
-                            }
-
-                            protected TlsSignerCredentials getRSASignerCredentials() throws IOException {
-                                // SignatureAndHashAlgorithm needed for TLS1.2
-                                final SignatureAndHashAlgorithm signatureAndHashAlgorithm = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
-                                return new DefaultTlsSignerCredentials(context, apiCert.getCert(), apiCert.getAsymKeyParam(), signatureAndHashAlgorithm);
-                            }
-
-                            protected org.bouncycastle.crypto.tls.ProtocolVersion getMaximumVersion() {
-                                // signal TLS1.2 support
-                                return ProtocolVersion.TLSv12;
-                            };
-
-                        });
-                        httpIS = tlsServerProtocol.getInputStream();
-                        httpOS = tlsServerProtocol.getOutputStream();
-                    }
-                    finallyCloseSocket = false;
-                    new CustomHttpConnection(DeprecatedAPIServer.this, clientSocket, httpIS, httpOS).run();
+                    }).run();
                 } catch (Throwable e) {
                     LogController.CL(DeprecatedAPIServer.class).log(e);
-                } finally {
-                    try {
-                        if (finallyCloseSocket) {
-                            clientSocket.close();
-                        }
-                    } catch (IOException ignore) {
-                    }
                 }
             }
         };
