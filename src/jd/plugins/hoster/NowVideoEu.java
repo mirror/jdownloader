@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -24,6 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,12 +46,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to", "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014", "NEVERUSETHISSUPERDUBERREGEXATALL2015" }, flags = { 2, 0, 0, 0 })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
+    // note: avi containers are not converted to flv!
 
     private static Object                  LOCK               = new Object();
     private static final String            currentMainDomain  = "nowvideo.to";
@@ -56,6 +58,7 @@ public class NowVideoEu extends PluginForHost {
     private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
     private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
     private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at|ec|li|to)";
+    private String                         filename           = null;
     private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
     private static AtomicReference<String> agent              = new AtomicReference<String>("http://www." + currentMainDomain);
@@ -159,6 +162,8 @@ public class NowVideoEu extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br = new Browser();
+        filename = null;
         prepBrowser(br);
         correctCurrentDomain();
         correctDownloadLink(link);
@@ -167,11 +172,7 @@ public class NowVideoEu extends PluginForHost {
         link.setName(linkid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getContentUrl());
-        } catch (final Throwable e) {
-            br.getPage(link.getDownloadURL());
-        }
+        br.getPage(link.getContentUrl());
         checkForThis();
         if (br.containsHTML(">This file no longer exists on our servers|>Possible reasons:")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -181,7 +182,7 @@ public class NowVideoEu extends PluginForHost {
             link.setName(linkid + ".flv");
             return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("<title>Watch (.*?) online \\|").getMatch(0);
+        filename = br.getRegex("<title>Watch (.*?) online \\|").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"Watch (.*?) online \\|").getMatch(0);
             if (filename == null) {
@@ -192,7 +193,7 @@ public class NowVideoEu extends PluginForHost {
             }
         }
         filename = filename.trim() + "(" + linkid + ")";
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        link.setName(Encoding.htmlDecode(filename) + ".flv");
         return AvailableStatus.TRUE;
     }
 
@@ -248,15 +249,20 @@ public class NowVideoEu extends PluginForHost {
         if (br.containsHTML("error_msg=The video has failed to convert")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'The video has failed to convert'", 60 * 60 * 1000l);
         }
-        String dllink = br.getRegex("url=(http://[^<>\"]*?\\.flv)\\&title").getMatch(0);
+        String dllink = br.getRegex("url=(https?://[^<>\"]*?\\.(?:flv|avi))\\&title").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // set correct file extension, flv != avi!
+        final String name = getFileNameFromURL(new URL(dllink));
+        final String ext = name.substring(name.lastIndexOf("."));
+        downloadLink.setFinalFileName(filename + ext);
+        // end of final filename correction
         while (true) {
             if (errCount >= 1) {
                 br.getHeaders().put("Referer", host + "/player/cloudplayer.swf");
                 br.getPage(host + player + errCount + "&errorCode=404&errorUrl=" + Encoding.urlEncode(dllink));
-                dllink = br.getRegex("url=(http://[^<>\"]+\\.flv)\\&title").getMatch(0);
+                dllink = br.getRegex("url=(https?://[^<>\"]+\\.(?:flv|avi))\\&title").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -411,7 +417,7 @@ public class NowVideoEu extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://[a-z0-9\\.]+/dl/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(/download\\.php\\?file=[a-f0-9]{32,}\\.flv)\"").getMatch(0);
+                dllink = br.getRegex("\"(/download\\.php\\?file=[a-f0-9]{32,}\\.(?:flv|avi))\"").getMatch(0);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
