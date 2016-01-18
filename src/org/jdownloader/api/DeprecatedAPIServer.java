@@ -222,13 +222,13 @@ public class DeprecatedAPIServer extends HttpServer {
                 certGen.setSerialNumber(BigInteger.valueOf(currentTimeMillis));
                 certGen.setIssuerDN(dnName);
                 certGen.setNotBefore(new Date(currentTimeMillis - (2 * 24 * 60 * 60 * 1000l)));
-                certGen.setNotAfter(new Date(currentTimeMillis + (100 * 365 * 24 * 60 * 60 * 1000l)));
+                certGen.setNotAfter(new Date(currentTimeMillis + (50 * 365 * 24 * 60 * 60 * 1000l)));
                 certGen.setSubjectDN(dnName); // note: same as issuer
                 certGen.setPublicKey(keyPair.getPublic());
                 certGen.setSignatureAlgorithm("SHA1withRSA");
                 final ASN1EncodableVector alternativeNames = new ASN1EncodableVector();
                 final String[] subjects;
-                if ("localhost".equalsIgnoreCase(name)) {
+                if ("localhost".equalsIgnoreCase(name) || "127.0.0.1".equalsIgnoreCase(name)) {
                     alternativeNames.add(new GeneralName(GeneralName.dNSName, "localhost"));
                     alternativeNames.add(new GeneralName(GeneralName.iPAddress, "127.0.0.1"));
                     subjects = new String[] { "localhost", "127.0.0.1" };
@@ -331,7 +331,10 @@ public class DeprecatedAPIServer extends HttpServer {
 
                     @Override
                     public void processClientExtensions(Hashtable arg0) throws IOException {
-                        final String serverName = getServerName(arg0);
+                        String serverName = getServerName(arg0);
+                        if (serverName == null) {
+                            serverName = clientSocket.getLocalAddress().getHostAddress();
+                        }
                         super.processClientExtensions(arg0);
                         try {
                             apiCert = getAPICert(serverName);
