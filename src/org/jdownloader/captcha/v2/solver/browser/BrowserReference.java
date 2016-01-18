@@ -40,6 +40,8 @@ public abstract class BrowserReference implements HttpRequestHandler {
     private BrowserViewport                        viewport;
     private final HashMap<String, URL>             resourceIds;
     private final HashMap<String, String>          types;
+    private long                                   opened;
+    private long                                   latestRequest;
 
     {
         resourceIds = new HashMap<String, URL>();
@@ -115,6 +117,8 @@ public abstract class BrowserReference implements HttpRequestHandler {
             // }
         }
 
+        opened = System.currentTimeMillis();
+
         if (browserCmd == null || browserCmd.length == 0) {
             CrossSystem.openURL(url);
         } else {
@@ -165,6 +169,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
         try {
+            latestRequest = System.currentTimeMillis();
             if ("/resource".equals(request.getRequestedPath())) {
                 String resourceID = request.getRequestedURLParameters().get(0).value;
                 URL resource = resourceIds.get(resourceID);
@@ -210,12 +215,19 @@ public abstract class BrowserReference implements HttpRequestHandler {
                 return true;
             } else if ("canClose".equals(pDo)) {
                 SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(challenge.getId().getID());
-                if (challenge.isSolved() || job == null || job.isDone()) {
+                if (challenge.isSolved() || job == null || job.isDone() || BrowserSolver.getInstance().isJobDone(job)) {
                     response.getOutputStream(true).write("true".getBytes("UTF-8"));
                     return true;
                 } else {
                     response.getOutputStream(true).write("false".getBytes("UTF-8"));
                 }
+            } else if ("unload".equals(pDo)) {
+                SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(challenge.getId().getID());
+                BrowserSolver.getInstance().kill((SolverJob<String>) job);
+
+                response.getOutputStream(true).write("true".getBytes("UTF-8"));
+                return true;
+
             } else if (pDo == null) {
                 response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));
             } else {

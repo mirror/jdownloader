@@ -22,6 +22,17 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import jd.controlling.captcha.SkipException;
 
 public abstract class ChallengeSolver<T> {
+    public boolean setInvalid(AbstractResponse<?> response) {
+        return false;
+    }
+
+    public boolean setUnused(AbstractResponse<?> response) {
+        return false;
+    }
+
+    public boolean setValid(AbstractResponse<?> response) {
+        return false;
+    }
 
     protected ThreadPoolExecutor threadPool;
     private Class<T>             resultType;

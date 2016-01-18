@@ -44,8 +44,12 @@ function getOffset(elem) {
 
 function init(elem) {
 
-	// document.getElementById("elementID").offsetTop;
-	// document.getElementById("elementID").offsetLeft;
+	window.addEventListener("beforeunload", function (e) {
+//close dialog when user closed browser
+		unload();
+		  return null;;                            //Webkit, Safari, Chrome
+		});
+
 	var bounds = null;
 	if (elem != null) {
 		bounds = elem.getBoundingClientRect();
@@ -112,6 +116,20 @@ function getInternetExplorerVersion() {
 			rv = parseFloat(RegExp.$1);
 	}
 	return rv;
+}
+function unload(){
+	try {
+		var xhr = new XMLHttpRequest();
+	
+
+		xhr.open("GET", window.location.href + "&do=unload", true);
+		xhr.timeout = 5000;
+		xhr.send();
+
+	} catch (err) {
+		
+		return;
+	}
 }
 function closeWindowOrTab() {
 
@@ -192,7 +210,7 @@ function refresh() {
 
 		xhr.open("GET", window.location.href + "&do=canClose", true);
 		//set timeout AFTER .open else we would get an invalid state exception in ie 11 (any maybe even 10)
-		xhr.timeout = 1000;
+		xhr.timeout = 5000;
 		xhr.send();
 
 	} catch (err) {

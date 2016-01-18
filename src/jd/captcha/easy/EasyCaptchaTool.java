@@ -38,6 +38,12 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.storage.jackson.JacksonMapper;
+import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTHelper;
+
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.easy.load.LoadCaptchas;
 import jd.captcha.translate.T;
@@ -47,13 +53,22 @@ import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
-import org.appwork.storage.jackson.JacksonMapper;
-import org.appwork.utils.Application;
-import org.appwork.utils.swing.EDTHelper;
-
 public class EasyCaptchaTool {
+    static {
+        Application.setApplication(".jd_home");
+    }
+
+    public static void main(String[] args) throws IOException {
+
+        JSonStorage.setMapper(new JacksonMapper());
+        LookAndFeelController.getInstance().setUIManager();
+        // EDTEventQueue.initEventQueue();
+
+        EasyMethodFile meth = EasyCaptchaTool.getCaptchaMethode();
+
+        showToolKid(meth);
+    }
+
     public static Storage      config             = JSonStorage.getPlainStorage("EasyCaptchaTool");
     public static final String CONFIG_LASTSESSION = "CONFIG_LASTSESSION";
     public static final String CONFIG_AUTHOR      = "AUTHOR";
@@ -383,19 +398,6 @@ public class EasyCaptchaTool {
         dialog.add(box);
         dialog.pack();
         dialog.setVisible(true);
-    }
-
-    public static void main(String[] args) throws IOException {
-
-        Application.setApplication(".jd_home");
-
-        JSonStorage.setMapper(new JacksonMapper());
-        LookAndFeelController.getInstance().setUIManager();
-        // EDTEventQueue.initEventQueue();
-
-        EasyMethodFile meth = EasyCaptchaTool.getCaptchaMethode();
-
-        showToolKid(meth);
     }
 
 }

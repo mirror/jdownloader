@@ -16,7 +16,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
@@ -24,7 +23,6 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA_SOLUTIONS;
 
@@ -34,7 +32,7 @@ import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.encoding.Encoding;
 
-public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation, GenericConfigEventListener<String> {
+public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implements GenericConfigEventListener<String> {
 
     private CaptchaSolutionsConfigInterface     config;
     private static final CaptchaSolutionsSolver INSTANCE   = new CaptchaSolutionsSolver();
@@ -77,7 +75,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
 
         job.showBubble(this);
         checkInterruption();
@@ -146,47 +144,6 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         return true;
     }
 
-    @Override
-    public void setUnused(AbstractResponse<?> response, SolverJob<?> job) {
-    }
-
-    @Override
-    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
-        // if (config.isFeedBackSendingEnabled() && response instanceof CaptchaSolutionsResponse) {
-        // threadPool.execute(new Runnable() {
-        //
-        // @Override
-        // public void run() {
-        // try {
-        // String captcha = ((CaptchaSolutionsResponse) response).getCaptchaID();
-        // Challenge<?> challenge = response.getChallenge();
-        // if (challenge instanceof BasicCaptchaChallenge) {
-        // Browser br = new Browser();
-        // PostFormDataRequest r = new PostFormDataRequest(" http://api.CaptchaSolutions.com/api/captcha/" + captcha + "/report");
-        //
-        // r.addFormData(new FormData("username", (config.getUserName())));
-        // r.addFormData(new FormData("password", (config.getPassword())));
-        //
-        // URLConnectionAdapter conn = br.openRequestConnection(r);
-        // br.loadConnection(conn);
-        // System.out.println(conn);
-        // }
-        //
-        // // // Report incorrectly solved CAPTCHA if neccessary.
-        // // // Make sure you've checked if the CAPTCHA was in fact
-        // // // incorrectly solved, or else you might get banned as
-        // // // abuser.
-        // // Client client = getClient();
-        //
-        // } catch (final Throwable e) {
-        // logger.log(e);
-        // }
-        // }
-        // });
-        // }
-
-    }
-
     public CaptchaSolutionsAccount loadAccount() {
 
         CaptchaSolutionsAccount ret = new CaptchaSolutionsAccount();
@@ -232,10 +189,6 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         config.setAPIKey(key);
         config.setAPISecret(secret);
 
-    }
-
-    @Override
-    public void setValid(AbstractResponse<?> response, SolverJob<?> job) {
     }
 
     @Override

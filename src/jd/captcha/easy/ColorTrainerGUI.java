@@ -49,6 +49,8 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.appwork.utils.swing.EDTHelper;
+
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.pixelgrid.Captcha;
@@ -58,8 +60,6 @@ import jd.captcha.utils.Utilities;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.swing.EDTHelper;
 
 public class ColorTrainerGUI {
     private static final long serialVersionUID = 1L;
@@ -140,10 +140,11 @@ public class ColorTrainerGUI {
             public void mouseClicked(MouseEvent e) {
                 final CPoint p = colorTrainer.getCPointFromMouseEvent(e);
 
-                if (colorTrainer.add)
+                if (colorTrainer.add) {
                     addPixel(p);
-                else
+                } else {
                     removePixelRelativ(p);
+                }
             }
 
             public void mouseEntered(MouseEvent e) {
@@ -174,7 +175,7 @@ public class ColorTrainerGUI {
 
     /**
      * Gibt die default GridbagConstants zurück
-     * 
+     *
      * @param x
      * @param y
      * @param width
@@ -321,9 +322,9 @@ public class ColorTrainerGUI {
         /*
          * JCheckBox fst = new EDTHelper<JCheckBox>() { public JCheckBox edtRun() { return new JCheckBox(JDL.L("easycaptcha.fastselection",
          * "FastSelection:"), colorTrainer.fastSelection); } }.getReturnValue();
-         * 
+         *
          * fst.addActionListener(new ActionListener() {
-         * 
+         *
          * public void actionPerformed(ActionEvent e) { colorTrainer.fastSelection = !colorTrainer.fastSelection; } }); box.add(fst);
          */
         final ChangeListener cl = new ChangeListener() {
@@ -441,15 +442,21 @@ public class ColorTrainerGUI {
         File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + jac.getMethodDirName() + "/CPoints.xml");
         File[] list = folder.listFiles();
         Captcha[] cs = new Captcha[15 < list.length ? 15 : list.length];
-        if (colorPoints == null) colorPoints = ColorTrainer.load(file);
+        if (colorPoints == null) {
+            colorPoints = ColorTrainer.load(file);
+        }
         ColorTrainerGUI lastCC = null;
         for (int i = 0; i < cs.length; i++) {
             File captchafile = list[i];
             Image captchaImage = Utilities.loadImage(captchafile);
-            if (captchaImage == null) continue;
+            if (captchaImage == null) {
+                continue;
+            }
 
             Captcha captcha = jac.createCaptcha(captchaImage);
-            if (captcha == null) continue;
+            if (captcha == null) {
+                continue;
+            }
             BackGroundImageManager bgit = new BackGroundImageManager(captcha);
             bgit.clearCaptchaAll();
             captcha.setOrgGrid(PixelGrid.getGridCopy(captcha.grid));
@@ -472,20 +479,24 @@ public class ColorTrainerGUI {
             }
             lastCC = cc;
             colorPoints = cc.colorTrainer.colorPointList;
-            if (cc.close) break;
+            if (cc.close) {
+                break;
+            }
 
         }
         if (new EDTHelper<Boolean>() {
             public Boolean edtRun() {
                 return JOptionPane.showConfirmDialog(null, T._.gui_btn_save(), T._.gui_btn_save(), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
             }
-        }.getReturnValue()) ColorTrainer.saveColors(colorPoints, file);
+        }.getReturnValue()) {
+            ColorTrainer.saveColors(colorPoints, file);
+        }
         return colorPoints;
     }
 
     /**
      * Startet einen ColorTrainer und gibt die Liste mit den Trainierten CPoints zurück
-     * 
+     *
      * @param file
      * @return
      * @throws InterruptedException

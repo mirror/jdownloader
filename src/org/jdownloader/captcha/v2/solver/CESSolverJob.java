@@ -71,9 +71,15 @@ public class CESSolverJob<T> {
     }
 
     public void setAnswer(AbstractResponse<T> abstractResponse) {
-        answered = true;
-        job.addAnswer(abstractResponse);
-        setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer(abstractResponse.getValue() + ""), NewTheme.I().getIcon(IconKey.ICON_OK, 20));
+
+        if (job.addAnswer(abstractResponse)) {
+            answered = true;
+            setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer(abstractResponse.getValue() + ""), NewTheme.I().getIcon(IconKey.ICON_OK, 20));
+        } else {
+            setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer_bad(abstractResponse.getValue() + ""), NewTheme.I().getIcon(IconKey.ICON_BAD, 20));
+
+        }
+
     }
 
     public void hideBubble() {

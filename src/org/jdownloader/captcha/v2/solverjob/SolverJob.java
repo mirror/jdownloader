@@ -8,18 +8,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipRequest;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.ValidationResult;
+
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipRequest;
 
 public class SolverJob<T> {
 
@@ -61,9 +60,11 @@ public class SolverJob<T> {
         }
     }
 
-    public void addAnswer(AbstractResponse<T> abstractResponse) {
+    public boolean addAnswer(AbstractResponse<T> abstractResponse) {
         if (!abstractResponse.getChallenge().validateResponse(abstractResponse)) {
-            return;
+            abstractResponse.setValidation(ValidationResult.INVALID);
+
+            return false;
         }
         boolean kill = false;
         boolean isAlive;
@@ -84,17 +85,11 @@ public class SolverJob<T> {
         }
         if (isAlive) {
             fireNewAnswerEvent(abstractResponse);
+            return true;
         } else {
-            final Object solver = abstractResponse.getSolver();
-            if (solver instanceof ChallengeResponseValidation) {
-                try {
-                    ((ChallengeResponseValidation) solver).setUnused(abstractResponse, this);
-                } catch (final Throwable e) {
+            abstractResponse.setValidation(ValidationResult.UNUSED);
+            return false;
 
-                    LoggerFactory.log(getLogger(), e);
-
-                }
-            }
         }
     }
 
@@ -347,132 +342,56 @@ public class SolverJob<T> {
         }
     }
 
-    private boolean sameResponseValue(AbstractResponse a, AbstractResponse b) {
-        if (a != null && b != null && a.getValue() != null && b.getValue() != null) {
-            return a.getValue() == b.getValue() || a.getValue().equals(b.getValue());
-        }
-        return false;
-    }
-
     /**
      * call to tell the job, that the result has been correct
      */
     public void validate() {
-        final ResponseList<T> returnedResponseList = this.getResponse();
-        if (returnedResponseList != null && returnedResponseList.size() > 0) {
-            final AbstractResponse<?> returnedResponse = returnedResponseList.get(0);
-            for (final AbstractResponse<T> response : returnedResponseList) {
-                if (response.getSolver() instanceof ChallengeResponseValidation) {
-                    final ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                    if (returnedResponse == response) {
-                        try {
-                            validation.setValid(response, this);
-                        } catch (final Throwable e) {
-                            LoggerFactory.log(getLogger(), e);
-                        }
+        final ArrayList<ResponseList<T>> responsesLists = this.getResponses();
+        if (responsesLists != null) {
+            for (int i = 0; i < responsesLists.size(); i++) {
+                ResponseList<T> responseList = responsesLists.get(0);
+                for (final AbstractResponse<T> response : responseList) {
+                    if (i == 0) {
+                        // used response
+
+                        response.setValidation(ValidationResult.VALID);
+
                     } else {
-                        if (sameResponseValue(returnedResponse, response)) {
-                            try {
-                                validation.setValid(response, this);
-                            } catch (final Throwable e) {
-                                LoggerFactory.log(getLogger(), e);
-                            }
-                        } else {
-                            try {
-                                validation.setInvalid(response, this);
-                            } catch (final Throwable e) {
-                                LoggerFactory.log(getLogger(), e);
-                            }
-                        }
-                    }
-                }
-            }
-            final ArrayList<ResponseList<T>> allResponseLists = this.getResponses();
-            if (allResponseLists != null) {
-                for (ResponseList<T> responseList : allResponseLists) {
-                    if (responseList != returnedResponseList) {
-                        for (final AbstractResponse<T> response : responseList) {
-                            if (response.getSolver() instanceof ChallengeResponseValidation) {
-                                final ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                                if (sameResponseValue(returnedResponse, response)) {
-                                    try {
-                                        validation.setValid(response, this);
-                                    } catch (final Throwable e) {
-                                        LoggerFactory.log(getLogger(), e);
-                                    }
-                                } else {
-                                    try {
-                                        validation.setInvalid(response, this);
-                                    } catch (final Throwable e) {
-                                        LoggerFactory.log(getLogger(), e);
-                                    }
-                                }
-                            }
-                        }
+                        // unused responses
+                        // maybe send invalid instead?
+                        response.setValidation(ValidationResult.UNUSED);
+
                     }
                 }
             }
         }
+
     }
 
     /**
      * call to tell the job, that the result has been INCORRECT
      */
     public void invalidate() {
-        final ResponseList<T> returnedResponseList = this.getResponse();
-        if (returnedResponseList != null && returnedResponseList.size() > 0) {
-            final AbstractResponse<?> returnedResponse = returnedResponseList.get(0);
-            for (final AbstractResponse<T> response : returnedResponseList) {
-                if (response.getSolver() instanceof ChallengeResponseValidation) {
-                    final ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                    if (returnedResponse == response) {
-                        try {
-                            validation.setInvalid(response, this);
-                        } catch (final Throwable e) {
-                            LoggerFactory.log(getLogger(), e);
-                        }
+
+        final ArrayList<ResponseList<T>> responsesLists = this.getResponses();
+        if (responsesLists != null) {
+            for (int i = 0; i < responsesLists.size(); i++) {
+                ResponseList<T> responseList = responsesLists.get(0);
+                for (final AbstractResponse<T> response : responseList) {
+                    if (i == 0) {
+                        // used response
+
+                        response.setValidation(ValidationResult.INVALID);
+
                     } else {
-                        if (sameResponseValue(returnedResponse, response)) {
-                            try {
-                                validation.setInvalid(response, this);
-                            } catch (final Throwable e) {
-                                LoggerFactory.log(getLogger(), e);
-                            }
-                        } else {
-                            try {
-                                validation.setUnused(response, this);
-                            } catch (final Throwable e) {
-                                LoggerFactory.log(getLogger(), e);
-                            }
-                        }
-                    }
-                }
-            }
-            final ArrayList<ResponseList<T>> allResponseLists = this.getResponses();
-            if (allResponseLists != null) {
-                for (ResponseList<T> responseList : allResponseLists) {
-                    if (responseList != returnedResponseList) {
-                        for (final AbstractResponse<T> response : responseList) {
-                            if (response.getSolver() instanceof ChallengeResponseValidation) {
-                                final ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
-                                if (sameResponseValue(returnedResponse, response)) {
-                                    try {
-                                        validation.setInvalid(response, this);
-                                    } catch (final Throwable e) {
-                                        LoggerFactory.log(getLogger(), e);
-                                    }
-                                } else {
-                                    try {
-                                        validation.setUnused(response, this);
-                                    } catch (final Throwable e) {
-                                        LoggerFactory.log(getLogger(), e);
-                                    }
-                                }
-                            }
-                        }
+                        // unused responses
+
+                        response.setValidation(ValidationResult.UNUSED);
+
                     }
                 }
             }
         }
+
     }
 }

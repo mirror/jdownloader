@@ -18,7 +18,6 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
@@ -26,7 +25,6 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
@@ -34,7 +32,7 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> implements ChallengeResponseValidation {
+public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> {
 
     private Captcha9kwSettings                 config;
     private static final Captcha9kwSolverClick INSTANCE                    = new Captcha9kwSolverClick();
@@ -436,7 +434,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     }
 
     @Override
-    public void setValid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setValid(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -462,11 +460,13 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override
-    public void setUnused(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setUnused(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -492,11 +492,13 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override
-    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -522,7 +524,9 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override
@@ -531,7 +535,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     }
 
     @Override
-    protected void solveBasicCaptchaChallenge(CESSolverJob<ClickedPoint> job, BasicCaptchaChallenge challenge) {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<ClickedPoint> job, BasicCaptchaChallenge challenge) throws SolverException {
 
         // not used solveCES Overwritten
     }

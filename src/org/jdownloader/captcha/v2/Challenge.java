@@ -7,6 +7,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
@@ -123,6 +124,9 @@ public abstract class Challenge<T> {
 
     // can be overridden to validate a response before adding it to the job
     public boolean validateResponse(AbstractResponse<T> response) {
+        if (response.getPriority() <= 0) {
+            return false;
+        }
         return true;
     }
 
@@ -204,6 +208,7 @@ public abstract class Challenge<T> {
     }
 
     private ResponseList<T> result;
+    private SolverJob<T>    job;
 
     public String getHost() {
         final Plugin plg = getPlugin();
@@ -259,10 +264,15 @@ public abstract class Challenge<T> {
         return result == getRefreshTrigger();
     }
 
-    public void initController() {
+    public void initController(SolverJob<T> job) {
+        this.job = job;
         Plugin plg = getPlugin();
         if (plg != null) {
             round = plg.addChallenge(this);
         }
+    }
+
+    public SolverJob<T> getJob() {
+        return job;
     }
 }

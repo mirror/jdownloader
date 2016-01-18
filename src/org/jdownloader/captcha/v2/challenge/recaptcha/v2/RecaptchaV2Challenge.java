@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -15,6 +16,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import javax.imageio.ImageIO;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -22,7 +25,9 @@ import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -36,6 +41,10 @@ import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
+import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
+import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 import jd.controlling.captcha.SkipRequest;
@@ -55,6 +64,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         private String                     challenge;
         private String                     payload;
         private String                     token;
+        private boolean                    useEnglish = false;
 
         @Override
         public Object getAPIStorable(String format) throws Exception {
@@ -99,22 +109,58 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         public BufferedImage getAnnotatedImage() throws IOException {
             final BufferedImage img = ImageIO.read(getImageFile());
             final Font font = new Font("Arial", 0, 12);
+
+            // toto:
+            // add example image here
+            String exeplain = getExplain();
+            Icon icon = null;
+            File file = getImageFile();
+            try {
+                String filename = new Regex(exeplain, "(?:with|of) (.*)").getMatch(0).replaceAll("[^\\w]", "") + ".png";
+                try {
+
+                    icon = IconIO.getScaledInstance(new ImageIcon(ImageIO.read(getClass().getResource("example/" + filename))), 80, 55);
+
+                } catch (Throwable e) {
+                    // no example icon
+                    System.out.println("No Example " + file);
+                }
+            } catch (Throwable e) {
+
+            }
+
             final String instructions = "Type 145 if image 1,4 and 5 match the question above.";
             final int explainWidth = img.getGraphics().getFontMetrics(font.deriveFont(Font.BOLD)).stringWidth(getExplain()) + 10;
             final int solutionWidth = img.getGraphics().getFontMetrics(font).stringWidth(instructions) + 10;
-            final BufferedImage newImage = IconIO.createEmptyImage(Math.max(Math.max(explainWidth, solutionWidth), img.getWidth()), img.getHeight() + 4 * 20);
+
+            final BufferedImage newImage = IconIO.createEmptyImage(Math.max((icon == null ? 0 : (icon.getIconWidth() + 5)) + Math.max(explainWidth, solutionWidth), img.getWidth()), img.getHeight() + 4 * 20);
             final Graphics2D g = (Graphics2D) newImage.getGraphics();
+            int x = 5;
+            int y = 0;
+
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
             g.setColor(Color.WHITE);
             g.setFont(font.deriveFont(Font.BOLD));
-            int y = 0;
-            g.drawString(getExplain(), 5, y += 20);
+            if (icon != null) {
+                icon.paintIcon(null, g, x, 5);
+
+                g.drawRect(x, 5, icon.getIconWidth(), icon.getIconHeight());
+                x += icon.getIconWidth() + 5;
+            }
+            g.drawString(getExplain(), x, y += 20);
             g.setFont(font);
-            g.drawString("Instructions:", 5, y += 20);
-            g.drawString(instructions, 5, y += 20);
-            y += 15;
+            g.drawString("Instructions:", x, y += 20);
+            g.drawString(instructions, x, y += 20);
+            y += 10;
+            if (icon != null) {
+                y = Math.max(y, icon.getIconHeight() + 5);
+
+            }
+            g.setColor(Color.WHITE);
+            g.drawLine(0, y, newImage.getWidth(), y);
+            y += 5;
             int xOffset;
             g.drawImage(img, xOffset = (newImage.getWidth() - img.getWidth()) / 2, y, null);
             g.setFont(new Font("Arial", 0, 16).deriveFont(Font.BOLD));
@@ -132,6 +178,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                 }
             }
             g.dispose();
+            // Dialog.getInstance().showImage(newImage);
             return newImage;
         }
 
@@ -168,10 +215,19 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             try {
                 final String dataSiteKey = owner.getSiteKey();
                 if (round == 1) {
-                    iframe.getPage("http://www.google.com/recaptcha/api2/demo");
+                    // iframe.getPage("http://www.google.com/recaptcha/api2/demo");
                     iframe.getHeaders().put(new HTTPHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0"));
                     iframe.getHeaders().put(new HTTPHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
-                    iframe.getHeaders().put(new HTTPHeader("Accept-Language", TranslationFactory.getDesiredLanguage()));
+
+                    useEnglish |= NineKwSolverService.getInstance().isEnabled();
+                    useEnglish |= DeathByCaptchaSolver.getInstance().getService().isEnabled();
+                    useEnglish |= ImageTyperzCaptchaSolver.getInstance().getService().isEnabled();
+                    useEnglish |= CBSolver.getInstance().getService().isEnabled();
+                    if (useEnglish) {
+                        iframe.getHeaders().put(new HTTPHeader("Accept-Language", "en"));
+                    } else {
+                        iframe.getHeaders().put(new HTTPHeader("Accept-Language", TranslationFactory.getDesiredLanguage()));
+                    }
                     iframe.getPage("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey);
                 }
                 payload = Encoding.htmlDecode(iframe.getRegex("\"(/recaptcha/api2/payload[^\"]+)").getMatch(0));
@@ -182,8 +238,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                 if (message != null) {
                     setExplain("Round #" + round + "/2: " + message.replaceAll("<.*?>", "").replaceAll("\\s+", " "));
                 }
+
                 challenge = iframe.getRegex("name=\"c\"\\s+value=\\s*\"([^\"]+)").getMatch(0);
                 setImageFile(Application.getResource("rc_" + System.currentTimeMillis() + ".jpg"));
+
                 FileOutputStream fos = null;
                 URLConnectionAdapter con = null;
                 try {
@@ -200,6 +258,17 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                     } catch (final Throwable ignore) {
                     }
                 }
+                if (!Application.isJared(null)) {
+                    try {
+                        String filename = new Regex(getExplain(), "(?:with|of) (.*)").getMatch(0).replaceAll("[^\\w]", "");
+                        File cache = Application.getResource("tmp/recaptcha/" + filename + "/" + Hash.getMD5(getImageBytes()) + ".jpg");
+                        if (!cache.exists()) {
+                            cache.getParentFile().mkdirs();
+                            IO.writeToFile(cache, getImageBytes());
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
             } catch (Throwable e) {
                 throw new WTFException(e);
             }
@@ -209,9 +278,14 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             return challenge;
         }
 
+        private ArrayList<AbstractResponse<String>> responses = new ArrayList<AbstractResponse<String>>();
+
         @Override
         public boolean validateResponse(AbstractResponse<String> response) {
             try {
+                if (response.getPriority() <= 0) {
+                    return false;
+                }
                 final String dataSiteKey = owner.getSiteKey();
                 final Form form = iframe.getFormbyKey("c");
                 String responses = "";
@@ -226,6 +300,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                 // iframe.getHeaders().put(new HTTPHeader("Origin", "http://www.google.com"));
                 iframe.postPageRaw("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey, "c=" + Encoding.urlEncode(form.getInputField("c").getValue()) + responses);
                 token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
+                this.responses.add(response);
             } catch (Throwable e) {
                 throw new WTFException(e);
             }
@@ -333,6 +408,9 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     @Override
     public boolean validateResponse(AbstractResponse<String> response) {
+        if (response.getPriority() <= 0) {
+            return false;
+        }
         return true;
     }
 
