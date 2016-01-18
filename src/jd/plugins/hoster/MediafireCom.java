@@ -342,7 +342,7 @@ public class MediafireCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             handleServerErrors();
             logger.info("Error (3)");
-            logger.info(dl.getConnection() + "");
+            // logger.info(dl.getConnection() + "");
             br.followConnection();
             handleNonAPIErrors(downloadLink, br);
             if (br.containsHTML("We apologize, but we are having difficulties processing your download request")) {
@@ -567,8 +567,10 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                case 110:
                     // offline file, to file/get_info as a single file... we need to return so the proper
+                case 110:
+                    // invalid uid
+                case 111:
                     return;
                 default:
                     // unknown error!
@@ -576,6 +578,23 @@ public class MediafireCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    private boolean handleLinkcheckingApiError(final Account account) throws PluginException {
+        if (!StringUtils.equalsIgnoreCase(JSonUtils.getJson(api, "result"), "Success")) {
+            if (StringUtils.equalsIgnoreCase(JSonUtils.getJson(api, "result"), "Error")) {
+                // error handling
+                final String error = JSonUtils.getJson(api, "error");
+                switch (Integer.parseInt(error)) {
+                // invalid uid
+                case 111:
+                    return true;
+                default:
+                    return false;
+                }
+            }
+        }
+        return false;
     }
 
     private String getRandomFourLetters() {
@@ -625,7 +644,7 @@ public class MediafireCom extends PluginForHost {
                     apiCommand(account, "file/get_info.php", sb.toString());
                 } else {
                     api = br.cloneBrowser();
-                    api.setAllowedResponseCodes(403);
+                    api.setAllowedResponseCodes(new int[] { 400, 403 });
                     api.getHeaders().put("Accept", "*/*");
                     api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     api.getPage("https://www.mediafire.com/api/1.4/file/get_info.php" + "?r=" + getRandomFourLetters() + "&" + sb.toString() + "&response_format=json");
@@ -648,19 +667,30 @@ public class MediafireCom extends PluginForHost {
                 }
                 for (final DownloadLink dl : links) {
                     if (json == null && jsonResults == null && links.size() == 1) {
-                        // single result....
-                        dl.setAvailableStatus(AvailableStatus.TRUE);
+                        // for invalid uid in arraylist.size == 1;
+                        if (handleLinkcheckingApiError(account)) {
+                            // we know that single result must be false!
+                            dl.setAvailableStatus(AvailableStatus.FALSE);
+                        } else {
+                            // single result....
+                            dl.setAvailableStatus(AvailableStatus.TRUE);
+                        }
                         return true;
+                    } else if (handleLinkcheckingApiError(account) && links.size() > 1) {
+                        // all uids teh array are invalid.
+                        dl.setAvailableStatus(AvailableStatus.FALSE);
+                        continue;
                     }
                     final String fuid = getFUID(dl);
                     if (offline.contains(fuid)) {
-                        dl.setAvailable(false);
+                        dl.setAvailableStatus(AvailableStatus.FALSE);
                         continue;
                     }
+                    boolean online = false;
                     for (final String result : jsonResults) {
                         final String quickkey = JSonUtils.getJson(result, "quickkey");
                         if (StringUtils.equals(quickkey, fuid)) {
-                            dl.setAvailable(true);
+                            dl.setAvailableStatus(AvailableStatus.TRUE);
                             final String name = JSonUtils.getJson(result, "filename");
                             final String size = JSonUtils.getJson(result, "size");
                             final String sha256 = JSonUtils.getJson(result, "hash");
@@ -681,8 +711,14 @@ public class MediafireCom extends PluginForHost {
                             if (pass != null) {
                                 dl.setProperty("passwordRequired", JSonUtils.parseBoolean(pass));
                             }
+                            online = true;
                             break;
                         }
+                    }
+                    if (!online) {
+                        // if some uids are invalid with valid results, invalids just don't return.. we can then set them as offline!
+                        dl.setAvailableStatus(AvailableStatus.FALSE);
+                        continue;
                     }
                 }
                 if (index == urls.length) {
