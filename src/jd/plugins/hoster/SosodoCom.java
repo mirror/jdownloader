@@ -28,15 +28,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mvpdj.com", "sosodo.com" }, urls = { "http://(www\\.)?mvpdj\\.com/song/player/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mvpdj.com", "sosodo.com" }, urls = { "https?://(?:www\\.)?mvpdj\\.com/song/player/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 0, 0 })
 public class SosodoCom extends PluginForHost {
 
     public SosodoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -46,25 +47,26 @@ public class SosodoCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        dllink = null;
+        br = new Browser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* Very old links --> Offline */
-        if (downloadLink.getDownloadURL().matches("http://(www\\.)?(sosodo|mvpdj)\\.com/home/music/track/\\d+/\\d+")) {
+        if (downloadLink.getDownloadURL().matches("https?://(?:www\\.)?(sosodo|mvpdj)\\.com/home/music/track/\\d+/\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("<title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        String filename = JSonUtils.getJson(br, "name");
+        dllink = JSonUtils.getJson(br, "url");
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = "http://www.mvpdj.com" + Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
             ext = ".mp3";
         }
@@ -78,7 +80,7 @@ public class SosodoCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = openConnection(br2, DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -96,26 +98,12 @@ public class SosodoCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
