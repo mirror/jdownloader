@@ -44,9 +44,6 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 
 public class ChallengeResponseController {
     private static final ChallengeResponseController INSTANCE = new ChallengeResponseController();
@@ -238,7 +235,7 @@ public class ChallengeResponseController {
     }
 
     public <T> SolverJob<T> handle(final Challenge<T> c) throws InterruptedException, SkipException {
-        c.initController();
+
         LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
         if (logger == null) {
             logger = this.logger;
@@ -254,14 +251,8 @@ public class ChallengeResponseController {
         }
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);
-        final Plugin plugin = c.getPlugin();
-        if (plugin != null) {
-            if (plugin instanceof PluginForHost) {
-                ((PluginForHost) plugin).setLastSolverJob(job);
-            } else if (plugin instanceof PluginForDecrypt) {
-                ((PluginForDecrypt) plugin).setLastSolverJob(job);
-            }
-        }
+        c.initController(job);
+
         final UniqueAlltimeID jobID = c.getId();
         synchronized (activeJobs) {
             activeJobs.add(job);
@@ -309,7 +300,7 @@ public class ChallengeResponseController {
         final ArrayList<ChallengeSolver<T>> ret = new ArrayList<ChallengeSolver<T>>();
         for (final ChallengeSolver<?> s : solverList) {
             try {
-                if (s.isEnabled() && s.canHandle(c)) {
+                if (s.isEnabled() && s.validateBlackWhite(c) && s.canHandle(c)) {
                     ret.add((ChallengeSolver<T>) s);
                 }
             } catch (final Throwable e) {

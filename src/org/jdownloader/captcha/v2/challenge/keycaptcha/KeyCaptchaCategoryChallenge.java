@@ -1,7 +1,5 @@
 package org.jdownloader.captcha.v2.challenge.keycaptcha;
 
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
@@ -11,6 +9,8 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
+
+import jd.plugins.Plugin;
 
 public class KeyCaptchaCategoryChallenge extends Challenge<String> {
 
@@ -54,7 +54,9 @@ public class KeyCaptchaCategoryChallenge extends Challenge<String> {
 
     @Override
     public boolean validateResponse(AbstractResponse<String> response) {
-
+        if (response.getPriority() <= 0) {
+            return false;
+        }
         return true;
     }
 

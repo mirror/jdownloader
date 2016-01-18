@@ -10,6 +10,7 @@ import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -55,26 +56,29 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             throw new CaptchaException(blackListEntry);
         }
         try {
-            ChallengeResponseController.getInstance().handle(c);
-            logger.info("Results: " + c.getResult().size());
-            if (c.getResult().size() > 0) {
-                logger.info("Challenge: " + c.getResult().get(0).getChallenge().getClass());
-            }
-            if (c.getResult().size() == 1 && c.getResult().get(0).getChallenge() instanceof Recaptcha2FallbackChallenge) {
-                logger.info("2 Step Recaptcha v2 round #2");
-                final Recaptcha2FallbackChallenge challenge = ((Recaptcha2FallbackChallenge) c.getResult().get(0).getChallenge());
-                try {
-                    challenge.reload(2, c.getResult().get(0).getValue());
-                    ChallengeResponseController.getInstance().handle(challenge);
-                    if (challenge.getToken() != null) {
-                        return challenge.getToken();
-                        // challenge.evaluate()
-                    } else {
+            SolverJob<String> firstJob = ChallengeResponseController.getInstance().handle(c);
+            if (c.getResult() != null) {
+                if (c.getResult().size() > 0) {
+                    logger.info("Challenge: " + c.getResult().get(0).getChallenge().getClass());
+                }
+                if (c.getResult().size() == 1 && c.getResult().get(0).getChallenge() instanceof Recaptcha2FallbackChallenge) {
+                    logger.info("2 Step Recaptcha v2 round #2");
+                    final Recaptcha2FallbackChallenge challenge = ((Recaptcha2FallbackChallenge) c.getResult().get(0).getChallenge());
+                    try {
+                        challenge.reload(2, c.getResult().get(0).getValue());
+                        ChallengeResponseController.getInstance().handle(challenge);
+                        if (challenge.getToken() != null) {
+                            firstJob.validate();
+                            return challenge.getToken();
+                            // challenge.evaluate()
+                        } else {
+                            firstJob.invalidate();
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        }
+                    } catch (IOException e) {
+                        LogSource.exception(logger, e);
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
-                } catch (IOException e) {
-                    LogSource.exception(logger, e);
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
             }
             if (!c.isSolved()) {

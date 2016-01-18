@@ -21,20 +21,6 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.PluginWrapper;
-import jd.config.SubConfiguration;
-import jd.controlling.ProgressController;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerAbort;
-import jd.controlling.linkcrawler.LinkCrawlerDistributer;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
 import org.appwork.utils.Application;
@@ -55,10 +41,23 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+
+import jd.PluginWrapper;
+import jd.config.SubConfiguration;
+import jd.controlling.ProgressController;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerAbort;
+import jd.controlling.linkcrawler.LinkCrawlerDistributer;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -74,7 +73,7 @@ public abstract class PluginForDecrypt extends Plugin {
     private LinkCrawlerAbort                linkCrawlerAbort;
 
     private LinkCrawler                     crawler;
-    private transient SolverJob<?>          lastSolverJob           = null;
+
     private final static ProgressController dummyProgressController = new ProgressController();
 
     /**
@@ -130,7 +129,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * @since JD2
-     * */
+     */
     public void setBrowser(Browser br) {
         this.br = br;
     }
@@ -203,7 +202,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @param message
      * @since JD2
      * @author raztoki
-     * */
+     */
     protected DownloadLink createOfflinelink(final String link, final String filename, final String message) {
         final DownloadLink dl = new DownloadLink(null, null, getHost(), "directhttp://" + Encoding.urlDecode(link, true), true);
         dl.setProperty("OFFLINE", true);
@@ -247,8 +246,8 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
-     * Vector<String> mit den decoded Links setzen
+     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector
+     * <String> mit den decoded Links setzen
      *
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
@@ -264,7 +263,7 @@ public abstract class PluginForDecrypt extends Plugin {
         boolean pwfailed = false;
         boolean captchafailed = false;
         try {
-            lastSolverJob = null;
+            challenges = null;
             setCurrentLink(link);
             /*
              * we now lets log into plugin specific loggers with all verbose/debug on
@@ -303,7 +302,7 @@ public abstract class PluginForDecrypt extends Plugin {
             }
         } finally {
             clean();
-            lastSolverJob = null;
+            challenges = null;
         }
         if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed) {
             /*
@@ -417,36 +416,6 @@ public abstract class PluginForDecrypt extends Plugin {
         copy.getParentFile().mkdirs();
         IO.copyFile(file, copy);
         return copy;
-    }
-
-    public void invalidateLastChallengeResponse() {
-        try {
-            SolverJob<?> lJob = lastSolverJob;
-            if (lJob != null) {
-                lJob.invalidate();
-            }
-        } finally {
-            lastSolverJob = null;
-        }
-    }
-
-    public void setLastSolverJob(SolverJob<?> job) {
-        this.lastSolverJob = job;
-    }
-
-    public void validateLastChallengeResponse() {
-        try {
-            final SolverJob<?> lsj = this.lastSolverJob;
-            if (lsj != null) {
-                lsj.validate();
-            }
-        } finally {
-            lastSolverJob = null;
-        }
-    }
-
-    public boolean hasChallengeResponse() {
-        return lastSolverJob != null;
     }
 
     protected ClickedPoint getCaptchaClickedPoint(String method, File file, final CryptedLink link, String defaultValue, String explain) throws Exception {

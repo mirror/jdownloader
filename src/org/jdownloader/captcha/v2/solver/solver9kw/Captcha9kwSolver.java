@@ -13,16 +13,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
@@ -36,7 +31,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
-public class Captcha9kwSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+
+public class Captcha9kwSolver extends CESChallengeSolver<String> {
 
     private static final Captcha9kwSolver INSTANCE           = new Captcha9kwSolver();
     private final ThreadPoolExecutor      threadPool         = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -447,11 +446,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     ret = ret.substring("OK-answered-".length());
                     AbstractResponse<String> answer = challenge.parseAPIAnswer(ret, this);
 
-                    if (ret.length() > 0) {
-                        job.setAnswer(new Captcha9kwResponse(challenge, this, answer.getValue(), answer.getPriority(), captchaID));
-                    } else {
-                        setInvalid(new Captcha9kwResponse(challenge, this, answer.getValue(), answer.getPriority(), captchaID), job.getJob());
-                    }
+                    job.setAnswer(new Captcha9kwResponse(challenge, this, answer.getValue(), answer.getPriority(), captchaID));
 
                     return;
                 } else if (((System.currentTimeMillis() - startTime) / 1000) > (timeoutthing + 10)) {
@@ -491,7 +486,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     }
 
     @Override
-    public void setValid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setValid(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -516,11 +511,13 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override
-    public void setUnused(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setUnused(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -546,11 +543,13 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override
-    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -576,7 +575,9 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override
@@ -586,7 +587,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     }
 
     @Override
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws SolverException {
         // not used. solveCEs is overwritten
     }
 

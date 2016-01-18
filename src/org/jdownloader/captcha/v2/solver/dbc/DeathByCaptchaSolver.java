@@ -12,7 +12,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
@@ -24,15 +23,15 @@ import org.jdownloader.captcha.v2.solver.dbc.api.Client;
 import org.jdownloader.captcha.v2.solver.dbc.api.SocketClient;
 import org.jdownloader.captcha.v2.solver.dbc.api.User;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_DBC;
 
-public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
+public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
 
     private DeathByCaptchaSettings            config;
     private static final DeathByCaptchaSolver INSTANCE   = new DeathByCaptchaSolver();
@@ -63,15 +62,33 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
 
     }
 
+    // protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
+    // Challenge<?> challenge = job.getChallenge();
+    // if (challenge instanceof RecaptchaV2Challenge) {
+    // challenge = ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+    // solveRecaptchaCaptchaChallenge(job, (Re) challenge);
+    // } else {
+    //
+    // solveBasicCaptchaChallenge(job, (BasicCaptchaChallenge) challenge);
+    // }
+    //
+    // }
+
+    // private void solveRecaptchaCaptchaChallenge(CESSolverJob<String> job, RecaptchaV2Challenge challenge) {
+    // }
+
     @Override
     public boolean canHandle(Challenge<?> c) {
+        if (!validateBlackWhite(c)) {
+            return false;
+        }
         if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
             return true;
         }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
 
         job.showBubble(this, getBubbleTimeout(challenge));
         checkInterruption();
@@ -101,7 +118,9 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
                     job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + captcha.text);
 
                     AbstractResponse<String> answer = challenge.parseAPIAnswer(captcha.text, this);
-                    job.setAnswer(new DeathByCaptchaResponse(challenge, this, captcha, answer.getValue(), answer.getPriority()));
+                    DeathByCaptchaResponse response = new DeathByCaptchaResponse(challenge, this, captcha, answer.getValue(), answer.getPriority());
+
+                    job.setAnswer(response);
 
                 } else {
                     job.getLogger().info("Failed solving CAPTCHA");
@@ -110,6 +129,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
             }
 
         } catch (Exception e) {
+            job.setStatus(e.getMessage(), new AbstractIcon(IconKey.ICON_ERROR, 20));
             job.getLogger().log(e);
         } finally {
             client.close();
@@ -149,16 +169,18 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
     }
 
     @Override
-    public void setUnused(AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setUnused(AbstractResponse<?> response) {
+        return false;
     }
 
     @Override
-    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isFeedBackSendingEnabled() && response instanceof DeathByCaptchaResponse) {
             threadPool.execute(new Runnable() {
 
                 @Override
                 public void run() {
+
                     try {
                         Captcha captcha = ((DeathByCaptchaResponse) response).getCaptcha();
                         // Report incorrectly solved CAPTCHA if neccessary.
@@ -184,7 +206,9 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     public DBCAccount loadAccount() {
@@ -205,10 +229,6 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
         }
         return ret;
 
-    }
-
-    @Override
-    public void setValid(AbstractResponse<?> response, SolverJob<?> job) {
     }
 
 }

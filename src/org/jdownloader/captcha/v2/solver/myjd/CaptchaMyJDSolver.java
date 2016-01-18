@@ -13,7 +13,6 @@ import org.appwork.utils.net.Base64OutputStream;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
@@ -21,7 +20,6 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge;
@@ -38,7 +36,7 @@ import jd.plugins.Account;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
-public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
+public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
 
     private final CaptchaMyJDSolverConfig  config;
 
@@ -49,7 +47,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     private static final CaptchaMyJDSolver INSTANCE = new CaptchaMyJDSolver();
 
     @Override
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws SolverException {
 
         // not used solveCES Overwritten
     }
@@ -254,33 +252,44 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     @Override
-    public void setValid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setValid(final AbstractResponse<?> response) {
         if (response instanceof CaptchaMyJDCESResponse) {
             try {
                 MyJDownloaderController.getInstance().sendChallengeFeedback(((CaptchaMyJDCESResponse) response).getSolution().getId(), MyCaptchaSolution.RESULT.CORRECT);
+                return true;
+            } catch (Throwable e) {
+                logger.log(e);
+            }
+
+        }
+        return false;
+    }
+
+    @Override
+    public boolean setUnused(final AbstractResponse<?> response) {
+        if (response instanceof CaptchaMyJDCESResponse) {
+            try {
+                MyJDownloaderController.getInstance().sendChallengeFeedback(((CaptchaMyJDCESResponse) response).getSolution().getId(), MyCaptchaSolution.RESULT.ABORT);
+                return true;
+            } catch (Throwable e) {
+                logger.log(e);
+
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean setInvalid(final AbstractResponse<?> response) {
+        if (response instanceof CaptchaMyJDCESResponse) {
+            try {
+                MyJDownloaderController.getInstance().sendChallengeFeedback(((CaptchaMyJDCESResponse) response).getSolution().getId(), MyCaptchaSolution.RESULT.WRONG);
+                return true;
             } catch (Throwable e) {
                 logger.log(e);
             }
         }
-
-    }
-
-    @Override
-    public void setUnused(final AbstractResponse<?> response, SolverJob<?> job) {
-        try {
-            MyJDownloaderController.getInstance().sendChallengeFeedback(((CaptchaMyJDCESResponse) response).getSolution().getId(), MyCaptchaSolution.RESULT.ABORT);
-        } catch (Throwable e) {
-            logger.log(e);
-        }
-    }
-
-    @Override
-    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
-        try {
-            MyJDownloaderController.getInstance().sendChallengeFeedback(((CaptchaMyJDCESResponse) response).getSolution().getId(), MyCaptchaSolution.RESULT.WRONG);
-        } catch (Throwable e) {
-            logger.log(e);
-        }
+        return false;
     }
 
     @Override

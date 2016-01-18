@@ -13,7 +13,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
@@ -21,7 +20,6 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -35,7 +33,7 @@ import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.encoding.Encoding;
 
-public class CheapCaptchaSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
+public class CheapCaptchaSolver extends CESChallengeSolver<String> {
 
     private CheapCaptchaConfigInterface     config;
     private static final CheapCaptchaSolver INSTANCE   = new CheapCaptchaSolver();
@@ -78,7 +76,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> implements Ch
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
 
         job.showBubble(this);
         checkInterruption();
@@ -172,11 +170,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> implements Ch
     }
 
     @Override
-    public void setUnused(AbstractResponse<?> response, SolverJob<?> job) {
-    }
-
-    @Override
-    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isFeedBackSendingEnabled() && response instanceof CheapCaptchaResponse) {
             threadPool.execute(new Runnable() {
 
@@ -208,7 +202,9 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> implements Ch
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     public CheapCaptchaAccount loadAccount() {
@@ -236,10 +232,6 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> implements Ch
         }
         return ret;
 
-    }
-
-    @Override
-    public void setValid(AbstractResponse<?> response, SolverJob<?> job) {
     }
 
 }

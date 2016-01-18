@@ -5,18 +5,12 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
@@ -24,11 +18,15 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_IMAGE_TYPERZ;
 
-public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+
+public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
 
     private final ImageTyperzConfigInterface      config;
     private static final ImageTyperzCaptchaSolver INSTANCE   = new ImageTyperzCaptchaSolver();
@@ -67,7 +65,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
         job.showBubble(this);
         checkInterruption();
         URLConnectionAdapter conn = null;
@@ -145,11 +143,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
     }
 
     @Override
-    public void setUnused(AbstractResponse<?> response, SolverJob<?> job) {
-    }
-
-    @Override
-    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isFeedBackSendingEnabled() && response instanceof ImageTyperzResponse) {
             threadPool.execute(new Runnable() {
 
@@ -187,7 +181,9 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     public ImageTyperzAccount loadAccount() {
@@ -222,10 +218,6 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> impleme
         }
         return ret;
 
-    }
-
-    @Override
-    public void setValid(AbstractResponse<?> response, SolverJob<?> job) {
     }
 
 }

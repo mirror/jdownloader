@@ -40,17 +40,23 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileFilter;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
+import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.FileChooserType;
 
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.translate.T;
 import jd.captcha.utils.Utilities;
-import jd.gui.UserIO;
 import jd.nutils.JDHash;
-import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.swing.EDTHelper;
 
 public class BackGroundImageDialog implements ActionListener {
 
@@ -128,11 +134,35 @@ public class BackGroundImageDialog implements ActionListener {
             this.ret = this.workingImage;
             return;
         } else if (e.getSource() == this.btLoadBackgroundImage) {
-            final File[] fch = UserIO.getInstance().requestFileChooser(null, null, null, new JDFileFilter(null, ".jpg|.png|.gif|.jpeg|.bmp", true), null);
-            if (fch == null) { return; }
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, "Choose Background Image", null, null);
+            d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
+            d.setFileFilter(new FileFilter() {
 
-            final File fout = new File(this.bgim.methode.file, "mask_" + JDHash.getMD5(fch[0]) + "." + Files.getExtension(fch[0].getName()));
-            JDIO.copyFile(fch[0], fout);
+                @Override
+                public String getDescription() {
+
+                    return "png";
+
+                }
+
+                @Override
+                public boolean accept(File f) {
+                    return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), ".png");
+
+                }
+            });
+            d.setType(FileChooserType.OPEN_DIALOG);
+            d.setMultiSelection(false);
+            try {
+                Dialog.I().showDialog(d);
+            } catch (DialogClosedException e2) {
+                return;
+            } catch (DialogCanceledException e2) {
+                return;
+            }
+
+            final File fout = new File(this.bgim.methode.file, "mask_" + JDHash.getMD5(d.getSelectedFile()) + "." + Files.getExtension(d.getSelectedFile().getName()));
+            JDIO.copyFile(d.getSelectedFile(), fout);
             this.workingImage = new BackGroundImage();
             this.workingImage.setBackgroundImage(fout.getName());
             this.workingImage.setColor(this.colorChooser.getColor().getRGB());

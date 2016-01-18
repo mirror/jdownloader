@@ -5,14 +5,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 
-import jd.captcha.JACMethod;
-import jd.captcha.JAntiCaptcha;
-import jd.captcha.LetterComperator;
-import jd.captcha.pixelgrid.Captcha;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -22,14 +14,21 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 
-public class JACSolver extends ChallengeSolver<String> implements ChallengeResponseValidation {
+import jd.captcha.JACMethod;
+import jd.captcha.JAntiCaptcha;
+import jd.captcha.LetterComperator;
+import jd.captcha.pixelgrid.Captcha;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+
+public class JACSolver extends ChallengeSolver<String> {
 
     private static final double            _0_85             = 0.85;
     private JACSolverConfig                config;
@@ -189,9 +188,9 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
     }
 
     @Override
-    public void setValid(AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setValid(AbstractResponse<?> response) {
         if (response.getSolver() != this) {
-            return;
+            return false;
         }
         if (response instanceof JACCaptchaResponse) {
             int priority = ((JACCaptchaResponse) response).getUnmodifiedTrustValue();
@@ -213,15 +212,12 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
 
             }
         }
+        return true;
 
     }
 
     @Override
-    public void setUnused(AbstractResponse<?> response, SolverJob<?> job) {
-    }
-
-    @Override
-    public void setInvalid(AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setInvalid(AbstractResponse<?> response) {
         if (response instanceof JACCaptchaResponse) {
             int priority = ((JACCaptchaResponse) response).getUnmodifiedTrustValue();
             Challenge<?> challenge = response.getChallenge();
@@ -241,7 +237,9 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
                 }
 
             }
+            return true;
         }
+        return false;
 
     }
 

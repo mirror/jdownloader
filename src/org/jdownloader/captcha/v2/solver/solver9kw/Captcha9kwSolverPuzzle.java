@@ -18,7 +18,6 @@ import javax.imageio.ImageIO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaImages;
@@ -28,14 +27,13 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implements ChallengeResponseValidation {
+public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> {
 
     private static final Captcha9kwSolverPuzzle INSTANCE   = new Captcha9kwSolverPuzzle();
     private ThreadPoolExecutor                  threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -47,7 +45,7 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implement
     }
 
     @Override
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) {
+    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws SolverException {
 
         // not used solveCES Overwritten
     }
@@ -387,7 +385,7 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implement
     }
 
     @Override
-    public void setValid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setValid(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -413,11 +411,13 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implement
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override
-    public void setUnused(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setUnused(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -444,11 +444,13 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implement
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override
-    public void setInvalid(final AbstractResponse<?> response, SolverJob<?> job) {
+    public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isfeedback()) {
             threadPool.execute(new Runnable() {
 
@@ -475,7 +477,9 @@ public class Captcha9kwSolverPuzzle extends CESChallengeSolver<String> implement
                     }
                 }
             });
+            return true;
         }
+        return false;
     }
 
     @Override

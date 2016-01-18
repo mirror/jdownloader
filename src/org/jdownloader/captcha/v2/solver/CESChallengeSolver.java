@@ -61,7 +61,7 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
 
     }
 
-    protected abstract void solveBasicCaptchaChallenge(CESSolverJob<T> job, BasicCaptchaChallenge challenge) throws InterruptedException;
+    protected abstract void solveBasicCaptchaChallenge(CESSolverJob<T> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException;
 
     protected abstract boolean validateLogins();
 
