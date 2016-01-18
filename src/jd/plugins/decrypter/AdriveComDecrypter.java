@@ -16,8 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Random;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,8 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "https?://(www\\.)?adrive\\.com/public/[0-9a-zA-Z]+" }, flags = { 0 })
 public class AdriveComDecrypter extends PluginForDecrypt {
 
@@ -39,7 +40,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         final String parameter = Encoding.htmlDecode(param.toString());
         final String fid = new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0);
@@ -72,7 +73,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
 
                     dl.setDownloadSize(filesize);
                     dl.setFinalFileName(filename);
-                    dl.setProperty("LINKDUPEID", "adrivecom" + fid + "_" + filename);
+                    dl.setProperty("LINKDUPEID", "adrivecom://" + fid);
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("directlink", br.getURL());
                     dl.setAvailable(true);
@@ -89,6 +90,19 @@ public class AdriveComDecrypter extends PluginForDecrypt {
 
         final String linktext = br.getRegex("<table>(.*?)</table>").getMatch(0);
         if (linktext == null) {
+            // not always defect! -raztoki20160119
+            if (br.toString().startsWith("<b>File overlimit.")) {
+                // we can assume its a SINGLE file! we wont know its size
+                final DownloadLink dl = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                final String filename = getFileNameFromURL(new URL(continuelink));
+                dl.setFinalFileName(filename);
+                dl.setProperty("LINKDUPEID", "adrivecom://" + fid + "/" + filename);
+                dl.setProperty("mainlink", parameter);
+                dl.setProperty("directlink", continuelink);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -117,7 +131,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
 
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setFinalFileName(filename);
-            dl.setProperty("LINKDUPEID", "adrivecom" + fid + "_" + filename);
+            dl.setProperty("LINKDUPEID", "adrivecom://" + fid + "/" + filename);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("directlink", directlink);
             dl.setAvailable(true);
