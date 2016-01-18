@@ -418,8 +418,16 @@ public class NowVideoEu extends PluginForHost {
             dllink = br.getRegex("\"(https?://[a-z0-9\\.]+/dl/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(/download\\.php\\?file=[a-f0-9]{32,}\\.(?:flv|avi))\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
+        // set correct file extension, flv != avi!
+        final String name = getFileNameFromURL(new URL(dllink));
+        final String ext = name.substring(name.lastIndexOf("."));
+        link.setFinalFileName(filename + ext);
+        // end of final filename correction
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
