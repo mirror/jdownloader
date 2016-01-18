@@ -1,33 +1,24 @@
 package org.jdownloader.api.myjdownloader;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.KeyStore;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
-
 import jd.controlling.reconnect.ipcheck.IP;
 
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.net.httpserver.HttpConnection;
-import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.model.action.ActionInvocation;
 import org.fourthline.cling.model.message.UpnpResponse;
@@ -40,6 +31,8 @@ import org.fourthline.cling.model.types.UDAServiceType;
 import org.fourthline.cling.model.types.UnsignedIntegerTwoBytes;
 import org.fourthline.cling.support.igd.callback.PortMappingAdd;
 import org.fourthline.cling.support.model.PortMapping;
+import org.jdownloader.api.DeprecatedAPIServer;
+import org.jdownloader.api.DeprecatedAPIServer.AutoSSLHttpConnectionFactory;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
@@ -100,34 +93,6 @@ public class MyJDownloaderDirectServer extends Thread {
         final int min = 1025;
         final int max = 65000;
         return new Random().nextInt((max - min) + 1) + min;
-    }
-
-    public static void main(String[] args) throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(""), "pw".toCharArray());
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, "pw".toCharArray());
-        SSLContext sc = SSLContext.getInstance("TLS");
-        sc.init(kmf.getKeyManagers(), null, null);
-        SSLServerSocketFactory ssf = sc.getServerSocketFactory();
-        SSLServerSocket s = (SSLServerSocket) ssf.createServerSocket(8888);
-        while (true) {
-            SSLSocket c = (SSLSocket) s.accept();
-            try {
-                new HttpConnection(null, c) {
-                    private final List<HttpRequestHandler> list = new ArrayList<HttpRequestHandler>(0);
-
-                    public java.util.List<org.appwork.utils.net.httpserver.handler.HttpRequestHandler> getHandler() {
-                        return list;
-                    };
-                }.run();
-                System.out.println("next");
-            } catch (final Throwable e) {
-                e.printStackTrace();
-            } finally {
-                c.close();
-            }
-        }
     }
 
     private int setUPNPPort() throws InterruptedException {
@@ -309,8 +274,16 @@ public class MyJDownloaderDirectServer extends Thread {
             public void run() {
                 try {
                     System.out.println("Handle a direct MyJDownloader connection:" + requestNumber);
-                    MyJDownloaderDirectHttpConnection httpConnection = new MyJDownloaderDirectHttpConnection(clientSocket, api);
-                    httpConnection.run();
+                    final HttpConnection httpConnection = DeprecatedAPIServer.autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
+
+                        @Override
+                        public MyJDownloaderDirectHttpConnection create(Socket clientSocket, InputStream is, OutputStream os) throws IOException {
+                            return new MyJDownloaderDirectHttpConnection(clientSocket, is, os, api);
+                        }
+                    });
+                    if (httpConnection != null) {
+                        httpConnection.run();
+                    }
                 } catch (final Throwable e) {
                     logger.log(e);
                 } finally {

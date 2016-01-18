@@ -1,6 +1,8 @@
 package org.jdownloader.api.myjdownloader;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 import org.appwork.utils.StringUtils;
@@ -12,6 +14,10 @@ public class MyJDownloaderDirectHttpConnection extends MyJDownloaderHttpConnecti
 
     public MyJDownloaderDirectHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(clientConnection, api);
+    }
+
+    public MyJDownloaderDirectHttpConnection(final Socket clientSocket, final InputStream is, final OutputStream os, MyJDownloaderAPI api) throws IOException {
+        super(clientSocket, is, os, api);
     }
 
     @Override

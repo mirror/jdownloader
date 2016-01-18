@@ -2,6 +2,7 @@ package org.jdownloader.api.myjdownloader;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -74,6 +75,12 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(null, clientConnection);
+        this.api = api;
+        logger = api.getLogger();
+    }
+
+    public MyJDownloaderHttpConnection(final Socket clientSocket, final InputStream is, final OutputStream os, MyJDownloaderAPI api) throws IOException {
+        super(null, clientSocket, is, os);
         this.api = api;
         logger = api.getLogger();
     }
