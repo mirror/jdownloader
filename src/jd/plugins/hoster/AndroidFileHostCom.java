@@ -53,7 +53,7 @@ public class AndroidFileHostCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">file not found|404 not found") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">file not found|404 not found") || br.getHttpConnection().getResponseCode() == 404 || (br.containsHTML("<h3>access denied</h3>") && br.containsHTML("you don't have permission to access this folder\\."))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("id=\"filename\" value=\"([^<>\"]*?)\"").getMatch(0);
