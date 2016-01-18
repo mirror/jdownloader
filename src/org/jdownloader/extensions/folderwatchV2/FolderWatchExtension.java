@@ -389,7 +389,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
         case NORMAL:
             final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.EXTENSION, "FolderWatch:" + f.getAbsolutePath()), j.getText());
             job.setDeepAnalyse(j.isDeepAnalyseEnabled());
-
             final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
                 @Override
@@ -497,7 +496,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         break;
                     default:
                     }
-
                     switch (j.getAutoConfirm()) {
                     case FALSE:
                         cl.setAutoConfirmEnabled(false);
@@ -507,7 +505,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         break;
                     default:
                     }
-
                     LinkCollector.getInstance().addCrawledLink(cl);
                 } catch (UpdateRequiredClassNotFoundException e) {
                     e.printStackTrace();

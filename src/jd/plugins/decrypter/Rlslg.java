@@ -24,12 +24,12 @@ import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.controlling.PasswordUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "http://(www\\.)?rlslog\\.net/.+/(.+/)?#comments" }, flags = { 0 })

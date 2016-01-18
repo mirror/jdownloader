@@ -24,11 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,6 +46,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -917,7 +917,7 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     @Override
-    public String getHost(DownloadLink link, Account account) {
+    public String getHost(final DownloadLink link, Account account) {
         if (link != null) {
             return Browser.getHost(link.getDownloadURL(), true);
         }

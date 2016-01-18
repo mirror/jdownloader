@@ -103,7 +103,7 @@ public class DncHllWldNt extends antiDDoSForDecrypt {
         }
         // this will construct basic relative path
         else if (link.matches("^/.+") && protocol != null) {
-            link = protocol + "//" + Browser.getHost(br.getURL(), true) + link;
+            link = protocol + "//" + Browser.getHost(br.getURI(), true) + link;
         }
         if (new Regex(link, "facebook.com(/|%2F)plugins(/|%2F)|twitter.com(/|%2F)").matches()) {
             return null;

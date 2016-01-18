@@ -6,7 +6,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 public class AbstractResponse<T> {
     private final UniqueAlltimeID id         = new UniqueAlltimeID();
     private int                   priority;
-    private ValidationResult      validation = null;;
+    private ValidationResult      validation = null;                  ;
 
     public ValidationResult getValidation() {
         return validation;
@@ -17,28 +17,26 @@ public class AbstractResponse<T> {
             // only validate once
             if (this.validation != null) {
                 return false;
-            }
-
-            this.validation = validation;
-            Object s = getSolver();
-            if (s != null && s instanceof ChallengeSolver) {
-                switch (validation) {
-                case INVALID:
-                    return ((ChallengeSolver) s).setInvalid(this);
-
-                case UNUSED:
-                    return ((ChallengeSolver) s).setUnused(this);
-                case VALID:
-                    return ((ChallengeSolver) s).setValid(this);
+            } else {
+                this.validation = validation;
+                final Object solver = getSolver();
+                if (solver != null && solver instanceof ChallengeSolver) {
+                    switch (validation) {
+                    case INVALID:
+                        return ((ChallengeSolver<?>) solver).setInvalid(this);
+                    case UNUSED:
+                        return ((ChallengeSolver<?>) solver).setUnused(this);
+                    case VALID:
+                        return ((ChallengeSolver<?>) solver).setValid(this);
+                    }
                 }
+                return true;
             }
-            return true;
         } catch (Throwable e) {
             validation = null;
             LoggerFactory.getDefaultLogger().log(e);
             return false;
         }
-
     }
 
     public int getPriority() {

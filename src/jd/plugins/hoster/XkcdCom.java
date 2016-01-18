@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -81,11 +80,9 @@ public class XkcdCom extends PluginForHost {
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // bug in correcturl
-        dllink = dllink.startsWith("//") ? "http:" + dllink : dllink;
         // set filename
         filename = filename.trim();
-        final String tempfilename = getFileNameFromURL(new URL(dllink));
+        final String tempfilename = extractFileNameFromURL(dllink);
         String ext = tempfilename.substring(tempfilename.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
             ext = ".png";
@@ -100,7 +97,7 @@ public class XkcdCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (con.isOK()) {
+            if (con.isOK() && !con.getContentType().contains("html")) {
                 downloadLink.setVerifiedFileSize(con.getLongContentLength());
                 // incase redirect after advertised img link.
                 dllink = br.getURL();

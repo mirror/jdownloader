@@ -379,8 +379,8 @@ public class VesselCom extends antiDDoSForHost {
              * @return
              * @throws MalformedURLException
              */
-            public Request createPostRawRequest(final String url, final String post) throws MalformedURLException {
-                final PostRequest request = new PostRequest(this.getURL(url));
+            public Request createPostRawRequest(final String url, final String post) throws IOException {
+                final PostRequest request = new PostRequest(this.getURI(url));
                 request.setPostDataString(post);
 
                 String requestContentType = null;

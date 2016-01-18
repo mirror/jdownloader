@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -662,61 +663,43 @@ public class TbCmV2 extends PluginForDecrypt {
             }
 
             if (requestedVariant != null) {
-
                 for (VariantInfo v : allVariants.values()) {
-
                     if (v.variant.getTypeId().equals(requestedVariant)) {
-
                         String groupID = getGroupID(v.variant);
-
                         List<VariantInfo> fromGroup = groups.get(groupID);
-
                         decryptedLinks.add(createLink(v, fromGroup));
-
                     }
-
                 }
-
                 for (VariantInfo vi : allSubtitles) {
                     if (vi.getIdentifier().equalsIgnoreCase(requestedVariant)) {
                         decryptedLinks.add(createLink(vi, allSubtitles));
                     }
-
                 }
                 for (VariantInfo vi : descriptions) {
                     if (vi.getIdentifier().equalsIgnoreCase(requestedVariant)) {
                         decryptedLinks.add(createLink(vi, descriptions));
                     }
-
                 }
-
             } else {
-
                 main: for (Entry<String, List<VariantInfo>> e : groups.entrySet()) {
                     if (e.getValue().size() == 0) {
                         continue;
                     }
                     Collections.sort(e.getValue());
                     if (e.getKey().equals(YoutubeVariantInterface.VariantGroup.DESCRIPTION.name()) || e.getKey().equalsIgnoreCase("txt")) {
-
                         for (VariantInfo vi : descriptions) {
-                            // if (vi.getIdentifier().equalsIgnoreCase(requestedVariant)) {
                             decryptedLinks.add(createLink(vi, descriptions));
-                            // }
-
                         }
-
                     } else if (e.getKey().equals(YoutubeVariantInterface.VariantGroup.SUBTITLES.name()) || e.getKey().equalsIgnoreCase("srt")) {
                         if (cfg.isCreateBestSubtitleVariantLinkEnabled()) {
                             // special handling for subtitles
-
-                            String[] keys = cfg.getPreferedSubtitleLanguages();
+                            final String[] keys = cfg.getPreferedSubtitleLanguages();
                             // first try the users prefered list
                             if (keys != null) {
-                                for (String locale : keys) {
+                                for (final String locale : keys) {
                                     try {
                                         for (VariantInfo vi : e.getValue()) {
-                                            if (vi.getIdentifier().toLowerCase().startsWith(locale)) {
+                                            if (StringUtils.startsWithCaseInsensitive(vi.getIdentifier(), locale)) {
                                                 decryptedLinks.add(createLink(vi, e.getValue()));
                                                 continue main;
                                             }
@@ -726,12 +709,11 @@ public class TbCmV2 extends PluginForDecrypt {
                                     }
                                 }
                             }
-
                             try {
                                 // try to find the users locale
-                                String desiredLocale = TranslationFactory.getDesiredLanguage();
-                                for (VariantInfo vi : e.getValue()) {
-                                    if (vi.getIdentifier().toLowerCase().startsWith(desiredLocale.toLowerCase())) {
+                                final String desiredLocale = TranslationFactory.getDesiredLanguage().toLowerCase(Locale.ENGLISH);
+                                for (final VariantInfo vi : e.getValue()) {
+                                    if (StringUtils.startsWithCaseInsensitive(vi.getIdentifier(), desiredLocale)) {
                                         decryptedLinks.add(createLink(vi, e.getValue()));
                                         continue main;
                                     }
@@ -739,32 +721,32 @@ public class TbCmV2 extends PluginForDecrypt {
                             } catch (Exception e1) {
                                 // try english
                                 getLogger().log(e1);
-                                for (VariantInfo vi : e.getValue()) {
-                                    if (vi.getIdentifier().toLowerCase().startsWith("en")) {
+                                for (final VariantInfo vi : e.getValue()) {
+                                    if (StringUtils.startsWithCaseInsensitive(vi.getIdentifier(), "en")) {
                                         decryptedLinks.add(createLink(vi, e.getValue()));
                                         continue main;
                                     }
                                 }
-
                             }
                             // fallback: use the first
                             decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                        } else {
+                            for (VariantInfo vi : e.getValue()) {
+                                decryptedLinks.add(createLink(vi, e.getValue()));
+                            }
                         }
                     } else {
                         if (cfg.getGroupLogic() != GroupLogic.NO_GROUP) {
-
                             switch (e.getValue().get(0).variant.getGroup()) {
                             case AUDIO:
                                 if (cfg.isCreateBestAudioVariantLinkEnabled()) {
                                     decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                                 }
                                 break;
-
                             case IMAGE:
                                 if (cfg.isCreateBestImageVariantLinkEnabled()) {
                                     decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                                 }
-
                                 break;
                             case VIDEO:
                                 boolean added = false;
@@ -785,9 +767,7 @@ public class TbCmV2 extends PluginForDecrypt {
                                     if (!added) {
                                         decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                                     }
-
                                 }
-
                                 break;
                             case VIDEO_3D:
                                 if (cfg.isCreateBest3DVariantLinkEnabled()) {
@@ -796,31 +776,22 @@ public class TbCmV2 extends PluginForDecrypt {
                                 break;
                             }
                         } else {
-
                             decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                         }
                     }
-
                 }
-
             if (extra != null && extra.length > 0) {
                 main: for (VariantInfo v : allVariants.values()) {
                     for (String s : extra) {
                         if (v.variant.getTypeId().equals(s)) {
-
                             String groupID = getGroupID(v.variant);
-
                             List<VariantInfo> fromGroup = groups.get(groupID);
-
                             decryptedLinks.add(createLink(v, fromGroup));
                             continue main;
-
                         }
                     }
                 }
-
             }
-
             ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
             if (extraSubtitles != null) {
                 for (String v : extraSubtitles) {
@@ -829,12 +800,10 @@ public class TbCmV2 extends PluginForDecrypt {
                             if (vi.getIdentifier().equalsIgnoreCase(v)) {
                                 decryptedLinks.add(createLink(vi, allSubtitles));
                             }
-
                         }
                     }
                 }
             }
-
             }
         }
         for (DownloadLink dl : decryptedLinks) {
@@ -1017,7 +986,12 @@ public class TbCmV2 extends PluginForDecrypt {
             variantInfo.fillExtraProperties(thislink, alternatives);
             String filename;
             thislink.setFinalFileName(filename = getCachedHelper().createFilename(thislink));
-            thislink.setLinkID("youtubev2://" + variantInfo.variant + "/" + clip.videoID);
+            if (YoutubeVariant.SUBTITLES.equals(variantInfo.variant)) {
+                thislink.setLinkID("youtubev2://" + variantInfo.variant + "/" + clip.videoID + "/" + variantInfo.getIdentifier());
+            } else {
+                thislink.setLinkID("youtubev2://" + variantInfo.variant + "/" + clip.videoID);
+            }
+
             FilePackage fp = FilePackage.getInstance();
             YoutubeHelper helper = getCachedHelper();
             final String fpName = helper.replaceVariables(thislink, helper.getConfig().getPackagePattern());
