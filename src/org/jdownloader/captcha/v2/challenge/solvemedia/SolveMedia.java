@@ -127,7 +127,6 @@ public class SolveMedia {
         if (!noscript) {
             return chId;
         }
-
         verify.put("adcopy_response", Encoding.urlEncode(code));
         // for backup purposes.
         Browser smbr = smBr.cloneBrowser();
