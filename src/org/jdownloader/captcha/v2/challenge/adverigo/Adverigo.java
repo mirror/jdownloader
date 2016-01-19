@@ -3,13 +3,13 @@ package org.jdownloader.captcha.v2.challenge.adverigo;
 import java.io.File;
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+
+import org.appwork.utils.StringUtils;
 
 /**
  *
@@ -139,7 +139,7 @@ public class Adverigo {
      * @throws Exception
      */
     private final void setSid() throws Exception {
-        this.sid = JSonUtils.getJson(abr, "sid");
+        this.sid = PluginJSonUtils.getJson(abr, "sid");
         if (StringUtils.isEmpty(this.sid)) {
             throw new Exception("Could not determine \"sid\"");
         }
@@ -152,7 +152,7 @@ public class Adverigo {
         abr = br.cloneBrowser();
         abr.getHeaders().put("Accept", "*/*");
         abr.getPage(SERVER + "/verify.json?sid=" + sid + "&hash=" + this.apiKey + "&answer=" + Encoding.urlEncode(response) + "&" + System.currentTimeMillis());
-        final boolean success = JSonUtils.parseBoolean(JSonUtils.getJson(abr, "status"));
+        final boolean success = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(abr, "status"));
         return success;
     }
 
