@@ -67,18 +67,18 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(?:www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
     private static final String     TYPE_SINGLE_VIDEO_EMBED         = "https?://(?:www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
     private static final String     TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(?:www\\.)?facebook\\.com/.+/videos.*?/\\d+.*?";
-    private static final String     TYPE_SET_LINK_PHOTO             = "http(s)?://.+/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
+    private static final String     TYPE_SET_LINK_PHOTO             = "http(s)?://.+/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
     private static final String     TYPE_SET_LINK_VIDEO             = "https?://.+(/media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
     private static final String     TYPE_ALBUMS_LINK                = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
     private static final String     TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
     private static final String     TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
     private static final String     TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[^/]+/photos_stream.*";
-    private static final String     TYPE_PHOTOS_STREAM_LINK_2       = "https?://(?:www\\.)?facebook\\.com/pages/[^/]+/\\d+\\?sk=photos_stream\\&tab=.*";
+    private static final String     TYPE_PHOTOS_STREAM_LINK_2       = "https?://(?:www\\.)?facebook\\.com/pages/[^/]+/\\d+\\?sk=photos_stream&tab=.*";
     private static final String     TYPE_PHOTOS_LINK                = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos.*";
     private static final String     TYPE_GROUPS_PHOTOS              = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
     private static final String     TYPE_GROUPS_FILES               = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
-    private static final String     TYPE_PROFILE_PHOTOS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+(?:%3A5|:A5)$";
-    private static final String     TYPE_PROFILE_ALBUMS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+(?:%3A6|:A6)$";
+    private static final String     TYPE_PROFILE_PHOTOS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=[A-Z0-9%]+(?:%3A5|A5)$";
+    private static final String     TYPE_PROFILE_ALBUMS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=[A-Z0-9%]+(?:%3A6|A6)$";
     private static final String     TYPE_NOTES                      = "https?://(?:www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
     private static final String     TYPE_MESSAGE                    = "httpss?://(?:www\\.)?facebook\\.com/messages/.+";
 
@@ -217,7 +217,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private void decryptAlbums() throws Exception {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)\\- Photos \\| Facebook</title>").getMatch(0);
+        String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)(?:\\- Photos \\| Facebook)?</title>").getMatch(0);
         final String profileID = getProfileID();
         final String user = getUser(this.br);
         if (user == null) {
