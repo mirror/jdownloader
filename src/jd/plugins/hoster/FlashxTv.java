@@ -135,7 +135,7 @@ public class FlashxTv extends antiDDoSForHost {
         correctDownloadLink(link);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<h3>The file was deleted by administration because it didn't comply with our Terms of Use</h3>|>Sorry, HDD was totally damaged\\. Recovery was not possible!<)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
