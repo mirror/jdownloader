@@ -284,7 +284,7 @@ public class RusfolderCom extends PluginForHost {
                     e.printStackTrace();
                     cbr.submitForm(captchaForm);
                 }
-                final boolean dberror = cbr.containsHTML("<h1>Ошибка</h1>") && cbr.containsHTML("Внутренняя ошибка на сервере\\(DB\\)");
+                final boolean dberror = cbr.containsHTML("<h1>Ошибка</h1>") && (cbr.containsHTML("Внутренняя ошибка на сервере\\(DB\\)") || cbr.containsHTML(">Внутренняя ошибка на сервере\\.<"));
                 if (dberror) {
                     // this happens in browser also.
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster issues around captcha", 10 * 60 * 1000l);
@@ -293,6 +293,7 @@ public class RusfolderCom extends PluginForHost {
                     br.getRequest().setHtmlCode(cbr.toString());
                     break;
                 }
+
                 if (retry + 1 == 5) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
