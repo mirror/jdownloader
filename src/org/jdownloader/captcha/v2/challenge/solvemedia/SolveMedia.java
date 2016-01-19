@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -133,7 +134,22 @@ public class SolveMedia {
         verify.setAction((url == null ? "" : url) + verify.getAction());
 
         verify.put("adcopy_response", Encoding.urlEncode(code));
-        smBr.submitForm(verify);
+        // for backup purposes.
+        Browser smbr = smBr.cloneBrowser();
+        final int retry = 4;
+        for (int i = 0; i != retry; i++) {
+            smBr = smbr.cloneBrowser();
+            try {
+                // less common here..
+                smBr.submitForm(verify);
+            } catch (BrowserException e) {
+                // should cover socket related issues.
+                if (i + 1 != retry) {
+                    continue;
+                }
+                throw new Exception("SolveMedia Module fails");
+            }
+        }
         String verifyUrl = smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
         if (verifyUrl == null) {
             return null;
@@ -141,12 +157,24 @@ public class SolveMedia {
         if (secure) {
             verifyUrl = verifyUrl.replaceAll("http://", "https://");
         }
-        try {
-            smBr.getPage(verifyUrl);
-        } catch (Throwable e) {
-            throw new Exception("SolveMedia Module fails");
+        String challenge = null;
+
+        for (int i = 0; i != retry; i++) {
+            smBr = smbr.cloneBrowser();
+            try {
+                // very common to get errors here! lets try a crude retry!
+                smBr.getPage(verifyUrl);
+            } catch (BrowserException e) {
+                // should cover socket related issues.
+                if (i + 1 != retry) {
+                    continue;
+                }
+                throw new Exception("SolveMedia Module fails");
+            }
+            break;
         }
-        return smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
+        challenge = smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
+        return challenge;
     }
 
     public Browser getBr() {
