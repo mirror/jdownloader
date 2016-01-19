@@ -144,6 +144,7 @@ public class SolveMedia {
                 }
                 throw new Exception("SolveMedia Module fails");
             }
+            break;
         }
         String verifyUrl = smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
         if (verifyUrl == null) {
