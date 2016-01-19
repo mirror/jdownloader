@@ -350,16 +350,19 @@ public class HLSDownloader extends DownloadInterface {
                             }
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                             final StringBuilder sb = new StringBuilder();
-                            for (String s : Regex.getLines(playlist)) {
+                            for (final String line : Regex.getLines(playlist)) {
                                 if (sb.length() > 0) {
                                     sb.append("\r\n");
                                 }
-                                if (s.matches("^https?://.+")) {
-                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(s));
-                                } else if (!s.trim().startsWith("#")) {
-                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(br.getBaseURL() + s));
+                                if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
+                                    // http://habrahabr.ru/company/mailru/blog/274855/
+                                    logger.severe("possibly malicious: " + line);
+                                } else if (line.matches("^https?://.+")) {
+                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(line));
+                                } else if (!line.trim().startsWith("#")) {
+                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(br.getBaseURL() + line));
                                 } else {
-                                    sb.append(s);
+                                    sb.append(line);
                                 }
                             }
                             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
