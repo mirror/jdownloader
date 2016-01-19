@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -384,11 +385,13 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
             checkInterruption();
             byte[] data = challenge.getAnnotatedImageBytes();
             final Browser br = new Browser();
+
             br.setAllowedResponseCodes(new int[] { 500 });
             String ret = "";
             job.setStatus(SolverStatus.UPLOADING);
             for (int i = 0; i <= 5; i++) {
                 ret = br.postPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2" + moreoptions + "&captchaperhour=" + cph + "&captchapermin=" + cpm + "&prio=" + priothing + "&selfsolve=" + selfsolve + "&confirm=" + confirm + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                LoggerFactory.getDefaultLogger().info(br.getRequest() + "");
                 if (ret.startsWith("OK-")) {
                     counterSend.incrementAndGet();
                     break;
@@ -432,6 +435,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
             Thread.sleep(10000);
             while (true) {
                 ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
+                LoggerFactory.getDefaultLogger().info(br.getRequest() + "");
                 if (StringUtils.isEmpty(ret) || ret == "No htmlCode read") {
                     setdebug(job, "CaptchaID " + captchaID + " - NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
                 } else {
@@ -498,6 +502,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
                             final String ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            LoggerFactory.getDefaultLogger().info(br.getRequest() + "");
                             if (ret.startsWith("OK")) {
                                 setdebug_short("CaptchaID " + captchaID + ": OK (Feedback 1)");
                                 counterOK.incrementAndGet();
@@ -529,6 +534,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
                             final String ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=3&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            LoggerFactory.getDefaultLogger().info(br.getRequest() + "");
                             if (ret.startsWith("OK")) {
                                 setdebug_short("CaptchaID " + captchaID + ": Unused (Feedback 3)");
                                 counterUnused.incrementAndGet();
@@ -561,6 +567,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                         br.setAllowedResponseCodes(new int[] { 500 });
                         for (int i = 0; i <= 3; i++) {
                             final String ret = br.getPage(NineKwSolverService.getInstance().getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            LoggerFactory.getDefaultLogger().info(br.getRequest() + "");
                             if (ret.startsWith("OK")) {
                                 setdebug_short("CaptchaID " + captchaID + ": NotOK (Feedback 2)");
                                 counterNotOK.incrementAndGet();
