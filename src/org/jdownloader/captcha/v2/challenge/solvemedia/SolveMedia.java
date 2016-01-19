@@ -128,11 +128,6 @@ public class SolveMedia {
             return chId;
         }
 
-        /** FIXME stable Browser Bug --> Form action handling */
-        String url = smBr.getURL();
-        url = url.substring(0, url.indexOf("media?c="));
-        verify.setAction((url == null ? "" : url) + verify.getAction());
-
         verify.put("adcopy_response", Encoding.urlEncode(code));
         // for backup purposes.
         Browser smbr = smBr.cloneBrowser();
