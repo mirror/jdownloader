@@ -103,8 +103,18 @@ public class TwitterCom extends PluginForHost {
                 }
             }
 
-        } else {
+        } else { // TYPE_DIRECT - jpg/png/mp4
             dllink = link.getDownloadURL();
+            if (dllink.contains("jpg") || dllink.contains("png")) {
+                try {
+                    con = br.openHeadConnection(dllink + ":orig");
+                    if (!con.getContentType().contains("html")) {
+                        dllink = dllink + ":orig";
+                    }
+                } finally {
+                    con.disconnect();
+                }
+            }
         }
         try {
             try {
@@ -119,7 +129,7 @@ public class TwitterCom extends PluginForHost {
             }
             if (!con.getContentType().contains("html")) {
                 if (filename == null) {
-                    filename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                    filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
                 }
                 if (tweetid != null && !filename.contains(tweetid)) {
                     filename = tweetid + "_" + filename;
