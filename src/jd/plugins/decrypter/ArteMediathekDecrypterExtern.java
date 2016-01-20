@@ -365,40 +365,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         decryptedLinks.add(link);
     }
 
-    /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
-    private int getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
-        /* versionShortLibelle: What is UTH?? */
-        /* versionCode: VO is not necessarily french */
-        if (versionShortLibelle == null || versionCode == null) {
-            throw new DecrypterException("Decrypter broken");
-        }
-        int lint;
-        if ("VOF-STA".equalsIgnoreCase(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
-            /* Definitly NOT subtitled: VF-STMF */
-            lint = 3;
-        } else if (versionCode.equals("VOA-STMA")) {
-            lint = 4;
-        } else if (versionCode.equals("VAAUD")) {
-            lint = 5;
-        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO")) {
-            /* Without language --> So it simply is our current language */
-            lint = languageVersion;
-        } else if (versionShortLibelle.equals("DE") || versionShortLibelle.equals("VA") || versionCode.equals("VO-STA") || versionShortLibelle.equals("VOSTA")) {
-            /* German */
-            lint = 1;
-        } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VF-STMF")) {
-            /* French - use same number than for german as the handling has changed. */
-            lint = 2;
-        } else {
-            /* Unknown - use language inside the link */
-            /* Unknown language Strings so far: VOA */
-            /* This should never happen... */
-            lint = languageVersion;
-            throw new DecrypterException("Decrypter broken");
-        }
-        return lint;
-    }
-
     /* 1 = No subtitle, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
     private String get_user_format_from_format_code(final short version) {
         return jd.plugins.decrypter.ArteMediathekDecrypter.get_user_format_from_format_code(version);
