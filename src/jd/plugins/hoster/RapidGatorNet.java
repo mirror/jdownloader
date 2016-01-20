@@ -22,21 +22,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -60,13 +63,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "http://(www\\.)?(rapidgator\\.net|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" }, flags = { 2 })
 public class RapidGatorNet extends PluginForHost {
@@ -268,47 +264,6 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @Override
-    protected void showFreeDialog(final String domain) {
-        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
-            super.showFreeDialog(domain);
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            final String lng = System.getProperty("user.language");
-                            String message = null;
-                            String title = null;
-                            final String tab = "                        ";
-                            if ("de".equalsIgnoreCase(lng)) {
-                                title = domain + " Free Download";
-                                message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
-                                message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
-                                message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
-                            } else {
-                                title = domain + " Free Download";
-                                message = "You are using the " + domain + " Free Mode.\r\n";
-                                message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
-                                message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
-                            }
-                            if (CrossSystem.isOpenBrowserSupported()) {
-                                final int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                                if (JOptionPane.OK_OPTION == result) {
-                                    CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
-                                }
-                            }
-                        } catch (final Throwable e) {
-                        }
-                    }
-                });
-            } catch (final Throwable e) {
-            }
-        }
-    }
-
-    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.requestFileInformation(downloadLink);
         this.doFree(downloadLink);
@@ -339,14 +294,7 @@ public class RapidGatorNet extends PluginForHost {
             }
         }
         if (this.br.containsHTML(RapidGatorNet.PREMIUMONLYTEXT)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         try {
             // end of experiment
@@ -513,16 +461,10 @@ public class RapidGatorNet extends PluginForHost {
             final String redirect = br.getRedirectLocation();
             // Set-Cookie: failed_on_captcha=1; path=/ response if the captcha expired.
             if ("1".equals(this.br.getCookie("http://rapidgator.net", "failed_on_captcha")) || this.br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)") || (redirect != null && redirect.matches("https?://rapidgator\\.net/file/[a-z0-9]+"))) {
-                try {
-                    this.invalidateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
+                this.invalidateLastChallengeResponse();
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                try {
-                    this.validateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
+                this.validateLastChallengeResponse();
             }
 
             String dllink = this.br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
@@ -594,8 +536,6 @@ public class RapidGatorNet extends PluginForHost {
         return 1;
     }
 
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
@@ -613,7 +553,6 @@ public class RapidGatorNet extends PluginForHost {
     public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
         synchronized (RapidGatorNet.LOCK) {
             try {
-                RapidGatorNet.maxPrem.set(1);
                 final String sid = this.login_api(account);
                 if (sid != null) {
                     account.setValid(true);
@@ -640,13 +579,8 @@ public class RapidGatorNet extends PluginForHost {
                         if (!ai.isExpired()) {
                             account.setType(AccountType.PREMIUM);
                             /* account still valid */
-                            try {
-                                RapidGatorNet.maxPrem.set(-1);
-                                account.setMaxSimultanDownloads(-1);
-                                account.setConcurrentUsePossible(true);
-                            } catch (final Throwable e) {
-                                // not available in old Stable 0.9.581
-                            }
+                            account.setMaxSimultanDownloads(-1);
+                            account.setConcurrentUsePossible(true);
                             if (account.getAccountInfo() == null) {
                                 account.setAccountInfo(ai);
                             }
@@ -667,12 +601,8 @@ public class RapidGatorNet extends PluginForHost {
                     }
                     ai.setStatus("Free Account");
                     account.setType(AccountType.FREE);
-                    try {
-                        RapidGatorNet.maxPrem.set(1);
-                        account.setMaxSimultanDownloads(1);
-                        account.setConcurrentUsePossible(false);
-                    } catch (final Throwable e) {
-                    }
+                    account.setMaxSimultanDownloads(1);
+                    account.setConcurrentUsePossible(false);
                     return ai;
                 }
                 account.setType(null);
@@ -692,7 +622,6 @@ public class RapidGatorNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public AccountInfo fetchAccountInfo_web(final Account account, final AccountInfo ai) throws Exception {
-        RapidGatorNet.maxPrem.set(1);
         try {
             this.login_web(account, true);
         } catch (final PluginException e) {
@@ -701,15 +630,10 @@ public class RapidGatorNet extends PluginForHost {
         }
         final boolean isPremium = Account.AccountType.PREMIUM.equals(account.getType());
         if (!isPremium) {
-            ai.setStatus("Registered (free) User");
-            try {
-                RapidGatorNet.maxPrem.set(1);
-                // free accounts still have captcha.
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
+            ai.setStatus("Free Account");
+            // free accounts still have captcha.
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
             ai.setUnlimitedTraffic();
         } else {
             this.br.getPage("http://rapidgator.net/profile/index");
@@ -749,13 +673,8 @@ public class RapidGatorNet extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
             }
             ai.setStatus("Premium User");
-            try {
-                RapidGatorNet.maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
         }
         account.setValid(true);
         return ai;
@@ -921,10 +840,7 @@ public class RapidGatorNet extends PluginForHost {
     public static String readErrorStream(final URLConnectionAdapter con) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
         try {
-            try {
-                con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
-            } catch (final Throwable not09581) {
-            }
+            con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
             final InputStream es = con.getErrorStream();
             if (es == null) {
                 throw new IOException("No errorstream!");
@@ -1053,12 +969,9 @@ public class RapidGatorNet extends PluginForHost {
 
     private void prepareBrowser_api(final Browser br) {
         RapidGatorNet.prepareBrowser(br);
-        try {
-            /* not available in old stable */
-            if (br != null) {
-                br.setAllowedResponseCodes(new int[] { 401, 402, 501, 423 });
-            }
-        } catch (final Throwable not09581) {
+        /* not available in old stable */
+        if (br != null) {
+            br.setAllowedResponseCodes(new int[] { 401, 402, 501, 423 });
         }
     }
 
@@ -1350,76 +1263,11 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return RapidGatorNet.maxPrem.get();
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-    }
-
-    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-
-    public static void showSSLWarning(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        final String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        final boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            } else {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else if ("es".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
-                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            } else {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            } else {
-                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        }
-                        final int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) {
-                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                        }
-                        RapidGatorNet.stableSucks.set(true);
-                    } catch (final Throwable e) {
-                    }
-                }
-            });
-        } catch (final Throwable e) {
-        }
     }
 
 }
