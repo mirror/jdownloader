@@ -107,9 +107,9 @@ public class TwitterCom extends PluginForHost {
             dllink = link.getDownloadURL();
             if (dllink.contains("jpg") || dllink.contains("png")) {
                 try {
-                    con = br.openHeadConnection(dllink + ":orig");
+                    con = br.openHeadConnection(dllink.replace(":large", "") + ":orig");
                     if (!con.getContentType().contains("html")) {
-                        dllink = dllink + ":orig";
+                        dllink = dllink.replace(":large", "") + ":orig";
                     }
                 } finally {
                     con.disconnect();
