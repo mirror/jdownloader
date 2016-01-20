@@ -4,8 +4,11 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import jd.controlling.TaskQueue;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -15,6 +18,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
@@ -42,6 +46,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
     private final HashMap<String, String>          types;
     private long                                   opened;
     private long                                   latestRequest;
+    private final static AtomicInteger             LATESTPORT  = new AtomicInteger(BrowserSolverService.getInstance().getConfig().getLocalHttpPort());
 
     {
         resourceIds = new HashMap<String, URL>();
@@ -79,14 +84,27 @@ public abstract class BrowserReference implements HttpRequestHandler {
     }
 
     public void open() throws IOException {
-        HttpHandlerInfo lHandlerInfo = null;
-        try {
-            final int port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
-            lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, this);
-        } catch (final IOException e) {
-            lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, this);
-        }
-        openURL("http://127.0.0.1:" + lHandlerInfo.getPort() + "/" + challenge.getHttpPath() + "/?id=" + id.getID());
+        TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
+
+            @Override
+            protected Void run() throws IOException {
+                HttpHandlerInfo lHandlerInfo = null;
+                try {
+                    int port = LATESTPORT.get();
+                    if (port < 1024) {
+                        port = 0;
+                    } else if (port > 65000) {
+                        port = 65000;
+                    }
+                    lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this);
+                } catch (final IOException e) {
+                    lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this);
+                }
+                LATESTPORT.set(lHandlerInfo.getPort());
+                openURL("http://127.0.0.1:" + lHandlerInfo.getPort() + "/" + challenge.getHttpPath() + "/?id=" + id.getID());
+                return null;
+            }
+        });
     }
 
     private void openURL(String url) {
@@ -153,17 +171,24 @@ public abstract class BrowserReference implements HttpRequestHandler {
     }
 
     public void dispose() {
-        final HttpHandlerInfo lHandlerInfo = handlerInfo.getAndSet(null);
-        try {
-            if (lHandlerInfo != null) {
-                DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(lHandlerInfo);
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                final HttpHandlerInfo lHandlerInfo = handlerInfo.getAndSet(null);
+                try {
+                    if (lHandlerInfo != null) {
+                        DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(lHandlerInfo);
+                    }
+                } finally {
+                    final Process lProcess = process.getAndSet(null);
+                    if (lProcess != null) {
+                        lProcess.destroy();
+                    }
+                }
+                return null;
             }
-        } finally {
-            final Process lProcess = process.getAndSet(null);
-            if (lProcess != null) {
-                lProcess.destroy();
-            }
-        }
+        });
     }
 
     @Override

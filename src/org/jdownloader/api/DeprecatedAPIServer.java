@@ -378,13 +378,16 @@ public class DeprecatedAPIServer extends HttpServer {
             @Override
             public void run() {
                 try {
-                    autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
+                    final HttpConnection httpConnection = autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
 
                         @Override
                         public HttpConnection create(Socket clientSocket, InputStream is, OutputStream os) throws IOException {
                             return new CustomHttpConnection(DeprecatedAPIServer.this, clientSocket, is, os);
                         }
-                    }).run();
+                    });
+                    if (httpConnection != null) {
+                        httpConnection.run();
+                    }
                 } catch (Throwable e) {
                     LogController.CL(DeprecatedAPIServer.class).log(e);
                 }

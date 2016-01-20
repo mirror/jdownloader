@@ -20,8 +20,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -34,7 +36,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.StringUtils;
@@ -82,7 +83,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     LANG_DE                                     = "de";
     private static final String     LANG_FR                                     = "fr";
 
-    private short                   languageVersion                             = 1;
     private String                  parameter;
     private ArrayList<DownloadLink> decryptedLinks                              = new ArrayList<DownloadLink>();
     private String                  example_arte_vp_url                         = null;
@@ -101,12 +101,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
      */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        /* Load host plugin to access some static methods later */
-        JDUtilities.getPluginForHost("arte.tv");
         int foundFormatsNum = 0;
         parameter = param.toString();
         this.example_arte_vp_url = null;
-        ArrayList<String> selectedLanguages = new ArrayList<String>();
+        final ArrayList<String> selectedLanguages = new ArrayList<String>();
         String title = getUrlFilename();
         String fid = null;
         String thumbnailUrl = null;
@@ -198,26 +196,27 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
              * Now let's check which languages the user wants. We'll do the quality selection later but we have to access webpages to get
              * the different languages so let's keep the load low by only grabbing what the user selected.
              */
+            final boolean germanSelected = cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, true);
+            final boolean francaisSelected = cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, true);
             if (cfg.getBooleanProperty(LOAD_LANGUAGE_URL, true)) {
                 selectedLanguages.add(this.getUrlLang());
             } else {
-                if (cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, true) && !selectedLanguages.contains(LANG_DE)) {
+                if (isGerman && germanSelected) {
                     selectedLanguages.add(LANG_DE);
-                }
-                if (cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, true) && !selectedLanguages.contains(LANG_FR)) {
+                } else if (isFrancais && francaisSelected) {
                     selectedLanguages.add(LANG_FR);
-                }
-                if (isGerman && selectedLanguages.contains(LANG_DE)) {
-                    selectedLanguages.remove(LANG_DE);
-                    selectedLanguages.add(0, LANG_DE);
-                } else if (isFrancais && selectedLanguages.contains(LANG_FR)) {
-                    selectedLanguages.remove(LANG_FR);
-                    selectedLanguages.add(0, LANG_FR);
+                } else {
+                    if (germanSelected) {
+                        selectedLanguages.add(LANG_DE);
+                    }
+                    if (francaisSelected) {
+                        selectedLanguages.add(LANG_FR);
+                    }
                 }
             }
+            final HashSet<String> linkIDs = new HashSet<String>();
             /* Finally, grab all we can get (in the selected language(s)) */
             for (final String selectedLanguage : selectedLanguages) {
-                setSelectedLang_format_code(selectedLanguage);
                 final String apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
                 br.getPage(apiurl);
                 if (br.getHttpConnection().getResponseCode() == 404) {
@@ -260,6 +259,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 if (thumbnailUrl == null) {
                     thumbnailUrl = (String) videoJsonPlayer.get("programImage");
+                    if (thumbnailUrl == null) {
+                        Object VTU = videoJsonPlayer.get("VTU");
+                        if (VTU != null && VTU instanceof Map) {
+                            thumbnailUrl = (String) ((Map) VTU).get("IUR");
+                        }
+                    }
                 }
                 final String vru = (String) videoJsonPlayer.get("VRU");
                 final String vra = (String) videoJsonPlayer.get("VRA");
@@ -299,84 +304,85 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 for (final Object o : vsr_quals) {
                     foundFormatsNum++;
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
+                    final String url = (String) qualitymap.get("url");
+                    if (!url.startsWith("http") || url.contains(".m3u8")) {
+                        continue;
+                    }
                     final Object widtho = qualitymap.get("width");
                     final Object heighto = qualitymap.get("height");
                     String videoresolution = "";
                     String width = "";
                     String height = "";
-                    final String protocol = "http";
                     final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
                     if (widtho != null && heighto != null) {
                         /* These parameters are available in 95+% of all cases! */
-                        width = "" + ((Number) qualitymap.get("width")).intValue();
-                        height = "" + ((Number) qualitymap.get("height")).intValue();
+                        width = ((Number) qualitymap.get("width")).toString();
+                        height = ((Number) qualitymap.get("height")).toString();
                         videoresolution = width + "x" + height;
                     }
-                    final String versionCode = (String) qualitymap.get("versionCode");
-                    final String versionLibelle = (String) qualitymap.get("versionLibelle");
-                    final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
-                    final String url = (String) qualitymap.get("url");
-                    if (isGerman && !StringUtils.containsIgnoreCase(versionLibelle, "Deutsch")) {
-                        continue;
-                    } else if (isFrancais && !StringUtils.containsIgnoreCase(versionLibelle, "Français")) {
-                        continue;
-                    }
 
-                    final short format_code = getFormatCode(versionShortLibelle, versionCode);
-                    final String quality_intern = protocol + "_" + videoBitrate;
-                    final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + get_user_language_from_format_code(format_code) + "_" + get_user_format_from_format_code(format_code) + "_" + versionCode + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
-
-                    /* Lets check if we can add this link / if user wants it. */
-                    /* Ignore HLS/RTMP versions */
-                    if (!url.startsWith("http") || url.contains(".m3u8")) {
-                        logger.info("Skipping " + filename + " because it is not a supported streaming format");
-                        continue;
-                    }
-                    if (!cfg.getBooleanProperty(V_NORMAL, true) && (format_code == format_intern_german || format_code == format_intern_french)) {
-                        /* User does not want the non-subtitled version */
-                        continue;
-                    }
-                    if (!cfg.getBooleanProperty(V_SUBTITLED, true) && format_code == format_intern_subtitled) {
-                        /* User does not want the subtitled version */
-                        continue;
-                    }
-                    if (!cfg.getBooleanProperty(V_SUBTITLE_DISABLED_PEOPLE, true) && format_code == format_intern_subtitled_for_disabled_people) {
-                        /* User does not want the subtitled-for-.disabled-people version */
-                        continue;
-                    }
-                    if (!cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, true) && format_code == format_intern_audio_description) {
-                        /* User does not want the audio-description version */
-                        continue;
-                    }
+                    final String quality_intern = "http_" + videoBitrate;
                     if (!cfg.getBooleanProperty(quality_intern, true)) {
                         /* User does not want this bitrate --> Skip it */
                         logger.info("Skipping " + quality_intern);
                         continue;
                     }
 
-                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                    final String versionCode = (String) qualitymap.get("versionCode");
+                    final String versionLibelle = (String) qualitymap.get("versionLibelle");
+                    final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
 
-                    link.setFinalFileName(filename);
-                    link.setContentUrl(parameter);
-                    link._setFilePackage(fp);
-                    link.setProperty("directURL", url);
-                    link.setProperty("directName", filename);
-                    link.setProperty("quality_intern", quality_intern);
-                    link.setProperty("langShort", selectedLanguage);
-                    link.setProperty("mainlink", parameter);
-                    link.setProperty("apiurl", apiurl);
-                    if (vra != null && vru != null) {
-                        link.setProperty("VRA", convertDateFormat(vra));
-                        link.setProperty("VRU", convertDateFormat(vru));
+                    final VersionInfo versionInfo = parseVersionInfo(versionCode);
+
+                    if (!cfg.getBooleanProperty(V_NORMAL, true) && !(SubtitleType.FULL.equals(versionInfo.getSubtitleType()) || SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType()))) {
+                        /* User does not want the non-subtitled version */
+                        continue;
                     }
-                    link.setComment(description);
-                    link.setContentUrl(parameter);
-                    /* Use filename as linkid as it is unique! */
-                    link.setLinkID(getHost() + "://" + vpi + "/" + selectedLanguage + "/" + format_code + "/" + quality_intern);
-                    if (fastLinkcheck) {
-                        link.setAvailable(true);
+                    if (!cfg.getBooleanProperty(V_SUBTITLE_DISABLED_PEOPLE, true) && SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType())) {
+                        /* User does not want the subtitled-for-.disabled-people version */
+                        continue;
                     }
-                    decryptedLinks.add(link);
+                    if (!cfg.getBooleanProperty(V_SUBTITLED, true) && SubtitleType.FULL.equals(versionInfo.getSubtitleType())) {
+                        /* User does not want the subtitled version */
+                        continue;
+                    }
+                    if (!francaisSelected && SubtitleLanguage.FRANCAIS.equals(versionInfo.getSubtitleLanguage())) {
+                        continue;
+                    }
+                    if (!germanSelected && SubtitleLanguage.GERMAN.equals(versionInfo.getSubtitleLanguage())) {
+                        continue;
+                    }
+                    // TODO
+                    // if (!cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, true) && format_code == format_intern_audio_description) {
+                    // /* User does not want the audio-description version */
+                    // continue;
+                    // }
+                    final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
+                    if (linkIDs.add(linkID)) {
+                        final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                        final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
+                        link.setFinalFileName(filename);
+                        link.setContentUrl(parameter);
+                        link._setFilePackage(fp);
+                        link.setProperty("versionCode", versionCode);
+                        link.setProperty("directURL", url);
+                        link.setProperty("directName", filename);
+                        link.setProperty("quality_intern", quality_intern);
+                        link.setProperty("langShort", selectedLanguage);
+                        link.setProperty("mainlink", parameter);
+                        link.setProperty("apiurl", apiurl);
+                        if (vra != null && vru != null) {
+                            link.setProperty("VRA", convertDateFormat(vra));
+                            link.setProperty("VRU", convertDateFormat(vru));
+                        }
+                        link.setComment(description);
+                        link.setContentUrl(parameter);
+                        link.setLinkID(linkID);
+                        if (fastLinkcheck) {
+                            link.setAvailable(true);
+                        }
+                        decryptedLinks.add(link);
+                    }
                 }
             }
 
@@ -435,49 +441,168 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
-    private String getArteVPUrl() {
-        return getArteVPUrl(this.br.toString());
-    }
-
     private String getArteVPUrl(final String source) {
         return new Regex(source, "arte_vp_url=(?:\"|\\')(http[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
     }
 
-    /* Collection of possible values */
-    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]", "VI", "VO-STE[ANG]", "VO-STE[ESP]", "VO-STE[ITA]", "VO-STE[POL]", "VOA-STE[ESP]", "VOA-STE[ANG]" };
-    /* Can also be "-" */
-    private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOA", "VOF", "VOSTF", "VE[ANG]", "VI", "OmU-ANG", "OmU-ESP", "OmU-ITA", "OmU-POL" };
+    private static enum VideoLanguage {
+        FRANCAIS,
+        GERMAN,
+        OTHER;
 
-    /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions, 6 = unknown */
-    private short getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
-        /* versionShortLibelle: What is UTH?? */
-        /* versionCode: VO is not necessarily french */
-        if (versionShortLibelle == null || versionCode == null) {
-            throw new DecrypterException("Decrypter broken");
+        private static VideoLanguage parse(final String apiosCode) {
+            final String originalVersion = new Regex(apiosCode, "^VO(F|A)($|-)").getMatch(0);
+            if (originalVersion != null) {
+                // original version
+                if ("F".equals(originalVersion)) {
+                    return FRANCAIS;
+                } else if ("A".equals(originalVersion)) {
+                    return GERMAN;
+                } else {
+                    return OTHER;
+                }
+            }
+            final String nonOriginalVersion = new Regex(apiosCode, "^V(F|A)($|-)").getMatch(0);
+            if (nonOriginalVersion != null) {
+                // non-original version
+                if ("F".equals(nonOriginalVersion)) {
+                    return FRANCAIS;
+                } else if ("A".equals(nonOriginalVersion)) {
+                    return GERMAN;
+                } else {
+                    return OTHER;
+                }
+            }
+            return OTHER;
         }
-        short lint;
-        if (versionCode.equals("VO") && parameter.matches(TYPE_CONCERT)) {
-            /* Special case - no different versions available --> We already got the version we want */
-            lint = languageVersion;
-        } else if ("VOF-STA".equalsIgnoreCase(versionCode) || "VOF-STMF".equals(versionCode) || "VA-STMA".equals(versionCode)) {
-            lint = format_intern_subtitled;
-        } else if (versionCode.equals("VOA-STMA")) {
-            lint = format_intern_subtitled_for_disabled_people;
-        } else if (versionCode.equals("VAAUD")) {
-            lint = format_intern_audio_description;
-        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]") || versionCode.equals("VI") || "VOA-STA".equals(versionCode) || "VO-STE[ANG]".equals(versionCode) || versionCode.equals("VO-STE[ITA]") || versionCode.equals("VOA-STE[ESP]") || versionCode.equals("VOA-STE[ANG]")) {
-            /* VE Actually means English but there is no specified selection for this. */
-            /* Without language --> So it simply is our current language */
-            lint = languageVersion;
-        } else if (versionShortLibelle.equals("DE") || versionShortLibelle.equals("VA") || versionCode.equals("VO-STA") || versionShortLibelle.equals("VOSTA")) {
-            lint = format_intern_german;
-        } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VF-STMF")) {
-            lint = format_intern_french;
-        } else {
-            /* Unknown */
-            lint = format_intern_unknown;
+    }
+
+    private static enum SubtitleLanguage {
+        FRANCAIS,
+        GERMAN,
+        OTHER;
+
+        private static SubtitleLanguage parse(final String apiosCode) {
+            final String subtitleLanguage = new Regex(apiosCode, "-STM?(A|F)").getMatch(0);
+            if (subtitleLanguage != null) {
+                if ("F".equals(subtitleLanguage)) {
+                    return FRANCAIS;
+                } else if ("A".equals(subtitleLanguage)) {
+                    return GERMAN;
+                } else {
+                    return OTHER;
+                }
+            }
+            return OTHER;
         }
-        return lint;
+    }
+
+    private static enum SubtitleType {
+        NONE,
+        FULL,
+        PARTIAL,
+        HEARING_IMPAIRED;
+
+        private static SubtitleType parse(final String apiosCode) {
+            if (StringUtils.equalsIgnoreCase(apiosCode, "VF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VA-STA") || StringUtils.equalsIgnoreCase(apiosCode, "VOF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VOA-STA")) {
+                return PARTIAL;
+            } else if (StringUtils.containsIgnoreCase(apiosCode, "-STM")) {
+                return HEARING_IMPAIRED;
+            } else if (StringUtils.containsIgnoreCase(apiosCode, "-ST")) {
+                return FULL;
+            } else {
+                return NONE;
+            }
+        }
+    }
+
+    private static enum VersionType {
+        ORIGINAL,
+        ORIGINAL_FRANCAIS,
+        ORIGINAL_GERMAN,
+        NON_ORIGINAL_FRANCAIS,
+        NON_ORIGINAL_GERMAN,
+        FOREIGN;
+
+        private static VersionType parse(final String apiosCode) {
+            if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
+                return ORIGINAL_FRANCAIS;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOA")) {
+                return ORIGINAL_GERMAN;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VA-") || StringUtils.equalsIgnoreCase(apiosCode, "VA")) {
+                return NON_ORIGINAL_GERMAN;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VF-") || StringUtils.equalsIgnoreCase(apiosCode, "VF")) {
+                return NON_ORIGINAL_FRANCAIS;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VO-") || StringUtils.equalsIgnoreCase(apiosCode, "VO")) {
+                return ORIGINAL;
+            } else {
+                return FOREIGN;
+            }
+        }
+    }
+
+    private static interface VersionInfo {
+
+        VersionType getVersionType();
+
+        VideoLanguage getVideoLanguage();
+
+        SubtitleLanguage getSubtitleLanguage();
+
+        SubtitleType getSubtitleType();
+
+        boolean hasSubtitle();
+
+    }
+
+    private VersionInfo parseVersionInfo(final String apiosCode) {
+        final SubtitleType subtitleType = SubtitleType.parse(apiosCode);
+        final VideoLanguage videoLanguage = VideoLanguage.parse(apiosCode);
+        final SubtitleLanguage subtitleLanguage = SubtitleLanguage.parse(apiosCode);
+        final VersionType versionType = VersionType.parse(apiosCode);
+        return new VersionInfo() {
+
+            @Override
+            public SubtitleType getSubtitleType() {
+                return subtitleType;
+            }
+
+            @Override
+            public SubtitleLanguage getSubtitleLanguage() {
+                return subtitleLanguage;
+            }
+
+            @Override
+            public VideoLanguage getVideoLanguage() {
+                return videoLanguage;
+            }
+
+            @Override
+            public VersionType getVersionType() {
+                return versionType;
+            }
+
+            @Override
+            public String toString() {
+                final StringBuilder sb = new StringBuilder();
+                sb.append(getVersionType());
+                sb.append("_");
+                sb.append(getVideoLanguage());
+                if (hasSubtitle()) {
+                    sb.append("_");
+                    sb.append(getSubtitleType());
+                    sb.append("_");
+                    sb.append(getSubtitleLanguage());
+                }
+                return sb.toString();
+            }
+
+            @Override
+            public boolean hasSubtitle() {
+                return !SubtitleType.NONE.equals(getSubtitleType());
+            }
+
+        };
     }
 
     /* 1 = No subtitle, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
@@ -501,38 +626,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
-    /* 1 = No subtitle, 3 = Subtitled version, 4 = Subtitled version for disabled people, 5 = Audio description */
-    public static String get_user_language_from_format_code(final short version) {
-        switch (version) {
-        case format_intern_german:
-            return "german";
-        case format_intern_french:
-            return "french";
-        default:
-            return "french";
-        }
-    }
-
-    /**
-     * Inout: Normal formatCode Output: formatCode for internal use (1+2 = 1) 1=German, 2 = French, both no_subtitle --> We only need the
-     * 'no subtitle' information which has the code 1.
-     */
-    private int get_intern_format_code_from_format_code(final int formatCode) {
-        if (formatCode == format_intern_german || formatCode == format_intern_french) {
-            return 1;
-        } else {
-            return formatCode;
-        }
-    }
-
-    private void setSelectedLang_format_code(final String short_lang) {
-        if ("de".equals(short_lang)) {
-            this.languageVersion = format_intern_german;
-        } else {
-            this.languageVersion = format_intern_french;
-        }
-    }
-
     private String getAPIUrl(final String hybridAPIlink, final String lang, final String id) {
         String apilink;
         if (example_arte_vp_url != null && this.example_arte_vp_url.matches(API_TYPE_GUIDE)) {
@@ -546,23 +639,16 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return apilink;
     }
 
-    private String artetv_api_language() {
-        return artetv_api_language(getUrlLang());
-    }
-
     private String artetv_api_language(final String lang) {
-        String apilang;
         if ("de".equals(lang)) {
-            apilang = "D";
+            return "D";
         } else {
-            apilang = "F";
+            return "F";
         }
-        return apilang;
     }
 
     private String getUrlFilename() {
-        String urlfilename;
-        urlfilename = new Regex(parameter, "([A-Za-z0-9\\-]+)$").getMatch(0);
+        final String urlfilename = new Regex(parameter, "([A-Za-z0-9\\-]+)$").getMatch(0);
         return urlfilename;
     }
 
@@ -599,20 +685,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("unused")
     private String getURLFilename(final String parameter) {
-        String urlfilename;
         if (parameter.matches(TYPE_CONCERT)) {
-            urlfilename = new Regex(parameter, "concert\\.arte\\.tv/(de|fr)/(.+)").getMatch(1);
+            return new Regex(parameter, "concert\\.arte\\.tv/(de|fr)/(.+)").getMatch(1);
         } else {
-            urlfilename = new Regex(parameter, "arte\\.tv/guide/[a-z]{2}/(.+)").getMatch(0);
+            return new Regex(parameter, "arte\\.tv/guide/[a-z]{2}/(.+)").getMatch(0);
         }
-        return urlfilename;
     }
 
     private String getUrlLang() {
-        String lang = new Regex(parameter, "^https?://[^/]+(?:/guide)?/(\\w+)/.+").getMatch(0);
+        final String lang = new Regex(parameter, "^https?://[^/]+(?:/guide)?/(\\w+)/.+").getMatch(0);
         if (lang != null && !lang.matches("(de|fr)")) {
             /* TODO: Maybe add support for "en" and/or others */
-            lang = "de";
+            return "de";
         }
         return lang;
     }
