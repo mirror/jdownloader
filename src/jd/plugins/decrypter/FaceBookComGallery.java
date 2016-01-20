@@ -77,8 +77,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     TYPE_PHOTOS_LINK                = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos.*";
     private static final String     TYPE_GROUPS_PHOTOS              = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
     private static final String     TYPE_GROUPS_FILES               = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
-    private static final String     TYPE_PROFILE_PHOTOS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=[A-Z0-9%]+(?:%3A5|A5)$";
-    private static final String     TYPE_PROFILE_ALBUMS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=[A-Z0-9%]+(?:%3A6|A6)$";
+    private static final String     TYPE_PROFILE_PHOTOS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)5$";
+    private static final String     TYPE_PROFILE_ALBUMS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)6$";
     private static final String     TYPE_NOTES                      = "https?://(?:www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
     private static final String     TYPE_MESSAGE                    = "httpss?://(?:www\\.)?facebook\\.com/messages/.+";
 
@@ -164,9 +164,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
             /* temporarily unavailable (or forever, or permission/rights needed) || empty album */
             if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            }
-
-            if (parameter.matches(TYPE_ALBUMS_LINK)) {
+            } else if (br.getURL().startsWith("https://www.facebook.com/login.php")) {
+                // login required to perform task
+                logger.warning("login required to perform this task!");
+                return decryptedLinks;
+            } else if (parameter.matches(TYPE_ALBUMS_LINK)) {
                 decryptAlbums();
             } else if (parameter.matches(TYPE_PHOTOS_OF_LINK)) {
                 decryptPhotosOf();
