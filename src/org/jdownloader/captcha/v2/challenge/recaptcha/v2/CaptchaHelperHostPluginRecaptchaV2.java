@@ -10,8 +10,8 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -63,7 +63,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         try {
             link.addPluginProgress(progress);
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin);
+            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin, getSiteDomain(), getSiteUrl());
             c.setTimeout(plugin.getCaptchaTimeout());
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
@@ -105,6 +105,15 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             }
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+
+            if (c.getResult() != null) {
+                for (AbstractResponse<String> r : c.getResult()) {
+                    if (r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
+                        return ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
+                    }
+
+                }
             }
             if (!c.isCaptchaResponseValid()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha reponse value did not validate!");

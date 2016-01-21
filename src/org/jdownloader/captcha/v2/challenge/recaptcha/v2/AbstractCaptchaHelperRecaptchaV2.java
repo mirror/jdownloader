@@ -1,21 +1,34 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
-import jd.http.Browser;
-import jd.plugins.Plugin;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
+
+import jd.http.Browser;
+import jd.plugins.Plugin;
 
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected T            plugin;
     protected LogInterface logger;
     protected Browser      br;
     protected String       siteKey;
+    private String         siteUrl;
+
+    public String getSiteUrl() {
+        return siteUrl;
+    }
+
+    public String getSiteDomain() {
+        return siteDomain;
+    }
+
+    private String siteDomain;
 
     public AbstractCaptchaHelperRecaptchaV2(T plugin, Browser br, String siteKey) {
         this.plugin = plugin;
         this.br = br;
+        this.siteUrl = br.getURL();
+        this.siteDomain = Browser.getHost(siteUrl, true);
         logger = plugin.getLogger();
         if (logger == null) {
             logger = LogController.getInstance().getLogger(getClass().getSimpleName());

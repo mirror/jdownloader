@@ -275,4 +275,10 @@ public abstract class Challenge<T> {
     public SolverJob<T> getJob() {
         return job;
     }
+
+    /**
+     * called when the controller handled this challenge
+     */
+    public void onHandled() {
+    }
 }

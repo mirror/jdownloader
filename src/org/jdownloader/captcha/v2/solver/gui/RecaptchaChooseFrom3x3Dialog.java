@@ -25,33 +25,89 @@ import java.awt.Image;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.net.MalformedURLException;
 import java.util.HashSet;
 
+import javax.swing.Icon;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JSeparator;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
-import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.gui.translate._GUI;
 
 import jd.gui.swing.dialog.AbstractImageCaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
 public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
 
-    private HashSet<Integer> selected;
+    private HashSet<Integer>                    selected;
+    private AbstractRecaptcha2FallbackChallenge challenge;
 
-    public RecaptchaChooseFrom3x3Dialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String explain) {
-        this(flag, type, DomainInfo, new Image[] { image }, explain);
+    // public RecaptchaChooseFrom3x3Dialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String
+    // explain) {
+    // this(flag, type, DomainInfo, new Image[] { image }, explain);
+    // }
+
+    public RecaptchaChooseFrom3x3Dialog(int flag, DialogType type, DomainInfo domainInfo, AbstractRecaptcha2FallbackChallenge challenge) {
+        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, null, (Image[]) null);
+
+        this.challenge = challenge;
+        BufferedImage img;
+        try {
+            img = IconIO.getImage(challenge.getImageFile().toURI().toURL(), false);
+
+            images = new Image[] { img };
+        } catch (MalformedURLException e) {
+            throw new WTFException(e);
+        }
+
     }
 
-    public RecaptchaChooseFrom3x3Dialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
+    @Override
+    protected void addBeforeImage(MigPanel field) {
+        super.addBeforeImage(field);
+        String key = challenge.getHighlightedExplain();
+        if (StringUtils.isNotEmpty(key)) {
+            field.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
 
+        } else {
+            field.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
+        }
+
+        Icon explainIcon = challenge.getExplainIcon(challenge.getExplain());
+        if (StringUtils.isNotEmpty(key)) {
+            if (explainIcon != null) {
+                field.add(SwingUtils.setOpaque(SwingUtils.toBold(new JLabel(challenge.getExplain(), explainIcon, JLabel.LEFT)), false), "split 2,gapleft 5,gaptop5");
+            } else {
+                field.add(SwingUtils.setOpaque(SwingUtils.toBold(new JLabel(challenge.getExplain())), false), "split 2,gapleft 5,gaptop5");
+
+            }
+            JLabel header = new JLabel(key);
+            header.setFont(header.getFont().deriveFont(20f));
+            header.setHorizontalAlignment(JLabel.RIGHT);
+            field.add(SwingUtils.setOpaque(SwingUtils.toBold(header), false), "gapleft 5,gaptop5,alignx right");
+        } else {
+            if (explainIcon != null) {
+                field.add(SwingUtils.setOpaque(SwingUtils.toBold(new JLabel(challenge.getExplain(), explainIcon, JLabel.LEFT)), false), "gapleft 5,gaptop5");
+            } else {
+                field.add(SwingUtils.setOpaque(SwingUtils.toBold(new JLabel(challenge.getExplain())), false), "gapleft 5,gaptop5");
+
+            }
+        }
+        field.add(new JSeparator(JSeparator.HORIZONTAL));
     }
 
     protected void paintIconComponent(Graphics g, int width, int height, int xOffset, int yOffset, BufferedImage scaled) {
@@ -122,10 +178,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
 
     @Override
     protected JComponent createInputComponent() {
-        ExtTextField ret = new ExtTextField();
-        ret.setText(getHelpText());
-        ret.setEditable(false);
-        return ret;
+        return null;
     }
 
     public String getResult() {

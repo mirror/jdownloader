@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -193,7 +193,7 @@ public abstract class ChallengeSolver<T> {
         if (c instanceof AbstractBrowserChallenge) {
             return false;
         }
-        if (c instanceof Recaptcha2FallbackChallenge) {
+        if (c instanceof AbstractRecaptcha2FallbackChallenge) {
             return false;
         }
         if (!getResultType().isAssignableFrom(c.getResultType())) {
