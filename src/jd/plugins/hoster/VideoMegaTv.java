@@ -17,9 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
 
@@ -60,13 +65,11 @@ public class VideoMegaTv extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getSetLinkID() == null) {
-            final String fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-            if (link.getDownloadURL().matches(TYPE_HASH)) {
-                link.setLinkID("hash" + fuid);
-            } else {
-                link.setLinkID("id" + fuid);
-            }
+        final String fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        if (link.getDownloadURL().matches(TYPE_HASH)) {
+            link.setLinkID(getHost() + "://hash:" + fuid);
+        } else {
+            link.setLinkID(getHost() + "://id:" + fuid);
         }
     }
 
@@ -121,7 +124,7 @@ public class VideoMegaTv extends antiDDoSForHost {
         String fileName = br.getRegex("class=\"center\">Videomega\\.tv - (.*?)</div").getMatch(0);
         if (link.getFinalFileName() == null) {
             if (StringUtils.isEmpty(fileName)) {
-                fileName = br.getRegex("<title>Videomega\\.tv - (.*?)</title").getMatch(0);
+                fileName = br.getRegex("<title>Videomega\\.tv - ((?!Disable adblock|Host and share your videos free, subtitles supported).*?)</title").getMatch(0);
             }
             if (StringUtils.isNotEmpty(fileName)) {
                 link.setFinalFileName(fileName + ".mp4");
@@ -141,7 +144,7 @@ public class VideoMegaTv extends antiDDoSForHost {
         js.getHeaders().put("Accept", "*/*");
         getPage(js, "/cdn.js");
         final String javascript = br.getRegex("<script[^\r\n]+ref=\"" + fuid + ".*?</script>").getMatch(-1);
-        final String width = new Regex(javascript, "width=\"(\\d+)\"").getMatch(0);
+        final String width = new Regex(javascript, "width=\"(\\d+%?)\"").getMatch(0);
         final String height = new Regex(javascript, "height=\"(\\d+)\"").getMatch(0);
         getPage("/view.php?ref=" + fuid + "&width=" + (width == null ? "800" : width) + "&height=" + (height == null ? "400" : height));
         if (br.containsHTML(">Sorry an error has occurred converting this video\\.<")) {
@@ -154,10 +157,10 @@ public class VideoMegaTv extends antiDDoSForHost {
                 Browser br2 = br.cloneBrowser();
                 escape = Encoding.htmlDecode(escape);
                 dllink = new Regex(escape, "file:\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
+                if (inValidateHost(dllink)) {
                     dllink = new Regex(escape, "\"(https?://([a-z0-9]+\\.){1,}videomega\\.tv/vid(?:eo)?s/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
                 }
-                if (dllink == null) {
+                if (inValidateHost(dllink)) {
                     if (!escaped[escaped.length - 1].equals(escape)) {
                         // this tests if link is last in array
                         continue;
@@ -186,11 +189,33 @@ public class VideoMegaTv extends antiDDoSForHost {
                 break;
             }
         } else {
-            /* New way */
-            dllink = br.getRegex("<source src=\"(http://[^<>\"]*?)\"").getMatch(0);
-            final String id = br.getRegex("id: \"(\\d+)\"").getMatch(0);
-            if (dllink == null || id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* New way 20160121 */
+            Boolean hasLinkButInvalid = null;
+            {
+                // packed
+                String packed = br.getRegex("eval\\s*\\((function\\(p,a,c,k,e,d\\).*?\\}{2}.*?\\))\\)").getMatch(0);
+                if (packed != null) {
+                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    String result = null;
+                    try {
+                        engine.eval("var res = " + packed);
+                        result = (String) engine.get("res");
+                    } catch (final Exception e) {
+                    }
+                    dllink = new Regex(result, "(\"|')(https?://.*?\\.mp4.*?)\\1").getMatch(1);
+                    hasLinkButInvalid = inValidateHost(dllink);
+                }
+            }
+            if (inValidateHost(dllink)) {
+                dllink = br.getRegex("<source src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                hasLinkButInvalid = inValidateHost(dllink);
+                if (Boolean.TRUE.equals(hasLinkButInvalid)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (inValidateHost(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             // this is needed
             String ran = "";
@@ -269,6 +294,18 @@ public class VideoMegaTv extends antiDDoSForHost {
         } else if (dl.getConnection().getLongContentLength() < 10000l) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File is too small", 60 * 60 * 1000l);
         }
+    }
+
+    protected boolean inValidateHost(final String s) {
+        if (inValidate(s)) {
+            return true;
+        }
+        try {
+            InetAddress.getAllByName(new URL(s).getHost());
+        } catch (Throwable t) {
+            return true;
+        }
+        return false;
     }
 
     @Override
