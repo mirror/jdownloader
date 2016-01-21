@@ -297,6 +297,14 @@
 				<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
 
 			</fileset>
+			
+			<fileset dir="${dep.jdc}/src">
+					<include name="**/*.js" />
+					<include name="**/*.html" />
+					<include name="**/*.css" />
+					<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
+
+				</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/plugins/hoster/RTMPDownload.class" />
 			</fileset>
