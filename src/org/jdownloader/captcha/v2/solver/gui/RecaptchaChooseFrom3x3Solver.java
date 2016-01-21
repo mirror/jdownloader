@@ -3,8 +3,8 @@ package org.jdownloader.captcha.v2.solver.gui;
 import org.appwork.utils.Application;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -34,7 +34,7 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
         if (isBrowserSolverEnabled(c)) {
             return false;
         }
-        if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
+        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
 
             return true;
         }
@@ -67,7 +67,7 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
             if (solverJob.getChallenge() instanceof RecaptchaV2Challenge) {
 
                 checkSilentMode(solverJob);
-                Recaptcha2FallbackChallenge captchaChallenge = (Recaptcha2FallbackChallenge) ((RecaptchaV2Challenge) solverJob.getChallenge()).createBasicCaptchaChallenge();
+                AbstractRecaptcha2FallbackChallenge captchaChallenge = (AbstractRecaptcha2FallbackChallenge) ((RecaptchaV2Challenge) solverJob.getChallenge()).createBasicCaptchaChallenge();
                 checkInterruption();
                 handler = new RecaptchaChooseFrom3x3DialogHandler(captchaChallenge);
 
@@ -76,10 +76,10 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
                 if (handler.getResult() != null) {
                     solverJob.addAnswer(new AbstractResponse<String>(captchaChallenge, this, 100, handler.getResult()));
                 }
-            } else if (solverJob.getChallenge() instanceof Recaptcha2FallbackChallenge) {
+            } else if (solverJob.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
 
                 checkSilentMode(solverJob);
-                Recaptcha2FallbackChallenge captchaChallenge = (Recaptcha2FallbackChallenge) solverJob.getChallenge();
+                AbstractRecaptcha2FallbackChallenge captchaChallenge = (AbstractRecaptcha2FallbackChallenge) solverJob.getChallenge();
                 checkInterruption();
                 handler = new RecaptchaChooseFrom3x3DialogHandler(captchaChallenge);
 

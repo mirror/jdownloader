@@ -22,10 +22,8 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
-import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
@@ -47,6 +45,9 @@ import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
+import jd.gui.swing.laf.LookAndFeelController;
 
 public class Main {
 
@@ -224,6 +225,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        loadJXBrowser();
         final boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswing") != null && !Application.isHeadless();
         if (nativeSwing) {
             long start = System.currentTimeMillis();
@@ -331,5 +333,50 @@ public class Main {
                 }
             }
         }
+    }
+
+    private static void loadJXBrowser() {
+        try {
+            final ClassLoader cl = Main.class.getClassLoader();
+            File jar;
+            switch (CrossSystem.getOSFamily()) {
+            case LINUX:
+                if (Application.is64BitJvm()) {
+                    jar = Application.getResource("libs/jxbrowser/jxbrowser-linux64.jar");
+                    if (jar.exists()) {
+
+                        Application.addUrlToClassPath(jar.toURI().toURL(), cl);
+
+                    }
+                } else {
+                    jar = Application.getResource("libs/jxbrowser/jxbrowser-linux32.jar");
+                    if (jar.exists()) {
+                        Application.addUrlToClassPath(jar.toURI().toURL(), cl);
+                    }
+                }
+                break;
+            case WINDOWS:
+
+                jar = Application.getResource("libs/jxbrowser/jxbrowser-win.jar");
+                if (jar.exists()) {
+                    Application.addUrlToClassPath(jar.toURI().toURL(), cl);
+                }
+                break;
+            case MAC:
+                jar = Application.getResource("libs/jxbrowser/jxbrowser-mac.jar");
+                if (jar.exists()) {
+                    Application.addUrlToClassPath(jar.toURI().toURL(), cl);
+                }
+            }
+            jar = Application.getResource("libs/jxbrowser/license.jar");
+            if (jar.exists()) {
+                Application.addUrlToClassPath(jar.toURI().toURL(), cl);
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }

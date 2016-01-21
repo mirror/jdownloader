@@ -25,9 +25,6 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import jd.captcha.utils.GifDecoder;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.utils.URLStream;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
@@ -35,6 +32,9 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractCaptchaDialog;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.captcha.utils.GifDecoder;
+import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<Object> {
 
@@ -82,7 +82,7 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
 
     int                 fps;
 
-    Image[]             images;
+    protected Image[]   images;
 
     protected Point     offset;
     private int         frame = 0;
@@ -95,27 +95,29 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
 
         // if we have gif images, but read them as non indexed images, we try to fix this here.
         java.util.List<Image> ret = new ArrayList<Image>();
-        for (int i = 0; i < images.length; i++) {
-            if (images[i] instanceof BufferedImage) {
-                if (((BufferedImage) images[i]).getColorModel() instanceof IndexColorModel) {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    try {
-                        ImageIO.write((BufferedImage) images[i], "gif", os);
+        if (images != null) {
+            for (int i = 0; i < images.length; i++) {
+                if (images[i] instanceof BufferedImage) {
+                    if (((BufferedImage) images[i]).getColorModel() instanceof IndexColorModel) {
+                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+                        try {
+                            ImageIO.write((BufferedImage) images[i], "gif", os);
 
-                        InputStream is = new ByteArrayInputStream(os.toByteArray());
-                        Image[] subImages = getGifImages(is);
-                        for (Image ii : subImages) {
-                            ret.add(ii);
+                            InputStream is = new ByteArrayInputStream(os.toByteArray());
+                            Image[] subImages = getGifImages(is);
+                            for (Image ii : subImages) {
+                                ret.add(ii);
+                            }
+                            continue;
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                        continue;
-                    } catch (IOException e) {
-                        e.printStackTrace();
+
                     }
 
                 }
-
+                ret.add(images[i]);
             }
-            ret.add(images[i]);
         }
 
         this.images = ret.toArray(new Image[] {});

@@ -292,6 +292,7 @@ public class ChallengeResponseController {
             } finally {
                 fireJobDone(job);
             }
+            c.onHandled();
         }
     }
 
