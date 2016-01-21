@@ -81,9 +81,6 @@ public class SpeedyShareCom extends PluginForHost {
         // br.getHeaders().put("Connection", "keep-alive");
     }
 
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
