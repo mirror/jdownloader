@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -62,7 +63,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private int                     DIALOGRETURN                    = -1;
 
     private static final String     TYPE_FBSHORTLINK                = "http(s)?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
-    private static final String     TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/l/[^/]+/.+";
+    private static final String     TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/(?:l/[^/]+/.+|l\\.php\\?u=.+)";
     private static final String     TYPE_SINGLE_PHOTO               = "http(s)?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
     private static final String     TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(?:www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
     private static final String     TYPE_SINGLE_VIDEO_EMBED         = "https?://(?:www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
@@ -90,6 +91,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     CRYPTLINK                       = "facebookdecrypted.com/";
     private static final String     EXCEPTION_LINKOFFLINE           = "EXCEPTION_LINKOFFLINE";
     private static final String     EXCEPTION_NOTLOGGEDIN           = "EXCEPTION_NOTLOGGEDIN";
+    private static final String     EXCEPTION_PLUGINDEFECT          = "EXCEPTION_PLUGINDEFECT";
 
     private static final String     CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                  parameter                       = null;
@@ -123,18 +125,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else {
                 id = new Regex(parameter, "(?:v=|video_id=)(\\d+)").getMatch(0);
             }
-            final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + id);
-            decryptedLinks.add(fina);
+            decryptedLinks.add(createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + id));
             return decryptedLinks;
         } else if (parameter.matches(TYPE_SINGLE_PHOTO)) {
             final String id = new Regex(parameter, "fbid=(\\d+)").getMatch(0);
-            final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/photo.php?fbid=" + id);
-            decryptedLinks.add(fina);
+            decryptedLinks.add(createDownloadlink("https://www.facebookdecrypted.com/photo.php?fbid=" + id));
             return decryptedLinks;
         } else if (parameter.matches(TYPE_FB_REDIRECT_TO_EXTERN_SITE)) {
-            final String external_url = "http://" + new Regex(parameter, "facebook\\.com/l/[^/]+/(.+)").getMatch(0);
-            final DownloadLink fina = createDownloadlink(external_url);
-            decryptedLinks.add(fina);
+            decryptedLinks.add(createDownloadlink(getRedirectToExternalSite(parameter)));
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
@@ -142,12 +140,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             if (parameter.matches(TYPE_FBSHORTLINK)) {
                 br.getPage(parameter);
                 final String finallink = br.getRedirectLocation();
-                if (br.containsHTML(">Something\\'s wrong here")) {
-                    logger.info("Link offline: " + parameter);
-                    final DownloadLink offline = this.createOfflinelink(parameter);
-                    offline.setFinalFileName(new Regex(parameter, "facebook\\.com/(.+)").getMatch(0));
-                    decryptedLinks.add(offline);
-                    return decryptedLinks;
+                if (br.containsHTML(">Something's wrong here")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -162,12 +156,17 @@ public class FaceBookComGallery extends PluginForDecrypt {
             getpagefirsttime(parameter);
 
             /* temporarily unavailable (or forever, or permission/rights needed) || empty album */
-            if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
+            if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")
+                    || /*
+                        * problem is with this is, plugin would have to work with multiple languages! so
+                        * ">Sorry, this content isn&#039;t available right now</h2>" would fail.
+                        *
+                        */
+                    br.containsHTML("<h2 class=\"accessible_elem\">[^<]+</h2>")) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            } else if (br.getURL().startsWith("https://www.facebook.com/login.php")) {
+            } else if (br.getURL().matches("https?://(?:www\\.)facebook\\.com/login\\.php.*?")) {
                 // login required to perform task
-                logger.warning("login required to perform this task!");
-                return decryptedLinks;
+                throw new DecrypterException(EXCEPTION_NOTLOGGEDIN);
             } else if (parameter.matches(TYPE_ALBUMS_LINK)) {
                 decryptAlbums();
             } else if (parameter.matches(TYPE_PHOTOS_OF_LINK)) {
@@ -192,8 +191,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else if (parameter.matches(TYPE_MESSAGE)) {
                 v2decryptMessagePhotos();
             } else {
-                // Should never happen
                 logger.info("Unsupported linktype: " + parameter);
+                return decryptedLinks;
                 // because facebook picks up so many false positives do not throw exception or add offline links.
                 // throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
@@ -204,6 +203,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else if (StringUtils.equals(e.getMessage(), EXCEPTION_NOTLOGGEDIN)) {
                 decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "facebook\\.com/(.+)").getMatch(0), "Your not logged in! This could have influenced this negative outcome"));
                 return decryptedLinks;
+            } else if (StringUtils.equals(e.getMessage(), EXCEPTION_PLUGINDEFECT)) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
             throw e;
         }
@@ -963,14 +965,54 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptNotes() throws Exception {
-        final String html = br.getRegex("<div class=\"_4-u3 _5cla\">(.*?)class=\"commentable_item\"").getMatch(0);
+        // does not fetch comments, only the body!
+        final String html = br.getRegex("<div class=\"_4-u3 _5cla\">.*?(?:</div>){3}").getMatch(-1);
         if (html == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
-        final String[] urls = HTMLParser.getHttpLinks(html, null);
-        for (final String url : urls) {
-            this.decryptedLinks.add(this.createDownloadlink(url));
+        // set packagename
+        final String fpName = new Regex(html, "<h2 class=\"_5clb\">(.*?)</h2>").getMatch(0);
+        if (StringUtils.isNotEmpty(fpName)) {
+            if (fp == null) {
+                fp = FilePackage.getDefaultFilePackage();
+            }
+            fp.setName(fpName);
         }
+        // parser can be quite slow... I assume due to cleanups
+        final String[] urls = HTMLParser.getHttpLinks(html, null);
+        // reduce threads/dupes/overheads
+        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+        // prevent loops!
+        dupe.add(parameter);
+        dupe.add(br.getURL());
+        for (final String url : urls) {
+            if (!dupe.add(url)) {
+                continue;
+            }
+            // anything with l.facebook.com/
+            if (url.matches(TYPE_FB_REDIRECT_TO_EXTERN_SITE)) {
+                final String link = getRedirectToExternalSite(url);
+                if (!dupe.add(link)) {
+                    continue;
+                }
+                decryptedLinks.add(createDownloadlink(link));
+            } else {
+                this.decryptedLinks.add(this.createDownloadlink(url));
+            }
+        }
+    }
+
+    private String getRedirectToExternalSite(final String url) throws DecrypterException {
+        String external_url = new Regex(url, "/l\\.php\\?u=([^&]+)").getMatch(0);
+        if (StringUtils.isNotEmpty(external_url)) {
+            external_url = Encoding.urlDecode(external_url, false);
+            return external_url;
+        }
+        external_url = new Regex(url, "facebook\\.com/l/[^/]+/(.+)").getMatch(0);
+        if (StringUtils.isNotEmpty(external_url)) {
+            return "http://" + external_url;
+        }
+        throw new DecrypterException(EXCEPTION_PLUGINDEFECT);
     }
 
     // TODO: Use this everywhere as it should work universal
