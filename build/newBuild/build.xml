@@ -24,6 +24,7 @@
 		<fileset dir="${cls}" />
 		<!-- Dependencies -->
 		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
+		<fileset dir="${dep.jdc}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.updateclient}/libs" includes="**/*.jar" />
 
