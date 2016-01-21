@@ -268,7 +268,7 @@ public class SpeedyShareCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://www.speedyshare.com/login.php", "redir=%2user.php&remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www.speedyshare.com/login.php", "redir=%2Fuser.php&remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 String secondLoginurl = br.getRegex("http\\-equiv=\"REFRESH\" content=\"\\d+;url=(http://speedyshare.com/relogin[^<>\"]*?)\"").getMatch(0);
                 if (secondLoginurl != null) {
                     br.setFollowRedirects(false);
