@@ -101,7 +101,11 @@
 			<fileset dir="${res}/jd" includes="**/*" />
 		</copy>
 
-
+		<copy todir="${dist}/libs">
+			<fileset dir="${dep.jdc}/libs" includes="**/*">
+				<exclude name="**/*.info" />	
+			</fileset>
+		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*">
 				<exclude name="**/*.info" />	
@@ -124,6 +128,7 @@
 			<fileset dir="${res}/licenses" includes="**/*" />
 			<fileset dir="${res}/libs/" includes="**/*.info" />
 			<fileset dir="${dep.awu}/libs/" includes="**/*.info" />
+			<fileset dir="${dep.jdc}/libs/" includes="**/*.info" />
 		</copy>
 
 		<copy todir="${dist}/tools">
