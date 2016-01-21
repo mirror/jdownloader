@@ -326,19 +326,16 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             add(new JScrollPane(loader), "alignx center,aligny 20%");
         } else {
             if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-
                 // Dimension p = tableScrollPane.getPreferredSize();
                 // add(Box.createHorizontalGlue());
                 if (CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
                     setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[]2[]2[]"));
-
                     this.add(tableScrollPane, "");
                     add(propertiesPanel, "hidemode 2");
                     add(getOverView(), "");
                     add(bottomBar, "height 24!");
                 } else {
                     setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]2[]2[]"));
-
                     this.add(tableScrollPane, "");
                     add(getOverView(), "");
                     add(bottomBar, "height 24!");
@@ -346,9 +343,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
             } else {
                 if (CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
-
                     setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill]0[]2[]"));
-
                     this.add(tableScrollPane, "");
                     add(propertiesPanel, "hidemode 2");
                     add(bottomBar, "height 24!");
@@ -358,9 +353,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     add(bottomBar, "height 24!");
                 }
             }
-
         }
-
     }
 
     private Component getOverView() {
@@ -368,9 +361,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         if (ret != null) {
             return ret;
         } else {
-
             ret = createInternalOverview();
-
             overViewScrollBar.compareAndSet(null, ret);
         }
         return ret;
@@ -413,74 +404,6 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         return ret;
     }
 
-    // private void createSidebar() {
-    // sidebar = new DownloadViewSidebar(table);
-    //
-    // sidebarScrollPane = new HeaderScrollPane(sidebar) {
-    //
-    // /**
-    // *
-    // */
-    // private static final long serialVersionUID = 1L;
-    // // protected int getHeaderHeight() {
-    // // return (int)
-    // // table.getTableHeader().getPreferredSize().getHeight();
-    // // }
-    // };
-    //
-    // // ScrollPaneUI udi = sp.getUI();
-    // int c =
-    // LAFOptions.getInstance().getPanelBackgroundColor();
-    // // LayoutManager lm = sp.getLayout();
-    //
-    // if (c >= 0) {
-    // sidebarScrollPane.setBackground(new Color(c));
-    // sidebarScrollPane.setOpaque(true);
-    //
-    // }
-    // sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-    // sidebarScrollPane.setColumnHeaderView(new DownloadViewSideBarHeader());
-    // // ExtButton bt = new ExtButton(new AppAction() {
-    // // {
-    // // setSmallIcon(NewTheme.I().getIcon("close", -1));
-    // //
-    // setToolTipText(_GUI._.LinkGrabberSideBarHeader_LinkGrabberSideBarHeader_object_());
-    // // }
-    // //
-    // // public void actionPerformed(ActionEvent e) {
-    // //
-    // org.jdownloader.settings.statics.GUI.LINKGRABBER_SIDEBAR_ENABLED.setValue(false);
-    // // }
-    // // });
-    // //
-    // // sidebarScrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER,
-    // // bt);
-    // //
-    // org.jdownloader.settings.statics.LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(new
-    // // GenericConfigEventListener<Boolean>() {
-    // //
-    // // public void onConfigValidatorError(KeyHandler<Boolean> keyHandler,
-    // // Boolean invalidValue, ValidationException validateException) {
-    // // }
-    // //
-    // // public void onConfigValueModified(KeyHandler<Boolean> keyHandler,
-    // // Boolean newValue) {
-    // //
-    // // if (Boolean.TRUE.equals(newValue)) {
-    // // SwingUtilities.invokeLater(new Runnable() {
-    // //
-    // // public void run() {
-    // //
-    // sidebarScrollPane.getVerticalScrollBar().setValue(sidebarScrollPane.getVerticalScrollBar().getMaximum());
-    // // }
-    // // });
-    // //
-    // // }
-    // // }
-    // // });
-    //
-    // }
-
     @Override
     protected void onShow() {
         tableModel.recreateModel(false);
@@ -509,16 +432,6 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }, 250, CFG_GUI.CFG.getDownloadsTableRefreshInterval(), TimeUnit.MILLISECONDS);
         }
         DownloadController.getInstance().addListener(this);
-        // SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
-        //
-        // @Override
-        // public void run() {
-        // ExtractionExtension extension = ExtractionExtension.getIntance();
-        // if(extension!=null){
-        // extension.getEventSender().addListener(DownloadsPanel.this);
-        // }
-        // }
-        // });
         table.requestFocusInWindow();
         if (propertiesPanel != null) {
             propertiesPanel.refreshAfterTabSwitch();
