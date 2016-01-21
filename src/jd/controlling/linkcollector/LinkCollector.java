@@ -2,11 +2,12 @@ package jd.controlling.linkcollector;
 
 import java.awt.Toolkit;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -88,8 +91,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.appwork.utils.zip.ZipIOReader;
-import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -1115,9 +1116,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1740,24 +1741,61 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private LinkedList<CrawledPackage> load(File file, HashMap<CrawledPackage, CrawledPackageStorable> restoreMap) {
         LinkedList<CrawledPackage> ret = null;
         if (file != null && file.exists()) {
-            ZipIOReader zip = null;
+            FileInputStream fis = null;
+            ZipInputStream zis = null;
             try {
-                zip = new ZipIOReader(file);
+                fis = new FileInputStream(file);
+                zis = new ZipInputStream(fis);
                 /* lets restore the CrawledPackages from Json */
                 final HashMap<Integer, LoadedPackage> packageMap = new HashMap<Integer, LoadedPackage>();
-                InputStream is = null;
                 LinkCollectorStorable lcs = null;
-                final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
+                final TypeRef<CrawledLinkStorable> crawledLinkStorable = new TypeRef<CrawledLinkStorable>() {
+                };
+                final TypeRef<CrawledPackageStorable> crawledPackageStorable = new TypeRef<CrawledPackageStorable>() {
+                };
+                final TypeRef<LinkCollectorStorable> linkCollectorStorable = new TypeRef<LinkCollectorStorable>() {
+                };
+                ZipEntry entry = null;
+                final ZipInputStream finalZis = zis;
+                final InputStream entryInputStream = new InputStream() {
+
                     @Override
-                    public synchronized byte[] toByteArray() {
-                        /* avoid creating new byteArray */
-                        return buf;
+                    public int read() throws IOException {
+                        return finalZis.read();
+                    }
+
+                    @Override
+                    public int read(byte[] b, int off, int len) throws IOException {
+                        return finalZis.read(b, off, len);
+                    }
+
+                    @Override
+                    public long skip(long n) throws IOException {
+                        return finalZis.skip(n);
+                    }
+
+                    @Override
+                    public int available() throws IOException {
+                        return finalZis.available();
+                    }
+
+                    @Override
+                    public boolean markSupported() {
+                        return false;
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                    }
+
+                    @Override
+                    public synchronized void mark(int readlimit) {
                     }
                 };
-                for (ZipEntry entry : zip.getZipFiles()) {
-                    byteBuffer.reset();
-                    String json = null;
+                int entries = 0;
+                while ((entry = zis.getNextEntry()) != null) {
                     try {
+                        entries++;
                         if (entry.getName().matches("^\\d+_\\d+$")) {
                             final String idx[] = entry.getName().split("_");
                             final Integer packageIndex = Integer.valueOf(idx[0]);
@@ -1767,11 +1805,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 loadedPackage = new LoadedPackage();
                                 packageMap.put(packageIndex, loadedPackage);
                             }
-                            is = zip.getInputStream(entry);
-                            final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
-                            json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                            final CrawledLinkStorable storable = JSonStorage.restoreFromString(json, new TypeRef<CrawledLinkStorable>() {
-                            }, null);
+                            final CrawledLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, crawledLinkStorable);
                             if (storable != null) {
                                 loadedPackage.crawledLinks.put(childIndex, storable._getCrawledLink());
                             } else {
@@ -1779,11 +1813,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         } else if (entry.getName().matches("^\\d+$")) {
                             final Integer packageIndex = Integer.valueOf(entry.getName());
-                            is = zip.getInputStream(entry);
-                            final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
-                            json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                            final CrawledPackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<CrawledPackageStorable>() {
-                            }, null);
+                            final CrawledPackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, crawledPackageStorable);
                             if (storable != null) {
                                 LoadedPackage loadedPackage = packageMap.get(packageIndex);
                                 if (loadedPackage == null) {
@@ -1798,27 +1828,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 throw new WTFException("restored a null CrawledPackageStorable");
                             }
                         } else if ("extraInfo".equalsIgnoreCase(entry.getName())) {
-                            is = zip.getInputStream(entry);
-                            final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
-                            json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                            lcs = JSonStorage.stringToObject(json, new TypeRef<LinkCollectorStorable>() {
-                            }, null);
+                            lcs = JSonStorage.getMapper().inputStreamToObject(entryInputStream, linkCollectorStorable);
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
-                        logger.info("String was: " + json);
                         if (entry != null) {
                             logger.info("Entry:" + entry + "|Size:" + entry.getSize() + "|Compressed Size:" + entry.getCompressedSize());
-                        } else {
-                            logger.info("Entry: " + entry);
                         }
                         throw e;
-                    } finally {
-                        try {
-                            is.close();
-                        } catch (final Throwable e) {
-                        }
                     }
+                }
+                if (entries == 0) {
+                    throw new WTFException("Empty/Invalid Zip:" + file);
                 }
                 /* sort positions */
                 final List<Integer> packageIndices = new ArrayList<Integer>(packageMap.keySet());
@@ -1866,7 +1887,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 ret = new LinkedList<CrawledPackage>(ret2);
             } catch (final Throwable e) {
                 try {
-                    zip.close();
+                    if (zis != null) {
+                        zis.close();
+                        zis = null;
+                        fis = null;
+                    } else if (fis != null) {
+                        fis.close();
+                        fis = null;
+                    }
                 } catch (final Throwable e2) {
                 }
                 final File renameTo = new File(file.getAbsolutePath() + ".backup");
@@ -1885,8 +1913,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 logger.log(e);
             } finally {
                 try {
-                    zip.close();
-                } catch (final Throwable e) {
+                    if (zis != null) {
+                        zis.close();
+                    } else if (fis != null) {
+                        fis.close();
+                    }
+                } catch (final Throwable e2) {
                 }
             }
         }
@@ -1919,7 +1951,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 }
                 boolean deleteFile = true;
-                ZipIOWriter zip = null;
+                ZipOutputStream zos = null;
                 FileOutputStream fos = null;
                 final int bufferSize;
                 if (linkcollectorLists.size() > 0) {
@@ -1966,7 +1998,30 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                         };
-                        zip = new ZipIOWriter(new BufferedOutputStream(fos, bufferSize));
+                        zos = new ZipOutputStream(new BufferedOutputStream(fos, bufferSize));
+                        final ZipOutputStream finalZos = zos;
+                        final OutputStream entryOutputStream = new OutputStream() {
+
+                            @Override
+                            public void write(int b) throws IOException {
+                                finalZos.write(b);
+                            }
+
+                            @Override
+                            public void write(byte[] b, int off, int len) throws IOException {
+                                finalZos.write(b, off, len);
+                            }
+
+                            @Override
+                            public void close() throws IOException {
+                            }
+
+                            @Override
+                            public void flush() throws IOException {
+                                finalZos.flush();
+                            }
+
+                        };
                         int packageIndex = 0;
                         for (final CrawledPackage pkg : packages) {
                             /* convert FilePackage to JSon */
@@ -2000,7 +2055,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             final List<CrawledLinkStorable> linkStorables = new ArrayList<CrawledLinkStorable>(packageStorable.getLinks());
                             packageStorable.getLinks().clear();
                             final String packageEntryID = String.format(packageFormat, packageIndex++);
-                            zip.addByteArry(JSonStorage.serializeToJsonByteArray(packageStorable), true, "", packageEntryID);
+                            final ZipEntry packageEntry = new ZipEntry(packageEntryID);
+                            packageEntry.setMethod(ZipEntry.DEFLATED);
+                            zos.putNextEntry(packageEntry);
+                            JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
+                            zos.closeEntry();
                             final String childFormat;
                             if (linkStorables.size() >= 10) {
                                 childFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
@@ -2010,7 +2069,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             int childIndex = 0;
                             for (final CrawledLinkStorable linkStorable : linkStorables) {
                                 final String childEntryID = String.format(childFormat, childIndex++);
-                                zip.addByteArry(JSonStorage.serializeToJsonByteArray(linkStorable), true, "", packageEntryID + "_" + childEntryID);
+                                final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
+                                linkEntry.setMethod(ZipEntry.DEFLATED);
+                                zos.putNextEntry(linkEntry);
+                                JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                                zos.closeEntry();
                             }
                         }
                         LinkCollectorStorable lcs = new LinkCollectorStorable();
@@ -2023,9 +2086,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             /* the method above can throw exceptions, eg in SVN */
                             logger.log(e);
                         }
-                        zip.addByteArry(JSonStorage.serializeToJsonByteArray(lcs), true, "", "extraInfo");
-                        /* close ZipIOWriter */
-                        zip.close();
+                        final ZipEntry linkCollectorEntry = new ZipEntry("extraInfo");
+                        linkCollectorEntry.setMethod(ZipEntry.DEFLATED);
+                        zos.putNextEntry(linkCollectorEntry);
+                        JSonStorage.getMapper().writeObject(entryOutputStream, lcs);
+                        zos.closeEntry();
+
+                        zos.close();
+                        zos = null;
                         fos = null;
                         deleteFile = false;
                         try {

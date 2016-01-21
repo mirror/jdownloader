@@ -955,14 +955,14 @@ public class MyJDownloaderConnectThread extends Thread {
         boolean deviceBound = false;
         try {
             session = (SessionInfoWrapper) lapi.connect(getEmail(), getPassword());
-            // Thread.sleep(1000);
-            String uniqueID = getUniqueDeviceID();
-            DeviceData device = lapi.bindDevice(new DeviceData(uniqueID, "jd", getDeviceName()));
+            final String uniqueID = getUniqueDeviceID();
+            final DeviceData device = lapi.bindDevice(new DeviceData(uniqueID, "jd", getDeviceName()));
             if (StringUtils.isNotEmpty(device.getId())) {
                 if (!device.getId().equals(uniqueID)) {
                     setUniqueDeviceID(device.getId());
                 }
                 validateSession(session);
+                CFG_MYJD.DEVICE_NAME.setValue(device.getName());
                 deviceBound = true;
             }
             return session;
@@ -999,13 +999,15 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     protected String getDeviceName() {
-        return deviceName;
+        final String ret = this.deviceName;
+        if (StringUtils.isEmpty(ret)) {
+            return CFG_MYJD.DEVICE_NAME.getDefaultValue();
+        } else {
+            return ret;
+        }
     }
 
     public void setDeviceName(String deviceName) {
-        if (StringUtils.isEmpty(deviceName)) {
-            deviceName = "JDownloader";
-        }
         this.deviceName = deviceName;
     }
 

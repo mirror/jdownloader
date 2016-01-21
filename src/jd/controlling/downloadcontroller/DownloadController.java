@@ -17,11 +17,12 @@
 package jd.controlling.downloadcontroller;
 
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +35,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import jd.config.NoOldJDDataBaseFoundException;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -66,8 +69,6 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.zip.ZipIOReader;
-import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.afterdownload.AccountLoader;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.DownloadLinkWalker;
@@ -565,24 +566,61 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         synchronized (SAVELOADLOCK) {
             LinkedList<FilePackage> ret = null;
             if (file != null && file.exists()) {
-                ZipIOReader zip = null;
+                FileInputStream fis = null;
+                ZipInputStream zis = null;
                 try {
-                    zip = new ZipIOReader(file);
+                    fis = new FileInputStream(file);
+                    zis = new ZipInputStream(fis);
                     /* lets restore the FilePackages from Json */
                     final HashMap<Integer, LoadedPackage> packageMap = new HashMap<Integer, LoadedPackage>();
                     DownloadControllerStorable dcs = null;
-                    InputStream is = null;
-                    final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
+                    final TypeRef<DownloadLinkStorable> downloadLinkStorableTypeRef = new TypeRef<DownloadLinkStorable>() {
+                    };
+                    final TypeRef<FilePackageStorable> filePackageStorable = new TypeRef<FilePackageStorable>() {
+                    };
+                    final TypeRef<DownloadControllerStorable> downloadControllerStorable = new TypeRef<DownloadControllerStorable>() {
+                    };
+                    ZipEntry entry = null;
+                    final ZipInputStream finalZis = zis;
+                    final InputStream entryInputStream = new InputStream() {
+
                         @Override
-                        public synchronized byte[] toByteArray() {
-                            /* avoid creating new byteArray */
-                            return buf;
+                        public int read() throws IOException {
+                            return finalZis.read();
+                        }
+
+                        @Override
+                        public int read(byte[] b, int off, int len) throws IOException {
+                            return finalZis.read(b, off, len);
+                        }
+
+                        @Override
+                        public long skip(long n) throws IOException {
+                            return finalZis.skip(n);
+                        }
+
+                        @Override
+                        public int available() throws IOException {
+                            return finalZis.available();
+                        }
+
+                        @Override
+                        public boolean markSupported() {
+                            return false;
+                        }
+
+                        @Override
+                        public void close() throws IOException {
+                        }
+
+                        @Override
+                        public synchronized void mark(int readlimit) {
                         }
                     };
-                    for (ZipEntry entry : zip.getZipFiles()) {
-                        byteBuffer.reset();
-                        String json = null;
+                    int entries = 0;
+                    while ((entry = zis.getNextEntry()) != null) {
                         try {
+                            entries++;
                             if (entry.getName().matches("^\\d+_\\d+$")) {
                                 final String idx[] = entry.getName().split("_");
                                 final Integer packageIndex = Integer.valueOf(idx[0]);
@@ -592,11 +630,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     loadedPackage = new LoadedPackage();
                                     packageMap.put(packageIndex, loadedPackage);
                                 }
-                                is = zip.getInputStream(entry);
-                                final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
-                                json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                                final DownloadLinkStorable storable = JSonStorage.restoreFromString(json, new TypeRef<DownloadLinkStorable>() {
-                                }, null);
+                                final DownloadLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadLinkStorableTypeRef);
                                 if (storable != null) {
                                     loadedPackage.downloadLinks.put(childIndex, storable._getDownloadLink());
                                 } else {
@@ -604,11 +638,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                 }
                             } else if (entry.getName().matches("^\\d+$")) {
                                 final Integer packageIndex = Integer.valueOf(entry.getName());
-                                is = zip.getInputStream(entry);
-                                final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
-                                json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                                final FilePackageStorable storable = JSonStorage.stringToObject(json, new TypeRef<FilePackageStorable>() {
-                                }, null);
+                                final FilePackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, filePackageStorable);
                                 if (storable != null) {
                                     LoadedPackage loadedPackage = packageMap.get(packageIndex);
                                     if (loadedPackage == null) {
@@ -620,27 +650,18 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     throw new WTFException("restored a null FilePackageStorable");
                                 }
                             } else if ("extraInfo".equalsIgnoreCase(entry.getName())) {
-                                is = zip.getInputStream(entry);
-                                final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
-                                json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                                dcs = JSonStorage.stringToObject(json, new TypeRef<DownloadControllerStorable>() {
-                                }, null);
+                                dcs = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadControllerStorable);
                             }
                         } catch (Throwable e) {
                             logger.log(e);
-                            logger.info("String was: " + json);
                             if (entry != null) {
                                 logger.info("Entry:" + entry + "|Size:" + entry.getSize() + "|Compressed Size:" + entry.getCompressedSize());
-                            } else {
-                                logger.info("Entry: " + entry);
                             }
                             throw e;
-                        } finally {
-                            try {
-                                is.close();
-                            } catch (final Throwable e) {
-                            }
                         }
+                    }
+                    if (entries == 0) {
+                        throw new WTFException("Empty/Invalid Zip:" + file);
                     }
                     /* sort positions */
                     final List<Integer> packageIndices = new ArrayList<Integer>(packageMap.keySet());
@@ -688,7 +709,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     ret = new LinkedList<FilePackage>(ret2);
                 } catch (final Throwable e) {
                     try {
-                        zip.close();
+                        if (zis != null) {
+                            zis.close();
+                            zis = null;
+                            fis = null;
+                        } else if (fis != null) {
+                            fis.close();
+                            fis = null;
+                        }
                     } catch (final Throwable e2) {
                     }
                     final File renameTo = new File(file.getAbsolutePath() + ".backup");
@@ -706,8 +734,12 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     logger.log(e);
                 } finally {
                     try {
-                        zip.close();
-                    } catch (final Throwable e) {
+                        if (zis != null) {
+                            zis.close();
+                        } else if (fis != null) {
+                            fis.close();
+                        }
+                    } catch (final Throwable e2) {
                     }
                 }
             }
@@ -938,7 +970,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     packageFormat = "%02d";
                 }
                 boolean deleteFile = true;
-                ZipIOWriter zip = null;
+                ZipOutputStream zos = null;
                 FileOutputStream fos = null;
                 try {
                     fos = new FileOutputStream(file) {
@@ -953,7 +985,30 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             }
                         }
                     };
-                    zip = new ZipIOWriter(new BufferedOutputStream(fos, bufferSize));
+                    zos = new ZipOutputStream(new BufferedOutputStream(fos, bufferSize));
+                    final ZipOutputStream finalZos = zos;
+                    final OutputStream entryOutputStream = new OutputStream() {
+
+                        @Override
+                        public void write(int b) throws IOException {
+                            finalZos.write(b);
+                        }
+
+                        @Override
+                        public void write(byte[] b, int off, int len) throws IOException {
+                            finalZos.write(b, off, len);
+                        }
+
+                        @Override
+                        public void close() throws IOException {
+                        }
+
+                        @Override
+                        public void flush() throws IOException {
+                            finalZos.flush();
+                        }
+
+                    };
                     int packageIndex = 0;
                     for (FilePackage pkg : packages) {
                         final String packageEntryID = String.format(packageFormat, packageIndex++);
@@ -961,7 +1016,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         final FilePackageStorable packageStorable = new FilePackageStorable(pkg);
                         final List<DownloadLinkStorable> linkStorables = new ArrayList<DownloadLinkStorable>(packageStorable.getLinks());
                         packageStorable.getLinks().clear();
-                        zip.addByteArry(JSonStorage.serializeToJsonByteArray(packageStorable), true, "", packageEntryID);
+                        final ZipEntry packageEntry = new ZipEntry(packageEntryID);
+                        packageEntry.setMethod(ZipEntry.DEFLATED);
+                        zos.putNextEntry(packageEntry);
+                        JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
+                        zos.closeEntry();
                         final String childFormat;
                         if (linkStorables.size() >= 10) {
                             childFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
@@ -971,10 +1030,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         int childIndex = 0;
                         for (final DownloadLinkStorable linkStorable : linkStorables) {
                             final String childEntryID = String.format(childFormat, childIndex++);
-                            zip.addByteArry(JSonStorage.serializeToJsonByteArray(linkStorable), true, "", packageEntryID + "_" + childEntryID);
+                            final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
+                            linkEntry.setMethod(ZipEntry.DEFLATED);
+                            zos.putNextEntry(linkEntry);
+                            JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                            zos.closeEntry();
                         }
                     }
-                    DownloadControllerStorable dcs = new DownloadControllerStorable();
+                    final DownloadControllerStorable dcs = new DownloadControllerStorable();
                     try {
                         /*
                          * set current RootPath of JDownloader, so we can update it when user moves JDownloader folder
@@ -984,9 +1047,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         /* the method above can throw exceptions, eg in SVN */
                         logger.log(e);
                     }
-                    zip.addByteArry(JSonStorage.serializeToJsonByteArray(dcs), true, "", "extraInfo");
-                    /* close ZipIOWriter */
-                    zip.close();
+                    final ZipEntry downloadControllerEntry = new ZipEntry("extraInfo");
+                    downloadControllerEntry.setMethod(ZipEntry.DEFLATED);
+                    zos.putNextEntry(downloadControllerEntry);
+                    JSonStorage.getMapper().writeObject(entryOutputStream, dcs);
+                    zos.closeEntry();
+
+                    zos.close();
+                    zos = null;
                     fos = null;
                     deleteFile = false;
                     try {
@@ -1012,7 +1080,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     logger.log(e);
                 } finally {
                     try {
-                        if (fos != null) {
+                        if (zos != null) {
+                            zos.close();
+                        } else if (fos != null) {
                             fos.close();
                         }
                     } catch (final Throwable e) {

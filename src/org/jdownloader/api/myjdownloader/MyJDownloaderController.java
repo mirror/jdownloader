@@ -143,7 +143,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         if (!isConnected()) {
             return null;
         }
-        MyJDownloaderConnectThread th = thread.get();
+        final MyJDownloaderConnectThread th = thread.get();
         if (th == null) {
             return null;
         }
@@ -154,7 +154,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         if (!isConnected()) {
             return null;
         }
-        MyJDownloaderConnectThread th = thread.get();
+        final MyJDownloaderConnectThread th = thread.get();
         if (th == null) {
             return null;
         }
@@ -165,7 +165,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         if (!isConnected()) {
             return null;
         }
-        MyJDownloaderConnectThread th = thread.get();
+        final MyJDownloaderConnectThread th = thread.get();
         if (th == null) {
             return null;
         }
