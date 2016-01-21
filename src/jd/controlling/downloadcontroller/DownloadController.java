@@ -532,11 +532,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     logger.log(e);
                 } finally {
                     DOWNLOADLIST_LOADED.setReached();
-
                 }
                 return null;
             }
-
         });
     }
 
