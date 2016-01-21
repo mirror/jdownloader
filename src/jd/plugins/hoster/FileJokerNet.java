@@ -868,6 +868,15 @@ public class FileJokerNet extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (inValidate(account.getUser()) || account.getUser().matches(".+@.+")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your E-Mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        } else if (inValidate(account.getPass())) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou can not have a blank/empty password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         try {
