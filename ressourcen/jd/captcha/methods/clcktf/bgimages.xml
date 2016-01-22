@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_66" class="java.beans.XMLDecoder">
+ <object class="java.util.Vector">
+  <void method="add">
+   <object class="jd.captcha.easy.BackGroundImage">
+    <void property="backgroundImage">
+     <string>mask_d644b806aee93f0c57e173ea27c5eb2a.png</string>
+    </void>
+    <void property="color">
+     <int>-1</int>
+    </void>
+    <void property="colorDistanceMode">
+     <byte>11</byte>
+    </void>
+    <void property="distance">
+     <int>2</int>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>

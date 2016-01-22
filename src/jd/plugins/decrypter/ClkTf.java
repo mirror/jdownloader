@@ -33,6 +33,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+/**
+ *
+ * after writing this... found out same as yep.pm (now dead)<br/>
+ * Name: yep.pm <br/>
+ * Addresses: 213.184.127.151<br/>
+ * 108.61.185.218<br/>
+ * 190.97.163.134<br/>
+ * <br/>
+ * Name: click.tf<br/>
+ * Addresses: 190.97.163.134<br/>
+ * 213.184.127.151<br/>
+ * 108.61.185.218<br/>
+ * <br/>
+ * same server!!!<br/>
+ *
+ * I've created jac for this under this name.
+ *
+ * @author raztoki
+ *
+ */
 @DecrypterPlugin(revision = "$Revision: 32094 $", interfaceVersion = 3, names = { "click.tf" }, urls = { "http://click\\.tf/[a-zA-Z0-9]{8,}(/.+)?" }, flags = { 0 })
 public class ClkTf extends PluginForDecrypt {
 
@@ -87,7 +107,7 @@ public class ClkTf extends PluginForDecrypt {
     }
 
     private void handleCaptcha(final CryptedLink param) throws Exception {
-        final int retry = 3;
+        final int retry = 4;
         Form captcha = br.getForm(0);
         for (int i = 1; i < retry; i++) {
             if (captcha == null) {
@@ -96,6 +116,9 @@ public class ClkTf extends PluginForDecrypt {
             final String captchaImage = captcha.getRegex("/captcha\\.php\\?cap_id=\\d+").getMatch(-1);
             if (captchaImage != null) {
                 final String c = getCaptchaCode(captchaImage, param);
+                if (c == null) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
                 captcha.put("ent_code", Encoding.urlEncode(c));
             }
             br.submitForm(captcha);
@@ -116,7 +139,7 @@ public class ClkTf extends PluginForDecrypt {
     }
 
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
 }
