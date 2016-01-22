@@ -4,7 +4,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Comparator;
-import java.util.logging.Level;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -12,18 +11,6 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.border.Border;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcrawler.ArchiveCrawledPackage;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.NaturalOrderComparator;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -34,7 +21,6 @@ import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
@@ -49,6 +35,18 @@ import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDow
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcrawler.ArchiveCrawledPackage;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.NaturalOrderComparator;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
 
@@ -112,7 +110,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         final JPopupMenu ret = new JPopupMenu();
         LockColumnWidthAction action;
         boolean sepRequired = false;
-        if (!isLocked) {
+        if (!isLocked && fileColumn.getModel().getTable().isColumnLockingFeatureEnabled()) {
             sepRequired = true;
             ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(fileColumn)));
         }
@@ -271,7 +269,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                     isMultiArchive = archive != null && archive.getArchiveFiles().size() > 1;
                 }
             } catch (Throwable e) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log( e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
             ((CrawledLink) object).setName(value);
             if (isMultiArchive) {
@@ -290,7 +288,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                     isMultiArchive = archive != null && archive.getArchiveFiles().size() > 1;
                 }
             } catch (Throwable e) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log( e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
             DownloadWatchDog.getInstance().renameLink(((DownloadLink) object), value);
             if (isMultiArchive) {

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
@@ -110,6 +111,16 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     @Override
     protected boolean isWrapAroundEnabled() {
         return wrapAroundEnabled;
+    }
+
+    public boolean isColumnLockingFeatureEnabled() {
+        return getAutoResizeMode() != JTable.AUTO_RESIZE_OFF;
+    }
+
+    @Override
+    public void setAutoResizeMode(int mode) {
+        super.setAutoResizeMode(mode);
+
     }
 
     @Override
@@ -545,7 +556,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                                         if (index >= 0) {
                                             /* move after this element */
                                             after = pc.getPackages().get(index);
-                                        }/* else move to top */
+                                        } /* else move to top */
                                     } catch (final Throwable e) {
                                         LogController.CL().log(e);
                                     }
@@ -564,7 +575,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                                     if (index >= 0) {
                                         /* move after this element */
                                         after = pkg.getChildren().get(index);
-                                    }/* else move to top */
+                                    } /* else move to top */
                                 } catch (final Throwable e) {
                                     LogController.CL().log(e);
                                 } finally {
