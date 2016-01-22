@@ -11,6 +11,7 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.CaptchaQualityEnsuranceRule;
 
@@ -71,6 +72,7 @@ public interface CaptchaSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Captcha Mode")
     @DefaultEnumValue("NORMAL")
+    @RequiresRestart("A JDownloader Restart is Required")
     MODE getCaptchaMode();
 
     void setCaptchaMode(MODE mode);

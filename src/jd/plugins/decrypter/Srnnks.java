@@ -23,8 +23,6 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
@@ -43,6 +41,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.EditDistance;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/([a-z]{1,2}[_-][a-f0-9]{16}.*|go\\-[a-f0-9]{128}/)", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" }, flags = { 0, 0 })
 public class Srnnks extends PluginForDecrypt {
@@ -315,7 +315,9 @@ public class Srnnks extends PluginForDecrypt {
                                         }
                                     }
                                 }
-                                if (form != null && form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
+                                if (form != null && form.containsHTML("=\"g-recaptcha\"")) {
+                                    // recaptchav2
+                                } else if (form != null && form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
                                     /*
                                      * this form contains captcha image, so it must be valid
                                      */
