@@ -207,7 +207,7 @@
 		</jar>
 
 		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${dep.jdc}/src">
+			<fileset dir="${dep.jdupdateclient}/src">
 				<include name="org/jdownloader/container/mydns.key" />
 				<include name="org/jdownloader/container/mydns.crt" />		
 			</fileset>
