@@ -103,12 +103,12 @@
 
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.jdc}/libs" includes="**/*">
-				<exclude name="**/*.info" />	
+				<exclude name="**/*.info" />
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*">
-				<exclude name="**/*.info" />	
+				<exclude name="**/*.info" />
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
@@ -207,8 +207,13 @@
 		</jar>
 
 		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
-
+			<fileset dir="${dep.jdc}/src">
+				<include name="org/jdownloader/container/mydns.key" />
+				<include name="org/jdownloader/container/mydns.crt" />		
+			</fileset>
 			<fileset dir="${cls}">
+
+				<include name="org/jdownloader/container/**/*" />
 				<include name="org/jdownloader/container/**/*" />
 			</fileset>
 		</jar>
@@ -293,19 +298,19 @@
 			<fileset dir="src">
 				<include name="**/*.js" />
 				<include name="**/*.html" />
-				<include name="**/*.css" />	
+				<include name="**/*.css" />
 				<include name="org/jdownloader/captcha/v2/challenge/recaptcha/v2/example/*.jpg" />
 				<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
 
 			</fileset>
-			
-			<fileset dir="${dep.jdc}/src">
-					<include name="**/*.js" />
-					<include name="**/*.html" />
-					<include name="**/*.css" />
-					<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
 
-				</fileset>
+			<fileset dir="${dep.jdc}/src">
+				<include name="**/*.js" />
+				<include name="**/*.html" />
+				<include name="**/*.css" />
+				<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
+
+			</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/plugins/hoster/RTMPDownload.class" />
 			</fileset>
