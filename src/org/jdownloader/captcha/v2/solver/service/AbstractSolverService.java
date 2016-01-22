@@ -135,6 +135,8 @@ public abstract class AbstractSolverService implements SolverService {
             if (dupe == null) {
                 dupe = new HashSet<SolverService>();
             }
+
+            //
             // System.out.println("Start: " + start.getName());
             // System.out.println("Check: " + check.getName());
             if (arrayList.size() == 0) {
