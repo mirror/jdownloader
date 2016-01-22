@@ -56,7 +56,8 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_SINGLE_PHOTO     = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
     private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     private static final String TYPE_DOWNLOAD         = "https?://(www\\.)?facebook\\.com/download/\\d+";
-    private static final String REV                   = jd.plugins.decrypter.FaceBookComGallery.REV;
+    private static final String REV_2                 = jd.plugins.decrypter.FaceBookComGallery.REV_2;
+    private static final String REV_3                 = jd.plugins.decrypter.FaceBookComGallery.REV_3;
 
     public static final long    trust_cookie_age      = 30000l;
 
@@ -79,10 +80,10 @@ public class FaceBookComVideos extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("facebookdecrypted.com/", "facebook.com/"));
-        String thislink = link.getDownloadURL().replace("https://", "http://");
+        String thislink = link.getDownloadURL();
         String videoID = new Regex(thislink, "facebook\\.com/video\\.php\\?v=(\\d+)").getMatch(0);
         if (videoID != null) {
-            thislink = "http://facebook.com/video.php?v=" + videoID;
+            thislink = "https://facebook.com/video.php?v=" + videoID;
         }
         link.setUrlDownload(thislink);
     }
@@ -217,13 +218,13 @@ public class FaceBookComVideos extends PluginForHost {
                  * If no downloadlink is there, simply try to find the fullscreen link to the picture which is located on the "theatre view"
                  * page
                  */
+                final String fbid = getPICID(link);
                 if (setID != null && user != null && ajaxpipe_token != null && dllink == null) {
                     try {
                         logger.info("Trying to get original quality image");
-                        final String fbid = getPICID(link);
                         final String data = "{\"type\":\"1\",\"fbid\":\"" + fbid + "\",\"set\":\"" + setID + "\",\"firstLoad\":true,\"ssid\":0,\"av\":\"0\"}";
                         final Browser br2 = br.cloneBrowser();
-                        final String theaterView = "https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=7n8ajEyl2qm9udDgDxyF4EihUtCxO4p9GgSmEZ9LFwxBxCuUWdDx2ubhHximmey8OdUS8w&__req=jsonp_3&__rev=" + REV + "&__adt=3";
+                        final String theaterView = "https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=7n8ajEyl2qm9udDgDxyF4EihUtCxO4p9GgSmEZ9LFwxBxCuUWdDx2ubhHximmey8OdUS8w&__req=jsonp_3&__rev=" + REV_2 + "&__adt=3";
                         br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                         br2.getPage(theaterView);
                         // NOTE: lid isn't always within the url, thus is now bad way to determine dllink! -raztoki20160119
@@ -239,6 +240,30 @@ public class FaceBookComVideos extends PluginForHost {
                     } catch (final Throwable e) {
                     }
                 }
+                if (setID == null && user != null && ajaxpipe_token != null && dllink == null) {
+                    // another way -raztoki20160122
+                    try {
+                        logger.info("Trying to get original quality image");
+                        final String data = "{\"type\":\"1\",\"fbid\":\"" + fbid + "\",\"firstLoad\":true,\"ssid\":" + System.currentTimeMillis() + ",\"av\":\"" + user + "\"}";
+                        final Browser br2 = br.cloneBrowser();
+                        final String theaterView = "https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?__pc=EXP1%3ADEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=7AmajEzUGBym5Q9UrEwlg9pEbEKAdy9VQC-C26m6oKezob4q68K5UcU-2CEau48vEwy3eEjzUyVWxeUlwzx2bwYDDBBwDK4VqCgS2O7E&__req=jsonp_2&__rev=" + REV_3 + "&__adt=2";
+                        br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                        br2.getPage(theaterView);
+                        // NOTE: lid isn't always within the url, thus is now bad way to determine dllink! -raztoki20160119
+                        final String filter = br2.getRegex("\"image\":\\{\"" + lid + "\".*?\\}{3}").getMatch(-1);
+                        if (filter == null) {
+                            logger.warning("Filter could not be found.");
+                        } else {
+                            dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_o\\.jpg[^<>\"/]*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_n\\.jpg[^<>\"/]*?)\"").getMatch(0);
+                            }
+                        }
+                    } catch (final Throwable e) {
+                    }
+                }
+
+                // not sure what this is used for... -raztoki
                 if (dllink == null) {
                     dllink = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 }
