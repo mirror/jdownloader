@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://(?:www\\.)?brazzers\\.com/(scenes/view/id/\\d+(?:/[a-z0-9\\-]+/)?|embed/\\d+/?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://(?:www\\.)?brazzers\\.com/(scenes/view/id/\\d+(?:/[a-z0-9\\-]+/?)?|embed/\\d+/?)" }, flags = { 0 })
 public class BrazzersCom extends antiDDoSForHost {
 
     public BrazzersCom(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class BrazzersCom extends antiDDoSForHost {
     private boolean              not_yet_released  = false;
 
     private final String         type_embed        = "https?://(?:www\\.)?brazzers\\.com/embed/\\d+/?";
-    private final String         type_normal       = "https?://(?:www\\.)?brazzers\\.com/scenes/view/id/\\d+(?:/[a-z0-9\\-]+/)?";
+    private final String         type_normal       = "https?://(?:www\\.)?brazzers\\.com/scenes/view/id/\\d+(?:/[a-z0-9\\-]+/?)?";
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -87,7 +87,7 @@ public class BrazzersCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fid = new Regex(link.getDownloadURL(), "/id/(\\d+)/?$").getMatch(0);
-        final String url_name = new Regex(link.getDownloadURL(), "/id/\\d+/(.+)/$").getMatch(0);
+        final String url_name = new Regex(link.getDownloadURL(), "/id/\\d+/([^/]+)").getMatch(0);
         String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)<span").getMatch(0);
 
         /* This way we have a better dupe-detection! */
