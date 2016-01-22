@@ -1,7 +1,5 @@
 package org.jdownloader.gui.translate;
 
-import javax.swing.JComponent;
-
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.DescriptionForTranslationEntry;
@@ -6007,5 +6005,5 @@ public interface GuiTranslation extends TranslateInterface {
     String DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer_bad(String string);
 
     @Default(lngs = { "en" }, values = { "Choose at least 2 images..." })
-    JComponent RECAPTCHA_3x3Dialog_help();
+    String RECAPTCHA_3x3Dialog_help();
 }
