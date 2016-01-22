@@ -83,10 +83,10 @@ public class DrawcrowdCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = getFileNameFromURL(new URL(dllink));
-        ext = ext.substring(ext.lastIndexOf("."));
+        final String dllinkfilename = getFileNameFromURL(new URL(dllink));
+        String ext = !inValidate(dllinkfilename) && dllinkfilename.contains(".") ? dllinkfilename.substring(dllinkfilename.lastIndexOf(".")) : ".jpg";
         /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+        if (!ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = ".jpg";
         }
         if (!filename.endsWith(ext)) {
