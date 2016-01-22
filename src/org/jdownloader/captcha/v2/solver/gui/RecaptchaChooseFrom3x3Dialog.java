@@ -83,7 +83,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
 
         field.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][][grow,fill]"));
 
-        field.add(SwingUtils.setOpaque(_GUI._.RECAPTCHA_3x3Dialog_help(), false), "gapleft 5,gaptop5,alignx right");
+        field.add(SwingUtils.setOpaque(new JLabel(_GUI._.RECAPTCHA_3x3Dialog_help()), false), "gapleft 5,gaptop5,alignx right");
         Icon explainIcon = challenge.getExplainIcon(challenge.getExplain());
         if (StringUtils.isNotEmpty(key)) {
             if (explainIcon != null) {
