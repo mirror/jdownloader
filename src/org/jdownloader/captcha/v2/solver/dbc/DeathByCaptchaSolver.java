@@ -13,6 +13,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.Recaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
@@ -99,8 +100,11 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
             job.setStatus(SolverStatus.UPLOADING);
-
-            captcha = client.upload(challenge.getAnnotatedImageBytes());
+            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
+                captcha = client.upload(challenge.getAnnotatedImageBytes());
+            } else {
+                captcha = client.upload(challenge.getImageFile());
+            }
             if (null != captcha) {
                 job.setStatus(new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " uploaded: " + captcha.id);
