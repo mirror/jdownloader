@@ -34,6 +34,8 @@ public class ViceComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private final String TYPE_SINGLEVIDEO = "https?://(?:[a-z0-9\\-]+\\.)?vice\\.com/[a-z]+/video/[a-z0-9\\-]+";
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -61,14 +63,28 @@ public class ViceComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        /* Found no external urls --> Return link for our host plugin */
 
-        final DownloadLink main = createDownloadlink(parameter.replace("vice.com/", "vicedecrypted.com/"));
-        main.setContentUrl(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML(jd.plugins.hoster.ViceCom.HTML_VIDEO_EXISTS)) {
-            main.setAvailable(false);
+        /* Check for vice embedded videos */
+        final String[] videoURLs = this.br.getRegex("share_url=https?://(?:[a-z0-9\\-]+\\.)?vice\\.com/([a-z]+/video/[a-z0-9\\-]+)\"").getColumn(0);
+        if (!parameter.matches(TYPE_SINGLEVIDEO) && videoURLs != null && videoURLs.length > 0) {
+            /*
+             * E.g. http://www.vice.com/de/read/schlaege-beleidigungen-drohungen-das-sek-berlin-macht-eine-hausbegehung-809 &utm_medium=link
+             */
+            for (final String videourl : videoURLs) {
+                decryptedLinks.add(createDownloadlink("http://vicedecrypted.com/" + videourl));
+            }
+        } else {
+            /* No embedded video there --> We either have a single video or no downloadable content! */
+            /* E.g. http://www.vice.com/de/video/heimat-ausgekohlt-der-kampf-um-die-kohle-101 */
+            final DownloadLink main = createDownloadlink(parameter.replace("vice.com/", "vicedecrypted.com/"));
+            main.setContentUrl(parameter);
+            /* Check for offline */
+            if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML(jd.plugins.hoster.ViceCom.HTML_VIDEO_EXISTS)) {
+                main.setAvailable(false);
+            }
+            /* Found no external urls --> Return link for our host plugin */
+            decryptedLinks.add(main);
         }
-        decryptedLinks.add(main);
 
         return decryptedLinks;
     }
