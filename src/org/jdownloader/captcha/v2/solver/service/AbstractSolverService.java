@@ -7,16 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.SolverService;
+
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
 public abstract class AbstractSolverService implements SolverService {
 
@@ -136,25 +135,25 @@ public abstract class AbstractSolverService implements SolverService {
             if (dupe == null) {
                 dupe = new HashSet<SolverService>();
             }
-            System.out.println("Start: " + start.getName());
-            System.out.println("Check: " + check.getName());
+            // System.out.println("Start: " + start.getName());
+            // System.out.println("Check: " + check.getName());
             if (arrayList.size() == 0) {
-                System.out.println("Added " + start.getName());
+                // System.out.println("Added " + start.getName());
                 arrayList.add(start);
                 dupe.add(start);
             }
-            System.out.println("Added " + check.getName());
+            // System.out.println("Added " + check.getName());
             arrayList.add(check);
             if (!dupe.add(check)) {
 
-                System.out.println("Dupe found " + check.getName());
+                // System.out.println("Dupe found " + check.getName());
                 return arrayList;
             }
-            System.out.println(check.getName() + ": " + JSonStorage.serializeToJson(check.getWaitForMapCopy()));
+            // System.out.println(check.getName() + ": " + JSonStorage.serializeToJson(check.getWaitForMapCopy()));
             for (Entry<String, Integer> es : check.getWaitForMapCopy().entrySet()) {
                 final SolverService service = ChallengeResponseController.getInstance().getServiceByID(es.getKey());
                 if (service != null && es.getValue() != null && es.getValue().intValue() > 0) {
-                    System.out.println(check.getName() + " waits for " + service.getName() + " : " + es.getValue().intValue());
+                    // System.out.println(check.getName() + " waits for " + service.getName() + " : " + es.getValue().intValue());
                     final ArrayList<SolverService> ret = validateWaittimeQueue(start, service, new ArrayList<SolverService>(arrayList), new HashSet<SolverService>(dupe));
                     if (ret != null) {
                         return ret;
