@@ -6,10 +6,12 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -62,6 +64,9 @@ import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.jce.provider.X509CertParser;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jdownloader.logging.LogController;
 
@@ -91,7 +96,15 @@ public class DeprecatedAPIServer extends HttpServer {
         private final Certificate            cert;
         private final String[]               subjects;
 
-        protected APICert(KeyPair keyPair, X509Certificate x509, String[] subjects) throws CertificateEncodingException, IOException {
+        protected APICert(final AsymmetricKeyParameter asymKeyParam, final Certificate cert, final String[] subjects) {
+            this.asymKeyParam = asymKeyParam;
+            this.cert = cert;
+            this.subjects = subjects;
+            this.x509 = null;
+            this.keyPair = null;
+        }
+
+        protected APICert(final KeyPair keyPair, final X509Certificate x509, final String[] subjects) throws CertificateEncodingException, IOException {
             this.keyPair = keyPair;
             this.asymKeyParam = PrivateKeyFactory.createKey(keyPair.getPrivate().getEncoded());
             this.x509 = x509.getEncoded();
@@ -100,15 +113,18 @@ public class DeprecatedAPIServer extends HttpServer {
         }
 
         protected CertStorable toCertStorable() throws CertificateEncodingException, IOException {
-            final CertStorable ret = new CertStorable();
-            ret.setCert(HexFormatter.byteArrayToHex(x509));
-            ret.setPrivateKey(HexFormatter.byteArrayToHex(keyPair.getPrivate().getEncoded()));
-            ret.setPublicKey(HexFormatter.byteArrayToHex(keyPair.getPublic().getEncoded()));
-            ret.setSubjects(subjects);
-            return ret;
+            if (keyPair != null) {
+                final CertStorable ret = new CertStorable();
+                ret.setCert(HexFormatter.byteArrayToHex(x509));
+                ret.setPrivateKey(HexFormatter.byteArrayToHex(keyPair.getPrivate().getEncoded()));
+                ret.setPublicKey(HexFormatter.byteArrayToHex(keyPair.getPublic().getEncoded()));
+                ret.setSubjects(subjects);
+                return ret;
+            }
+            return null;
         }
 
-        protected APICert(CertStorable certStorable) throws CertificateEncodingException, IOException, InvalidKeySpecException, NoSuchAlgorithmException {
+        protected APICert(final CertStorable certStorable) throws CertificateEncodingException, IOException, InvalidKeySpecException, NoSuchAlgorithmException {
             this.x509 = HexFormatter.hexToByteArray(certStorable.getCert());
             this.cert = new Certificate(new org.bouncycastle.asn1.x509.Certificate[] { org.bouncycastle.asn1.x509.Certificate.getInstance(x509) });
             final PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(HexFormatter.hexToByteArray(certStorable.getPublicKey())));
@@ -177,12 +193,56 @@ public class DeprecatedAPIServer extends HttpServer {
     private static final File                     APICERTSFILE       = Application.getTempResource("myjd.certs");
     private static final AtomicBoolean            APICERTSFILELOADED = new AtomicBoolean(false);
 
+    private static APICert initMyDNSCert() throws Exception {
+        InputStream crtInputStream = null;
+        InputStream keyInputStream = null;
+        try {
+            final URL crtURL = Application.getRessourceURL("org/jdownloader/container/mydns.crt");
+            final URL keyURL = Application.getRessourceURL("org/jdownloader/container/mydns.key");
+            if (crtURL != null && keyURL != null) {
+                crtInputStream = crtURL.openStream();
+                final X509CertParser certParser = new X509CertParser();
+                certParser.engineInit(crtInputStream);
+                org.bouncycastle.jce.provider.X509CertificateObject x509 = (org.bouncycastle.jce.provider.X509CertificateObject) certParser.engineRead();
+                keyInputStream = keyURL.openStream();
+                final PemReader pemReader = new PemReader(new InputStreamReader(keyInputStream));
+                final PemObject pemObject = pemReader.readPemObject();
+                pemReader.close();
+                final PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(pemObject.getContent());
+                final Certificate cert = new Certificate(new org.bouncycastle.asn1.x509.Certificate[] { org.bouncycastle.asn1.x509.Certificate.getInstance(x509.getEncoded()) });
+                final KeyFactory factory = KeyFactory.getInstance("RSA");
+                final PrivateKey privateKey = factory.generatePrivate(privKeySpec);
+                final AsymmetricKeyParameter asymKeyParam = PrivateKeyFactory.createKey(privateKey.getEncoded());
+                return new APICert(asymKeyParam, cert, new String[] { "*.mydns.jdownloader.org" });
+            } else {
+                return null;
+            }
+        } finally {
+            if (crtInputStream != null) {
+                try {
+                    crtInputStream.close();
+                } catch (IOException ignore) {
+                }
+            }
+            if (keyInputStream != null) {
+                try {
+                    keyInputStream.close();
+                } catch (IOException ignore) {
+                }
+            }
+        }
+    }
+
     protected static final APICert getAPICert(final String serverName) throws NoSuchAlgorithmException, CertificateEncodingException, InvalidKeyException, IllegalStateException, SignatureException, IOException {
         final String name;
-        if (serverName == null) {
-            name = "localhost";
+        if (serverName != null) {
+            if (serverName.matches("^\\d+-\\d+-\\d+-\\d+.mydns.jdownloader.org$")) {
+                name = "*.mydns.jdownloader.org";
+            } else {
+                name = serverName;
+            }
         } else {
-            name = serverName;
+            name = "localhost";
         }
         synchronized (APICERTS) {
             if (APICERTSFILELOADED.compareAndSet(false, true)) {
@@ -209,6 +269,16 @@ public class DeprecatedAPIServer extends HttpServer {
                     } catch (final Throwable e) {
                         LogController.CL(DeprecatedAPIServer.class).log(e);
                     }
+                    try {
+                        final APICert mydnsCert = initMyDNSCert();
+                        final String[] subjects = mydnsCert.getSubjects();
+                        if (subjects != null) {
+                            for (String subject : subjects) {
+                                APICERTS.put(subject, mydnsCert);
+                            }
+                        }
+                    } catch (final Throwable e) {
+                    }
                 }
             }
             APICert apiCert = APICERTS.get(name);
@@ -217,13 +287,13 @@ public class DeprecatedAPIServer extends HttpServer {
                 final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
                 keyPairGenerator.initialize(1024, new SecureRandom());
                 final KeyPair keyPair = keyPairGenerator.genKeyPair();
-                final X500Principal dnName = new X500Principal("CN=Certificate for local JDownloader");
                 final X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
                 certGen.setSerialNumber(BigInteger.valueOf(currentTimeMillis));
+                final X500Principal dnName = new X500Principal("CN=Certificate for local JDownloader");
                 certGen.setIssuerDN(dnName);
+                certGen.setSubjectDN(dnName); // note: same as issuer
                 certGen.setNotBefore(new Date(currentTimeMillis - (2 * 24 * 60 * 60 * 1000l)));
                 certGen.setNotAfter(new Date(currentTimeMillis + (50 * 365 * 24 * 60 * 60 * 1000l)));
-                certGen.setSubjectDN(dnName); // note: same as issuer
                 certGen.setPublicKey(keyPair.getPublic());
                 certGen.setSignatureAlgorithm("SHA1withRSA");
                 final ASN1EncodableVector alternativeNames = new ASN1EncodableVector();
@@ -242,14 +312,16 @@ public class DeprecatedAPIServer extends HttpServer {
                 certGen.addExtension(X509Extensions.SubjectAlternativeName, false, new DERSequence(alternativeNames));
                 final X509Certificate cert = certGen.generate(keyPair.getPrivate());
                 apiCert = new APICert(keyPair, cert, subjects);
-
                 // save apiCerts
                 for (final String subject : subjects) {
                     APICERTS.put(subject, apiCert);
                 }
                 final List<CertStorable> certStorables = new ArrayList<CertStorable>();
                 for (final APICert toStorable : new HashSet<APICert>(APICERTS.values())) {
-                    certStorables.add(toStorable.toCertStorable());
+                    final CertStorable storable = toStorable.toCertStorable();
+                    if (storable != null) {
+                        certStorables.add(storable);
+                    }
                 }
                 final byte[] json = JSonStorage.getMapper().objectToByteArray(certStorables);
                 final Runnable run = new Runnable() {
