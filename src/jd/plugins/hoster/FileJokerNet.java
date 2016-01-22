@@ -868,7 +868,7 @@ public class FileJokerNet extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (inValidate(account.getUser()) || account.getUser().matches(".+@.+")) {
+        if (inValidate(account.getUser()) || !account.getUser().matches(".+@.+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
