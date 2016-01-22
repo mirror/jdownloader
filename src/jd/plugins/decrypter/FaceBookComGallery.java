@@ -100,7 +100,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;
     private boolean                 logged_in                       = false;
     private ArrayList<DownloadLink> decryptedLinks                  = null;
-    private boolean                 debug                           = true;
+    private boolean                 debug                           = false;
 
     /*
      * Dear whoever is looking at this - this is a classic example of spaghetticode. If you like spaghettis, go ahead, and get you some
