@@ -198,6 +198,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (date == null || title == null || show == null) {
                 return null;
             }
+            show = Encoding.htmlDecode(show);
+            show = encodeUnicode(show);
 
             date_formatted = formatDateZDF(date);
 

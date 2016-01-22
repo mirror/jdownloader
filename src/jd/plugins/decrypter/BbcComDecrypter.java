@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -37,33 +36,36 @@ public class BbcComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String vpid_invalid = "(program)";
-
     @SuppressWarnings("unchecked")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        /* Check if maybe we have video-IDs inside our url */
-        final String[] urlids = new Regex(parameter, "/([pb][a-z0-9]{7})/?").getColumn(0);
-        if (urlids != null && urlids.length > 0) {
-            for (final String vpid : urlids) {
-                if (vpid.matches(vpid_invalid)) {
-                    /* Skip invalid ids */
-                    continue;
-                }
-                final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);
-                dl.setName(vpid + ".mp4");
-                decryptedLinks.add(dl);
-            }
-            return decryptedLinks;
-        }
+        /* Do NOT check urls for vpids as we will almost always get wrong IDs this way. We NEED the html code containing the IDs! */
+        // final String[] urlids = new Regex(parameter, "/([pb][a-z0-9]{7})/?").getColumn(0);
+        // if (urlids != null && urlids.length > 0) {
+        // for (final String vpid : urlids) {
+        // if (vpid.matches("(program)")) {
+        // /* Skip invalid ids */
+        // continue;
+        // }
+        // final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);
+        // dl.setName(vpid + ".mp4");
+        // decryptedLinks.add(dl);
+        // }
+        // return decryptedLinks;
+        // }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        final String[] jsons = this.br.getRegex("data\\-playable=\\'(.*?)\\'>").getColumn(0);
+        /* Type 1 */
+        String[] jsons = this.br.getRegex("data\\-playable=\\'(.*?)\\'>").getColumn(0);
+        if (jsons == null || jsons.length == 0) {
+            /* Type 2 */
+            jsons = this.br.getRegex("playlistObject\\s*?:\\s*?(\\{.*?\\}),[\n]+").getColumn(0);
+        }
         if (jsons == null) {
             logger.info("Failed to find any playable content");
             return decryptedLinks;
@@ -71,7 +73,13 @@ public class BbcComDecrypter extends PluginForDecrypt {
         LinkedHashMap<String, Object> entries = null;
         for (final String json : jsons) {
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "settings/playlistObject");
+            /* Type 1 */
+            Object sourcemapo = DummyScriptEnginePlugin.walkJson(entries, "settings/playlistObject");
+            if (sourcemapo == null) {
+                /* Type 2 */
+                sourcemapo = DummyScriptEnginePlugin.walkJson(entries, "allAvailableVersions/{0}/smpConfig");
+            }
+            entries = (LinkedHashMap<String, Object>) sourcemapo;
             String title = (String) entries.get("title");
             final String description = (String) entries.get("summary");
             entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "items/{0}");
@@ -86,12 +94,11 @@ public class BbcComDecrypter extends PluginForDecrypt {
             dl.setLinkID(vpid);
             dl.setName(title + ".mp4");
             dl.setProperty("decrypterfilename", title);
+            dl.setContentUrl(parameter);
 
             if (!inValidate(description)) {
                 dl.setComment(description);
             }
-
-            dl.setAvailable(true);
 
             decryptedLinks.add(dl);
         }

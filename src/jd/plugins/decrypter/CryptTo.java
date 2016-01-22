@@ -25,7 +25,9 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
@@ -43,6 +45,7 @@ public class CryptTo extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> dupelist = new ArrayList<String>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -51,22 +54,68 @@ public class CryptTo extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+        /* First try to load container - this is the quickest way! */
         decryptedLinks = loadcontainer(folderid);
-        // String fpName = br.getRegex("").getMatch(0);
-        // final String[] links = br.getRegex("").getColumn(0);
-        // if (links == null || links.length == 0) {
-        // logger.warning("Decrypter broken for link: " + parameter);
-        // return null;
-        // }
-        // for (final String singleLink : links) {
-        // decryptedLinks.add(createDownloadlink(singleLink));
-        // }
-        //
-        // if (fpName != null) {
-        // final FilePackage fp = FilePackage.getInstance();
-        // fp.setName(Encoding.htmlDecode(fpName.trim()));
-        // fp.addLinks(decryptedLinks);
-        // }
+
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            /* Some urls do not have containers --> Server will return 0b DLC --> We'll have to check for captcha & password */
+            /*
+             * TODO: Maybe add support for other captcha types and password protected folders - so far I (psp) only found this one case and
+             * was not able to create new links with other captcha types/password ...
+             */
+            boolean failed = true;
+            String code = null;
+            for (int i = 0; i <= 5; i++) {
+                final Form form = this.br.getFormbyProperty("id", "mainForm");
+                if (form.containsHTML("captcha\\.inc\\.php")) {
+                    code = this.getCaptchaCode("/inc/captcha.inc.php", param);
+                    form.put("pruefcode", code);
+                }
+                this.br.submitForm(form);
+                if (br.containsHTML(">Passwort falsch oder das Captcha wurde nicht")) {
+                    this.br.getPage(parameter);
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+
+            // String fpName = null;
+
+            final String[] linkkeys = br.getRegex("out\\(\\\\'([^<>\"\\']*?)\\\\'").getColumn(0);
+            if (linkkeys == null || linkkeys.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            this.br.setFollowRedirects(false);
+            for (final String linkkey : linkkeys) {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return decryptedLinks;
+                }
+                if (dupelist.contains(linkkey)) {
+                    continue;
+                }
+                /* Add current linkkey to our dupelist */
+                dupelist.add(linkkey);
+
+                this.br.getPage("http://crypt.to/iframe.php?row=0&linkkey=" + linkkey);
+                final String finallink = this.br.getRedirectLocation();
+                if (finallink == null || finallink.matches(".+crypt\\.to/.+")) {
+                    continue;
+                }
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
+
+            // if (fpName != null) {
+            // final FilePackage fp = FilePackage.getInstance();
+            // fp.setName(Encoding.htmlDecode(fpName.trim()));
+            // fp.addLinks(decryptedLinks);
+            // }
+        }
 
         return decryptedLinks;
     }
