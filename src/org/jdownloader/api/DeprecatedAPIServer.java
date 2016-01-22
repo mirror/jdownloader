@@ -68,6 +68,7 @@ import org.bouncycastle.jce.provider.X509CertParser;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.jdownloader.container.NZB;
 import org.jdownloader.logging.LogController;
 
 public class DeprecatedAPIServer extends HttpServer {
@@ -197,8 +198,8 @@ public class DeprecatedAPIServer extends HttpServer {
         InputStream crtInputStream = null;
         InputStream keyInputStream = null;
         try {
-            final URL crtURL = Application.getRessourceURL("org/jdownloader/container/mydns.crt");
-            final URL keyURL = Application.getRessourceURL("org/jdownloader/container/mydns.key");
+            final URL crtURL = NZB.class.getResource("mydns.crt");
+            final URL keyURL = NZB.class.getResource("mydns.key");
             if (crtURL != null && keyURL != null) {
                 crtInputStream = crtURL.openStream();
                 final X509CertParser certParser = new X509CertParser();
