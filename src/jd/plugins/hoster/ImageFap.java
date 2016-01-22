@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" }, flags = { 0 })
 public class ImageFap extends PluginForHost {
 
     public ImageFap(final PluginWrapper wrapper) {
@@ -51,11 +51,7 @@ public class ImageFap extends PluginForHost {
         if (addedLink.contains("imagedecrypted/")) {
             final String newurl = "http://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/";
             link.setUrlDownload(newurl);
-            try {
-                link.setContentUrl(newurl);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            link.setContentUrl(newurl);
         }
     }
 
@@ -88,7 +84,7 @@ public class ImageFap extends PluginForHost {
             // JDUtilities.htmlDecode(t));
             return Encoding.htmlDecode(t);
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
         }
         return null;
     }
@@ -162,7 +158,8 @@ public class ImageFap extends PluginForHost {
             // subfolders
             // in subfolders which is bad
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, imagelink, false, 1);
-            if (dl.getConnection().getResponseCode() == 404 || dl.getConnection().getContentLength() < 107) {
+            final long t = dl.getConnection().getContentLength();
+            if (dl.getConnection().getResponseCode() == 404 || (t != -1 && t < 107)) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -260,7 +257,7 @@ public class ImageFap extends PluginForHost {
             }
             return AvailableStatus.TRUE;
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
@@ -313,18 +310,18 @@ public class ImageFap extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
-            put("LABEL_FILENAME", "Define custom filename for pictures:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
+                                                      put("LABEL_FILENAME", "Define custom filename for pictures:");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
