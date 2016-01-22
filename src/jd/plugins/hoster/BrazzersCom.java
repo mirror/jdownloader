@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
@@ -28,6 +26,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -48,6 +47,8 @@ public class BrazzersCom extends antiDDoSForHost {
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
+    private boolean              not_yet_released  = false;
+
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -61,13 +62,15 @@ public class BrazzersCom extends antiDDoSForHost {
     /**
      * So far this plugin has no account support which means the plugin itself cannot download anything but the download via MOCH will work
      * fine.
+     *
+     * @throws Exception
      */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         /* Offline will usually return 404 */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -98,7 +101,7 @@ public class BrazzersCom extends antiDDoSForHost {
         }
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        /* Do NOT set final filename here yet! */
+        /* Do NOT set final filename yet!! */
         link.setName(filename + ".mp4");
         if (filesize_max > -1) {
             if (aa != null) {
@@ -110,6 +113,13 @@ public class BrazzersCom extends antiDDoSForHost {
             } else {
                 link.setDownloadSize(filesize_max);
             }
+            link.setProperty("not_yet_released", false);
+            not_yet_released = false;
+        } else {
+            /* No filesize available --> Content is (probably) not (yet) released/downloadable */
+            link.getLinkStatus().setStatusText("Content has not yet been released");
+            link.setProperty("not_yet_released", true);
+            not_yet_released = true;
         }
         return AvailableStatus.TRUE;
     }
@@ -121,13 +131,39 @@ public class BrazzersCom extends antiDDoSForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        handleGeneralErrors();
         /* Premiumonly */
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
+    private void handleGeneralErrors() throws PluginException {
+        if (not_yet_released) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content has not (yet) been released", 1 * 60 * 60 * 1000l);
+        }
+    }
+
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
-        return account != null;
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        /*
+         * Usually an account is needed for this host but in case content has not yet been released the plugin should jump into download
+         * mode to display this errormessage to the user!
+         */
+        return account != null || contentHasNotYetBeenReleased(downloadLink);
+    }
+
+    private boolean contentHasNotYetBeenReleased(final DownloadLink dl) {
+        return dl.getBooleanProperty("not_yet_released", false);
+    }
+
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        if (is_this_plugin) {
+            /* The original brazzers plugin is always allowed to download. */
+            return true;
+        } else {
+            /* Multihosts should not be tried if we know that content is not yet downloadable! */
+            return !contentHasNotYetBeenReleased(downloadLink);
+        }
     }
 
     /**
