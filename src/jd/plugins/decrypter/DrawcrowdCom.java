@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -37,16 +38,18 @@ public class DrawcrowdCom extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br = new Browser();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String username = parameter.substring(parameter.lastIndexOf("/"));
-        jd.plugins.hoster.DrawcrowdCom.setHeaders(this.br);
-        this.br.getPage("http://drawcrowd.com/users/" + username);
+        jd.plugins.hoster.DrawcrowdCom.setHeaders(br);
+        final Browser org = br.cloneBrowser();
+        br.getPage("/users" + username);
         LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         json = (LinkedHashMap<String, Object>) json.get("user");
         final String full_name = (String) json.get("full_name");
@@ -58,7 +61,8 @@ public class DrawcrowdCom extends PluginForDecrypt {
         fp.setName(full_name);
 
         do {
-            this.br.getPage("/" + username + "/projects?sort=newest&offset=" + offset + "&limit=" + entries_per_page);
+            br = org.cloneBrowser();
+            br.getPage(username + "/projects?sort=newest&offset=" + offset + "&limit=" + entries_per_page);
             json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList) json.get("projects");
             for (final Object resource : ressourcelist) {
@@ -71,14 +75,14 @@ public class DrawcrowdCom extends PluginForDecrypt {
                 final String url_content = "http://drawcrowd.com/projects/" + id;
                 final DownloadLink dl = createDownloadlink(url_content);
                 dl.setContentUrl(url_content);
-                if (description != null) {
+                if (!inValidate(description)) {
                     dl.setComment(description);
                 }
-                dl._setFilePackage(fp);
                 dl.setLinkID(id);
                 dl.setName(full_name + "_" + id + ".jpg");
                 dl.setProperty("full_name", full_name);
                 dl.setAvailable(true);
+                fp.add(dl);
                 decryptedLinks.add(dl);
                 distribute(dl);
                 offset++;
