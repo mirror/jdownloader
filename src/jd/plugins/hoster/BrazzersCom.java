@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://(?:www\\.)?brazzers\\.com/scenes/view/id/\\d+(?:/[a-z0-9\\-]+/)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://(?:www\\.)?brazzers\\.com/(scenes/view/id/\\d+(?:/[a-z0-9\\-]+/)?|embed/\\d+/?)" }, flags = { 0 })
 public class BrazzersCom extends antiDDoSForHost {
 
     public BrazzersCom(PluginWrapper wrapper) {
@@ -48,6 +48,17 @@ public class BrazzersCom extends antiDDoSForHost {
     private static final int     FREE_MAXDOWNLOADS = 20;
 
     private boolean              not_yet_released  = false;
+
+    private final String         type_embed        = "https?://(?:www\\.)?brazzers\\.com/embed/\\d+/?";
+    private final String         type_normal       = "https?://(?:www\\.)?brazzers\\.com/scenes/view/id/\\d+(?:/[a-z0-9\\-]+/)?";
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(type_embed)) {
+            final String fid = new Regex(link.getDownloadURL(), "/embed/(\\d+)").getMatch(0);
+            link.setUrlDownload("http://www.brazzers.com/scenes/view/id/" + fid + "/");
+        }
+    }
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -75,15 +86,23 @@ public class BrazzersCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fid = new Regex(link.getDownloadURL(), "/id/(\\d+)").getMatch(0);
+        final String fid = new Regex(link.getDownloadURL(), "/id/(\\d+)/?$").getMatch(0);
         final String url_name = new Regex(link.getDownloadURL(), "/id/\\d+/(.+)/$").getMatch(0);
         String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)<span").getMatch(0);
+
+        /* This way we have a better dupe-detection! */
+        link.setLinkID(fid);
+
         /* Two fallbacks in case we do not get any filename via html code */
         if (inValidate(filename)) {
             filename = url_name;
         }
         if (inValidate(filename)) {
+            /* Finally - fallback to fid because we found nothing better. */
             filename = fid;
+        } else {
+            /* Add fileid in front of the filename to make it look nicer - will usually be removed in the final filename. */
+            filename = fid + "_" + filename;
         }
         final Account aa = AccountController.getInstance().getValidAccount(this);
         final boolean moch_download_possible = AccountController.getInstance().hasMultiHostAccounts(this.getHost());

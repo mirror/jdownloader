@@ -225,6 +225,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
         // Directlinks can be used for up to 2 days
         currDownloadLink.setProperty("debriditaliadirectlink", dllink);
 
+        /* They sometimes return html-encoded filenames - let's fix this! */
+        String server_filename = getFileNameFromHeader(this.dl.getConnection());
+        server_filename = Encoding.htmlDecode(server_filename);
+        this.currDownloadLink.setFinalFileName(server_filename);
+
         try {
             // start the dl
             if (!this.dl.startDownload()) {
