@@ -151,13 +151,13 @@ public class PluginJSonUtils {
         }
         if (result == null) {
             // javascript doesn't always encase keyname with quotation
-            result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+            result = new Regex(source, "[^a-zA-Z0-9_\\-]+" + Pattern.quote(key) + "[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
             if (result == null) {
-                result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
+                result = new Regex(source, "[^a-zA-Z0-9_\\-]+" + Pattern.quote(key) + "[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
                 if (result != null) {
                     // some rudimentary detection if we have braked at the wrong place.
                     while (result.endsWith("\\")) {
-                        String xtraResult = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*\"(" + Pattern.quote(result) + "\"[^\"]*\"?)\"").getMatch(0);
+                        String xtraResult = new Regex(source, "[^a-zA-Z0-9_\\-]+" + Pattern.quote(key) + "[ \t]*:[ \t]*\"(" + Pattern.quote(result) + "\"[^\"]*\"?)\"").getMatch(0);
                         if (xtraResult != null) {
                             result = xtraResult;
                         } else {

@@ -51,17 +51,19 @@ public class OkRu extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     public static void prepBR(final Browser br) {
         /* Use mobile website to get http urls. */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+        // with jd default lang we get non english (homepage) or non russian responses (mobile)
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.setFollowRedirects(true);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         prepBR(this.br);
         final String mainlink = downloadLink.getStringProperty("mainlink", null);
@@ -77,23 +79,23 @@ public class OkRu extends PluginForHost {
         if (filename == null) {
             filename = new Regex(mainlink, "(\\d+)$").getMatch(0);
         }
-        DLLINK = br.getRegex("embedVPlayer\\(this,\\&#39;(http[^<>\"]*?)\\&#39;,\\&#39;").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("data\\-embedclass=\"yt_layer\" data\\-objid=\"\\d+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("embedVPlayer\\(this,\\&#39;(http[^<>\"]*?)\\&#39;,\\&#39;").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("data\\-embedclass=\"yt_layer\" data\\-objid=\"\\d+\" href=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        final String url_quality = new Regex(DLLINK, "(st.mq=\\d+)").getMatch(0);
+        dllink = Encoding.htmlDecode(dllink);
+        final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);
         if (url_quality != null) {
             /* Always prefer highest quality available */
-            DLLINK = DLLINK.replace(url_quality, "st.mq=5");
+            dllink = dllink.replace(url_quality, "st.mq=5");
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -108,7 +110,7 @@ public class OkRu extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -117,7 +119,7 @@ public class OkRu extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -140,6 +142,9 @@ public class OkRu extends PluginForHost {
             /* Redirect --> Offline! */
             return true;
         }
+        if (br.containsHTML(">Видеоролик заблокирован<")) {
+            return true;
+        }
         // offline due to copyright claim
         if (br.containsHTML("<div class=\"empty\"")) {
             final String vid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
@@ -147,7 +152,7 @@ public class OkRu extends PluginForHost {
             // mobile page .... get standard browser
             br2.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
             br2.getPage("http://ok.ru/video/" + vid);
-            if (br2.containsHTML(">Video has been blocked due to author's rights infingement<")) {
+            if (br2.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<")) {
                 return true;
             }
         }
@@ -162,7 +167,7 @@ public class OkRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
