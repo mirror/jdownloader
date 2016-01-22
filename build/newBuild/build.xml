@@ -294,7 +294,7 @@
 				<include name="**/*.js" />
 				<include name="**/*.html" />
 				<include name="**/*.css" />	
-				<include name="org/jdownloader/captcha/v2/challenge/recaptcha/v2/*.jpg" />
+				<include name="org/jdownloader/captcha/v2/challenge/recaptcha/v2/example/*.jpg" />
 				<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
 
 			</fileset>
