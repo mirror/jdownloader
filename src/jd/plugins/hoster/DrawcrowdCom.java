@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -43,14 +44,7 @@ public class DrawcrowdCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-
-    private String               DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -61,7 +55,7 @@ public class DrawcrowdCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -78,21 +72,22 @@ public class DrawcrowdCom extends PluginForHost {
         if (inValidate(filename)) {
             filename = fid;
         }
-        DLLINK = (String) json.get("original_image");
-        if (filename == null || DLLINK == null) {
+        dllink = (String) json.get("original_image");
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         if (full_name != null) {
             filename = full_name + "_" + filename;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = getFileNameFromURL(new URL(dllink));
+        ext = ext.substring(ext.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+            ext = ".jpg";
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -104,7 +99,7 @@ public class DrawcrowdCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -113,7 +108,7 @@ public class DrawcrowdCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -126,7 +121,7 @@ public class DrawcrowdCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -171,7 +166,7 @@ public class DrawcrowdCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return -1;
     }
 
     /**
