@@ -57,7 +57,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
 
     private String parameter = null;
 
-    // @Override
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -84,7 +83,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
         }
         /* Alle Parts suchen */
         final String[] links = br.getRegex(Pattern.compile("href=.*?((?:(?:https?|ftp):)?//[^\"']{2,}|(&#x[a-f0-9]{2};)+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        progress.setRange(links.length);
         final HashSet<String> dupe = new HashSet<String>();
         for (String link : links) {
             if (link.matches("(&#x[a-f0-9]{2};)+")) {
@@ -93,7 +91,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
             }
             link = Request.getLocation(link, br.getRequest());
             if (!dupe.add(link)) {
-                progress.increase(1);
                 continue;
             }
             if (kanHandle(link)) {
@@ -106,7 +103,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
                 }
                 decryptedLinks.add(dLink);
             }
-            progress.increase(1);
         }
         if (parameter.contains("urbanmusicdaily.me/")) {
             // lets look for embeded types

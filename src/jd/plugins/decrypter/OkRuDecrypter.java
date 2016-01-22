@@ -36,7 +36,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceAll("http://(m|www)\\.", "http://www.").replace("/videoembed/", "/video/");
         final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
         /* Load plugin */
@@ -44,11 +44,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
         jd.plugins.hoster.OkRu.prepBR(this.br);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String externID = this.br.getRegex("data\\-ytid=\"([^<>\"]*?)\"").getMatch(0);

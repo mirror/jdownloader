@@ -23,31 +23,26 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(www\\.)?mystream\\.la/(watch|external)/[A-Za-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(www\\.)?mystream\\.la/external/[A-Za-z0-9]{12}" }, flags = { 0 })
 public class MyStreamLa extends PluginForHost {
 
     public MyStreamLa(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
         return "http://mystream.la/terms-of-service";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/external/", "/watch/").toLowerCase());
     }
 
     @SuppressWarnings("deprecation")
@@ -60,16 +55,18 @@ public class MyStreamLa extends PluginForHost {
         if (br.containsHTML(">File Not Found<|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<b>Filename:</b></td><td nowrap>([^<>\"]*?)</td>").getMatch(0);
+        String filename = PluginJSonUtils.getJson(br, "title");
         final String filesize = br.getRegex(">\\((\\d+) bytes\\)<").getMatch(0);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
         downloadLink.setFinalFileName(filename);
-        downloadLink.setDownloadSize(Long.parseLong(filesize));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(Long.parseLong(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -77,36 +74,41 @@ public class MyStreamLa extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            br.getPage("http://www.mystream.la/external/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
-            DLLINK = br.getRegex("file:[\t\n\r ]*?(?:\\'|\")(http://[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
-            if (DLLINK == null) {
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            dllink = PluginJSonUtils.getJson(br, "file");
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directlink", br.getURL());
         dl.startDownload();
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
             try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable t) {
+                }
             }
         }
         return dllink;

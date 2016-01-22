@@ -41,7 +41,7 @@ public class ImgChiliCom extends PluginForDecrypt {
     private static final String SINGLEFINALLINK = "http://(www\\.)?[it]\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.\\(\\)]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         if (parameter.matches(ALBUMLINK)) {
             br.setFollowRedirects(true);
