@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
@@ -59,7 +60,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
     private static Object           LOCK                            = new Object();
-    private static final String     FACEBOOKMAINPAGE                = "http://www.facebook.com";
+    private static final String     FACEBOOKMAINPAGE                = "https://www.facebook.com";
     private int                     DIALOGRETURN                    = -1;
 
     private static final String     TYPE_FBSHORTLINK                = "http(s)?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
@@ -85,9 +86,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private static final int        MAX_LOOPS_GENERAL               = 150;
     private static final int        MAX_PICS_DEFAULT                = 5000;
-    public static final String      REV                             = "1938577";
+    public static final String      REV_2                           = "1938577";
+    public static final String      REV_3                           = "2141616";
 
-    private static String           MAINPAGE                        = "http://www.facebook.com";
+    private static String           MAINPAGE                        = "https://www.facebook.com";
     private static final String     CRYPTLINK                       = "facebookdecrypted.com/";
     private static final String     EXCEPTION_LINKOFFLINE           = "EXCEPTION_LINKOFFLINE";
     private static final String     EXCEPTION_NOTLOGGEDIN           = "EXCEPTION_NOTLOGGEDIN";
@@ -98,6 +100,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;
     private boolean                 logged_in                       = false;
     private ArrayList<DownloadLink> decryptedLinks                  = null;
+    private boolean                 debug                           = true;
 
     /*
      * Dear whoever is looking at this - this is a classic example of spaghetticode. If you like spaghettis, go ahead, and get you some
@@ -107,7 +110,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // for debugging
-        if (false) {
+        if (debug) {
             disableLogger();
         }
         br = new Browser();
@@ -221,7 +224,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private void decryptAlbums() throws Exception {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)(?:\\- Photos \\| Facebook)?</title>").getMatch(0);
+        String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)(?:- Photos \\| Facebook)?</title>").getMatch(0);
         final String profileID = getProfileID();
         final String user = getUser(this.br);
         if (user == null) {
@@ -332,6 +335,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         boolean dynamicLoadAlreadyDecrypted = false;
         String lastfirstID = "";
 
+        final HashSet<String> dupe = new HashSet<String>();
+
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
             int currentMaxPicCount = 20;
 
@@ -354,7 +359,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TaggedPhotosAppCollectionPagelet?data=%7B%22collection_token%22%3A%22" + token + "%22%2C%22cursor%22%3A%22" + cursor + "%22%2C%22tab_key%22%3A%22photos_of%22%2C%22profile_id%22%3A" + profileID + "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%7D&__user=" + user + "&__a=1&__dyn=" + getDyn() + "&__adt=" + i;
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
-                currentMaxPicCount = 40;
                 dynamicLoadAlreadyDecrypted = true;
             } else {
                 links = br.getRegex("id=\"pic_(\\d+)\"").getColumn(0);
@@ -371,6 +375,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     stop = true;
                     break;
                 }
+                if (!dupe.add(picID)) {
+                    continue;
+                }
+
                 final DownloadLink dl = createPicDownloadlink(picID);
                 fp.add(dl);
                 distribute(dl);
@@ -449,7 +457,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Cannot find more links, stopping decryption...");
                     break;
                 }
-                String loadLink = "https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + additionalPostData + "%22%2C%22overview%22%3Afalse%2C%22active_collection%22%3A69%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22cursor%22%3A0%2C%22tab_id%22%3A%22u_0_t%22%2C%22order%22%3Anull%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyngCBDBzpQ9UoGhk4BwzCxO4oKA8ABGfirWo8popyUWdDx24QqUgKm58y&__req=jsonp_" + i + "&__rev=" + REV + "&__adt=" + i;
+                String loadLink = "https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + additionalPostData + "%22%2C%22overview%22%3Afalse%2C%22active_collection%22%3A69%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22cursor%22%3A0%2C%22tab_id%22%3A%22u_0_t%22%2C%22order%22%3Anull%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyngCBDBzpQ9UoGhk4BwzCxO4oKA8ABGfirWo8popyUWdDx24QqUgKm58y&__req=jsonp_" + i + "&__rev=" + REV_2 + "&__adt=" + i;
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                 currentMaxPicCount = 32;
@@ -751,7 +759,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
         for (final String picID : photoids) {
             final DownloadLink dl = createPicDownloadlink(picID);
             fp.add(dl);
-            distribute(dl);
+            if (!debug) {
+                distribute(dl);
+            }
             decryptedLinks.add(dl);
         }
     }
@@ -763,7 +773,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             links = br.getRegex("ajaxify=\"(?:[^\"]+/videos/vb\\.\\d+/|[^\"]+/video\\.php\\?v=)(\\d+)").getColumn(0);
         }
         for (final String videoid : links) {
-            final String videolink = "http://facebookdecrypted.com/video.php?v=" + videoid;
+            final String videolink = "https://facebookdecrypted.com/video.php?v=" + videoid;
             final DownloadLink dl = createDownloadlink(videolink);
             dl.setContentUrl(videoid);
             dl.setLinkID(videoid);
@@ -1140,7 +1150,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             scriptRedirect = JSonUtils.unescape(scriptRedirect);
             br.getPage(scriptRedirect);
         }
-        String normal_redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"0; URL=(/[^<>\"]*?)\"").getMatch(0);
+        String normal_redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"0; URL=(/[^<>\"]*?)\"").getMatch(0);
         /* Do not access the noscript versions of links - this will cause out of date errors! */
         if (normal_redirect != null && !normal_redirect.contains("fb_noscript=1")) {
             normal_redirect = Encoding.htmlDecode(normal_redirect);
@@ -1153,8 +1163,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private DownloadLink createPicDownloadlink(final String picID) {
-        final String final_link = "http://www." + CRYPTLINK + "photo.php?fbid=" + picID;
-        final String real_link = "http://www.facebook.com/photo.php?fbid=" + picID;
+        final String final_link = "https://www." + CRYPTLINK + "photo.php?fbid=" + picID;
+        final String real_link = "https://www.facebook.com/photo.php?fbid=" + picID;
         final DownloadLink dl = createDownloadlink(final_link);
         dl.setContentUrl(real_link);
         if (!logged_in) {
@@ -1169,11 +1179,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private String getProfileID() {
-        String profileid = br.getRegex("data\\-gt=\"\\&#123;\\&quot;profile_owner\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
+        String profileid = br.getRegex("data-gt=\"\\&#123;\\&quot;profile_owner\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
         if (profileid == null) {
             profileid = br.getRegex("PageHeaderPageletController_(\\d+)\"").getMatch(0);
             if (profileid == null) {
-                profileid = br.getRegex("data\\-profileid=\"(\\d+)\"").getMatch(0);
+                profileid = br.getRegex("data-profileid=\"(\\d+)\"").getMatch(0);
                 if (profileid == null) {
                     profileid = br.getRegex("\\\\\"profile_id\\\\\":(\\d+)").getMatch(0);
                 }
@@ -1190,7 +1200,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     public static String getRev(final Browser br) {
         String rev = br.getRegex("\"revision\":(\\d+)").getMatch(0);
         if (rev == null) {
-            rev = REV;
+            rev = REV_2;
         }
         return rev;
     }
