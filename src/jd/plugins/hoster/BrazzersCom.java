@@ -86,7 +86,7 @@ public class BrazzersCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fid = new Regex(link.getDownloadURL(), "/id/(\\d+)/?$").getMatch(0);
+        final String fid = new Regex(link.getDownloadURL(), "/id/(\\d+)/?").getMatch(0);
         final String url_name = new Regex(link.getDownloadURL(), "/id/\\d+/([^/]+)").getMatch(0);
         String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)<span").getMatch(0);
 
