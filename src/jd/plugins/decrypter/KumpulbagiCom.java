@@ -19,9 +19,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,9 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kumpulbagi.com" }, urls = { "http://kumpulbagi\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[^\\s]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.com" }, urls = { "http://kumpulbagi\\.(?:com|id)/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[^\\s]+)?" }, flags = { 0 })
 public class KumpulbagiCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -49,61 +51,23 @@ public class KumpulbagiCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String passCode = null;
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replace(".com/", ".id/");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable ethr) {
-                /* Not available in 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
-        /* No permission to see file/folder */{
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable ethr) {
-                /* Not available in 0.9.581 Stable */
-            }
+        /* No permission to see file/folder */ {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        // final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
-        // final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
-        // final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        // if (br.containsHTML("class=\"LoginToFolderForm\"")) {
-        // final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        // if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
-        // logger.warning("Decrypter broken for link: " + parameter);
-        // return null;
-        // }
-        // for (int i = 1; i <= 3; i++) {
-        // passCode = Plugin.getUserInput("Password?", param);
-        // br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid +
-        // "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) +
-        // "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
-        // if (br.containsHTML("\"IsSuccess\":false")) {
-        // continue;
-        // }
-        // break;
-        // }
-        // if (br.containsHTML("\"IsSuccess\":false")) {
-        // throw new DecrypterException(DecrypterException.PASSWORD);
-        // }
-        // /* We don't want to work with the encoded json bla html response */
-        // br.getPage(parameter);
-        // }
-
         /* empty folder | no folder */
         if (!br.containsHTML("name=\"fileId\"")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable ethr) {
-                /* Not available in 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
@@ -125,40 +89,25 @@ public class KumpulbagiCom extends PluginForDecrypt {
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("pass", passCode);
-
-            try {
-                dl.setContentUrl(parameter);
-                dl.setLinkID(fid);
-            } catch (final Throwable e) {
-                dl.setBrowserUrl(parameter);
-            }
-
+            dl.setContentUrl(parameter);
+            dl.setLinkID(getHost() + "://" + fid);
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setAvailable(true);
-
             decryptedLinks.add(dl);
         } else {
             String fpName = br.getRegex("scrollTop\">([^<>\"]*?)</a>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             }
-            int lastpage = 1;
-            int tempmaxpage = 0;
+            String nextPage = "";
+            int currentPage = 1;
             do {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
                 }
-                lastpage = tempmaxpage;
-                logger.info("Decrypting page " + lastpage + " of ??");
-                if (lastpage > 1) {
-                    br.getPage(parameter + "/gallery,1," + lastpage);
-                }
+                logger.info("Decrypting page " + currentPage + " of ??");
                 String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
                 if (linkinfo == null || linkinfo.length == 0) {
                     linkinfo = br.getRegex("<p class=\"filename\">(.*?)class=\"fileActionsFacebookSend\"").getColumn(0);
@@ -179,14 +128,18 @@ public class KumpulbagiCom extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                // insert ajax stuff
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                final Browser org = br.cloneBrowser();
                 for (final String lnkinfo : linkinfo) {
                     String content_url = new Regex(lnkinfo, "class=\"name\">[\t\n\r ]*?<a href=\"(/[^<>\"]*?)\"").getMatch(0);
                     if (content_url != null) {
-                        content_url = "http://" + this.getHost() + content_url;
+                        content_url = Request.getLocation(content_url, br.getRequest());
                     } else {
                         content_url = parameter;
                     }
-                    final String fid = new Regex(lnkinfo, "data\\-file\\-id=\"(\\d+)\"").getMatch(0);
+                    final String fid = new Regex(lnkinfo, "data-file-id=\"(\\d+)\"").getMatch(0);
                     final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
                     String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
                     if (filesize == null) {
@@ -225,37 +178,26 @@ public class KumpulbagiCom extends PluginForDecrypt {
                         }
                         filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
                     }
-
                     final DownloadLink dl = getDecryptedDownloadlink();
-
                     dl.setProperty("plain_filename", filename);
                     dl.setProperty("plain_filesize", filesize);
                     dl.setProperty("plain_fid", fid);
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("pass", passCode);
-
-                    try {
-                        dl.setContentUrl(content_url);
-                        dl.setLinkID(fid);
-                    } catch (final Throwable e) {
-                        dl.setBrowserUrl(content_url);
-                    }
-
+                    dl.setContentUrl(content_url);
+                    dl.setLinkID(getHost() + "://" + fid);
                     dl.setName(filename);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);
-
                     decryptedLinks.add(dl);
                 }
-                final String[] pagenumbers = br.getRegex("lass=\"pageSplitter\"><a href=\"/[^<>\"]*?\">(\\d+)</a>").getColumn(0);
-                for (final String pge : pagenumbers) {
-                    final int pageint = Integer.parseInt(pge);
-                    if (pageint > lastpage) {
-                        tempmaxpage = pageint;
-                        break;
-                    }
+                nextPage = br.getRegex("class=\"pageSplitterBorder\" data-nextpage-number=\"" + (currentPage + 1) + "\" data-nextpage-url=\"(.*?)\"").getMatch(0);
+                if (nextPage != null) {
+                    br = org.cloneBrowser();
+                    br.getPage(nextPage);
+                    currentPage++;
                 }
-            } while (tempmaxpage > lastpage);
+            } while (nextPage != null);
 
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
