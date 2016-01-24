@@ -328,6 +328,10 @@ public class FernsehkritikTv extends PluginForHost {
                 }
                 if (inValidate(DLLINK)) {
                     getStreamDllinkMassengeschmackWebsite();
+                    if (inValidate(DLLINK)) {
+                        /* Last chance! */
+                        DLLINK = getBESTDllinkSpecialAPICall();
+                    }
                 }
 
                 channel = br.getRegex("<li><a href=\"/mag\\-cover\\.php\\?pid=\\d+\">([^<<\"]*?)</a>").getMatch(0);
@@ -446,15 +450,16 @@ public class FernsehkritikTv extends PluginForHost {
             }
         }
 
-        if (inValidate(DLLINK)) {
-            /*
-             * Nothing found? Lets overwrite DLLINK with an url of which we definitly know that we will get the highest quality (kind of
-             * like an API).
-             */
-            DLLINK = "https://massengeschmack.tv/dlr/" + url_videoid + "/best.mp4";
-        } else if (!DLLINK.startsWith("http")) {
+        if (!inValidate(DLLINK) && !DLLINK.startsWith("http")) {
             DLLINK = "http://" + HOST_MASSENGESCHMACK + DLLINK;
         }
+    }
+
+    private String getBESTDllinkSpecialAPICall() {
+        /*
+         * Function/API Call of which we definitly know that we will get the highest quality (kind of like an API).
+         */
+        return "https://massengeschmack.tv/dlr/" + url_videoid + "/best.mp4";
     }
 
     @SuppressWarnings("deprecation")
@@ -788,7 +793,9 @@ public class FernsehkritikTv extends PluginForHost {
             return null;
         }
         final String url_episodenumber = new Regex(url_videoid, "(\\d+)$").getMatch(0);
-        if (url_videoid.matches("fktv.*?")) {
+        if (url_videoid.matches("fktvplus\\d+")) {
+            url_videoid = "Fernsehkritik-TV Plus";
+        } else if (url_videoid.matches("fktv.*?")) {
             url_videoid = "Fernsehkritik-TV";
         } else if (url_videoid.matches("ptv.*?")) {
             url_videoid = "Pantoffel-TV";
