@@ -39,11 +39,12 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
         return highlightedExplain;
     }
 
-    protected String           token;
+    protected String token;
 
     public static final String WITH_OF_ALL_THE = "(?:with|of|all the) (.*)";
 
-    protected boolean          useEnglish;
+    protected boolean useEnglish;
+    protected Icon    explainIcon;
 
     @Override
     public Object getAPIStorable(String format) throws Exception {
@@ -149,6 +150,9 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     }
 
     public Icon getExplainIcon(String exeplain) {
+        if (explainIcon != null) {
+            return IconIO.getScaledInstance(explainIcon, 80, 55);
+        }
         try {
             String filename = new Regex(exeplain, WITH_OF_ALL_THE).getMatch(0).replaceAll("[^\\w]", "") + ".jpg";
             try {
