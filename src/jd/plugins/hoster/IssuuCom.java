@@ -96,7 +96,11 @@ public class IssuuCom extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getHeaders().put("Accept", "*/*");
-                br.getPage("https://api.issuu.com/query?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
+                // br.getPage("https://api.issuu.com/query?username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
+                // Encoding.urlEncode(account.getPass()) +
+                // "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json&jsonCallback=_jqjsp&_" +
+                // System.currentTimeMillis() + "=");
+                br.postPage("https://issuu.com/query", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json");
                 if (br.getCookie(MAINPAGE, "site.model.token") == null || br.containsHTML("\"message\":\"Login failed\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

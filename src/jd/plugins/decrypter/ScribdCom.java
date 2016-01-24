@@ -138,7 +138,9 @@ public class ScribdCom extends PluginForDecrypt {
                     logger.info("Decryption aborted by user: " + parameter);
                     return decryptedLinks;
                 }
-                br.getPage("https://de.scribd.com/profiles/content.json?content_key=documents&id=" + id + "&page=" + page);
+                /* E.g. for "/author/" urls */
+                // https://de.scribd.com/profiles/content.json?content_key=authored_documents&id=229905341&page=2
+                br.getPage("https://de.scribd.com/profiles/content.json?content_key=all_documents&id=" + id + "&page=" + page);
                 if (!this.br.getHttpConnection().getContentType().contains("json")) {
                     decryptedLinks.add(getOfflineLink(parameter));
                     return decryptedLinks;

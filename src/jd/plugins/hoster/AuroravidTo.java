@@ -312,8 +312,7 @@ public class AuroravidTo extends PluginForHost {
         return dllink;
     }
 
-    private static final String MAINPAGE = "http://novamov.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
@@ -332,14 +331,14 @@ public class AuroravidTo extends PluginForHost {
                         for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(DOMAIN, key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www.novamov.com/login.php?return=", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                final String passcookie = br.getCookie(MAINPAGE, "pass");
+                br.postPage("http://www." + DOMAIN + "/login.php?return=", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                final String passcookie = br.getCookie(DOMAIN, "pass");
                 if (passcookie == null || "deleted".equals(passcookie)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -349,7 +348,7 @@ public class AuroravidTo extends PluginForHost {
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
+                final Cookies add = br.getCookies(DOMAIN);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
