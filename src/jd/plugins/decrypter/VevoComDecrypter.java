@@ -74,6 +74,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
     private static final String                 type_embedded    = "https?://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
     private static final String                 player           = "http://cache.vevo.com/a/swf/versions/3/player.swf";
 
+    /** TODO: Maybe switch to full API usage: https://apiv2.vevo.com/video/%s?token=%s */
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
@@ -97,8 +98,6 @@ public class VevoComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         final DownloadLink offline = this.createOfflinelink(parameter);
         offline.setProperty("mainlink", parameter);
-        offline.setProperty("offline", true);
-        offline.setAvailable(false);
         offline.setContentUrl(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             decryptedLinks.add(offline);
@@ -184,75 +183,98 @@ public class VevoComDecrypter extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().put("Referer", player);
-            br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
+            br.postPage("http://www.vevo.com/auth", "");
+            final String access_token = getJson("access_token");
+            if (access_token == null) {
+                logger.warning("access_token is null");
+                return null;
+            }
+            // br.getPage("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=" + videoid);
+            this.br.getPage("https://apiv2.vevo.com/video/" + videoid + "/streams/http?token=" + Encoding.urlEncode(access_token));
             final String statusCode = getJson("statusCode");
-            if (statusCode.equals("304") || statusCode.equals("909")) {
+            if (statusCode != null && (statusCode.equals("304") || statusCode.equals("909"))) {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
-            } else if ((statusCode.equals("501")) || (statusCode.equals("502"))) {
+            } else if (statusCode != null && ((statusCode.equals("501")) || (statusCode.equals("502")))) {
                 geoblock_2 = true;
             }
         }
         if (!geoblock_1 && !geoblock_2) {
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final LinkedHashMap<String, Object> video = (LinkedHashMap<String, Object>) entries.get("video");
-            final ArrayList<Object> ressourcelist = (ArrayList) video.get("videoVersions");
+            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             /* Explanation of sourceType: 0=undefined, 1=?RTMP?, 2=HTTP, 3=HLS iOS,4=HLS, 5=HDS, 10=SmoothStreaming, 13=RTMPAkamai */
             /*
              * Explanation of version: Seems to be different vevo data servers as it has no influence on the videoquality: 0==, 1=?,
              * 2=aka.vevo.com, 3=lvl3.vevo.com, 4=aws.vevo.com --> version 2 never worked for me
              */
-            /* Last checked: 08.01.2015 */
+            /* Last checked: 2016-02-24 */
             final int preferredVersion = 4;
             LinkedHashMap<String, Object> tempmap = null;
-            String html_data = null;
             for (final Object currentStreamset : ressourcelist) {
                 tempmap = (LinkedHashMap<String, Object>) currentStreamset;
-                final int version = ((Number) tempmap.get("version")).intValue();
-                final int sourceType = ((Number) tempmap.get("sourceType")).intValue();
-                html_data = (String) tempmap.get("data");
-                type_string = "version_" + version + "_type_" + sourceType;
-                if (sourceType == 2 && version == preferredVersion) {
-                    final String[] renditions = new Regex(html_data, "<rendition (.*?) />").getColumn(0);
-                    for (final String linkinfo : renditions) {
-                        final String url = new Regex(linkinfo, "url=\"(http[^<>\"]*?)\"").getMatch(0);
-                        final String totalBitrate = new Regex(linkinfo, "totalBitrate=\"([^<>\"]*?)\"").getMatch(0);
-                        final String videoCodec = new Regex(linkinfo, "videoCodec=\"([^<>\"]*?)\"").getMatch(0);
-                        final String audioCodec = new Regex(linkinfo, "audioCodec=\"([^<>\"]*?)\"").getMatch(0);
-                        final String frameWidth = new Regex(linkinfo, "frameWidth=\"([^<>\"]*?)\"").getMatch(0);
-                        final String frameheight = new Regex(linkinfo, "frameheight=\"([^<>\"]*?)\"").getMatch(0);
-                        final String videoBitrate = new Regex(linkinfo, "videoBitrate=\"([^<>\"]*?)\"").getMatch(0);
-                        final String audioBitrate = new Regex(linkinfo, "audioBitrate=\"([^<>\"]*?)\"").getMatch(0);
-                        int videobitrateint = Integer.parseInt(videoBitrate);
-                        final String final_filename = title + "_" + totalBitrate + "k_" + frameWidth + "x" + frameheight + "_" + videoCodec + "_" + videoBitrate + "_" + audioCodec + "_" + audioBitrate + ".mp4";
-                        final DownloadLink fina = createDloadlink();
-                        fina.setAvailable(true);
-                        fina.setFinalFileName(final_filename);
-                        fina.setProperty("directlink", url);
-                        fina.setProperty("mainlink", parameter);
-                        fina.setProperty("plain_filename", final_filename);
-                        fina.setProperty("sourcetype", sourceType);
-                        /* Bitrates may vary so let's make sure we know what we're adding so the selection works later. */
-                        if (videobitrateint <= 200) {
-                            videobitrateint = 56;
-                        } else if (videobitrateint > 200 && videobitrateint <= 1000) {
-                            videobitrateint = 500;
-                        } else {
-                            videobitrateint = 2000;
-                        }
-                        dupeid = fid + "_" + type_string + videoBitrate;
-                        try {
-                            fina.setContentUrl(parameter);
-                            fina.setLinkID(dupeid);
-                        } catch (final Throwable e) {
-                            /* Not available in 0.9.581 Stable */
-                            fina.setBrowserUrl(parameter);
-                        }
-                        final String format = type_string + "_" + Integer.toString(videobitrateint);
-                        FOUNDQUALITIES.put(format, fina);
+                final Object versiono = tempmap.get("version");
+                final Object sourceTypeo = tempmap.get("sourceType");
+                final String url = (String) tempmap.get("url");
+                int version = 4;
+                int sourceType = 2;
+                if (versiono != null) {
+                    version = ((Number) versiono).intValue();
+                }
+                if (sourceTypeo != null) {
+                    sourceType = ((Number) sourceTypeo).intValue();
+                } else {
+                    if (url.contains("manifest.mpd")) {
+                        /* Skip dash */
+                        continue;
+                    } else if (url.endsWith(".mp4")) {
+                        sourceType = 2;
+                    } else if (url.endsWith(".m3u8")) {
+                        sourceType = 4;
+                    } else if (url.endsWith(".ism/manifest")) {
+                        /* Skip Microsoft streaming 'SmoothStreaming' */
+                        sourceType = 10;
                     }
+                    /*
+                     * This will ignore (non-working) urls with tokens e.g.
+                     * http://h264-aka.vevo.com/v3/h264/2015/12/USUV71503512/d883425f-2f
+                     * 3c-4d0d-8263-4b45dbc6cd4d/usuv71503512_med_480x360_h264_500_aac_128
+                     * .mp4?__gda__=1453651935_81bc2d25039ad336e9f641d0638386ec
+                     */
+                }
+                type_string = "version_" + version + "_type_" + sourceType;
+
+                if (sourceType == 2 && version == preferredVersion) {
+                    final Regex finfo = new Regex(url, "(\\d+)x(\\d+)_([a-z0-9]+)_(\\d+)_([a-z0-9]+)_(\\d+)\\.mp4");
+                    final String videoCodec = finfo.getMatch(2);
+                    final String audioCodec = finfo.getMatch(4);
+                    final String frameWidth = finfo.getMatch(0);
+                    final String frameheight = finfo.getMatch(1);
+                    final String videoBitrate = finfo.getMatch(3);
+                    final String audioBitrate = finfo.getMatch(5);
+                    int videobitrateint = Integer.parseInt(videoBitrate);
+                    int audiobitrateint = Integer.parseInt(audioBitrate);
+                    final int totalBitrateint = videobitrateint + audiobitrateint;
+                    final String final_filename = title + "_" + totalBitrateint + "k_" + frameWidth + "x" + frameheight + "_" + videoCodec + "_" + videoBitrate + "_" + audioCodec + "_" + audioBitrate + ".mp4";
+                    final DownloadLink fina = createDloadlink();
+                    fina.setAvailable(true);
+                    fina.setFinalFileName(final_filename);
+                    fina.setProperty("directlink", url);
+                    fina.setProperty("mainlink", parameter);
+                    fina.setProperty("plain_filename", final_filename);
+                    fina.setProperty("sourcetype", sourceType);
+                    /* Bitrates may vary so let's make sure we know what we're adding so the selection works later. */
+                    if (videobitrateint <= 200) {
+                        videobitrateint = 56;
+                    } else if (videobitrateint > 200 && videobitrateint <= 1000) {
+                        videobitrateint = 500;
+                    } else {
+                        videobitrateint = 2000;
+                    }
+                    dupeid = fid + "_" + type_string + "_" + videoBitrate;
+                    fina.setContentUrl(parameter);
+                    fina.setLinkID(dupeid);
+                    final String format = type_string + "_" + videobitrateint;
+                    FOUNDQUALITIES.put(format, fina);
                 } else if (sourceType == 4 && version == preferredVersion) {
-                    final String url = new Regex(html_data, "url=\"(http[^<>\"]*?)\"").getMatch(0);
                     br.getPage(url);
                     // http://hls-lvl3.vevo.com/v3/hls/2014/09/GB89B1000240/5c5ed477-0a30-49e7-8e15-34b6df8d3b9d/5200/gb89b1000240_5200k_1920x1080_h264_5200_aac_128.m3u8
                     final String[] medias = br.getRegex("#EXT-X-STREAM-INF:(.*?\\.m3u8)").getColumn(-1);
@@ -276,13 +298,8 @@ public class VevoComDecrypter extends PluginForDecrypt {
                         fina.setProperty("sourcetype", sourceType);
                         int videobitrateint = Integer.parseInt(videoBitrate);
                         dupeid = fid + "_" + type_string + videoBitrate;
-                        try {
-                            fina.setContentUrl(parameter);
-                            fina.setLinkID(dupeid);
-                        } catch (final Throwable e) {
-                            /* Not available in 0.9.581 Stable */
-                            fina.setBrowserUrl(parameter);
-                        }
+                        fina.setContentUrl(parameter);
+                        fina.setLinkID(dupeid);
                         final String format = type_string + "_" + Integer.toString(videobitrateint);
                         FOUNDQUALITIES.put(format, fina);
                     }
@@ -350,13 +367,8 @@ public class VevoComDecrypter extends PluginForDecrypt {
                         videobitrateint = 1600;
                     }
                     dupeid = fid + "_" + type_string + videoBitrate;
-                    try {
-                        fina.setContentUrl(parameter);
-                        fina.setLinkID(dupeid);
-                    } catch (final Throwable e) {
-                        /* Not available in 0.9.581 Stable */
-                        fina.setBrowserUrl(parameter);
-                    }
+                    fina.setContentUrl(parameter);
+                    fina.setLinkID(dupeid);
                     final String format = type_string + "_" + Integer.toString(videobitrateint);
                     FOUNDQUALITIES.put(format, fina);
                     /* Force adding rtmp links to the linkgrabber in case the user is geo-blocked! */
