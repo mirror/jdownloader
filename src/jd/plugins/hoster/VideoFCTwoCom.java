@@ -142,24 +142,17 @@ public class VideoFCTwoCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("http://fc2.com/en/login.php");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&image=Log+in&keep_login=1&done=video");
+                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&done=");
                 String loginDone = br.getRegex("(http://id\\.fc2\\.com/\\?.*?login=done.*?)").getMatch(0);
                 if (loginDone == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 br.getPage(loginDone);
                 br.getPage("http://id.fc2.com");
-                String userinfo = br.getRegex("(http://video\\.fc2\\.com(/[a-z]{2})?/mem_login\\.php\\?uid=[^\"]+)").getMatch(0);
-                if (userinfo == null) {
-                    account.setValid(false);
-                    if (iai != null) {
-                        return iai;
-                    } else {
-                        account.setAccountInfo(ai);
-                        return ai;
-                    }
+                final String userinfo = br.getRegex("(http://video\\.fc2\\.com(/[a-z]{2})?/mem_login\\.php\\?uid=[^\"]+)").getMatch(0);
+                if (userinfo != null) {
+                    br.getPage(userinfo);
                 }
-                br.getPage(userinfo);
                 ai.setUnlimitedTraffic();
                 String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
                 if (expire != null) {

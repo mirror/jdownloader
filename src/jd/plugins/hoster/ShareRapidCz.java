@@ -38,12 +38,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-rapid.cz", "file-share.top" }, urls = { "http://(www\\.)?(share\\-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|srapid|share\\-free)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz|megarapid\\.cz)/(stahuj|soubor)/([0-9]+/.+|[a-z0-9]+)", "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-rapid.cz", "file-share.top" }, urls = { "http://(www\\.)?(share\\-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|srapid|share\\-free)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz|megarapid\\.cz)/(stahuj|soubor)/([0-9]+/.+|[a-z0-9]+)", "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2, 2 })
 public class ShareRapidCz extends PluginForHost {
 
     private static final String  TYPE_CURRENT                 = "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+";
@@ -209,9 +208,12 @@ public class ShareRapidCz extends PluginForHost {
             if (br.containsHTML("(was not found on this server|No htmlCode read)")) {
                 /** Show other errormessage if free account was used */
                 if (account.getType() == AccountType.FREE) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharerapidcz.maybenofreedownloadpossible", "Error: Maybe this file cannot be downloaded as a freeuser: Buy traffic or try again later"), 60 * 60 * 1000);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: Maybe this file cannot be downloaded as a freeuser: Buy traffic or try again later", 60 * 60 * 1000);
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
+            } else if (this.br.getURL().contains("/panel/credit")) {
+                logger.info("Traffic empty / Not enough traffic to download this file");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNot enough traffic available!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

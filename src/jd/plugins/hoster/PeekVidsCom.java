@@ -218,7 +218,7 @@ public class PeekVidsCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://accounts.playvid.com/de/login/peekvids", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://accounts.playvids.com/de/login/peekvids", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String status = getJson("status");
                 final String redirect = getJson("redirect");
                 if (!"ok".equals(status)) {
