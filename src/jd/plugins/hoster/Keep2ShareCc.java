@@ -22,6 +22,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,10 +44,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
+/**
+ *
+ * @author raztoki
+ *
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://keep2sharedecrypted\\.cc/file/[a-z0-9]+" }, flags = { 2 })
 public class Keep2ShareCc extends K2SApi {
 
@@ -232,7 +237,7 @@ public class Keep2ShareCc extends K2SApi {
             premiumDownloadRestriction("This file is only available to premium members");
         }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
+        if (inValidate(dllink)) {
             if (br.containsHTML(DOWNLOADPOSSIBLE)) {
                 dllink = getDllink();
                 if (dllink == null) {
@@ -255,7 +260,7 @@ public class Keep2ShareCc extends K2SApi {
                 getPage(br2, getProtocol() + "static.k2s.cc/ext/evercookie/evercookie.swf");
                 // can be here also, raztoki 20130521!
                 dllink = getDllink();
-                if (dllink == null) {
+                if (inValidate(dllink)) {
                     handleFreeErrors();
                     if (br.containsHTML("Free account does not allow to download more than one file at the same time")) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
@@ -298,7 +303,7 @@ public class Keep2ShareCc extends K2SApi {
                     handleFreeErrors();
                     br.getHeaders().put("X-Requested-With", null);
                     dllink = getDllink();
-                    if (dllink == null) {
+                    if (inValidate(dllink)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
@@ -505,7 +510,7 @@ public class Keep2ShareCc extends K2SApi {
             account.setValid(true);
             if (br.containsHTML("class=\"free\">Free</a>")) {
                 account.setProperty("free", true);
-                ai.setStatus("Registered Free User");
+                ai.setStatus("Free Account");
             } else {
                 account.setProperty("free", false);
                 final String usedTraffic = br.getRegex("Used traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
@@ -523,13 +528,13 @@ public class Keep2ShareCc extends K2SApi {
                     expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
                 }
                 if (expire == null && br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
-                    ai.setStatus("Premium Lifetime User");
+                    ai.setStatus("Premium Lifetime Account");
                     ai.setValidUntil(-1);
                 } else if (expire == null) {
-                    ai.setStatus("Premium User");
+                    ai.setStatus("Premium Account");
                     ai.setValidUntil(-1);
                 } else {
-                    ai.setStatus("Premium User");
+                    ai.setStatus("Premium Account");
                     // Expired but actually we still got one day ('today')
                     if (br.containsHTML("\\(1 day\\)")) {
                         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
@@ -598,7 +603,7 @@ public class Keep2ShareCc extends K2SApi {
                 String currentDomain = MAINPAGE.replace("http://", "");
                 String newDomain = null;
                 String dllink = br.getRedirectLocation();
-                if (dllink == null) {
+                if (inValidate(dllink)) {
                     dllink = getDllinkPremium();
                 }
                 String possibleDomain = getDomain(dllink);
@@ -619,7 +624,7 @@ public class Keep2ShareCc extends K2SApi {
                     currentDomain = newDomain;
                 }
 
-                if (dllink == null) {
+                if (inValidate(dllink)) {
                     if (br.containsHTML("Traffic limit exceed!<")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }

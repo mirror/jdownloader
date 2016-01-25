@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -28,8 +27,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -54,12 +54,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com/files|fp\\.io)/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com/files|fp\\.io)/[a-z0-9]+" }, flags = { 2 })
 public class FilePostCom extends PluginForHost {
 
     private static AtomicReference<String> agent              = new AtomicReference<String>(null);
@@ -155,46 +150,6 @@ public class FilePostCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("https:", "http:").replace("fp.io/", "filepost.com/files/"));
-    }
-
-    protected void showFreeDialog(final String domain) {
-        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
-            super.showFreeDialog(domain);
-            return;
-        }
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        String tab = "                        ";
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " Free Download";
-                            message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
-                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
-                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
-                        } else {
-                            title = domain + " Free Download";
-                            message = "You are using the " + domain + " Free Mode.\r\n";
-                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
-                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
-                        }
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) {
-                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
-                            }
-                        }
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
     private void checkShowFreeDialog() {
@@ -321,26 +276,10 @@ public class FilePostCom extends PluginForHost {
         generalErrorhandling();
         String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);
         if (premiumlimit != null) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        if (br.containsHTML(FREEBLOCKED)) {
-            if (br.containsHTML("The file owner has limited free downloads of this file")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
-            }
+        if (br.containsHTML(FREEBLOCKED) && br.containsHTML("The file owner has limited free downloads of this file")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (br.containsHTML("We are sorry, the server where this file is")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
@@ -350,7 +289,7 @@ public class FilePostCom extends PluginForHost {
         }
         String passCode = downloadLink.getStringProperty("pass", null);
         // Errorhandling in case their linkchecker lies
-        if (br.containsHTML("(<title>FilePost\\.com: Download  - fast &amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) {
+        if (br.containsHTML("(<title>FilePost\\.com: Download  - fast &(?:amp;)? secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* token and SID used for all requests */
