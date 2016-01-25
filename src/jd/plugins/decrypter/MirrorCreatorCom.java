@@ -26,7 +26,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" }, flags = { 0 })
 public class MirrorCreatorCom extends PluginForDecrypt {
@@ -41,21 +41,21 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         final String uid = new Regex(param.toString(), "([A-Z0-9]{8})$").getMatch(0);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (userAgent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            userAgent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            userAgent = UserAgents.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", userAgent);
-        final String parameter = "http://www.mirrorcreator.com/download.php?uid=" + uid;
+        final String parameter = "https://www.mirrorcreator.com/download.php?uid=" + uid;
         param.setCryptedUrl(parameter);
 
         br.setFollowRedirects(true);
         br.getPage(parameter);
         br.setFollowRedirects(false);
         String continuelink = br.getRegex("\"(/mstat\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
-        if (continuelink != null) br.getPage(continuelink);
+        if (continuelink != null) {
+            br.getPage(continuelink);
+        }
         /* Error handling */
-        if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error \\- Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable\\.<)")) {
+        if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable\\.<)")) {
             logger.info("The following link should be offline: " + param.toString());
             return decryptedLinks;
         }
@@ -70,28 +70,23 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             }
         }
         for (String link : links) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted...");
-                    return decryptedLinks;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted...");
+                return decryptedLinks;
             }
             Browser br2 = br.cloneBrowser();
             br2.getPage(link);
-            String[] redirectLinks = br2.getRegex("(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)").getColumn(0);
+            // adware for some users!
+            String[] redirectLinks = br2.getRegex("(\"|')[^\"']*(?![^\"']*optic4u\\.info)(/[^/\r\n\t]+/" + uid + "/[^\"\r\n\t]+)").getColumn(1);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 // not redirects but final download link in html.
                 String finallink = br2.getRegex("<a href=([^ ]+) TARGET='_blank'").getMatch(0);
-                if (finallink == null) finallink = br2.getRegex("<div class=\"highlight redirecturl\">(.*?)</div>").getMatch(0);
+                if (finallink == null) {
+                    finallink = br2.getRegex("<div class=\"highlight redirecturl\">(.*?)</div>").getMatch(0);
+                }
                 if (finallink != null) {
                     final DownloadLink dl = createDownloadlink(finallink);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
-                    }
+                    distribute(dl);
                     decryptedLinks.add(dl);
                     continue;
                 }
@@ -110,8 +105,10 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                     br2.getPage(singlelink.trim());
                     dllink = br2.getRedirectLocation();
                     if (dllink == null) {
-                        dllink = br2.getRegex("Please <a href=(\"|')?(http.*?)(\"|')? ").getMatch(1);
-                        if (dllink == null) dllink = br2.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
+                        dllink = br2.getRegex("Please <a href=(\"|')?(http.*?)\\1 ").getMatch(1);
+                        if (dllink == null) {
+                            dllink = br2.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
+                        }
                     }
                 } else {
                     // Handling for already regexed final-links
@@ -124,11 +121,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                     continue;
                 }
                 final DownloadLink fina = createDownloadlink(dllink);
-                try {
-                    distribute(fina);
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
-                }
+                distribute(fina);
                 decryptedLinks.add(fina);
             }
         }

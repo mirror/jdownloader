@@ -19,10 +19,13 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,36 +48,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to", "novamov.com", "novaup.com" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0, 0 })
 public class AuroravidTo extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
-    private final String         TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
-    private final String         TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
-    private static final String  DOMAIN                       = "auroravid.to";
+    private final String        TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
+    private final String        TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
+    private static final String DOMAIN                       = "auroravid.to";
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-
-    private String               DLLINK                       = "";
+    private String              dllink                       = "";
 
     public AuroravidTo(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.novamov.com/premium.php");
+        this.enablePremium("http://www.auroravid.to/premium.php");
     }
 
     @Override
@@ -102,12 +88,14 @@ public class AuroravidTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
+        br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -173,12 +161,12 @@ public class AuroravidTo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, true, 0, "free_directlink");
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        DLLINK = checkDirectLink(downloadLink, directlinkproperty);
-        if (DLLINK == null) {
+        dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (dllink == null) {
             if (downloadLink.getDownloadURL().contains("video")) {
                 /* Generate new link */
                 br.getPage(downloadLink.getDownloadURL());
@@ -210,17 +198,17 @@ public class AuroravidTo extends PluginForHost {
                     } else {
                         br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
                     }
-                    DLLINK = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
-                    if (DLLINK == null) {
+                    dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
+                    if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     try {
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
                         if (!dl.getConnection().getContentType().contains("html")) {
                             success = true;
                             break;
                         } else {
-                            lastdllink = DLLINK;
+                            lastdllink = dllink;
                             continue;
                         }
                     } finally {
@@ -240,17 +228,14 @@ public class AuroravidTo extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage(downloadLink.getDownloadURL());
-                DLLINK = br.getRegex("class= \"click_download\"><a href=\"(http://.*?)\"").getMatch(0);
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("\"(http://e\\d+\\.novaup\\.com/dl/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+                dllink = br.getRegex("class= \"click_download\"><a href=\"(http://.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(http://e\\d+\\.(?:novaup\\.com|" + Pattern.quote(DOMAIN) + "/dl/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
                 }
-                if (DLLINK == null) {
+                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (!DLLINK.contains("http://")) {
-                    DLLINK = "http://novaup.com" + DLLINK;
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
             }
         }
         if (dl.getConnection().getContentType().contains("html")) {
@@ -258,7 +243,7 @@ public class AuroravidTo extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        downloadLink.setProperty(directlinkproperty, DLLINK);
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -375,29 +360,17 @@ public class AuroravidTo extends PluginForHost {
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("<h3>Your premium membership expires on: ([^<>\"/]*?)</h3>").getMatch(0);
         if (expire != null) {
-            account.setProperty("free", false);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MMM-dd", Locale.ENGLISH));
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         } else {
-            account.setProperty("free", true);
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         }
         account.setValid(true);
         return ai;
@@ -410,7 +383,7 @@ public class AuroravidTo extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (account.getBooleanProperty("free", false)) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            doFree(link, true, 0, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
@@ -420,7 +393,7 @@ public class AuroravidTo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleServerErrors();
                 logger.warning("The final dllink seems not to be a file!");
@@ -430,12 +403,6 @@ public class AuroravidTo extends PluginForHost {
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override

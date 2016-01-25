@@ -61,7 +61,7 @@ public class YourPornTubeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("yourporntube.com/video/") || br.containsHTML("<title>404: Page Not Found</title>")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("yourporntube.com/video/") || br.containsHTML("<title>404: Page Not Found</title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"title-video-player\"><h2>([^<>\"]*?)<").getMatch(0);

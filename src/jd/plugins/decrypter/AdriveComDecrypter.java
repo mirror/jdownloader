@@ -47,16 +47,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         final String continuelink = br.getRegex("\"(https?://\\w+\\.adrive.com/public/(?:view/)?[A-Za-z0-9]+\\.html)\"").getMatch(0);
         if (br.containsHTML("The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login") || continuelink == null) {
-            final DownloadLink offline = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            try {
-                offline.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e) {
-            }
-            ;
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            offline.setName(new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0));
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
             return decryptedLinks;
         }
         // continue links can be direct download links
@@ -86,6 +77,11 @@ public class AdriveComDecrypter extends PluginForDecrypt {
                 con.disconnect();
             } catch (Throwable e) {
             }
+        }
+        // content can be offline!
+        if (br.toString().matches("<b>File doesn't exist\\. Please turn on javascript\\.</b>\\s*<script> window.top.location=\"http://www\\.adrive\\.com/public/noexist\"; </script>")) {
+            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
+            return decryptedLinks;
         }
 
         final String linktext = br.getRegex("<table>(.*?)</table>").getMatch(0);

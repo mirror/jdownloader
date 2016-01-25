@@ -88,7 +88,7 @@ public class TheSupCm extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink("directhttp://" + image);
                 String ext = getFileNameFromURL(new URL(image));
                 ext = StringUtils.isNotEmpty(ext) && ext.contains(".") ? ext.substring(ext.lastIndexOf(".")) : "jpg";
-                dl.setFinalFileName(df.format((index + 1)) + " - " + name.replaceFirst("\\s*-\\s*\\d+\\s*$", "") + ext);
+                dl.setFinalFileName(df.format((index + 1)) + " - " + name.replaceFirst("(?:_?\\d+\\s+Jpg)?\\s*-\\s*\\d+\\s*$", "") + ext);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
