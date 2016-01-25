@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,10 +43,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
+/**
+ *
+ * @author raztoki
+ *
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "https?://(www\\.)?(fboom|fileboom)\\.me/file/[a-z0-9]{13,}" }, flags = { 2 })
 public class FileBoomMe extends K2SApi {
 
@@ -169,104 +174,106 @@ public class FileBoomMe extends K2SApi {
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        dllink = getDllink();
-        if (dllink == null) {
-            if (br.containsHTML(">\\s*This file is available<br>only for premium members\\.\\s*</div>")) {
-                premiumDownloadRestriction("This file can only be downloaded by premium users");
-            }
-            final String id = br.getRegex("data-slow-id=\"([a-z0-9]+)\"").getMatch(0);
-            if (id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            postPage(br.getURL(), "slow_id=" + id);
-            if (br.containsHTML("Free user can't download large files")) {
-                premiumDownloadRestriction("This file can only be downloaded by premium users");
-            } else if (br.containsHTML(freeAccConLimit)) {
-                // could be shared network or a download hasn't timed out yet or user downloading in another program?
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
-            }
-            if (br.containsHTML(">Downloading is not possible<")) {
-                final Regex waittime = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this");
-                String tmphrs = waittime.getMatch(0);
-                String tmpmin = waittime.getMatch(1);
-                String tmpsec = waittime.getMatch(2);
-                if (tmphrs == null && tmpmin == null && tmpsec == null) {
-                    logger.info("Waittime regexes seem to be broken");
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                } else {
-                    int minutes = 0, seconds = 0, hours = 0;
-                    if (tmphrs != null) {
-                        hours = Integer.parseInt(tmphrs);
-                    }
-                    if (tmpmin != null) {
-                        minutes = Integer.parseInt(tmpmin);
-                    }
-                    if (tmpsec != null) {
-                        seconds = Integer.parseInt(tmpsec);
-                    }
-                    int totalwaittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                    logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, totalwaittime);
-                }
-            }
+        if (inValidate(dllink)) {
             dllink = getDllink();
             if (dllink == null) {
-                final Browser cbr = br.cloneBrowser();
-                String captcha = null;
-                final int repeat = 4;
-                for (int i = 1; i <= repeat; i++) {
-                    if (br.containsHTML(reCaptcha)) {
-                        final Recaptcha rc = new Recaptcha(br, this);
-                        rc.findID();
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                        postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
-                        if (br.containsHTML(reCaptcha) && i + 1 != repeat) {
-                            continue;
-                        } else if (br.containsHTML(reCaptcha) && i + 1 == repeat) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        } else {
-                            break;
-                        }
-                    } else if (br.containsHTML(formCaptcha)) {
-                        if (captcha == null) {
-                            captcha = br.getRegex(formCaptcha).getMatch(-1);
-                            if (captcha == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                        }
-                        String code = getCaptchaCode(captcha, downloadLink);
-                        postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
-                        if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
-                            getPage(cbr, "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
-                            captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
-                            if (captcha != null) {
-                                captcha = captcha.replace("\\", "");
-                            }
-                            continue;
-                        } else if (br.containsHTML(formCaptcha) && i + 1 == repeat) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        } else {
-                            break;
-                        }
-                    }
+                if (br.containsHTML(">\\s*This file is available<br>only for premium members\\.\\s*</div>")) {
+                    premiumDownloadRestriction("This file can only be downloaded by premium users");
                 }
-                int wait = 30;
-                final String waittime = br.getRegex("class=\"tik-tak\"[\t\r\n ]{0,}>(\\d+)</div>").getMatch(0);
-                if (waittime != null) {
-                    wait = Integer.parseInt(waittime);
+                final String id = br.getRegex("data-slow-id=\"([a-z0-9]+)\"").getMatch(0);
+                if (inValidate(id)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                this.sleep(wait * 1001l, downloadLink);
-                postPage(br.getURL(), "free=1&uniqueId=" + id);
-                if (br.containsHTML(freeAccConLimit)) {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                postPage(br.getURL(), "slow_id=" + id);
+                if (br.containsHTML("Free user can't download large files")) {
+                    premiumDownloadRestriction("This file can only be downloaded by premium users");
+                } else if (br.containsHTML(freeAccConLimit)) {
                     // could be shared network or a download hasn't timed out yet or user downloading in another program?
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
                 }
+                if (br.containsHTML(">Downloading is not possible<")) {
+                    final Regex waittime = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this");
+                    String tmphrs = waittime.getMatch(0);
+                    String tmpmin = waittime.getMatch(1);
+                    String tmpsec = waittime.getMatch(2);
+                    if (tmphrs == null && tmpmin == null && tmpsec == null) {
+                        logger.info("Waittime regexes seem to be broken");
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                    } else {
+                        int minutes = 0, seconds = 0, hours = 0;
+                        if (tmphrs != null) {
+                            hours = Integer.parseInt(tmphrs);
+                        }
+                        if (tmpmin != null) {
+                            minutes = Integer.parseInt(tmpmin);
+                        }
+                        if (tmpsec != null) {
+                            seconds = Integer.parseInt(tmpsec);
+                        }
+                        int totalwaittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                        logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, totalwaittime);
+                    }
+                }
                 dllink = getDllink();
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (inValidate(dllink)) {
+                    final Browser cbr = br.cloneBrowser();
+                    String captcha = null;
+                    final int repeat = 4;
+                    for (int i = 1; i <= repeat; i++) {
+                        if (br.containsHTML(reCaptcha)) {
+                            final Recaptcha rc = new Recaptcha(br, this);
+                            rc.findID();
+                            rc.load();
+                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                            postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
+                            if (br.containsHTML(reCaptcha) && i + 1 != repeat) {
+                                continue;
+                            } else if (br.containsHTML(reCaptcha) && i + 1 == repeat) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            } else {
+                                break;
+                            }
+                        } else if (br.containsHTML(formCaptcha)) {
+                            if (captcha == null) {
+                                captcha = br.getRegex(formCaptcha).getMatch(-1);
+                                if (captcha == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                            }
+                            String code = getCaptchaCode(captcha, downloadLink);
+                            postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
+                            if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
+                                getPage(cbr, "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
+                                captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
+                                if (captcha != null) {
+                                    captcha = captcha.replace("\\", "");
+                                }
+                                continue;
+                            } else if (br.containsHTML(formCaptcha) && i + 1 == repeat) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    int wait = 30;
+                    final String waittime = br.getRegex("class=\"tik-tak\"[\t\r\n ]{0,}>(\\d+)</div>").getMatch(0);
+                    if (waittime != null) {
+                        wait = Integer.parseInt(waittime);
+                    }
+                    this.sleep(wait * 1001l, downloadLink);
+                    postPage(br.getURL(), "free=1&uniqueId=" + id);
+                    if (br.containsHTML(freeAccConLimit)) {
+                        // could be shared network or a download hasn't timed out yet or user downloading in another program?
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
+                    }
+                    dllink = getDllink();
+                    if (inValidate(dllink)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
@@ -411,8 +418,11 @@ public class FileBoomMe extends K2SApi {
             } else {
                 String dllink = br.getRedirectLocation();
                 /* Maybe user has direct downloads disabled */
-                if (dllink == null) {
+                if (inValidate(dllink)) {
                     dllink = getDllink();
+                    if (inValidate(dllink)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), resumes, chunks);
                 if (dl.getConnection().getContentType().contains("html")) {
