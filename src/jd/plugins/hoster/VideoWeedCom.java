@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -46,25 +45,25 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvid.sx", "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(bitvid\\.sx|videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-xjahyasbs" }, flags = { 2, 0 })
 public class VideoWeedCom extends PluginForHost {
 
     public VideoWeedCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.videoweed.es/premium.php");
+        this.enablePremium("http://www.bitvid.sx/premium.php");
     }
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         final String fileID = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        link.setUrlDownload("http://www.videoweed.es/file/" + fileID);
+        link.setUrlDownload("http://www.bitvid.sx/file/" + fileID);
     }
 
     @Override
     public String rewriteHost(String host) {
-        if ("videoweed.com".equals(getHost())) {
-            if (host == null || "videoweed.com".equals(host)) {
-                return "videoweed.es";
+        if ("videoweed.com".equals(getHost()) || "videoweed.es".equals(getHost())) {
+            if (host == null || "videoweed.com".equals(getHost()) || "videoweed.es".equals(getHost())) {
+                return "bitvid.sx";
             }
         }
         return super.rewriteHost(host);
@@ -72,24 +71,11 @@ public class VideoWeedCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.videoweed.es/terms.php";
+        return "http://www.bitvid.sx/terms.php";
     }
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
-    private static final String  DOMAIN                       = "videoweed.es";
-    /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static final String DOMAIN = "bitvid.sx";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -104,9 +90,9 @@ public class VideoWeedCom extends PluginForHost {
         }
         String filename = br.getRegex("<h1 class=\"text_shadow\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("name=\"title\" content=\"Watch (.*?) online \\| VideoWeed \"").getMatch(0);
+            filename = br.getRegex("name=\"title\" content=\"Watch (.*?) online \\| \\w+ \"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("videoweed\\.com/file/[a-z0-9]+\\&title=(.*?)\\+\\-\\+VideoWeed\\.com\"").getMatch(0);
+                filename = br.getRegex("\\w+\\.com/file/[a-z0-9]+\\&title=(.*?)\\+\\-\\+\\w+\\.com\"").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("<td><strong>Title: </strong>(.*?)</td>").getMatch(0);
                     if (filename == null) {
@@ -157,7 +143,7 @@ public class VideoWeedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, true, 0, "free_directlink");
     }
 
     @SuppressWarnings("deprecation")
@@ -184,7 +170,7 @@ public class VideoWeedCom extends PluginForHost {
                 cid2 = "undefined";
             }
             key = Encoding.urlEncode(key);
-            final String fid = new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "/file/(.+)").getMatch(0);
             String lastdllink = null;
             boolean success = false;
             for (int i = 0; i <= 3; i++) {
@@ -192,9 +178,9 @@ public class VideoWeedCom extends PluginForHost {
                     return;
                 }
                 if (i > 0) {
-                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+                    br.getPage("/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
                 } else {
-                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+                    br.getPage("/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
                 }
                 dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
                 if (dllink == null) {
@@ -253,7 +239,7 @@ public class VideoWeedCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     private String unWise() {
@@ -280,8 +266,7 @@ public class VideoWeedCom extends PluginForHost {
         return result;
     }
 
-    private static final String MAINPAGE = "http://videoweed.es";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
@@ -300,14 +285,14 @@ public class VideoWeedCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(DOMAIN, key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www.videoweed.es/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "pass") == null || br.getURL().contains("e=1")) {
+                br.postPage("http://www.bitvid.sx/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(DOMAIN, "pass") == null || br.getURL().contains("e=1")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -316,7 +301,7 @@ public class VideoWeedCom extends PluginForHost {
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
+                final Cookies add = br.getCookies(DOMAIN);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -343,28 +328,16 @@ public class VideoWeedCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex(">Your premium membership expires on: ([^<>\"]*?)<").getMatch(0);
         if (expire == null) {
-            account.setProperty("free", true);
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         } else {
-            account.setProperty("free", false);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MMM-dd", Locale.ENGLISH));
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
         account.setValid(true);
@@ -377,8 +350,8 @@ public class VideoWeedCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (account.getBooleanProperty("free", false)) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        if (AccountType.FREE.equals(account.getType())) {
+            doFree(link, true, 0, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
@@ -389,7 +362,7 @@ public class VideoWeedCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -398,12 +371,6 @@ public class VideoWeedCom extends PluginForHost {
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override

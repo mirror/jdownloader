@@ -71,8 +71,15 @@ public class AnimeggOrg extends antiDDoSForHost {
         this.setBrowserExclusive();
         final String link = downloadLink.getDownloadURL();
         br.getPage(link);
+        // not yet available. We can only say offline!
+        if (br.containsHTML("<img src=\"\\.\\./images/animegg-unavailable.jpg\" style=\"width: 100%\">")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!link.matches(".+/embed/\\d+")) {
             final String embed = br.getRegex("<iframe [^>]*src=(\"|')(.*?/embed/\\d+)\\1").getMatch(1);
+            if (embed == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage(embed);
         }
         final String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);

@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 0 })
 public class YuvutuCom extends PluginForHost {
 
     public String dllink = null;
@@ -99,6 +99,10 @@ public class YuvutuCom extends PluginForHost {
         conf.disconnect();
         // Link offline
         if (br.containsHTML(">The video you requested does not exist<|video_noexist\\.png\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // private file (login needed, we dont support at this stage!)
+        if (br.containsHTML(">This video has been marked as private by the uploader.</h2>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);

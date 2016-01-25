@@ -23,6 +23,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -43,9 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alfafile.net" }, urls = { "https?://(www\\.)?alfafile\\.net/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class AlfafileNet extends PluginForHost {
@@ -123,11 +124,13 @@ public class AlfafileNet extends PluginForHost {
             filename = br.getRegex("id=\"st_file_name\" title=\"([^<>\"]*?)\"").getMatch(0);
             filesize = br.getRegex("<span class=\"size\">([^<>\"]*?)</span>").getMatch(0);
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (StringUtils.isNotEmpty(filesize)) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.contains(".") && filesize.contains(",") ? filesize.replace(",", "") : filesize));
+        }
         if (md5 != null) {
             /* TODO: Check if their API actually returns valid md5 hashes */
             link.setMD5Hash(md5);
@@ -405,9 +408,9 @@ public class AlfafileNet extends PluginForHost {
             if (errorcode.equals("409")) {
                 /*
                  * E.g. detailed errormessages:
-                 * 
+                 *
                  * Conflict. Delay between downloads must be not less than 60 minutes. Try again in 51 minutes.
-                 * 
+                 *
                  * Conflict. DOWNLOAD::ERROR::You can't download not more than 1 file at a time in free mode.
                  */
                 String minutes_regexed = null;
@@ -437,7 +440,7 @@ public class AlfafileNet extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
