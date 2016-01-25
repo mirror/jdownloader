@@ -34,6 +34,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -48,14 +49,14 @@ import jd.utils.locale.JDL;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" }, flags = { 2 })
-public class Publish2Me extends K2SApi {
+@HostPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/file/[a-z0-9]{13,}" }, flags = { 2 })
+public class TezFilesCom extends K2SApi {
 
-    private final String MAINPAGE = "http://publish2.me";
+    private final String MAINPAGE = "http://tezfiles.com";
 
-    public Publish2Me(PluginWrapper wrapper) {
+    public TezFilesCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE + "/#premium");
+        this.enablePremium(MAINPAGE + "/premium.html");
         setConfigElements();
     }
 
@@ -77,17 +78,12 @@ public class Publish2Me extends K2SApi {
      */
     @Override
     protected String getDomain() {
-        return "publish2.me";
+        return "tezfiles.com";
     }
 
     @Override
     public long getVersion() {
         return (Math.max(super.getVersion(), 0) * 100000) + getAPIRevision();
-    }
-
-    @Override
-    protected String getFUID(final DownloadLink downloadLink) {
-        return new Regex(downloadLink.getDownloadURL(), "/([a-z0-9]+)/$").getMatch(0);
     }
 
     /**
@@ -124,8 +120,8 @@ public class Publish2Me extends K2SApi {
     /* end of K2SApi stuff */
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.Publish2Me.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Publish2Me.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(default_SSL_CONNECTION));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.FileBoomMe.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.FileBoomMe.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(default_SSL_CONNECTION));
     }
 
     @Override
@@ -140,8 +136,8 @@ public class Publish2Me extends K2SApi {
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("class=\"icon-download-alt\" style=\"\"></i>([^<>\"]*?)</div>").getMatch(0);
-        final String filesize = br.getRegex(">File size: ([^<>\"]*?)</").getMatch(0);
+        final String filename = br.getRegex("<h1 style=\"margin-top: 20px;\">\\s*([^<>\"]*?)\\s*<span").getMatch(0);
+        final String filesize = br.getRegex(">\\s*\\(([^<>\"]*?)\\)</span").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -153,6 +149,9 @@ public class Publish2Me extends K2SApi {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         if (useAPI()) {
             super.handleDownload(downloadLink, null);
         } else {
@@ -169,16 +168,19 @@ public class Publish2Me extends K2SApi {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (inValidate(dllink)) {
             dllink = getDllink();
-            if (dllink == null) {
+            if (inValidate(dllink)) {
                 if (br.containsHTML(">\\s*This file is available<br>only for premium members\\.\\s*</div>")) {
                     premiumDownloadRestriction("This file can only be downloaded by premium users");
                 }
-                final String id = br.getRegex("data-slow-id=\"([a-z0-9]+)\"").getMatch(0);
+                final Form slowdl = br.getFormbyKey("slow_id");
+                if (slowdl == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String id = slowdl.getInputField("slow_id").getValue();
                 if (id == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage(br.getURL(), "slow_id=" + id);
+                sendForm(slowdl);
                 if (br.containsHTML("Free user can't download large files")) {
                     premiumDownloadRestriction("This file can only be downloaded by premium users");
                 } else if (br.containsHTML(freeAccConLimit)) {
@@ -210,7 +212,7 @@ public class Publish2Me extends K2SApi {
                     }
                 }
                 dllink = getDllink();
-                if (dllink == null) {
+                if (inValidate(dllink)) {
                     final Browser cbr = br.cloneBrowser();
                     String captcha = null;
                     final int repeat = 4;
@@ -258,13 +260,13 @@ public class Publish2Me extends K2SApi {
                         wait = Integer.parseInt(waittime);
                     }
                     this.sleep(wait * 1001l, downloadLink);
-                    postPage(br.getURL(), "free=1&uniqueId=" + id);
+                    // postPage(br.getURL(), "free=1&uniqueId=" + id);
                     if (br.containsHTML(freeAccConLimit)) {
                         // could be shared network or a download hasn't timed out yet or user downloading in another program?
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
                     }
                     dllink = getDllink();
-                    if (dllink == null) {
+                    if (inValidate(dllink)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
@@ -367,6 +369,9 @@ public class Publish2Me extends K2SApi {
             if (expire == null) {
                 ai.setStatus("Free Account");
                 account.setProperty("free", true);
+            } else if ("LifeTime".equals(expire)) {
+                ai.setStatus("LifeTime Premium Account");
+                account.setProperty("free", false);
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
                 ai.setStatus("Premium Account");
@@ -394,6 +399,11 @@ public class Publish2Me extends K2SApi {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
+        if (account.getBooleanProperty("free", false)) {
+            if (checkShowFreeDialog(getHost())) {
+                showFreeDialog(getHost());
+            }
+        }
         if (useAPI()) {
             super.handleDownload(link, account);
         } else {
@@ -433,13 +443,13 @@ public class Publish2Me extends K2SApi {
 
     private String getDllink() throws Exception {
         String dllink = br.getRegex("(\"|')(/file/url\\.html\\?file=[a-z0-9]+)\\1").getMatch(1);
-        if (dllink != null) {
+        if (inValidate(dllink)) {
             getPage(dllink);
             dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
+            if (inValidate(dllink)) {
                 dllink = br.getRedirectLocation();
             }
-            if (dllink == null) {
+            if (inValidate(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = dllink.replace("\\", "");
@@ -453,12 +463,12 @@ public class Publish2Me extends K2SApi {
     }
 
     @Override
-    public void reset() {
+    public int getMaxSimultanFreeDownloadNum() {
+        return maxFree.get();
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void reset() {
     }
 
     @Override
@@ -469,14 +479,14 @@ public class Publish2Me extends K2SApi {
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-            return true;
+            return false;
         }
         return false;
     }
