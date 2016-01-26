@@ -81,6 +81,8 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("AUTO")
+    @DescriptionForConfigEntry("Delay writes to disk of background tasks")
+    @RequiresRestart("A JDownloader Restart is Required")
     DelayWriteMode getDelayWriteMode();
 
     public void setDelayWriteMode(DelayWriteMode mode);
