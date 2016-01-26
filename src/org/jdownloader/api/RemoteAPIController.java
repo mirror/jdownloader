@@ -12,10 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.InterfaceHandler;
@@ -90,6 +86,10 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
+
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
 
 public class RemoteAPIController {
 
@@ -602,7 +602,16 @@ public class RemoteAPIController {
                 try {
                     parameters[i] = RemoteAPI.convert(stringParams.get(count), method.getGenericParameterTypes()[i]);
                 } catch (final Throwable e) {
-                    throw new BadParameterException(e, stringParams.get(count));
+                    try {
+                        // maybe the parameter has been a Bla....Parameter array. let's try to evaluate the whole array as one
+                        if (parameters.length == 1 && method.getGenericParameterTypes()[i] instanceof Class && ((Class) method.getGenericParameterTypes()[i]).isArray()) {
+                            parameters[i] = RemoteAPI.convert(JSonStorage.serializeToJson(params), method.getGenericParameterTypes()[i]);
+                        } else {
+                            throw new BadParameterException(e, stringParams.get(count));
+                        }
+                    } catch (final Throwable e1) {
+                        throw new BadParameterException(e, stringParams.get(count));
+                    }
                 }
                 count++;
             }
