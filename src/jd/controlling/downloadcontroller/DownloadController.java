@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -45,6 +46,7 @@ import jd.controlling.packagecontroller.PackageController;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
+import jd.plugins.DownloadLinkStorable;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.PluginForHost;
@@ -616,39 +618,45 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         }
                     };
                     int entries = 0;
+                    final Pattern entryType = Pattern.compile("(\\d+)(?:_(\\d+))?|extraInfo", Pattern.CASE_INSENSITIVE);
                     while ((entry = zis.getNextEntry()) != null) {
                         try {
                             entries++;
-                            if (entry.getName().matches("^\\d+_\\d+$")) {
-                                final String idx[] = entry.getName().split("_");
-                                final Integer packageIndex = Integer.valueOf(idx[0]);
-                                final Integer childIndex = Integer.valueOf(idx[1]);
-                                LoadedPackage loadedPackage = packageMap.get(packageIndex);
-                                if (loadedPackage == null) {
-                                    loadedPackage = new LoadedPackage();
-                                    packageMap.put(packageIndex, loadedPackage);
-                                }
-                                final DownloadLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadLinkStorableTypeRef);
-                                if (storable != null) {
-                                    loadedPackage.downloadLinks.put(childIndex, storable._getDownloadLink());
-                                } else {
-                                    throw new WTFException("restored a null DownloadLinkLinkStorable");
-                                }
-                            } else if (entry.getName().matches("^\\d+$")) {
-                                final Integer packageIndex = Integer.valueOf(entry.getName());
-                                final FilePackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, filePackageStorable);
-                                if (storable != null) {
+                            final Matcher entryName = entryType.matcher(entry.getName());
+                            if (entryName.matches()) {
+                                if (entryName.group(2) != null) {
+                                    // \\d+_\\d+ DownloadLinkStorable
+                                    final Integer packageIndex = Integer.valueOf(entryName.group(1));
+                                    final Integer childIndex = Integer.valueOf(entryName.group(2));
                                     LoadedPackage loadedPackage = packageMap.get(packageIndex);
                                     if (loadedPackage == null) {
                                         loadedPackage = new LoadedPackage();
                                         packageMap.put(packageIndex, loadedPackage);
                                     }
-                                    loadedPackage.filePackage = storable._getFilePackage();
+                                    final DownloadLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadLinkStorableTypeRef);
+                                    if (storable != null) {
+                                        loadedPackage.downloadLinks.put(childIndex, storable._getDownloadLink());
+                                    } else {
+                                        throw new WTFException("restored a null DownloadLinkLinkStorable");
+                                    }
+                                } else if (entryName.group(1) != null) {
+                                    // \\d+ FilePackageStorable
+                                    final Integer packageIndex = Integer.valueOf(entry.getName());
+                                    final FilePackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, filePackageStorable);
+                                    if (storable != null) {
+                                        LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                                        if (loadedPackage == null) {
+                                            loadedPackage = new LoadedPackage();
+                                            packageMap.put(packageIndex, loadedPackage);
+                                        }
+                                        loadedPackage.filePackage = storable._getFilePackage();
+                                    } else {
+                                        throw new WTFException("restored a null FilePackageStorable");
+                                    }
                                 } else {
-                                    throw new WTFException("restored a null FilePackageStorable");
+                                    // extraInfo
+                                    dcs = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadControllerStorable);
                                 }
-                            } else if ("extraInfo".equalsIgnoreCase(entry.getName())) {
-                                dcs = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadControllerStorable);
                             }
                         } catch (Throwable e) {
                             logger.log(e);

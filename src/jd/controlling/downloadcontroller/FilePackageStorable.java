@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkStorable;
 import jd.plugins.FilePackage;
 
 import org.appwork.storage.Storable;

@@ -2,11 +2,11 @@ package jd.controlling.linkcollector;
 
 import java.util.ArrayList;
 
-import jd.controlling.downloadcontroller.DownloadLinkStorable;
 import jd.controlling.linkcrawler.ArchiveInfoStorable;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkStorable;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.extensions.extraction.BooleanStatus;

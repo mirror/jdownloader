@@ -134,6 +134,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.RlyWarnLevel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.ShowSpeedInWindowTitleTrigger;
 import org.jdownloader.settings.SilentModeSettings.DialogDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -1870,49 +1871,25 @@ public class JDGui implements UpdaterListener, OwnerFinder {
      * @param requestedLevel
      * @return
      */
-    public static boolean bugme(WarnLevel requestedLevel) {
-        switch (requestedLevel) {
-        case LOW:
-
-            switch (CFG_GUI.CFG.getRlyWarnLevel()) {
-            case DISABLED:
-                return false;
+    public static boolean bugme(final WarnLevel requestedLevel) {
+        final RlyWarnLevel rlyWarnLevel = CFG_GUI.CFG.getRlyWarnLevel();
+        switch (rlyWarnLevel) {
+        case DISABLED:
+            return false;
+        case HIGH:
+            return true;
+        default:
+            switch (requestedLevel) {
             case LOW:
                 return false;
             case NORMAL:
-                return false;
-            case HIGH:
+                return RlyWarnLevel.NORMAL.equals(rlyWarnLevel);
+            case SEVERE:
                 return true;
-
+            default:
+                break;
             }
             break;
-        case NORMAL:
-            switch (CFG_GUI.CFG.getRlyWarnLevel()) {
-            case DISABLED:
-                return false;
-            case LOW:
-                return false;
-            case NORMAL:
-                return true;
-            case HIGH:
-                return true;
-
-            }
-        case SEVERE:
-
-            switch (CFG_GUI.CFG.getRlyWarnLevel()) {
-            case DISABLED:
-                return false;
-            case LOW:
-                return true;
-            case NORMAL:
-                return true;
-            case HIGH:
-                return true;
-
-            }
-            break;
-
         }
         return true;
     }

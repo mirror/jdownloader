@@ -239,6 +239,10 @@ public class Property implements Serializable {
         }
     }
 
+    public void setPropertiesUnsafe(final HashMap<String, Object> properties) {
+        this.properties = properties;
+    }
+
     private static String deDuplicateString(String string) {
         if (string != null && Application.getJavaVersion() >= Application.JAVA17) {
             return string.intern();

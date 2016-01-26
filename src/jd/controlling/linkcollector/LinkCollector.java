@@ -24,6 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -116,6 +117,7 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.RlyWarnLevel;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
@@ -1793,42 +1795,48 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 };
                 int entries = 0;
+                final Pattern entryType = Pattern.compile("(\\d+)(?:_(\\d+))?|extraInfo", Pattern.CASE_INSENSITIVE);
                 while ((entry = zis.getNextEntry()) != null) {
                     try {
                         entries++;
-                        if (entry.getName().matches("^\\d+_\\d+$")) {
-                            final String idx[] = entry.getName().split("_");
-                            final Integer packageIndex = Integer.valueOf(idx[0]);
-                            final Integer childIndex = Integer.valueOf(idx[1]);
-                            LoadedPackage loadedPackage = packageMap.get(packageIndex);
-                            if (loadedPackage == null) {
-                                loadedPackage = new LoadedPackage();
-                                packageMap.put(packageIndex, loadedPackage);
-                            }
-                            final CrawledLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, crawledLinkStorable);
-                            if (storable != null) {
-                                loadedPackage.crawledLinks.put(childIndex, storable._getCrawledLink());
-                            } else {
-                                throw new WTFException("restored a null CrawledLinkStorable");
-                            }
-                        } else if (entry.getName().matches("^\\d+$")) {
-                            final Integer packageIndex = Integer.valueOf(entry.getName());
-                            final CrawledPackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, crawledPackageStorable);
-                            if (storable != null) {
+                        final Matcher entryName = entryType.matcher(entry.getName());
+                        if (entryName.matches()) {
+                            if (entryName.group(2) != null) {
+                                // \\d+_\\d+ CrawledLinkStorable
+                                final Integer packageIndex = Integer.valueOf(entryName.group(1));
+                                final Integer childIndex = Integer.valueOf(entryName.group(2));
                                 LoadedPackage loadedPackage = packageMap.get(packageIndex);
                                 if (loadedPackage == null) {
                                     loadedPackage = new LoadedPackage();
                                     packageMap.put(packageIndex, loadedPackage);
                                 }
-                                loadedPackage.crawledPackage = storable._getCrawledPackage();
-                                if (restoreMap != null) {
-                                    restoreMap.put(storable._getCrawledPackage(), storable);
+                                final CrawledLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, crawledLinkStorable);
+                                if (storable != null) {
+                                    loadedPackage.crawledLinks.put(childIndex, storable._getCrawledLink());
+                                } else {
+                                    throw new WTFException("restored a null CrawledLinkStorable");
+                                }
+                            } else if (entryName.group(1) != null) {
+                                // \\d+ CrawledPackageStorable
+                                final Integer packageIndex = Integer.valueOf(entry.getName());
+                                final CrawledPackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, crawledPackageStorable);
+                                if (storable != null) {
+                                    LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                                    if (loadedPackage == null) {
+                                        loadedPackage = new LoadedPackage();
+                                        packageMap.put(packageIndex, loadedPackage);
+                                    }
+                                    loadedPackage.crawledPackage = storable._getCrawledPackage();
+                                    if (restoreMap != null) {
+                                        restoreMap.put(storable._getCrawledPackage(), storable);
+                                    }
+                                } else {
+                                    throw new WTFException("restored a null CrawledPackageStorable");
                                 }
                             } else {
-                                throw new WTFException("restored a null CrawledPackageStorable");
+                                // extraInfo
+                                lcs = JSonStorage.getMapper().inputStreamToObject(entryInputStream, linkCollectorStorable);
                             }
-                        } else if ("extraInfo".equalsIgnoreCase(entry.getName())) {
-                            lcs = JSonStorage.getMapper().inputStreamToObject(entryInputStream, linkCollectorStorable);
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
@@ -2499,16 +2507,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     return null;
 
                 }
-                WarnLevel level = WarnLevel.LOW;
-
-                boolean byPassDialog2 = byPassDialog;
+                final WarnLevel level;
                 if (containsOnline) {
                     level = WarnLevel.NORMAL;
+                } else {
+                    level = WarnLevel.LOW;
                 }
-                if (!JDGui.bugme(level)) {
-                    byPassDialog2 = true;
+                final boolean finalByPassDialog;
+                if (RlyWarnLevel.HIGH.equals(CFG_GUI.CFG.getRlyWarnLevel())) {
+                    // Always warn me
+                    finalByPassDialog = false;
+                } else if (!JDGui.bugme(level)) {
+                    finalByPassDialog = true;
+                } else {
+                    finalByPassDialog = byPassDialog;
                 }
-                if (!byPassDialog2 && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
+                if (!finalByPassDialog && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
                     GenericResetLinkgrabberRlyDialog dialog = new GenericResetLinkgrabberRlyDialog(nodesToDelete, containsOnline, string, isCancelLinkcrawlerJobs, isClearFilteredLinks, isClearSearchFilter, isResetTableSorter);
                     try {
                         Dialog.getInstance().showDialog(dialog);

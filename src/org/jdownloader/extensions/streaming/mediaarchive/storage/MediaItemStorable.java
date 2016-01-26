@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.streaming.mediaarchive.storage;
 
-import jd.controlling.downloadcontroller.DownloadLinkStorable;
+import jd.plugins.DownloadLinkStorable;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;

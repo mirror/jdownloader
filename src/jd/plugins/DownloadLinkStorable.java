@@ -1,20 +1,17 @@
-package jd.controlling.downloadcontroller;
+package jd.plugins;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.crypt.JDCrypt;
-import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
-
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.plugins.FinalLinkState;
 
@@ -66,7 +63,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public void setName(String name) {
-        this.link.setName(name);
+        this.link.setNameUnsafe(name);
     }
 
     public Map<String, Object> getProperties() {
@@ -84,7 +81,11 @@ public class DownloadLinkStorable implements Storable {
         if (props == null || props.isEmpty()) {
             return;
         }
-        this.link.setProperties(props);
+        if (props instanceof HashMap) {
+            link.setPropertiesUnsafe((HashMap<String, Object>) props);
+        } else {
+            this.link.setProperties(props);
+        }
     }
 
     /**
@@ -100,7 +101,7 @@ public class DownloadLinkStorable implements Storable {
     public void setFinalLinkState(String state) {
         if (state != null) {
             try {
-                link.setFinalLinkState(FinalLinkState.valueOf(state));
+                link.setFinalLinkStateUnsafe(FinalLinkState.valueOf(state));
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
@@ -164,13 +165,13 @@ public class DownloadLinkStorable implements Storable {
 
     public void setURL(String url) {
         if (StringUtils.isEmpty(url)) {
-            link.setPluginPatternMatcher(null);
+            link.setPluginPatternMatcherUnsafe(null);
         } else if (url.startsWith(CRYPTED)) {
             final byte[] bytes = Base64.decodeFast(url.substring(CRYPTED.length()));
             final String url2 = JDCrypt.decrypt(bytes, KEY);
-            link.setPluginPatternMatcher(url2);
+            link.setPluginPatternMatcherUnsafe(url2);
         } else {
-            link.setPluginPatternMatcher(url);
+            link.setPluginPatternMatcherUnsafe(url);
         }
     }
 
@@ -252,7 +253,6 @@ public class DownloadLinkStorable implements Storable {
         default:
             return false;
         }
-
     }
 
     /**
@@ -279,7 +279,7 @@ public class DownloadLinkStorable implements Storable {
             final byte[] bytes = Base64.decodeFast(propertiesString.substring(CRYPTED.length()));
             final Map<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
             });
-            link.setProperties(properties);
+            setProperties(properties);
         }
     }
 }

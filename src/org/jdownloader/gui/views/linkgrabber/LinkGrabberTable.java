@@ -256,6 +256,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
                 loaderPanel.setVisible(false);
                 add(rendererPane);
+                revalidate();
                 repaint();
             }
         };

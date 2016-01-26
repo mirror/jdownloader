@@ -193,7 +193,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient List<HistoryEntry>                history                             = null;
 
     private transient Boolean                           partOfAnArchive                     = null;
-    public static final String                    RELATIVE_DOWNLOAD_FOLDER_PATH = "subfolderbyplugin";
+    public static final String                          RELATIVE_DOWNLOAD_FOLDER_PATH       = "subfolderbyplugin";
 
     public Boolean isPartOfAnArchive() {
         return partOfAnArchive;
@@ -1153,6 +1153,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
+    protected void setAvailableStatusUnsafe(final AvailableStatus availableStatus) {
+        if (availableStatus == null) {
+            this.availableStatus = AvailableStatus.UNCHECKED;
+        } else {
+            this.availableStatus = availableStatus;
+        }
+    }
+
     public long getLastAvailableStatusChange() {
         return lastAvailableStatusChange;
     }
@@ -1400,6 +1408,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return old;
     }
 
+    protected void setFinalLinkStateUnsafe(final FinalLinkState finalLinkState) {
+        this.finalLinkState = finalLinkState;
+    }
+
     public FinalLinkState getFinalLinkState() {
         return finalLinkState;
     }
@@ -1485,6 +1497,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (!StringUtils.equals(oldName, newName) && hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
         }
+    }
+
+    protected void setNameUnsafe(String name) {
+        this.name = name;
     }
 
     /**
@@ -1600,7 +1616,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             if (previousURLDownload != null && previousURLDownload.equals(pluginPattern)) {
                 return;
             }
-            this.urlDownload = new String(pluginPattern.trim());
+            this.urlDownload = pluginPattern;
         } else {
             this.urlDownload = null;
         }
@@ -1612,6 +1628,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             /* downloadURL changed, so set original one as linkID, so all dupemaps still work */
             setLinkID(previousURLDownload);
         }
+    }
+
+    protected void setPluginPatternMatcherUnsafe(final String pluginPattern) {
+        this.urlDownload = pluginPattern;
     }
 
     /**
