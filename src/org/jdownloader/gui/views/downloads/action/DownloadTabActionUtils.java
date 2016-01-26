@@ -17,6 +17,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.RlyWarnLevel;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.utils.JDFileUtils;
 
@@ -37,7 +38,6 @@ public class DownloadTabActionUtils {
                     new IconDialog(0, _GUI._.lit_ups_something_is_wrong(), _GUI._.DownloadController_deleteLinksRequest_nolinks(), NewTheme.I().getIcon("robot_sos", 256), null).show();
                     return null;
                 }
-                boolean byPassDialog2 = byPassDialog;
                 WarnLevel level = WarnLevel.LOW;
                 switch (mode) {
                 case REMOVE_LINKS_AND_DELETE_FILES:
@@ -62,10 +62,16 @@ public class DownloadTabActionUtils {
                     }
                     break;
                 }
-                if (!JDGui.bugme(level)) {
-                    byPassDialog2 = true;
+                final boolean finalByPassDialog;
+                if (RlyWarnLevel.HIGH.equals(CFG_GUI.CFG.getRlyWarnLevel())) {
+                    // Always warn me
+                    finalByPassDialog = false;
+                } else if (!JDGui.bugme(level)) {
+                    finalByPassDialog = true;
+                } else {
+                    finalByPassDialog = byPassDialog;
                 }
-                if (!byPassDialog2 && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
+                if (!finalByPassDialog && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
                     final ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI._.DeleteSelectionAction_actionPerformed_affected2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), DownloadController.getInstance().getChildrenCount() - agg.getTotalCount(), agg.getLocalFileCount()), agg.getBytesLoaded());
                     dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
                     dialog.setMode(mode);

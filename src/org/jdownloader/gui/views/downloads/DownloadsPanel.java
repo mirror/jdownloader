@@ -33,7 +33,6 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.download.DownloadControllerListener;
@@ -206,14 +205,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     protected void runInEDT() {
                         removeAll();
                         layoutComponents(true);
-                        new EDTHelper<Void>() {
-
-                            @Override
-                            public Void edtRun() {
-                                tableModel.recreateModel(false);
-                                return null;
-                            }
-                        }.start(true);
+                        revalidate();
 
                     }
                 };
@@ -228,6 +220,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     protected void runInEDT() {
                         removeAll();
                         layoutComponents(false);
+                        revalidate();
                     }
                 };
             }
