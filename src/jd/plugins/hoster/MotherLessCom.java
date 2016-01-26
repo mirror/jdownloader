@@ -47,7 +47,7 @@ public class MotherLessCom extends PluginForHost {
     public static final String html_OFFLINE                = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
     public static final String html_notOnlineYet           = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
     public static final String ua                          = RandomUserAgent.generate();
-    private String             DLLINK                      = null;
+    private String             dllink                      = null;
 
     @SuppressWarnings("deprecation")
     public MotherLessCom(PluginWrapper wrapper) {
@@ -101,12 +101,12 @@ public class MotherLessCom extends PluginForHost {
             }
             title = getUploadTitle();
             getVideoLink();
-            if (DLLINK == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             betterName = new Regex(parameter.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             if (betterName != null) {
-                String ext = new Regex(DLLINK, "\\.(flv|mp4)").getMatch(-1);
+                String ext = new Regex(dllink, "\\.(flv|mp4)").getMatch(-1);
                 if (ext != null) {
                     betterName += ext;
                 }
@@ -120,25 +120,25 @@ public class MotherLessCom extends PluginForHost {
             }
             title = getUploadTitle();
             getPictureLink();
-            logger.info("DLLINK: " + DLLINK);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("fileurl = \'(http://.*?)\'").getMatch(0);
+            logger.info("dllink: " + dllink);
+            if (dllink == null) {
+                dllink = br.getRegex("fileurl = \'(http://.*?)\'").getMatch(0);
             }
             // No link there but link to the full picture -> Offline
-            if (DLLINK == null && br.containsHTML("<div id=\"media-media\">[\t\n\r ]+<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) {
+            if (dllink == null && br.containsHTML("<div id=\"media-media\">[\t\n\r ]+<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (DLLINK == null) {
+            } else if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (DLLINK == null) {
-            DLLINK = parameter.getDownloadURL();
+        if (dllink == null) {
+            dllink = parameter.getDownloadURL();
         }
         URLConnectionAdapter con = null;
         try {
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept-Encoding", "identity");
-            con = openConnection(brc, DLLINK);
+            con = openConnection(brc, dllink);
             if (con.getContentType().contains("html")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -191,9 +191,9 @@ public class MotherLessCom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "identity");
         if ("video".equals(link.getStringProperty("dltype"))) {
             br.getHeaders().put("Referer", "http://motherless.com/scripts/jwplayer.flash.swf");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         } else if ("image".equals(link.getStringProperty("dltype"))) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         } else {
             logger.warning("Unnknown case for link: " + link.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -245,17 +245,17 @@ public class MotherLessCom extends PluginForHost {
     }
 
     private void getPictureLink() {
-        DLLINK = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
-                    if (DLLINK == null) {
-                        DLLINK = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
-                        if (DLLINK == null) {
-                            DLLINK = br.getRegex("\"(https?://[\\w\\-\\.]*images\\.motherlessmedia\\.com/images/[a-zA-Z0-9]+\\..{3,4}(?:\\?fs=opencloud)?)\"").getMatch(0);
+        dllink = br.getRegex("\"(https?://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("full_sized\\.jpg\" (.*?)\"(https?://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
+            if (dllink == null) {
+                dllink = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(https?://.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!https?://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("\"(https?://[\\w\\-\\.]*images\\.motherlessmedia\\.com/images/[a-zA-Z0-9]+\\..{3,4}(?:\\?fs=opencloud)?)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br.getRegex("\"(https?://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
                         }
                     }
                 }
@@ -264,15 +264,15 @@ public class MotherLessCom extends PluginForHost {
     }
 
     private void getVideoLink() {
-        DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.(flv|mp4))\\'\\)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = JSonUtils.getJson(br, "file");
+        dllink = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.(flv|mp4))\\'\\)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
+            if (dllink == null) {
+                dllink = JSonUtils.getJson(br, "file");
             }
         }
-        if (DLLINK != null && !DLLINK.contains("?start=0")) {
-            // DLLINK += "?start=0";
+        if (dllink != null && !dllink.contains("?start=0")) {
+            // dllink += "?start=0";
         }
     }
 
@@ -321,7 +321,7 @@ public class MotherLessCom extends PluginForHost {
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
         URLConnectionAdapter con;
-        if (isJDStable()) {
+        if (true || isJDStable()) {
             con = br.openGetConnection(directlink);
         } else {
             con = br.openHeadConnection(directlink);
