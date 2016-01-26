@@ -46,6 +46,7 @@ import javax.swing.JWindow;
 
 import jd.controlling.AccountController;
 import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
@@ -1014,6 +1015,13 @@ public class SecondLevelLaunch {
                                     }
                                 });
                             }
+                            SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    DelayWriteController.getInstance().init();
+                                }
+                            });
                         } catch (Throwable e) {
                             SecondLevelLaunch.LOG.log(e);
                             if (Application.isHeadless()) {
