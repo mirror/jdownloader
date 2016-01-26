@@ -23,8 +23,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +43,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvid.sx", "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(bitvid\\.sx|videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-xjahyasbs" }, flags = { 2, 0 })
 public class VideoWeedCom extends PluginForHost {
 
@@ -61,9 +61,10 @@ public class VideoWeedCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("videoweed.com".equals(getHost()) || "videoweed.es".equals(getHost())) {
-            if (host == null || "videoweed.com".equals(getHost()) || "videoweed.es".equals(getHost())) {
-                return "bitvid.sx";
+        final String currentHost = getHost();
+        if ("videoweed.com".equals(currentHost) || "videoweed.es".equals(currentHost)) {
+            if (host == null || "videoweed.com".equals(host) || "videoweed.es".equals(host)) {
+                return DOMAIN;
             }
         }
         return super.rewriteHost(host);
@@ -75,7 +76,7 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
-    private static final String DOMAIN = "bitvid.sx";
+    private final String DOMAIN = "bitvid.sx";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
