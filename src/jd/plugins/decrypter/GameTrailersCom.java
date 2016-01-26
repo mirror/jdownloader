@@ -28,8 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://(www\\.)?gametrailers\\.com/((video|user\\-movie)/[\\w\\-]+/\\d+|(full\\-episodes|videos|reviews)/\\w+/[\\w\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://(www\\.)?gametrailers\\.com/((video|user\\-movie)/[\\w\\-]+/\\d+|(full\\-episodes|reviews)/\\w+/[\\w\\-]+|videos/view/[\\w\\-]+/\\d+)" }, flags = { 0 })
 public class GameTrailersCom extends PluginForDecrypt {
 
     private static String ua = RandomUserAgent.generate();
@@ -50,7 +51,9 @@ public class GameTrailersCom extends PluginForDecrypt {
         String videoTitle = null;
         final String title1 = br.getRegex("<h1><a href=\"http://[^<>\"]*?\">([^<>\"/]*?)</a></h1>").getMatch(0);
         String title2 = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"/>").getMatch(0);
-        if (title2 == null) title2 = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (title2 == null) {
+            title2 = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        }
         if (title1 != null && title1 != null) {
             videoTitle = Encoding.htmlDecode(title1.trim()) + " - " + Encoding.htmlDecode(title2.trim());
         } else {
@@ -60,8 +63,26 @@ public class GameTrailersCom extends PluginForDecrypt {
             }
         }
 
-        String contentId = br.getRegex("data\\-contentId=(\'|\")([^\'\"]+)").getMatch(1);
-        if (contentId == null) return decryptedLinks;
+        String contentId = br.getRegex("data-contentId=(\'|\")([^\'\"]+)").getMatch(1);
+        if (contentId == null) {
+            // new support raztoki20160126
+            final String iframe = br.getRegex("<iframe[^>]* src=('|\")(.*?gametrailers\\.com/embed/.*?)\\1").getMatch(1);
+            if (iframe == null) {
+                return null;
+            }
+            br.getPage(iframe);
+            videoTitle = PluginJSonUtils.getJson(br, "contentName");
+            contentId = PluginJSonUtils.getJson(br, "contentId");
+            final String videoURI = PluginJSonUtils.getJson(br, "videoUri");
+            if (videoTitle != null && contentId != null && videoURI != null) {
+                final DownloadLink dl = createDownloadlink(videoURI);
+                dl.setFinalFileName(getVideoTitle(videoTitle));
+                dl.setProperty("CONTENTID", br.getURL());
+                dl.setProperty("GRABBEDTIME", System.currentTimeMillis());
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+        }
         String[] dlButton = br.getRegex("<div class=\"download_button\" data\\-video=\"(.*?)\" data\\-token=\"([^\"]+)").getRow(0);
         Browser br2 = br.cloneBrowser();
         /* episodes */
@@ -69,7 +90,9 @@ public class GameTrailersCom extends PluginForDecrypt {
             br2.getPage("/feeds/mrss?uri=" + Encoding.urlEncode(contentId));
             String[] contentIds = br2.getRegex("<guid isPermaLink=\"(true|false)\">(.*?)</guid>").getColumn(1);
             String episodesTitle = br2.getRegex("<media:title><\\!\\[CDATA\\[(.*?)\\]\\]></media:title>").getMatch(0);
-            if (contentIds == null || contentIds.length == 0) return decryptedLinks;
+            if (contentIds == null || contentIds.length == 0) {
+                return decryptedLinks;
+            }
             int i = 1;
             for (String cId : contentIds) {
                 String link = null;
@@ -81,7 +104,9 @@ public class GameTrailersCom extends PluginForDecrypt {
                     br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(cId) + "&forceProgressive=true");
                     link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
                 }
-                if (link == null) continue;
+                if (link == null) {
+                    continue;
+                }
 
                 DownloadLink dl = createDownloadlink(link.replace("\\", ""));
                 dl.setFinalFileName(getVideoTitle(episodesTitle + (contentIds.length > 1 ? "_Part" + i++ : "")));
@@ -104,7 +129,9 @@ public class GameTrailersCom extends PluginForDecrypt {
                 br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(contentId) + "&forceProgressive=true");
                 link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
             }
-            if (link == null) return decryptedLinks;
+            if (link == null) {
+                return decryptedLinks;
+            }
 
             DownloadLink dl = createDownloadlink(link.replace("\\", ""));
             dl.setFinalFileName(getVideoTitle(videoTitle));
@@ -121,7 +148,9 @@ public class GameTrailersCom extends PluginForDecrypt {
     }
 
     private String getVideoTitle(String s) {
-        if (s == null) s = "UnknownTitle";
+        if (s == null) {
+            s = "UnknownTitle";
+        }
         s = s.replace("._Part", "_Part");
         String ext = br.getRegex("type=\"video/([0-9a-zA-Z]{3,5})\"").getMatch(0);
         ext = ext != null ? ext : "mp4";

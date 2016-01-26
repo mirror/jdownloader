@@ -25,6 +25,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[0-9a-z\\.]+\\.mtvnservices\\.com/.*?\\?__gda__=\\d+_[0-9a-f]+" }, flags = { 0 })
 public class GameTrailersCom extends PluginForHost {
@@ -53,11 +54,21 @@ public class GameTrailersCom extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                br.getPage(downloadLink.getStringProperty("CONTENTID", "http://www.gametrailers.com"));
+                final String page = downloadLink.getStringProperty("CONTENTID", null);
+                if (page == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(page);
                 dllink = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("\"url\":\"([^\"]+)").getMatch(0);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                downloadLink.setUrlDownload(dllink.replace("\\", ""));
+                if (dllink == null) {
+                    dllink = PluginJSonUtils.getJson(br, "url");
+                    if (dllink == null) {
+                        dllink = PluginJSonUtils.getJson(br, "videoUri");
+                        if (dllink == null) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                    }
+                }
                 try {
                     br2.openGetConnection(downloadLink.getDownloadURL());
                     if (!con.getContentType().contains("html")) {
@@ -72,13 +83,16 @@ public class GameTrailersCom extends PluginForHost {
                     }
                 }
             }
-        } finally {
+        } finally
+
+        {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
         return AvailableStatus.TRUE;
+
     }
 
     @Override
@@ -86,7 +100,9 @@ public class GameTrailersCom extends PluginForHost {
         long gt = (Long) downloadLink.getProperty("GRABBEDTIME", -1l);
         if (gt > 0) {
             /* Expiration date has not been verified */
-            if (System.currentTimeMillis() - gt >= 24 * 60 * 60 * 1000) requestFileInformation(downloadLink);
+            if (System.currentTimeMillis() - gt >= 24 * 60 * 60 * 1000) {
+                requestFileInformation(downloadLink);
+            }
         }
         String linkurl = downloadLink.getDownloadURL();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
