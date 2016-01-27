@@ -140,17 +140,20 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             }
                         }
                     } catch (Throwable throwable) {
-                        connectThread.log(throwable);
-                        e = throwable;
-                        if (proxy != null && !proxy.isNone() && throwable instanceof HTTPProxyException) {
-                            ProxyController.getInstance().reportHTTPProxyException(proxy, url, (IOException) throwable);
-                        }
                         try {
-                            if (connectionSocket != null) {
-                                connectionSocket.close();
-                                connectionSocket = null;
+                            connectThread.log(throwable);
+                            e = throwable;
+                            if (proxy != null && !proxy.isNone() && throwable instanceof HTTPProxyException) {
+                                ProxyController.getInstance().reportHTTPProxyException(proxy, url, (IOException) throwable);
                             }
-                        } catch (final Throwable ignore) {
+                        } finally {
+                            try {
+                                if (connectionSocket != null) {
+                                    connectionSocket.close();
+                                    connectionSocket = null;
+                                }
+                            } catch (final Throwable ignore) {
+                            }
                         }
                     }
                     MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, connectionStatus, connectionSocket, e);
