@@ -123,7 +123,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         RemoteAPIController.validateInterfaces(DownloadControllerEventPublisherInterface.class, DownloadsEventsInterface.class);
         this.eventsAPI = eventsapi;
         eventsapi.getLocalEventSender().addListener(this);
-
     }
 
     @Override
@@ -471,7 +470,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     private void fire(String eventID, Object dls, String collapseKey) {
         synchronized (this) {
-
             ArrayList<Subscriber> subscribers = eventsAPI.getSubscribers();
             final SimpleEventObject eventObject = new SimpleEventObject(this, eventID, dls, collapseKey);
             RemoteAPIController.getInstance().getEventSender().fireEvent(new RemoteAPIInternalEvent() {
@@ -483,11 +481,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
             });
             for (Subscriber subscriber : subscribers) {
-
                 pushToBuffer(subscriber, eventObject);
-
             }
-
         }
     }
 

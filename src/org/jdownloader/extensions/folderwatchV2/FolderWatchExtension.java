@@ -288,7 +288,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     entryDelimiter.clear();
                     continue parserLoop;
                 }
-                final String key = line.substring(0, i);
+                final String key = line.substring(0, i).trim();
                 if (StringUtils.equalsIgnoreCase(key, "resttext")) {
                     /* special key, all lines (including current one) will go to CrawlJobStorable.setText */
                     restText = new StringBuilder();

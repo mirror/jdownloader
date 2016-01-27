@@ -83,7 +83,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
         getService().setSolver(this);
         logger = LogController.getInstance().getLogger(CaptchaMyJDSolver.class.getName());
         config = JsonConfig.create(CaptchaMyJDSolverConfig.class);
-
         lastChallenge = new ArrayList<Request>();
     }
 

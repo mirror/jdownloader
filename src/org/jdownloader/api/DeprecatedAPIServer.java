@@ -6,12 +6,10 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -64,11 +62,7 @@ import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.crypto.tls.TlsServerProtocol;
 import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.jce.provider.X509CertParser;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.jdownloader.container.NZB;
 import org.jdownloader.logging.LogController;
 
 public class DeprecatedAPIServer extends HttpServer {
@@ -97,10 +91,10 @@ public class DeprecatedAPIServer extends HttpServer {
         private final Certificate            cert;
         private final String[]               subjects;
 
-        protected APICert(final AsymmetricKeyParameter asymKeyParam, final Certificate cert, final String[] subjects) {
-            this.asymKeyParam = asymKeyParam;
-            this.cert = cert;
-            this.subjects = subjects;
+        protected APICert() {
+            this.asymKeyParam = null;
+            this.cert = null;
+            this.subjects = null;
             this.x509 = null;
             this.keyPair = null;
         }
@@ -194,46 +188,6 @@ public class DeprecatedAPIServer extends HttpServer {
     private static final File                     APICERTSFILE       = Application.getTempResource("myjd.certs");
     private static final AtomicBoolean            APICERTSFILELOADED = new AtomicBoolean(false);
 
-    private static APICert initMyDNSCert() throws Exception {
-        InputStream crtInputStream = null;
-        InputStream keyInputStream = null;
-        try {
-            final URL crtURL = NZB.class.getResource("mydns.crt");
-            final URL keyURL = NZB.class.getResource("mydns.key");
-            if (crtURL != null && keyURL != null) {
-                crtInputStream = crtURL.openStream();
-                final X509CertParser certParser = new X509CertParser();
-                certParser.engineInit(crtInputStream);
-                org.bouncycastle.jce.provider.X509CertificateObject x509 = (org.bouncycastle.jce.provider.X509CertificateObject) certParser.engineRead();
-                keyInputStream = keyURL.openStream();
-                final PemReader pemReader = new PemReader(new InputStreamReader(keyInputStream));
-                final PemObject pemObject = pemReader.readPemObject();
-                pemReader.close();
-                final PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(pemObject.getContent());
-                final Certificate cert = new Certificate(new org.bouncycastle.asn1.x509.Certificate[] { org.bouncycastle.asn1.x509.Certificate.getInstance(x509.getEncoded()) });
-                final KeyFactory factory = KeyFactory.getInstance("RSA");
-                final PrivateKey privateKey = factory.generatePrivate(privKeySpec);
-                final AsymmetricKeyParameter asymKeyParam = PrivateKeyFactory.createKey(privateKey.getEncoded());
-                return new APICert(asymKeyParam, cert, new String[] { "*.mydns.jdownloader.org" });
-            } else {
-                return null;
-            }
-        } finally {
-            if (crtInputStream != null) {
-                try {
-                    crtInputStream.close();
-                } catch (IOException ignore) {
-                }
-            }
-            if (keyInputStream != null) {
-                try {
-                    keyInputStream.close();
-                } catch (IOException ignore) {
-                }
-            }
-        }
-    }
-
     protected static final APICert getAPICert(final String serverName) throws NoSuchAlgorithmException, CertificateEncodingException, InvalidKeyException, IllegalStateException, SignatureException, IOException {
         final String name;
         if (serverName != null) {
@@ -258,8 +212,10 @@ public class DeprecatedAPIServer extends HttpServer {
                                     final APICert apiCert = new APICert(certStorable);
                                     final String[] subjects = apiCert.getSubjects();
                                     if (subjects != null) {
-                                        for (String subject : subjects) {
-                                            APICERTS.put(subject, apiCert);
+                                        for (final String subject : subjects) {
+                                            if (!APICERTS.containsKey(subject)) {
+                                                APICERTS.put(subject, apiCert);
+                                            }
                                         }
                                     }
                                 } catch (final Throwable e) {
@@ -270,27 +226,17 @@ public class DeprecatedAPIServer extends HttpServer {
                     } catch (final Throwable e) {
                         LogController.CL(DeprecatedAPIServer.class).log(e);
                     }
-                    try {
-                        final APICert mydnsCert = initMyDNSCert();
-                        final String[] subjects = mydnsCert.getSubjects();
-                        if (subjects != null) {
-                            for (String subject : subjects) {
-                                APICERTS.put(subject, mydnsCert);
-                            }
-                        }
-                    } catch (final Throwable e) {
-                    }
                 }
             }
             APICert apiCert = APICERTS.get(name);
             if (apiCert == null) {
                 final long currentTimeMillis = System.currentTimeMillis();
                 final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-                keyPairGenerator.initialize(1024, new SecureRandom());
+                keyPairGenerator.initialize(2048, new SecureRandom());
                 final KeyPair keyPair = keyPairGenerator.genKeyPair();
                 final X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
                 certGen.setSerialNumber(BigInteger.valueOf(currentTimeMillis));
-                final X500Principal dnName = new X500Principal("CN=Certificate for local JDownloader");
+                final X500Principal dnName = new X500Principal("CN=Self signed certificate for local JDownloader@" + System.getProperty("user.name", "User"));
                 certGen.setIssuerDN(dnName);
                 certGen.setSubjectDN(dnName); // note: same as issuer
                 certGen.setNotBefore(new Date(currentTimeMillis - (2 * 24 * 60 * 60 * 1000l)));
@@ -299,11 +245,7 @@ public class DeprecatedAPIServer extends HttpServer {
                 certGen.setSignatureAlgorithm("SHA1withRSA");
                 final ASN1EncodableVector alternativeNames = new ASN1EncodableVector();
                 final String[] subjects;
-                if ("localhost".equalsIgnoreCase(name) || "127.0.0.1".equalsIgnoreCase(name)) {
-                    alternativeNames.add(new GeneralName(GeneralName.dNSName, "localhost"));
-                    alternativeNames.add(new GeneralName(GeneralName.iPAddress, "127.0.0.1"));
-                    subjects = new String[] { "localhost", "127.0.0.1" };
-                } else if (name.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
+                if (name.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
                     alternativeNames.add(new GeneralName(GeneralName.iPAddress, name));
                     subjects = new String[] { name };
                 } else {
@@ -313,7 +255,6 @@ public class DeprecatedAPIServer extends HttpServer {
                 certGen.addExtension(X509Extensions.SubjectAlternativeName, false, new DERSequence(alternativeNames));
                 final X509Certificate cert = certGen.generate(keyPair.getPrivate());
                 apiCert = new APICert(keyPair, cert, subjects);
-                // save apiCerts
                 for (final String subject : subjects) {
                     APICERTS.put(subject, apiCert);
                 }
@@ -374,7 +315,8 @@ public class DeprecatedAPIServer extends HttpServer {
                 final TlsServerProtocol tlsServerProtocol = new TlsServerProtocol(clientSocketIS, clientSocket.getOutputStream(), new SecureRandom());
                 tlsServerProtocol.accept(new DefaultTlsServer() {
 
-                    private APICert apiCert = null;
+                    private Certificate            cert     = null;
+                    private AsymmetricKeyParameter keyParam = null;
 
                     @Override
                     public void notifySecureRenegotiation(boolean arg0) throws IOException {
@@ -410,7 +352,9 @@ public class DeprecatedAPIServer extends HttpServer {
                         }
                         super.processClientExtensions(arg0);
                         try {
-                            apiCert = getAPICert(serverName);
+                            APICert apiCert = getAPICert(serverName);
+                            cert = apiCert.getCert();
+                            keyParam = apiCert.getAsymKeyParam();
                         } catch (Throwable e) {
                             LogController.CL(DeprecatedAPIServer.class).log(e);
                             throw new IOException(e);
@@ -420,7 +364,7 @@ public class DeprecatedAPIServer extends HttpServer {
                     protected TlsSignerCredentials getRSASignerCredentials() throws IOException {
                         // SignatureAndHashAlgorithm needed for TLS1.2
                         final SignatureAndHashAlgorithm signatureAndHashAlgorithm = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
-                        return new DefaultTlsSignerCredentials(context, apiCert.getCert(), apiCert.getAsymKeyParam(), signatureAndHashAlgorithm);
+                        return new DefaultTlsSignerCredentials(context, cert, keyParam, signatureAndHashAlgorithm);
                     }
 
                     protected org.bouncycastle.crypto.tls.ProtocolVersion getMaximumVersion() {

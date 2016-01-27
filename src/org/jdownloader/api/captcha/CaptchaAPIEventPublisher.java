@@ -18,8 +18,8 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
         // SOLVER_END
     }
 
-    private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
-    private final String[]                    eventIDs;
+    private final CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
+    private final String[]                                   eventIDs;
 
     /**
      * access this publisher view CaptchaAPISolver.getInstance().getEventPublisher
@@ -38,55 +38,32 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
         return "captchas";
     }
 
-    // public void onNewJobAnswer(SolverJob<?> job) {
-    // EventObject eventObject = new SimpleEventObject(this, EVENTID.NEW_ANSWER.name(), job.getChallenge().getId().getID());
-    // for (EventsSender eventSender : eventSenders) {
-    // eventSender.publishEvent(eventObject, null);
-    // }
-    // }
-
     public void fireJobDoneEvent(SolverJob<?> job) {
-        EventObject eventObject = new SimpleEventObject(this, EVENTID.DONE.name(), job.getChallenge().getId().getID());
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
+        if (eventSenders.size() > 0) {
+            final EventObject eventObject = new SimpleEventObject(this, EVENTID.DONE.name(), job.getChallenge().getId().getID());
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
         }
     }
 
     public void fireNewJobEvent(SolverJob<?> job) {
-
-        EventObject eventObject = new SimpleEventObject(this, EVENTID.NEW.name(), job.getChallenge().getId().getID());
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
+        if (eventSenders.size() > 0) {
+            final EventObject eventObject = new SimpleEventObject(this, EVENTID.NEW.name(), job.getChallenge().getId().getID());
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
         }
     }
 
-    // @Override
-    // public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
-    // EventObject eventObject = new SimpleEventObject(this, EVENTID.SOLVER_START.name(), job.getChallenge().getId().getID());
-    // for (EventsSender eventSender : eventSenders) {
-    // eventSender.publishEvent(eventObject, null);
-    // }
-    // }
-    //
-    // @Override
-    // public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
-    // EventObject eventObject = new SimpleEventObject(this, EVENTID.SOLVER_END.name(), job.getChallenge().getId().getID());
-    // for (EventsSender eventSender : eventSenders) {
-    // eventSender.publishEvent(eventObject, null);
-    // }
-    // }
-
     @Override
     public synchronized void register(RemoteAPIEventsSender eventsAPI) {
-        boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
-
     }
 
     @Override
     public synchronized void unregister(RemoteAPIEventsSender eventsAPI) {
         eventSenders.remove(eventsAPI);
-
     }
 
 }
