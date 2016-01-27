@@ -97,13 +97,7 @@ public class DiscoveryCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                if (isJDStable()) {
-                    /* @since JD2 */
                     con = br.openHeadConnection(DLLINK);
-                } else {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
-                }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -119,10 +113,6 @@ public class DiscoveryCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -52,8 +53,7 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
     /* Broken flv urls of source: http://discidevflash-f.akamaihd.net//digmed/dp/2015-04/10/879577/145609.002.01.001.flv */
     /*
      * Working HLS:
-     * http://discidevflash-f.akamaihd.net/i/digmed/dp/2015-04/10/879577/145609.002.01.001-,110k,200k,400k,600k,800k,1500k,3500k
-     * ,.mp4.csmil/master.m3u8
+     * http://discidevflash-f.akamaihd.net/i/digmed/dp/2015-04/10/879577/145609.002.01.001-,110k,200k,400k,600k,800k,1500k,3500k,.mp4.csmil/master.m3u8
      */
     /*
      * Working http: http://discsmil.edgesuite.net/digmed/dp/2015-04/10/879577/145609.002.01.001-110k.mp4
@@ -178,13 +178,9 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
                             logger.info("currentBITRATE:" + bitrate);
                         }
                         final String filenamepart_two = filenamepart + "_" + getFormatString(formats.get(bitrate));
-                        try {
-                            dl.setContentUrl(parameter);
-                            if (description != null) {
-                                dl.setComment(description);
-                            }
-                        } catch (final Throwable e) {
-                            /* Not available in old 0.9.581 Stable */
+                        dl.setContentUrl(parameter);
+                        if (description != null) {
+                            dl.setComment(description);
                         }
                         dl._setFilePackage(fp);
                         dl.setProperty("bitrate", bitrate);
@@ -226,18 +222,14 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
                 final String filenamepart = show + " - " + entryname;
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(filenamepart);
-                final String[] urls = br.getRegex("(http://discsmil\\.edgesuite\\.net/digmed/dsc/\\d+/[A-Za-z0-9\\-_\\.]+\\-\\d+k\\.mp4)").getColumn(0);
+                final String[] urls = br.getRegex("(http://discsmil\\.edgesuite\\.net/digmed/\\w+/(?:[\\d\\-]+/){1,}[A-Za-z0-9\\-_\\.]+\\-\\d+k\\.mp4)").getColumn(0);
                 for (final String dllink : urls) {
                     final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                     bitrate = new Regex(dllink, "(\\d+k)\\.mp4$").getMatch(0);
                     final String filenamepart_two = filenamepart + "_" + getFormatString(formats.get(bitrate));
-                    try {
-                        dl.setContentUrl(parameter);
-                        if (description != null) {
-                            dl.setComment(description);
-                        }
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
+                    dl.setContentUrl(parameter);
+                    if (description != null) {
+                        dl.setComment(description);
                     }
                     dl._setFilePackage(fp);
                     dl.setProperty("bitrate", bitrate);
@@ -292,17 +284,13 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
         return formatString;
     }
 
-    private void getAMFRequest(final Browser amf, final byte[] b, String s) {
+    private void getAMFRequest(final Browser amf, final byte[] b, String s) throws IOException {
         amf.getHeaders().put("Content-Type", "application/x-amf");
-        try {
-            amf.setKeepResponseContentBytes(true);
-            PostRequest request = (PostRequest) amf.createPostRequest("http://c.brightcove.com/services/messagebroker/amf?playerKey=" + s, (String) null);
-            request.setPostBytes(b);
-            amf.openRequestConnection(request);
-            amf.loadConnection(null);
-        } catch (Throwable e) {
-            /* does not exist in 09581 */
-        }
+        amf.setKeepResponseContentBytes(true);
+        PostRequest request = amf.createPostRequest("http://c.brightcove.com/services/messagebroker/amf?playerKey=" + s, (String) null);
+        request.setPostBytes(b);
+        amf.openRequestConnection(request);
+        amf.loadConnection(null);
     }
 
     private byte[] createAMFMessage(String... s) {
@@ -373,7 +361,7 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private static boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
