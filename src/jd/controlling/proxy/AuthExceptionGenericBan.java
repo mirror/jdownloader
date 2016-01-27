@@ -3,10 +3,11 @@ package jd.controlling.proxy;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 
-import jd.plugins.Plugin;
-
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
+
+import jd.plugins.Plugin;
 
 public class AuthExceptionGenericBan extends AbstractBan {
 
@@ -42,6 +43,9 @@ public class AuthExceptionGenericBan extends AbstractBan {
     @Override
     public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         HTTPProxy proxy = getProxy();
+        if ("api.jdownloader.org".equals(this.url.getHost())) {
+            return proxy != null && proxy.equals(orgReference) && StringUtils.equals(url.toString(), this.url.toString());
+        }
         return proxy != null && proxy.equals(orgReference);
     }
 
