@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/)[^/]+/[^/]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/|resource/)[^/]+/[^/]+/" }, flags = { 0 })
 public class PinterestComDecrypter extends PluginForDecrypt {
 
     public PinterestComDecrypter(PluginWrapper wrapper) {
@@ -66,7 +66,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Sometimes html can be very big */
-        br.setLoadLimit(br.getLoadLimit() * 3);
+        br.setLoadLimit(br.getLoadLimit() * 4);
         final boolean loggedIN = getUserLogin(false);
         String fpName = null;
         br.getPage(parameter);
@@ -105,7 +105,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             /* First, get the first 25 pictures from their site. */
             // decryptSite();
             final String board_id = br.getRegex("\"board_id\":[\t\n\r ]+\"(\\d+)\"").getMatch(0);
-            String nextbookmark = br.getRegex("\"bookmarks\": \\[\"([^<>\"]{5,})\"").getMatch(0);
+            String nextbookmark = br.getRegex("\"bookmarks\": \\[\"((?!-end-)[^<>\"]+)\"").getMatch(0);
             final String source_url = new Regex(parameter, "pinterest\\.com(/.+)").getMatch(0);
             if (board_id == null || nextbookmark == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -121,7 +121,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
                     if ((!loggedIN && json_source == null) || !decryptedLinks.isEmpty()) {
                         /* Not logged in ? Sometimes needed json is already given in html code! */
-                        String getpage = "https://www.pinterest.com/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22add_pin_rep_with_place%22%3Afalse%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22page_size%22%3A25%2C%22add_vase%22%3Atrue%2C%22access%22%3A%5B%5D%2C%22board_layout%22%3A%22default%22%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22prepend%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                        String getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22add_pin_rep_with_place%22%3Afalse%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22page_size%22%3A1000%2C%22add_vase%22%3Atrue%2C%22access%22%3A%5B%5D%2C%22board_layout%22%3A%22default%22%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22prepend%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                         // referrer should always be of the first request!
                         final Browser ajax = br.cloneBrowser();
                         ajax.getPage(getpage);
