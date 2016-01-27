@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
@@ -51,6 +50,7 @@ import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
+@SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.+|l\\.facebook\\.com/l/[^/]+/.+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
@@ -97,9 +97,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private static final String     CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                  parameter                       = null;
-    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;
+    private boolean                 fastLinkcheckPictures           = true;                                                                                                                 // jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;
     private boolean                 logged_in                       = false;
     private ArrayList<DownloadLink> decryptedLinks                  = null;
+    private LinkedHashSet<String>   dupe                            = null;
+
     private boolean                 debug                           = false;
 
     /*
@@ -116,8 +118,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
         br = new Browser();
         fp = null;
         decryptedLinks = new ArrayList<DownloadLink>();
+        dupe = new LinkedHashSet<String>();
 
-        this.br.setAllowedResponseCodes(400);
+        br.setAllowedResponseCodes(400);
+        br.setLoadLimit(br.getLoadLimit() * 4);
 
         parameter = param.toString().replace("#!/", "");
         fastLinkcheckPictures = getPluginConfig().getBooleanProperty(jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES, jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT);
@@ -334,8 +338,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         fp.setName(fpName);
         boolean dynamicLoadAlreadyDecrypted = false;
         String lastfirstID = "";
-
-        final HashSet<String> dupe = new HashSet<String>();
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
             int currentMaxPicCount = 20;
@@ -686,23 +688,24 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 }
                 final String urlload;
                 final String data;
+                final int fetchSize = 1000;
                 if (this.parameter.matches(TYPE_SET_LINK_PHOTO)) {
                     if (collection_token != null) {
-                        data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"tab_key\":\"media_set\",\"set\":\"" + setid + "\",\"type\":\"" + set_type + "\",\"sk\":\"photos\",\"overview\":false,\"active_collection\":" + activecollection + ",\"collection_token\":\"" + collection_token + "\",\"cursor\":0,\"tab_id\":\"u_0_u\",\"order\":null,\"importer_state\":null}";
+                        data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":" + fetchSize + ",\"profile_id\":" + profileID + ",\"tab_key\":\"media_set\",\"set\":\"" + setid + "\",\"type\":\"" + set_type + "\",\"sk\":\"photos\",\"overview\":false,\"active_collection\":" + activecollection + ",\"collection_token\":\"" + collection_token + "\",\"cursor\":0,\"tab_id\":\"u_0_u\",\"order\":null,\"importer_state\":null}";
                     } else {
-                        data = "{\"scroll_load\":true,\"last_fbid\":\"" + currentLastFbid + "\",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"viewmode\":null,\"set\":\"" + setid + "\",\"type\":\"" + set_type + "\"}";
+                        data = "{\"scroll_load\":true,\"last_fbid\":\"" + currentLastFbid + "\",\"fetch_size\":" + fetchSize + ",\"profile_id\":" + profileID + ",\"viewmode\":null,\"set\":\"" + setid + "\",\"type\":\"" + set_type + "\"}";
                     }
                     urlload = "/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?__pc=EXP1%3ADEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
                 } else if (this.parameter.matches(TYPE_SET_LINK_VIDEO)) {
-                    data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"viewmode\":null,\"profile_id\":" + profileID + ",\"set\":\"" + setid + "\",\"type\":2}";
+                    data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":" + fetchSize + ",\"viewmode\":null,\"profile_id\":" + profileID + ",\"set\":\"" + setid + "\",\"type\":2}";
                     urlload = "/ajax/pagelet/generic.php/TimelinePhotoSetPagelet?__pc=EXP1:DEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
                 } else if (this.parameter.matches(TYPE_PHOTOS_STREAM_LINK)) {
                     if (tab != null) {
                         /* E.g. https://www.facebook.com/JenniLee.Official/photos_stream?tab=photos */
-                        data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"is_medley_view\":true,\"" + tab + "\":\"photos\",\"is_page_new_view\":true}";
+                        data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":" + fetchSize + ",\"profile_id\":" + profileID + ",\"is_medley_view\":true,\"" + tab + "\":\"photos\",\"is_page_new_view\":true}";
                         urlload = "/ajax/pagelet/generic.php/TimelinePhotosPagelet?__pc=EXP1:DEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
                     } else {
-                        data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"tab\":\"photos_stream\",\"vanity\":\"" + url_username + "\",\"sk\":\"photos_stream\",\"tab_key\":\"photos_stream\",\"page\":" + profileID + ",\"is_medley_view\":true,\"pager_fired_on_init\":true}";
+                        data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":" + fetchSize + ",\"profile_id\":" + profileID + ",\"tab\":\"photos_stream\",\"vanity\":\"" + url_username + "\",\"sk\":\"photos_stream\",\"tab_key\":\"photos_stream\",\"page\":" + profileID + ",\"is_medley_view\":true,\"pager_fired_on_init\":true}";
                         urlload = "/ajax/pagelet/generic.php/TimelinePhotosStreamPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=" + i;
                     }
                 } else {
@@ -716,8 +719,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 // + i + "\",\"__rev\":\"" + rev + "\",\"__adt\":\"7\",\"vanity\":\"" + url_username +
                 // "\",\"sk\":\"photos_stream\",\"tab_key\":\"photos_stream\",\"page\":" + profileID + ",\"is_medley_view\":true}";
                 br.getPage(urlload);
+                // this is dangerous as its ruins unicode also! -raztoki20160127
                 br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
-                currentMaxPicCount = 40;
+                // as it seems to find double!
+                currentMaxPicCount = fetchSize * 2;
                 dynamicLoadAlreadyDecrypted = true;
             }
             if (this.parameter.matches(TYPE_SET_LINK_VIDEO)) {
@@ -728,7 +733,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             linkscount_after = this.decryptedLinks.size();
             addedlinks = linkscount_after - linkscount_before;
             // currentMaxPicCount = max number of links per segment
-            if (addedlinks < currentMaxPicCount) {
+            if (addedlinks < (i > 1 ? currentMaxPicCount / 2 : currentMaxPicCount)) {
                 logger.info("facebook.com: Found less pics than a full page -> Continuing anyways");
             }
             logger.info("facebook.com: Decrypted " + this.decryptedLinks.size() + " of " + totalPicsNum);
@@ -736,10 +741,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 logger.info("facebook.com: Three times no change -> Aborting decryption");
                 break;
             }
-            if (this.decryptedLinks.size() >= totalPicsNum) {
-                logger.info("facebook.com: Decrypted all pictures -> Stopping");
-                break;
-            }
+            // if (this.decryptedLinks.size() >= totalPicsNum) {
+            // logger.info("facebook.com: Decrypted all pictures -> Stopping");
+            // break;
+            // }
             if (this.decryptedLinks.size() == linkscount_before) {
                 timesNochange++;
             } else {
@@ -757,11 +762,12 @@ public class FaceBookComGallery extends PluginForDecrypt {
             photoids = br.getRegex("id=\"pic_(\\d+)\"").getColumn(0);
         }
         for (final String picID : photoids) {
+            if (!dupe.add(picID)) {
+                continue;
+            }
             final DownloadLink dl = createPicDownloadlink(picID);
             fp.add(dl);
-            if (!debug) {
-                distribute(dl);
-            }
+            distribute(dl);
             decryptedLinks.add(dl);
         }
     }
@@ -773,6 +779,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
             links = br.getRegex("ajaxify=\"(?:[^\"]+/videos/vb\\.\\d+/|[^\"]+/video\\.php\\?v=)(\\d+)").getColumn(0);
         }
         for (final String videoid : links) {
+            if (!dupe.add(videoid)) {
+                continue;
+            }
             final String videolink = "https://facebookdecrypted.com/video.php?v=" + videoid;
             final DownloadLink dl = createDownloadlink(videolink);
             dl.setContentUrl(videoid);
@@ -788,6 +797,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
         // String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)videos \\| Facebook</title>").getMatch(0);
         final String[] links = br.getRegex("href=\"(https?://(?:www\\.)?facebook\\.com/media/set/\\?set=a\\.[^<>\"]*?)\"").getColumn(0);
         for (String url_album : links) {
+            if (!dupe.add(url_album)) {
+                continue;
+            }
             url_album = Encoding.htmlDecode(url_album);
             final DownloadLink dl = createDownloadlink(url_album);
             if (fp != null) {
@@ -819,7 +831,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         fp = FilePackage.getInstance();
         fp.setName(fpName);
         boolean dynamicLoadAlreadyDecrypted = false;
-        final ArrayList<String> allids = new ArrayList<String>();
         // Use this as default as an additional fail safe
         long totalPicsNum = MAX_PICS_DEFAULT;
         if (totalPicCount != null) {
@@ -872,24 +883,24 @@ public class FaceBookComGallery extends PluginForDecrypt {
             logger.info("Decrypting page " + i + " of ??");
             for (final String single_link : links) {
                 final String current_id = new Regex(single_link, "(\\d+)$").getMatch(0);
-                if (!allids.contains(current_id)) {
-                    allids.add(current_id);
-                    final DownloadLink dl = createDownloadlink(single_link.replace("facebook.com/", CRYPTLINK));
-                    dl.setContentUrl(single_link);
-                    if (!logged_in) {
-                        dl.setProperty("nologin", true);
-                    }
-                    if (fastLinkcheckPictures) {
-                        dl.setAvailable(true);
-                    }
-                    dl.setContentUrl(single_link);
-                    // Set temp name, correct name will be set in hosterplugin later
-                    dl.setName(current_id + ".jpg");
-                    fp.add(dl);
-                    distribute(dl);
-                    decryptedLinks.add(dl);
-                    decryptedPicsNum++;
+                if (!dupe.add(current_id)) {
+                    continue;
                 }
+                final DownloadLink dl = createDownloadlink(single_link.replace("facebook.com/", CRYPTLINK));
+                dl.setContentUrl(single_link);
+                if (!logged_in) {
+                    dl.setProperty("nologin", true);
+                }
+                if (fastLinkcheckPictures) {
+                    dl.setAvailable(true);
+                }
+                dl.setContentUrl(single_link);
+                // Set temp name, correct name will be set in hosterplugin later
+                dl.setName(current_id + ".jpg");
+                fp.add(dl);
+                distribute(dl);
+                decryptedLinks.add(dl);
+                decryptedPicsNum++;
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount) {
@@ -990,8 +1001,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         // parser can be quite slow... I assume due to cleanups
         final String[] urls = HTMLParser.getHttpLinks(html, null);
-        // reduce threads/dupes/overheads
-        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         // prevent loops!
         dupe.add(parameter);
         dupe.add(br.getURL());
