@@ -72,8 +72,8 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
         if (request.getRequestedURL().endsWith("/confidentincludes/callback.php")) {
             // we need to send this in jd as the referrer info in browser will be wrong!
             final Browser c = new Browser();
-            c.getHeaders().put("Referer", getBr().getURL());
-            for (final HTTPHeader header1 : getBr().getRequest().getHeaders()) {
+            c.getHeaders().put("Referer", getPluginBrowser().getURL());
+            for (final HTTPHeader header1 : getPluginBrowser().getRequest().getHeaders()) {
                 // we just want the headers that sends in request.. we do this with our session browser for validation
                 // first add all existing browser headers
                 final String h1K = header1.getKey();
@@ -108,7 +108,7 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
                 postargs += key + "=" + Encoding.urlEncode(value) + "&";
             }
             postargs = (String) postargs.subSequence(0, postargs.length() - 1);
-            c.postPage(getBr().getBaseURL() + "confidentincludes/callback.php", postargs);
+            c.postPage(getPluginBrowser().getBaseURL() + "confidentincludes/callback.php", postargs);
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
             response.getOutputStream(true).write(c.getRequest().getHtmlCode().getBytes("UTF-8"));

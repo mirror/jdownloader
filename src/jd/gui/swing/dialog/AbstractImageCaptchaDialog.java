@@ -156,10 +156,12 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
                 super.paintComponent(g);
                 int insets = CFG_GUI.CFG.isCaptchaDialogBorderAroundImageEnabled() ? 10 : 0;
                 BufferedImage scaled = IconIO.getScaledInstance(images[frame], getWidth() - insets, getHeight() - insets, Interpolation.BICUBIC, true);
-                g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, col, null);
                 scaleFaktor = images[frame].getWidth(null) / (double) scaled.getWidth();
                 offset = new Point((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2);
                 AbstractImageCaptchaDialog.this.bounds = new Rectangle((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, scaled.getWidth(), scaled.getHeight());
+
+                g.setClip(bounds);
+                g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, col, null);
                 paintIconComponent(g, getWidth(), getHeight(), (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, scaled);
 
             }

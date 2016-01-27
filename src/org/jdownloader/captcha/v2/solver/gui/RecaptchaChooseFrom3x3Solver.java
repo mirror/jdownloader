@@ -4,10 +4,13 @@ import org.appwork.utils.Application;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.Recaptcha2FallbackChallengeViaJxBrowser;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
+import org.jdownloader.captcha.v2.solver.browser.CFG_BROWSER_CAPTCHA_SOLVER;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 import jd.controlling.captcha.SkipException;
 
@@ -31,6 +34,7 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
         if (!validateBlackWhite(c)) {
             return false;
         }
+
         if (isBrowserSolverEnabled(c)) {
             return false;
         }
@@ -42,6 +46,24 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
     }
 
     private boolean isBrowserSolverEnabled(Challenge<?> c) {
+        try {
+            if (!CFG_BROWSER_CAPTCHA_SOLVER.CFG.isRecaptcha2Enabled()) {
+                return false;
+            }
+            if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c instanceof Recaptcha2FallbackChallengeViaJxBrowser) {
+                return false;
+            }
+            if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c instanceof RecaptchaV2Challenge) {
+                // Load via reflection until evaluation tests are done
+
+                Class.forName("com.teamdev.jxbrowser.chromium.Browser");
+                if (((RecaptchaV2Challenge) c).createBasicCaptchaChallenge() != null) {
+                    return false;
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         if (!BrowserSolver.getInstance().isEnabled()) {
             return false;
         }

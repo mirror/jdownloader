@@ -28,7 +28,7 @@ public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChall
     public Recaptcha2FallbackChallenge(RecaptchaV2Challenge challenge) {
         super(challenge);
 
-        iframe = owner.getBr().cloneBrowser();
+        iframe = owner.getPluginBrowser().cloneBrowser();
         load();
     }
 
@@ -52,13 +52,12 @@ public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChall
             if (message == null) {
                 message = Encoding.htmlDecode(iframe.getRegex("<div .*?class=\"fbc-imageselect-message-error\">(.*?)</div>").getMatch(0));
             }
-            highlightedExplain = "#" + round + "/2: " + new Regex(message, "<strong>\\s*(.*?)\\s*</strong>").getMatch(0).replaceAll("<.*?>", "").replaceAll("\\s+", " ");
+            highlightedExplain = new Regex(message, "<strong>\\s*(.*?)\\s*</strong>").getMatch(0).replaceAll("<.*?>", "").replaceAll("\\s+", " ");
             if (message != null) {
                 setExplain(message.replaceAll("<.*?>", "").replaceAll("\\s+", " "));
             }
 
             challenge = iframe.getRegex("name=\"c\"\\s+value=\\s*\"([^\"]+)").getMatch(0);
-            setImageFile(Application.getResource("rc_" + System.currentTimeMillis() + ".jpg"));
 
             FileOutputStream fos = null;
             URLConnectionAdapter con = null;
@@ -102,6 +101,7 @@ public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChall
     public boolean validateResponse(AbstractResponse<String> response) {
         try {
             if (response.getPriority() <= 0) {
+                killSession();
                 return false;
             }
             final String dataSiteKey = owner.getSiteKey();
@@ -120,6 +120,7 @@ public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChall
             token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
             // this.responses.add(response);
         } catch (Throwable e) {
+            killSession();
             throw new WTFException(e);
         }
         // always return true. recaptchav2 fallback requires several captchas. we need to accept all answers. validation will be done
@@ -129,7 +130,7 @@ public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChall
 
     private int round = 1;
 
-    public void reload(int i, String lastResponse) throws IOException {
+    public void reload(int i) throws IOException {
         round = i;
         load();
     }

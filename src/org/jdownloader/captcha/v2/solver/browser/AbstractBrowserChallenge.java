@@ -3,6 +3,13 @@ package org.jdownloader.captcha.v2.solver.browser;
 import java.awt.Rectangle;
 import java.io.IOException;
 
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
+
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -14,24 +21,17 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.remoteapi.exceptions.RemoteAPIException;
-import org.appwork.utils.net.httpserver.requests.GetRequest;
-import org.appwork.utils.net.httpserver.requests.PostRequest;
-import org.appwork.utils.net.httpserver.responses.HttpResponse;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.solverjob.ResponseList;
-
 public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
-    private Plugin  plugin;
-    private Browser br;
+    private Plugin    plugin;
+    protected Browser pluginBrowser;
 
     public Plugin getPlugin() {
         return plugin;
     }
 
-    public Browser getBr() {
-        return br;
+    public Browser getPluginBrowser() {
+        return pluginBrowser;
     }
 
     public boolean isSolved() {
@@ -47,9 +47,9 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
             plugin = getPluginFromThread();
         }
         if (pluginForHost instanceof PluginForHost) {
-            this.br = ((PluginForHost) pluginForHost).getBrowser();
+            this.pluginBrowser = ((PluginForHost) pluginForHost).getBrowser();
         } else if (pluginForHost instanceof PluginForDecrypt) {
-            this.br = ((PluginForDecrypt) pluginForHost).getBrowser();
+            this.pluginBrowser = ((PluginForDecrypt) pluginForHost).getBrowser();
         }
     }
 
