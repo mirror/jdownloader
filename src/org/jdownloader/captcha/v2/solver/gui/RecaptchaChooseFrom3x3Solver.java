@@ -4,7 +4,6 @@ import org.appwork.utils.Application;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.Recaptcha2FallbackChallengeViaJxBrowser;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.browser.CFG_BROWSER_CAPTCHA_SOLVER;
@@ -50,7 +49,7 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
             if (!CFG_BROWSER_CAPTCHA_SOLVER.CFG.isRecaptcha2Enabled()) {
                 return false;
             }
-            if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c instanceof Recaptcha2FallbackChallengeViaJxBrowser) {
+            if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c.getClass().getSimpleName().equals("Recaptcha2FallbackChallengeViaJxBrowser")) {
                 return false;
             }
             if (CFG_GENERAL.CFG.isJxBrowserEnabled() && c instanceof RecaptchaV2Challenge) {
