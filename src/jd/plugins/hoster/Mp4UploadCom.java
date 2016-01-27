@@ -173,6 +173,9 @@ public class Mp4UploadCom extends PluginForHost {
                             fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
                             if (fileInfo[0] == null) {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                if (fileInfo[0] == null) {
+                                    fileInfo[0] = new Regex(correctedBR, "<span class=\"dfilename\">([^<>\"\\']+)</span>").getMatch(0);
+                                }
                             }
                         }
                     }
