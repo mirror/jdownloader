@@ -21,6 +21,7 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
+import jd.http.Browser;
 import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
@@ -59,8 +60,18 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         return new Recaptcha2BrowserViewport(screenResource, rect, elementBounds);
     }
 
-    public RecaptchaV2Challenge(String siteKey, Plugin pluginForHost, String siteDomain, String siteUrl) {
+    @Override
+    public void cleanup() {
+        super.cleanup();
+        if (basicChallenge != null) {
+            basicChallenge.cleanup();
+        }
+    }
+
+    public RecaptchaV2Challenge(String siteKey, Plugin pluginForHost, Browser br, String siteDomain, String siteUrl) {
         super(RECAPTCHAV2, pluginForHost);
+
+        this.pluginBrowser = br;
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
         this.siteUrl = siteUrl;

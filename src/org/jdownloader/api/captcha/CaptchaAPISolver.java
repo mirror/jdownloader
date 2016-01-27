@@ -5,10 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
-
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -36,6 +32,10 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
 

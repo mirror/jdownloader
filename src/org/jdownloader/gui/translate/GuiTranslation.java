@@ -6004,6 +6004,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Invalid answer: %s1" })
     String DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer_bad(String string);
 
-    @Default(lngs = { "en" }, values = { "Choose at least 2 images..." })
-    String RECAPTCHA_3x3Dialog_help();
+    @Default(lngs = { "en" }, values = { "Choose at least %s1 images..." })
+    String RECAPTCHA_2_Dialog_help(int num);
+
+    @Default(lngs = { "en" }, values = { "Choose ALL squares that contain any trace if a street sign!" })
+    String RECAPTCHA_2_Dialog_help_tile();
 }

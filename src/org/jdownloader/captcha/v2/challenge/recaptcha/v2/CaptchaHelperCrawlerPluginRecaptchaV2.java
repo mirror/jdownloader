@@ -1,6 +1,6 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
-import java.io.IOException;
+import java.util.ArrayList;
 
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -47,7 +47,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             }
         }
         final PluginForDecrypt plugin = getPlugin();
-        final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin, getSiteDomain(), getSiteUrl());
+        final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin, br, getSiteDomain(), getSiteUrl());
         c.setTimeout(plugin.getCaptchaTimeout());
         plugin.invalidateLastChallengeResponse();
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
@@ -55,32 +55,42 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             logger.warning("Cancel. Blacklist Matching");
             throw new CaptchaException(blackListEntry);
         }
+        ArrayList<SolverJob<String>> jobs = new ArrayList<SolverJob<String>>();
         try {
-            SolverJob<String> firstJob = ChallengeResponseController.getInstance().handle(c);
-            if (c.getResult() != null) {
 
-                if (c.getResult().size() == 1 && c.getResult().get(0).getChallenge() instanceof Recaptcha2FallbackChallenge) {
-                    logger.info("2 Step Recaptcha v2 round #2");
-                    final Recaptcha2FallbackChallenge challenge = ((Recaptcha2FallbackChallenge) c.getResult().get(0).getChallenge());
-                    try {
-                        challenge.reload(2, c.getResult().get(0).getValue());
-                        SolverJob<String> secondJob = ChallengeResponseController.getInstance().handle(challenge);
-                        if (challenge.getToken() != null) {
-                            firstJob.validate();
-                            secondJob.validate();
-                            return challenge.getToken();
-                            // challenge.evaluate()
-                        } else {
-                            firstJob.invalidate();
-                            secondJob.invalidate();
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+            jobs.add(ChallengeResponseController.getInstance().handle(c));
+            AbstractRecaptcha2FallbackChallenge rcFallback = null;
+
+            while (jobs.size() <= 10) {
+
+                if (rcFallback == null && c.getResult() != null) {
+                    for (AbstractResponse<String> r : c.getResult()) {
+                        if (r.getChallenge() != null && r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
+                            rcFallback = (AbstractRecaptcha2FallbackChallenge) r.getChallenge();
+
+                            break;
+
                         }
-                    } catch (IOException e) {
+                    }
+                }
+                if (rcFallback != null && rcFallback.getToken() == null) {
+                    // retry
+
+                    try {
+                        rcFallback.reload(jobs.size() + 1);
+                    } catch (Throwable e) {
                         LogSource.exception(logger, e);
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
+                    jobs.add(ChallengeResponseController.getInstance().handle(rcFallback));
+                    if (rcFallback.getToken() != null) {
+                        break;
+                    }
+                } else {
+                    break;
                 }
             }
+
             if (!c.isSolved()) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
@@ -88,9 +98,28 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             if (c.getResult() != null) {
                 for (AbstractResponse<String> r : c.getResult()) {
                     if (r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
-                        return ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
-                    }
+                        String token = ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
+                        if (token == null) {
+                            for (int i = 0; i < jobs.size(); i++) {
 
+                                jobs.get(i).invalidate();
+
+                            }
+                        } else {
+                            setCorrectAfter(jobs.size());
+
+                            int validateTheLast = getRequiredCorrectAnswersGuess();
+                            for (int i = 0; i < jobs.size(); i++) {
+
+                                if (i >= jobs.size() - validateTheLast) {
+                                    jobs.get(i).validate();
+                                } else {
+                                    jobs.get(i).invalidate();
+                                }
+                            }
+                        }
+                        return token;
+                    }
                 }
             }
             if (!c.isCaptchaResponseValid()) {
@@ -125,6 +154,8 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                 break;
             }
             throw new CaptchaException(e.getSkipRequest());
+        } finally {
+            c.cleanup();
         }
     }
 

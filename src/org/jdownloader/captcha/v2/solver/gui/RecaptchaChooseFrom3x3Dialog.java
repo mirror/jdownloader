@@ -22,6 +22,7 @@ import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
@@ -36,13 +37,13 @@ import javax.swing.JSeparator;
 import org.appwork.exceptions.WTFException;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 import jd.gui.swing.dialog.AbstractImageCaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
@@ -81,54 +82,87 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
         super.addBeforeImage(field);
         String key = challenge.getHighlightedExplain();
 
-        field.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][][grow,fill]"));
+        field.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
 
-        field.add(SwingUtils.setOpaque(new JLabel(_GUI._.RECAPTCHA_3x3Dialog_help()), false), "gapleft 5,gaptop5,alignx right");
         Icon explainIcon = challenge.getExplainIcon(challenge.getExplain());
-        if (StringUtils.isNotEmpty(key)) {
-            if (explainIcon != null) {
-                field.add(SwingUtils.setOpaque(SwingUtils.toBold(new JLabel(challenge.getExplain(), explainIcon, JLabel.LEFT)), false), "split 2,gapleft 5,gaptop5");
-            } else {
-                field.add(SwingUtils.setOpaque(SwingUtils.toBold(new JLabel(challenge.getExplain())), false), "split 2,gapleft 5,gaptop5");
-
-            }
-            JLabel header = new JLabel(key);
-            header.setFont(header.getFont().deriveFont(20f));
-            header.setHorizontalAlignment(JLabel.RIGHT);
-            field.add(SwingUtils.setOpaque(SwingUtils.toBold(header), false), "gapleft 5,gaptop5,alignx right");
-        } else {
-            if (explainIcon != null) {
-                field.add(SwingUtils.setOpaque(SwingUtils.toBold(new JLabel(challenge.getExplain(), explainIcon, JLabel.LEFT)), false), "gapleft 5,gaptop5");
-            } else {
-                field.add(SwingUtils.setOpaque(SwingUtils.toBold(new JLabel(challenge.getExplain())), false), "gapleft 5,gaptop5");
-
-            }
+        String ex = challenge.getExplain().replaceAll("<.*?>", "").replace(key, "<b>" + key + "</b>");
+        if (challenge.getChooseAtLeast() > 0) {
+            ex += "<br>" + _GUI._.RECAPTCHA_2_Dialog_help(challenge.getChooseAtLeast());
         }
+        if (challenge.getType() != null && challenge.getType().startsWith("TileSelection")) {
+            ex += "<br>" + _GUI._.RECAPTCHA_2_Dialog_help_tile();
+        }
+        if (explainIcon != null) {
+            field.add(SwingUtils.setOpaque(new JLabel("<html>" + ex + "</html>", explainIcon, JLabel.LEFT), false), "gapleft 5,gaptop 5");
+        } else {
+            field.add(SwingUtils.setOpaque(new JLabel("<html>" + ex + "</html>"), false), "gapleft 5,gaptop 5");
+
+        }
+
         field.add(new JSeparator(JSeparator.HORIZONTAL));
+    }
+
+    private Color col = (LAFOptions.getInstance().getColorForPanelBackground());
+
+    private int ceil(double d) {
+        return (int) Math.ceil(d);
     }
 
     protected void paintIconComponent(Graphics g, int width, int height, int xOffset, int yOffset, BufferedImage scaled) {
         if (bounds == null) {
             return;
         }
-        int columnWidth = bounds.width / 3;
-        int rowHeight = bounds.height / 3;
-        for (int yslot = 0; yslot < 3; yslot++) {
-            for (int xslot = 0; xslot < 3; xslot++) {
-                int x = (1 + xslot) * columnWidth;
-                int y = (1 + yslot) * rowHeight;
-                int num = xslot + yslot * 3;
+
+        double columnWidth = bounds.getWidth() / challenge.getSplitWidth();
+        double rowHeight = bounds.getHeight() / challenge.getSplitHeight();
+        double imgColumnWidth = images[0].getWidth(null) / challenge.getSplitWidth();
+        double imgRowHeight = images[0].getHeight(null) / challenge.getSplitHeight();
+
+        g.setColor(col);
+
+        int splitterWidth = 4;
+        ((Graphics2D) g).setStroke(new BasicStroke(splitterWidth));
+        for (int yslot = 0; yslot < challenge.getSplitHeight() - 1; yslot++) {
+            int y = ceil((1 + yslot) * rowHeight);
+
+            g.drawLine(bounds.x, bounds.y + y, bounds.x + bounds.width, bounds.y + y);
+
+        }
+        for (int xslot = 0; xslot < challenge.getSplitWidth() - 1; xslot++) {
+            int x = ceil((1 + xslot) * columnWidth);
+
+            g.drawLine(bounds.x + x, bounds.y, bounds.x + x, bounds.y + bounds.height);
+        }
+        ((Graphics2D) g).setStroke(new BasicStroke(3));
+        for (int yslot = 0; yslot < challenge.getSplitHeight(); yslot++) {
+            for (int xslot = 0; xslot < challenge.getSplitWidth(); xslot++) {
+                int x = (int) ((1 + xslot) * columnWidth);
+                int y = (int) ((1 + yslot) * rowHeight);
+                int num = xslot + yslot * challenge.getSplitWidth();
+
                 // Color color = Color.RED;
                 if (selected.contains(num)) {
+                    Rectangle rect = new Rectangle(ceil(bounds.x + xslot * columnWidth), ceil(bounds.y + yslot * rowHeight), ceil(columnWidth), ceil(rowHeight));
+                    Rectangle src = new Rectangle(ceil(xslot * imgColumnWidth), ceil(yslot * imgRowHeight), ceil(imgColumnWidth), ceil(imgRowHeight));
+
+                    int strokeWidth = 10;
+                    g.setColor(col);
+                    g.fillRect(rect.x, rect.y, rect.width, rect.height);
+                    g.setColor(Color.GREEN.brighter());
+                    int x1 = rect.x + strokeWidth / 2 + splitterWidth;
+                    int y1 = rect.y + strokeWidth / 2 + splitterWidth;
+                    int x2 = rect.x + rect.width - strokeWidth;
+                    int y2 = rect.y + rect.height - strokeWidth;
+                    g.drawImage(images[0], x1, y1, x2, y2, src.x, src.y, src.x + src.width, src.y + src.height, null);
+                    g.drawRect(x1, y1, x2 - x1, y2 - y1);
                     CheckBoxIcon.TRUE.paintIcon(iconPanel, g, xOffset + x - CheckBoxIcon.TRUE.getIconWidth() - 5, yOffset + y - CheckBoxIcon.TRUE.getIconHeight() - 5);
-                    g.setColor(Color.GREEN);
-                    ((Graphics2D) g).setStroke(new BasicStroke(2));
-                    g.drawRect(bounds.x + xslot * columnWidth + 1, bounds.y + yslot * rowHeight + 1, columnWidth - 2, rowHeight - 2);
+
                 } else {
                     CheckBoxIcon.FALSE.paintIcon(iconPanel, g, xOffset + x - CheckBoxIcon.TRUE.getIconWidth() - 5, yOffset + y - CheckBoxIcon.TRUE.getIconHeight() - 5);
                 }
             }
         }
+
     }
 
     @Override
@@ -142,9 +176,9 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
             @Override
             public void mouseReleased(MouseEvent e) {
 
-                int x = (e.getX() - bounds.x) / (bounds.width / 3);
-                int y = (e.getY() - bounds.y) / (bounds.height / 3);
-                int num = x + y * 3;
+                int x = (e.getX() - bounds.x) / (bounds.width / challenge.getSplitWidth());
+                int y = (e.getY() - bounds.y) / (bounds.height / challenge.getSplitHeight());
+                int num = x + y * challenge.getSplitWidth();
                 System.out.println("pressed " + num);
                 if (!selected.remove(num)) {
                     selected.add(num);

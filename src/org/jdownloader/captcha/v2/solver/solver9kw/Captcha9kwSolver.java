@@ -21,7 +21,7 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.SolverStatus;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.Recaptcha2FallbackChallenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
@@ -78,7 +78,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
+        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
 
             return true;
         }

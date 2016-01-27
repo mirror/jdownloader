@@ -38,7 +38,15 @@ public class RecaptchaChooseFrom3x3DialogHandler extends ChallengeDialogHandler<
 
     @Override
     protected void showDialog(DialogType dialogType, int flag) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
-
+        if (false) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            result = "7,8,9";
+            return;
+        }
         RecaptchaChooseFrom3x3Dialog d = new RecaptchaChooseFrom3x3Dialog(flag, dialogType, getHost(), captchaChallenge);
         d.setPlugin(captchaChallenge.getPlugin());
         d.setTimeout(getTimeoutInMS());

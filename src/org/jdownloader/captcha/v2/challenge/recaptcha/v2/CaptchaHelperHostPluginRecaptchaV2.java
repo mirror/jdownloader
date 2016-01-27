@@ -1,6 +1,6 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
-import java.io.IOException;
+import java.util.ArrayList;
 
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -63,7 +63,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         try {
             link.addPluginProgress(progress);
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin, getSiteDomain(), getSiteUrl());
+            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin, br, getSiteDomain(), getSiteUrl());
             c.setTimeout(plugin.getCaptchaTimeout());
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
@@ -82,27 +82,41 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                 logger.warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            SolverJob<String> firstJob = ChallengeResponseController.getInstance().handle(c);
-            if (c.getResult() != null) {
-                if (c.getResult().size() == 1 && c.getResult().get(0).getChallenge() instanceof Recaptcha2FallbackChallenge) {
-                    final Recaptcha2FallbackChallenge challenge = ((Recaptcha2FallbackChallenge) c.getResult().get(0).getChallenge());
-                    try {
-                        challenge.reload(2, c.getResult().get(0).getValue());
-                        ChallengeResponseController.getInstance().handle(challenge);
-                        if (challenge.getToken() != null) {
-                            firstJob.validate();
-                            return challenge.getToken();
-                            // challenge.evaluate()
-                        } else {
-                            firstJob.invalidate();
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            ArrayList<SolverJob<String>> jobs = new ArrayList<SolverJob<String>>();
+
+            jobs.add(ChallengeResponseController.getInstance().handle(c));
+            AbstractRecaptcha2FallbackChallenge rcFallback = null;
+
+            while (jobs.size() <= 10) {
+
+                if (rcFallback == null && c.getResult() != null) {
+                    for (AbstractResponse<String> r : c.getResult()) {
+                        if (r.getChallenge() != null && r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
+                            rcFallback = (AbstractRecaptcha2FallbackChallenge) r.getChallenge();
+
+                            break;
+
                         }
-                    } catch (IOException e) {
+                    }
+                }
+                if (rcFallback != null && rcFallback.getToken() == null) {
+                    // retry
+
+                    try {
+                        rcFallback.reload(jobs.size() + 1);
+                    } catch (Throwable e) {
                         LogSource.exception(logger, e);
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
+                    jobs.add(ChallengeResponseController.getInstance().handle(rcFallback));
+                    if (rcFallback.getToken() != null) {
+                        break;
+                    }
+                } else {
+                    break;
                 }
             }
+
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -110,11 +124,31 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             if (c.getResult() != null) {
                 for (AbstractResponse<String> r : c.getResult()) {
                     if (r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
-                        return ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
-                    }
+                        String token = ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
+                        if (token == null) {
+                            for (int i = 0; i < jobs.size(); i++) {
 
+                                jobs.get(i).invalidate();
+
+                            }
+                        } else {
+                            setCorrectAfter(jobs.size());
+
+                            int validateTheLast = getRequiredCorrectAnswersGuess();
+                            for (int i = 0; i < jobs.size(); i++) {
+
+                                if (i >= jobs.size() - validateTheLast) {
+                                    jobs.get(i).validate();
+                                } else {
+                                    jobs.get(i).invalidate();
+                                }
+                            }
+                        }
+                        return token;
+                    }
                 }
             }
+
             if (!c.isCaptchaResponseValid()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha reponse value did not validate!");
             }

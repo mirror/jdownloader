@@ -277,8 +277,16 @@ public abstract class Challenge<T> {
     }
 
     /**
+     * is called from plugins after all it's challenges have been handled. NOTE: Not all plugins call this method.
+     */
+    public void cleanup() {
+
+    }
+
+    /**
      * called when the controller handled this challenge
      */
     public void onHandled() {
+
     }
 }

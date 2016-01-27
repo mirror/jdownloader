@@ -9,15 +9,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.updatev2.FilterList;
+import org.jdownloader.updatev2.ProxyData;
+
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.ProxySelectorInterface;
 import jd.http.Request;
 import jd.plugins.Account;
 import jd.plugins.Plugin;
-
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.updatev2.FilterList;
-import org.jdownloader.updatev2.ProxyData;
 
 public abstract class AbstractProxySelectorImpl implements ProxySelectorInterface {
     public static enum Type {
@@ -107,6 +107,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public AbstractProxySelectorImpl() {
+
     }
 
     public boolean add(final SingleDownloadController singleDownloadController) {

@@ -8,16 +8,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.Recaptcha2FallbackChallenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
@@ -28,6 +24,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CBH;
+
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
 
 public class CBSolver extends CESChallengeSolver<String> {
 
@@ -130,7 +130,7 @@ public class CBSolver extends CESChallengeSolver<String> {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (c instanceof RecaptchaV2Challenge || c instanceof Recaptcha2FallbackChallenge) {
+        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
             try {
                 checkForEnoughCredits();
             } catch (SolverException e) {
