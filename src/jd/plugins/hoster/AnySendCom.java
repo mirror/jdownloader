@@ -24,6 +24,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,9 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anysend.com" }, urls = { "http://(www\\.)?anysend\\.com/[A-F0-9]{32}" }, flags = { 0 })
 public class AnySendCom extends PluginForHost {
@@ -95,7 +95,7 @@ public class AnySendCom extends PluginForHost {
             br.setCookie("http://www.anysend.com/", "PAPVisitorId", visitorid);
             continuelink += visitorid;
             br.getPage(continuelink);
-            if (br.containsHTML(">Your download is no longer available|>Your file is not ready for download yet")) {
+            if (br.containsHTML(">\\s*Your download is no longer available|>\\s*Your file is not ready for download yet")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // Check if we're on the mainpage

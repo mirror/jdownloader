@@ -146,7 +146,7 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         }
     }
 
-    private boolean preferHeadRequest = true && isNewJD();
+    private boolean preferHeadRequest = true;
 
     private URLConnectionAdapter getConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
         br.setFollowRedirects(true);

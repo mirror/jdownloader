@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -63,9 +62,6 @@ public class TwitterCom extends PluginForHost {
     private static final boolean ACCOUNT_FREE_RESUME       = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
 
     private String               dllink                    = null;
     private String               tweetid                   = null;
@@ -241,11 +237,10 @@ public class TwitterCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(1);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
@@ -259,12 +254,6 @@ public class TwitterCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override

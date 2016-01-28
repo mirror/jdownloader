@@ -23,6 +23,9 @@ import java.util.Map;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,8 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" }, flags = { 2, 0 })
 public class DiskYandexNet extends PluginForHost {
@@ -107,7 +108,7 @@ public class DiskYandexNet extends PluginForHost {
     /* Make sure we always use our main domain */
     private String getMainLink(final DownloadLink dl) {
         String mainlink = dl.getStringProperty("mainlink", null);
-        if (!mainlink.contains("yadi")) {
+        if (!StringUtils.contains(mainlink, "yadi")) {
             mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[^/]+/(.+)").getMatch(0);
         }
         return mainlink;
@@ -285,7 +286,7 @@ public class DiskYandexNet extends PluginForHost {
                  * Download API:
                  *
                  * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
-                 * */
+                 */
                 /* Free API download. */
                 this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
                 if (this.br.containsHTML("DiskNotFoundError")) {
@@ -323,12 +324,9 @@ public class DiskYandexNet extends PluginForHost {
                     br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
                 }
                 handleErrorsFree();
-                dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+                dllink = getJson("file");
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (dllink.startsWith("//")) {
-                    dllink = "http:" + dllink;
                 }
                 /* Don't do htmldecode because the link will be invalid then */
                 dllink = HTMLEntities.unhtmlentities(dllink);
@@ -427,7 +425,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String getCkey() throws PluginException {
-        final String ckey = br.getRegex("\"ckey\":\"([^\"]+)\"").getMatch(0);
+        final String ckey = getJson("ckey");
         if (ckey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -512,7 +510,7 @@ public class DiskYandexNet extends PluginForHost {
         account.setProperty("saved_sk", ACCOUNT_SK);
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         return ai;
     }
 
@@ -669,7 +667,6 @@ public class DiskYandexNet extends PluginForHost {
                 /* Fix links - cookies sit on the other domain */
                 if (dllink != null) {
                     dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
-                    dllink = dllink.replace("\\", "");
                 }
                 break;
             } catch (final Throwable e) {
@@ -702,9 +699,9 @@ public class DiskYandexNet extends PluginForHost {
     private String siteGetDllink(final DownloadLink dl) {
         final String dllink;
         if (isZippedFolder(dl)) {
-            dllink = br.getRegex("\"folder\":\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = getJson("folder");
         } else {
-            dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = getJson("file");
         }
         return dllink;
     }
@@ -821,7 +818,7 @@ public class DiskYandexNet extends PluginForHost {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     public static String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
@@ -831,7 +828,7 @@ public class DiskYandexNet extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }

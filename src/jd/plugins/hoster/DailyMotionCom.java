@@ -137,7 +137,7 @@ public class DailyMotionCom extends PluginForHost {
             if (dllink == null) {
                 System.out.println(1);
             } else {
-                System.out.println("DLink FOund");
+                // System.out.println("DLink FOund");
             }
 
             /* .m4a links have wrong internal directlinks --> Size check not possible */

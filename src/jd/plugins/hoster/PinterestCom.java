@@ -141,9 +141,9 @@ public class PinterestCom extends PluginForHost {
                  * Site actually contains similar json compared to API --> Grab that and get the final link via that as it is not always
                  * present in the normal html code.
                  */
-                String json = br.getRegex("P\\.start\\.start\\((.*?)\\);\n").getMatch(0);
+                String json = br.getRegex("P\\.(?:start\\.start|main\\.start)\\((.*?)\\);\n").getMatch(0);
                 if (json == null) {
-                    json = br.getRegex("P\\.main\\.start\\((.*?)\\);\n").getMatch(0);
+                    json = br.getRegex("P\\.startArgs = (.*?);\n").getMatch(0);
                 }
                 if (json == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
