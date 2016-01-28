@@ -96,11 +96,11 @@ public class KinoxTo extends antiDDoSForDecrypt {
             throw new DecrypterException("Decrypter broken");
         }
         final DecimalFormat df = new DecimalFormat("00");
-        final int season_int = Integer.parseInt(season_number);
         final FilePackage fp = FilePackage.getInstance();
-        final String season_formatted = "S" + df.format(season_int);
         String fpname = addr_id;
         if (season_number != null && episode != null) {
+            final int season_int = Integer.parseInt(season_number);
+            final String season_formatted = "S" + df.format(season_int);
             fpname += " " + season_formatted;
         }
         fp.setName(fpname);
