@@ -895,9 +895,29 @@ public class OldRAFDownload extends DownloadInterface {
         return result;
     }
 
+    protected boolean checkResumeConnection() {
+        final String requestedRange = connection.getHeaderField("Range");
+        if (requestedRange != null) {
+            // range requested
+            final long[] responseRange = connection.getRange();
+            if (responseRange == null) {
+                // no range response
+                logger.info("RequestRange: " + requestedRange + "|No ResponseRange but connection has responseCode=" + connection.getResponseCode() + " and content-length=" + connection.getCompleteContentLength());
+                setChunkNum(1);
+                return false;
+            } else {
+                // range response
+                logger.info("RequestRange: " + requestedRange + "|ResponseRange:" + Arrays.toString(responseRange));
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+
     protected void setupChunks() throws Exception {
         try {
-            if (isRangeRequestSupported() && checkResumabled()) {
+            if (isRangeRequestSupported() && checkResumabled() && checkResumeConnection()) {
                 logger.finer("Setup resume");
                 this.resumedDownload = true;
                 this.setupResume();
@@ -958,9 +978,7 @@ public class OldRAFDownload extends DownloadInterface {
         setChunkNum(chunks);
         logger.finer("Start Download in " + chunks + " chunks. Chunksize: " + partSize);
         downloadable.setChunksProgress(new long[chunkNum]);
-
         int start = 0;
-
         long rangePosition = 0;
         int id = 0;
         if (connection.getRange() != null && connection.getRange()[1] != connection.getRange()[2] - 1) {
