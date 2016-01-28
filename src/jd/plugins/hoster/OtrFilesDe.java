@@ -60,7 +60,9 @@ public class OtrFilesDe extends PluginForHost {
         if (!br.getURL().contains("?otr-files.de/index.php?option=")) {
             br.getPage(getOptionsLink());
         }
-        if (!br.containsHTML("> Verf\\&uuml;gbare Formate auf otr\\-files") && !br.containsHTML(LIMITREACHED) && !br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("> Verf\\&uuml;gbare Formate auf otr\\-files") && !br.containsHTML(LIMITREACHED) && !br.containsHTML(NOSLOTS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setFinalFileName(Encoding.htmlDecode(new Regex(link.getDownloadURL(), "\\&f=(.+\\.otrkey)$").getMatch(0)));
         return AvailableStatus.TRUE;
     }
@@ -84,11 +86,19 @@ public class OtrFilesDe extends PluginForHost {
             }
         }
         if (dllink == null) {
-            if (br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Keine freien Slots verfügbar!", (1 + new Random().nextInt(7)) * 60 * 1000l);
-            if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (br.containsHTML(NOSLOTS)) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Keine freien Slots verfügbar!", (1 + new Random().nextInt(7)) * 60 * 1000l);
+            }
+            if (br.containsHTML(LIMITREACHED)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            }
             dllink = br.getRegex("\"(http://otr\\-files\\.de/dl\\-slot/\\d+/[a-z0-9]+/[^<>\"\\']+\\.otrkey)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("<br><br><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                dllink = br.getRegex("<br><br><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -100,8 +110,10 @@ public class OtrFilesDe extends PluginForHost {
     }
 
     private String getOptionsLink() throws PluginException {
-        final String optlink = br.getRegex("\"(http://(www\\.)?otr\\-files\\.de/index\\.php\\?option=com_content\\&amp;task=view\\&amp;id=\\d+\\&amp;Itemid=\\d+\\&amp;server=[a-z0-9]+\\&amp;f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
-        if (optlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String optlink = br.getRegex("\"(http://(www\\.)?otr-files\\.de/index\\.php\\?option=com_content(?:&amp;|&)task=view(?:&amp;|&)id=\\d+(?:&amp;|&)Itemid=\\d+(?:&amp;|&)server=[a-z0-9]*(?:&amp;|&)f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
+        if (optlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return Encoding.htmlDecode(optlink);
     }
 
