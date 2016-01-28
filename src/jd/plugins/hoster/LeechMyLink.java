@@ -110,17 +110,19 @@ public class LeechMyLink extends antiDDoSForHost {
         if ("premium".equalsIgnoreCase(type) && !inValidate(expire_timestamp)) {
             // unix timestamp is in seconds, we reference in milli
             ac.setValidUntil(Long.parseLong(expire_timestamp) * 1000, br);
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
             account.setType(AccountType.PREMIUM);
             ac.setStatus("Premium Account");
+            ac.setUnlimitedTraffic();
+        } else {
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
-        } else {
             account.setType(AccountType.FREE);
             ac.setStatus("Registered (free) account");
-            account.setMaxSimultanDownloads(-1);
-            account.setConcurrentUsePossible(true);
+            /* 2016-01-28: No way to download with free accounts (anymore) */
+            ac.setTrafficLeft(0);
         }
-        ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
         br.getPage("/api/filehosts");
         final String[] array = getJsonResultsFromArray(br.toString());
@@ -272,6 +274,10 @@ public class LeechMyLink extends antiDDoSForHost {
                 sleep(hasFailedInt * 1001, link);
             }
             br.postPage("http://leechmy.link/api/leecher", "link=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getDownloadPassword() != null ? "&lpass=" + Encoding.urlEncode(link.getDownloadPassword()) : ""));
+            /*
+             * Errorresponse on free account download attempt:
+             * {"status":"error","msg":"You are not logged in","link":"http:...","isVideo":false}
+             */
             dllink = getJson("download_link");
             if ("error".equalsIgnoreCase(getJson("status"))) {
                 final String msg = getJson("msg");
