@@ -221,11 +221,11 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
     @Override
     public void updateContents() {
         onMyJDownloaderConnectionStatusChanged(MyJDownloaderController.getInstance().getConnectionStatus(), MyJDownloaderController.getInstance().getEstablishedConnections());
+        final MyJDownloaderError latestError = CFG_MYJD.CFG.getLatestError();
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                MyJDownloaderError latestError = CFG_MYJD.CFG.getLatestError();
                 switch (latestError) {
                 case NONE:
                     error.setVisible(false);

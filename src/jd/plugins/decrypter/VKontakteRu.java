@@ -100,6 +100,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     VKWALL_GRAB_DOCS                        = "VKWALL_GRAB_DOCS";
     private static final String     VKVIDEO_USEIDASPACKAGENAME              = "VKVIDEO_USEIDASPACKAGENAME";
     private static final String     VKAUDIOS_USEIDASPACKAGENAME             = "VKAUDIOS_USEIDASPACKAGENAME";
+    private static final String     VKDOCS_USEIDASPACKAGENAME               = "VKDOCS_USEIDASPACKAGENAME";
 
     /* Settings 'in action' */
     private boolean                 vkwall_grabalbums;
@@ -1367,10 +1368,19 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         final String owner_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)$").getMatch(0);
+        String fpName = null;
+        if (cfg.getBooleanProperty(VKDOCS_USEIDASPACKAGENAME, false)) {
+            fpName = "docs" + owner_ID;
+        } else {
+            fpName = br.getRegex("\"htitle\":\"([^<>\"]*?)\"").getMatch(0);
+            if (fpName == null) {
+                fpName = "vk.com docs - " + owner_ID;
+            }
+        }
         final String alldocs = br.getRegex("cur\\.docs = \\[(.*?)\\];").getMatch(0);
         final String[] docs = alldocs.split("\\],\\[");
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(owner_ID);
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         for (final String docinfo : docs) {
             final String[] stringdata = new Regex(docinfo, "\\'([^<>\"\\']*?)\\'").getColumn(0);
             final String filesize = new Regex(docinfo, "(\\d{1,3} (?:kB|MB|GB))").getMatch(0);

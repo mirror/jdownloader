@@ -30,7 +30,7 @@ public class PluginRelatedConnectionBan extends AbstractBan {
 
     @Override
     public String toString() {
-        HTTPProxy proxy = getProxy();
+        final HTTPProxy proxy = getProxy();
         return _JDT._.AuthExceptionGenericBan_toString_plugin(proxy == null ? "" : proxy.toString(), getHost());
     }
 
@@ -42,7 +42,7 @@ public class PluginRelatedConnectionBan extends AbstractBan {
 
     @Override
     public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
-        HTTPProxy proxy = getProxy();
+        final HTTPProxy proxy = getProxy();
         return proxy != null && proxy.equals(orgReference);
     }
 

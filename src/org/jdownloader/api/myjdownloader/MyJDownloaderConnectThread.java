@@ -37,6 +37,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.ProxyEndpointConnectException;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
@@ -302,9 +303,15 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
-    private DeviceConnectionHelper getNextDeviceConnectionHelper() {
-        DeviceConnectionHelper ret = deviceConnectionHelper[helperIndex];
+    private synchronized DeviceConnectionHelper getNextDeviceConnectionHelper() {
+        final DeviceConnectionHelper ret = deviceConnectionHelper[helperIndex];
         helperIndex = (helperIndex + 1) % deviceConnectionHelper.length;
+        if (ret.backoffrequested()) {
+            final DeviceConnectionHelper ret2 = deviceConnectionHelper[helperIndex];
+            if (!ret2.backoffrequested()) {
+                return ret2;
+            }
+        }
         return ret;
     }
 
@@ -406,6 +413,12 @@ public class MyJDownloaderConnectThread extends Thread {
             log("Something else!?!?! WTF!");
             currentHelper.requestbackoff();
             return null;
+        } catch (ProxyEndpointConnectException e) {
+            currentHelper.requestbackoff();
+            log("Could not connect! Server down?", e);
+            setConnected(MyJDownloaderConnectionStatus.PENDING);
+            myJDownloaderController.onError(MyJDownloaderError.SERVER_DOWN);
+            return null;
         } catch (ConnectException e) {
             currentHelper.requestbackoff();
             log("Could not connect! Server down?", e);
@@ -461,7 +474,7 @@ public class MyJDownloaderConnectThread extends Thread {
                         if (currentHelper == null || currentHelper.backoffrequested()) {
                             currentHelper = getNextDeviceConnectionHelper();
                         }
-                        SessionInfoWrapper currentSession = ensureValidSession(currentHelper);
+                        final SessionInfoWrapper currentSession = ensureValidSession(currentHelper);
                         if (connected.get() == MyJDownloaderConnectionStatus.UNCONNECTED) {
                             setConnected(MyJDownloaderConnectionStatus.PENDING);
                         }
