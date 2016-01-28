@@ -17,7 +17,7 @@ public class LAFOptions {
 
     /**
      * get the only existing instance of LAFOptions. This is a singleton
-     * 
+     *
      * @return
      */
     public static LAFOptions getInstance() {
@@ -338,6 +338,10 @@ public class LAFOptions {
 
     public Color getColorForLinkgrabberDupeHighlighter() {
         return createColor(cfg.getColorForLinkgrabberDupeHighlighter());
+    }
+
+    public Color getColorForTableRowGap() {
+        return createColor(cfg.getColorForTableRowGap());
     }
 
 }

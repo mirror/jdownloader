@@ -433,4 +433,13 @@ public interface LAFSettings extends ConfigInterface {
 
     public void setConfigLabelDisabledTextColor(String str);
 
+    @DescriptionForConfigEntry("Customized Color for the Table Row gap line in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+
+    public String getColorForTableRowGap();
+
+    public void setColorForTableRowGap(String str);
+
 }

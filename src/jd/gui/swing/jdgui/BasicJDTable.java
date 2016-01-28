@@ -74,6 +74,10 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
                 overwriteHorizontalLinesPossible = false;
             }
         }
+        Color col = LAFOptions.getInstance().getColorForTableRowGap();
+        if (col != null) {
+            setGridColor(col);
+        }
 
     }
 
@@ -205,11 +209,13 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
 
         Integer custom = CFG_GUI.CUSTOM_TABLE_ROW_HEIGHT.getValue();
         CFG_GUI.CUSTOM_TABLE_ROW_HEIGHT.getEventSender().addListener(this, true);
+
         if (custom != null && custom > 0) {
             return custom;
         } else {
             return prefHeight + 3;
         }
+
     }
 
     public boolean isOriginalOrder() {
@@ -242,7 +248,18 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     }
 
     @Override
+    public boolean getShowHorizontalLines() {
+        return true;
+    }
+
+    @Override
+    public Color getGridColor() {
+        return super.getGridColor();
+    }
+
+    @Override
     public void paintComponent(Graphics g) {
+
         if (overwriteHorizontalLinesPossible == false || isShowHorizontalLineBelowLastEntry()) {
             super.paintComponent(g);
         } else {
