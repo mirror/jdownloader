@@ -55,14 +55,8 @@ public class SankakucomplexCom extends antiDDoSForHost {
     @Override
     public void init() {
         try {
-            if (isNewJD()) {
-                Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 60000);
-            } else {
-                // law of averages, client shouldn't be making a heap of requests every second...
-                Browser.setRequestIntervalLimitGlobal(this.getHost(), 1500);
-            }
-        } catch (final Throwable t) {
-            t.printStackTrace();
+            Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 60000);
+        } catch (Exception e) {
         }
     }
 

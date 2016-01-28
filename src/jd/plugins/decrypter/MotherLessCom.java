@@ -57,7 +57,7 @@ public class MotherLessCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setLoadLimit(4194304);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(503);

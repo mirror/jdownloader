@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,10 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" }, flags = { 0 })
 public class HostUjeNet extends PluginForHost {
@@ -63,9 +63,7 @@ public class HostUjeNet extends PluginForHost {
         br = new Browser();
         this.setBrowserExclusive();
         if (userAgent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            userAgent.set(UserAgents.stringUserAgent());
         }
         br.getHeaders().put("User-Agent", userAgent.get());
         br.getPage(downloadLink.getDownloadURL());
@@ -73,12 +71,14 @@ public class HostUjeNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("name=\"name\" value=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("<b>Rozmiar:</b>([^<>\"]*?)<br>").getMatch(0);
-        if (filename == null || filesize == null) {
+        final String filesize = br.getRegex("<b>\\s*Rozmiar\\s*:\\s*</b>\\s*([^<>\"]*?)\\s*<br>").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setName(Encoding.htmlDecode(filename).trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
+        }
         return AvailableStatus.TRUE;
     }
 
