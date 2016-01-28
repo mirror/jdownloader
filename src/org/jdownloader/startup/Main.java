@@ -22,8 +22,10 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.net.MalformedURLException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
+import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
@@ -45,9 +47,6 @@ import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
-
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
-import jd.gui.swing.laf.LookAndFeelController;
 
 public class Main {
 
@@ -337,46 +336,33 @@ public class Main {
 
     public static void loadJXBrowser(ClassLoader cl) {
         try {
-
-            File jar;
+            final File lib;
             switch (CrossSystem.getOSFamily()) {
             case LINUX:
                 if (Application.is64BitJvm()) {
-                    jar = Application.getResource("libs/jxbrowser/jxbrowser-linux64.jar");
-                    if (jar.exists()) {
-
-                        Application.addUrlToClassPath(jar.toURI().toURL(), cl);
-
-                    }
+                    lib = Application.getResource("libs/jxbrowser/jxbrowser-linux64.jar");
                 } else {
-                    jar = Application.getResource("libs/jxbrowser/jxbrowser-linux32.jar");
-                    if (jar.exists()) {
-                        Application.addUrlToClassPath(jar.toURI().toURL(), cl);
-                    }
+                    lib = Application.getResource("libs/jxbrowser/jxbrowser-linux32.jar");
                 }
                 break;
             case WINDOWS:
-
-                jar = Application.getResource("libs/jxbrowser/jxbrowser-win.jar");
-                if (jar.exists()) {
-                    Application.addUrlToClassPath(jar.toURI().toURL(), cl);
-                }
+                lib = Application.getResource("libs/jxbrowser/jxbrowser-win.jar");
                 break;
             case MAC:
-                jar = Application.getResource("libs/jxbrowser/jxbrowser-mac.jar");
-                if (jar.exists()) {
-                    Application.addUrlToClassPath(jar.toURI().toURL(), cl);
-                }
+                lib = Application.getResource("libs/jxbrowser/jxbrowser-mac.jar");
+                break;
+            default:
+                lib = null;
             }
-            jar = Application.getResource("libs/jxbrowser/license.jar");
+            final File jar = Application.getResource("libs/jxbrowser/license.jar");
             if (jar.exists()) {
                 Application.addUrlToClassPath(jar.toURI().toURL(), cl);
+                if (lib != null && lib.exists()) {
+                    Application.addUrlToClassPath(lib.toURI().toURL(), cl);
+                }
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
-
     }
 }
