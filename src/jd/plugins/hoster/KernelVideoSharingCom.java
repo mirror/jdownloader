@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -33,10 +34,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "hotamateurs.xxx", "theclassicporn.com", "faplust.com", "alotporn.com", "alphaporno.com", "updatetube.com", "thenewporn.com", "pinkrod.com", "hotshame.com", "tubewolf.com", "voyeurhit.com", "yourlust.com", "pornicom.com", "pervclips.com", "wankoz.com", "tubecup.com", "pornalized.com", "myxvids.com", "hellporno.com", "h2porn.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com", "hclips.com", "mylust.com", "pornfun.com", "pornoid.com", "pornwhite.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com", "wetplace.com", "xbabe.com", "xfig.net", "hdzog.com", "sex3.com", "egbo.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com", "bravotube.net", "upornia.com", "xcafe.com",
-"txxx.com" }, urls = { "http://(?:www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?hotamateurs\\.xxx/pornvideos/\\d+\\-[a-z0-9\\-]+/", "http://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://faplust\\.com/watch/\\d+/", "http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "http://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html",
-        "http://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/", "http://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?tubecup\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/",
-        "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xfig\\.net/videos/\\d+/[a-z0-9\\-]+/",
-        "http://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?sex3\\.com/\\d+/", "http://(?:www\\.)?egbo\\.com/video/\\d+/?", "http://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "http://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://xcafe\\.com/\\d+/", "http://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        "txxx.com" }, urls = { "http://(?:www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?hotamateurs\\.xxx/pornvideos/\\d+\\-[a-z0-9\\-]+/", "http://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?faplust\\.com/watch/\\d+/", "http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "http://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+",
+                "http://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/", "http://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?tubecup\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+",
+                "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/",
+                "http://(?:www\\.)?xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?sex3\\.com/\\d+/", "http://(?:www\\.)?egbo\\.com/video/\\d+/?", "http://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "http://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://xcafe\\.com/\\d+/", "http://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class KernelVideoSharingCom extends PluginForHost {
 
     public KernelVideoSharingCom(PluginWrapper wrapper) {
@@ -68,7 +69,7 @@ public class KernelVideoSharingCom extends PluginForHost {
      *
      * -Website should NOT link to external sources (needs decrypter)
      *
-     * */
+     */
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension            = ".mp4";
@@ -88,9 +89,9 @@ public class KernelVideoSharingCom extends PluginForHost {
     /* Special types */
     private static final String  type_special_hotamateurs_xxx = "^https?://(?:www\\.)?hotamateurs\\.xxx/pornvideos/\\d+\\-[a-z0-9\\-]+/$";
     private static final String  type_special_alotporn_com    = "^http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/";
-    private static final String  type_special_faplust_com     = "^https?://faplust\\.com/watch/\\d+/$";
+    private static final String  type_special_faplust_com     = "^https?://(?:www\\.)?faplust\\.com/watch/\\d+/$";
 
-    private String               DLLINK                       = null;
+    private String               dllink                       = null;
 
     @Override
     public String getAGBLink() {
@@ -110,7 +111,7 @@ public class KernelVideoSharingCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         String filename = null;
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
@@ -174,7 +175,7 @@ public class KernelVideoSharingCom extends PluginForHost {
             }
             if (filename == null) {
                 /* Working e.g. for pervclips.com, pornicom.com */
-                filename = this.br.getRegex("class=\"heading video\\-heading\">[\t\n\r ]+<h\\d+>([^<>\"]*?)</h\\d+>").getMatch(0);
+                filename = this.br.getRegex("class=\"heading video-heading\">[\t\n\r ]+<(h\\d+)>([^<>\"]*?)</h\\1>").getMatch(1);
             }
             if (filename == null) {
                 /* Working e.g. for voyeurhit.com */
@@ -216,47 +217,48 @@ public class KernelVideoSharingCom extends PluginForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         * 
-         * 
+         *
+         *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
-        DLLINK = this.br.getRegex("flashvars\\[\\'video_html5_url\\'\\]=\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) {
+        dllink = this.br.getRegex("flashvars\\[\\'video_html5_url\\'\\]=\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
             /* E.g. yourlust.com */
-            DLLINK = this.br.getRegex("flashvars\\.video_html5_url = \"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = this.br.getRegex("flashvars\\.video_html5_url = \"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             /* RegEx for "older" KVS versions */
-            DLLINK = this.br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            dllink = this.br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
-        if (DLLINK == null && downloadLink.getDownloadURL().contains("xfig.net/")) {
+        if (dllink == null && downloadLink.getDownloadURL().contains("xfig.net/")) {
             /* Small workaround - do not include the slash at the end. */
-            DLLINK = this.br.getRegex("var videoFile=\"(http[^<>\"]*?)/\"").getMatch(0);
+            dllink = this.br.getRegex("var videoFile=\"(http[^<>\"]*?)/\"").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = this.br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        if (dllink == null) {
+            dllink = this.br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = this.br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = this.br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = this.br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        if (dllink == null) {
+            dllink = this.br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = this.br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        if (dllink == null) {
+            dllink = this.br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = this.br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = this.br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             if (!this.br.containsHTML("license_code:") && !this.br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
                 /* No licence key present in html and/or no player --> No video --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        dllink = Encoding.htmlDecode(dllink);
+        String ext = getFileNameFromURL(new URL(dllink));
+        ext = ext.contains(".") ? ext.substring(ext.lastIndexOf(".")) : ext;
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -270,7 +272,7 @@ public class KernelVideoSharingCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = this.br.openHeadConnection(DLLINK);
+                con = this.br.openHeadConnection(dllink);
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
                     final String redirect_url = this.br.getHttpConnection().getRequest().getUrl();
@@ -283,10 +285,10 @@ public class KernelVideoSharingCom extends PluginForHost {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 final String redirect_url = this.br.getHttpConnection().getRequest().getUrl();
                 if (redirect_url != null) {
-                    DLLINK = redirect_url;
-                    logger.info("DLLINK: " + DLLINK);
+                    dllink = redirect_url;
+                    logger.info("DLLINK: " + dllink);
                 }
-                downloadLink.setProperty("directlink", DLLINK);
+                downloadLink.setProperty("directlink", dllink);
             }
             return AvailableStatus.TRUE;
         } finally {
@@ -305,7 +307,7 @@ public class KernelVideoSharingCom extends PluginForHost {
         } else if (this.br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

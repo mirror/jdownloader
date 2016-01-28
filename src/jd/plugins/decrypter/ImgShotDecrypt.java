@@ -87,7 +87,7 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
         if (br.containsHTML("imgContinue") || br.containsHTML("continue_to_image")) {
             br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
         }
-        final String finallink = br.getRegex("(\\'|\")(http://(www\\.)?" + Pattern.quote(Browser.getHost(parameter)) + "(/upload/big/|/uploads/images/)[^<>\"]*?)\\1").getMatch(1);
+        final String finallink = br.getRegex("(\\'|\")(https?://([\\w\\-]+\\.)?" + Pattern.quote(Browser.getHost(parameter)) + "((?:/upload)?/big/|(?:/uploads)?/images/)[^<>\"]*?)\\1").getMatch(1);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

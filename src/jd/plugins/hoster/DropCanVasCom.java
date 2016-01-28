@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropcanvas.com" }, urls = { "http://(www\\.)?dropcanvas\\.com/[a-z0-9]+/\\d+" }, flags = { 0 })
 public class DropCanVasCom extends antiDDoSForHost {
@@ -40,7 +41,8 @@ public class DropCanVasCom extends antiDDoSForHost {
         return "http://dropcanvas.com/terms-and-conditions-of-service";
     }
 
-    private String DLLINK = null;
+    private String  dllink            = null;
+    private boolean isNotDownloadable = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -52,7 +54,7 @@ public class DropCanVasCom extends antiDDoSForHost {
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                DLLINK = link.getDownloadURL();
+                dllink = link.getDownloadURL();
                 return AvailableStatus.TRUE;
             }
         } finally {
@@ -65,6 +67,10 @@ public class DropCanVasCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Please wait while we fetch your download</h3>([^<>\"]*?)<br />").getMatch(0);
+        if (filename == null) {
+            isNotDownloadable = true;
+            filename = br.getRegex("<div class=\"fileNameView\">\\s*(.*?)\\s*&nbsp;").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -79,24 +85,34 @@ public class DropCanVasCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (DLLINK == null) {
-            DLLINK = checkDirectLink(downloadLink, "directlink");
-            if (DLLINK == null) {
-                final int minWait = Integer.parseInt(br.getRegex("queueMinDrop = (\\d+);").getMatch(0));
-                final int beginQueue = Integer.parseInt(br.getRegex("queue = (\\d+);").getMatch(0));
-                final int wait = beginQueue * minWait;
-                sleep(1001 * wait, downloadLink);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                final Regex dlInfo = new Regex(downloadLink.getDownloadURL(), "dropcanvas\\.com/([a-z0-9]+)/(\\d+)");
-                br.postPage("http://dropcanvas.com/download/getDownloadLink", "albumId=" + dlInfo.getMatch(0) + "&indx=" + dlInfo.getMatch(1));
-                DLLINK = br.getRegex("\"downloadLink\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                if (DLLINK == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = checkDirectLink(downloadLink, "directlink");
+            if (dllink == null) {
+                if (isNotDownloadable) {
+                    // images etc...
+                    dllink = br.getRegex("<img\\s+class=\"big dragout\"\\s+src=\"(.*?)\"").getMatch(0);
                 }
-                DLLINK = DLLINK.replace("\\", "");
+                if (dllink == null) {
+                    final String minwait = br.getRegex("queueMinDrop = (\\d+);").getMatch(0);
+                    final String beginqueue = br.getRegex("queue = (\\d+);").getMatch(0);
+                    if (minwait == null || beginqueue == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final int minWait = Integer.parseInt(minwait);
+                    final int beginQueue = Integer.parseInt(beginqueue);
+                    final int wait = beginQueue * minWait;
+                    sleep(1001 * wait, downloadLink);
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    final Regex dlInfo = new Regex(downloadLink.getDownloadURL(), "dropcanvas\\.com/([a-z0-9]+)/(\\d+)");
+                    br.postPage("http://dropcanvas.com/download/getDownloadLink", "albumId=" + dlInfo.getMatch(0) + "&indx=" + dlInfo.getMatch(1));
+                    dllink = PluginJSonUtils.getJson(br, "downloadLink");
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("\"error\":\"Unknown error\"")) {
@@ -104,7 +120,7 @@ public class DropCanVasCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", DLLINK);
+        downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
