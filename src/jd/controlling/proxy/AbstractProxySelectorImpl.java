@@ -9,15 +9,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.updatev2.FilterList;
-import org.jdownloader.updatev2.ProxyData;
-
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.ProxySelectorInterface;
 import jd.http.Request;
 import jd.plugins.Account;
 import jd.plugins.Plugin;
+
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.updatev2.FilterList;
+import org.jdownloader.updatev2.ProxyData;
 
 public abstract class AbstractProxySelectorImpl implements ProxySelectorInterface {
     public static enum Type {
@@ -138,54 +138,47 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         return Collections.unmodifiableList(banList);
     }
 
-    public void addSessionBan(ConnectionBan ban) {
-        if (ban != null) {
-            for (ConnectionBan b : banList) {
-                if (b.isExpired()) {
-                    banList.remove(b);
-                    continue;
-                }
-                if (b.canSwallow(ban)) {
+    public void addSessionBan(final ConnectionBan newBan) {
+        if (newBan != null) {
+            for (final ConnectionBan oldBan : banList) {
+                if (oldBan.isExpired()) {
+                    banList.remove(oldBan);
+                } else if (oldBan.canSwallow(newBan)) {
                     return;
-                }
-                if (ban.canSwallow(b)) {
-                    banList.remove(b);
-                    continue;
+                } else if (newBan.canSwallow(oldBan)) {
+                    banList.remove(oldBan);
                 }
             }
-            banList.addIfAbsent(ban);
+            banList.addIfAbsent(newBan);
         }
     }
 
     public boolean isProxyBannedFor(final HTTPProxy orgReference, final URL url, final Plugin pluginFromThread, final boolean ignoreConnectBans) {
-        boolean banned = false;
-        for (ConnectionBan b : banList) {
-            if (b.isExpired()) {
-                banList.remove(b);
-            } else if (banned == false && b.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans)) {
-                banned = true;
+        for (final ConnectionBan ban : banList) {
+            if (ban.isExpired()) {
+                banList.remove(ban);
+            } else if (ban.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans)) {
+                return true;
             }
         }
-        return banned;
+        return false;
     }
 
     public boolean isSelectorBannedFor(final Plugin pluginForHost, final boolean ignoreConnectBans) {
-        boolean banned = false;
-        for (ConnectionBan b : banList) {
-            if (b.isExpired()) {
-                banList.remove(b);
-            } else if (banned == false && b.isSelectorBannedByPlugin(pluginForHost, ignoreConnectBans)) {
-                banned = true;
+        for (final ConnectionBan ban : banList) {
+            if (ban.isExpired()) {
+                banList.remove(ban);
+            } else if (ban.isSelectorBannedByPlugin(pluginForHost, ignoreConnectBans)) {
+                return true;
             }
         }
-        return banned;
+        return false;
     }
 
     public void addSelectProxyByUrlHook(SelectProxyByUrlHook selectProxyByUrlHook) {
         if (selectProxyByUrlHook != null) {
             selectProxyByUrlHooks.addIfAbsent(selectProxyByUrlHook);
         }
-
     }
 
     public void removeSelectProxyByUrlHook(SelectProxyByUrlHook hook) {

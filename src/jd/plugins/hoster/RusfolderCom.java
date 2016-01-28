@@ -22,9 +22,6 @@ import java.io.IOException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.adverigo.Adverigo;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +38,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.adverigo.Adverigo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(com|net|ru|su)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
 public class RusfolderCom extends PluginForHost {
@@ -78,7 +78,7 @@ public class RusfolderCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return -1;
     }
 
     @Override

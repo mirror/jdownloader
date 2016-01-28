@@ -18,6 +18,22 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.ClonedProxy;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -45,6 +61,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.net.httpconnection.ProxyConnectException;
+import org.appwork.utils.net.httpconnection.ProxyEndpointConnectException;
 import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -70,22 +87,6 @@ import com.btr.proxy.selector.whitelist.ProxyBypassListSelector;
 import com.btr.proxy.util.Logger;
 import com.btr.proxy.util.Logger.LogBackEnd;
 import com.btr.proxy.util.Logger.LogLevel;
-
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.ClonedProxy;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
 
 //import com.btr.proxy.search.ProxySearchStrategy;
 //import com.btr.proxy.search.browser.firefox.FirefoxProxySearchStrategy;
@@ -119,30 +120,24 @@ public class ProxyController implements ProxySelectorInterface {
 
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
 
-                                                                                                @Override
-                                                                                                public void killQueue() {
-                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                                                                                    /*
-                                                                                                                                                                     * this
-                                                                                                                                                                     * queue
-                                                                                                                                                                     * can
-                                                                                                                                                                     * '
-                                                                                                                                                                     * t
-                                                                                                                                                                     * be
-                                                                                                                                                                     * killed
-                                                                                                                                                                     */
-                                                                                                }
+        @Override
+        public void killQueue() {
+            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
 
-                                                                                            };
+    };
 
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
 
-                                                                                                @Override
-                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
-                                                                                                    return true;
-                                                                                                }
-                                                                                            };
+        @Override
+        public boolean suppressEvent(ConfigEvent eventType) {
+            return true;
+        }
+    };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -914,7 +909,6 @@ public class ProxyController implements ProxySelectorInterface {
 
     private boolean askForProxyAuth(final SelectedProxy selectedProxy, final int flags, final boolean typeEditable, final URL url, final String msg, final String title) {
         final AbstractProxySelectorImpl selector = selectedProxy.selector;
-
         final Plugin plugin = getPluginFromThread();
         if (selector.isProxyBannedFor(selectedProxy, url, plugin, false) == false) {
             HTTPProxy proxy = null;
@@ -1276,7 +1270,10 @@ public class ProxyController implements ProxySelectorInterface {
                 if (selectedProxy != null && selectedProxy.getSelector() != null) {
                     final URL url = new URL(urlString);
                     final AbstractProxySelectorImpl selector = selectedProxy.getSelector();
-                    if (e instanceof ProxyConnectException) {
+                    if (e instanceof ProxyEndpointConnectException) {
+                        selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, url));
+                        return true;
+                    } else if (e instanceof ProxyConnectException) {
                         selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, url));
                         return true;
                     } else if (e instanceof ProxyAuthException) {
@@ -1293,7 +1290,6 @@ public class ProxyController implements ProxySelectorInterface {
 
     @Override
     public boolean reportConnectException(Request request, int retryCounter, IOException e) {
-
         try {
             if (e instanceof ProxyAuthException) {
                 // we handle this
@@ -1301,12 +1297,17 @@ public class ProxyController implements ProxySelectorInterface {
             } else if (e instanceof ProxyConnectException) {
                 final SelectedProxy selectedProxy = getSelectedProxy(request.getProxy());
                 if (selectedProxy != null && selectedProxy.getSelector() != null) {
-                    AbstractProxySelectorImpl selector = selectedProxy.getSelector();
-                    Plugin plg = getPluginFromThread();
+                    final AbstractProxySelectorImpl selector = selectedProxy.getSelector();
+                    final Plugin plg = getPluginFromThread();
                     if (plg != null) {
                         selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
                     } else {
-                        selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, new URL(request.getUrl())));
+                        final URL url = new URL(request.getUrl());
+                        if (e instanceof ProxyEndpointConnectException) {
+                            selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, url));
+                        } else {
+                            selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, url));
+                        }
                     }
                 }
             }

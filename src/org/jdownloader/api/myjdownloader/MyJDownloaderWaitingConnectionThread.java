@@ -1,6 +1,7 @@
 package org.jdownloader.api.myjdownloader;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
@@ -21,11 +22,6 @@ import org.jdownloader.myjdownloader.client.json.DeviceConnectionStatus;
 public class MyJDownloaderWaitingConnectionThread extends Thread {
 
     protected static class MyJDownloaderConnectionRequest {
-        private final InetSocketAddress addr;
-
-        public final InetSocketAddress getAddr() {
-            return addr;
-        }
 
         public final SessionInfoWrapper getSession() {
             return session;
@@ -39,7 +35,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         }
 
         protected MyJDownloaderConnectionRequest(SessionInfoWrapper session, DeviceConnectionHelper connectionHelper) {
-            this.addr = connectionHelper.getAddr();
             this.session = session;
             this.connectionHelper = connectionHelper;
         }
@@ -118,9 +113,10 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     request.getConnectionHelper().backoff();
                     Socket connectionSocket = null;
                     HTTPProxy proxy = null;
-                    final String url = "http://" + SocketConnection.getHostName(request.getAddr()) + ":" + request.getAddr().getPort();
+                    final InetSocketAddress addr = request.getConnectionHelper().getAddr();
+                    final String url = "http://" + SocketConnection.getHostName(addr) + ":" + addr.getPort();
                     try {
-                        connectThread.log("Connect " + request.getAddr());
+                        connectThread.log("Connect " + addr);
                         final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByUrl(url, false, false);
                         if (list != null && list.size() > 0) {
                             proxy = list.get(0);
@@ -128,15 +124,18 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             connectionSocket.setReuseAddress(true);
                             connectionSocket.setSoTimeout(180000);
                             connectionSocket.setTcpNoDelay(true);
-                            connectionSocket.connect(request.getAddr(), 30000);
+                            connectionSocket.connect(addr, 30000);
                             connectionSocket.getOutputStream().write(("DEVICE" + request.getSession().getSessionToken()).getBytes("ISO-8859-1"));
                             connectionSocket.getOutputStream().flush();
                             int validToken = connectionSocket.getInputStream().read();
                             connectionStatus = DeviceConnectionStatus.parse(validToken);
                         } else {
-                            connectThread.log("No connection available!");
                             synchronized (connectionRequest) {
-                                connectionRequest.wait(5000);
+                                try {
+                                    connectionRequest.wait(5000);
+                                } catch (final InterruptedException ignore) {
+                                }
+                                throw new ConnectException("No available connection for:" + url);
                             }
                         }
                     } catch (Throwable throwable) {
@@ -156,7 +155,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             }
                         }
                     }
-                    MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, connectionStatus, connectionSocket, e);
+                    final MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request, connectionStatus, connectionSocket, e);
                     if (connectThread.putResponse(response) == false) {
                         connectThread.log("putResponse failed, maybe connectThread is closed/interrupted.");
                         try {
