@@ -26,8 +26,6 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -47,6 +45,8 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
@@ -144,8 +144,8 @@ public class VideoMegaTv extends antiDDoSForHost {
         js.getHeaders().put("Accept", "*/*");
         getPage(js, "/cdn.js");
         final String javascript = br.getRegex("<script[^\r\n]+ref=\"" + fuid + ".*?</script>").getMatch(-1);
-        final String width = new Regex(javascript, "width=\"(\\d+%?)\"").getMatch(0);
-        final String height = new Regex(javascript, "height=\"(\\d+)\"").getMatch(0);
+        final String width = new Regex(javascript, "width=\"(\\d+)%?\"").getMatch(0);
+        final String height = new Regex(javascript, "height=\"(\\d+)%?\"").getMatch(0);
         getPage("/view.php?ref=" + fuid + "&width=" + (width == null ? "800" : width) + "&height=" + (height == null ? "400" : height));
         if (br.containsHTML(">Sorry an error has occurred converting this video\\.<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster issue converting video.", 30 * 60 * 1000l);

@@ -467,6 +467,38 @@ public class YoutubeDashV2 extends PluginForHost {
         boolean isSubtitleCopyforEachVideoVariant();
 
         @AboutConfig
+        @DefaultIntValue(40)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingCodecH264();
+
+        void setRatingCodecH264(int rating);
+
+        @AboutConfig
+        @DefaultIntValue(25)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingCodecH263();
+
+        void setRatingCodecH263(int rating);
+
+        @AboutConfig
+        @DefaultIntValue(30)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingCodecVP9();
+
+        void setRatingCodecVP9(int rating);
+
+        @AboutConfig
+        @DefaultIntValue(20)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingCodecVP8();
+
+        void setRatingCodecVP8(int rating);
+
+        @AboutConfig
         @DefaultIntValue(5)
         @RequiresRestart("A JDownloader Restart is Required")
         @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")

@@ -162,7 +162,6 @@ public class TbCmV2 extends PluginForDecrypt {
         @Override
         public int compareTo(VariantInfo o) {
             return new Double(o.variant.getQualityRating()).compareTo(new Double(variant.getQualityRating()));
-
         }
 
     }
@@ -749,22 +748,25 @@ public class TbCmV2 extends PluginForDecrypt {
                                 }
                                 break;
                             case VIDEO:
-                                boolean added = false;
                                 if (cfg.isCreateBestVideoVariantLinkEnabled()) {
+                                    VariantInfo best = null;
                                     if (cfg.isBestVideoVariant1080pLimitEnabled()) {
                                         for (VariantInfo vv : e.getValue()) {
                                             try {
                                                 if (vv.getVariant().getiTagVideo().getQualityRating() < VideoResolution.P_1440.getRating()) {
-                                                    decryptedLinks.add(createLink(vv, e.getValue()));
-                                                    added = true;
-                                                    break;
+                                                    if (best == null) {
+                                                        best = vv;
+                                                    } else if (best.getVariant().getQualityRating() < vv.getVariant().getQualityRating()) {
+                                                        best = vv;
+                                                    }
                                                 }
                                             } catch (Throwable ee) {
-
                                             }
                                         }
                                     }
-                                    if (!added) {
+                                    if (best != null) {
+                                        decryptedLinks.add(createLink(best, e.getValue()));
+                                    } else {
                                         decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                                     }
                                 }
