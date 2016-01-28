@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -40,9 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://www(\\d+)?\\.speedyshare\\.com/remote/[A-Za-z0-9]+/d\\d+\\-[A-Za-z0-9]+|http://(www\\.)?(speedyshare\\.com|speedy\\.sh)/(files?/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class SpeedyShareCom extends PluginForHost {
@@ -150,14 +150,7 @@ public class SpeedyShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().matches(REMOTELINK)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (br.containsHTML("The one\\-hour limit has been reached\\. Wait")) {
             String wait[] = br.getRegex("id=minwait1>(\\d+):(\\d+)</span> minutes").getRow(0);
@@ -332,25 +325,16 @@ public class SpeedyShareCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-            try {
-                br.getPage("/remote_downloader.php");
-                final String[] hosts = br.getRegex("src=/gf/ru/([A-Za-z0-9\\.]+)\\.png width=").getColumn(0);
-                if (hosts == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-                /*
-                 * set ArrayList<String> with all supported multiHosts of this service
-                 */
-                ai.setMultiHostSupport(this, supportedHosts);
-                ai.setStatus("Premium Account");
-            } catch (final Throwable e) {
-                logger.info("Could not fetch ServerList from speedyshare.com: " + e.toString());
-            }
-        } else {
-            ai.setStatus("Premium Account");
+        br.getPage("/remote_downloader.php");
+        final String[] hosts = br.getRegex("src=/gf/ru/([A-Za-z0-9\\.]+)\\.png width=").getColumn(0);
+        if (hosts == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        /*
+         * set ArrayList<String> with all supported multiHosts of this service
+         */
+        ai.setMultiHostSupport(this, supportedHosts);
         return ai;
     }
 
@@ -383,7 +367,7 @@ public class SpeedyShareCom extends PluginForHost {
                 sleep(3000, link);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, -8);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.warning("Final downloadlink doesn't lead to a file!");
@@ -437,11 +421,7 @@ public class SpeedyShareCom extends PluginForHost {
         }
         if (fuid != null) {
             final String linkID = getHost() + "://" + fuid;
-            try {
-                downloadLink.setLinkID(linkID);
-            } catch (final Throwable e) {
-                downloadLink.setProperty("LINKDUPEID", linkID);
-            }
+            downloadLink.setLinkID(linkID);
         }
     }
 

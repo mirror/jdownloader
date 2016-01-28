@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ps3gameroom.net" }, urls = { "http://(www\\.)?ps3gameroom\\.net/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ps3gameroom.net" }, urls = { "^http://(?:www\\.)?ps3gameroom\\.net/[a-zA-Z0-9]+$" }, flags = { 2 })
 public class Ps3GameRoomNet extends PluginForHost {
 
     public Ps3GameRoomNet(PluginWrapper wrapper) {
@@ -58,7 +58,7 @@ public class Ps3GameRoomNet extends PluginForHost {
 
     private final String        MAINPAGE     = "http://ps3gameroom.net";
     private final String        TYPE         = "html";
-    private static final String INVALIDLINKS = "http://(www\\.)?ps3gameroom\\.net/(account_home|account_folders|account_edit|logout)";
+    private static final String INVALIDLINKS = "(?i)https?://(?:www\\.)?ps3gameroom\\.net/(?:logout|themes|js|images).*?";
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -228,10 +228,10 @@ public class Ps3GameRoomNet extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.MFScripts_YetiShare;
-	}
 
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
+    }
 
 }
