@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.components.packagetable;
 
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
@@ -25,16 +26,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.BasicJDTable;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
+import org.appwork.swing.exttable.ExtOverlayRowHighlighter;
+import org.appwork.swing.exttable.ExtTable;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
@@ -50,6 +47,12 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.BasicJDTable;
 
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
 
@@ -172,6 +175,33 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 selectionVersion.incrementAndGet();
             }
         });
+        int horizontalLineWeight = CFG_GUI.CFG.getLinkTableHorizontalRowLineWeight();
+        if (horizontalLineWeight > 0) {
+            addRowHighlighter(new ExtOverlayRowHighlighter(null, null) {
+                private Color       color;
+                private BasicStroke stroke;
+
+                {
+                    stroke = new BasicStroke(horizontalLineWeight);
+                    color = LAFOptions.getInstance().getColorForTableRowGap();
+                    if (color == null) {
+                        color = Color.WHITE;
+                    }
+                }
+
+                @Override
+                public void paint(Graphics2D g, int x, int y, int width, int height) {
+                    g.setColor(color);
+                    g.setStroke(stroke);
+                    g.drawLine(x, y + height, x + width, y + height);
+                }
+
+                @Override
+                public boolean doHighlight(ExtTable<?> extTable, int row) {
+                    return true;
+                }
+            });
+        }
     }
 
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo() {

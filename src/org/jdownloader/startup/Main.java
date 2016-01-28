@@ -225,7 +225,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        loadJXBrowser();
+        loadJXBrowser(Main.class.getClassLoader());
         final boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswing") != null && !Application.isHeadless();
         if (nativeSwing) {
             long start = System.currentTimeMillis();
@@ -335,9 +335,9 @@ public class Main {
         }
     }
 
-    private static void loadJXBrowser() {
+    public static void loadJXBrowser(ClassLoader cl) {
         try {
-            final ClassLoader cl = Main.class.getClassLoader();
+
             File jar;
             switch (CrossSystem.getOSFamily()) {
             case LINUX:
