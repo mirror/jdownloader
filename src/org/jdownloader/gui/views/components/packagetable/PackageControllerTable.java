@@ -175,7 +175,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 selectionVersion.incrementAndGet();
             }
         });
-        int horizontalLineWeight = CFG_GUI.CFG.getLinkTableHorizontalRowLineWeight();
+        final int horizontalLineWeight = CFG_GUI.CFG.getLinkTableHorizontalRowLineWeight();
         if (horizontalLineWeight > 0) {
             addRowHighlighter(new ExtOverlayRowHighlighter(null, null) {
                 private Color       color;
