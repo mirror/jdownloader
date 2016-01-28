@@ -37,6 +37,11 @@ public class PseudoCombo<Type> extends JButton {
 
     }
 
+    @Override
+    public Dimension getMinimumSize() {
+        return super.getPreferredSize();
+    }
+
     public void setValues(Type[] values) {
         this.values = values;
         Insets m = getMargin();
@@ -120,6 +125,7 @@ public class PseudoCombo<Type> extends JButton {
             }
             popup.add(new AppAction() {
                 private Type value;
+
                 {
                     value = sc;
                     setName(getLabel(sc, false));

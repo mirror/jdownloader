@@ -9,20 +9,6 @@ import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.ProxyInput;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.components.YoutubeVariant;
-import jd.plugins.decrypter.YoutubeHelper;
-import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
-import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
-import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAPlaylistAction;
-import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
-
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
@@ -34,6 +20,22 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.ProxyInput;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.components.YoutubeVariant;
+import jd.plugins.components.youtube.MediaQualityInterface;
+import jd.plugins.components.youtube.VideoContainer;
+import jd.plugins.decrypter.YoutubeHelper;
+import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
+import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
+import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAPlaylistAction;
+import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
@@ -191,20 +193,44 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                 image.add(ytv);
                 break;
             case VIDEO:
-                if (ytv.name().startsWith("MP4")) {
-                    videoMP4.add(ytv);
-                } else if (ytv.name().startsWith("DASH_H264")) {
-                    videoMP4.add(ytv);
-
-                } else if (ytv.name().startsWith("FLV")) {
-                    videoFLV.add(ytv);
-
-                } else if (ytv.name().startsWith("THREEGP")) {
-                    videoGP3.add(ytv);
-
+                VideoContainer videoTag = null;
+                for (MediaQualityInterface tag : ytv.getiTagVideo().getQualityTags()) {
+                    if (tag instanceof VideoContainer) {
+                        videoTag = (VideoContainer) tag;
+                        break;
+                    }
+                }
+                if (videoTag != null) {
+                    switch (videoTag) {
+                    case FLV:
+                        videoFLV.add(ytv);
+                        break;
+                    case MP4:
+                        videoMP4.add(ytv);
+                        break;
+                    case THREEGP:
+                        videoGP3.add(ytv);
+                        break;
+                    case WEBM:
+                        videoWEBM.add(ytv);
+                        break;
+                    }
                 } else {
-                    videoWEBM.add(ytv);
+                    if (ytv.name().startsWith("MP4")) {
+                        videoMP4.add(ytv);
+                    } else if (ytv.name().startsWith("DASH_H264")) {
+                        videoMP4.add(ytv);
 
+                    } else if (ytv.name().startsWith("FLV")) {
+                        videoFLV.add(ytv);
+
+                    } else if (ytv.name().startsWith("THREEGP")) {
+                        videoGP3.add(ytv);
+
+                    } else {
+                        videoWEBM.add(ytv);
+
+                    }
                 }
 
                 break;
