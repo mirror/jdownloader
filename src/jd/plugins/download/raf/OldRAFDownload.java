@@ -896,7 +896,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     protected boolean checkResumeConnection() {
-        final String requestedRange = connection.getHeaderField("Range");
+        final String requestedRange = connection.getRequestProperty("Range");
         if (requestedRange != null) {
             // range requested
             final long[] responseRange = connection.getRange();
