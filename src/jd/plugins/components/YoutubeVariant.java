@@ -7,15 +7,15 @@ import java.util.Locale;
 
 import javax.swing.Icon;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.youtube.AudioBitrate;
-import jd.plugins.components.youtube.AudioCodec;
-
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.youtube.AudioBitrate;
+import jd.plugins.components.youtube.AudioCodec;
 
 public enum YoutubeVariant implements YoutubeVariantInterface {
     AAC_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
@@ -2148,7 +2148,32 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return _GUI._.YoutubeVariant_nametag_generic_video("4320p");
         }
 
-    };
+    },
+
+    H264_480P_24FPS_AAC_128KBIT("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_ITAG59_H264_480P_24FPS_AAC_128KBIT, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_generic_video("480p", "Mp4");
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_name_generic_video("480p", "Mp4");
+        }
+    },
+    H264_480P_24FPS_AAC_128KBIT_2("480P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_ITAG78_H264_480P_24FPS_AAC_128KBIT, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_generic_video("480p", "Mp4");
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_name_generic_video("480p", "Mp4");
+        }
+    }
+
+    ;
 
     private YoutubeConverter                           converter;
     final private String                               fileExtension;
