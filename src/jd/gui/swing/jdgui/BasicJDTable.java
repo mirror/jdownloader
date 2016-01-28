@@ -95,8 +95,9 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     protected JPopupMenu columnControlMenu(final ExtColumn<T> extColumn) {
         JPopupMenu popup = super.columnControlMenu(extColumn);
         // popup.add(new JSeparator());
-        popup.add(new JMenuItem(new LockAllColumnsAction(this)));
-
+        if (getModel().getTable().isColumnLockingFeatureEnabled()) {
+            popup.add(new JMenuItem(new LockAllColumnsAction(this)));
+        }
         return popup;
     }
 

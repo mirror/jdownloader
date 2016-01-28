@@ -443,7 +443,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -619,7 +619,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API, TODO: Return host-plugin links here to improve the overall stability.
-     * 
+     *
      * @throws Exception
      */
     private void decryptAudioPage() throws Exception {
@@ -1042,7 +1042,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     private void decryptCommunityVideoAlbum() throws Exception {
@@ -1196,7 +1196,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                     filename = title;
                     if (docs_add_unique_id) {
-                        filename = owner_id + "_" + content_id + filename;
+                        filename = owner_id + "_" + content_id + "_" + filename;
                     }
                     dl = createDownloadlink(url);
                     dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
@@ -1357,7 +1357,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * NOT Using API
-     * 
+     *
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
@@ -1623,7 +1623,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Handles these error-codes: https://vk.com/dev/errors
-     * 
+     *
      * @return true = ready to retry, false = problem - failed!
      */
     private boolean apiHandleErrors() throws Exception {
@@ -1818,7 +1818,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /**
      * Returns the ownerID which belongs to a name e.g. vk.com/some_name
-     * 
+     *
      * @throws Exception
      */
     private String resolveScreenNameAPI(final String screenname) throws Exception {

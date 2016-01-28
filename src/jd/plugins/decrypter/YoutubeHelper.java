@@ -82,13 +82,21 @@ import org.jdownloader.statistics.StatsManager.CollectionName;
 
 public class YoutubeHelper implements YoutubeHelperInterface {
     static {
-        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         MediaTagsVarious.VIDEO_FPS_60.setRating(cfg.getRating60Fps() / 100d);
         VideoContainer.MP4.setRating(cfg.getRatingContainerMP4() / 10d);
         VideoContainer.WEBM.setRating(cfg.getRatingContainerWEBM() / 10d);
         AudioCodec.AAC.setRating(cfg.getRatingContainerAAC() / 10000d);
         AudioCodec.AAC_M4A.setRating(cfg.getRatingContainerM4A() / 10000d);
         AudioCodec.MP3.setRating(cfg.getRatingContainerMP3() / 10000d);
+        VideoCodec.VP8.setRating(cfg.getRatingCodecVP8());
+        final int vp9 = cfg.getRatingCodecVP9();
+        VideoCodec.H263.setRating(cfg.getRatingCodecH263());
+        VideoCodec.H264.setRating(cfg.getRatingCodecH264());
+        VideoCodec.VP9_WORSE_PROFILE_1.setRating(vp9 - 1);
+        VideoCodec.VP9.setRating(vp9);
+        VideoCodec.VP9_BETTER_PROFILE_1.setRating(vp9 + 1);
+        VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
     }
 
     public static final String    PAID_VIDEO        = "Paid Video:";
