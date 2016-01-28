@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -92,6 +93,7 @@ public class KernelVideoSharingCom extends PluginForHost {
     private static final String  type_special_faplust_com     = "^https?://(?:www\\.)?faplust\\.com/watch/\\d+/$";
 
     private String               dllink                       = null;
+    private boolean              isDownload                   = false;;
 
     @Override
     public String getAGBLink() {
@@ -221,30 +223,32 @@ public class KernelVideoSharingCom extends PluginForHost {
          *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
-        dllink = this.br.getRegex("flashvars\\[\\'video_html5_url\\'\\]=\\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = this.br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
         if (dllink == null) {
             /* E.g. yourlust.com */
             dllink = this.br.getRegex("flashvars\\.video_html5_url = \"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
             /* RegEx for "older" KVS versions */
-            dllink = this.br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            dllink = this.br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?'(http[^<>\"]*?)'").getMatch(0);
         }
         if (dllink == null && downloadLink.getDownloadURL().contains("xfig.net/")) {
             /* Small workaround - do not include the slash at the end. */
-            dllink = this.br.getRegex("var videoFile=\"(http[^<>\"]*?)/\"").getMatch(0);
+            dllink = this.br.getRegex("var videoFile=\"(http[^<>\"]*?)/?\"").getMatch(0);
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+            dllink = this.br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|'|\")").getMatch(0);
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            dllink = this.br.getRegex("'(?:file|video)'[\t\n\r ]*?:[\t\n\r ]*?'(http[^<>\"]*?)'").getMatch(0);
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            dllink = this.br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"]*?)\\1").getMatch(1);
         }
         if (dllink == null) {
-            dllink = this.br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            dllink = this.br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(\"|')video/(?:mp4|flv)\\2").getMatch(0);
         }
         if (dllink == null) {
             dllink = this.br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
@@ -267,23 +271,29 @@ public class KernelVideoSharingCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        // In case the link redirects to the finallink
-        this.br.setFollowRedirects(true);
+        // this prevents another check when download is about to happen! -raztoki
+        if (isDownload) {
+            return AvailableStatus.TRUE;
+        }
+        // if you don't do this then referrer is fked for the download! -raztoki
+        final Browser br = this.br.cloneBrowser();
+        // In case the link redirects to the finallink -
+        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = this.br.openHeadConnection(dllink);
-                if (this.br.getHttpConnection().getResponseCode() == 404) {
+                con = br.openHeadConnection(dllink);
+                if (br.getHttpConnection().getResponseCode() == 404) {
                     /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
-                    final String redirect_url = this.br.getHttpConnection().getRequest().getUrl();
-                    con = this.br.openHeadConnection(redirect_url);
+                    final String redirect_url = br.getHttpConnection().getRequest().getUrl();
+                    con = br.openHeadConnection(redirect_url);
                 }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-                final String redirect_url = this.br.getHttpConnection().getRequest().getUrl();
+                final String redirect_url = br.getHttpConnection().getRequest().getUrl();
                 if (redirect_url != null) {
                     dllink = redirect_url;
                     logger.info("DLLINK: " + dllink);
@@ -301,6 +311,7 @@ public class KernelVideoSharingCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        isDownload = true;
         requestFileInformation(downloadLink);
         if (this.br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

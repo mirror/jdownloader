@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -30,11 +31,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submityourflicks.com" }, urls = { "http://(www\\.)?submityourflicks\\.com/(\\d+[a-z0-9\\-]+\\.html|embconfig/\\d+|embedded/\\d+)" }, flags = { 0 })
 public class SubmitYourFlicksCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public SubmitYourFlicksCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,29 +70,35 @@ public class SubmitYourFlicksCom extends PluginForHost {
         if (br.getURL().contains("submityourflicks.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourflicks\\.com)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^>]+)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) - SubmitYourFlicks</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) (?:-|at) SubmitYourFlicks</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("addVariable\\(\"file\", \"(http.*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("name=\"FlashVars\" value=\"file=(http.*?)http://(www\\.)?submityourflicks\\.com").getMatch(0);
+        dllink = br.getRegex("addVariable\\(\"file\", \"(http.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("name=\"FlashVars\" value=\"file=(http.*?)http://(www\\.)?submityourflicks\\.com").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("contentUrl\" content=\"(http://videos\\.cdn\\.submityourflicks\\.com/[^\"]+)\"").getMatch(0);
+                if (dllink == null) {
+                    final String clip = PluginJSonUtils.getJsonNested(br.toString(), "clip");
+                    dllink = new Regex((clip != null ? clip : ""), "url\\s*:\\s*'(.*?)'").getMatch(0);
+                }
+            }
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("contentUrl\" content=\"(http://videos\\.cdn\\.submityourflicks\\.com/[^\"]+)\"").getMatch(0);
-        }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        String ext = getFileNameFromURL(new URL(dllink));
+        ext = ext.contains(".") ? ext.substring(ext.lastIndexOf(".")) : ext;
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + (ext != null ? ext : ".mp4"));
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -108,7 +116,7 @@ public class SubmitYourFlicksCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
