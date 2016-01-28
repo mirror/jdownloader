@@ -269,6 +269,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             }
         } else if (e.getSource() == cmbType) {
             relayout();
+            panel.revalidate();
             panel.repaint();
 
         } else {
