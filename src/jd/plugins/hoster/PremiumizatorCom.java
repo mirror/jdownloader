@@ -373,21 +373,31 @@ public class PremiumizatorCom extends PluginForHost {
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
         /* Get a list of 'crippled' hosts - only catch ones that work fine according to the API */
         final String[] crippledHosts = br.getRegex("\"([^<>\"]*?)\":\"up\"").getColumn(0);
-        for (final String crippledhost : crippledHosts) {
-            if (crippledhost.equals("filecloud")) {
-                /* Workaround as .io is not in the array above also multiple filecloud's exist. */
-                supportedhostslist.add("filecloud.io");
-            } else {
-                /* Go insane */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedhostslist.add(full_possible_host);
+        if (crippledHosts == null || crippledHosts.length == 0 && account.getType() == AccountType.FREE) {
+            /* Free Account and no available hosts --> No way to download anything --> No traffic left */
+            /*
+             * 2016-01-28: On their website they have listed some hosts as 'Free Filehosters' but only some video sites (e.g. YouTube)
+             * really seems to work plus free download only goes via confirmation of one ReCaptchaV2 and several ad-redirector sites (such
+             * as adf.ly). Via API, free account download seems to be impossible.
+             */
+            ai.setTrafficLeft(0);
+        } else {
+            for (final String crippledhost : crippledHosts) {
+                if (crippledhost.equals("filecloud")) {
+                    /* Workaround as .io is not in the array above also multiple filecloud's exist. */
+                    supportedhostslist.add("filecloud.io");
+                } else {
+                    /* Go insane */
+                    for (final String possibledomain : possible_domains) {
+                        final String full_possible_host = crippledhost + "." + possibledomain;
+                        supportedhostslist.add(full_possible_host);
+                    }
                 }
             }
+            ai.setUnlimitedTraffic();
         }
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        ai.setUnlimitedTraffic();
 
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();

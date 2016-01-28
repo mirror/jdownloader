@@ -314,6 +314,11 @@ public class MultiVipNet extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Vip key");
         } else {
+            /* Free keys have a max downloadable filesize limit */
+            /*
+             * Free keys have an expire date as well. Once expired, they cannot be used to download anything anymore and JD will not accept
+             * them (shows correct message'Account expired').
+             */
             account.setType(AccountType.FREE);
             ai.setStatus("Free Vip key");
         }

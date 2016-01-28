@@ -359,7 +359,10 @@ public class PremboxCom extends PluginForHost {
 
         String status = null;
         long traffic_left_total = 0;
-        long expire_timestamp = DummyScriptEnginePlugin.toLong(traffic_standard.get("expireTstamp"), -1);
+        long expire_timestamp_standard = DummyScriptEnginePlugin.toLong(traffic_standard.get("expireTstamp"), -1);
+        long expire_timestamp_daily = DummyScriptEnginePlugin.toLong(traffic_daily.get("expireTstamp"), -1);
+        long expire_timestamp;
+        /* Accounts can also have negative traffic (=no traffic left) */
         long traffic_left_standard = DummyScriptEnginePlugin.toLong(traffic_standard.get("left"), 0);
         long traffic_left_daily = DummyScriptEnginePlugin.toLong(traffic_daily.get("left"), 0);
         final String accounttype = (String) entries.get("accountType");
@@ -378,9 +381,10 @@ public class PremboxCom extends PluginForHost {
             traffic_left_total = 0;
         }
 
-        if (traffic_left_standard <= 0) {
-            /* Maybe user only has daily traffic --> Display corret that */
-            expire_timestamp = DummyScriptEnginePlugin.toLong(traffic_daily.get("expireTstamp"), -1);
+        if (expire_timestamp_standard > expire_timestamp_daily) {
+            expire_timestamp = expire_timestamp_standard;
+        } else {
+            expire_timestamp = expire_timestamp_daily;
         }
 
         if ("premium".equals(accounttype)) {
