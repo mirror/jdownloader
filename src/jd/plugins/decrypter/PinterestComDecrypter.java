@@ -99,7 +99,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
 
-        String json_source = this.br.getRegex("P\\.main\\.start\\((\\{.*?\\})\\);[\t\n\r]+").getMatch(0);
+        String json_source = br.getRegex("P\\.main\\.start\\((\\{.*?\\})\\);[\t\n\r]+").getMatch(0);
+        if (json_source == null) {
+            json_source = br.getRegex("P\\.startArgs\\s*=\\s*(\\{.*?\\});[\t\n\r]+").getMatch(0);
+        }
 
         if (loggedIN || force_api_usage) {
             /* First, get the first 25 pictures from their site. */
