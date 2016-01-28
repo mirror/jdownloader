@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -66,21 +65,12 @@ public class PinterestCom extends PluginForHost {
         link.setUrlDownload("https://www.pinterest.com/pin/" + pin + "/");
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME               = false;
-    private static final int     FREE_MAXCHUNKS            = 1;
-    private static final int     FREE_MAXDOWNLOADS         = 20;
-    private static final boolean ACCOUNT_FREE_RESUME       = false;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-
     /* Site constants */
-    public static final String   x_app_version             = "9491270";
-    public static final String   default_extension         = ".jpg";
+    public static final String x_app_version     = "9491270";
+    public static final String default_extension = ".jpg";
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
-    private String               dllink                    = null;
+    private String             dllink            = null;
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
@@ -89,12 +79,7 @@ public class PinterestCom extends PluginForHost {
         final String pin_id = new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0);
         /* Display ids for offline links */
         link.setName(pin_id);
-        try {
-            link.setLinkID(pin_id);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            link.setProperty("LINKDUPEID", pin_id);
-        }
+        link.setLinkID(pin_id);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String site_title = null;
@@ -225,7 +210,7 @@ public class PinterestCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, false, 1, "free_directlink");
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -267,7 +252,7 @@ public class PinterestCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     private static final String MAINPAGE = "http://pinterest.com";
@@ -347,16 +332,10 @@ public class PinterestCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-        try {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(false);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
-        ai.setStatus("Registered (free) user");
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(-1);
+        account.setConcurrentUsePossible(false);
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
@@ -366,7 +345,7 @@ public class PinterestCom extends PluginForHost {
         requestFileInformation(link);
         /* We already logged in in requestFileInformation */
         br.setFollowRedirects(false);
-        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        doFree(link, false, 1, "account_free_directlink");
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
@@ -383,12 +362,6 @@ public class PinterestCom extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
