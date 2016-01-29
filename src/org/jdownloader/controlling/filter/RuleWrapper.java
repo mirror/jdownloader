@@ -3,11 +3,12 @@ package org.jdownloader.controlling.filter;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkInfo;
 
-import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
@@ -138,18 +139,6 @@ public class RuleWrapper<T extends FilterRule> {
         return onlineStatusFilter;
     }
 
-    public static void main(String[] args) {
-        test("(.*)\\QBauer7\\E(.*?)\\Q.part\\E(.*)", "*Bauer7*.part*");
-        test("\\QBauer7\\E(.*?)\\Q.part\\E", "Bauer7*.part");
-        test("\\QBauer7\\E(.*?)\\Q.part\\E", "Bauer7*.part");
-        test("\\QBauer7\\E", "Bauer7");
-        test("\\QBauer7\\E", "");
-    }
-
-    private static void test(String string, String string2) {
-        System.out.println("Test compile " + string2 + ": " + (string.equals(createPattern(string2, false).toString())));
-    }
-
     public static Pattern createPattern(String regex, boolean useRegex) {
         if (useRegex) {
             return Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
@@ -182,34 +171,30 @@ public class RuleWrapper<T extends FilterRule> {
         }
     }
 
-    public boolean checkFileType(CrawledLink link) {
-        if (getFiletypeFilter() != null) {
-            if (link.getLinkState() != AvailableLinkState.ONLINE) {
-                return false;
-            }
-            String ext = Files.getExtension(link.getName());
-            // if there is no extension, this filter does not match
-            if (ext == null) {
-                return false;
-            }
-            return getFiletypeFilter().matches(ext);
+    public boolean checkFileType(final CrawledLink link) {
+        final CompiledFiletypeFilter filetypeFilter = getFiletypeFilter();
+        if (filetypeFilter != null) {
+            final LinkInfo linkInfo = link.getLinkInfo();
+            return filetypeFilter.matches(linkInfo.getExtension().name(), linkInfo);
         }
         return true;
     }
 
-    public boolean checkFileSize(CrawledLink link) {
-        if (getFilesizeRule() != null) {
-            // if (link.getDownloadLink().getView().getBytesTotal() <= 0) return true;
+    public boolean checkFileSize(final CrawledLink link) {
+        final CompiledFilesizeFilter fileSizeRule = getFilesizeRule();
+        if (fileSizeRule != null) {
             if (link.getLinkState() != AvailableLinkState.ONLINE) {
                 return false;
+            } else {
+                return fileSizeRule.matches(link.getSize());
             }
-            return getFilesizeRule().matches(link.getSize());
         }
         return true;
     }
 
-    public boolean checkPackageName(CrawledLink link) {
-        if (getPackageNameRule() != null) {
+    public boolean checkPackageName(final CrawledLink link) {
+        final CompiledRegexFilter packageNameRule = getPackageNameRule();
+        if (packageNameRule != null) {
             String packagename = null;
             if (link != null) {
                 if (link.getParentNode() != null) {
@@ -221,36 +206,41 @@ public class RuleWrapper<T extends FilterRule> {
             }
             if (StringUtils.isEmpty(packagename)) {
                 return false;
+            } else {
+                return packageNameRule.matches(packagename);
             }
-            return getPackageNameRule().matches(packagename);
         }
         return true;
     }
 
-    public boolean checkFileName(CrawledLink link) {
-        if (link != null && getFileNameRule() != null) {
+    public boolean checkFileName(final CrawledLink link) {
+        final CompiledRegexFilter fileNameRule = getFileNameRule();
+        if (fileNameRule != null) {
             if (link.getLinkState() != AvailableLinkState.ONLINE) {
                 return false;
+            } else {
+                return fileNameRule.matches(link.getName());
             }
-            return getFileNameRule().matches(link.getName());
         }
         return true;
     }
 
-    public boolean checkHoster(CrawledLink link) throws NoDownloadLinkException {
-        if (getHosterRule() != null) {
-            if (link.getDownloadLink() == null || link.gethPlugin() == null) {
+    public boolean checkHoster(final CrawledLink link) throws NoDownloadLinkException {
+        final CompiledRegexFilter hosterRule = getHosterRule();
+        if (hosterRule != null) {
+            final DownloadLink dlLink = link.getDownloadLink();
+            if (dlLink == null || link.gethPlugin() == null) {
                 throw new NoDownloadLinkException();
-            }
-            DownloadLink dlLink = link.getDownloadLink();
-            //
-            switch (getHosterRule().getMatchType()) {
-            case CONTAINS:
-            case EQUALS:
-                return (dlLink.getHost() != null && getHosterRule().matches(dlLink.getHost())) || getHosterRule().matches(dlLink.getContentUrlOrPatternMatcher());
-            case CONTAINS_NOT:
-            case EQUALS_NOT:
-                return (dlLink.getHost() == null || getHosterRule().matches(dlLink.getHost())) && getHosterRule().matches(dlLink.getContentUrlOrPatternMatcher());
+            } else {
+                final String host = dlLink.getHost();
+                switch (hosterRule.getMatchType()) {
+                case CONTAINS:
+                case EQUALS:
+                    return (host != null && hosterRule.matches(host)) || hosterRule.matches(dlLink.getContentUrlOrPatternMatcher());
+                case CONTAINS_NOT:
+                case EQUALS_NOT:
+                    return (host == null || hosterRule.matches(host)) && hosterRule.matches(dlLink.getContentUrlOrPatternMatcher());
+                }
             }
         }
         return true;
@@ -263,7 +253,6 @@ public class RuleWrapper<T extends FilterRule> {
             String pattern = getSourceRule().getPattern().pattern();
             boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
             boolean inverted = pattern.startsWith("-");
-
             if (sources == null || sources.length == 0) {
                 /* the first link never has sourceURLs */
                 sources = new String[2];
@@ -273,7 +262,6 @@ public class RuleWrapper<T extends FilterRule> {
                     sources[1] = LinkCrawler.cleanURL(job.getCustomSourceUrl());
                 }
             }
-
             for (int j = inverted ? 0 : sources.length - 1; (inverted ? (j < sources.length) : (j >= 0)); j = (inverted ? (j + 1) : (j - 1))) {
                 String url = sources[j];
                 if (url == null) {
@@ -293,53 +281,54 @@ public class RuleWrapper<T extends FilterRule> {
                     default:
                         // nothing
                     }
-
                 }
-
             }
-
-            return false;
-
-        }
-        return true;
-    }
-
-    public boolean checkOnlineStatus(CrawledLink link) {
-        if (AvailableLinkState.UNKNOWN == link.getLinkState()) {
             return false;
         }
-        if (getOnlineStatusFilter() != null) {
-            return getOnlineStatusFilter().matches(link.getLinkState());
+        return true;
+    }
+
+    public boolean checkOnlineStatus(final CrawledLink link) {
+        final AvailableLinkState linkState = link.getLinkState();
+        if (AvailableLinkState.UNKNOWN == linkState) {
+            return false;
+        }
+        final CompiledOnlineStatusFiler onlineStatusFilter = getOnlineStatusFilter();
+        if (onlineStatusFilter != null) {
+            return onlineStatusFilter.matches(linkState);
         }
         return true;
     }
 
-    public boolean checkConditions(CrawledLink link) {
-        if (getConditionFilter() != null) {
-            if (link == null) {
+    public boolean checkConditions(final CrawledLink link) {
+        final CompiledConditionFilter conditionFiler = getConditionFilter();
+        if (conditionFiler != null) {
+            return conditionFiler.matches(link);
+        }
+        return true;
+    }
+
+    public boolean checkOrigin(final CrawledLink link) {
+        final CompiledOriginFilter originFiler = getOriginFilter();
+        if (originFiler != null) {
+            final LinkOriginDetails origin = link.getOrigin();
+            if (origin == null) {
                 return false;
+            } else {
+                return originFiler.matches(origin.getOrigin());
             }
-            return getConditionFilter().matches(link);
         }
         return true;
     }
 
-    public boolean checkOrigin(CrawledLink link) {
-        if (getOriginFilter() != null) {
-            if (link == null || link.getOrigin() == null) {
-                return false;
-            }
-            return getOriginFilter().matches(link.getOrigin().getOrigin());
-        }
-        return true;
-    }
-
-    public boolean checkPluginStatus(CrawledLink link) throws NoDownloadLinkException {
-        if (getPluginStatusFilter() != null) {
+    public boolean checkPluginStatus(final CrawledLink link) throws NoDownloadLinkException {
+        final CompiledPluginStatusFilter pluginStatusFilter = getPluginStatusFilter();
+        if (pluginStatusFilter != null) {
             if (link.getDownloadLink() == null || link.gethPlugin() == null) {
                 throw new NoDownloadLinkException();
+            } else {
+                return pluginStatusFilter.matches(link);
             }
-            return getPluginStatusFilter().matches(link);
         }
         return true;
     }

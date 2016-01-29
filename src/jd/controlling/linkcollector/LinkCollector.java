@@ -117,7 +117,6 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.RlyWarnLevel;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
@@ -1118,9 +1117,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2514,10 +2513,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     level = WarnLevel.LOW;
                 }
                 final boolean finalByPassDialog;
-                if (RlyWarnLevel.HIGH.equals(CFG_GUI.CFG.getRlyWarnLevel())) {
-                    // Always warn me
-                    finalByPassDialog = false;
-                } else if (!JDGui.bugme(level)) {
+                if (!JDGui.bugme(level)) {
                     finalByPassDialog = true;
                 } else {
                     finalByPassDialog = byPassDialog;

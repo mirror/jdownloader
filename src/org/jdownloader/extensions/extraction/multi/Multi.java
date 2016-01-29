@@ -176,16 +176,20 @@ public class Multi extends IExtraction {
     public void setLastModifiedDate(ISimpleInArchiveItem item, File extractTo) {
         // Set last write time
         try {
+            final long modified;
             if (getConfig().isUseOriginalFileDate()) {
                 final Date date = item.getLastWriteTime();
                 if (date != null && date.getTime() >= 0) {
-                    if (!extractTo.setLastModified(date.getTime())) {
-                        logger.warning("Could not set last write/modified time for " + item.getPath());
-                        return;
-                    }
+                    modified = date.getTime();
+                } else {
+                    modified = -1;
                 }
             } else {
-                extractTo.setLastModified(System.currentTimeMillis());
+                modified = System.currentTimeMillis();
+            }
+            if (modified > 0 && !extractTo.setLastModified(modified)) {
+                logger.warning("Could not set last write/modified time for " + item.getPath());
+                return;
             }
         } catch (final Throwable e) {
             logger.log(e);
@@ -551,12 +555,12 @@ public class Multi extends IExtraction {
                         setPermissions(item, extractTo);
                         if (size != null && size != extractTo.length()) {
                             if (ExtractOperationResult.OK == res) {
-                                logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
+                                logger.info("Size missmatch for " + item.getPath() + "(" + size + "!=" + extractTo.length() + "), but Extraction returned OK?! Archive seems incomplete");
                                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
                                 return;
                             }
-                            logger.info("Size missmatch for " + item.getPath() + " is " + extractTo.length() + " but should be " + size);
-                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
+                            logger.info("Size missmatch for " + item.getPath() + "(" + size + "!=" + extractTo.length() + ")");
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
                             return;
                         }
                         switch (res) {

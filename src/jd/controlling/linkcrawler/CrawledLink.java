@@ -17,7 +17,6 @@ import jd.plugins.LinkInfo;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
@@ -55,7 +54,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setOrigin(LinkOriginDetails source) {
         this.origin = source;
-
     }
 
     public LinkOriginDetails getOrigin() {
@@ -97,7 +95,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private volatile LinkCollectingJob         sourceJob          = null;
     private volatile long                      created            = -1;
 
-    boolean                                    enabledState       = true;
+    private boolean                            enabledState       = true;
     private volatile PackageInfo               desiredPackageInfo = null;
     private volatile LinkCollectingInformation collectingInfo     = null;
 
@@ -204,10 +202,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.matchingRule = matchingRule;
     }
 
-    private volatile ArchiveInfo                    archiveInfo;
-    private volatile UniqueAlltimeID                previousParent = null;
-    private volatile String[]                       sourceUrls;
-    private final NullsafeAtomicReference<LinkInfo> linkInfo       = new NullsafeAtomicReference<LinkInfo>();
+    private volatile ArchiveInfo     archiveInfo;
+    private volatile UniqueAlltimeID previousParent = null;
+    private volatile String[]        sourceUrls;
+    private volatile LinkInfo        linkInfo       = null;
 
     public CrawledLink(DownloadLink dlLink) {
         link = dlLink;
@@ -218,7 +216,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         if (dlLink == null) {
             return;
         }
-        List<String> lst = dlLink.getSourcePluginPasswordList();
+        final List<String> lst = dlLink.getSourcePluginPasswordList();
         if (lst != null && lst.size() > 0) {
             getArchiveInfo().getExtractionPasswords().addAll(lst);
         }
@@ -227,7 +225,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public void setDownloadLink(DownloadLink dlLink) {
         link = dlLink;
         passwordForward(dlLink);
-
     }
 
     public CrawledLink(CryptedLink cLink) {
@@ -629,20 +626,17 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public LinkInfo getLinkInfo() {
-        LinkInfo ret = linkInfo.get();
-        if (ret == null) {
-            ret = LinkInfo.getLinkInfo(this);
-            linkInfo.set(ret);
+        final LinkInfo linkInfo = this.linkInfo;
+        if (linkInfo == null) {
+            final LinkInfo newLinkInfo = LinkInfo.getLinkInfo(this);
+            this.linkInfo = newLinkInfo;
+            return newLinkInfo;
         }
-        return ret;
+        return linkInfo;
     }
 
     private void setLinkInfo(LinkInfo linkInfo) {
-        if (linkInfo != null) {
-            this.linkInfo.set(linkInfo);
-        } else {
-            this.linkInfo.getAndClear();
-        }
+        this.linkInfo = linkInfo;
     }
 
     @Override

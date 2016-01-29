@@ -14,7 +14,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -55,7 +54,6 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
-
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -257,12 +255,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     protected boolean isResizable() {
-        // TODO Auto-generated method stub
         return true;
     }
 
     public FiletypeFilter getFiletypeFilter() {
-
         return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbTypeSelection.isItemSelected(FileType.HASH), cbTypeSelection.isItemSelected(FileType.AUDIO), cbTypeSelection.isItemSelected(FileType.VIDEO), cbTypeSelection.isItemSelected(FileType.ARCHIVE), cbTypeSelection.isItemSelected(FileType.IMAGE), cbTypeSelection.isItemSelected(FileType.CUSTOM) ? txtCustumMime.getText() : null, cbRegFileType.isSelected());
     }
 
@@ -696,8 +692,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             @Override
             public void updateDependencies() {
                 super.updateDependencies();
-                updateOnline();
-
             }
 
         };
@@ -707,7 +701,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             @Override
             public void mousePressed(MouseEvent e) {
                 cbType.setSelected(true);
-
             }
 
         });
@@ -1092,7 +1085,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                 if (cbOnline == null) {
                     return;
                 }
-                if (cbFilename.isSelected() || cbSize.isSelected() || cbType.isSelected()) {
+                if (cbFilename.isSelected() || cbSize.isSelected()) {
                     if (!cbOnline.isSelected() || cobOnline.getSelectedIndex() != 0 || cobOnlineOptions.getSelectedIndex() != 1) {
                         autoset = true;
                         if (cbOnline.isEnabled()) {

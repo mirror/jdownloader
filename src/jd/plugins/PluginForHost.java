@@ -153,13 +153,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[] PATTERNS       = new Pattern[] {
 
-            /**
-             * these patterns should split filename and fileextension (extension must include the point)
-             */
-            // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin         lazyP          = null;
     /**
@@ -2203,7 +2204,8 @@ public abstract class PluginForHost extends Plugin {
             if (exten != null) {
                 boolean isVideo = false;
                 for (final ExtensionsFilterInterface extension : VideoExtensions.values()) {
-                    if (extension.getPattern().matcher(exten).matches()) {
+                    final Pattern pattern = extension.getPattern();
+                    if (pattern != null && pattern.matcher(exten).matches()) {
                         isVideo = true;
                         break;
                     }

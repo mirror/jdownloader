@@ -23,7 +23,7 @@ public abstract class ExtensionFilter extends Filter {
     @Override
     public boolean isFiltered(CrawledLink link) {
         final ExtensionsFilterInterface extension = link.getLinkInfo().getExtension();
-        return filter != null && filter.isSameExtensionGroup(extension);
+        return extension.isSameExtensionGroup(filter);
     }
 
 }

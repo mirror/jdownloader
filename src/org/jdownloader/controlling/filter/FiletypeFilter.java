@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
@@ -16,9 +17,8 @@ public class FiletypeFilter extends Filter implements Storable {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-
-        java.util.List<String> cond = new ArrayList<String>();
+        final StringBuilder sb = new StringBuilder();
+        final List<String> cond = new ArrayList<String>();
         if (hashEnabled) {
             cond.add(HashExtensions.MD5.getDesc());
         }
@@ -46,15 +46,12 @@ public class FiletypeFilter extends Filter implements Storable {
                     } else {
                         sb.append(" " + _GUI._.FilterRule_toString_or(cond.get(i)).trim());
                     }
-
                 } else {
                     sb.append(cond.get(i));
                 }
-
             }
             return _GUI._.FiletypeFilter_toString_(sb.toString());
         default:
-
             for (int i = 0; i < cond.size(); i++) {
                 if (i > 0) {
                     if (i < cond.size() - 1) {
@@ -62,11 +59,9 @@ public class FiletypeFilter extends Filter implements Storable {
                     } else {
                         sb.append(" " + _GUI._.FilterRule_toString_or(cond.get(i).trim()));
                     }
-
                 } else {
                     sb.append(cond.get(i));
                 }
-
             }
             return _GUI._.FiletypeFilter_toString_not(sb.toString());
         }
