@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,9 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" }, flags = { 0 })
 public class EmuParadiseMe extends PluginForHost {
@@ -119,11 +118,7 @@ public class EmuParadiseMe extends PluginForHost {
         } else {
             synchronized (LOCK) {
                 br.getPage(br.getURL() + "-download");
-                if (br.containsHTML("id=\"happy\\-hour\"") && !br.containsHTML("class=\"help tip\" style=\"display:none;\" id=\"happy\\-hour\">")) {
-                    maxFree.set(2);
-                } else {
-                    maxFree.set(1);
-                }
+
                 dllink = checkDirectLink(downloadLink, "directlink");
                 if (dllink == null) {
                     /* As long as the static cookie set captcha workaround works fine, */
@@ -161,6 +156,24 @@ public class EmuParadiseMe extends PluginForHost {
                     dllink = "http://www.emuparadise.me" + Encoding.htmlDecode(dllink);
                 }
             }
+
+            boolean happyHour = false;
+
+            if (br.containsHTML("id=\"happy\\-hour\"")) {
+                if (br.containsHTML("src=\"/happy_hour.php\"")) {
+                    Browser clone = br.cloneBrowser();
+                    clone.getPage("/happy_hour.php");
+                    if (clone.containsHTML(".style.display=\"block\"")) {
+                        happyHour = true;
+                    }
+                }
+            }
+            if (happyHour) {
+                maxFree.set(2);
+            } else {
+                maxFree.set(1);
+            }
+
         }
         /* Without this the directlink won't be accepted! */
         br.getHeaders().put("Referer", "http://www.emuparadise.me/");
