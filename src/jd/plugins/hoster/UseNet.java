@@ -2,6 +2,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -295,7 +296,7 @@ public class UseNet extends PluginForHost {
         }
         final List<HTTPProxy> list;
         try {
-            list = selector.getProxiesByUrl(getHost());
+            list = selector.getProxiesByURI(new URI("http://" + getHost()));
         } catch (Throwable e) {
             throw new NoGateWayException(selector, e);
         }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.URI;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -114,10 +115,10 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     Socket connectionSocket = null;
                     HTTPProxy proxy = null;
                     final InetSocketAddress addr = request.getConnectionHelper().getAddr();
-                    final String url = "http://" + SocketConnection.getHostName(addr) + ":" + addr.getPort();
+                    final URI uri = new URI("socket://" + SocketConnection.getHostName(addr) + ":" + addr.getPort());
                     try {
                         connectThread.log("Connect " + addr);
-                        final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByUrl(url, false, false);
+                        final List<HTTPProxy> list = ProxyController.getInstance().getProxiesByURI(uri, false, false);
                         if (list != null && list.size() > 0) {
                             proxy = list.get(0);
                             connectionSocket = SocketConnectionFactory.createSocket(proxy);
@@ -135,7 +136,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                     connectionRequest.wait(5000);
                                 } catch (final InterruptedException ignore) {
                                 }
-                                throw new ConnectException("No available connection for:" + url);
+                                throw new ConnectException("No available connection for:" + uri);
                             }
                         }
                     } catch (Throwable throwable) {
@@ -143,7 +144,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             connectThread.log(throwable);
                             e = throwable;
                             if (proxy != null && !proxy.isNone() && throwable instanceof HTTPProxyException) {
-                                ProxyController.getInstance().reportHTTPProxyException(proxy, url, (IOException) throwable);
+                                ProxyController.getInstance().reportHTTPProxyException(proxy, uri, (IOException) throwable);
                             }
                         } finally {
                             try {

@@ -17,13 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,6 +36,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+
 /**
  * @author pspzockerscene
  * @author raztoki
@@ -48,23 +49,23 @@ import jd.plugins.PluginException;
 public class FastixRu extends antiDDoSForHost {
 
     /** Using API: http://fastix.ru/apidoc */
-    private final String NOCHUNKS          = "NOCHUNKS";
-    private final String DOMAIN            = "http://fastix.ru/api_v2/";
-    private final String NICE_HOST         = "fastix.ru";
-    private final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private final String                                   NOCHUNKS                     = "NOCHUNKS";
+    private final String                                   DOMAIN                       = "http://fastix.ru/api_v2/";
+    private final String                                   NICE_HOST                    = "fastix.ru";
+    private final String                                   NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     /* Connection limits */
-    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean                                  ACCOUNT_PREMIUM_RESUME       = true;
+    private final int                                      ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private final int                                      ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap     = new HashMap<Account, HashMap<String, Long>>();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
     // used for checkDirectLink
-    private boolean                                        supportsHeadConnection = true;
+    private boolean                                        supportsHeadConnection       = true;
     // this session info
-    private int                                            statuscode             = 0;
-    private Account                                        account                = null;
-    private DownloadLink                                   downloadLink           = null;
+    private int                                            statuscode                   = 0;
+    private Account                                        account                      = null;
+    private DownloadLink                                   downloadLink                 = null;
 
     public FastixRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -159,7 +160,7 @@ public class FastixRu extends antiDDoSForHost {
             // Important Parameter [ip] can not take the address format IPv6, as well as masks (approx. 192.168. *. *)
 
             // IP might not even be needed in the scheme of things?? - raztoki
-            final HTTPProxy proxyThatWillBeUsed = br.getProxy().getProxiesByUrl(DOMAIN).get(0);
+            final HTTPProxy proxyThatWillBeUsed = br.getProxy().getProxiesByURI(new URI(DOMAIN)).get(0);
             final String externalIP = new BalancedWebIPCheck(new StaticProxySelector(proxyThatWillBeUsed)).getExternalIP().getIP();
             /* External IP of the user is needed for this request, also enforce SSL */
             getAPISafe(DOMAIN + "?apikey=" + getAPIKEY() + "&sub=getdirectlink&link=" + JSonUtils.escape(link.getDownloadURL()) + "&ip=" + JSonUtils.escape(externalIP) + "&ssl=true");

@@ -2,8 +2,8 @@ package jd.controlling.proxy;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,33 +66,23 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public List<HTTPProxy> getProxiesByUrl(String urlOrDomain) {
-        List<HTTPProxy> ret = getProxyByUrlInternal(urlOrDomain);
-        for (SelectProxyByUrlHook hook : selectProxyByUrlHooks) {
-            hook.onProxyChoosen(urlOrDomain, ret);
+    public List<HTTPProxy> getProxiesByURI(URI uri) {
+        final List<HTTPProxy> ret = getProxyByUrlInternal(uri);
+        for (final SelectProxyByURIHook hook : selectProxyByURIHooks) {
+            hook.onProxyChoosen(uri, ret);
         }
         return ret;
     }
 
-    public List<HTTPProxy> getProxyByUrlInternal(String urlOrDomain) {
+    public List<HTTPProxy> getProxyByUrlInternal(URI uri) {
         PacProxySelector lSelector = getPacProxySelector();
         if (lSelector == null) {
             return null;
         }
         final ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-        URL url = null;
-        try {
-            url = new URL(urlOrDomain);
-        } catch (MalformedURLException e) {
+        if (uri != null) {
             try {
-                url = new URL("http://" + urlOrDomain);
-            } catch (MalformedURLException e1) {
-                return null;
-            }
-        }
-        if (url != null) {
-            try {
-                List<Proxy> result = lSelector.select(url.toURI());
+                List<Proxy> result = lSelector.select(uri);
                 if (result != null) {
                     for (Proxy p : result) {
                         String ID = p.toString();
@@ -351,14 +341,14 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
+    public boolean isProxyBannedFor(HTTPProxy orgReference, URI uri, Plugin pluginFromThread, boolean ignoreConnectBans) {
         // can orgRef be null? I doubt that. TODO:ensure
         synchronized (this) {
             if (!cacheMap.containsValue(orgReference)) {
                 return false;
             }
         }
-        return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
+        return super.isProxyBannedFor(orgReference, uri, pluginFromThread, ignoreConnectBans);
     }
 
     @Override

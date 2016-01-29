@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -362,7 +363,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                                     }
 
                                     @Override
-                                    public List<HTTPProxy> getProxiesByUrl(String url) {
+                                    public List<HTTPProxy> getProxiesByURI(URI url) {
                                         return proxies;
                                     }
                                 });

@@ -1,6 +1,6 @@
 package jd.controlling.proxy;
 
-import java.net.URL;
+import java.net.URI;
 
 import jd.plugins.Plugin;
 
@@ -9,24 +9,24 @@ import org.jdownloader.translate._JDT;
 
 public class GenericConnectExceptionBan extends AuthExceptionGenericBan {
 
-    public GenericConnectExceptionBan(AbstractProxySelectorImpl selector, HTTPProxy orgReference, URL url) {
+    public GenericConnectExceptionBan(AbstractProxySelectorImpl selector, HTTPProxy orgReference, URI url) {
         super(selector, orgReference, url);
         created = System.currentTimeMillis();
     }
 
     @Override
     public String toString() {
-        final URL url = getUrl();
-        if (url != null) {
-            return _JDT._.ConnectExceptionInPluginBan(url.getHost().concat(":").concat(Integer.toString(url.getPort())));
+        final URI uri = getURI();
+        if (uri != null) {
+            return _JDT._.ConnectExceptionInPluginBan(uri.getHost().concat(":").concat(Integer.toString(getPort(uri))));
         }
         final HTTPProxy proxy = getProxy();
         return _JDT._.ConnectExceptionInPluginBan(proxy == null ? "" : proxy.toString());
     }
 
     @Override
-    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
-        return !ignoreConnectBans && super.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans);
+    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URI uri, Plugin pluginFromThread, boolean ignoreConnectBans) {
+        return !ignoreConnectBans && super.isProxyBannedByUrlOrPlugin(orgReference, uri, pluginFromThread, ignoreConnectBans);
     }
 
     @Override

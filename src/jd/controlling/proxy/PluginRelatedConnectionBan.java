@@ -1,7 +1,7 @@
 package jd.controlling.proxy;
 
 import java.lang.ref.WeakReference;
-import java.net.URL;
+import java.net.URI;
 
 import jd.plugins.Plugin;
 
@@ -41,7 +41,7 @@ public class PluginRelatedConnectionBan extends AbstractBan {
     }
 
     @Override
-    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
+    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URI uri, Plugin pluginFromThread, boolean ignoreConnectBans) {
         final HTTPProxy proxy = getProxy();
         return proxy != null && proxy.equals(orgReference);
     }
