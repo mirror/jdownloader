@@ -421,7 +421,7 @@ public class CompiledFiletypeFilter {
         default:
             return false;
         }
-        for (final ExtensionsFilterInterface filterInterfaces : filterInterfaces) {
+        for (final ExtensionsFilterInterface filterInterfaces : this.filterInterfaces) {
             if (linkInfo != null && filterInterfaces.isSameExtensionGroup(linkInfo.getExtension())) {
                 return ret;
             }
@@ -456,7 +456,7 @@ public class CompiledFiletypeFilter {
     public Pattern[] getList() {
         final List<Pattern> ret = new ArrayList<Pattern>();
         ret.addAll(Arrays.asList(this.list));
-        for (final ExtensionsFilterInterface filterInterfaces : filterInterfaces) {
+        for (final ExtensionsFilterInterface filterInterfaces : this.filterInterfaces) {
             for (final ExtensionsFilterInterface filterInterface : filterInterfaces.listSameGroup()) {
                 final Pattern pattern = filterInterface.getPattern();
                 if (pattern != null) {
