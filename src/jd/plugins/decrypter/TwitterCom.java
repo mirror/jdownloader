@@ -57,8 +57,13 @@ public class TwitterCom extends PornEmbedParser {
         final String parameter = param.toString().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://www.twitter.com/");
         final String urlfilename = getUrlFname(parameter);
         final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(user);
+        final FilePackage fp;
+        if ("i".equals(user)) {
+            fp = null;
+        } else {
+            fp = FilePackage.getInstance();
+            fp.setName(user);
+        }
         String tweet_id = null;
 
         if (parameter.matches(TYPE_REDIRECT)) {
@@ -118,7 +123,9 @@ public class TwitterCom extends PornEmbedParser {
                 dllink = dllink.replace("\\", "");
                 final String filename = tweet_id + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
                 final DownloadLink dl = this.createDownloadlink(dllink, tweet_id);
-                fp.add(dl);
+                if (fp != null) {
+                    fp.add(dl);
+                }
                 dl.setProperty("decryptedfilename", filename);
                 dl.setName(filename);
                 dl.setAvailable(true);
@@ -154,7 +161,9 @@ public class TwitterCom extends PornEmbedParser {
                         if (embed_links != null) {
                             for (final String single_embed_ink : embed_links) {
                                 final DownloadLink dl = createDownloadlink(single_embed_ink, tweet_id);
-                                fp.add(dl);
+                                if (fp != null) {
+                                    fp.add(dl);
+                                }
                                 distribute(dl);
                                 decryptedLinks.add(dl);
                                 addedlinks_all++;
@@ -173,7 +182,9 @@ public class TwitterCom extends PornEmbedParser {
                                 }
                                 singleLink = Encoding.htmlDecode(singleLink.trim());
                                 final DownloadLink dl = createDownloadlink(singleLink, tweet_id);
-                                fp.add(dl);
+                                if (fp != null) {
+                                    fp.add(dl);
+                                }
                                 dl.setAvailable(true);
                                 distribute(dl);
                                 decryptedLinks.add(dl);
@@ -187,7 +198,9 @@ public class TwitterCom extends PornEmbedParser {
                         /* Our post is a stream */
                         /* Usually stream_id == tweet_id */
                         final DownloadLink dl = createDownloadlink(createVideourl(stream_id), tweet_id);
-                        fp.add(dl);
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
                         distribute(dl);
                         decryptedLinks.add(dl);
                         addedlinks_all++;
@@ -199,7 +212,9 @@ public class TwitterCom extends PornEmbedParser {
                     final String vsrc = vinfo.getMatch(1);
                     if (vid != null && vsrc != null) {
                         final DownloadLink dl = createDownloadlink(vsrc, tweet_id);
-                        fp.add(dl);
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
                         dl.setContentUrl(vsrc);
                         dl.setLinkID(vid);
                         dl.setName(vid + ".mp4");
