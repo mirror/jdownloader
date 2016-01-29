@@ -1,7 +1,7 @@
 package jd.controlling.proxy;
 
 import java.lang.ref.WeakReference;
-import java.net.URL;
+import java.net.URI;
 
 import jd.plugins.Plugin;
 
@@ -11,16 +11,16 @@ import org.jdownloader.translate._JDT;
 public class AuthExceptionGenericBan extends AbstractBan {
 
     private final WeakReference<HTTPProxy> proxy;
-    private final URL                      url;
+    private final URI                      uri;
 
-    public URL getUrl() {
-        return url;
+    public URI getURI() {
+        return uri;
     }
 
-    public AuthExceptionGenericBan(AbstractProxySelectorImpl proxySelector, HTTPProxy proxy, URL url) {
+    public AuthExceptionGenericBan(AbstractProxySelectorImpl proxySelector, HTTPProxy proxy, URI uri) {
         super(proxySelector);
         this.proxy = new WeakReference<HTTPProxy>(proxy);
-        this.url = url;
+        this.uri = uri;
     }
 
     protected HTTPProxy getProxy() {
@@ -39,7 +39,7 @@ public class AuthExceptionGenericBan extends AbstractBan {
     }
 
     @Override
-    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
+    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URI uri, Plugin pluginFromThread, boolean ignoreConnectBans) {
         final HTTPProxy proxy = getProxy();
         return proxy != null && proxy.equals(orgReference);
     }

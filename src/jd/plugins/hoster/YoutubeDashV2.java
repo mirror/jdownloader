@@ -958,8 +958,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-                                                                                                                                 * 15.12.2014
-                                                                                                                                 */"This video is not available.")) {
+             * 15.12.2014
+             */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1090,7 +1090,7 @@ public class YoutubeDashV2 extends PluginForHost {
         {
             // scope just to highlight the jd2 code
             // Do not copy to jd09 plugins.. this is jd2 code!
-            List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByUrl(request.getUrl());
+            List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURI(request.getURI());
             request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
         }
         final String dashPath = new File(downloadLink.getDownloadDirectory(), dashName).getAbsolutePath();

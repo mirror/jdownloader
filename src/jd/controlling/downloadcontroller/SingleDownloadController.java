@@ -17,6 +17,7 @@
 package jd.controlling.downloadcontroller;
 
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,7 @@ import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRE
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.SelectProxyByUrlHook;
+import jd.controlling.proxy.SelectProxyByURIHook;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
@@ -543,16 +544,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     @Override
     public void run() {
         LogSource downloadLogger = null;
-        SelectProxyByUrlHook hook = null;
+        SelectProxyByURIHook hook = null;
         final PluginProgressTask task = new PluginProgressTask(null);
         final AbstractProxySelectorImpl ps = getProxySelector();
         try {
             if (ps != null) {
                 final Thread currentThread = Thread.currentThread();
-                ps.addSelectProxyByUrlHook(hook = new SelectProxyByUrlHook() {
+                ps.addSelectProxyByUrlHook(hook = new SelectProxyByURIHook() {
 
                     @Override
-                    public void onProxyChoosen(String urlOrDomain, List<HTTPProxy> ret) {
+                    public void onProxyChoosen(URI uri, List<HTTPProxy> ret) {
                         if (currentThread == Thread.currentThread()) {
                             usedProxy = ret.get(0);
                         }

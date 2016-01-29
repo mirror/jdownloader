@@ -1,11 +1,12 @@
 package jd.controlling.proxy;
 
+import java.net.URI;
 import java.util.List;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
-public interface SelectProxyByUrlHook {
+public interface SelectProxyByURIHook {
 
-    void onProxyChoosen(String urlOrDomain, List<HTTPProxy> ret);
+    void onProxyChoosen(URI uri, List<HTTPProxy> ret);
 
 }
