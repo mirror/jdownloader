@@ -11,6 +11,19 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.PackagizerInterface;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -38,37 +51,24 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.jd1import.JD1Importer;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.PackagizerInterface;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private final PackagizerSettings              config;
-    private ArrayList<PackagizerRule>             list              = new ArrayList<PackagizerRule>();
+    private ArrayList<PackagizerRule>             list           = new ArrayList<PackagizerRule>();
     private PackagizerControllerEventSender       eventSender;
     private java.util.List<PackagizerRuleWrapper> fileFilter;
     private java.util.List<PackagizerRuleWrapper> urlFilter;
 
-    public static final String                    ORGFILENAME       = "orgfilename";
-    public static final String                    ORGFILETYPE       = "orgfiletype";
-    public static final String                    HOSTER            = "hoster";
-    public static final String                    SOURCE            = "source";
+    public static final String                    ORGFILENAME    = "orgfilename";
+    public static final String                    ORGFILETYPE    = "orgfiletype";
+    public static final String                    HOSTER         = "hoster";
+    public static final String                    SOURCE         = "source";
 
-    public static final String                    PACKAGENAME       = "packagename";
-    public static final String                    SIMPLEDATE        = "simpledate";
+    public static final String                    PACKAGENAME    = "packagename";
+    public static final String                    SIMPLEDATE     = "simpledate";
 
-    private static final PackagizerController     INSTANCE          = new PackagizerController(false);
-    public static final String                    ORGPACKAGENAME    = "orgpackagename";
-    private HashMap<String, PackagizerReplacer>   replacers         = new HashMap<String, PackagizerReplacer>();
+    private static final PackagizerController     INSTANCE       = new PackagizerController(false);
+    public static final String                    ORGPACKAGENAME = "orgpackagename";
+    private HashMap<String, PackagizerReplacer>   replacers      = new HashMap<String, PackagizerReplacer>();
     private final boolean                         testInstance;
 
     public static PackagizerController getInstance() {
@@ -653,7 +653,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
-
                 if (!lgr.checkOrigin(link)) {
                     continue;
                 }
@@ -666,6 +665,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 if (!lgr.checkPackageName(link)) {
                     continue;
                 }
+                if (!lgr.checkFileType(link)) {
+                    continue;
+                }
                 if (lgr.isRequiresLinkcheck()) {
                     if (!lgr.checkOnlineStatus(link)) {
                         continue;
@@ -673,18 +675,13 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     if (!lgr.checkFileName(link)) {
                         continue;
                     }
-
                     if (!lgr.checkFileSize(link)) {
-                        continue;
-                    }
-                    if (!lgr.checkFileType(link)) {
                         continue;
                     }
                 }
             }
             set(link, lgr);
         }
-
     }
 
     public void runByUrl(final CrawledLink link) {
@@ -709,7 +706,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             } catch (NoDownloadLinkException e) {
                 continue;
             }
-
             try {
                 if (!lgr.checkPluginStatus(link)) {
                     continue;
@@ -728,7 +724,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
             set(link, lgr);
         }
-
     }
 
     public static String PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
@@ -975,6 +970,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     if (!lgr.checkPackageName(dummyLink)) {
                         continue;
                     }
+                    if (!lgr.checkFileType(dummyLink)) {
+                        continue;
+                    }
                     if (lgr.isRequiresLinkcheck()) {
                         if (!lgr.checkOnlineStatus(dummyLink)) {
                             continue;
@@ -982,11 +980,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         if (!lgr.checkFileName(dummyLink)) {
                             continue;
                         }
-
                         if (!lgr.checkFileSize(dummyLink)) {
-                            continue;
-                        }
-                        if (!lgr.checkFileType(dummyLink)) {
                             continue;
                         }
                     }

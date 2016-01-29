@@ -204,12 +204,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
     }
 
     private void handleDl() throws Exception {
-
         int chunks = 0;
         if (currDownloadLink.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
             chunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, currDownloadLink, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -224,12 +222,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
         // Directlinks can be used for up to 2 days
         currDownloadLink.setProperty("debriditaliadirectlink", dllink);
-
         /* They sometimes return html-encoded filenames - let's fix this! */
         String server_filename = getFileNameFromHeader(this.dl.getConnection());
         server_filename = Encoding.htmlDecode(server_filename);
         this.currDownloadLink.setFinalFileName(server_filename);
-
         try {
             // start the dl
             if (!this.dl.startDownload()) {
@@ -252,7 +248,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 currDownloadLink.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-
             throw e;
         }
     }

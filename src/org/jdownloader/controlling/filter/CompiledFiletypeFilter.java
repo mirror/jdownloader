@@ -1,14 +1,20 @@
 package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
+import jd.plugins.LinkInfo;
+
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.translate._GUI;
 
 public class CompiledFiletypeFilter {
-    private Pattern[]     list = new Pattern[0];
-    private TypeMatchType matchType;
+    private final Pattern[]                   list;
+    private final ExtensionsFilterInterface[] filterInterfaces;
+    private final TypeMatchType               matchType;
 
     public TypeMatchType getMatchType() {
         return matchType;
@@ -27,13 +33,16 @@ public class CompiledFiletypeFilter {
 
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension);
 
+        public ExtensionsFilterInterface[] listSameGroup();
+
     }
 
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
         if (fileExtension != null) {
             for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { HashExtensions.values(), AudioExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values() }) {
                 for (final ExtensionsFilterInterface extension : extensions) {
-                    if (extension.getPattern().matcher(fileExtension).matches()) {
+                    final Pattern pattern = extension.getPattern();
+                    if (pattern != null && pattern.matcher(fileExtension).matches()) {
                         return extension;
                     }
                 }
@@ -84,6 +93,11 @@ public class CompiledFiletypeFilter {
         @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
             return extension instanceof HashExtensions;
+        }
+
+        @Override
+        public ExtensionsFilterInterface[] listSameGroup() {
+            return values();
         }
 
     }
@@ -150,6 +164,11 @@ public class CompiledFiletypeFilter {
             return extension instanceof AudioExtensions;
         }
 
+        @Override
+        public ExtensionsFilterInterface[] listSameGroup() {
+            return values();
+        }
+
     }
 
     public static enum VideoExtensions implements ExtensionsFilterInterface {
@@ -210,17 +229,25 @@ public class CompiledFiletypeFilter {
         public String getIconID() {
             return "video";
         }
+
+        @Override
+        public ExtensionsFilterInterface[] listSameGroup() {
+            return values();
+        }
     }
 
     private static Pattern compileAllPattern(ExtensionsFilterInterface[] filters) {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("(");
         boolean or = false;
         for (ExtensionsFilterInterface value : filters) {
             if (or) {
                 sb.append("|");
             }
-            sb.append(value.getPattern());
+            final Pattern pattern = value.getPattern();
+            if (pattern != null) {
+                sb.append(pattern);
+            }
             or = true;
         }
         sb.append(")");
@@ -278,6 +305,11 @@ public class CompiledFiletypeFilter {
         }
 
         @Override
+        public ExtensionsFilterInterface[] listSameGroup() {
+            return values();
+        }
+
+        @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
             return extension instanceof ArchiveExtensions;
         }
@@ -326,6 +358,11 @@ public class CompiledFiletypeFilter {
         }
 
         @Override
+        public ExtensionsFilterInterface[] listSameGroup() {
+            return values();
+        }
+
+        @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
             return extension instanceof ImageExtensions;
         }
@@ -336,41 +373,28 @@ public class CompiledFiletypeFilter {
     }
 
     public CompiledFiletypeFilter(FiletypeFilter filetypeFilter) {
-        java.util.List<Pattern> list = new ArrayList<Pattern>();
+        final List<Pattern> list = new ArrayList<Pattern>();
+        final List<ExtensionsFilterInterface> filterInterfaces = new ArrayList<ExtensionsFilterInterface>();
         if (filetypeFilter.isArchivesEnabled()) {
-            for (ArchiveExtensions ae : ArchiveExtensions.values()) {
-                list.add(ae.getPattern());
-            }
+            filterInterfaces.add(ArchiveExtensions.ACE);
         }
-
         if (filetypeFilter.isHashEnabled()) {
-            for (HashExtensions ae : HashExtensions.values()) {
-                list.add(ae.getPattern());
-            }
+            filterInterfaces.add(HashExtensions.MD5);
         }
-
         if (filetypeFilter.isAudioFilesEnabled()) {
-            for (AudioExtensions ae : AudioExtensions.values()) {
-                list.add(ae.getPattern());
-            }
+            filterInterfaces.add(AudioExtensions.AA);
         }
-
         if (filetypeFilter.isImagesEnabled()) {
-            for (ImageExtensions ae : ImageExtensions.values()) {
-                list.add(ae.getPattern());
-            }
+            filterInterfaces.add(ImageExtensions.BMP);
         }
         if (filetypeFilter.isVideoFilesEnabled()) {
-            for (VideoExtensions ae : VideoExtensions.values()) {
-                list.add(ae.getPattern());
-            }
+            filterInterfaces.add(VideoExtensions.ASF);
         }
         try {
             if (filetypeFilter.getCustoms() != null) {
                 if (filetypeFilter.isUseRegex()) {
                     list.add(Pattern.compile(filetypeFilter.getCustoms(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE));
                 } else {
-
                     for (String s : filetypeFilter.getCustoms().split("\\,")) {
                         list.add(LinkgrabberFilterRuleWrapper.createPattern(s, false));
                     }
@@ -382,40 +406,65 @@ public class CompiledFiletypeFilter {
         }
         matchType = filetypeFilter.getMatchType();
         this.list = list.toArray(new Pattern[list.size()]);
+        this.filterInterfaces = filterInterfaces.toArray(new ExtensionsFilterInterface[filterInterfaces.size()]);
     }
 
-    public boolean matches(String extension) {
+    public boolean matches(final String extension, final LinkInfo linkInfo) {
+        final boolean ret;
         switch (matchType) {
         case IS:
-            for (Pattern o : this.list) {
-                try {
-                    if (o.matcher(extension).matches()) {
-                        return true;
-                    }
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
-            return false;
+            ret = true;
+            break;
         case IS_NOT:
-            for (Pattern o : this.list) {
+            ret = false;
+            break;
+        default:
+            return false;
+        }
+        for (final ExtensionsFilterInterface filterInterfaces : filterInterfaces) {
+            if (linkInfo != null && filterInterfaces.isSameExtensionGroup(linkInfo.getExtension())) {
+                return ret;
+            }
+            if (StringUtils.isNotEmpty(extension)) {
+                for (final ExtensionsFilterInterface filterInterface : filterInterfaces.listSameGroup()) {
+                    final Pattern pattern = filterInterface.getPattern();
+                    try {
+                        if (pattern != null && pattern.matcher(extension).matches()) {
+                            return ret;
+                        }
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        if (StringUtils.isNotEmpty(extension)) {
+            for (final Pattern o : this.list) {
                 try {
                     if (o.matcher(extension).matches()) {
-                        return false;
+                        return ret;
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
             }
-            return true;
-
+            return !ret;
         }
-
         return false;
     }
 
     public Pattern[] getList() {
-        return list;
+        final List<Pattern> ret = new ArrayList<Pattern>();
+        ret.addAll(Arrays.asList(this.list));
+        for (final ExtensionsFilterInterface filterInterfaces : filterInterfaces) {
+            for (final ExtensionsFilterInterface filterInterface : filterInterfaces.listSameGroup()) {
+                final Pattern pattern = filterInterface.getPattern();
+                if (pattern != null) {
+                    ret.add(pattern);
+                }
+            }
+        }
+        return ret.toArray(new Pattern[ret.size()]);
     }
 
 }

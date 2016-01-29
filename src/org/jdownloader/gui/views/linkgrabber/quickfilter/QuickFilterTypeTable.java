@@ -222,6 +222,11 @@ public class QuickFilterTypeTable extends FilterTable {
                             }
 
                             @Override
+                            public ExtensionsFilterInterface[] listSameGroup() {
+                                return new ExtensionsFilterInterface[] { this };
+                            }
+
+                            @Override
                             public Pattern getPattern() {
                                 return null;
                             }

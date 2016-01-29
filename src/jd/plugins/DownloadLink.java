@@ -59,6 +59,7 @@ import org.jdownloader.controlling.DownloadLinkView;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.controlling.linkcrawler.GenericVariants;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
@@ -116,6 +117,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public static final String                          PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
     public static final String                          PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
     public static final String                          PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
+    public static final String                          PROPERTY_MIME_HINT                  = "MIME_HINT";
 
     private static final long                           serialVersionUID                    = 1981079856214268373L;
 
@@ -995,11 +997,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return null;
     }
 
+    public LinkInfo getSetLinkInfo() {
+        return linkInfo;
+    }
+
     public LinkInfo getLinkInfo() {
-        LinkInfo lLinkInfo = linkInfo;
+        final LinkInfo lLinkInfo = linkInfo;
         if (lLinkInfo == null) {
-            lLinkInfo = LinkInfo.getLinkInfo(this);
-            linkInfo = lLinkInfo;
+            final LinkInfo newLinkInfo = LinkInfo.getLinkInfo(this);
+            linkInfo = newLinkInfo;
+            return newLinkInfo;
         }
         return lLinkInfo;
     }
@@ -1014,7 +1021,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return
      */
     public String getNameSetbyPlugin() {
-        String ret = this.getFinalFileName();
+        final String ret = this.getFinalFileName();
         if (ret != null) {
             return ret;
         }
@@ -1100,7 +1107,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1842,6 +1849,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public String getSha1Hash() {
         return getStringProperty(PROPERTY_SHA1, (String) null);
+    }
+
+    public void setMimeHint(final ExtensionsFilterInterface extensionFilter) {
+        if (extensionFilter == null) {
+            removeProperty(PROPERTY_MIME_HINT);
+        } else {
+            setProperty(PROPERTY_MIME_HINT, extensionFilter.name());
+        }
+    }
+
+    public String getMimeHint() {
+        return getStringProperty(PROPERTY_MIME_HINT, null);
     }
 
     /**

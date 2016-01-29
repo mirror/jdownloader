@@ -17,7 +17,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.RlyWarnLevel;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.utils.JDFileUtils;
 
@@ -63,10 +62,7 @@ public class DownloadTabActionUtils {
                     break;
                 }
                 final boolean finalByPassDialog;
-                if (RlyWarnLevel.HIGH.equals(CFG_GUI.CFG.getRlyWarnLevel())) {
-                    // Always warn me
-                    finalByPassDialog = false;
-                } else if (!JDGui.bugme(level)) {
+                if (!JDGui.bugme(level)) {
                     finalByPassDialog = true;
                 } else {
                     finalByPassDialog = byPassDialog;
