@@ -19,6 +19,7 @@ public abstract class ServiceCollection<T> extends ArrayList<T> implements Compa
     public abstract boolean isEnabled();
 
     public int getInvalidCount() {
+
         return 0;
     }
 
