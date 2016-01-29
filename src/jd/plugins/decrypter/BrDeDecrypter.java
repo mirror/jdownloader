@@ -33,19 +33,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.BrDe;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" }, flags = { 32 })
 public class BrDeDecrypter extends PluginForDecrypt {
-
-    private static final String Q_0          = "Q_0";
-    private static final String Q_A          = "Q_A";
-    private static final String Q_B          = "Q_B";
-    private static final String Q_E          = "Q_E";
-    private static final String Q_C          = "Q_C";
-    private static final String Q_BEST       = "Q_BEST";
-    private static final String Q_SUBTITLES  = "Q_SUBTITLES";
 
     private static final String TYPE_INVALID = "http://(www\\.)?br\\.de/mediathek/video/index\\.html";
 
@@ -77,14 +70,15 @@ public class BrDeDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig("br-online.de");
-        final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
+        final boolean grab_subtitle = cfg.getBooleanProperty(BrDe.Q_SUBTITLES, false);
 
-        String player_link = br.getRegex("\\{dataURL:\\'(/mediathek/video/[^<>\"]*?)\\'\\}").getMatch(0);
+        final String player_link = br.getRegex("\\{dataURL:\\'(/mediathek/video/[^<>\"]*?)\\'\\}").getMatch(0);
         String date = br.getRegex(">(\\d{2}\\.\\d{2}\\.\\d{4}), \\d{2}:\\d{2} Uhr,?</time>").getMatch(0);
         if (player_link == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final String playerLinkID = JDHash.getMD5(player_link);
         br.getPage("http://www.br.de" + player_link);
         if (date == null) {
             date = getXML("broadcastDate");
@@ -114,13 +108,14 @@ public class BrDeDecrypter extends PluginForDecrypt {
             if (final_url == null) {
                 continue;
             }
-            final String q_string = new Regex(final_url, "_(0|A|B|C|D|E)\\.mp4").getMatch(0);
+            final String q_string = new Regex(final_url, "_(0|A|B|C|D|E|X)\\.mp4").getMatch(0);
             final String width = this.getXML(qinfo, "frameWidth");
             final String height = this.getXML(qinfo, "frameHeight");
             final String fsize = this.getXML(qinfo, "size");
             final String resolution = width + "x" + height;
             final String final_video_name = date_formatted + "_br_" + show + " - " + plain_name + "_" + resolution + ".mp4";
-            final DownloadLink dl_video = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
+            final DownloadLink dl_video = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=" + resolution + "&hash=" + playerLinkID);
+            dl_video.setLinkID(getHost() + "://" + playerLinkID + "/" + q_string + "/" + resolution);
             dl_video.setProperty("mainlink", parameter);
             dl_video.setProperty("direct_link", final_url);
             dl_video.setProperty("plain_filename", final_video_name);
@@ -138,10 +133,10 @@ public class BrDeDecrypter extends PluginForDecrypt {
             return null;
         }
 
-        ArrayList<String> selected_qualities = new ArrayList<String>();
-        if (newRet.size() > 1 && cfg.getBooleanProperty(Q_BEST, false)) {
-            /* only keep best quality */
-            final String[] best_list = { "C", "E", "B", "A", "0" };
+        final ArrayList<String> selected_qualities = new ArrayList<String>();
+        if (newRet.size() > 1 && cfg.getBooleanProperty(BrDe.Q_BEST, false)) {
+            /* only keep best quality , do not change the ORDER */
+            final String[] best_list = { "X", "C", "E", "B", "A", "0" };
             for (final String current_quality : best_list) {
                 final DownloadLink keep = best_map.get(current_quality);
                 if (keep != null) {
@@ -150,20 +145,21 @@ public class BrDeDecrypter extends PluginForDecrypt {
                 }
             }
         } else {
-            boolean grab_0 = cfg.getBooleanProperty(Q_0, false);
-            boolean grab_A = cfg.getBooleanProperty(Q_A, false);
-            boolean grab_B = cfg.getBooleanProperty(Q_B, false);
-            boolean grab_C = cfg.getBooleanProperty(Q_C, false);
-            boolean grab_E = cfg.getBooleanProperty(Q_E, false);
+            boolean grab_0 = cfg.getBooleanProperty(BrDe.Q_0, true);
+            boolean grab_A = cfg.getBooleanProperty(BrDe.Q_A, true);
+            boolean grab_B = cfg.getBooleanProperty(BrDe.Q_B, true);
+            boolean grab_C = cfg.getBooleanProperty(BrDe.Q_C, true);
+            boolean grab_E = cfg.getBooleanProperty(BrDe.Q_E, true);
+            boolean grab_X = cfg.getBooleanProperty(BrDe.Q_X, true);
             /* User deselected all --> Add all */
-            if (!grab_0 && !grab_A && !grab_B && !grab_C && !grab_E) {
+            if (!grab_0 && !grab_A && !grab_B && !grab_C && !grab_E && !grab_X) {
                 grab_0 = true;
                 grab_A = true;
                 grab_B = true;
                 grab_C = true;
                 grab_E = true;
+                grab_X = true;
             }
-
             if (grab_0) {
                 selected_qualities.add("0");
             }
@@ -179,6 +175,9 @@ public class BrDeDecrypter extends PluginForDecrypt {
             if (grab_E) {
                 selected_qualities.add("E");
             }
+            if (grab_X) {
+                selected_qualities.add("X");
+            }
         }
         for (final String selected_quality : selected_qualities) {
             final DownloadLink keep = best_map.get(selected_quality);
@@ -187,7 +186,11 @@ public class BrDeDecrypter extends PluginForDecrypt {
                 if (grab_subtitle && subtitle_url != null) {
                     final String subtitle_filename = date_formatted + "_br_" + show + " - " + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
                     final String resolution = keep.getStringProperty("plain_resolution", null);
-                    final DownloadLink dl_subtitle = createDownloadlink("http://brdecrypted-online.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
+                    final DownloadLink dl_subtitle = createDownloadlink("http://brdecrypted-online.de/?format=xml&quality=" + resolution + "&hash=" + playerLinkID);
+                    final String linkID = keep.getSetLinkID();
+                    if (linkID != null) {
+                        dl_subtitle.setLinkID(linkID + "/subtitle");
+                    }
                     dl_subtitle.setProperty("mainlink", parameter);
                     dl_subtitle.setProperty("direct_link", subtitle_url);
                     dl_subtitle.setProperty("plain_filename", subtitle_filename);

@@ -58,13 +58,14 @@ public class BrDe extends PluginForHost {
         return "http://www.br.de/unternehmen/service/kontakt/index.html";
     }
 
-    private static final String Q_0         = "Q_0";
-    private static final String Q_A         = "Q_A";
-    private static final String Q_B         = "Q_B";
-    private static final String Q_E         = "Q_E";
-    private static final String Q_C         = "Q_C";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
+    public static final String Q_0         = "Q_0";
+    public static final String Q_A         = "Q_A";
+    public static final String Q_B         = "Q_B";
+    public static final String Q_E         = "Q_E";
+    public static final String Q_C         = "Q_C";
+    public static final String Q_X         = "Q_X";
+    public static final String Q_BEST      = "Q_BEST";
+    public static final String Q_SUBTITLES = "Q_SUBTITLES";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -301,11 +302,12 @@ public class BrDe extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.brdemediathek.best", "Load best version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_0, JDL.L("plugins.hoster.brdemediathek.load_q0", "Load 256x144 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_A, JDL.L("plugins.hoster.brdemediathek.load_qA", "Load 384x216 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_B, JDL.L("plugins.hoster.brdemediathek.load_qB", "Load 512x288 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_E, JDL.L("plugins.hoster.brdemediathek.load_qE", "Load 640x360 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_C, JDL.L("plugins.hoster.brdemediathek.load_qC", "Load 960x544 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_0, JDL.L("plugins.hoster.brdemediathek.load_q0", "Load 256x144 version (XS)")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_A, JDL.L("plugins.hoster.brdemediathek.load_qA", "Load 384x216 version (S)")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_B, JDL.L("plugins.hoster.brdemediathek.load_qB", "Load 512x288 version (M)")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_E, JDL.L("plugins.hoster.brdemediathek.load_qE", "Load 640x360 version (L)")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_C, JDL.L("plugins.hoster.brdemediathek.load_qC", "Load 960x544 version (XL)")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_X, JDL.L("plugins.hoster.brdemediathek.load_qX", "Load 1280x720 version (XXL)")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
     }
 
     @Override
