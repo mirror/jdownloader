@@ -26,6 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/(list/[\\w\\-\\.%!]+|view)/\\d+" }, flags = { 0 })
 public class Rule34PahealNet extends PluginForDecrypt {
@@ -36,22 +37,24 @@ public class Rule34PahealNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">No Images Found<") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">No Images Found<")) {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "rule34\\.paheal\\.net/post/list/(.*?)/\\d+").getMatch(0));
-        String next = parameter;
+        String next = null;
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 return decryptedLinks;
             }
-            this.br.getPage(next);
+            if (next != null) {
+                br.getPage(next);
+            }
             String[] links = br.getRegex("<br><a href=('|\")(http://.*?)\\1>").getColumn(1);
             if (links == null || links.length == 0) {
                 links = br.getRegex("('|\")(http://rule34-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
@@ -66,19 +69,23 @@ public class Rule34PahealNet extends PluginForDecrypt {
             for (final String singlelink : links) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + singlelink);
                 dl.setAvailable(true);
-                dl._setFilePackage(fp);
+                fp.add(dl);
                 decryptedLinks.add(dl);
                 distribute(dl);
             }
-            next = this.br.getRegex("\"(/post/[^<>\"]*?)\">Next</a>").getMatch(0);
+            next = br.getRegex("\"(/post/[^<>\"]*?)\">Next</a>").getMatch(0);
         } while (next != null);
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Danbooru;
     }
 
 }
