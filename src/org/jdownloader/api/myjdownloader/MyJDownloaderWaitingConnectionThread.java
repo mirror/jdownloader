@@ -136,7 +136,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                     connectionRequest.wait(5000);
                                 } catch (final InterruptedException ignore) {
                                 }
-                                throw new ConnectException("No available connection for:" + uri);
+                                throw new ConnectException("No available connection for: " + uri);
                             }
                         }
                     } catch (Throwable throwable) {
