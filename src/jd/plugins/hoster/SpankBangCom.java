@@ -16,9 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -27,15 +24,13 @@ import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" }, flags = { 2 })
-public class SpankBangCom extends PluginForHost {
+public class SpankBangCom extends antiDDoSForHost {
 
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,17 +49,10 @@ public class SpankBangCom extends PluginForHost {
     private static String ALLOW_480p    = "ALLOW_480p";
     private static String ALLOW_720p    = "ALLOW_720p";
 
-    private String        DLLINK        = null;
+    private String        dllink        = null;
 
     @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-
-        return ret;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* Old links before the decrypter --> hosterplugin + qualityselection change! */
         if (!link.getDownloadURL().matches("http://spankbangdecrypted\\.com/\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -72,13 +60,13 @@ public class SpankBangCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        br.getPage(link.getStringProperty("mainlink", null));
+        getPage(link.getStringProperty("mainlink", null));
         if ("http://spankbang.com/".equals(br.getURL()) || br.containsHTML(">this video is no longer available\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = link.getStringProperty("plain_filename", null);
-        DLLINK = link.getStringProperty("plain_directlink", null);
-        if (filename == null || DLLINK == null) {
+        dllink = link.getStringProperty("plain_directlink", null);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(filename);
@@ -88,17 +76,16 @@ public class SpankBangCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openGetConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            // this request isn't behind cloudflare.
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
+        } catch (final BrowserException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } finally {
             try {
                 con.disconnect();
@@ -110,7 +97,7 @@ public class SpankBangCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
