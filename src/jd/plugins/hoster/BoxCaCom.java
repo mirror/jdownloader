@@ -23,6 +23,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,10 +47,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boxca.com" }, urls = { "https?://(www\\.)?boxca\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class BoxCaCom extends PluginForHost {
@@ -143,14 +143,15 @@ public class BoxCaCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+        if (new Regex(correctedBR, regexIpBlock).matches() && br.getHttpConnection().getResponseCode() == 403) {
+            // apparently error fatal will prevent multihoster.
+            return AvailableStatus.UNCHECKABLE;
+        } else if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        } else if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.getURL().contains("/?op=login&redirect=")) {
+        } else if (br.getURL().contains("/?op=login&redirect=")) {
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
             return AvailableStatus.UNCHECKABLE;
         }
@@ -219,6 +220,7 @@ public class BoxCaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        ipBlock();
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
@@ -263,7 +265,7 @@ public class BoxCaCom extends PluginForHost {
                     }
                 }
                 // end of backward compatibility
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
@@ -380,7 +382,7 @@ public class BoxCaCom extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
@@ -569,9 +571,18 @@ public class BoxCaCom extends PluginForHost {
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
+    private void submitForm(final Form form) throws Exception {
         br.submitForm(form);
         correctBR();
+    }
+
+    private final String regexIpBlock = ">Unfortunately, this page is currently unavailable in your country\\.</p>";
+
+    private void ipBlock() throws PluginException {
+        if (new Regex(correctedBR, regexIpBlock).matches() && br.getHttpConnection().getResponseCode() == 403) {
+            logger.warning("Country/IP Block issued hoster!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Country/IP Block issued hoster!");
+        }
     }
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -622,7 +633,7 @@ public class BoxCaCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -637,7 +648,7 @@ public class BoxCaCom extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
