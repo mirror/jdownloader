@@ -95,14 +95,14 @@ public class LinkInfo {
                             final String  desc;
                             final Pattern pattern;
                             {
-                                if (StringUtils.isEmpty(fileNameExtension)) {
+                                if (fileNameExtension != null && fileNameExtension.matches("^[a-zA-Z0-9]{1,4}§")) {
+                                    extension = fileNameExtension;
+                                    desc = fileNameExtension;
+                                    pattern = Pattern.compile(Pattern.quote(fileNameExtension), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+                                } else {
                                     extension = "";
                                     desc = _GUI._.settings_linkgrabber_filter_others();
                                     pattern = null;
-                                } else {
-                                    extension = fileNameExtension;
-                                    desc = fileNameExtension;
-                                    pattern = Pattern.compile(fileNameExtension, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
                                 }
                             }
 
