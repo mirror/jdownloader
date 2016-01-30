@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -30,11 +29,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" }, flags = { 0 })
-public class SpankBangCom extends PluginForDecrypt {
+public class SpankBangCom extends antiDDoSForDecrypt {
 
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,8 +39,8 @@ public class SpankBangCom extends PluginForDecrypt {
 
     private static final String           DOMAIN         = "spankbang.com";
 
-    private LinkedHashMap<String, String> FOUNDQUALITIES = new LinkedHashMap<String, String>();
-    private String                        PARAMETER      = null;
+    private LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
+    private String                        parameter      = null;
 
     /** Settings stuff */
     private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
@@ -53,38 +50,19 @@ public class SpankBangCom extends PluginForDecrypt {
     private static final String           ALLOW_720p     = "ALLOW_720p";
 
     private static Object                 ctrlLock       = new Object();
-    private static AtomicBoolean          pluginLoaded   = new AtomicBoolean(false);
-
-    @Override
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink ret = super.createDownloadlink(link);
-
-        return ret;
-    }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
-        PARAMETER = param.toString().replaceAll("http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "http://spankbang.com/").replace("/embed/", "/video/");
+        parameter = param.toString().replaceAll("http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "http://spankbang.com/").replace("/embed/", "/video/");
         br.setFollowRedirects(true);
         br.setCookie("http://spankbang.com/", "country", "GB");
         br.getHeaders().put("Accept-Language", "en");
         synchronized (ctrlLock) {
-            if (!pluginLoaded.get()) {
-                // load plugin!
-                JDUtilities.getPluginForHost(DOMAIN);
-                pluginLoaded.set(true);
-            }
-            br.getPage(PARAMETER);
+            getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is no longer available.<") || !br.getURL().contains("/video")) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
-                try {
-                    dl.setContentUrl(PARAMETER);
-                } catch (Throwable e) {
-                }
-                dl.setProperty("offline", true);
-                decryptedLinks.add(dl);
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             /* Decrypt start */
@@ -92,22 +70,22 @@ public class SpankBangCom extends PluginForDecrypt {
 
             /* Decrypt qualities START */
             String title = br.getRegex("<title>([^<>\"]*?) \\- SpankBang</title>").getMatch(0);
-            final String fid = new Regex(PARAMETER, "spankbang\\.com/([a-z0-9]+)/video/").getMatch(0);
+            final String fid = new Regex(parameter, "spankbang\\.com/([a-z0-9]+)/video/").getMatch(0);
             final String streamkey = br.getRegex("var stream_key  = \\'([^<>\"]*?)\\'").getMatch(0);
-            final String[] qualities = br.getRegex("class=\"ft\\-button ft\\-light-blue tt q_(\\d+p)\"").getColumn(0);
+            final String[] qualities = br.getRegex("class=\"q_(\\d+p)\"").getColumn(0);
             if (qualities == null || qualities.length == 0 || streamkey == null || title == null) {
-                logger.warning("Decrypter broken for link: " + PARAMETER);
+                logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             title = Encoding.htmlDecode(title.trim());
             fp.setName(title);
             for (final String quality : qualities) {
                 final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
-                FOUNDQUALITIES.put(quality, directlink);
+                foundQualities.put(quality, directlink);
             }
 
-            if (FOUNDQUALITIES == null) {
-                logger.warning("Decrypter broken for link: " + PARAMETER);
+            if (foundQualities == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             /* Decrypt qualities END */
@@ -117,7 +95,7 @@ public class SpankBangCom extends PluginForDecrypt {
             if (cfg.getBooleanProperty(ALLOW_BEST, false)) {
                 final String[] allqualities = { "720p", "480p", "240p" };
                 for (final String quality : allqualities) {
-                    if (FOUNDQUALITIES.get(quality) != null) {
+                    if (foundQualities.get(quality) != null) {
                         selectedQualities.add(quality);
                         break;
                     }
@@ -147,24 +125,19 @@ public class SpankBangCom extends PluginForDecrypt {
                 if (predefinedVariant != null && !predefinedVariant.equalsIgnoreCase(selectedQualityValue)) {
                     continue;
                 }
-                final String directlink = FOUNDQUALITIES.get(selectedQualityValue);
+                final String directlink = foundQualities.get(selectedQualityValue);
                 if (directlink != null) {
                     final String finalname = title + "_" + selectedQualityValue + ".mp4";
                     final DownloadLink dl = createDownloadlink("http://spankbangdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                     dl.setFinalFileName(finalname);
-                    try {
-                        dl.setContentUrl("http://spankbang.com/" + fid + "/video/?quality=" + selectedQualityValue);
-
-                    } catch (Throwable e) {
-                        // jd09
-                    }
+                    dl.setContentUrl("http://spankbang.com/" + fid + "/video/?quality=" + selectedQualityValue);
                     if (fastcheck) {
                         dl.setAvailable(true);
                     }
-                    dl.setProperty("LINKDUPEID", "spankbangcom_" + fid + "_" + selectedQualityValue);
+                    dl.setLinkID("spankbangcom_" + fid + "_" + selectedQualityValue);
                     dl.setProperty("plain_filename", finalname);
                     dl.setProperty("plain_directlink", directlink);
-                    dl.setProperty("mainlink", PARAMETER);
+                    dl.setProperty("mainlink", parameter);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 }
@@ -172,7 +145,6 @@ public class SpankBangCom extends PluginForDecrypt {
         }
         if (decryptedLinks.size() == 0) {
             logger.info(DOMAIN + ": None of the selected qualities were found, decrypting done...");
-            return decryptedLinks;
         }
         return decryptedLinks;
     }
