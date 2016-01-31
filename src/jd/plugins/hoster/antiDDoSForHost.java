@@ -20,6 +20,13 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -38,11 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -449,10 +451,14 @@ public abstract class antiDDoSForHost extends PluginForHost {
             if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
                 if (request != null) {
                     // used soley by openAntiDDoSRequestConnection/DirectHTTP plugin when open connection is used.
-                    ibr.followConnection();
                     if (request instanceof HeadRequest && (responseCode == 403 || responseCode == 429 || (responseCode >= 503 && responseCode <= 525))) {
                         openAntiDDoSRequestConnection(ibr, new GetRequest(request));
                         return;
+                    }
+                    // all blocks with cloudflare are within "text/*", we only need to follow the connection when this happens! Otherwise
+                    // data could be grabbed and we don't want that to happen.
+                    if (StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/")) {
+                        ibr.followConnection();
                     }
                 }
                 Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
@@ -460,40 +466,46 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     cloudflare = ibr.getFormbyProperty("id", "challenge-form");
                 }
                 if (responseCode == 403 && cloudflare != null) {
-                    // new method seems to be within 403
-                    if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                        // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                        // we will manually remove all those
-                        while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                            cloudflare.remove("recaptcha_response_field");
-                        }
-                        while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                            cloudflare.remove("recaptcha_challenge_field");
-                        }
-                        // this one is null, needs to be ""
-                        if (cloudflare.hasInputFieldByName("message")) {
-                            cloudflare.remove("message");
-                            cloudflare.put("messsage", "\"\"");
-                        }
-                        // recaptcha bullshit
-                        String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                        if (apiKey == null) {
-                            apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                            if (apiKey == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // recapthcha v2
+                    if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr).getToken();
+                        cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } else {
+                        // recapthca v1
+                        if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                            // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                            // we will manually remove all those
+                            while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                                cloudflare.remove("recaptcha_response_field");
                             }
+                            while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                                cloudflare.remove("recaptcha_challenge_field");
+                            }
+                            // this one is null, needs to be ""
+                            if (cloudflare.hasInputFieldByName("message")) {
+                                cloudflare.remove("message");
+                                cloudflare.put("messsage", "\"\"");
+                            }
+                            // recaptcha bullshit,
+                            String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                            if (apiKey == null) {
+                                apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                                if (apiKey == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                            }
+                            final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                            final Recaptcha rc = new Recaptcha(ibr, this);
+                            rc.setId(apiKey);
+                            rc.load();
+                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                            final String response = getCaptchaCode("recaptcha", cf, dllink);
+                            if (inValidate(response)) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                            cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                            cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         }
-                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                        final Recaptcha rc = new Recaptcha(ibr, this);
-                        rc.setId(apiKey);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String response = getCaptchaCode("recaptcha", cf, dllink);
-                        if (inValidate(response)) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                        cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         if (request != null) {
                             ibr.openFormConnection(cloudflare);
                         } else {
@@ -588,7 +600,12 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
                     } catch (final Throwable t) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare related issue", 5 * 60 * 1000l);
+                        // we want to preserve proper exceptions!
+                        if (t instanceof PluginException) {
+                            throw t;
+                    }
+                        t.printStackTrace();
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
                     }
                     // new sendRequest saves.
                     return;
@@ -603,6 +620,11 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
                     } catch (final Throwable t) {
+                        // we want to preserve proper exceptions!
+                        if (t instanceof PluginException) {
+                            throw t;
+                        }
+                        t.printStackTrace();
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                     }
                     return;
@@ -790,20 +812,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
             return true;
         }
         return false;
-    }
-
-    // stable browser is shite.
-
-    private boolean isJava7nJDStable() {
-        if (!isNewJD() && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    protected final boolean isNewJD() {
-        return System.getProperty("jd.revision.jdownloaderrevision") != null ? true : false;
     }
 
     /**
