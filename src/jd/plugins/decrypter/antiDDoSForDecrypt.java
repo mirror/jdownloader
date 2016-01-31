@@ -600,7 +600,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     // effectively refresh page!
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Throwable t) {
+                    } catch (final Exception t) {
                         // we want to preserve proper exceptions!
                         if (t instanceof PluginException) {
                             throw t;
@@ -620,7 +620,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     // try again! -NOTE: this isn't stable compliant-
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Throwable t) {
+                    } catch (final Exception t) {
                         // we want to preserve proper exceptions!
                         if (t instanceof PluginException) {
                             throw t;

@@ -599,11 +599,11 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // effectively refresh page!
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Throwable t) {
+                    } catch (final Exception t) {
                         // we want to preserve proper exceptions!
                         if (t instanceof PluginException) {
                             throw t;
-                    }
+                        }
                         t.printStackTrace();
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
                     }
@@ -619,7 +619,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // try again! -NOTE: this isn't stable compliant-
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Throwable t) {
+                    } catch (final Exception t) {
                         // we want to preserve proper exceptions!
                         if (t instanceof PluginException) {
                             throw t;
