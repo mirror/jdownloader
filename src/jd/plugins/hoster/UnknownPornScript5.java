@@ -190,7 +190,9 @@ public class UnknownPornScript5 extends PluginForHost {
 
         String ext = default_Extension;
         if (!inValidateDLLINK()) {
-            DLLINK = Encoding.htmlDecode(DLLINK);
+            if (!downloadLink.getDownloadURL().contains("ashemaletube")) {
+                DLLINK = Encoding.htmlDecode(DLLINK);
+            }
             filename = filename.trim();
             ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             if (ext == null || ext.length() > 5) {
