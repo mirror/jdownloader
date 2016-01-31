@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,9 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-rapid.cz", "file-share.top" }, urls = { "http://(www\\.)?(share\\-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|srapid|share\\-free)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz|megarapid\\.cz)/(stahuj|soubor)/([0-9]+/.+|[a-z0-9]+)", "https?://(?:www\\.)?file\\-share\\.top/file/\\d+/[^/]+" }, flags = { 2, 2 })
 public class ShareRapidCz extends PluginForHost {
@@ -118,7 +119,7 @@ public class ShareRapidCz extends PluginForHost {
         /**
          * Expire unlimited -> Unlimited traffic for a specified amount of time Normal expire -> Expire date + trafficleft
          *
-         * */
+         */
         final String expireUnlimited = br.getRegex("<td>Paušální stahování aktivní\\. Vyprší </td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>").getMatch(0);
         if (expireUnlimited != null) {
             /* TODO: Check if this case still exists */
@@ -199,7 +200,21 @@ public class ShareRapidCz extends PluginForHost {
         }
         logger.info("Final downloadlink = " + dllink);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        } catch (final PluginException e) {
+            // Link; 6150801113541.log; 388414; jdlog://6150801113541
+            // they have redirection issues which are infinite loops... this is the best way to address
+            if (StringUtils.endsWithCaseInsensitive(e.getErrorMessage(), "Redirectloop")) {
+                final String redirect = br.getRedirectLocation();
+                if (redirect.matches(".+/\\?error=2$")) {
+                    // unknown error message type...
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Error Handling, Pleae report issues");
+                }
+            }
+        }
         if (!dl.getConnection().isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
