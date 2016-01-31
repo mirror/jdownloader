@@ -470,6 +470,20 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr).getToken();
                         cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+
+                        if (request != null) {
+                            ibr.openFormConnection(cloudflare);
+                        } else {
+                            ibr.submitForm(cloudflare);
+                        }
+                        if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
+                            logger.warning("Wrong captcha");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        // if it works, there should be a redirect.
+                        if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                            ibr.getPage(ibr.getRedirectLocation());
+                        }
                     } else {
                         // recapthca v1
                         if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {

@@ -14,7 +14,32 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected LogInterface logger;
     protected Browser      br;
     protected String       siteKey;
-    private String         siteUrl;
+    protected String       secureToken;
+
+    public String getSecureToken() {
+        if (secureToken != null) {
+            return secureToken;
+        }
+        // from fallback url
+        secureToken = br.getRegex("\\&stoken=([^\"]+)").getMatch(0);
+
+        if (secureToken != null) {
+            return secureToken;
+        }
+        secureToken = br.getRegex("data\\-stoken\\s*=\\s*\"([^\"]+)").getMatch(0);
+
+        if (secureToken != null) {
+            return secureToken;
+        }
+
+        return secureToken;
+    }
+
+    public void setSecureToken(String secureToken) {
+        this.secureToken = secureToken;
+    }
+
+    private String siteUrl;
 
     public String getSiteUrl() {
         return siteUrl;
