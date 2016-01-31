@@ -10,6 +10,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -22,16 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class LinkChecker<E extends CheckableLink> {
 
@@ -87,13 +87,13 @@ public class LinkChecker<E extends CheckableLink> {
     private final static Object                                     LOCK                   = new Object();
 
     /* local variables for this LinkChecker */
-    private final AtomicLong                                        linksRequested         = new AtomicLong(0);
-    private final boolean                                           forceRecheck;
-    private LinkCheckerHandler<E>                                   handler                = null;
-    private final static int                                        SPLITSIZE              = 80;
-    private final static LinkCheckerEventSender                     EVENTSENDER            = new LinkCheckerEventSender();
-    protected final AtomicLong                                      checkerGeneration      = new AtomicLong(0);
-    protected final AtomicBoolean                                   runningState           = new AtomicBoolean(false);
+    private final AtomicLong                    linksRequested    = new AtomicLong(0);
+    private final boolean                       forceRecheck;
+    private LinkCheckerHandler<E>               handler           = null;
+    private final static int                    SPLITSIZE         = 80;
+    private final static LinkCheckerEventSender EVENTSENDER       = new LinkCheckerEventSender();
+    protected final AtomicLong                  checkerGeneration = new AtomicLong(0);
+    protected final AtomicBoolean               runningState      = new AtomicBoolean(false);
 
     public static LinkCheckerEventSender getEventSender() {
         return EVENTSENDER;
@@ -485,6 +485,7 @@ public class LinkChecker<E extends CheckableLink> {
             plgToUse.setBrowser(new Browser());
             plgToUse.reset();
             logger.info("Check FileInformation: " + link.getPluginPatternMatcher());
+            plgToUse.setDownloadLink(link);
             availableStatus = plgToUse.checkLink(link);
         } catch (PluginException e) {
             logger.log(e);
@@ -512,6 +513,7 @@ public class LinkChecker<E extends CheckableLink> {
             logger.flush();
             availableStatus = AvailableStatus.UNCHECKABLE;
         } finally {
+            plgToUse.setDownloadLink(null);
             if (availableStatus == null) {
                 logger.severe("Link " + link.getPluginPatternMatcher() + " is broken, status was null");
                 availableStatus = AvailableStatus.UNCHECKABLE;

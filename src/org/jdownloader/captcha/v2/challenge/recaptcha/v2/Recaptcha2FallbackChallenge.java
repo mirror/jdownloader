@@ -11,6 +11,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.captcha.v2.AbstractResponse;
 
@@ -45,7 +46,8 @@ public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChall
                 } else {
                     iframe.getHeaders().put(new HTTPHeader("Accept-Language", TranslationFactory.getDesiredLanguage()));
                 }
-                iframe.getPage("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey);
+
+                iframe.getPage("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey + (StringUtils.isNotEmpty(owner.getSecureToken()) ? ("&stoken=" + owner.getSecureToken()) : ""));
             }
             payload = Encoding.htmlDecode(iframe.getRegex("\"(/recaptcha/api2/payload[^\"]+)").getMatch(0));
             String message = Encoding.htmlDecode(iframe.getRegex("<label .*?class=\"fbc-imageselect-message-text\">(.*?)</label>").getMatch(0));
@@ -116,7 +118,7 @@ public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChall
                 }
             }
             // iframe.getHeaders().put(new HTTPHeader("Origin", "http://www.google.com"));
-            iframe.postPageRaw("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey, "c=" + Encoding.urlEncode(form.getInputField("c").getValue()) + responses);
+            iframe.postPageRaw("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey + (StringUtils.isNotEmpty(owner.getSecureToken()) ? ("&stoken=" + owner.getSecureToken()) : ""), "c=" + Encoding.urlEncode(form.getInputField("c").getValue()) + responses);
             token = iframe.getRegex("\"this\\.select\\(\\)\">(.*?)</textarea>").getMatch(0);
             // this.responses.add(response);
         } catch (Throwable e) {

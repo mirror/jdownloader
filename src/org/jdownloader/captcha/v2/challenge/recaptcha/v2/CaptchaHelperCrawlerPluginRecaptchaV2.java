@@ -47,7 +47,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             }
         }
         final PluginForDecrypt plugin = getPlugin();
-        final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin, br, getSiteDomain(), getSiteUrl());
+        final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, getSecureToken(), plugin, br, getSiteDomain(), getSiteUrl());
         c.setTimeout(plugin.getCaptchaTimeout());
         plugin.invalidateLastChallengeResponse();
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);

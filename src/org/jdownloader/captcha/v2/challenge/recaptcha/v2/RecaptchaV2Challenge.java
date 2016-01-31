@@ -9,6 +9,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -26,14 +27,16 @@ import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
-    public static final String    RECAPTCHAV2 = "recaptchav2";
+    public static final String RECAPTCHAV2 = "recaptchav2";
 
     private String                siteKey;
     private BasicCaptchaChallenge basicChallenge;
 
-    private String                siteDomain;
+    private String siteDomain;
 
-    private String                siteUrl;
+    private String siteUrl;
+
+    private String secureToken;
 
     public String getSiteKey() {
         return siteKey;
@@ -68,9 +71,9 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
     }
 
-    public RecaptchaV2Challenge(String siteKey, Plugin pluginForHost, Browser br, String siteDomain, String siteUrl) {
+    public RecaptchaV2Challenge(String siteKey, String secureToken, Plugin pluginForHost, Browser br, String siteDomain, String siteUrl) {
         super(RECAPTCHAV2, pluginForHost);
-
+        this.secureToken = secureToken;
         this.pluginBrowser = br;
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
@@ -79,6 +82,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             throw new WTFException("Bad SiteKey");
         }
 
+    }
+
+    public String getSecureToken() {
+        return secureToken;
     }
 
     public String getSiteDomain() {
@@ -111,6 +118,13 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             final URL url = RecaptchaV2Challenge.class.getResource("recaptcha.html");
             String html = IO.readURLToString(url);
             html = html.replace("%%%sitekey%%%", siteKey);
+            String stoken = getSecureToken();
+            if (StringUtils.isNotEmpty(stoken)) {
+                html = html.replace("%%%optionals%%%", "data-stoken=\"" + stoken + "\"");
+            } else {
+                html = html.replace("%%%optionals%%%", "");
+
+            }
             return html;
         } catch (IOException e) {
             throw new WTFException(e);

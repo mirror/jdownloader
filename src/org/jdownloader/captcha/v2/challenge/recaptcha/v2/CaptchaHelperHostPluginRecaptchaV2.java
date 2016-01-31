@@ -37,6 +37,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
     /* Most likely used for login captchas. */
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey) {
         super(plugin, br, siteKey);
+
     }
 
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br) {
@@ -50,6 +51,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
         }
         final PluginForHost plugin = this.plugin;
         final DownloadLink link = getPlugin().getDownloadLink();
+
         String apiKey = siteKey;
         if (apiKey == null) {
             apiKey = getRecaptchaV2ApiKey();
@@ -57,15 +59,20 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "RecaptchaV2 API Key can not be found");
             }
         }
+        String secToken = getSecureToken();
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         try {
-            link.addPluginProgress(progress);
+            if (link != null) {
+                link.addPluginProgress(progress);
+            }
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, plugin, br, getSiteDomain(), getSiteUrl());
+            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, getSecureToken(), plugin, br, getSiteDomain(), getSiteUrl());
             c.setTimeout(plugin.getCaptchaTimeout());
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                // coalado: discuss why. FilePackage.isDefaultFilePackage(link.getFilePackage()) is triggered for captchas during online
+                // check es well
                 /**
                  * account login -> do not use anticaptcha services
                  */
