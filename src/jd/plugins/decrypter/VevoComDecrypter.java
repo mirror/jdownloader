@@ -281,12 +281,12 @@ public class VevoComDecrypter extends PluginForDecrypt {
                     if (medias == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String hls_base = url.replace("/index.m3u8", "");
+                    final String hls_base = br.getBaseURL();
                     for (final String media : medias) {
                         final String m3u8_part = new Regex(media, "(\\d+/[A-Za-z0-9]+_\\d+k_\\d+x\\d+_[^<>\"]*?\\.m3u8)").getMatch(0);
                         final String hls_filename_part = new Regex(m3u8_part, "(_[0-9]{2,5}k_\\d+x\\d+_[a-z0-9]+_(\\d+)_.+)\\.m3u8$").getMatch(0);
                         final String videoBitrate = new Regex(hls_filename_part, "_\\d+k_\\d+x\\d+_[a-z0-9]+_(\\d+)_").getMatch(0);
-                        final String directlink = hls_base + "/" + m3u8_part;
+                        final String directlink = hls_base + m3u8_part;
                         final String final_filename = title + hls_filename_part + ".mp4";
                         final DownloadLink fina = createDloadlink();
                         fina.setAvailable(true);

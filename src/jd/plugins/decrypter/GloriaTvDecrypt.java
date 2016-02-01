@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -35,6 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gloria.tv" }, urls = { "http://(www\\.)?gloria\\.tv/media/[A-Za-z0-9]+" }, flags = { 0 })
 public class GloriaTvDecrypt extends PluginForDecrypt {
@@ -56,6 +56,9 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
             return decryptedLinks;
         }
         String videotitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (videotitle == null) {
+            videotitle = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
         if (videotitle == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -123,8 +126,8 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
                 }
             }
             if (qualities.length == 0 && audiolink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
             int count_all = qualities.length;
             if (audiolink != null) {

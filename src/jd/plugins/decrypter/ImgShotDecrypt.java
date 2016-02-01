@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -79,15 +80,12 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", jd.plugins.components.UserAgents.stringUserAgent());
         br.getPage(parameter);
-        if (br.containsHTML(">Image Removed or Bad Link<") || br.getURL().contains("/noimage.php") || br.getHttpConnection().getResponseCode() == 404) {
+        if (isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        /* general|imgtube.net */
-        if (br.containsHTML("imgContinue") || br.containsHTML("continue_to_image")) {
-            br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
-        }
-        final String finallink = br.getRegex("(\\'|\")(https?://([\\w\\-]+\\.)?" + Pattern.quote(Browser.getHost(parameter)) + "((?:/upload)?/big/|(?:/uploads)?/images/)[^<>\"]*?)\\1").getMatch(1);
+        handleContinueStep(this.br);
+        final String finallink = getFinallink(this.br, parameter);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -95,6 +93,24 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
         decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
 
         return decryptedLinks;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.containsHTML(">Image Removed or Bad Link<") || br.getURL().contains("/noimage.php") || br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        return false;
+    }
+
+    public static void handleContinueStep(final Browser br) throws IOException {
+        /* general|imgtube.net */
+        if (br.containsHTML("imgContinue") || br.containsHTML("continue_to_image")) {
+            br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
+        }
+    }
+
+    public static String getFinallink(final Browser br, final String sourcelink) {
+        return br.getRegex("(\\'|\")(https?://([\\w\\-]+\\.)?" + Pattern.quote(Browser.getHost(sourcelink)) + "((?:/upload)?/big/|(?:/uploads)?/images/)[^<>\"]*?)\\1").getMatch(1);
     }
 
     /* NO OVERRIDE!! */

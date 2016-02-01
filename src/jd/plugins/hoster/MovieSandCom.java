@@ -75,6 +75,9 @@ public class MovieSandCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://www.moviesand.com/404.php") || br.containsHTML("Page Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.getURL().contains(this.getHost() + "/")) {
+            /* Redirect to external site */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>MoviesAnd \\- ([^<>\"]*?) \\- Better than YouPorn and RedTube</title>").getMatch(0);
         if (filename == null) {
