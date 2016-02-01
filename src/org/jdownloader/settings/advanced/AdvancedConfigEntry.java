@@ -2,6 +2,7 @@ package org.jdownloader.settings.advanced;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
+import java.util.Locale;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
@@ -37,8 +38,65 @@ public class AdvancedConfigEntry {
         return configInterface;
     }
 
+    public String internalKey = null;
+
+    public String getInternalKey() {
+        if (internalKey == null) {
+            final String ret = getKey().replaceAll("[^a-zA-Z0-9 ]+", "").replace("colour", "color").replace("directory", "folder").toLowerCase(Locale.ENGLISH);
+            internalKey = ret;
+            return ret;
+        }
+        return internalKey;
+    }
+
+    private String key = null;
+
     public String getKey() {
-        return configInterface._getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey();
+        if (key == null) {
+            final String ret = getConfigInterfaceName().concat(".").concat(getHandlerKey());
+            key = ret;
+            return ret;
+        }
+        return key;
+    }
+
+    public String getHandlerKey() {
+        return keyHandler.getKey();
+    }
+
+    private String configInterfaceName = null;
+
+    public String getConfigInterfaceName() {
+        if (configInterfaceName == null) {
+            String ret = configInterface._getStorageHandler().getConfigInterface().getSimpleName();
+            if (ret.contains("Config")) {
+                ret = ret.replace("Config", "");
+            }
+            configInterfaceName = ret;
+            return ret;
+        }
+        return configInterfaceName;
+    }
+
+    private String keyText = null;
+
+    public String getKeyText() {
+        if (keyText == null) {
+            String getterName = getKeyHandler().getGetMethod().getName();
+            if (getterName.startsWith("is")) {
+                getterName = getterName.substring(2);
+            } else if (getterName.startsWith("get")) {
+                getterName = getterName.substring(3);
+            }
+            getterName = getterName.replaceAll("([a-z])([A-Z])", "$1 $2");
+            if (getterName.endsWith(" Enabled")) {
+                getterName = getterName.substring(0, getterName.length() - 8);
+            }
+            final String ret = getConfigInterfaceName() + ": " + getterName;
+            keyText = ret;
+            return ret;
+        }
+        return keyText;
     }
 
     public Object getValue() {

@@ -92,7 +92,7 @@ public class CompiledFiletypeFilter {
 
         @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
-            return extension instanceof HashExtensions;
+            return extension != null && extension instanceof HashExtensions;
         }
 
         @Override
@@ -161,7 +161,7 @@ public class CompiledFiletypeFilter {
 
         @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
-            return extension instanceof AudioExtensions;
+            return extension != null && extension instanceof AudioExtensions;
         }
 
         @Override
@@ -208,7 +208,7 @@ public class CompiledFiletypeFilter {
 
         @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
-            return extension instanceof VideoExtensions;
+            return extension != null && extension instanceof VideoExtensions;
         }
 
         private VideoExtensions(String id) {
@@ -311,7 +311,7 @@ public class CompiledFiletypeFilter {
 
         @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
-            return extension instanceof ArchiveExtensions;
+            return extension != null && extension instanceof ArchiveExtensions;
         }
 
         public String getIconID() {
@@ -364,7 +364,7 @@ public class CompiledFiletypeFilter {
 
         @Override
         public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
-            return extension instanceof ImageExtensions;
+            return extension != null && extension instanceof ImageExtensions;
         }
 
         public String getIconID() {
@@ -400,7 +400,7 @@ public class CompiledFiletypeFilter {
                     }
                 }
             }
-        } catch (final IllegalArgumentException e) {
+        } catch (final Throwable e) {
             /* custom regex may contain errors */
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
@@ -439,9 +439,9 @@ public class CompiledFiletypeFilter {
             }
         }
         if (StringUtils.isNotEmpty(extension)) {
-            for (final Pattern o : this.list) {
+            for (final Pattern pattern : this.list) {
                 try {
-                    if (o.matcher(extension).matches()) {
+                    if (pattern != null && pattern.matcher(extension).matches()) {
                         return ret;
                     }
                 } catch (Throwable e) {

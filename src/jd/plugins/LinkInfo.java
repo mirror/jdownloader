@@ -152,7 +152,7 @@ public class LinkInfo {
                                 if (hint != null) {
                                     return hint.isSameExtensionGroup(extension);
                                 } else {
-                                    return extension != null && extension.getPattern() == null && extension.getIconID() == null && StringUtils.equals(extension.name(), name());
+                                    return extension != null && extension.getIconID() == null && StringUtils.equals(extension.name(), name());
                                 }
                             }
 

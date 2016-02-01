@@ -10,15 +10,18 @@ import java.net.Socket;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.StreamClientImpl;
 
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.net.httpserver.HttpConnection;
+import org.fourthline.cling.DefaultUpnpServiceConfiguration;
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.model.action.ActionInvocation;
 import org.fourthline.cling.model.message.UpnpResponse;
@@ -31,6 +34,7 @@ import org.fourthline.cling.model.types.UDAServiceType;
 import org.fourthline.cling.model.types.UnsignedIntegerTwoBytes;
 import org.fourthline.cling.support.igd.callback.PortMappingAdd;
 import org.fourthline.cling.support.model.PortMapping;
+import org.fourthline.cling.transport.impl.StreamClientConfigurationImpl;
 import org.jdownloader.api.DeprecatedAPIServer;
 import org.jdownloader.api.DeprecatedAPIServer.AutoSSLHttpConnectionFactory;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
@@ -99,7 +103,23 @@ public class MyJDownloaderDirectServer extends Thread {
         UDAServiceType[] udaServices = new UDAServiceType[] { new UDAServiceType("WANPPPConnection"), new UDAServiceType("WANIPConnection") };
         UpnpServiceImpl upnpService = null;
         try {
-            upnpService = new UpnpServiceImpl();
+            final DefaultUpnpServiceConfiguration config = new DefaultUpnpServiceConfiguration() {
+                @Override
+                public Executor getMulticastReceiverExecutor() {
+                    return super.getMulticastReceiverExecutor();
+                }
+
+                @Override
+                public Integer getRemoteDeviceMaxAgeSeconds() {
+                    return super.getRemoteDeviceMaxAgeSeconds();
+                }
+
+                @Override
+                public StreamClientImpl createStreamClient() {
+                    return new StreamClientImpl(new StreamClientConfigurationImpl(getSyncProtocolExecutorService()));
+                }
+            };
+            upnpService = new UpnpServiceImpl(config);
             upnpService.getControlPoint().search(15000);
             Thread.sleep(15000);
             final CopyOnWriteArrayList<InetAddress> localIPs = new CopyOnWriteArrayList<InetAddress>(HTTPProxyUtils.getLocalIPs());
