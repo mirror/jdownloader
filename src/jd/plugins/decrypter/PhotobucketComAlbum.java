@@ -21,8 +21,8 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -39,46 +39,62 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         LinkedHashMap<String, Object> json;
         final String parameter = param.toString();
+        br = new Browser();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97");
+        br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String internal_album_name = this.br.getRegex("photobucket\\.com/albums/([^/]+)/[^/]+/story/").getMatch(0);
         final String token = this.br.getRegex("name=\"token\" id=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (token == null || internal_album_name == null) {
-            return null;
-        }
-        final Regex linkinfo = new Regex(parameter, "https?://(?:www\\.)?(s\\d+)\\.photobucket\\.com/user/([^/]+)/");
-        final String server = linkinfo.getMatch(0);
-        final String username = linkinfo.getMatch(1);
-        final String fpName = username;
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
 
-        // this.br.getHeaders().put("X-NewRelic-ID", "VgQFVFJWGwIFVFlSAQE=");
-        /* Not really needed */
-        this.br.getHeaders().put("X-NewRelic-ID", "");
-        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        /* Don't try more than 24 per page - it won't work - state 2015-10-28 */
-        final long max_entries_per_page = 24;
+        final FilePackage fp = FilePackage.getInstance();
+
         long image_count_total = 0;
         int page = 1;
+
+        final String albumdeds = br.getRegex("collectionData:\\s*(\\{.*?\\}),\\s*collectionId:").getMatch(0);
+        if (albumdeds == null) {
+            return null;
+        }
+        json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(albumdeds);
+        if (image_count_total == 0) {
+            image_count_total = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(json, "items/total"), 0);
+        }
+        /* Don't try more than 24 per page - it won't work - state 2015-10-28 */
+        // final long max_entries_per_page = 24;
+        final long max_entries_per_page = DummyScriptEnginePlugin.toLong(json.get("pageSize"), 24);
+
+        final String fpName = (String) json.get("albumName");
+
+        if (fpName != null) {
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+        }
+        final String currentAlbumPath = (String) json.get("currentAlbumPath");
+        final String libraryUrl = br.getRegex("'libraryUrl'\\s*,\\s*'(https?://s\\d+\\.photobucket\\.com)/user/").getMatch(0);
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 return decryptedLinks;
             }
-            final String pageurl = "http://" + server + ".photobucket.com/component/Common-PageCollection-Album-AlbumPageCollection?filters[album]=/albums/" + internal_album_name + "/" + username + "&filters[album_content]=2&sort=3&limit=" + max_entries_per_page + "&page=" + page + "&linkerMode=&json=1&hash=" + token + "&_=" + System.currentTimeMillis();
-            this.br.getPage(pageurl);
-            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            if (image_count_total == 0) {
-                image_count_total = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(json, "body/total"), 0);
+            if (!decryptedLinks.isEmpty()) {
+                // only required over the first page!
+                if (token == null || currentAlbumPath == null) {
+                    return null;
+                }
+                final Browser br = this.br.cloneBrowser();
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("application/json", "text/javascript, */*; q=0.01");
+                final String url = libraryUrl + "/component/Common-PageCollection-Album-AlbumPageCollection?filters[album]=" + currentAlbumPath + "&filters[album_content]=2&sort=3&limit=" + max_entries_per_page + "&page=" + page + "&linkerMode=&json=1&hash=" + token + "&_=" + System.currentTimeMillis();
+                br.getPage(url);
+                json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             }
-            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(json, "body/objects");
+            final ArrayList<Object> ressourcelist = (ArrayList) (decryptedLinks.isEmpty() ? DummyScriptEnginePlugin.walkJson(json, "items/objects") : DummyScriptEnginePlugin.walkJson(json, "body/objects"));
             for (final Object pico : ressourcelist) {
                 json = (LinkedHashMap<String, Object>) pico;
                 final String fname = (String) json.get("name");
@@ -90,9 +106,8 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(dlink);
                 dl.setContentUrl(dlink);
                 dl.setName(fname);
-                dl.setLinkID(userid + fname);
                 dl.setAvailable(true);
-                dl._setFilePackage(fp);
+                fp.add(dl);
                 decryptedLinks.add(dl);
                 distribute(dl);
             }
