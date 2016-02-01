@@ -274,7 +274,7 @@ public class OldRAFDownload extends DownloadInterface {
      */
     protected boolean checkResumabled() {
         long[] chunksP = downloadable.getChunksProgress();
-        if (chunksP == null || chunksP.length == 0) {
+        if (chunksP == null || chunksP.length == 0 || (chunksP.length == 1 && chunksP[0] == 0)) {
             return false;
         }
         final long fileSize = getFileSize();
@@ -769,7 +769,7 @@ public class OldRAFDownload extends DownloadInterface {
             }
             logger.info("FileSize: " + fileSize + "|Start:" + start + "|End:" + end);
         }
-        if (verifiedFileSize < 0 && start.equals("0")) {
+        if (start.equals("0") && (verifiedFileSize < 0 || "".equals(end))) {
             logger.info("rangeless resumable connect");
             rangeRequested = false;
             request.getHeaders().remove("Range");
