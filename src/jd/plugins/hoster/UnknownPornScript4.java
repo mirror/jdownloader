@@ -102,7 +102,7 @@ public class UnknownPornScript4 extends PluginForHost {
             flashvars = this.br.getRegex("flashvars=\"([^<>\"]+)").getMatch(0);
         }
         if (flashvars != null) {
-            DLLINK = new Regex(flashvars, "(http://(?:www\\.)?[^/]+/playerConfig\\.php[^<>\"/\\&]+)").getMatch(0);
+            DLLINK = new Regex(flashvars, "(http://(?:www\\.)?[^/]+/playerConfig\\.php[^<>\"/\\&|]+)").getMatch(0);
             if (DLLINK != null) {
                 br2.getPage(Encoding.htmlDecode(DLLINK));
                 DLLINK = br2.getRegex("flvMask:([^<>\"\\']*?);").getMatch(0);
