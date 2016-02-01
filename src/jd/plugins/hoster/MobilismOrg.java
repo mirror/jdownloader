@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,9 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -39,14 +35,21 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
+/**
+ *
+ * note: cloudflare<br/>
+ * note: transloads downloads<br/>
+ *
+ * @author raztoki
+ *
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class MobilismOrg extends PluginForHost {
+public class MobilismOrg extends antiDDoSForHost {
 
     /* Tags: Script vinaget.us */
-    private static final String                            DOMAIN               = "http://mobilism.org/";
-    private static final String                            DOMAIN_2             = "http://89.32.131.24/";
+    private static final String                            DOMAIN               = "http://mblservices.org";
     private static final String                            NICE_HOST            = "mobilism.org";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
@@ -67,7 +70,6 @@ public class MobilismOrg extends PluginForHost {
     private static final boolean                           defaultRESUME        = true;
 
     private static Object                                  CTRLLOCK             = new Object();
-    private int                                            statuscode           = 0;
     private static AtomicInteger                           maxPrem              = new AtomicInteger(1);
     private Account                                        currAcc              = null;
     private DownloadLink                                   currDownloadLink     = null;
@@ -84,12 +86,18 @@ public class MobilismOrg extends PluginForHost {
         return "http://images.mobilism.org/";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
-        br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0");
-        br.setAllowedResponseCodes(401);
-        return br;
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.addAllowedResponseCodes(401);
+        }
+        return prepBr;
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
     }
 
     private void setConstants(final Account acc, final DownloadLink dl) {
@@ -178,8 +186,6 @@ public class MobilismOrg extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
             br.followConnection();
-            updatestatuscode();
-            handleAPIErrors(this.br);
             handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);
         }
         try {
@@ -195,7 +201,7 @@ public class MobilismOrg extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        br = new Browser();
         final boolean forceNewLinkGeneration = true;
 
         synchronized (hostUnavailableMap) {
@@ -230,24 +236,46 @@ public class MobilismOrg extends PluginForHost {
 
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null || forceNewLinkGeneration) {
-            br.setAllowedResponseCodes(403);
             /* request creation of downloadlink */
+            br = new Browser();
             br.setFollowRedirects(true);
-            this.br = newBrowser();
-            this.br.setFollowRedirects(true);
             login(account, false);
-            this.getAPISafe("http://89.32.131.24/downloader/premium.php");
-            this.getAPISafe("/downloader/app/index.php?dl=" + Encoding.urlEncode(link.getDownloadURL()));
-            this.postAPISafe("/downloader/app/index.php", "premium_acc=on&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            final Form dlform = this.br.getForm(0);
-            if (dlform == null) {
-                handleErrorRetries("dlformnull", 10, 10 * 60 * 1000l);
+            getPage("http://mblservices.org/amember/downloader/manual/?");
+            // form
+            final String urlInputFieldName = "add_to_url";
+            final Form d1 = br.getFormByInputFieldKeyValue(urlInputFieldName, "");
+            if (d1 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.postAPIFormSafe(dlform);
-            dllink = br.getRegex("(https?://[^/]+/downloader/app/files/[^<>\"]*?)\"").getMatch(0);
+            d1.put(urlInputFieldName, Encoding.urlEncode(link.getDownloadURL()));
+            submitForm(d1);
+            // another form effectively
+            final Form d2 = br.getFormbyProperty("name", "transload");
+            if (d2 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            d2.put("premium_acc", "on");
+            submitForm(d2);
+            final Form d3 = br.getFormbyAction("/amember/downloader/downloader/app/index.php");
+            if (d3 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            submitForm(d3);
+            final String regex_dllink = "(https?://[^\"]+/downloader/app/files/[^\"]+)\"";
+            dllink = br.getRegex(regex_dllink).getMatch(0);
+            long time = 0;
+            long wait = 5 * 60 * 1000l;
             if (dllink == null) {
+                do {
+                    // transloading bullshit...
+                    sleep(1 * 60 * 1000l, link);
+                    submitForm(d3);
+                    dllink = br.getRegex(regex_dllink).getMatch(0);
+                } while (dllink == null && time < 5 * 60 * 1000l);
+            }
+            if (dllink == null && time > wait) {
                 logger.warning("Final downloadlink is null");
-                handleErrorRetries("dllinknull", 10, 10 * 60 * 1000l);
+                handleErrorRetries("dllinknull", 2, 10 * 60 * 1000l);
             }
         }
         handleDL(account, link, dllink);
@@ -299,34 +327,37 @@ public class MobilismOrg extends PluginForHost {
     @SuppressWarnings({ "deprecation" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.setConstants(account, null);
-        this.br = newBrowser();
+        br = new Browser();
         final AccountInfo ai = new AccountInfo();
+        setConstants(account, null);
+
         br.setFollowRedirects(true);
+        login(account, true);
 
-        this.login(account, true);
-
-        account.setType(AccountType.PREMIUM);
-        ai.setStatus("Premium account");
-        ai.setUnlimitedTraffic();
-        br.getPage("http://images.mobilism.org/downloader/premium.php");
+        final String url = getJson("url");
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        getPage(url);
         final String[] supportedHosts = br.getRegex("td>\\-([A-Za-z0-9\\-\\.]+)").getColumn(0);
+        if (url != null) {
+            ai.setMultiHostSupport(this, Arrays.asList(supportedHosts));
+        }
+        account.setType(AccountType.PREMIUM);
+        ai.setStatus("Premium Account");
+        ai.setUnlimitedTraffic();
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-
-        hostMaxchunksMap.clear();
-        hostMaxdlsMap.clear();
-        ai.setMultiHostSupport(this, Arrays.asList(supportedHosts));
         return ai;
     }
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean ifr = br.isFollowingRedirects();
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                this.br = newBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -338,51 +369,58 @@ public class MobilismOrg extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(DOMAIN, key, value);
-                            this.br.setCookie(DOMAIN_2, key, value);
+                            br.setCookie(DOMAIN, key, value);
                         }
-                        this.br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
                 /*
                  * 2016-01-24: When logged in and want to download it leads us to: http://mblservices.org/amember/login --> Here our initial
                  * login data does not work ...
                  */
-                if (true) {
+                /*
+                 * 20160201: above statement is no longer valid.. website login works in via browser (tested in chrome)
+                 */
+                if (false) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-
-                this.br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-                try {
-                    this.br.postPage("http://images.mobilism.org/downloader/premium.php", "add_to_url=http%3A%2F%2Flogintest.com%2F&submit=Go");
-                } catch (final BrowserException e) {
-                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                // this will redirect.
+                br.setFollowRedirects(true);
+                getPage("http://mblservices.org/amember/downloader/manual/");
+                final Form login = br.getFormbyProperty("name", "login");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // note that the login form looks like it CAN has recaptcha event....
+                login.put("amember_pass", Encoding.urlEncode(account.getPass()));
+                login.put("amember_login", Encoding.urlEncode(account.getUser()));
+                // json with these, html and standard redirect without!
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                submitForm(login);
+                br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                br.getHeaders().put("X-Requested-With", null);
+                // double check
+                if (br.getCookie(DOMAIN, "amember_nr") == null && !PluginJSonUtils.parseBoolean(getJson("ok"))) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    throw e;
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(DOMAIN);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
+                // save session
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(DOMAIN));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(ifr);
             }
         }
     }
@@ -401,24 +439,6 @@ public class MobilismOrg extends PluginForHost {
             unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
-        this.br.getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-    }
-
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-        this.br.postPage(accesslink, postdata);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-    }
-
-    private void postAPIFormSafe(final Form form) throws Exception {
-        this.br.submitForm(form);
-        updatestatuscode();
-        handleAPIErrors(this.br);
     }
 
     /** Performs slight domain corrections. */
@@ -441,7 +461,7 @@ public class MobilismOrg extends PluginForHost {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num) {
         synchronized (CTRLLOCK) {
             final String currentHost = correctHost(this.currDownloadLink.getHost());
@@ -456,77 +476,6 @@ public class MobilismOrg extends PluginForHost {
             hostRunningDlsNumMap.put(currentHost, currentRunningDls);
         }
     }
-
-    /**
-     * 0 = everything ok, 1-99 = official errorcodes, 100-199 = login-errors, 666 = hell
-     */
-    private void updatestatuscode() {
-        statuscode = 0;
-    }
-
-    private void handleAPIErrors(final Browser br) throws PluginException {
-        String statusMessage = null;
-        try {
-            switch (statuscode) {
-            case 0:
-                /* Everything ok */
-                break;
-            case 1:
-                statusMessage = "Invalid username/password";
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            case 666:
-                /* Unknown error */
-                statusMessage = "Unknown error";
-                logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 10, 5 * 60 * 1000l);
-            }
-        } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
-            throw e;
-        }
-    }
-
-    // /**
-    // * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-    // *
-    // * @param s
-    // * Imported String to match against.
-    // * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-    // * @author raztoki
-    // * */
-    // private boolean inValidate(final String s) {
-    // if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-    // return true;
-    // } else {
-    // return false;
-    // }
-    // }
-    //
-    // /** Corrects input so that it fits what we use in our plugins. */
-    // private int correctChunks(int maxchunks) {
-    // if (maxchunks < 1) {
-    // maxchunks = 1;
-    // } else if (maxchunks > 1) {
-    // maxchunks = -maxchunks;
-    // }
-    // /* Else maxchunks == 1 */
-    // return maxchunks;
-    // }
-    //
-    // /** Corrects input so that it fits what we use in our plugins. */
-    // private int correctMaxdls(int maxdls) {
-    // if (maxdls < 1) {
-    // maxdls = 1;
-    // } else if (maxdls > 20) {
-    // maxdls = 20;
-    // }
-    // /* Else we should have a valid value! */
-    // return maxdls;
-    // }
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
