@@ -468,22 +468,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 if (responseCode == 403 && cloudflare != null) {
                     // recapthcha v2
                     if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                        this.setDownloadLink(dllink);
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr).getToken();
                         cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-
-                        if (request != null) {
-                            ibr.openFormConnection(cloudflare);
-                        } else {
-                            ibr.submitForm(cloudflare);
-                        }
-                        if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                            logger.warning("Wrong captcha");
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        // if it works, there should be a redirect.
-                        if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                            ibr.getPage(ibr.getRedirectLocation());
-                        }
                     } else {
                         // recapthca v1
                         if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
@@ -520,19 +508,19 @@ public abstract class antiDDoSForHost extends PluginForHost {
                             cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                             cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         }
-                        if (request != null) {
-                            ibr.openFormConnection(cloudflare);
-                        } else {
-                            ibr.submitForm(cloudflare);
-                        }
-                        if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                            logger.warning("Wrong captcha");
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        // if it works, there should be a redirect.
-                        if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                            ibr.getPage(ibr.getRedirectLocation());
-                        }
+                    }
+                    if (request != null) {
+                        ibr.openFormConnection(cloudflare);
+                    } else {
+                        ibr.submitForm(cloudflare);
+                    }
+                    if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
+                        logger.warning("Wrong captcha");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    // if it works, there should be a redirect.
+                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                        ibr.getPage(ibr.getRedirectLocation());
                     }
                 } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
                     // website address could be www. or what ever prefixes, need to make sure

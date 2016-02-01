@@ -507,19 +507,19 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                             cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         }
-                        if (request != null) {
-                            ibr.openFormConnection(cloudflare);
-                        } else {
-                            ibr.submitForm(cloudflare);
-                        }
-                        if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                            logger.warning("Wrong captcha");
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        // if it works, there should be a redirect.
-                        if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                            ibr.getPage(ibr.getRedirectLocation());
-                        }
+                    }
+                    if (request != null) {
+                        ibr.openFormConnection(cloudflare);
+                    } else {
+                        ibr.submitForm(cloudflare);
+                    }
+                    if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
+                        logger.warning("Wrong captcha");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    // if it works, there should be a redirect.
+                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                        ibr.getPage(ibr.getRedirectLocation());
                     }
                 } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
                     // website address could be www. or what ever prefixes, need to make sure

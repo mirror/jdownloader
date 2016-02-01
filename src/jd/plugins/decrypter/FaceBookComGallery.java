@@ -51,7 +51,7 @@ import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
 @SuppressWarnings("deprecation")
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.+|l\\.facebook\\.com/l/[^/]+/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -59,18 +59,30 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     /* must be static so all plugins share same lock */
-    private static Object           LOCK                            = new Object();
-    private static final String     FACEBOOKMAINPAGE                = "https://www.facebook.com";
-    private int                     DIALOGRETURN                    = -1;
+    private static Object       LOCK             = new Object();
+    private static final String FACEBOOKMAINPAGE = "https://www.facebook.com";
+    private int                 DIALOGRETURN     = -1;
 
-    private static final String     TYPE_FBSHORTLINK                = "http(s)?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
+    public static String[] getAnnotationNames() {
+        return new String[] { "facebook.com" };
+    }
+
+    public static String[] getAnnotationUrls() {
+        return new String[] { TYPE_FBSHORTLINK + "|" + TYPE_FB_REDIRECT_TO_EXTERN_SITE + "|" + TYPE_SINGLE_PHOTO + "|" + TYPE_SINGLE_VIDEO_MANY_TYPES + "|" + TYPE_SINGLE_VIDEO_EMBED + "|" + TYPE_SINGLE_VIDEO_VIDEOS + "|" + TYPE_SET_LINK_PHOTO + "|" + TYPE_SET_LINK_VIDEO + "|" + TYPE_ALBUMS_LINK + "|" + TYPE_PHOTOS_OF_LINK + "|" + TYPE_PHOTOS_ALL_LINK + "|" + TYPE_PHOTOS_STREAM_LINK + "|" + TYPE_PHOTOS_STREAM_LINK_2 + "|" + TYPE_PHOTOS_LINK + "|" + TYPE_GROUPS_PHOTOS + "|" + TYPE_GROUPS_FILES + "|" + TYPE_PROFILE_PHOTOS + "|" + TYPE_PROFILE_ALBUMS + "|" + TYPE_NOTES + "|" + TYPE_MESSAGE };
+    }
+
+    public static int[] getAnnotationFlags() {
+        return new int[] { 0 };
+    }
+
+    private static final String     TYPE_FBSHORTLINK                = "https?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String     TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/(?:l/[^/]+/.+|l\\.php\\?u=.+)";
-    private static final String     TYPE_SINGLE_PHOTO               = "http(s)?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
+    private static final String     TYPE_SINGLE_PHOTO               = "https?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
     private static final String     TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(?:www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
     private static final String     TYPE_SINGLE_VIDEO_EMBED         = "https?://(?:www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
     private static final String     TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(?:www\\.)?facebook\\.com/.+/videos.*?/\\d+.*?";
-    private static final String     TYPE_SET_LINK_PHOTO             = "http(s)?://.+/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
-    private static final String     TYPE_SET_LINK_VIDEO             = "https?://.+(/media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
+    private static final String     TYPE_SET_LINK_PHOTO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
+    private static final String     TYPE_SET_LINK_VIDEO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
     private static final String     TYPE_ALBUMS_LINK                = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
     private static final String     TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
     private static final String     TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
@@ -82,7 +94,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     TYPE_PROFILE_PHOTOS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)5$";
     private static final String     TYPE_PROFILE_ALBUMS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)6$";
     private static final String     TYPE_NOTES                      = "https?://(?:www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
-    private static final String     TYPE_MESSAGE                    = "httpss?://(?:www\\.)?facebook\\.com/messages/.+";
+    private static final String     TYPE_MESSAGE                    = "https?://(?:www\\.)?facebook\\.com/messages/.+";
 
     private static final int        MAX_LOOPS_GENERAL               = 150;
     private static final int        MAX_PICS_DEFAULT                = 5000;
