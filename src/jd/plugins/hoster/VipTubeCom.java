@@ -73,7 +73,7 @@ public class VipTubeCom extends PluginForHost {
             filename = url_filename;
         }
         DLLINK = this.br.getRegex("src=\"(http://[^/]+/mp4/[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null || true) {
+        if (DLLINK == null) {
             String cfgurl = br.getRegex("\\'(http://(www\\.)?viptube\\.com/player_config/[^<>\"]*?)\\'").getMatch(0);
             final String vkey = br.getRegex("vkey=([a-z0-9]+)").getMatch(0);
             if (cfgurl == null || vkey == null) {
@@ -109,7 +109,7 @@ public class VipTubeCom extends PluginForHost {
                 con = br2.openGetConnection(DLLINK);
                 if (con.getResponseCode() == 404) {
                     /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
-                    final String redirect_url = br2.getHttpConnection().getRequest().getUrl();
+                    final String redirect_url = con.getRequest().getUrl();
                     con = br.openGetConnection(redirect_url);
                 }
             } catch (final BrowserException e) {
