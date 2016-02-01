@@ -23,39 +23,39 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.Regex;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgbb.net" }, urls = { "http://(?:www\\.)?imgbb\\.net/v\\-.+" }, flags = { 0 })
+public class ImgbbNet extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn5.com" }, urls = { "http://(?:www\\.)?porn5\\.com/video\\-\\d+(/[a-z0-9\\-]+)?" }, flags = { 0 })
-public class Porn5Com extends PluginForHost {
-
-    public Porn5Com(PluginWrapper wrapper) {
+    public ImgbbNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-    // other: They have an API but it nowhere near fits our needs: http://www.porn5.com/api
+    // other:
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final boolean free_resume       = false;
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
     private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://info.porn5.com/legal#terms";
+        return "http://imgbb.net/support/";
     }
 
     @SuppressWarnings("deprecation")
@@ -65,49 +65,24 @@ public class Porn5Com extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (jd.plugins.decrypter.ImgShotDecrypt.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0).replace("-", " ");
-        String filename = br.getRegex("title:\"([^<>\"]*?)\"").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "imgbb\\.net/v\\-(.+)").getMatch(0);
+        String filename = null;
         if (filename == null) {
-            filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]+<h\\d+>([^<>]*?)<").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        }
-        if (filename == null || "PORN5".equals(filename)) {
             filename = url_filename;
         }
-        /* Check for multiple videoqualities --> Find highest quality */
-        int maxquality = 0;
-        String sources_source = this.br.getRegex("streams:[\t\n\r ]*?\\[(.*?)\\]").getMatch(0);
-        if (sources_source != null) {
-            sources_source = sources_source.replace("\\", "");
-            final String[] qualities = new Regex(sources_source, "(\\{id:.*?\\})").getColumn(0);
-            for (final String quality_info : qualities) {
-                String p = new Regex(quality_info, "id:\"(\\d+)p").getMatch(0);
-                if (p == null) {
-                    p = new Regex(quality_info, "id:\"(low|med|high)").getMatch(0);
-                    if ("low".equals(p)) {
-                        p = "360";
-                    } else {
-                        /* TODO: Implement others */
-                        p = "360";
-                    }
-                }
-                int pint = 0;
-                if (p != null) {
-                    pint = Integer.parseInt(p);
-                }
-                if (pint > maxquality) {
-                    maxquality = pint;
-                    DLLINK = new Regex(quality_info, "url:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
-                }
-            }
+        jd.plugins.decrypter.ImgShotDecrypt.handleContinueStep(this.br);
+        DLLINK = jd.plugins.decrypter.ImgShotDecrypt.getFinallink(this.br, link.getDownloadURL());
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -124,7 +99,7 @@ public class Porn5Com extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        link.setFinalFileName(filename);
+        link.setName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -189,6 +164,11 @@ public class Porn5Com extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.ImageHosting_ImgShot;
     }
 
     @Override

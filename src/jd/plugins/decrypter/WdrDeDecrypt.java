@@ -200,6 +200,9 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 return null;
             }
             for (int counter = 0; counter <= 1; counter++) {
+                if (counter > qualities.length - 1) {
+                    break;
+                }
                 String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
                 final String single_quality_string_correct;
                 String resolution;

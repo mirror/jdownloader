@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
  * note: primewire.ag using cloudflare. -raztoki20150225
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(www\\.)?(vodly\\.to|primewire\\.ag)/(watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.ag|primewire\\.unblocked\\.cc)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)|http://(?:www\\.)?letmewatchthis\\.lv/movies/view/watch\\-\\d+[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class OneChannelCh extends antiDDoSForDecrypt {
 
     public OneChannelCh(PluginWrapper wrapper) {
@@ -54,7 +54,7 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.1channel.ch" + singleLink));
             }
         } else {
-            if (br.getURL().equals("http://www.1channel.ch/") || br.getURL().contains("/index.php")) {
+            if (br.getURL().equals("http://www.primewire.ag/") || br.getURL().contains("/index.php")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             } else if (br.containsHTML(">No episodes listed<")) {

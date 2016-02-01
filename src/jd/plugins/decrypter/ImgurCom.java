@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -277,8 +278,12 @@ public class ImgurCom extends PluginForDecrypt {
         }
     }
 
-    private void site_decrypt() throws DecrypterException, ParseException {
+    private void site_decrypt() throws DecrypterException, ParseException, IOException {
         /* Removed differentiation between two linktypes AFTER revision 26468 */
+        if (this.br.containsHTML("class=\"load\\-more\"")) {
+            /* RegExes below will work for the json after this ajax request too! */
+            this.br.getPage("http://imgur.com/ajaxalbums/getimages/" + this.lid + "/hit.json?all=true");
+        }
         String jsonarray = br.getRegex("\"images\":\\[(\\{.*?\\})\\]").getMatch(0);
         if (jsonarray == null) {
             jsonarray = br.getRegex("\"items\":\\[(.*?)\\]").getMatch(0);

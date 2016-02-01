@@ -336,9 +336,21 @@ public class FilesloopCom extends PluginForHost {
 
         final String accounttype = getJson("premium");
         final String validuntil = getJson("premium_to");
+        long timestamp_validuntil = 0;
+        if (validuntil != null) {
+            timestamp_validuntil = Long.parseLong(validuntil) * 1000;
+        }
 
-        if (accounttype.equals("1")) {
-            ai.setValidUntil(Long.parseLong(validuntil) * 1000);
+        /* Expired premium == FREE but API will still say its premium so we have to identify the real account type via expire date. */
+        /*
+         * 2016-02-01: Free accounts ('Trail plan') can download one file up to 1 GB. On download attempt of multiple files (I was actually
+         * able to download more than 1 file with a free account!) over 500 MB, server returned
+         * '{"error":"error-downloading-file","data":[]}' so there is no way to handle this situation correctly until now. Once a free
+         * account is completely out of traffic, this site will show "Your trail is over. Purchase premium account to download files.":
+         * https://www.filesloop.com/account/dashboard/
+         */
+        if (accounttype.equals("1") && timestamp_validuntil > System.currentTimeMillis()) {
+            ai.setValidUntil(timestamp_validuntil);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
         } else {

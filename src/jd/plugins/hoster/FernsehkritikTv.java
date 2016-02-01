@@ -802,6 +802,10 @@ public class FernsehkritikTv extends PluginForHost {
         } else if (url_videoid.matches("ps\\d+")) {
             url_videoid = "Pressesch(l)au";
         } else if (url_videoid.matches("studio(?:\\-)?\\d+")) {
+            /* 'Das Studio'-Pattern #1 */
+            url_videoid = "Das Studio";
+        } else if (url_videoid.matches("studio(?:\\-)?p\\d+")) {
+            /* 'Das Studio'-Pattern #2 */
             url_videoid = "Das Studio";
         } else {
             /* url_name_without_episodenumber should already be okay - simply remove '-' and that's it. */

@@ -52,6 +52,7 @@ public class MovikiRu extends PluginForHost {
         link.setLinkID(vid);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -61,6 +62,12 @@ public class MovikiRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"block_header\">([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<div class=\"headline\">[\t\n\r ]*?<h2>([^<>\"]+)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("([^<>\"]+)").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -61,11 +61,16 @@ public class GamesReveurDe extends PluginForHost {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
         String filesize = br.getRegex("Downloadgröße: ([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) {
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"addon-info-right\">[\t\n\r ]+(\\d+ (?:kB|mB|gB))[\t\n\r ]+</div>").getMatch(0);
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -99,7 +104,8 @@ public class GamesReveurDe extends PluginForHost {
         br.postPage("http://games.reveur.de/includes/ajax/checkUserInput.php", "params={\"val1\":" + value1 + ",\"val2\":" + value2 + ",\"result\":\"" + result + "\"}");
         final String ticket = getJson("ticket");
         if (ticket == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Happens sometimes ... */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 1000l);
         }
         final String dllink = "http://games.reveur.de/Download.php?intDlId=" + dlid + "&strDlType=" + dltype + "&strFileType=zip&intGameId=" + gameid + "&strGameShort=" + gameshort + "&strTicket=" + ticket;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
