@@ -36,8 +36,6 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -85,7 +83,7 @@ public class ZeveraCom extends antiDDoSForHost {
             super.prepBrowser(prepBr, host);
             // define custom browser headers and language settings.
             prepBr.setCookie(mProt + mName, "lang", "english");
-            //prepBr.getHeaders().put("User-Agent", "JDownloader");
+            // prepBr.getHeaders().put("User-Agent", "JDownloader");
             prepBr.setCustomCharset("utf-8");
             prepBr.setConnectTimeout(60 * 1000);
             prepBr.setReadTimeout(60 * 1000);
@@ -420,49 +418,38 @@ public class ZeveraCom extends antiDDoSForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        // doesn't contain useful info....
-        // br.getPage(mServ + "/jDownloader.ashx?cmd=accountinfo");
-        // grab website page instead.
-        getPage(mServ + "/Member/Dashboard.aspx");
-        final String expire = br.getRegex(">Expiration date:</label>.+?txExpirationDate\">(.*?)</label").getMatch(0);
-        final String server = br.getRegex(">Server time:</label>.+?txServerTime\">(.*?)</label").getMatch(0);
-        String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
-        String serverTime = new Regex(server, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
-        long eTime = -1, sTime = -1;
-        if (expireTime != null) {
-            eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
-            if (eTime == -1) {
-                eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
-            }
-        }
-        if (serverTime != null) {
-            sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm a", null);
-            if (sTime == -1) {
-                sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm:ss a", null);
-            }
-        }
-        if (eTime >= 0 && sTime >= 0) {
-            // accounts for different time zones! Should always be correct assuming the user doesn't change time every five minutes. Adjust
-            // expire time based on users current system time.
-            ai.setValidUntil(System.currentTimeMillis() + (eTime - sTime));
-        } else if (eTime >= 0) {
-            // fail over..
-            ai.setValidUntil(eTime);
-        } else {
-            if (StringUtils.contains(expire, "NEVER")) {
-                final String dayTraffic = br.getRegex(">Day Traffic left:</label>.+?txDayTrafficLeft\">(.*?)</label").getMatch(0);
-                if (dayTraffic != null) {
-                    final String dayTrafficLeft = new Regex(dayTraffic, "(\\d+ (MB|GB|TB))").getMatch(0);
-                    if (dayTrafficLeft != null) {
-                        ai.setTrafficLeft(SizeFormatter.getSize(dayTrafficLeft));
-                    }
+        getPage("//www.zevera.com/members/dashboard");
+        final String expire = br.getRegex(">Expiration date:</span>.+?txExpirationDate\">(.*?)</span").getMatch(0);
+        if (expire != null) {
+            final String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
+            long eTime = -1;
+            if (expireTime != null) {
+                eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
+                if (eTime == -1) {
+                    eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
                 }
+            }
+            if (eTime >= 0) {
+                // standard account
+                ai.setValidUntil(eTime, br);
+            } else if (StringUtils.endsWithCaseInsensitive(expire, "NEVER")) {
+                // life time account
             } else {
-                // epic fail?
-                logger.warning("Expire time could not be found/set. Please report to JDownloader Development Team");
+                logger.warning("unknown expire");
             }
         }
-        ai.setStatus("Premium User");
+        final String traffic = br.getRegex(">Traffic Left:\\s*</span>(?:<[^>]+>\\s*){2,}(.*?)</a></span>").getMatch(0);
+        if (traffic != null) {
+            if (StringUtils.equalsIgnoreCase(traffic, "UNLIMITED")) {
+                ai.setUnlimitedTraffic();
+            } else {
+                final String dayTrafficLeft = new Regex(traffic, "(\\d+ (MB|GB|TB))").getMatch(0);
+                if (dayTrafficLeft != null) {
+                    ai.setTrafficLeft(SizeFormatter.getSize(dayTrafficLeft));
+                }
+            }
+        }
+        ai.setStatus("Premium Account");
         try {
             getPage(mServ + "/jDownloader.ashx?cmd=gethosters");
             String[] hosts = br.getRegex("([^,]+)").getColumn(0);
@@ -499,6 +486,7 @@ public class ZeveraCom extends antiDDoSForHost {
                         return;
                     }
                 }
+                br.setFollowRedirects(true);
                 getPage(mServ + "/");
                 getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
@@ -516,15 +504,9 @@ public class ZeveraCom extends antiDDoSForHost {
                         }
                     }
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(mProt + mName);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(mProt + mName));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -533,7 +515,7 @@ public class ZeveraCom extends antiDDoSForHost {
     }
 
     private Form getMoreForm(final Account account) {
-        final Form more = br.getFormbyActionRegex("OfferLogin\\.aspx\\?login=" + Pattern.quote(Encoding.urlEncode(account.getUser())) + "&(?:amp;)?pass=" + Pattern.quote(Encoding.urlEncode(account.getPass())));
+        final Form more = br.getFormbyActionRegex("(?:\\./)?OfferLogin\\.aspx\\?login=" + Pattern.quote(Encoding.urlEncode(account.getUser())) + "&(?:amp;)?pass=" + Pattern.quote(Encoding.urlEncode(account.getPass())));
         return more;
     }
 
