@@ -195,12 +195,19 @@ public class Uploadedto extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            downloadLink.setFinalFileName(name.trim());
+            downloadLink.setFinalFileName(fixFileName(name.trim()));
             downloadLink.setDownloadSize(SizeFormatter.getSize(size));
         } finally {
             br.setFollowRedirects(red);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String fixFileName(final String fileName) {
+        if (fileName != null && fileName.endsWith("\";")) {
+            return fileName.substring(0, fileName.length() - 2);
+        }
+        return fileName;
     }
 
     private void getPage(Browser br, String url) throws IOException, PluginException, InterruptedException {
@@ -455,7 +462,7 @@ public class Uploadedto extends PluginForHost {
                             } catch (final Throwable e) {
                             }
                         }
-                        dl.setFinalFileName(name);
+                        dl.setFinalFileName(fixFileName(name));
                         long size = SizeFormatter.getSize(infos[hit][2]);
                         dl.setDownloadSize(size);
                         if (size > 0) {
@@ -1512,7 +1519,7 @@ public class Uploadedto extends PluginForHost {
             downloadLink.setSha1Hash(sha1);
         }
         if (downloadLink.getFinalFileName() == null) {
-            downloadLink.setFinalFileName(name);
+            downloadLink.setFinalFileName(fixFileName(name));
         }
         if (size != null) {
             try {

@@ -114,20 +114,20 @@ public class FileSharkPl extends PluginForHost {
 
         if (errorCode > 0) {
             //
-            // 2 => 'Wrong method', 
-            // 10 => 'Missing login or password', 
-            // 11 => 'User is not authenticated', 
-            // 20 => 'Missing file id, token or name', 
-            // 21 => 'No file found', 
-            // 22 => 'Missing file id or token', 
-            // 23 => 'File is deleted', 
-            // 24 => 'DMCA', 
-            // 30 => 'Only for users in selected countries', 
-            // 31 => 'Free download available only for countries: Poland', 
+            // 2 => 'Wrong method',
+            // 10 => 'Missing login or password',
+            // 11 => 'User is not authenticated',
+            // 20 => 'Missing file id, token or name',
+            // 21 => 'No file found',
+            // 22 => 'Missing file id or token',
+            // 23 => 'File is deleted',
+            // 24 => 'DMCA',
+            // 30 => 'Only for users in selected countries',
+            // 31 => 'Free download available only for countries: Poland',
             // 32 => 'You must wait for new download',
-            // 33 => 'Daily limit has been reached', 
+            // 33 => 'Daily limit has been reached',
             // 34 => 'Max number of active downloads has been reached'
-            
+
             return getJson("errorMessage");
         }
         return "Unknown error";
@@ -360,6 +360,9 @@ public class FileSharkPl extends PluginForHost {
                         }
                     } else if (errorCode == 34) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMessage, 10 * 60 * 1000l);
+                    } else if (errorCode == 31) {
+                        // Free download available only for countries: countryName
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_ONLY);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FATAL, errorMessage);
                     }

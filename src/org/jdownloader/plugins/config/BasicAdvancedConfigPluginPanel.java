@@ -4,6 +4,13 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedValueColumn;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.EditColumn;
+import jd.plugins.PluginConfigPanelNG;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DevConfig;
@@ -11,13 +18,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedValueColumn;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.EditColumn;
-import jd.plugins.PluginConfigPanelNG;
 
 public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
     private final class BasicAdvancedConfigTable extends AdvancedTable {
@@ -52,7 +52,7 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
 
                 @Override
                 public String getStringValue(AdvancedConfigEntry value) {
-                    return createKeyText(value);
+                    return value.getKeyText();
                 }
 
                 @Override

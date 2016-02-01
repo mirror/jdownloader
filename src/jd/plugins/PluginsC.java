@@ -18,13 +18,13 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
 import jd.nutils.Formatter;
 
 import org.appwork.storage.config.JsonConfig;
@@ -233,16 +233,18 @@ public abstract class PluginsC {
         boolean showException = true;
         try {
             /* extract filename from url */
-            final String currentURI = new Regex(source.getURL(), "(file:/.+)").getMatch(0);
-            if (currentURI != null) {
-                final File file = new File(new URI(currentURI));
+            final String sourceURL = new Regex(source.getURL(), "(file:/.+)").getMatch(0);
+            if (sourceURL != null) {
+                // workaround for authorities in file uris
+                final String currentURI = sourceURL.replaceFirst("file:///?", "file:///");
+                final File file = new File(Browser.constructURI(currentURI));
                 if (file != null && file.exists()) {
                     final CrawledLink origin = source.getOriginLink();
                     if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file:/")) {
                         askFileDeletion = false;
                     } else if (origin != null) {
-                        final String originURI = new Regex(origin.getURL(), "(file:/.+)").getMatch(0);
-                        if (originURI != null && !currentURI.equalsIgnoreCase(originURI)) {
+                        final String originURL = new Regex(origin.getURL(), "(file:/.+)").getMatch(0);
+                        if (originURL != null && !sourceURL.equalsIgnoreCase(originURL)) {
                             logger.fine("Do not ask - just delete: " + origin.getURL());
                             askFileDeletion = false;
                         }

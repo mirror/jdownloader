@@ -4,14 +4,14 @@ import java.awt.event.MouseEvent;
 import java.util.Iterator;
 import java.util.Locale;
 
+import jd.controlling.ClipboardMonitoring;
+
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
-
-import jd.controlling.ClipboardMonitoring;
 
 public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
@@ -41,14 +41,19 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
         final String ltext = text;
         if (ltext != null) {
             final String finds[] = ltext.replaceAll("[^a-zA-Z0-9 ]+", "").replace("colour", "color").replace("directory", "folder").toLowerCase(Locale.ENGLISH).split("\\s");
-            for (final Iterator<AdvancedConfigEntry> it = newtableData.iterator(); it.hasNext();) {
-                final AdvancedConfigEntry next = it.next();
-                for (String find : finds) {
-                    if (StringUtils.containsIgnoreCase(next.getKey(), find) || StringUtils.containsIgnoreCase(next.getDescription(), find) || containsKeyword(next, find) || StringUtils.containsIgnoreCase(createKeyText(next), find)) {
+            if (finds.length > 0) {
+                for (final Iterator<AdvancedConfigEntry> it = newtableData.iterator(); it.hasNext();) {
+                    final AdvancedConfigEntry next = it.next();
+                    if (StringUtils.startsWithCaseInsensitive(next.getInternalKey(), finds[0])) {
                         continue;
-                    } else {
-                        it.remove();
-                        break;
+                    }
+                    for (String find : finds) {
+                        if (StringUtils.containsIgnoreCase(next.getKey(), find) || StringUtils.containsIgnoreCase(next.getDescription(), find) || containsKeyword(next, find) || StringUtils.containsIgnoreCase(next.getKeyText(), find)) {
+                            continue;
+                        } else {
+                            it.remove();
+                            break;
+                        }
                     }
                 }
             }
@@ -68,7 +73,7 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
 
             @Override
             public String getStringValue(AdvancedConfigEntry value) {
-                return createKeyText(value);
+                return value.getKeyText();
             }
 
             @Override
@@ -153,21 +158,6 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
     public void refresh(final String filterText) {
         this.text = filterText;
         _fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
-    }
-
-    protected String createKeyText(AdvancedConfigEntry value) {
-        String getterName = value.getKeyHandler().getGetMethod().getName();
-        if (getterName.startsWith("is")) {
-            getterName = getterName.substring(2);
-        } else if (getterName.startsWith("get")) {
-            getterName = getterName.substring(3);
-        }
-        getterName = getterName.replaceAll("([a-z])([A-Z])", "$1 $2");
-        if (getterName.endsWith(" Enabled")) {
-            getterName = getterName.substring(0, getterName.length() - 8);
-        }
-
-        return value.getConfigInterface()._getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + ": " + getterName;
     }
 
 }

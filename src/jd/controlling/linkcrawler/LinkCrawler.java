@@ -3,7 +3,6 @@ package jd.controlling.linkcrawler;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -812,7 +811,9 @@ public class LinkCrawler {
                 try {
                     processedLinksCounter.incrementAndGet();
                     if (StringUtils.startsWithCaseInsensitive(source.getURL(), "file:/")) {
-                        final File file = new File(new URI(source.getURL()));
+                        // workaround for authorities in file uris
+                        final String currentURI = source.getURL().replaceFirst("file:///?", "file:///");
+                        final File file = new File(Browser.constructURI(currentURI));
                         if (file.exists() && file.isFile()) {
                             final int readLimit = Math.max(1 * 1024 * 1024, CONFIG.getDeepDecryptLoadLimit());
                             final String fileContent = new String(IO.readFile(file, readLimit), "UTF-8");

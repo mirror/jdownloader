@@ -411,7 +411,7 @@ public class ExtensionController implements MenuExtenderHandler {
     @SuppressWarnings("unchecked")
     private java.util.List<LazyExtension> loadUnpacked() {
         java.util.List<LazyExtension> retl = new ArrayList<LazyExtension>();
-        URL ret = getClass().getResource("/");
+        final URL ret = getClass().getResource("/");
         File root;
         if ("file".equalsIgnoreCase(ret.getProtocol())) {
             try {
