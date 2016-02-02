@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -104,6 +106,7 @@ public class SkymigaCom extends PluginForHost {
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    private final String                   PREFER_SSL                   = "PREFER_SSL";
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -154,6 +157,7 @@ public class SkymigaCom extends PluginForHost {
     public SkymigaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        setConfigElements();
     }
 
     @SuppressWarnings("deprecation")
@@ -710,13 +714,23 @@ public class SkymigaCom extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
+    private void getPage(String page) throws Exception {
+        if (preferSSL()) {
+            page = page.replace("http://", "https://");
+        } else {
+            page = page.replace("https://", "http://");
+        }
         br.getPage(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
-    private void postPage(final String page, final String postdata) throws Exception {
+    private void postPage(String page, final String postdata) throws Exception {
+        if (preferSSL()) {
+            page = page.replace("http://", "https://");
+        } else {
+            page = page.replace("https://", "http://");
+        }
         br.postPage(page, postdata);
         correctBR();
     }
@@ -724,6 +738,10 @@ public class SkymigaCom extends PluginForHost {
     private void submitForm(final Form form) throws Exception {
         br.submitForm(form);
         correctBR();
+    }
+
+    private boolean preferSSL() {
+        return this.getPluginConfig().getBooleanProperty(PREFER_SSL, default_prefer_ssl);
     }
 
     /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
@@ -1215,6 +1233,12 @@ public class SkymigaCom extends PluginForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
+    }
+
+    private boolean default_prefer_ssl = true;
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_SSL, JDL.L("plugins.hoster.skymigacom.preferSSL", "Prefer SSL?")).setDefaultValue(default_prefer_ssl));
     }
 
     @Override

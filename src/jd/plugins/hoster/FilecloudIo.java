@@ -343,11 +343,16 @@ public class FilecloudIo extends PluginForHost {
             throw e;
         }
         long traffic_left_long = 0;
+        long premium_until = 0;
         final String traffic_left_str = getJson("bandwidth");
+        final String premium_until_str = getJson("premium_until");
         if (traffic_left_str != null) {
             traffic_left_long = SizeFormatter.getSize(traffic_left_str);
         }
-        if (traffic_left_long == 0) {
+        if (premium_until_str != null) {
+            premium_until = Long.parseLong(premium_until_str) * 1000;
+        }
+        if (traffic_left_long == 0 && (premium_until_str != null && premium_until < System.currentTimeMillis())) {
             ai.setStatus("Registered (free) account");
             account.setType(AccountType.FREE);
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
@@ -362,7 +367,12 @@ public class FilecloudIo extends PluginForHost {
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setTrafficLeft(traffic_left_long);
+            if (traffic_left_str != null) {
+                ai.setTrafficLeft(traffic_left_long);
+            } else {
+                ai.setUnlimitedTraffic();
+            }
+            ai.setValidUntil(premium_until);
         }
         return ai;
     }
