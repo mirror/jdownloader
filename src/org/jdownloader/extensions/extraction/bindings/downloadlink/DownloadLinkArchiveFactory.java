@@ -26,13 +26,11 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implements ArchiveFactory {
 
     public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
-    private String             archiveID                      = null;
 
     public DownloadLinkArchiveFactory(DownloadLink link) {
         super(link);
@@ -124,22 +122,23 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public List<ArchiveFile> createPartFileList(final String file, final String archivePartFilePattern) {
         final String pattern = modifyPartFilePattern(archivePartFilePattern);
-        LogController.CL().info("File:" + file);
-        LogController.CL().info("OrgPattern:" + archivePartFilePattern);
-        LogController.CL().info("ModPattern:" + pattern);
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         final String fileParent = new File(file).getParent();
-        LogController.CL().info("Parent:" + fileParent);
         final HashMap<String, ArchiveFile> map = new HashMap<String, ArchiveFile>();
         DownloadController.getInstance().visitNodes(new AbstractNodeVisitor<DownloadLink, FilePackage>() {
 
             @Override
             public Boolean visitPackageNode(FilePackage pkg) {
                 if (CrossSystem.isWindows()) {
-                    return StringUtils.equalsIgnoreCase(fileParent, pkg.getDownloadDirectory());
+                    final String downloadDirectory = CrossSystem.fixPathSeparators(pkg.getDownloadDirectory());
+                    return StringUtils.equalsIgnoreCase(fileParent, downloadDirectory);
                 } else {
-                    LogController.CL().info("debug:" + pkg.getDownloadDirectory());
-                    return StringUtils.equals(fileParent, pkg.getDownloadDirectory());
+                    final String downloadDirectory = CrossSystem.fixPathSeparators(pkg.getDownloadDirectory());
+                    if (downloadDirectory.endsWith("/")) {
+                        return StringUtils.equals(fileParent.concat("/"), downloadDirectory);
+                    } else {
+                        return StringUtils.equals(fileParent, downloadDirectory);
+                    }
                 }
             }
 
@@ -148,7 +147,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 final String nodeFile = node.getFileOutput(false, true);
                 if (nodeFile == null) {
                     // http://board.jdownloader.org/showthread.php?t=59031
-                    LogController.CL().info("Return false:" + node.getName());
                     return false;
                 }
                 if (pat.matcher(nodeFile).matches()) {
@@ -160,8 +158,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                     } else {
                         af.addMirror(node);
                     }
-                } else {
-                    LogController.CL().info("does not match:" + nodeFile);
                 }
                 return true;
 
