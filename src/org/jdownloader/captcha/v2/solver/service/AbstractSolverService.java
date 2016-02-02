@@ -7,15 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.SolverService;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
 public abstract class AbstractSolverService implements SolverService {
 
@@ -107,7 +108,9 @@ public abstract class AbstractSolverService implements SolverService {
 
                         @Override
                         public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
+                            if (!Application.isHeadless()) {
+                                ServicePanel.getInstance().requestUpdate(true);
+                            }
                         }
                     });
                 }

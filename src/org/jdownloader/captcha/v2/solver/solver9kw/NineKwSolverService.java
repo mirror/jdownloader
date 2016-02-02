@@ -7,6 +7,14 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -27,14 +35,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 
 public class NineKwSolverService extends AbstractSolverService implements ServicePanelExtender {
     private static final NineKwSolverService INSTANCE = new NineKwSolverService();
@@ -171,6 +171,12 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
     private Captcha9kwSolverClick  clickSolver;
     private Captcha9kwSolverPuzzle puzzleSolver;
 
+    private void updateServicePanel(boolean b) {
+        if (!Application.isHeadless()) {
+            ServicePanel.getInstance().requestUpdate(b);
+        }
+    }
+
     /**
      * Create a new instance of NineKwSolverService. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
@@ -178,20 +184,15 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
     private NineKwSolverService() {
         config = JsonConfig.create(Captcha9kwSettings.class);
         AdvancedConfigManager.getInstance().register(config);
-
         if (!Application.isHeadless()) {
-
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
                 public void run() {
-
                     ServicePanel.getInstance().addExtender(NineKwSolverService.this);
-
                     CFG_9KWCAPTCHA.API_KEY.getEventSender().addListener(new GenericConfigEventListener<String>() {
 
                         @Override
                         public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
+                            updateServicePanel(true);
                         }
 
                         @Override
@@ -206,7 +207,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
                         @Override
                         public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
+                            updateServicePanel(true);
                         }
                     });
                     CFG_9KWCAPTCHA.ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -217,7 +218,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
                         @Override
                         public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
+                            updateServicePanel(true);
                         }
                     });
                     CFG_9KWCAPTCHA.MOUSE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -228,7 +229,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
                         @Override
                         public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
+                            updateServicePanel(true);
                         }
                     });
                     CFG_9KWCAPTCHA.PUZZLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -239,11 +240,10 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
                         @Override
                         public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
+                            updateServicePanel(true);
                         }
                     });
                 }
-
             });
         }
     }

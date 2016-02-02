@@ -51,17 +51,12 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
                 public void run() {
-                    if (!Application.isHeadless()) {
-                        ServicePanel.getInstance().addExtender(CaptchaMyJDSolverService.this);
-                    }
+                    ServicePanel.getInstance().addExtender(CaptchaMyJDSolverService.this);
                     initServicePanel(config._getStorageHandler().getKeyHandler("Enabled"));
                     MyJDownloaderController.getInstance().getEventSender().addListener(CaptchaMyJDSolverService.this);
-
+                    ServicePanel.getInstance().requestUpdate(true);
                 }
-
             });
-
-            ServicePanel.getInstance().requestUpdate(true);
         }
     }
 
