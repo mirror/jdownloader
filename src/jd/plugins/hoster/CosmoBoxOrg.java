@@ -21,7 +21,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -43,11 +47,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cosmobox.org" }, urls = { "https?://(www\\.)?cosmobox\\.org/[A-Za-z0-9]+" }, flags = { 2 })
 public class CosmoBoxOrg extends PluginForHost {
@@ -92,19 +91,6 @@ public class CosmoBoxOrg extends PluginForHost {
     private static final String  errortext_ERROR_SERVER                       = "Server error";
     private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
     private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
-
-    /* Connection stuff */
-    private static final boolean free_RESUME                                  = true;
-    private static final int     free_MAXCHUNKS                               = 0;
-    private static final int     free_MAXDOWNLOADS                            = 20;
-    private static final boolean account_FREE_RESUME                          = true;
-    private static final int     account_FREE_MAXCHUNKS                       = 0;
-    private static final int     account_FREE_MAXDOWNLOADS                    = 20;
-    private static final boolean account_PREMIUM_RESUME                       = true;
-    private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
-    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
-
-    private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -174,7 +160,7 @@ public class CosmoBoxOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, free_RESUME, free_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, true, 0, "free_directlink");
     }
 
     @SuppressWarnings("deprecation")
@@ -360,11 +346,7 @@ public class CosmoBoxOrg extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -394,7 +376,7 @@ public class CosmoBoxOrg extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -409,15 +391,6 @@ public class CosmoBoxOrg extends PluginForHost {
         } else {
             return "http://";
         }
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return free_MAXDOWNLOADS;
     }
 
     private static final Object LOCK = new Object();
@@ -473,9 +446,9 @@ public class CosmoBoxOrg extends PluginForHost {
                 }
                 br.getPage(loginstart + this.getHost() + "/account_home." + type);
                 if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
-                    account.setProperty("free", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("free", false);
+                    account.setType(AccountType.PREMIUM);
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -497,25 +470,17 @@ public class CosmoBoxOrg extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        MAXPREM.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        if (account.getBooleanProperty("free", false)) {
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-                /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
-            MAXPREM.set(account_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) account");
+        if (AccountType.FREE.equals(account.getType())) {
+            account.setMaxSimultanDownloads(-1);
+            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         } else {
             br.getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
@@ -527,27 +492,16 @@ public class CosmoBoxOrg extends PluginForHost {
             long expire_milliseconds = 0;
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-                account.setProperty("free", true);
-                try {
-                    account.setType(AccountType.FREE);
-                    account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-                    /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-                    account.setConcurrentUsePossible(false);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
-                MAXPREM.set(account_FREE_MAXDOWNLOADS);
-                ai.setStatus("Registered (free) user");
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(-1);
+                /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+                account.setConcurrentUsePossible(false);
+                ai.setStatus("Free Account");
             } else {
                 ai.setValidUntil(expire_milliseconds);
-                try {
-                    account.setType(AccountType.PREMIUM);
-                    account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
-                MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(-1);
+                ai.setStatus("Premium Account");
             }
         }
         account.setValid(true);
@@ -564,10 +518,10 @@ public class CosmoBoxOrg extends PluginForHost {
             if (!available_CHECK_OVER_INFO_PAGE) {
                 br.getPage(link.getDownloadURL());
             }
-            doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
+            doFree(link, true, 0, "free_acc_directlink");
         } else {
             String dllink = link.getDownloadURL();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             handleServerErrors();
             if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file, checking for errors...");
@@ -579,7 +533,7 @@ public class CosmoBoxOrg extends PluginForHost {
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             }
             handleServerErrors();
             if (!dl.getConnection().isContentDisposition()) {
@@ -590,12 +544,6 @@ public class CosmoBoxOrg extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return MAXPREM.get();
     }
 
     @Override
