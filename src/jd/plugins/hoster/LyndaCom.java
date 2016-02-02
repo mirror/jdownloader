@@ -49,7 +49,7 @@ public class LyndaCom extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         final String videoid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setName(videoid);
         this.setBrowserExclusive();
@@ -69,8 +69,22 @@ public class LyndaCom extends PluginForHost {
         try {
             long max_bitrate = 0;
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("PrioritizedStreams");
-            entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+            final String status = (String) entries.get("Status");
+            if ("ExpiredSession".equals(status)) {
+                logger.info("Only preview available --> Item can be considered as offline at least for users without accounts!");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Object prioritizedStreams_o = entries.get("PrioritizedStreams");
+            if (prioritizedStreams_o instanceof ArrayList) {
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("PrioritizedStreams");
+                entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+            } else {
+                LinkedHashMap<String, Object> prioritizedStreams_map = (LinkedHashMap<String, Object>) entries.get("PrioritizedStreams");
+                for (final Map.Entry<String, Object> entry : prioritizedStreams_map.entrySet()) {
+                    entries = (LinkedHashMap<String, Object>) entry.getValue();
+                    break;
+                }
+            }
             for (final Map.Entry<String, Object> entry : entries.entrySet()) {
                 final String bitrate_str = entry.getKey();
                 final String url = (String) entry.getValue();
@@ -80,7 +94,7 @@ public class LyndaCom extends PluginForHost {
                     DLLINK = url;
                 }
             }
-        } catch (final Throwable e) {
+        } catch (final IOException e) {
             e.printStackTrace();
         }
         if (DLLINK == null) {
