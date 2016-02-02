@@ -9,13 +9,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.zip.ZipIOException;
 import org.appwork.utils.zip.ZipIOWriter;
@@ -28,12 +27,25 @@ public class LogAPIImpl implements LogAPI {
 
     @Override
     public List<LogFolderStorable> getAvailableLogs() {
-        final ArrayList<LogFolder> folders = (ArrayList<LogFolder>) LogAction.getLogFolders();
+        final ArrayList<LogFolder> folders = AbstractLogAction.getLogFolders();
         final ArrayList<LogFolderStorable> result = new ArrayList<LogFolderStorable>();
+        LogFolder current = null;
         for (final LogFolder folder : folders) {
-            result.add(LogFolderStorable.create(folder));
+            if (isCurrentLogFolder(folder.getCreated())) {
+                current = folder;
+            } else {
+                result.add(LogFolderStorable.create(folder));
+            }
+        }
+        if (current != null) {
+            result.add(0, LogFolderStorable.create(current));
         }
         return result;
+    }
+
+    private boolean isCurrentLogFolder(long timestamp) {
+        final long startup = LogController.getInstance().getInitTime();
+        return startup == timestamp;
     }
 
     @Override
@@ -41,7 +53,7 @@ public class LogAPIImpl implements LogAPI {
         if (selectedFolders == null || selectedFolders.length == 0) {
             throw new BadParameterException("selection empty or null");
         }
-        final ArrayList<LogFolder> logFolders = LogAction.getLogFolders();
+        final ArrayList<LogFolder> logFolders = AbstractLogAction.getLogFolders();
         final ArrayList<LogFolder> selectedLogFolders = new ArrayList<LogFolder>();
 
         for (final LogFolderStorable storable : selectedFolders) {
@@ -66,7 +78,7 @@ public class LogAPIImpl implements LogAPI {
                             }
                             zip = createPackage(logFolder);
                             logID = JDServUtils.uploadLog(zip, logID);
-                            if (logID != null && logIDRef.get() == null) {                               
+                            if (logID != null && logIDRef.get() == null) {
                                 synchronized (logIDRef) {
                                     logIDRef.set(logID);
                                     logIDRef.notify();

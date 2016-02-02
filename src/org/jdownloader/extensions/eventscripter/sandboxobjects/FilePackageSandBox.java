@@ -17,80 +17,77 @@ import org.jdownloader.plugins.FinalLinkState;
 @ScriptAPI(description = "The context download list package")
 public class FilePackageSandBox {
 
-    private FilePackage filePackage;
+    private final FilePackage filePackage;
 
     public FilePackageSandBox(FilePackage parentNode) {
         this.filePackage = parentNode;
     }
 
     public FilePackageSandBox() {
-
+        this(null);
     }
 
     public long getBytesLoaded() {
         if (filePackage == null) {
             return 0;
+        } else {
+            return new FilePackageView(filePackage).aggregate().getDone();
         }
-        return new FilePackageView(filePackage).aggregate().getDone();
     }
 
     public ArchiveSandbox[] getArchives() {
         if (filePackage == null) {
             return null;
-        }
-
-        final ArrayList<ArchiveSandbox> list = new ArrayList<ArchiveSandbox>();
-
-        filePackage.getModifyLock().runReadLock(new Runnable() {
-
-            @Override
-            public void run() {
-                final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(filePackage.getChildren());
-                if (archives != null) {
-                    for (final Archive archive : archives) {
-                        list.add(new ArchiveSandbox(archive));
+        } else {
+            final ArrayList<ArchiveSandbox> list = new ArrayList<ArchiveSandbox>();
+            filePackage.getModifyLock().runReadLock(new Runnable() {
+                @Override
+                public void run() {
+                    final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(filePackage.getChildren());
+                    if (archives != null) {
+                        for (final Archive archive : archives) {
+                            list.add(new ArchiveSandbox(archive));
+                        }
                     }
                 }
-            }
-        });
-
-        return list.toArray(new ArchiveSandbox[] {});
-
+            });
+            return list.toArray(new ArchiveSandbox[] {});
+        }
     }
 
     public DownloadLinkSandBox[] getDownloadLinks() {
         if (filePackage == null) {
             return null;
-        }
-        final ArrayList<DownloadLinkSandBox> ret = new ArrayList<DownloadLinkSandBox>();
-        filePackage.getModifyLock().runReadLock(new Runnable() {
+        } else {
+            final ArrayList<DownloadLinkSandBox> ret = new ArrayList<DownloadLinkSandBox>();
+            filePackage.getModifyLock().runReadLock(new Runnable() {
 
-            @Override
-            public void run() {
-                for (DownloadLink link : filePackage.getChildren()) {
-                    ret.add(new DownloadLinkSandBox(link));
+                @Override
+                public void run() {
+                    for (DownloadLink link : filePackage.getChildren()) {
+                        ret.add(new DownloadLinkSandBox(link));
+                    }
+
                 }
-
-            }
-        });
-        return ret.toArray(new DownloadLinkSandBox[] {});
-
+            });
+            return ret.toArray(new DownloadLinkSandBox[] {});
+        }
     }
 
     public long getBytesTotal() {
         if (filePackage == null) {
             return 0;
+        } else {
+            return new FilePackageView(filePackage).aggregate().getSize();
         }
-
-        return new FilePackageView(filePackage).aggregate().getSize();
     }
 
     public String getComment() {
         if (filePackage == null) {
             return null;
+        } else {
+            return filePackage.getComment();
         }
-
-        return filePackage.getComment();
     }
 
     public void setComment(String comment) {
@@ -108,31 +105,32 @@ public class FilePackageSandBox {
     public boolean isFinished() {
         if (filePackage == null) {
             return false;
-        }
-        final AtomicBoolean finished = new AtomicBoolean(true);
-        filePackage.getModifyLock().runReadLock(new Runnable() {
+        } else {
+            final AtomicBoolean finished = new AtomicBoolean(true);
+            filePackage.getModifyLock().runReadLock(new Runnable() {
 
-            @Override
-            public void run() {
-                for (DownloadLink link : filePackage.getChildren()) {
-                    // only enabled links count. this is the same in the jd gui, so let's use the same logic here
-                    if (link.isEnabled() && !FinalLinkState.CheckFinished(link.getFinalLinkState())) {
-                        finished.set(false);
-                        break;
+                @Override
+                public void run() {
+                    for (DownloadLink link : filePackage.getChildren()) {
+                        // only enabled links count. this is the same in the jd gui, so let's use the same logic here
+                        if (link.isEnabled() && !FinalLinkState.CheckFinished(link.getFinalLinkState())) {
+                            finished.set(false);
+                            break;
+                        }
                     }
+
                 }
-
-            }
-        });
-
-        return finished.get();
+            });
+            return finished.get();
+        }
     }
 
     public String getDownloadFolder() {
         if (filePackage == null) {
             return Application.getResource("").getAbsolutePath();
+        } else {
+            return filePackage.getDownloadDirectory();
         }
-        return filePackage.getDownloadDirectory();
     }
 
     @Override
@@ -143,8 +141,9 @@ public class FilePackageSandBox {
     public String getName() {
         if (filePackage == null) {
             return "Example FilePackage Name";
+        } else {
+            return filePackage.getName();
         }
-        return filePackage.getName();
     }
 
 }
