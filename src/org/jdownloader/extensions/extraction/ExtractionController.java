@@ -42,6 +42,8 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.IfFileExistsAction;
 
@@ -218,13 +220,19 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             extractor.setCrashLog(crashLog);
             logger.info("Start unpacking of " + firstArchiveFile.getFilePath());
 
-            for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
                 if (!archiveFile.exists()) {
                     crashLog.write("File missing: " + archiveFile.getFilePath());
                     logger.info("Could not find archive file " + archiveFile.getFilePath());
                     archive.addCrcError(archiveFile);
                 } else {
-                    crashLog.write(" (Part)File: " + archiveFile.getFilePath());
+                    if (archiveFile instanceof DownloadLinkArchiveFile) {
+                        crashLog.write(" (DownloadLinkArchiveFile)File: " + archiveFile.getFilePath());
+                    } else if (archiveFile instanceof FileArchiveFile) {
+                        crashLog.write(" (FileArchiveFile)File: " + archiveFile.getFilePath());
+                    } else {
+                        crashLog.write(" File: " + archiveFile.getFilePath());
+                    }
                 }
             }
             if (archive.getCrcError().size() > 0) {
@@ -232,7 +240,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 crashLog.write("Failed");
                 return null;
             }
-
             if (gotKilled()) {
                 return null;
             }

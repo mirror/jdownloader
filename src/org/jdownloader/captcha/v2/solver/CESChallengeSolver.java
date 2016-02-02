@@ -1,8 +1,12 @@
 package org.jdownloader.captcha.v2.solver;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.SolverService;
@@ -10,9 +14,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
 public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
     protected int getDefaultWaitForOthersTimeout() {
@@ -82,7 +83,9 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
 
                         @Override
                         public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                            ServicePanel.getInstance().requestUpdate(true);
+                            if (!Application.isHeadless()) {
+                                ServicePanel.getInstance().requestUpdate(true);
+                            }
                         }
                     });
                 }
