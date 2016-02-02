@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -40,7 +41,7 @@ public class EroxiaCom extends PluginForHost {
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -68,25 +69,25 @@ public class EroxiaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Try to find direct link first
-        DLLINK = br.getRegex("\\&file=(http[^<>\"]*?)\\&").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("\\&file=(http[^<>\"]*?)\\&").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             // No direct link there -> 2nd way
-            DLLINK = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(Encoding.htmlDecode(DLLINK));
-            DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
-            if (DLLINK == null) {
+            br.getPage(Encoding.htmlDecode(dllink));
+            dllink = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
         }
@@ -96,13 +97,15 @@ public class EroxiaCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
+        } catch (BrowserException s) {
+            return AvailableStatus.FALSE;
         } finally {
             try {
                 con.disconnect();
@@ -114,7 +117,7 @@ public class EroxiaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

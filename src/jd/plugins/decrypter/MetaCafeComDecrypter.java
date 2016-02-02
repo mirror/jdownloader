@@ -58,7 +58,7 @@ public class MetaCafeComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(main);
             return decryptedLinks;
         }
-        if (br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>") || br.getURL().contains("metacafe.com/?m=removed")) {
+        if (br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>") || br.getURL().contains("metacafe.com/?m=removed") || br.containsHTML(">This content is temporarily not available\\.<|>Page '.' is temporarily unavailable\\.<")) {
             main.setAvailable(false);
             decryptedLinks.add(main);
             return decryptedLinks;
@@ -69,7 +69,9 @@ public class MetaCafeComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fileName = br.getRegex("name=\"title\" content=\"(.*?) \\- Video\"").getMatch(0);
-        if (fileName == null) fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
+        if (fileName == null) {
+            fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
+        }
         if (fileName != null) {
             main.setFinalFileName(fileName.trim() + ".mp4");
             main.setAvailable(true);

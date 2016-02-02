@@ -38,7 +38,7 @@ public class MovikiRu extends PluginForHost {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -77,12 +77,12 @@ public class MovikiRu extends PluginForHost {
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) {
+        dllink = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        dllink = Encoding.htmlDecode(dllink);
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
@@ -94,7 +94,7 @@ public class MovikiRu extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final SocketTimeoutException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -125,7 +125,7 @@ public class MovikiRu extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private video!");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

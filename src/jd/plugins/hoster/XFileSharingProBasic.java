@@ -57,6 +57,12 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
 
+    // DELETE THIS, after making plugin!
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
+
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
@@ -1270,11 +1276,6 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
-    }
-
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
     }
 
 }
