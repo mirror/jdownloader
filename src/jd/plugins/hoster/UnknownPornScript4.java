@@ -127,6 +127,7 @@ public class UnknownPornScript4 extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
+                    br2.followConnection();
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } finally {
