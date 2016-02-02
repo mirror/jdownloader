@@ -79,7 +79,7 @@ public class LogAction extends AbstractLogAction {
 
     @Override
     protected boolean isCurrentLogFolder(long timestamp) {
-        long startup = LogController.getInstance().getInitTime();
+        final long startup = LogController.getInstance().getInitTime();
         return startup == timestamp;
     }
 
