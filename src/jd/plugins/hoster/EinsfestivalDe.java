@@ -36,15 +36,13 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "einsfestival.de" }, urls = { "http://(www\\.)?einsfestival\\.de/mediathek/player\\.jsp\\?vid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "einsfestival.de" }, urls = { "https?://(?:www\\.)?einsfestival\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" }, flags = { 0 })
 public class EinsfestivalDe extends PluginForHost {
 
     public EinsfestivalDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -57,19 +55,54 @@ public class EinsfestivalDe extends PluginForHost {
         return "http://www.einsfestival.de/impressum/impressum.jsp";
     }
 
+    /** The video-CMS they use is just a huge mess! */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        final String vid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        downloadLink.setName(vid);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Es ist ein Fehler aufgetreten|>Bitte versuche es erneut oder später noch einmal")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_http_normal = br.getRegex("Query\\(video\\)\\.attr\\(\\'src\\',\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
-        final String url_rtmp_hq = br.getRegex("class=\"trailerboxHqLink\".+dslSrc=(rtmp[^<>\"]*?/mdb/ondemand/[^<>\"]*?\\.mp4)").getMatch(0);
-        final String date = br.getRegex("name=\\'VideoDate\\' content=\\'([^<>\"]*?)\\'").getMatch(0);
+        String title_subtitle = null;
+        String thisvideo_src = this.br.getRegex("arrVideos\\[" + vid + "\\] = \\{(.*?)\\}").getMatch(0);
+        if (thisvideo_src != null) {
+            final String title_subtitle_alternative = new Regex(thisvideo_src, "zmdbTitle: \\'([^<>\"\\']+)\\'").getMatch(0);
+            title_subtitle = new Regex(thisvideo_src, "startAlt: \\'([^<>\"\\']+)\\'").getMatch(0);
+            /* Avoid extremely long filenames with unneeded information! */
+            if (title_subtitle == null || title_subtitle.matches(".+(SENDER:|SENDETITEL:|UNTERTITEL:).+")) {
+                title_subtitle = title_subtitle_alternative;
+            }
+        } else {
+            thisvideo_src = this.br.toString();
+        }
+        // String server_rtmp = new Regex(thisvideo_src, "videoServer: \\'(rtmp://[^<>\"\\']+)\\'").getMatch(0);
+        // if (server_rtmp == null) {
+        // /* 2016-02-02 */
+        // server_rtmp = "rtmp://gffstream.fcod.llnwd.net/a792/e2";
+        // }
+        String server_http = new Regex(thisvideo_src, "videoServerHttp: \\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        if (server_http == null) {
+            /* 2016-02-02 */
+            server_http = "http://http-ras.wdr.de/";
+        }
+        String dslsrc = new Regex(thisvideo_src, "dslSrc: \\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
+        if (dslsrc == null) {
+            /* Fallback for older links ... */
+            dslsrc = br.getRegex("dslSrc=rtmpe?://gffstream[^<>\"\\']+(/CMS[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
+            if (dslsrc == null) {
+                dslsrc = br.getRegex("dslSrc: \\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
+            }
+        }
+        final String isdnsrc = new Regex(thisvideo_src, "isdnSrc: \\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
+        String date = br.getRegex("name=\\'VideoDate\\' content=\\'([^<>\"]*?)\\'").getMatch(0);
+        if (date == null) {
+            date = this.br.getRegex("<meta name=\\'DC\\.Date\\' content=\\'([^<>\"\\']+)\\'").getMatch(0);
+        }
         String title = br.getRegex("<title>([^<>]*?) \\| Einsfestival</title>").getMatch(0);
         if (title == null) {
             title = br.getRegex("class=\"videoInfoHead\">([^<>]*?)<").getMatch(0);
@@ -80,58 +113,63 @@ public class EinsfestivalDe extends PluginForHost {
         if (title == null) {
             title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        if (title == null || date == null || (url_http_normal == null && url_rtmp_hq == null)) {
+        if (title == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (url_rtmp_hq != null) {
-            /* Convert higher quality rtmp url to http */
-            DLLINK = "http://http-ras.wdr.de//CMS2010/mdb/ondemand/" + new Regex(url_rtmp_hq, "/ondemand/(.+)").getMatch(0);
-        } else {
-            /* User given http url, usually lower quality than rtmp hq */
-            DLLINK = url_http_normal;
         }
         final String date_formatted = formatDate(date);
         String filename = date_formatted + "_einsfestival_" + title;
+        if (title_subtitle != null) {
+            filename += " - " + title_subtitle;
+        }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = openConnection(br2, DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+        if (server_http != null && (dslsrc != null || isdnsrc != null)) {
+            if (dslsrc != null) {
+                DLLINK = server_http + dslsrc;
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                DLLINK = server_http + isdnsrc;
             }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                try {
+                    con = br.openHeadConnection(DLLINK);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setProperty("directlink", DLLINK);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (this.br.containsHTML("id=\"fskInfo\"")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung aus Jugendschutzgründen aktuell nicht verfügbar", 60 * 60 * 1000l);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -185,20 +223,6 @@ public class EinsfestivalDe extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
