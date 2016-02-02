@@ -1220,9 +1220,4 @@ public class UploadexCom extends antiDDoSForHost {
         return SiteTemplate.SibSoft_XFileShare;
     }
 
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
 }

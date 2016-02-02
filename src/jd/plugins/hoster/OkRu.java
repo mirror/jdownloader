@@ -142,7 +142,8 @@ public class OkRu extends PluginForHost {
             /* Redirect --> Offline! */
             return true;
         }
-        if (br.containsHTML(">Видеоролик заблокирован<")) {
+        // video blocked | video not found
+        if (br.containsHTML(">Видеоролик заблокирован<|>Видеоролик не найден<")) {
             return true;
         }
         // offline due to copyright claim

@@ -46,7 +46,7 @@ public class ArtstationCom extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -56,32 +56,36 @@ public class ArtstationCom extends PluginForHost {
     @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String filename = downloadLink.getStringProperty("decrypterfilename", null);
-        DLLINK = downloadLink.getDownloadURL();
-        if (filename == null || DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // filename NOT coming from decrypter wont have filename set!!! this is not a plugin defect! -raztoki20160202
+        String filename = downloadLink.getStringProperty("decrypterfilename", null);
+        dllink = downloadLink.getDownloadURL();
+        if (filename != null) {
+            downloadLink.setFinalFileName(filename);
         }
-        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
+                if (filename == null) {
+                    filename = getFileNameFromHeader(con);
+                    downloadLink.setFinalFileName(filename);
+                }
+                downloadLink.setProperty("directlink", dllink);
+                return AvailableStatus.TRUE;
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
@@ -93,7 +97,7 @@ public class ArtstationCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

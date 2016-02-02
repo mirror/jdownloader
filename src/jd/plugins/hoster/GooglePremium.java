@@ -101,9 +101,4 @@ public class GooglePremium extends PluginForHost {
     @Override
     public void reset() {
     }
-
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
 }

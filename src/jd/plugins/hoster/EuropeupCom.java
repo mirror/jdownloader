@@ -1242,9 +1242,4 @@ public class EuropeupCom extends PluginForHost {
         return SiteTemplate.SibSoft_XFileShare;
     }
 
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
 }

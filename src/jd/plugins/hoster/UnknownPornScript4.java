@@ -56,7 +56,7 @@ public class UnknownPornScript4 extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
     private String               rtmpurl           = null;
 
     @Override
@@ -67,7 +67,7 @@ public class UnknownPornScript4 extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         rtmpurl = null;
         final String host = downloadLink.getHost();
         final Browser br2 = new Browser();
@@ -102,18 +102,18 @@ public class UnknownPornScript4 extends PluginForHost {
             flashvars = this.br.getRegex("flashvars=\"([^<>\"]+)").getMatch(0);
         }
         if (flashvars != null) {
-            DLLINK = new Regex(flashvars, "(http://(?:www\\.)?[^/]+/playerConfig\\.php[^<>\"/\\&|]+)").getMatch(0);
-            if (DLLINK != null) {
-                br2.getPage(Encoding.htmlDecode(DLLINK));
-                DLLINK = br2.getRegex("flvMask:([^<>\"\\']*?);").getMatch(0);
+            dllink = new Regex(flashvars, "(http://(?:www\\.)?[^/]+/playerConfig\\.php[^<>\"/\\&|]+)").getMatch(0);
+            if (dllink != null) {
+                br2.getPage(Encoding.htmlDecode(dllink) + "&nocache=51");
+                dllink = br2.getRegex("flvMask:([^<>\"\\']*?);").getMatch(0);
                 rtmpurl = br2.getRegex("conn:(rtmp://[^<>\"]*?);").getMatch(0);
             }
         }
         String ext = default_Extension;
-        if (DLLINK != null && DLLINK.startsWith("http")) {
-            DLLINK = Encoding.htmlDecode(DLLINK);
+        if (dllink != null && dllink.startsWith("http")) {
+            dllink = Encoding.htmlDecode(dllink);
             filename = filename.trim();
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            ext = dllink.substring(dllink.lastIndexOf("."));
             if (ext == null || ext.length() > 5) {
                 ext = default_Extension;
             }
@@ -122,7 +122,7 @@ public class UnknownPornScript4 extends PluginForHost {
             URLConnectionAdapter con = null;
             br2.setFollowRedirects(true);
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
@@ -145,13 +145,13 @@ public class UnknownPornScript4 extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (DLLINK.startsWith("http")) {
+        if (dllink.startsWith("http")) {
             /* 99% use http - e.g. homemoviestube.com */
             downloadLink.setFinalFileName(downloadLink.getName());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -176,13 +176,13 @@ public class UnknownPornScript4 extends PluginForHost {
             if (app == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (DLLINK.endsWith(".mp4")) {
+            if (dllink.endsWith(".mp4")) {
                 /* e.g. http://www.fetishbox.com/videos/blonde-bitchy-bratty-barbie--35044.html */
-                DLLINK = "mp4:" + DLLINK;
+                dllink = "mp4:" + dllink;
                 /* Correct filename */
                 downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", ".mp4"));
             } else {
-                DLLINK = "flv:" + DLLINK;
+                dllink = "flv:" + dllink;
                 /* Correct filename */
                 downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
             }
@@ -195,7 +195,7 @@ public class UnknownPornScript4 extends PluginForHost {
             jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
             rtmp.setPageUrl(downloadLink.getDownloadURL());
             rtmp.setUrl(rtmpurl);
-            rtmp.setPlayPath(DLLINK);
+            rtmp.setPlayPath(dllink);
             rtmp.setApp(app);
             rtmp.setFlashVer("WIN 18,0,0,203");
             rtmp.setSwfVfy(swfvfy);

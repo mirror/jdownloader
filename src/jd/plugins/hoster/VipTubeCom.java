@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,6 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viptube.com" }, urls = { "http://(www\\.)?viptube\\.com/(video|embed)/\\d+" }, flags = { 0 })
 public class VipTubeCom extends PluginForHost {
@@ -39,7 +43,8 @@ public class VipTubeCom extends PluginForHost {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String            dllink    = null;
+    private static AtomicLong lastCheck = new AtomicLong(System.currentTimeMillis());
 
     @Override
     public String getAGBLink() {
@@ -56,84 +61,105 @@ public class VipTubeCom extends PluginForHost {
     /*
      * IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! Also, registered users can see
      * uncrypted normal streamlinks!
+     *
      */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
-        final String url_filename = new Regex(downloadLink.getDownloadURL(), "viptube\\.com/(.+)").getMatch(0).replace("/", "_");
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
-        }
-        DLLINK = this.br.getRegex("src=\"(http://[^/]+/mp4/[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            String cfgurl = br.getRegex("\\'(http://(www\\.)?viptube\\.com/player_config/[^<>\"]*?)\\'").getMatch(0);
-            final String vkey = br.getRegex("vkey=([a-z0-9]+)").getMatch(0);
-            if (cfgurl == null || vkey == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            cfgurl = Encoding.htmlDecode(cfgurl);
-            br.getPage(cfgurl + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)));
-            final String[] qualities = { "hq_video_file", "video_file" };
-            for (final String quality : qualities) {
-                DLLINK = br.getRegex("<" + quality + "><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></" + quality + ">").getMatch(0);
-                if (DLLINK != null) {
-                    break;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+        /*
+         * download and linkcheck can effectively request at the same time!! If you hit multiple links in short succession it will report
+         * some as offline!
+         */
+        synchronized (lastCheck) {
+            try {
+                long sum;
+                // small wait to prevent issue. -raztoki20160112
+                while ((sum = System.currentTimeMillis() - lastCheck.get()) < 5000) {
+                    // can't use sleep(long, downloadlink) because NPE will occur due to DownloadLink.getDownloadLinkController() line: 511
+                    Thread.sleep(5000l + new Random().nextInt(2000));
                 }
-            }
-        }
+                dllink = null;
+                br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+                final String url_filename = new Regex(downloadLink.getDownloadURL(), "viptube\\.com/(.+)").getMatch(0).replace("/", "_");
+                this.setBrowserExclusive();
+                br.setFollowRedirects(true);
+                br.getPage(downloadLink.getDownloadURL());
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+                if (filename == null) {
+                    filename = url_filename;
+                }
+                dllink = this.br.getRegex("src=\"(http://[^/]+/mp4/[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    String cfgurl = br.getRegex("\\'(http://(www\\.)?viptube\\.com/player_config/[^<>\"]*?)\\'").getMatch(0);
+                    final String vkey = br.getRegex("vkey=([a-z0-9]+)").getMatch(0);
+                    if (cfgurl == null || vkey == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    cfgurl = Encoding.htmlDecode(cfgurl);
+                    br.getPage(cfgurl + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)));
+                    final String[] qualities = { "hq_video_file", "video_file" };
+                    for (final String quality : qualities) {
+                        dllink = br.getRegex("<" + quality + "><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></" + quality + ">").getMatch(0);
+                        if (dllink != null) {
+                            break;
+                        }
+                    }
+                }
 
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br2.openGetConnection(DLLINK);
-                if (con.getResponseCode() == 404) {
-                    /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
-                    final String redirect_url = con.getRequest().getUrl();
-                    con = br.openGetConnection(redirect_url);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                dllink = Encoding.htmlDecode(dllink);
+                filename = filename.trim();
+                final String tempfilename = getFileNameFromURL(new URL(dllink));
+                String ext = tempfilename.substring(tempfilename.lastIndexOf("."));
+                if (ext == null || ext.length() > 5) {
+                    ext = ".mp4";
+                }
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+                br.getHeaders().put("Accept", "*/*");
+                final Browser br2 = br.cloneBrowser();
+                // In case the link redirects to the finallink
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = null;
+                try {
+                    try {
+                        con = br2.openGetConnection(dllink);
+                        if (con.getResponseCode() == 404) {
+                            /*
+                             * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com
+                             */
+                            final String redirect_url = con.getRequest().getUrl();
+                            con = br.openGetConnection(redirect_url);
+                        }
+                    } catch (final BrowserException e) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (!con.getContentType().contains("html")) {
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    return AvailableStatus.TRUE;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            } finally {
+                lastCheck.set(System.currentTimeMillis());
             }
         }
-        // return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
