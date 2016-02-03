@@ -7,6 +7,8 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.SecondLevelLaunch;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
@@ -20,8 +22,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.UpdateController;
-
-import jd.SecondLevelLaunch;
 
 public class LAFOptions {
 
@@ -120,14 +120,14 @@ public class LAFOptions {
         // public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
         // }
         // });
-        String theme = INSTANCE.getCfg().getIconSetID();
+        final String theme = INSTANCE.getCfg().getIconSetID();
         NewTheme.getInstance().setTheme(theme);
         if (StringUtils.equals("standard", theme)) {
             SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
 
                 @Override
                 public void run() {
-                    String extensionID = "iconset-" + theme;
+                    final String extensionID = "iconset-" + theme;
                     if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
                         try {
                             UpdateController.getInstance().runExtensionInstallation(extensionID);
