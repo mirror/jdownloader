@@ -16,15 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -36,13 +35,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "baixarpremium.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class BaixarPremiumNet extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "http://baixarpremium.net";
 
     private static final String                            NICE_HOST          = "baixarpremium.net";
@@ -75,11 +74,15 @@ public class BaixarPremiumNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
+        return fetchAccountInfoBaixar(this, this.br, account);
+    }
+
+    public static AccountInfo fetchAccountInfoBaixar(final PluginForHost plugin, final Browser br, final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         // check if account is valid
-        if (!login(account, true)) {
+        if (!((jd.plugins.hoster.BaixarPremiumNet) JDUtilities.getPluginForHost("baixarpremium.net")).login(br, account, true)) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -87,36 +90,40 @@ public class BaixarPremiumNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        ac.setUnlimitedTraffic();
-        br.getPage("http://baixarpremium.net/contas-ativas/");
-        // free accounts not supported
-        if (br.containsHTML(">\\s*Você não possui nenhum pacote de Conta Premium\\.\\s*<")) {
-            account.setType(AccountType.FREE);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        account.setType(AccountType.PREMIUM);
+        br.getPage("/contas-ativas/");
+        /* free accounts are not supported */
         final String hoststext = br.getRegex("premium aos servidores <span style=\"[^\"]+\">(.*?)<").getMatch(0);
-        if (hoststext == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // now let's get a list of all supported hosts:
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] crippledHosts = hoststext.split(", ");
-        for (String crippledhost : crippledHosts) {
-            crippledhost = crippledhost.trim();
-            crippledhost = crippledhost.toLowerCase();
-            if (crippledhost.equals("shareonline")) {
-                supportedHosts.add("share-online.biz");
-            } else {
-                /* Go insane */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedHosts.add(full_possible_host);
+        if (br.containsHTML(">\\s*Você não possui nenhum pacote de Conta Premium\\.\\s*<") || hoststext == null) {
+            account.setType(AccountType.FREE);
+            ac.setStatus("Free Account");
+            ac.setTrafficLeft(0);
+        } else {
+            /*
+             * Important: Ignore expire date as it depends on every host - we could show the expire date that lasts longest but that's too
+             * much effort for a website without API!
+             */
+            account.setType(AccountType.PREMIUM);
+            ac.setStatus("Premium Account");
+            ac.setUnlimitedTraffic();
+            // now let's get a list of all supported hosts:
+            final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
+            final ArrayList<String> supportedHosts = new ArrayList<String>();
+            final String[] crippledHosts = hoststext.split(", ");
+            for (String crippledhost : crippledHosts) {
+                crippledhost = crippledhost.trim();
+                crippledhost = crippledhost.toLowerCase();
+                if (crippledhost.equals("shareonline")) {
+                    supportedHosts.add("share-online.biz");
+                } else {
+                    /* Go insane */
+                    for (final String possibledomain : possible_domains) {
+                        final String full_possible_host = crippledhost + "." + possibledomain;
+                        supportedHosts.add(full_possible_host);
+                    }
                 }
             }
+            ac.setMultiHostSupport(plugin, supportedHosts);
         }
-        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 
@@ -131,7 +138,6 @@ public class BaixarPremiumNet extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
 
         setConstants(account, link);
@@ -152,55 +158,54 @@ public class BaixarPremiumNet extends PluginForHost {
             }
         }
 
-        int maxChunks = 0;
-        if (link.getBooleanProperty(BaixarPremiumNet.NOCHUNKS, false)) {
-            maxChunks = 1;
+        login(this.br, account, false);
+        final String dllink = getDllinkBaixar(this.br, this.currAcc, this.currDownloadLink);
+        if (!dllink.startsWith("http")) {
+            handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
         }
-        login(account, false);
-        final String keypass = br.getCookie(MAINPAGE, "utmhb");
-        // final String dllink = "http://srv3.baixarpremium.net/?link=" + b16encode(link.getDownloadURL()) + "&pass=&keypass=" + keypass;
-        String dllink = br.getPage("http://baixarpremium.net/api/index.php?link=" + Encoding.base16Encode(link.getDownloadURL()) + "&keypass=" + keypass);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            /* Free accounts are not supported */
-            if (br.containsHTML("Erro 404 \\- Página Não encontrada")) {
-                logger.info("Free accounts are not supported");
-                account.getAccountInfo().setTrafficLeft(0);
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
-            logger.info("Unhandled download error on baixarpremium.net: " + br.toString());
+            handleDlErrors(this.br, this.currAcc);
             handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
         }
-        /* Now we know that it is a premium account. */
+        /* Now we know for sure that it is a premium account. */
         account.getAccountInfo().setStatus("Premium account");
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(BaixarPremiumNet.NOCHUNKS, false) == false) {
-                    link.setProperty(BaixarPremiumNet.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+        dl.startDownload();
+    }
+
+    @SuppressWarnings("deprecation")
+    public static String getDllinkBaixar(final Browser br, final Account account, final DownloadLink link) throws IOException, PluginException {
+        final String additional_param;
+        final String host = account.getHoster();
+        if (host.equalsIgnoreCase("comprarpremium.com")) {
+            additional_param = "cp=1";
+        } else if (host.equalsIgnoreCase("contacombo.com.br")) {
+            additional_param = "cc=1";
+        } else {
+            /* E.g. baixarpremium.net */
+            additional_param = "";
+        }
+        final String keypass = br.getCookie(account.getHoster(), "utmhb");
+        final String getdata = "?cp=1&link=" + Encoding.base16Encode(link.getDownloadURL()) + "&keypass=" + keypass + "&" + additional_param;
+
+        final String dllink = br.getPage("http://baixarpremium.net/api/index.php" + getdata);
+        if (br.toString().equals("Arquivo-nao-encontrado")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return dllink;
+    }
+
+    public static void handleDlErrors(final Browser br, final Account account) throws PluginException {
+        /* Free accounts are not supported */
+        if (br.containsHTML("Erro 404 \\- Página Não encontrada")) {
+            account.getAccountInfo().setTrafficLeft(0);
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-        } catch (final PluginException e) {
-            // New V2 chunk errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(BaixarPremiumNet.NOCHUNKS, false) == false) {
-                link.setProperty(BaixarPremiumNet.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
         }
     }
 
@@ -211,66 +216,53 @@ public class BaixarPremiumNet extends PluginForHost {
 
     private static Object LOCK = new Object();
 
-    @SuppressWarnings("unchecked")
-    private boolean login(final Account account, final boolean force) throws Exception {
+    public boolean login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
+                final String currenthost = account.getHoster();
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        final Browser test = br.cloneBrowser();
-                        test.setFollowRedirects(true);
-                        /* Avoid login captchas whenever possible! */
-                        test.getPage("http://baixarpremium.net/contas-ativas/");
-                        if (test.getURL().endsWith("/contas-ativas/")) {
-                            return true;
-                        }
-                        br.clearCookies(MAINPAGE);
-                        /* Force full login! */
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(currenthost, cookies);
+                    final Browser test = br.cloneBrowser();
+                    test.setFollowRedirects(true);
+                    /* Avoid login captchas whenever possible! */
+                    test.getPage("http://" + currenthost + "/contas-ativas/");
+                    if (test.getURL().endsWith("/contas-ativas/")) {
+                        return true;
                     }
+                    br.clearCookies(account.getHoster());
+                    /* Force full login! */
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://baixarpremium.net/logar/");
+                br.getPage("http://" + currenthost + "/logar/");
                 String postData = "login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
                 if (br.containsHTML("/captcha\\.php") && !br.containsHTML("<span style=\"display:none\"><input type=\"text\" id=\"confirmacao\"")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "baixarpremium.net", "http://baixarpremium.net", true);
-                    final String code = getCaptchaCode("http://baixarpremium.net/acoes/captcha.php", dummyLink);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", currenthost, "http://" + currenthost, true);
+                    final String code = getCaptchaCode("/acoes/captcha.php", dummyLink);
                     postData += "&confirmacao=" + Encoding.urlEncode(code);
                 }
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("/acoes/deslogado/logar.php", postData);
-                if (br.getCookie(MAINPAGE, "utmhb") == null) {
+                if (br.getCookie(currenthost, "utmhb") == null || br.containsHTML("Login/E-mail ou senha inválida")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                // br.getPage("/gerador/");
+                account.saveCookies(br.getCookies(currenthost), "");
+                // br.postPage("http://comprarpremium.com/acoes/deslogado/logar.php",
+                // "login=Jdownloader&senha=2s4f6a87sf&method=pag&x=63&y=15");
+                // final String keypass = br.getCookie(account.getHoster(), "utmhb");
+                // br.setCookie("baixarpremium.net", "utmhb", keypass);
+                // final String dllink = br.getPage("http://baixarpremium.net/api/index.php?cp=1&link=" +
+                // Encoding.base16Encode("http://uploaded.net/file/yuud9gtn") + "&keypass=" + keypass);
                 return true;
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 return false;
             }
         }
@@ -286,7 +278,6 @@ public class BaixarPremiumNet extends PluginForHost {
                 unavailableMap = new HashMap<String, Long>();
                 hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait 30 mins to retry this host */
             unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
