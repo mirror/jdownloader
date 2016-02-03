@@ -27,13 +27,14 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -67,10 +68,10 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         super(_GUI._.filecolumn_title());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
         normalBorder = BorderFactory.createEmptyBorder(0, 0, 0, 0);
-        iconPackageOpen = NewTheme.I().getIcon("tree_package_open", 32);
-        iconArchiveOpen = NewTheme.I().getIcon("tree_archive_open", 32);
-        iconArchive = NewTheme.I().getIcon("tree_archive", 32);
-        iconPackageClosed = NewTheme.I().getIcon("tree_package_closed", 32);
+        iconPackageOpen = new AbstractIcon(IconKey.ICON_TREE_PACKAGE_OPEN, 32);
+        iconArchiveOpen = new AbstractIcon(IconKey.ICON_TREE_ARCHIVE_OPEN, 32);
+        iconArchive = new AbstractIcon(IconKey.ICON_TREE_ARCHIVE, 32);
+        iconPackageClosed = new AbstractIcon(IconKey.ICON_TREE_PACKAGE_CLOSED, 32);
         setClickcount(0);
         hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
@@ -275,7 +276,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();
-                Icon icon = NewTheme.I().getIcon("warning", 32);
+                Icon icon = new AbstractIcon(IconKey.ICON_WARNING, 32);
                 JDGui.help(title, msg, icon);
             }
         } else if (object instanceof DownloadLink) {
@@ -294,7 +295,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();
-                Icon icon = NewTheme.I().getIcon("warning", 32);
+                Icon icon = new AbstractIcon(IconKey.ICON_WARNING, 32);
                 JDGui.help(title, msg, icon);
             }
         }

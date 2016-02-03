@@ -30,9 +30,6 @@ import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -59,10 +56,14 @@ import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.ExtRealCheckBoxMenuItem;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel> extends ExtJWindow implements ActionListener, AWTEventListener, GenericConfigEventListener<Boolean> {
 
@@ -338,7 +339,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             Point los = comp.getLocationOnScreen();
             bounds.x = los.x;
             bounds.y = los.y;
-            // System.out.println(bounds + " - " + getBounds() + " - " + loc + "  " + bounds.contains(loc) + " - " +
+            // System.out.println(bounds + " - " + getBounds() + " - " + loc + " " + bounds.contains(loc) + " - " +
             // getBounds().contains(loc));
 
             if (loc.x >= bounds.x && loc.x <= bounds.x + bounds.width) {
@@ -473,22 +474,22 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             }
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
             protected void onRollOut() {
                 setContentAreaFilled(false);
 
-                setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("brightmix/wrench", 16), 0.5f));
-                // setIcon(NewTheme.I().getIcon("brightmix/w2", 18));
+                setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage(IconKey.ICON_WRENCH, 16), 0.5f));
+                // setIcon(new AbstractIcon(IconKey.ICON_brightmix/w2", 18));
             }
 
             /**
-             * 
+             *
              */
             protected void onRollOver() {
-                setIcon(NewTheme.I().getIcon("brightmix/wrench", 16));
+                setIcon(new AbstractIcon(IconKey.ICON_WRENCH, 16));
             }
 
         };
@@ -508,21 +509,21 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             }
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
             protected void onRollOut() {
                 setContentAreaFilled(false);
-                setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("16/mimiglyphs/close", 10), 0.5f));
+                setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("close", 10), 0.5f));
 
             }
 
             /**
-             * 
+             *
              */
             protected void onRollOver() {
-                setIcon(NewTheme.I().getIcon("16/mimiglyphs/close", 10));
+                setIcon(new AbstractIcon(IconKey.ICON_CLOSE, 10));
             }
 
         };

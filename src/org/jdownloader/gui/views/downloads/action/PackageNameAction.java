@@ -2,14 +2,15 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.UserIO;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
+
+import jd.gui.UserIO;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class PackageNameAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -18,7 +19,7 @@ public class PackageNameAction extends CustomizableTableContextAppAction<FilePac
 
     public PackageNameAction() {
         setName(NAME);
-        setIconKey("edit");
+        setIconKey(IconKey.ICON_EDIT);
     }
 
     public void actionPerformed(ActionEvent e) {

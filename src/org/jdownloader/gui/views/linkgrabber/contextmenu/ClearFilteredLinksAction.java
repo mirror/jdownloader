@@ -3,14 +3,15 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 
-import jd.controlling.linkcollector.LinkCollector;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.controlling.linkcollector.LinkCollector;
 
 public class ClearFilteredLinksAction extends CustomizableAppAction {
 
@@ -21,7 +22,7 @@ public class ClearFilteredLinksAction extends CustomizableAppAction {
 
     public ClearFilteredLinksAction() {
         setName(_GUI._.ClearFilteredLinksAction());
-        setIconKey("filter");
+        setIconKey(IconKey.ICON_FILTER);
         setEnabled(LinkCollector.getInstance().getfilteredStuffSize() > 0);
     }
 

@@ -6009,4 +6009,33 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Choose ALL squares that contain any trace if a street sign!" })
     String RECAPTCHA_2_Dialog_help_tile();
+
+    @Default(lngs = { "en" }, values = { "Submenu: %s1" })
+    String AddSubMenuAction_getListCellRendererComponent_container(String name);
+
+    @Default(lngs = { "en" }, values = { "%s1 (Component)" })
+
+    String AddSubMenuAction_component(String name);
+
+    @Default(lngs = { "en" }, values = { "Main Window is always on top of other windows" })
+    String AlwaysOnTopGuiToogleAction_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Always on Top" })
+    String AlwaysOnTopGuiToogleAction_enabled();
+
+    @Default(lngs = { "en" }, values = { "Always on Top" })
+    String AlwaysOnTopGuiToogleAction_disabled();
+
+    @Default(lngs = { "en" }, values = { "Input field width (-1=auto)" })
+    String MenuEditors_editorwidth();
+
+    @Default(lngs = { "en" }, values = { "Maximum width" })
+    String MenuEditors_boxwidth_max();
+
+    @Default(lngs = { "en" }, values = { "Minimum width" })
+    String MenuEditors_boxwidth_min();
+
+    @Default(lngs = { "en" }, values = { "Preferred width" })
+
+    String MenuEditors_boxwidth_pref();
 }

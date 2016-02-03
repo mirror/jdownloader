@@ -9,6 +9,15 @@ import java.awt.event.ActionListener;
 import javax.swing.Icon;
 import javax.swing.Timer;
 
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
+import org.appwork.utils.event.predefined.changeevent.ChangeListener;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
 import jd.controlling.linkchecker.LinkCheckerListener;
@@ -20,17 +29,9 @@ import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
-import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
-import org.appwork.utils.event.predefined.changeevent.ChangeListener;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-
 public class AutoConfirmButton extends ExtButton implements ChangeListener, AutoStartManagerListener {
     /**
-     * 
+     *
      */
     private static final long      serialVersionUID = 1L;
 
@@ -51,9 +52,9 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Auto
 
         setVisible(false);
 
-        progress = new IconedProcessIndicator(NewTheme.I().getIcon("paralell", 18)) {
+        progress = new IconedProcessIndicator(new AbstractIcon(IconKey.ICON_PARALELL, 18)) {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -177,9 +178,13 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Auto
 
     private void update() {
         final boolean enabled = !LinkChecker.isChecking() && !LinkCrawler.isCrawling();
-        if (enabled == active) return;
+        if (enabled == active) {
+            return;
+        }
         synchronized (this) {
-            if (enabled == active) return;
+            if (enabled == active) {
+                return;
+            }
             if (enabled) {
                 this.active = true;
                 LinkCollector.getInstance().getAutoStartManager().getEventSender().addListener(this, true);

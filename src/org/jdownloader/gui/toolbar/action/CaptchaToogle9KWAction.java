@@ -2,6 +2,7 @@ package org.jdownloader.gui.toolbar.action;
 
 import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 
@@ -10,7 +11,7 @@ public class CaptchaToogle9KWAction extends AbstractToolbarToggleAction {
     public CaptchaToogle9KWAction() {
         super(CFG_9KWCAPTCHA.ENABLED_GLOBALLY);
 
-        setIconKey("9kw");
+        setIconKey(IconKey.ICON_LOGO_9KW);
 
     }
 

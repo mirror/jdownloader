@@ -13,32 +13,37 @@ import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
 import javax.swing.border.Border;
-
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
+import javax.swing.plaf.synth.SynthButtonUI;
+import javax.swing.plaf.synth.SynthContext;
+import javax.swing.plaf.synth.SynthLookAndFeel;
+import javax.swing.plaf.synth.SynthPainter;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.NullsafeAtomicReference;
-
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public class SearchField<SearchCat extends SearchCatInterface, PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> extends ExtTextField implements MouseMotionListener, MouseListener {
     /**
@@ -64,6 +69,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private volatile boolean                                                                   closeEnabled     = false;
     private NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>> appliedFilter    = new NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>>(null);
     private AppAction                                                                          focusAction;
+    private JButton                                                                            button;
 
     public boolean isEmpty() {
         return appliedFilter.get() == null;
@@ -71,15 +77,16 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
     public SearchField(final PackageControllerTable<PackageType, ChildType> table2Filter, SearchCat defCategory) {
         super();
+        button = new JButton();
         this.table2Filter = table2Filter;
-        img = NewTheme.I().getImage("search", SIZE);
-        close = NewTheme.I().getImage("close", -1);
+        img = NewTheme.I().getImage(IconKey.ICON_SEARCH, SIZE);
+        close = NewTheme.I().getImage(IconKey.ICON_CLOSE, -1);
 
         LAFOptions lafo = LAFOptions.getInstance();
         bgColor = (lafo.getColorForPanelHeaderBackground());
 
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-        popIcon = NewTheme.I().getImage("popUpSmall", -1);
+        popIcon = NewTheme.I().getImage(IconKey.ICON_POPUPSMALL, -1);
         delayedFilter = new DelayedRunnable(150l, 2000l) {
 
             @Override
@@ -128,19 +135,55 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     }
 
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
+
+        super.paintComponent(g);
+
         if (label != null) {
+            if (!(button.getUI() instanceof SynthButtonUI)) {
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+                g2.setColor(bgColor);
 
-            g2.setColor(bgColor);
+                g2.fillRect(1, 1, labelWidth + 5 + iconGap + 8 - 1, getHeight() - 1);
+                g2.setColor(getBackground().darker());
+                g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 1);
+                g2.setComposite(comp);
+            } else {
+                try {
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
 
-            g2.fillRect(1, 1, labelWidth + 5 + iconGap + 8 - 1, getHeight() - 1);
-            g2.setColor(getBackground().darker());
-            g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 1);
-            g2.setComposite(comp);
+                    button.setOpaque(false);
+                    button.setBackground(null);
+
+                    button.setSize(labelWidth + 5 + iconGap + 8 - 1, getHeight());
+
+                    SynthContext context = ((SynthButtonUI) button.getUI()).getContext(button);
+                    Method method;
+
+                    method = SynthLookAndFeel.class.getDeclaredMethod("update", new Class[] { SynthContext.class, Graphics.class });
+
+                    method.setAccessible(true);
+                    method.invoke(null, new Object[] { context, g2 });
+
+                    SynthPainter painter = context.getStyle().getPainter(context);
+
+                    g2.setClip(0, 0, labelWidth + 5 + iconGap + 8 + 1, getHeight());
+                    painter.paintButtonBackground(context, g2, 0, 0, labelWidth + 5 + iconGap + 8 - 1 + 4, getHeight());
+
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+
+                    g2.setClip(null);
+                    g2.setColor(getBackground().darker().darker());
+                    g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 2);
+
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                } finally {
+                    g2.setComposite(comp);
+                }
+            }
             final SearchCat cat = getSelectedCategory();
             if (cat != null) {
                 cat.getIcon().paintIcon(this, g2, iconGap - 24, 3);
@@ -151,12 +194,48 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             // label.paintComponents(g2);
             g2.translate(-iconGap - 1, 0);
         } else {
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-            g2.setColor(bgColor);
-            g2.fillRect(0, 0, 26, getHeight());
-            g2.setColor(getBackground().darker());
-            g2.drawLine(26, 1, 26, getHeight() - 1);
-            g2.setComposite(comp);
+            if ((button.getUI() instanceof SynthButtonUI)) {
+                try {
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
+
+                    button.setOpaque(false);
+                    button.setBackground(null);
+
+                    button.setSize(labelWidth + 5 + iconGap + 8 - 1, getHeight());
+
+                    SynthContext context = ((SynthButtonUI) button.getUI()).getContext(button);
+                    Method method;
+
+                    method = SynthLookAndFeel.class.getDeclaredMethod("update", new Class[] { SynthContext.class, Graphics.class });
+
+                    method.setAccessible(true);
+                    method.invoke(null, new Object[] { context, g2 });
+
+                    SynthPainter painter = context.getStyle().getPainter(context);
+
+                    g2.setClip(0, 0, 26, getHeight());
+                    painter.paintButtonBackground(context, g2, 0, 0, 26 + 3, getHeight());
+
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+
+                    g2.setClip(null);
+                    g2.setColor(getBackground().darker().darker());
+                    g2.drawLine(26, 1, 26, getHeight() - 1);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                } finally {
+                    g2.setComposite(comp);
+                }
+            } else {
+
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+                g2.setColor(bgColor);
+                g2.fillRect(0, 0, 26, getHeight());
+                g2.setColor(getBackground().darker());
+                g2.drawLine(26, 1, 26, getHeight() - 1);
+                g2.setComposite(comp);
+
+            }
             g2.drawImage(img, 3, 3, 3 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
         }
         if (closeEnabled) {
@@ -281,6 +360,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
             popup.add(new AppAction() {
                 private final SearchCat category = sc;
+
                 {
                     setName(sc.getLabel());
                     setSmallIcon(sc.getIcon());

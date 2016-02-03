@@ -109,7 +109,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
      */
 
     private UploadedController() {
-        close = new AbstractIcon("close", -1);
+        close = new AbstractIcon(IconKey.ICON_CLOSE, -1);
         expireNotifies = CFG_GUI.CFG.getPremiumExpireWarningMapV2();
         if (expireNotifies == null) {
             expireNotifies = new HashMap<String, Long>();

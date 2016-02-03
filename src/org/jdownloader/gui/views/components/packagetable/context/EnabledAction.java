@@ -5,16 +5,6 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.plugins.DownloadLink;
-import jd.plugins.download.DownloadInterface;
-
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
@@ -24,12 +14,23 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.plugins.DownloadLink;
+import jd.plugins.download.DownloadInterface;
 
 public class EnabledAction extends CustomizableTableContextAppAction implements GUIListener, ActionContext {
     /**
@@ -222,14 +223,14 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
 
                                 if (bytesToDelete > 0) {
                                     if (JDGui.bugme(WarnLevel.SEVERE)) {
-                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
                                             return;
                                         }
 
                                     }
                                 } else {
                                     if (JDGui.bugme(WarnLevel.LOW)) {
-                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
                                             return;
                                         }
 

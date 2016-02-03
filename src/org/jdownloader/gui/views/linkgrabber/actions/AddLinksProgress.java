@@ -13,12 +13,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.Timer;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
@@ -28,10 +22,17 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public class AddLinksProgress extends AbstractDialog<Object> {
 
@@ -74,11 +75,11 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         MigPanel p = new MigPanel("ins 0,wrap 9", "[][][][][][][][][]", "[grow,fill]");
         progress = new CircledProgressBar();
         progress.setIndeterminate(true);
-        progress.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("linkgrabber", 26), 1.0f));
+        progress.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_LINKGRABBER, 26), 1.0f));
         ((ImagePainter) progress.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getValueClipPainter()).setForeground(Color.GREEN);
 
-        progress.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("linkgrabber", 26), 0.5f));
+        progress.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_LINKGRABBER, 26), 0.5f));
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
         p.add(progress, "height 40!,width 40!,spany 2");
@@ -89,11 +90,11 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         p.add(label(_GUI._.AddLinksProgress_layoutDialogContent_duration()));
 
         p.add(duration = new JLabel(), "width 50:n:n,growx");
-        p.add(new JLabel(NewTheme.I().getIcon("go-next", 18)));
+        p.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
         p.add(label(_GUI._.AddLinksProgress_found()));
         p.add(old = new JLabel());
         JLabel lbl;
-        p.add(lbl = new JLabel(NewTheme.I().getIcon("filter", 18)));
+        p.add(lbl = new JLabel(new AbstractIcon(IconKey.ICON_FILTER, 18)));
         lbl.setToolTipText(_GUI._.AddLinksProgress_filter());
         p.add(filtered = new JLabel(), "alignx right,sg 1");
 
@@ -151,7 +152,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                     IconedProcessIndicator iconComp = JDGui.getInstance().getStatusBar().getLinkGrabberIndicator();
                     Point loc = iconComp.getLocationOnScreen();
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), NewTheme.I().getIcon("linkgrabber", 32));
+                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
                     }
 
                 }

@@ -11,7 +11,7 @@ public class PrioritySubMenu extends JMenu {
         super(_GUI._.PriorityAction_PriorityAction_());
         setIcon(Priority.HIGHER.loadIcon(18));
 
-        // setIconKey("priority");
+        //setIconKey(IconKey.ICON_priority");
         this.add(new PriorityLowerAction());
         this.add(new PriorityDefaultAction());
         this.add(new PriorityHighAction());

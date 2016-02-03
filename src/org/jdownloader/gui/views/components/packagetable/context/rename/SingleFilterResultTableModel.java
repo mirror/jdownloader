@@ -2,9 +2,6 @@ package org.jdownloader.gui.views.components.packagetable.context.rename;
 
 import javax.swing.Icon;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.http.Browser;
-
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
@@ -12,8 +9,12 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Files;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
 
 public class SingleFilterResultTableModel extends ExtTableModel<CrawledLink> {
 
@@ -54,12 +55,12 @@ public class SingleFilterResultTableModel extends ExtTableModel<CrawledLink> {
 
                 try {
                     if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) {
-                        return NewTheme.I().getIcon("false", 16);
+                        return new AbstractIcon(IconKey.ICON_FALSE, 16);
                     }
                 } catch (Exception e) {
 
                 }
-                return NewTheme.I().getIcon("true", 16);
+                return new AbstractIcon(IconKey.ICON_TRUE, 16);
 
             }
 

@@ -13,17 +13,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Timer;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.View;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -33,6 +29,11 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTableM
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.Position;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.View;
 
 public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUIListener, GenericConfigEventListener<Boolean>, HierarchyListener {
 
@@ -48,8 +49,18 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
     private static final ScheduledExecutorService     SERVICE      = DelayedRunnable.getNewScheduledExecutorService();
 
+    private static String getInsetsString() {
+        try {
+            int[] insets = LAFOptions.getInstance().getCfg().getInfoPanelContentInsets();
+            return insets[0] + " " + insets[1] + " " + insets[2] + " " + insets[3];
+        } catch (Throwable e) {
+            LoggerFactory.getDefaultLogger().log(e);
+            return "0 0 1 0";
+        }
+    }
+
     public AbstractOverviewPanel(PackageControllerTableModel tableModel) {
-        super("ins 0", "[][grow,fill][]", "[grow,fill]");
+        super("ins " + getInsetsString(), "[][grow,fill][]", "[grow,fill]");
         this.tableModel = tableModel;
         LAFOptions.getInstance().applyPanelBackground(this);
         GUIEventSender.getInstance().addListener(this, true);

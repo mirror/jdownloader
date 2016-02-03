@@ -6,11 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -18,12 +13,18 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
 
 public class SplitPackagesByHost extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
 
@@ -35,7 +36,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
     public SplitPackagesByHost() {
         super();
         setName(_GUI._.SplitPackagesByHost_SplitPackagesByHost_object_());
-        setIconKey("split_packages");
+        setIconKey(IconKey.ICON_SPLIT_PACKAGES);
     }
 
     private LocationInList location      = LocationInList.AFTER_SELECTION;

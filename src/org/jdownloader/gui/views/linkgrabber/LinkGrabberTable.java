@@ -30,19 +30,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.plugins.DownloadLink.AvailableStatus;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
@@ -84,6 +71,19 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.plugins.DownloadLink.AvailableStatus;
+import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
 
@@ -130,9 +130,9 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             }
         };
 
-        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 1.0f));
+        loader.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 1.0f));
 
-        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 0.1f));
+        loader.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 0.1f));
         ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
         ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
         loader.setIndeterminate(true);
@@ -282,7 +282,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
         //
         if (JDGui.bugme(WarnLevel.NORMAL)) {
-            UIOManager.I().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.getNextSortIdentifier_sort_warning_rly_title_(), _JDT._.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), NewTheme.I().getIcon("help", 32), _JDT._.basics_yes(), _JDT._.basics_no());
+            UIOManager.I().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.getNextSortIdentifier_sort_warning_rly_title_(), _JDT._.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), new AbstractIcon(IconKey.ICON_HELP, 32), _JDT._.basics_yes(), _JDT._.basics_no());
         }
         sortPackageChildren(newColumn.getRowSorter(), getModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
 
@@ -474,7 +474,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             } else {
                 AppAction action;
                 try {
-                    if (mi.getActionData() == null) {
+                    if (!mi.getActionData()._isValidDataForCreatingAnAction()) {
                         continue;
                     }
                     action = mi.createAction();

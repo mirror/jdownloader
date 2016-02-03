@@ -15,16 +15,6 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkProperty;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageProperty;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -38,6 +28,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.extensions.extraction.ExtractionEvent;
 import org.jdownloader.extensions.extraction.ExtractionListener;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -52,9 +43,19 @@ import org.jdownloader.gui.views.downloads.properties.PropertiesScrollPane;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+import net.miginfocom.swing.MigLayout;
 
 public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener, GenericConfigEventListener<Boolean>, ExtractionListener {
 
@@ -91,7 +92,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                 CustomizeableActionBar iconComp = bottomBar;
                 Point loc = iconComp.getLocationOnScreen();
                 if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                 }
 
             }
@@ -280,9 +281,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }
         };
 
-        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 1.0f));
+        loader.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 1.0f));
 
-        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 0.1f));
+        loader.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 0.1f));
         ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
         ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
         loader.setIndeterminate(true);
@@ -397,7 +398,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                 Point loc = bottomBar.getLocationOnScreen();
 
                 if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                 }
 
             }

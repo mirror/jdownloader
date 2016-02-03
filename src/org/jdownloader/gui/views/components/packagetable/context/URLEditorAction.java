@@ -4,18 +4,19 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.JComponent;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.linkproperties.LinkURLEditor;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public class URLEditorAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
@@ -23,7 +24,7 @@ public class URLEditorAction<PackageType extends AbstractPackageNode<ChildrenTyp
         super();
 
         setName(_GUI._.ContextMenuFactory_createPopup_url());
-        setSmallIcon(NewTheme.I().getIcon("url", 20));
+        setSmallIcon(new AbstractIcon(IconKey.ICON_URL, 20));
 
     }
 

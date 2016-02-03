@@ -7,10 +7,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.LinkgrabberFilter;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
@@ -18,9 +14,14 @@ import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.LinkgrabberFilter;
 
 public class CustomFilterHeader extends MigPanel implements HeaderInterface {
 
@@ -44,7 +45,7 @@ public class CustomFilterHeader extends MigPanel implements HeaderInterface {
 
         config = new ExtButton(new BasicAction() {
             {
-                setSmallIcon(NewTheme.I().getIcon("exttable/columnButton", 14));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_EXTTABLE_COLUMNBUTTON, 14));
             }
 
             public void actionPerformed(ActionEvent e) {

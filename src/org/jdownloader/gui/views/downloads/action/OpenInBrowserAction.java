@@ -4,9 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -20,6 +17,9 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 public class OpenInBrowserAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
     private static final long   serialVersionUID = 7911375550836173693L;
@@ -27,7 +27,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
     private final static String NAME             = _GUI._.gui_table_contextmenu_browselink();
 
     public OpenInBrowserAction() {
-        setIconKey("browse");
+        setIconKey(IconKey.ICON_BROWSE);
         setName(NAME);
     }
 

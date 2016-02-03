@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
@@ -16,7 +17,7 @@ public class AddLinksContextMenuAction extends CustomizableTableContextAppAction
     public AddLinksContextMenuAction() {
         super(true, false);
         setName(NAME);
-        setIconKey("add");
+        setIconKey(IconKey.ICON_ADD);
         setTooltipText(TT);
         setAccelerator(KeyEvent.VK_O);
     }

@@ -1,8 +1,5 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionData;
@@ -45,8 +42,8 @@ import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTab
 import org.jdownloader.gui.views.downloads.action.SkipAction;
 import org.jdownloader.gui.views.downloads.action.SplitPackagesByHost;
 import org.jdownloader.gui.views.downloads.action.StopsignAction;
-import org.jdownloader.gui.views.downloads.context.submenu.ChunksMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
+import org.jdownloader.gui.views.downloads.context.submenu.DevChunksMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.MoreMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.SettingsMenuContainer;
@@ -57,6 +54,9 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.AddContainerContextMenu
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
 
@@ -171,7 +171,9 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         settings.add(new MenuItemData(new ActionData(SetDownloadFolderInDownloadTableAction.class)));
         settings.add(new MenuItemData(new ActionData(SetDownloadPassword.class)));
         settings.add(createPriorityMenu());
-        settings.add(createChunksMenu());
+        if (false) {
+            settings.add(createChunksMenu());
+        }
         return settings;
 
     }
@@ -188,7 +190,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
     }
 
     private MenuItemData createChunksMenu() {
-        ChunksMenuContainer chunksMenu = new ChunksMenuContainer();
+        DevChunksMenuContainer chunksMenu = new DevChunksMenuContainer();
         for (int chunks = 20; chunks >= 0; chunks--) {
             chunksMenu.add(new MenuItemData(new ActionData(GenericChunksAction.class).putSetup(GenericChunksAction.CHUNKS, chunks)));
         }

@@ -9,8 +9,9 @@ import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ConfirmOptionsAction extends AbstractAction {
@@ -19,7 +20,7 @@ public class ConfirmOptionsAction extends AbstractAction {
     private AddLinksDialog dialog;
 
     {
-        putValue(SMALL_ICON, NewTheme.I().getIcon("popUpSmall", -1));
+        putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_POPUPSMALL, -1));
 
     }
 
@@ -40,8 +41,9 @@ public class ConfirmOptionsAction extends AbstractAction {
             public void actionPerformed(ActionEvent e) {
                 dialog.setDeepAnalyse(true);
                 ActionEvent e2 = new ActionEvent(defaultOK, e.getID(), e.getActionCommand());
-                for (ActionListener a : defaultOK.getActionListeners())
+                for (ActionListener a : defaultOK.getActionListeners()) {
                     a.actionPerformed(e2);
+                }
             }
 
         }));
@@ -54,8 +56,9 @@ public class ConfirmOptionsAction extends AbstractAction {
             public void actionPerformed(ActionEvent e) {
                 dialog.setDeepAnalyse(false);
                 ActionEvent e2 = new ActionEvent(defaultOK, e.getID(), e.getActionCommand());
-                for (ActionListener a : defaultOK.getActionListeners())
+                for (ActionListener a : defaultOK.getActionListeners()) {
                     a.actionPerformed(e2);
+                }
             }
         }));
         // selected.add(new JMenuItem(new ConfirmAction(false,

@@ -2,12 +2,13 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import javax.swing.Icon;
 
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.interfaces.View;
-
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
 public class LinkGrabberView extends View {
     public LinkGrabberView() {
@@ -30,7 +31,7 @@ public class LinkGrabberView extends View {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("linkgrabber", ICON_SIZE);
+        return new AbstractIcon(IconKey.ICON_LINKGRABBER, ICON_SIZE);
     }
 
     @Override

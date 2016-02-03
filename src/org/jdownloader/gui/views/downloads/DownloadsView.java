@@ -2,10 +2,11 @@ package org.jdownloader.gui.views.downloads;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.interfaces.View;
-
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.gui.swing.jdgui.interfaces.View;
 
 public class DownloadsView extends View {
 
@@ -19,7 +20,7 @@ public class DownloadsView extends View {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("download", ICON_SIZE);
+        return new AbstractIcon(IconKey.ICON_DOWNLOAD, ICON_SIZE);
     }
 
     @Override

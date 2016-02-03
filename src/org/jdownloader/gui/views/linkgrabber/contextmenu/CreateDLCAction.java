@@ -2,23 +2,24 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.dlc.DLCFactory;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.logging.LogController;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 
 public class CreateDLCAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> {
 
     public CreateDLCAction() {
 
         setName(_GUI._.gui_table_contextmenu_dlc());
-        setIconKey("dlc");
+        setIconKey(IconKey.ICON_LOGO_DLC);
 
     }
 

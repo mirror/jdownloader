@@ -9,23 +9,24 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginProgress;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginProgress;
 
 public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
@@ -36,7 +37,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     }
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -67,8 +68,8 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     public ETAColumn() {
         super(_GUI._.ETAColumn_ETAColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
-        this.wait = NewTheme.I().getIcon("wait", 16);
-        this.ipwait = NewTheme.I().getIcon("auto-reconnect", 16);
+        this.wait = new AbstractIcon(IconKey.ICON_WAIT, 16);
+        this.ipwait = new AbstractIcon(IconKey.ICON_AUTO_RECONNECT, 16);
 
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             private ColumnHelper helper1 = new ColumnHelper();

@@ -28,6 +28,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
 
 public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink, SelfLayoutInterface {
+    private static final String SHORTCUT2 = "shortcut";
+
     public LinkgrabberSearchMenuItem() {
         super();
         setName(_GUI._.FilterMenuItem_FilterMenuItem());
@@ -42,14 +44,14 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         LinkgrabberSearchField item = LinkgrabberSearchField.getInstance();
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
         try {
-            ActionData ad = this.getActionData();
-            if (ad != null) {
-                Object sc = ad.fetchSetup("shortcut");
-                if (sc != null && sc instanceof String) {
 
-                    ks = KeyStroke.getKeyStroke((String) sc);
-                }
+            ActionData ad = this.getActionData();
+            Object sc = ad.fetchSetup(SHORTCUT2);
+            if (sc != null && sc instanceof String) {
+
+                ks = KeyStroke.getKeyStroke((String) sc);
             }
+
         } catch (Throwable e) {
         }
         AppAction a = item.getFocusAction();
@@ -75,7 +77,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         shortcut.setEditable(false);
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
         try {
-            Object sc = ad.fetchSetup("shortcut");
+            Object sc = ad.fetchSetup(SHORTCUT2);
             if (sc != null && sc instanceof String) {
 
                 ks = KeyStroke.getKeyStroke((String) sc);
@@ -100,7 +102,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
                 String msg1 = KeyUtils.getShortcutString(event, true);
                 KeyStroke currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
                 shortcut.setText(msg1);
-                actionData.putSetup("shortcut", currentShortcut == null ? null : currentShortcut.toString());
+                actionData.putSetup(SHORTCUT2, currentShortcut == null ? null : currentShortcut.toString());
 
             }
 
@@ -111,7 +113,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         JButton shortCutReset;
         p.add(shortCutReset = new JButton(new AppAction() {
             {
-                setIconKey("reset");
+               setIconKey(IconKey.ICON_RESET);
             }
 
             @Override
@@ -123,7 +125,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
                         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
                         String msg1 = KeyUtils.getShortcutString(ks, true);
                         shortcut.setText(msg1);
-                        actionData.putSetup("shortcut", null);
+                        actionData.putSetup(SHORTCUT2, null);
                         // managerFrame.fireUpdate();
                     }
                 };

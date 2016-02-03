@@ -6,11 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -18,12 +13,18 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class SplitPackagesByHost extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
@@ -39,7 +40,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
     public SplitPackagesByHost() {
         super();
         setName(NAME);
-        setIconKey("split_packages");
+        setIconKey(IconKey.ICON_SPLIT_PACKAGES);
     }
 
     public static String getTranslationForMergePackages() {

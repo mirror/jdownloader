@@ -15,8 +15,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.KeyStroke;
 
-import jd.controlling.linkcollector.LinkCollector;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.KeyUtils;
@@ -28,6 +26,7 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
@@ -35,7 +34,11 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextActi
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
+import jd.controlling.linkcollector.LinkCollector;
+
 public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfLayoutInterface {
+
+    private static final String        SHORTCUT2                = "shortcut";
 
     private static final String        ASSIGN_PRIORITY_ENABLED  = "AssignPriorityEnabled";
 
@@ -57,14 +60,14 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
         // DownloadsTableSearchField item = DownloadsTableSearchField.getInstance();
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         try {
-            ActionData ad = this.getActionData();
-            if (ad != null) {
-                Object sc = ad.fetchSetup("shortcut");
-                if (sc != null && sc instanceof String) {
 
-                    ks = KeyStroke.getKeyStroke((String) sc);
-                }
+            ActionData ad = this.getActionData();
+            Object sc = ad.fetchSetup(SHORTCUT2);
+            if (sc != null && sc instanceof String) {
+
+                ks = KeyStroke.getKeyStroke((String) sc);
             }
+
         } catch (Throwable e) {
         }
         AppAction a = new AppAction() {
@@ -121,7 +124,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
         shortcut.setEditable(false);
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         try {
-            Object sc = ad.fetchSetup("shortcut");
+            Object sc = ad.fetchSetup(SHORTCUT2);
             if (sc != null && sc instanceof String) {
 
                 ks = KeyStroke.getKeyStroke((String) sc);
@@ -138,7 +141,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
                 String msg1 = KeyUtils.getShortcutString(event, true);
                 KeyStroke currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
                 shortcut.setText(msg1);
-                actionData.putSetup("shortcut", currentShortcut == null ? null : currentShortcut.toString());
+                actionData.putSetup(SHORTCUT2, currentShortcut == null ? null : currentShortcut.toString());
                 updateButton();
 
             }
@@ -158,7 +161,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
         JButton shortCutReset;
         p.add(shortCutReset = new JButton(new AppAction() {
             {
-                setIconKey("reset");
+                setIconKey(IconKey.ICON_RESET);
             }
 
             @Override
@@ -170,7 +173,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
                         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
                         String msg1 = KeyUtils.getShortcutString(ks, true);
                         shortcut.setText(msg1);
-                        actionData.putSetup("shortcut", null);
+                        actionData.putSetup(SHORTCUT2, null);
                         updateButton();
                     }
                 };
@@ -291,14 +294,14 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
         if (INSTANCE != null) {
             KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
             try {
-                ActionData ad = getActionData();
-                if (ad != null) {
-                    Object sc = ad.fetchSetup("shortcut");
-                    if (sc != null && sc instanceof String) {
 
-                        ks = KeyStroke.getKeyStroke((String) sc);
-                    }
+                ActionData ad = getActionData();
+                Object sc = ad.fetchSetup(SHORTCUT2);
+                if (sc != null && sc instanceof String) {
+
+                    ks = KeyStroke.getKeyStroke((String) sc);
                 }
+
             } catch (Throwable e) {
             }
             INSTANCE.setAccelerator(ks);

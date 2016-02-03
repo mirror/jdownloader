@@ -4,12 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.nutils.io.JDFileFilter;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
@@ -17,7 +11,14 @@ import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.nutils.io.JDFileFilter;
 
 public class AddContainerAction extends CustomizableAppAction {
     /**
@@ -27,7 +28,7 @@ public class AddContainerAction extends CustomizableAppAction {
      */
     public AddContainerAction() {
 
-        setIconKey("addContainer");
+        setSmallIcon(new BadgeIcon("logo/dlc", "add", 32, 24, 2, 6));
         setName(_GUI._.AddContainerAction());
         setAccelerator(KeyEvent.VK_O);
     }

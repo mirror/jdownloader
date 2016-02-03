@@ -11,7 +11,7 @@ public class CaptchaToogleDBCAction extends AbstractToolbarToggleAction {
     public CaptchaToogleDBCAction() {
         super(DeathByCaptchaSolver.getInstance().getService().getConfig()._getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class));
 
-        setIconKey(IconKey.ICON_DBC);
+        setIconKey(IconKey.ICON_LOGO_DBC);
 
     }
 

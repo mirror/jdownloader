@@ -7,13 +7,14 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
-
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
 
 public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
@@ -28,7 +29,7 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setIcon(NewTheme.I().getIcon("stopsign", 14));
+                setIcon(new AbstractIcon(IconKey.ICON_STOPSIGN, 14));
                 setHorizontalAlignment(CENTER);
                 setText(null);
                 return this;
@@ -44,13 +45,13 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
     }
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
     public StopSignColumn() {
         super(_GUI._.StopSignColumn_StopSignColumn());
-        icon = NewTheme.I().getIcon("stopsign", 16);
+        icon = new AbstractIcon(IconKey.ICON_STOPSIGN, 16);
     }
 
     @Override

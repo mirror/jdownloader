@@ -4,15 +4,16 @@ import java.util.ArrayList;
 
 import javax.swing.JLabel;
 
-import jd.controlling.reconnect.Reconnecter.ReconnectResult;
-import jd.controlling.reconnect.ipcheck.IPConnectionState;
-import jd.controlling.reconnect.ipcheck.IPController;
-
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
+import jd.controlling.reconnect.ipcheck.IPConnectionState;
+import jd.controlling.reconnect.ipcheck.IPController;
 
 public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
 
@@ -27,7 +28,7 @@ public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
         startTime = System.currentTimeMillis();
         // super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
 
-        // , _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32)
+        // , _GUI._.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
 
         add(createHeaderLabel((_GUI._.ReconnectDialog_layoutDialogContent_duration())));
         add(duration = new JLabel(""));
@@ -50,12 +51,12 @@ public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
         switch (result) {
         case SUCCESSFUL:
             add(createHeaderLabel(_GUI._.ReconnectBubbleContent_onResult_result()));
-            add(new JLabel(_GUI._.ReconnectDialog_onIPValidated_(), NewTheme.I().getIcon("ok", 20), JLabel.LEFT));
+            add(new JLabel(_GUI._.ReconnectDialog_onIPValidated_(), new AbstractIcon(IconKey.ICON_OK, 20), JLabel.LEFT));
 
             break;
         case FAILED:
             add(createHeaderLabel(_GUI._.ReconnectBubbleContent_onResult_result()));
-            add(new JLabel(_GUI._.ReconnectDialog_failed(), NewTheme.I().getIcon("error", 20), JLabel.LEFT));
+            add(new JLabel(_GUI._.ReconnectDialog_failed(), new AbstractIcon(IconKey.ICON_ERROR, 20), JLabel.LEFT));
 
             break;
         }

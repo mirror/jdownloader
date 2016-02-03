@@ -34,16 +34,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.AbstractBugFinderWindow;
-import jd.gui.swing.jdgui.DirectFeedback;
-import jd.gui.swing.jdgui.DirectFeedbackInterface;
-import jd.gui.swing.jdgui.DownloadFeedBack;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
@@ -62,6 +52,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeparatorData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -69,10 +60,20 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.AbstractBugFinderWindow;
+import jd.gui.swing.jdgui.DirectFeedback;
+import jd.gui.swing.jdgui.DirectFeedbackInterface;
+import jd.gui.swing.jdgui.DownloadFeedBack;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.miginfocom.swing.MigLayout;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> implements DirectFeedbackInterface {
 
@@ -237,7 +238,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 }
                 if (getModel().getSortColumn() != null) {
                     if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
-                        HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
+                        HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), new AbstractIcon(IconKey.ICON_SORT, 32));
                     }
                 }
 
@@ -423,7 +424,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             } else {
                 AppAction action;
                 try {
-                    if (mi.getActionData() == null) {
+                    if (!mi.getActionData()._isValidDataForCreatingAnAction()) {
                         continue;
                     }
                     action = mi.createAction();

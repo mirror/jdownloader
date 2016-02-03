@@ -11,7 +11,7 @@ public class CaptchaToogleCBAction extends AbstractToolbarToggleAction {
     public CaptchaToogleCBAction() {
         super(CBSolver.getInstance().getService().getConfig()._getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class));
 
-        setIconKey(IconKey.ICON_CBH);
+        setIconKey(IconKey.ICON_LOGO_CBH);
 
     }
 

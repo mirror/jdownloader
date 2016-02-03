@@ -5,14 +5,6 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginProgress;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.IconKey;
@@ -21,6 +13,14 @@ import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginProgress;
 
 public class CheckStatusAction extends CustomizableTableContextAppAction {
 
@@ -50,7 +50,7 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
 
     public CheckStatusAction() {
         super();
-        setIconKey("ok");
+        setIconKey(IconKey.ICON_OK);
         setName(_GUI._.gui_table_contextmenu_check());
 
     }

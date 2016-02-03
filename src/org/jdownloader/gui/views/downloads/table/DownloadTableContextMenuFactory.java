@@ -82,7 +82,7 @@ public class DownloadTableContextMenuFactory {
         //
         // /* other menu */
         // JMenu o = new JMenu(_GUI._.ContextMenuFactory_createPopup_other());
-        // o.setIcon(NewTheme.I().getIcon("batch", 18));
+        // o.setIcon(new AbstractIcon(IconKey.ICON_BATCH, 18));
         //
         // o.add(new ResumeAction(si));
         // o.add(new ResetAction(si));
@@ -97,7 +97,7 @@ public class DownloadTableContextMenuFactory {
         // /* remove menu */
         // popup.add(new DeleteQuickAction(si));
         // JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup_only());
-        // m.setIcon(NewTheme.I().getIcon("clear", 18));
+        // m.setIcon(NewTheme.I().getIcon(IconKey.ICON_CLEAR, 18));
         // // m.add(new DeleteSelectedLinks(si));
         // m.add(new DeleteDisabledSelectedLinks(si));
         // m.add(new DeleteSelectedAndFailedLinksAction(si));

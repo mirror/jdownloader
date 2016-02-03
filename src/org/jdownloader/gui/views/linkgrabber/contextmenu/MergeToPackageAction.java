@@ -4,10 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -16,12 +12,17 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
 
@@ -32,7 +33,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
 
     public MergeToPackageAction() {
         setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
-        setIconKey("package_new");
+        setIconKey(IconKey.ICON_PACKAGE_NEW);
 
     }
 

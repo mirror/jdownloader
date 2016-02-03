@@ -9,18 +9,19 @@ import javax.swing.JLabel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
 
 public class SpeedLimitator extends AbstractDialog<Object> {
 
@@ -70,13 +71,13 @@ public class SpeedLimitator extends AbstractDialog<Object> {
         MigPanel ret = new MigPanel("ins 2,wrap 2", "[][grow,fill]", "[]");
         ret.setOpaque(false);
 
-        JLabel lbl = getLbl(_GUI._.CustomSpeedLimitator_SpeedlimitEditor__lbl(), NewTheme.I().getIcon("speed", 18));
+        JLabel lbl = getLbl(_GUI._.CustomSpeedLimitator_SpeedlimitEditor__lbl(), new AbstractIcon(IconKey.ICON_SPEED, 18));
         ret.add(SwingUtils.toBold(lbl), "spanx");
 
         spinner = new SizeSpinner(1, Long.MAX_VALUE, 1024) {
             /**
-         *
-         */
+            *
+            */
             private static final long serialVersionUID = 1L;
 
             protected String longToText(long longValue) {

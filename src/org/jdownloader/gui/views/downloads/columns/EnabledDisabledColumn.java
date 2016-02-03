@@ -8,24 +8,22 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtIconColumn;
 import org.appwork.utils.ModifyLock;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 /**
  * Class giving the implementation details of the enabled / disabled column type
- * 
+ *
  * @author pp_me
- * 
+ *
  */
 public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
 
@@ -58,7 +56,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
 
             /**
              * Method used to sort the packages list based on the status of their children
-             * 
+             *
              * @param o1
              *            Cell in download list
              * @param o2
@@ -99,7 +97,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
 
             /**
              * Method for sorting links within packages
-             * 
+             *
              * @param o1
              *            Cell in download list
              * @param o2
@@ -112,7 +110,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
 
             /**
              * Method to decide if the sort on this cell will return 1,0,-1
-             * 
+             *
              * @param h1
              * @param h2
              * @return
@@ -150,7 +148,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setIcon(NewTheme.I().getIcon(IconKey.ICON_ENABLED, 14));
+                setIcon(new CheckBoxIcon(true));
                 // defaultProxy
                 setHorizontalAlignment(CENTER);
                 setText(null);

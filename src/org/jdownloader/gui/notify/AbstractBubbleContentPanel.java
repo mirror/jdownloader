@@ -4,12 +4,13 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public abstract class AbstractBubbleContentPanel extends MigPanel {
 
@@ -115,7 +116,9 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
 
     public AbstractBubbleContentPanel(Icon icon) {
         super("ins 3 3 0 3,wrap 3", "[][fill][grow,fill]", "[]");
-
+        if (icon instanceof AbstractIcon) {
+            ((AbstractIcon) icon).setAutoDisabledIconEnabled(false);
+        }
         progressCircle = new IconedProcessIndicator(icon);
 
         progressCircle.setIndeterminate(false);

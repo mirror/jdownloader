@@ -11,13 +11,6 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import jd.gui.swing.jdgui.AbstractBugFinderWindow;
-import jd.gui.swing.jdgui.DirectFeedback;
-import jd.gui.swing.jdgui.DirectFeedbackInterface;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
@@ -32,6 +25,13 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.AbstractBugFinderWindow;
+import jd.gui.swing.jdgui.DirectFeedback;
+import jd.gui.swing.jdgui.DirectFeedbackInterface;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractConfigPanel extends SwitchPanel implements DirectFeedbackInterface {
 
@@ -318,7 +318,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
     }
 
     protected String getLeftGap() {
-        return "32";
+        return LAFOptions.getInstance().getCfg().getConfigPanelLeftIndent() + "";
     }
 
     protected void addHeader(String name, Icon icon) {

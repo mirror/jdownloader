@@ -2,14 +2,15 @@ package org.jdownloader.gui.mainmenu;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
-
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 
 public class CheckForUpdatesAction extends CustomizableAppAction {
     public CheckForUpdatesAction() {
-        setIconKey("update");
+        setIconKey(IconKey.ICON_UPDATE);
         setName(_GUI._.CheckForUpdatesAction_CheckForUpdatesAction());
     }
 

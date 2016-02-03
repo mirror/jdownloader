@@ -37,13 +37,14 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelSelectionOnlySelectionInfo.SelectionOnlyPackageView;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -175,32 +176,33 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 selectionVersion.incrementAndGet();
             }
         });
-        final int horizontalLineWeight = CFG_GUI.CFG.getLinkTableHorizontalRowLineWeight();
+        final int horizontalLineWeight = LAFOptions.getInstance().getCfg().getLinkTableHorizontalRowLineWeight();
         if (horizontalLineWeight > 0) {
-            addRowHighlighter(new ExtOverlayRowHighlighter(null, null) {
-                private Color       color;
-                private BasicStroke stroke;
+            this.setRowMargin(horizontalLineWeight);
+            final Color color = LAFOptions.getInstance().getColorForTableRowGap();
+            if (color != null) {
+                addRowHighlighter(new ExtOverlayRowHighlighter(null, null) {
 
-                {
-                    stroke = new BasicStroke(horizontalLineWeight);
-                    color = LAFOptions.getInstance().getColorForTableRowGap();
-                    if (color == null) {
-                        color = Color.WHITE;
+                    private BasicStroke stroke;
+
+                    {
+                        stroke = new BasicStroke(horizontalLineWeight);
+
                     }
-                }
 
-                @Override
-                public void paint(Graphics2D g, int x, int y, int width, int height) {
-                    g.setColor(color);
-                    g.setStroke(stroke);
-                    g.drawLine(x, y + height, x + width, y + height);
-                }
+                    @Override
+                    public void paint(Graphics2D g, int x, int y, int width, int height) {
+                        g.setColor(color);
+                        g.setStroke(stroke);
+                        g.drawLine(x, y + height, x + width, y + height);
+                    }
 
-                @Override
-                public boolean doHighlight(ExtTable<?> extTable, int row) {
-                    return true;
-                }
-            });
+                    @Override
+                    public boolean doHighlight(ExtTable<?> extTable, int row) {
+                        return true;
+                    }
+                });
+            }
         }
     }
 
@@ -515,7 +517,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             {
                 // setName(_GUI._.BottomBar_BottomBar_totop());
                 this.setTooltipText(_GUI._.BottomBar_BottomBar_totop_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-top", 20));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_TOP, 20));
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -558,7 +560,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             {
                 // setName(_GUI._.BottomBar_BottomBar_moveup());
                 this.setTooltipText(_GUI._.BottomBar_BottomBar_moveup_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-up", 20));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_UP, 20));
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -628,7 +630,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             {
                 // setName(_GUI._.BottomBar_BottomBar_movedown());
                 this.setTooltipText(_GUI._.BottomBar_BottomBar_movedown_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-down", 20));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_DOWN, 20));
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -693,7 +695,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             {
                 // setName(_GUI._.BottomBar_BottomBar_tobottom());
                 this.setTooltipText(_GUI._.BottomBar_BottomBar_tobottom_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-bottom", 20));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_BOTTOM, 20));
             }
 
             public void actionPerformed(ActionEvent e) {

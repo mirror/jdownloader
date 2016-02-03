@@ -12,23 +12,25 @@ import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.BasicJDTable;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.BasicJDTable;
 
 public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends MigPanel {
 
@@ -39,7 +41,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
 
         setOpaque(false);
         this.si = selectionInfo;
-        JLabel lbl = getLbl(_GUI._.LinkURLEditor(), NewTheme.I().getIcon("url", 18));
+        JLabel lbl = getLbl(_GUI._.LinkURLEditor(), new AbstractIcon(IconKey.ICON_URL, 18));
         add(SwingUtils.toBold(lbl), "spanx");
         final ExtTableModel<AbstractNode> model = new ExtTableModel<AbstractNode>("linkurleditor") {
             {
@@ -110,7 +112,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
                 popup.add(new AppAction() {
                     {
                         setName(_GUI._.LinkURLEditor_onContextMenu_copy_());
-                        setSmallIcon(NewTheme.I().getIcon("copy", 20));
+                        setSmallIcon(new AbstractIcon(IconKey.ICON_COPY, 20));
                     }
 
                     @Override
