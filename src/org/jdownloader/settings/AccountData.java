@@ -1,6 +1,7 @@
 package org.jdownloader.settings;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jd.plugins.Account;
@@ -58,6 +59,8 @@ public class AccountData implements Storable {
     private boolean             enabled;
     private boolean             valid                 = true;
 
+    private List<String>        hosterHistory         = null;
+
     private boolean             trafficUnlimited;
     private boolean             specialtraffic;
     private String              user;
@@ -107,6 +110,7 @@ public class AccountData implements Storable {
         ret.id = a.getId().getID();
         ret.errorType = enumToString(a.getError());
         ret.errorString = a.getErrorString();
+        ret.hosterHistory = a.getHosterHistory();
         final AccountInfo ai = a.getAccountInfo();
         if (ai != null) {
             ret.infoProperties = ai.getProperties();
@@ -261,6 +265,7 @@ public class AccountData implements Storable {
             }
             ai.setSpecialTraffic(specialtraffic);
         }
+        ret.setHosterHistory(getHosterHistory());
         ret.setId(getId());
         ret.setConcurrentUsePossible(concurrentUsePossible);
         ret.setEnabled(enabled);
@@ -278,5 +283,20 @@ public class AccountData implements Storable {
             ret.setError(AccountError.INVALID, null);
         }
         return ret;
+    }
+
+    /**
+     * @return the hosterHistory
+     */
+    public List<String> getHosterHistory() {
+        return hosterHistory;
+    }
+
+    /**
+     * @param hosterHistory
+     *            the hosterHistory to set
+     */
+    public void setHosterHistory(List<String> hosterHistory) {
+        this.hosterHistory = hosterHistory;
     }
 }
