@@ -33,12 +33,6 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -64,6 +58,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends antiDDoSForHost {
@@ -146,10 +146,20 @@ public class DepositFiles extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         setMainpage();
-        // this is needed to fix old users bad domain name corrections (say hotpspots/gateways)
+        String url = link.getDownloadURL();
+        if (url.matches("^https?://https?://.+")) {
+            // fixes regression because of buggy domain restoration code
+            url = url.replaceFirst("^(https?://https?://)", "http://");
+            link.setUrlDownload(url);
+        }
         final String currentDomain = Browser.getHost(link.getDownloadURL(), true);
         if (!currentDomain.matches(DOMAINS)) {
-            link.setUrlDownload(link.getDownloadURL().replace(currentDomain, MAINPAGE.get()));
+            // this is needed to fix old users bad domain name corrections (say hotpspots/gateways)
+            String mainPage = MAINPAGE.get();
+            if (mainPage != null) {
+                mainPage = mainPage.replace("https://", "").replace("http://", "");
+                link.setUrlDownload(link.getDownloadURL().replace(currentDomain, mainPage));
+            }
         }
         final String newLink = link.getDownloadURL().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.get().replaceAll("https?://(www\\.)?", "") + "/de/files");
         link.setUrlDownload(fixLinkSSL(newLink));
