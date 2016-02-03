@@ -60,7 +60,7 @@ public class LAFOptions {
         String name = (i >= 0 ? laf.substring(i + 1) : laf);
         String path = "cfg/laf/" + name;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
-        String rel = laf.replace(".", "/") + ".defaults";
+        String rel = laf.replace(".", "/");
         if (getClass().getResource("/" + rel + ".json") != null) {
             final LAFSettings defaultStorage = JsonConfig.create(rel, LAFSettings.class);
             defaultStorage._getStorageHandler().getPrimitiveStorage().setAutoPutValues(false);
@@ -77,6 +77,7 @@ public class LAFOptions {
 
                 @Override
                 public Object getDefaultValue(KeyHandler<?> handler, Object o) {
+
                     KeyHandler<Object> defKeyHandler = defaultStorage._getStorageHandler().getKeyHandler(handler.getKey());
                     Object v = defKeyHandler.getValue();
                     // Object def = defKeyHandler.getDefaultValue();
