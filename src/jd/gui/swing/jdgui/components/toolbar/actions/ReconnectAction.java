@@ -4,13 +4,6 @@ import java.awt.Dialog.ModalityType;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.Reconnecter.ReconnectResult;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
-
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -19,15 +12,23 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
 
 public class ReconnectAction extends AbstractToolBarAction {
 
     public ReconnectAction() {
 
-        setIconKey("reconnect");
+        setIconKey(IconKey.ICON_RECONNECT);
         setAccelerator(KeyEvent.VK_R);
 
     }
@@ -41,7 +42,7 @@ public class ReconnectAction extends AbstractToolBarAction {
                     e.printStackTrace();
                 }
 
-                ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.gui_reconnect_confirm(), NewTheme.I().getIcon("reconnect", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
+                ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.gui_reconnect_confirm(), new AbstractIcon(IconKey.ICON_RECONNECT, 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
 
                     @Override
                     public ModalityType getModalityType() {

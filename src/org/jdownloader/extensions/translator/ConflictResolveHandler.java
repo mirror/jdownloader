@@ -9,7 +9,8 @@ import org.appwork.utils.parser.Mapimizer;
 import org.appwork.utils.svn.ResolveHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.tmatesoft.svn.core.wc.SVNInfo;
 
 public class ConflictResolveHandler implements ResolveHandler {
@@ -28,7 +29,9 @@ public class ConflictResolveHandler implements ResolveHandler {
         // all new entries will be confirmed without user interaction
         for (Entry<String, String> e : theirs.entrySet()) {
             if (!mine.containsKey(e.getKey())) {
-                if (sb.length() > 0) sb.append("\r\n");
+                if (sb.length() > 0) {
+                    sb.append("\r\n");
+                }
                 sb.append(e.getKey());
                 sb.append("=");
                 sb.append(e.getValue());
@@ -38,7 +41,9 @@ public class ConflictResolveHandler implements ResolveHandler {
         // entries missing in theirs - we keep them
         for (Entry<String, String> e : mine.entrySet()) {
             if (!theirs.containsKey(e.getKey())) {
-                if (sb.length() > 0) sb.append("\r\n");
+                if (sb.length() > 0) {
+                    sb.append("\r\n");
+                }
                 sb.append(e.getKey());
                 sb.append("=");
                 sb.append(e.getValue());
@@ -49,20 +54,26 @@ public class ConflictResolveHandler implements ResolveHandler {
         for (Entry<String, String> e : mine.entrySet()) {
             if (theirs.containsKey(e.getKey())) {
                 if (e.getValue().equals(theirs.get(e.getKey()))) {
-                    if (sb.length() > 0) sb.append("\r\n");
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
                     sb.append(e.getKey());
                     sb.append("=");
                     sb.append(e.getValue());
                 } else {
                     String html = "<h1>Key: " + e.getKey() + "</h1><h2>Translation A</h2>" + e.getValue() + "<h2>Translation B</h2>" + theirs.get(e.getKey()) + "<br><br>Select the better translation. A or B:";
                     try {
-                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_HTML, "Conflicts occured!", html, NewTheme.I().getIcon("question", 32), "A", "B");
-                        if (sb.length() > 0) sb.append("\r\n");
+                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_HTML, "Conflicts occured!", html, new AbstractIcon(IconKey.ICON_QUESTION, 32), "A", "B");
+                        if (sb.length() > 0) {
+                            sb.append("\r\n");
+                        }
                         sb.append(e.getKey());
                         sb.append("=");
                         sb.append(e.getValue());
                     } catch (DialogNoAnswerException e1) {
-                        if (sb.length() > 0) sb.append("\r\n");
+                        if (sb.length() > 0) {
+                            sb.append("\r\n");
+                        }
                         sb.append(e.getKey());
                         sb.append("=");
                         sb.append(theirs.get(e.getKey()));

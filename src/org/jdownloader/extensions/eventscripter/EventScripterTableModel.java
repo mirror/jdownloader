@@ -93,7 +93,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("ok", 14));
+                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

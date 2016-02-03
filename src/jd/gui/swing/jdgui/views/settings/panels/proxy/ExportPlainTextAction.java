@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 import java.awt.event.ActionEvent;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class ExportPlainTextAction extends AppAction {
@@ -11,7 +12,7 @@ public class ExportPlainTextAction extends AppAction {
 
     public ExportPlainTextAction(ProxyTable table) {
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
-        setIconKey("export");
+        setIconKey(IconKey.ICON_EXPORT);
         this.table = table;
     }
 

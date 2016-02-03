@@ -12,7 +12,8 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 
 public class DummyArchiveDialog extends AbstractDialog<Object> {
 
@@ -39,22 +40,22 @@ public class DummyArchiveDialog extends AbstractDialog<Object> {
         if (archive.isComplete()) {
             JLabel lbl = new JLabel();
             d.add(lbl, "pushx,growx");
-            lbl.setIcon(NewTheme.I().getIcon("ok", 32));
+            lbl.setIcon(new AbstractIcon(IconKey.ICON_OK, 32));
             lbl.setText(T._.ValidateArchiveAction_actionPerformed_(archive.getSize()));
 
             lbl = new JLabel();
             d.add(lbl, "pushx,growx");
-            lbl.setIcon(NewTheme.I().getIcon("info", 32));
+            lbl.setIcon(new AbstractIcon(IconKey.ICON_INFO, 32));
             lbl.setText(T._.ValidateArchiveAction_actionPerformed_information(archive.getArchiveType()));
         } else {
             JLabel lbl = new JLabel();
             d.add(lbl, "pushx,growx");
-            lbl.setIcon(NewTheme.I().getIcon("stop", 32));
+            lbl.setIcon(new AbstractIcon(IconKey.ICON_STOP, 32));
             lbl.setText(T._.ValidateArchiveAction_actionPerformed_bad(archive.getSize()));
 
             lbl = new JLabel();
             d.add(lbl, "pushx,growx");
-            lbl.setIcon(NewTheme.I().getIcon("info", 32));
+            lbl.setIcon(new AbstractIcon(IconKey.ICON_INFO, 32));
             lbl.setText(T._.ValidateArchiveAction_actionPerformed_information(archive.getArchiveType()));
         }
         DummyArchiveContentsTable table = new DummyArchiveContentsTable(archive);

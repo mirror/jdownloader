@@ -3,9 +3,6 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 import java.awt.event.ActionEvent;
 import java.net.InetAddress;
 
-import jd.controlling.reconnect.RouterUtils;
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
@@ -17,7 +14,11 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressInterface;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.reconnect.RouterUtils;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
 public class GetIPAction extends BasicAction {
 
@@ -26,7 +27,7 @@ public class GetIPAction extends BasicAction {
     public GetIPAction(LiveHeaderReconnect liveHeaderReconnect) {
         plugin = liveHeaderReconnect;
         putValue(NAME, T._.GetIPAction_GetIPAction_());
-        putValue(SMALL_ICON, NewTheme.I().getIcon("defaultProxy", 18));
+        putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_DEFAULTPROXY, 18));
 
     }
 
@@ -34,7 +35,7 @@ public class GetIPAction extends BasicAction {
 
         String ip = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterIP();
         String txt = StringUtils.isEmpty(ip) ? T._.GetIPAction_GetIPAction_tt() : T._.GetIPAction_getTooltipText_tt_2(ip);
-        return new BasicTooltipFactory(getName(), txt, NewTheme.I().getIcon("defaultProxy", 32));
+        return new BasicTooltipFactory(getName(), txt, new AbstractIcon(IconKey.ICON_DEFAULTPROXY, 32));
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -74,7 +75,7 @@ public class GetIPAction extends BasicAction {
             }
         };
 
-        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T._.GetIPAction_actionPerformed_d_title(), T._.GetIPAction_actionPerformed_d_msg(), NewTheme.I().getIcon("defaultProxy", 32), null, null);
+        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T._.GetIPAction_actionPerformed_d_title(), T._.GetIPAction_actionPerformed_d_msg(), new AbstractIcon(IconKey.ICON_DEFAULTPROXY, 32), null, null);
         try {
             UIOManager.I().show(ProgressInterface.class, d).throwCloseExceptions();
         } catch (DialogClosedException e1) {

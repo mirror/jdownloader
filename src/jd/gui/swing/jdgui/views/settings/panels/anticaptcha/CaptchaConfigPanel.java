@@ -32,7 +32,7 @@ public class CaptchaConfigPanel extends AbstractConfigPanel {
 
     public CaptchaConfigPanel() {
         super();
-        this.addHeader(getTitle(), NewTheme.I().getIcon("ocr", 32));
+        this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_OCR, 32));
         this.addDescriptionPlain(_GUI._.AntiCaptchaConfigPanel_onShow_description());
 
         addPair(_GUI._.AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_sounds(), null, new Checkbox(CFG_SOUND.CAPTCHA_SOUND_ENABLED));
@@ -58,7 +58,7 @@ public class CaptchaConfigPanel extends AbstractConfigPanel {
 
         }));
         add(container);
-        // this.addHeader(_GUI._.AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_solver(), NewTheme.I().getIcon("share", 32));
+        // this.addHeader(_GUI._.AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_solver(), new AbstractIcon(IconKey.ICON_share", 32));
         // this.addDescriptionPlain(_GUI._.AntiCaptchaConfigPanel_onShow_description_solver());
         // add(psp = new CESSettingsPanel());
     }
@@ -71,7 +71,7 @@ public class CaptchaConfigPanel extends AbstractConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("ocr", 32);
+        return new AbstractIcon(IconKey.ICON_OCR, 32);
     }
 
     @Override

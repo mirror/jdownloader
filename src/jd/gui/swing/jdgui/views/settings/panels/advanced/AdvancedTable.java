@@ -9,8 +9,9 @@ import javax.swing.JPopupMenu;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.uio.UIOManager;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 import jd.gui.swing.jdgui.BasicJDTable;
@@ -32,7 +33,7 @@ public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
         JPopupMenu p = new JPopupMenu();
         p.add(new AppAction() {
             {
-                setSmallIcon(NewTheme.I().getIcon("reset", 20));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_RESET, 20));
                 setName(_GUI._.AdvancedTable_onContextMenu_reset_selection());
             }
 

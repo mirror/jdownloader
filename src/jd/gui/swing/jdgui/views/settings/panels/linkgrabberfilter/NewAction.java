@@ -4,20 +4,21 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.AbstractAddAction;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
 public class NewAction extends AbstractAddAction {
     /**
@@ -32,14 +33,14 @@ public class NewAction extends AbstractAddAction {
     public NewAction(LinkgrabberFilter linkgrabberFilter) {
         this.linkgrabberFilter = linkgrabberFilter;
         this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_add());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
+        this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_ADD, 20));
 
     }
 
     public NewAction(AbstractFilterTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_add());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 16));
+        this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_ADD, 16));
     }
 
     public void actionPerformed(ActionEvent e) {

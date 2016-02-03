@@ -2,15 +2,16 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
 public class EditScriptAction extends BasicAction implements GenericConfigEventListener<String> {
 
@@ -19,9 +20,9 @@ public class EditScriptAction extends BasicAction implements GenericConfigEventL
     public EditScriptAction(LiveHeaderReconnect liveHeaderReconnect) {
         this.liveHeaderReconnect = liveHeaderReconnect;
 
-        putValue(SMALL_ICON, NewTheme.I().getIcon("edit", 18));
+        putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_EDIT, 18));
 
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.EditScriptAction_EditScriptAction_tt(), NewTheme.I().getIcon("edit", 32)));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T._.EditScriptAction_EditScriptAction_tt(), new AbstractIcon(IconKey.ICON_EDIT, 32)));
         CFG_LIVEHEADER.SCRIPT.getEventSender().addListener(this, true);
         updateName();
     }

@@ -6,18 +6,19 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
+import org.jdownloader.gui.IconKey;
 
 public class UseDefaultAction extends AppAction {
 
-    private TranslatorExtension       owner;
+    private TranslatorExtension            owner;
     private java.util.List<TranslateEntry> selection;
-    private static TLocale            PRE;
+    private static TLocale                 PRE;
 
     public UseDefaultAction(TranslatorExtension owner, java.util.List<TranslateEntry> selection) {
         this.owner = owner;
         this.selection = selection;
         setName("Use Original/Default Translation");
-        setIconKey("copy");
+        setIconKey(IconKey.ICON_COPY);
     }
 
     @Override

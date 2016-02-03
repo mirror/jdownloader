@@ -12,19 +12,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jd.controlling.reconnect.ProcessCallBack;
-import jd.controlling.reconnect.ReconnectConfig;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.RouterPlugin;
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.pluginsinc.liveheader.recorder.Gui;
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-import jd.gui.UserIO;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
@@ -45,11 +32,24 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+
+import jd.controlling.reconnect.ProcessCallBack;
+import jd.controlling.reconnect.ReconnectConfig;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.RouterPlugin;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.pluginsinc.liveheader.recorder.Gui;
+import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
+import jd.gui.UserIO;
+import net.miginfocom.swing.MigLayout;
 
 public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventListener {
 
@@ -72,7 +72,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
     public LiveHeaderReconnect() {
         super();
-        this.icon = NewTheme.I().getIcon("modem", 16);
+        this.icon = new AbstractIcon(IconKey.ICON_MODEM, 16);
 
         // only listen to system to autosend script
         // Send routerscript if there were 3 successful recoinnects in a row
@@ -85,7 +85,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     void editScript(final boolean wait) {
 
         // final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor",
-        // "Please enter a Liveheader script below.", settings.getScript(), NewTheme.I().getIcon("edit", 18),
+        // "Please enter a Liveheader script below.", settings.getScript(), new AbstractIcon(IconKey.ICON_EDIT, 18),
         // T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
         // dialog.setPreferredSize(new Dimension(700, 400));
 

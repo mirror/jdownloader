@@ -20,13 +20,14 @@ import java.awt.Color;
 
 import javax.swing.Icon;
 
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
-
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class MyJDownloaderView extends ClosableView {
 
@@ -55,7 +56,7 @@ public class MyJDownloaderView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("myjdownloader", ICON_SIZE);
+        return new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, ICON_SIZE);
     }
 
     @Override

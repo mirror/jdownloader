@@ -82,6 +82,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                         LogSource.exception(logger, e);
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
+                    runDdosPrevention();
                     jobs.add(ChallengeResponseController.getInstance().handle(rcFallback));
                     if (rcFallback.getToken() != null) {
                         break;

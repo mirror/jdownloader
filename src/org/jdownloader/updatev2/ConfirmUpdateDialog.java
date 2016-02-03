@@ -11,7 +11,8 @@ import javax.swing.JPopupMenu;
 
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ConfirmUpdateDialog extends org.appwork.utils.swing.dialog.ConfirmDialog {
@@ -30,7 +31,7 @@ public class ConfirmUpdateDialog extends org.appwork.utils.swing.dialog.ConfirmD
             public void addCancelButton(final JButton cancelButton) {
                 super.addCancelButton(cancelButton);
 
-                final JButton bt = new JButton(NewTheme.I().getIcon("popDownSmall", -1)) {
+                final JButton bt = new JButton(new AbstractIcon(IconKey.ICON_POPDOWNSMALL, -1)) {
 
                     public void setBounds(int x, int y, int width, int height) {
                         int delta = 5;

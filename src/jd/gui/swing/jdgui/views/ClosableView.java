@@ -21,12 +21,14 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JPanel;
 
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.View;
-
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 
 public abstract class ClosableView extends View {
 
@@ -59,20 +61,20 @@ public abstract class ClosableView extends View {
             }
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
             protected void onRollOut() {
                 setContentAreaFilled(false);
-                setIcon(NewTheme.I().getIcon("close", -1));
+                setIcon(new AbstractIcon(IconKey.ICON_CLOSE, -1));
             }
 
             /**
-             * 
+             *
              */
             protected void onRollOver() {
-                setIcon(NewTheme.I().getIcon("close.on", -1));
+                setIcon(NewTheme.I().getIcon(IconKey.ICON_CLOSE_ON, -1));
             }
 
         };
@@ -88,7 +90,7 @@ public abstract class ClosableView extends View {
 
     /**
      * May be overridden to add some more menu Items
-     * 
+     *
      * @param menubar
      */
     protected void initMenuPanel(JPanel menubar) {

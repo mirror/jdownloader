@@ -28,12 +28,6 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import jd.captcha.utils.GifDecoder;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.html.HTMLParser;
-import net.sf.image4j.codec.ico.ICODecoder;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -44,11 +38,18 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.PublicSuffixList;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.captcha.utils.GifDecoder;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.html.HTMLParser;
+import net.sf.image4j.codec.ico.ICODecoder;
 
 public class FavIcons {
 
@@ -61,6 +62,7 @@ public class FavIcons {
     private static LogSource                                                     LOGGER;
 
     private static final FavIconsConfig                                          CONFIG        = JsonConfig.create(FavIconsConfig.class);
+
     static {
         LOGGER = LogController.getInstance().getLogger("FavIcons.class");
         int maxThreads = Math.max(CONFIG.getMaxThreads(), 1);
@@ -139,10 +141,10 @@ public class FavIcons {
         synchronized (LOCK) {
             /* check if we already have a favicon? */
             if (NewTheme.I().hasIcon("fav/" + host)) {
-                image = NewTheme.I().getIcon("fav/" + host, -1);
+                image = new AbstractIcon("fav/" + host, -1);
             }
             if (image == null && NewTheme.I().hasIcon("fav/big." + host)) {
-                image = NewTheme.I().getIcon("fav/big." + host, -1);
+                image = new AbstractIcon("fav/big." + host, -1);
             }
             if (image != null) {
                 /* load favIcon from disk */
@@ -260,7 +262,7 @@ public class FavIcons {
                                     fos = new FileOutputStream(imageFile);
                                     ImageIO.write(favicon, "png", fos);
                                     /* load and scale it again */
-                                    Icon image = NewTheme.I().getIcon("fav/" + host, -1);
+                                    Icon image = new AbstractIcon("fav/" + host, -1);
                                     if (image != null && requestors != null) {
                                         /* refresh icons for all queued plugins */
                                         for (FavIconRequestor requestor : requestors) {

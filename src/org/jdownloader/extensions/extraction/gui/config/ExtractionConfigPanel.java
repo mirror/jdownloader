@@ -12,19 +12,10 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.text.BadLocationException;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.TextArea;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
-
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
@@ -34,12 +25,21 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.utils.JDFileUtils;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.TextArea;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
     private static final long                                serialVersionUID = 1L;
@@ -63,7 +63,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
         toggleDefaultEnabled = this.addPair(T._.settings_auto_extract_default(), null, new Checkbox());
-        this.addHeader(T._.settings_extractto(), NewTheme.I().getIcon("folder", 32));
+        this.addHeader(T._.settings_extractto(), new AbstractIcon(IconKey.ICON_FOLDER, 32));
         toggleCustomizedPath = this.addPair(T._.settings_extract_to_archive_folder(), null, new Checkbox());
         customPath = this.addPair(T._.settings_extract_to_path(), null, new FolderChooser());
         customPath.setConditionPair(toggleCustomizedPath);
@@ -209,7 +209,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         });
         subPath.setConditionPair(toggleUseSubpath);
 
-        this.addHeader(T._.settings_various(), NewTheme.I().getIcon("settings", 32));
+        this.addHeader(T._.settings_various(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
         if (JDFileUtils.isTrashSupported()) {
             toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), null, (ComboBox<FileCreationManager.DeleteOption>) new ComboBox<FileCreationManager.DeleteOption>(FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.RECYCLE, FileCreationManager.DeleteOption.NULL) {
                 protected String valueToString(FileCreationManager.DeleteOption value) {
@@ -243,11 +243,11 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         toggleDeleteArchiveDownloadLinks = this.addPair(T._.settings_remove_after_extract_downloadlink(), null, new Checkbox());
         toggleOverwriteExisting = this.addPair(T._.settings_if_file_exists(), null, new ComboBox<IfFileExistsAction>(IfFileExistsAction.values()));
 
-        this.addHeader(T._.settings_multi(), NewTheme.I().getIcon("settings", 32));
+        this.addHeader(T._.settings_multi(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
         toggleUseOriginalFileDate = this.addPair(T._.settings_multi_use_original_file_date(), null, new Checkbox());
         blacklist = this.addPair(T._.settings_blacklist_regex(), null, new TextArea());
 
-        this.addHeader(T._.settings_passwords(), NewTheme.I().getIcon("password", 32));
+        this.addHeader(T._.settings_passwords(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
         passwordlist = addPair(T._.settings_passwordlist(), null, new TextArea());
     }
 

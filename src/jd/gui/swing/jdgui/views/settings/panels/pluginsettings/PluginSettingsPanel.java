@@ -19,23 +19,12 @@ import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -47,7 +36,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -57,9 +46,19 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 public class PluginSettingsPanel extends JPanel implements SettingsComponent, ActionListener {
     /**
-     * 
+     *
      */
     private static final long             serialVersionUID = 1L;
 
@@ -86,9 +85,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
     public PluginSettingsPanel() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
-        decryterIcon = NewTheme.I().getIcon("linkgrabber", 16);
+        decryterIcon = new AbstractIcon(IconKey.ICON_LINKGRABBER, 16);
         logger = LogController.getInstance().getLogger(PluginSettingsPanel.class.getName());
-        searchCombobox = new SearchComboBox<LazyPlugin<?>>(null) {
+        searchCombobox = new SearchComboBox<LazyPlugin<?>>() {
 
             @Override
             protected Icon getIconForValue(LazyPlugin<?> value) {
@@ -170,9 +169,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             loaderPanel.setBackground(null);
 
             CircledProgressBar loader = new CircledProgressBar();
-            loader.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 1.0f));
+            loader.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 1.0f));
 
-            loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 0.1f));
+            loader.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 0.1f));
             ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
             ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
             loader.setIndeterminate(true);

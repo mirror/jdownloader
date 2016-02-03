@@ -26,12 +26,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+
 import jd.plugins.DownloadLink;
 import jd.utils.JDHexUtils;
-
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 
 public class FlvFixer {
 
@@ -138,7 +139,7 @@ public class FlvFixer {
         final FlvFixerProgress progress;
         if (progressView) {
             progress = new FlvFixerProgress(0, 0, null);
-            progress.setIcon(NewTheme.I().getIcon("wait", 16));
+            progress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
             progress.setProgressSource(this);
 
         } else {

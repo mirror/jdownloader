@@ -5,10 +5,6 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
@@ -23,6 +19,10 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+
 public class MyJDownloaderAction extends AbstractToolBarAction {
     /**
      *
@@ -30,7 +30,7 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
     private static final long serialVersionUID = 1L;
 
     public MyJDownloaderAction() {
-        setIconKey("myjdownloader");
+        setIconKey(IconKey.ICON_LOGO_MYJDOWNLOADER);
         setEnabled(true);
         setTooltipText(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_());
     }
@@ -93,7 +93,7 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
                                     }
                                     break;
                                 case CONNECTED:
-                                    setIcon(new NoAPIIconWarnIcon(new AbstractIcon(getIconKey(), 22), new AbstractIcon(IconKey.ICON_TRUE, 24), 6, 6).crop(24, 24));
+                                    setIcon(new NoAPIIconWarnIcon(new AbstractIcon(getIconKey(), 22), new AbstractIcon(IconKey.ICON_TRUE, 16), 2, 2).crop(24, 24));
                                     break;
                                 case UNCONNECTED:
                                     setIcon(new AbstractIcon(getIconKey(), 22));

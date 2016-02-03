@@ -9,14 +9,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.NoProxySelector;
-import jd.controlling.proxy.PacProxySelectorImpl;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -26,6 +18,7 @@ import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 
@@ -40,12 +33,20 @@ import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.UrlPacScriptSource;
 import com.btr.proxy.selector.whitelist.ProxyBypassListSelector;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.NoProxySelector;
+import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
+
 public class ProxyAutoAction extends AppAction {
 
     public ProxyAutoAction() {
         super();
         setName(_GUI._.ProxyAutoAction_actionPerformed_d_title());
-        setIconKey("plugin");
+        setIconKey(IconKey.ICON_PLUGIN);
         setEnabled(JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled());
     }
 

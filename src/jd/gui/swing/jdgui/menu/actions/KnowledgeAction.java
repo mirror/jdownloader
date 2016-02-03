@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class KnowledgeAction extends CustomizableAppAction {
@@ -28,7 +29,7 @@ public class KnowledgeAction extends CustomizableAppAction {
 
     public KnowledgeAction() {
 
-        setIconKey("help");
+        setIconKey(IconKey.ICON_HELP);
         setName(_GUI._.action_help());
         setTooltipText(_GUI._.action_help_tooltip());
 

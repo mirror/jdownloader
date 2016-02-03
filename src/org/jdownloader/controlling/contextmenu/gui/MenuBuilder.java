@@ -1,5 +1,6 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
+import java.awt.Component;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -81,6 +82,8 @@ public class MenuBuilder {
         long t = System.currentTimeMillis();
         try {
             int counter = 0;
+            boolean hasToggle = false;
+
             for (MenuItemData i : md.getItems()) {
                 try {
                     final MenuItemData inst = i;
@@ -119,6 +122,12 @@ public class MenuBuilder {
             ;
             if (root instanceof ExtMenuInterface) {
                 ((ExtMenuInterface) root).cleanup();
+            }
+
+            for (Component c : root.getComponents()) {
+                if (c instanceof AfterLayerUpdateInterface) {
+                    ((AfterLayerUpdateInterface) c).onAfterLayerDone(root, md);
+                }
             }
         } finally {
             System.out.println("Menu Creation Layer: " + md + " took " + (System.currentTimeMillis() - t));

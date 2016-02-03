@@ -8,23 +8,24 @@ import org.appwork.swing.components.tooltips.TooltipFactory;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 
 public class ReconnectTestAction extends BasicAction {
     /**
-	 * 
-	 */
+     * 
+     */
     private static final long serialVersionUID = 2580441275315364611L;
 
     {
         putValue(NAME, _GUI._.ReconnectTestAction());
-        putValue(SMALL_ICON, NewTheme.I().getIcon("test", 20));
+        putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_TEST, 20));
 
     }
 
     public TooltipFactory getTooltipFactory() {
-        return new BasicTooltipFactory(getName(), _GUI._.ReconnectTestAction_tt_2(), NewTheme.I().getIcon("test", 32));
+        return new BasicTooltipFactory(getName(), _GUI._.ReconnectTestAction_tt_2(), new AbstractIcon(IconKey.ICON_TEST, 32));
     }
 
     public void actionPerformed(ActionEvent e) {

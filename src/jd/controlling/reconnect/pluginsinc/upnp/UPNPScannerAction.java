@@ -7,10 +7,6 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
-import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
-import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
-import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
-
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -18,7 +14,12 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
+import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
 public class UPNPScannerAction extends BasicAction {
 
@@ -27,8 +28,8 @@ public class UPNPScannerAction extends BasicAction {
     public UPNPScannerAction(UPNPRouterPlugin upnpRouterPlugin) {
         super(T._.literally_choose_router());
         this.plugin = upnpRouterPlugin;
-        putValue(SMALL_ICON, NewTheme.I().getIcon("list", 18));
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.UPNPScannerAction_UPNPScannerAction_tt(), NewTheme.I().getIcon("list", 32)));
+        putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_LIST, 18));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T._.UPNPScannerAction_UPNPScannerAction_tt(), new AbstractIcon(IconKey.ICON_LIST, 32)));
 
     }
 
@@ -52,9 +53,11 @@ public class UPNPScannerAction extends BasicAction {
 
                     return;
                 }
-                if (Thread.currentThread().isInterrupted()) { return; }
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
 
-                int ret = Dialog.getInstance().showComboDialog(0, T._.UPNPRouterPlugin_run_wizard_title(), T._.UPNPRouterPlugin_run_mesg(), devices.toArray(new UpnpRouterDevice[] {}), 0, NewTheme.I().getIcon("upnp", 32), null, null, new DefaultListCellRenderer() {
+                int ret = Dialog.getInstance().showComboDialog(0, T._.UPNPRouterPlugin_run_wizard_title(), T._.UPNPRouterPlugin_run_mesg(), devices.toArray(new UpnpRouterDevice[] {}), 0, new AbstractIcon(IconKey.ICON_LOGO_UPNP, 32), null, null, new DefaultListCellRenderer() {
 
                     private static final long serialVersionUID = 3607383089555373774L;
 
@@ -65,8 +68,12 @@ public class UPNPScannerAction extends BasicAction {
                         return label;
                     }
                 });
-                if (Thread.currentThread().isInterrupted()) { return; }
-                if (ret < 0) { return; }
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
+                if (ret < 0) {
+                    return;
+                }
                 plugin.setDevice(devices.get(ret));
 
             }
@@ -80,9 +87,17 @@ public class UPNPScannerAction extends BasicAction {
 
         try {
             Dialog.getInstance().showDialog(dialog);
-        } catch (DialogClosedException e1) {
+        } catch (
+
+        DialogClosedException e1)
+
+        {
             e1.printStackTrace();
-        } catch (DialogCanceledException e1) {
+        } catch (
+
+        DialogCanceledException e1)
+
+        {
             e1.printStackTrace();
         }
     }

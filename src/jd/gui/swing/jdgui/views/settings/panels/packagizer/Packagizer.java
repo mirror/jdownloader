@@ -23,9 +23,10 @@ import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
 
 import jd.controlling.TaskQueue;
@@ -43,7 +44,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
 
     public Packagizer() {
         super();
-        add(new Header(getTitle(), NewTheme.I().getIcon("packagizer", 32), org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED), "spanx,growx,pushx");
+        add(new Header(getTitle(), new AbstractIcon(IconKey.ICON_PACKAGIZER, 32), org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED), "spanx,growx,pushx");
         this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_packagizer_description());
         packagizer = new PackagizerFilter();
         add(packagizer);
@@ -51,7 +52,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("packagizer", 32);
+        return new AbstractIcon(IconKey.ICON_PACKAGIZER, 32);
     }
 
     @Override

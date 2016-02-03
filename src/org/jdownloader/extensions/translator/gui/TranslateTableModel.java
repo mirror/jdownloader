@@ -22,8 +22,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
 import javax.swing.text.BadLocationException;
 
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
@@ -35,9 +33,12 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.nutils.encoding.Encoding;
 
 /**
  * The Tablemodel defines all columns and renderers
@@ -108,7 +109,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("info", 16));
+                        setIcon(new AbstractIcon(IconKey.ICON_INFO, 16));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;
@@ -151,12 +152,12 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             @Override
             protected Icon getIcon(TranslateEntry obj) {
                 if (obj.isMissing()) {
-                    return NewTheme.I().getIcon("stop", 16);
+                    return new AbstractIcon(IconKey.ICON_STOP, 16);
                 } else if (obj.isParameterInvalid()) {
-                    return NewTheme.I().getIcon("error", 16);
+                    return new AbstractIcon(IconKey.ICON_ERROR, 16);
 
                 } else {
-                    return NewTheme.I().getIcon("ok", 16);
+                    return new AbstractIcon(IconKey.ICON_OK, 16);
                 }
             }
 
@@ -308,7 +309,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
                             ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
                             if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
-                                HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE2", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
+                                HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE2", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", new AbstractIcon(IconKey.ICON_HELP, 32));
                             }
                         } catch (BadLocationException e1) {
                             e1.printStackTrace();
@@ -317,6 +318,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                 });
 
             }
+
             private Color errorColor   = Color.RED;
             private Color warningColor = Color.BLUE;
             private Color defaultColor = Color.GRAY;

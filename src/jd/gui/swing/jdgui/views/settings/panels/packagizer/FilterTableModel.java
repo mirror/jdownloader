@@ -8,8 +8,6 @@ import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.linkcrawler.CrawledLink;
-
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
@@ -17,8 +15,12 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerControllerListener;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+
+import jd.controlling.linkcrawler.CrawledLink;
 
 public class FilterTableModel extends ExtTableModel<PackagizerRule> implements PackagizerControllerListener {
 
@@ -47,7 +49,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("ok", 14));
+                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;
@@ -152,7 +154,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
 
             protected Icon getIcon(final PackagizerRule value) {
                 if (!value.isValid()) {
-                    return NewTheme.I().getIcon("error", 18);
+                    return new AbstractIcon(IconKey.ICON_ERROR, 18);
                 }
                 return null;
             }

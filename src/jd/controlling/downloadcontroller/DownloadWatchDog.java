@@ -38,6 +38,76 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.controlling.State;
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
+import org.appwork.controlling.StateMachine;
+import org.appwork.controlling.StateMachineInterface;
+import org.appwork.exceptions.WTFException;
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.ExceptionDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.ConcatIterator;
+import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.ProxyAuthException;
+import org.appwork.utils.net.httpconnection.ProxyConnectException;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.ExceptionDialog;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.controlling.DownloadLinkWalker;
+import org.jdownloader.controlling.FileCreationEvent;
+import org.jdownloader.controlling.FileCreationListener;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
+import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.domainrules.DomainRuleController;
+import org.jdownloader.controlling.domainrules.event.DomainRuleControllerListener;
+import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.controlling.hosterrule.AccountUsageRule;
+import org.jdownloader.controlling.hosterrule.HosterRuleController;
+import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.IgnorableConditionalSkipReason;
+import org.jdownloader.plugins.MirrorLoading;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.ValidatableConditionalSkipReason;
+import org.jdownloader.plugins.WaitForAccountSkipReason;
+import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
+import org.jdownloader.settings.CleanAfterDownloadAction;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.settings.MirrorDetectionDecision;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
+import org.jdownloader.translate._JDT;
+import org.jdownloader.utils.JDFileUtils;
+
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -92,75 +162,6 @@ import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
 import jd.plugins.download.raf.FileBytesCache;
 
-import org.appwork.controlling.State;
-import org.appwork.controlling.StateEvent;
-import org.appwork.controlling.StateEventListener;
-import org.appwork.controlling.StateMachine;
-import org.appwork.controlling.StateMachineInterface;
-import org.appwork.exceptions.WTFException;
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownRequest;
-import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.shutdown.ShutdownVetoListener;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.ExceptionDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.ConcatIterator;
-import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.DefaultEventListener;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.ProxyAuthException;
-import org.appwork.utils.net.httpconnection.ProxyConnectException;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.ExceptionDialog;
-import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.controlling.DownloadLinkWalker;
-import org.jdownloader.controlling.FileCreationEvent;
-import org.jdownloader.controlling.FileCreationListener;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.FileCreationManager.DeleteOption;
-import org.jdownloader.controlling.Priority;
-import org.jdownloader.controlling.domainrules.DomainRuleController;
-import org.jdownloader.controlling.domainrules.event.DomainRuleControllerListener;
-import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.controlling.hosterrule.AccountUsageRule;
-import org.jdownloader.controlling.hosterrule.HosterRuleController;
-import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.ConditionalSkipReason;
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.IgnorableConditionalSkipReason;
-import org.jdownloader.plugins.MirrorLoading;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.ValidatableConditionalSkipReason;
-import org.jdownloader.plugins.WaitForAccountSkipReason;
-import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.controller.container.ContainerPluginController;
-import org.jdownloader.settings.CleanAfterDownloadAction;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.IfFileExistsAction;
-import org.jdownloader.settings.MirrorDetectionDecision;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-import org.jdownloader.settings.staticreferences.CFG_GENERAL;
-import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
-import org.jdownloader.translate._JDT;
-import org.jdownloader.utils.JDFileUtils;
-
 public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, FileCreationListener {
 
     private static class ReconnectThread extends Thread {
@@ -203,12 +204,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
-    public static final State                              IDLE_STATE            = new State("IDLE");
-    public static final State                              RUNNING_STATE         = new State("RUNNING");
+    public static final State IDLE_STATE     = new State("IDLE");
+    public static final State RUNNING_STATE  = new State("RUNNING");
 
-    public static final State                              PAUSE_STATE           = new State("PAUSE");
-    public static final State                              STOPPING_STATE        = new State("STOPPING");
-    public static final State                              STOPPED_STATE         = new State("STOPPED_STATE");
+    public static final State PAUSE_STATE    = new State("PAUSE");
+    public static final State STOPPING_STATE = new State("STOPPING");
+    public static final State STOPPED_STATE  = new State("STOPPED_STATE");
+
     static {
         IDLE_STATE.addChildren(RUNNING_STATE);
 
@@ -4013,7 +4015,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (dialogTitle != null) {
                 if (request.isSilent() == false) {
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
-                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null)) {
+                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), new AbstractIcon(IconKey.ICON_DOWNLOAD, 32), _JDT._.literally_yes(), null)) {
                             return;
                         }
                     } else {

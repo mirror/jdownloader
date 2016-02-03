@@ -51,6 +51,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeparatorData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -204,7 +205,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         add(name, "newline");
         add(nameReset = new JButton(new AppAction() {
             {
-                setIconKey("reset");
+                setIconKey(IconKey.ICON_RESET);
             }
 
             @Override
@@ -238,7 +239,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         add(iconChange, "newline");
         add(iconKeyReset = new JButton(new AppAction() {
             {
-                setIconKey("reset");
+                setIconKey(IconKey.ICON_RESET);
             }
 
             @Override
@@ -297,7 +298,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             add(shortcut, "newline,hidemode 3");
             add(shortCutReset = new JButton(new AppAction() {
                 {
-                    setIconKey("reset");
+                    setIconKey(IconKey.ICON_RESET);
                 }
 
                 @Override
@@ -360,7 +361,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         } else {
             try {
 
-                if (value.getActionData() == null || (value instanceof MenuLink)) {
+                if (!value.getActionData()._isValidDataForCreatingAnAction() || (value instanceof MenuLink)) {
                     return;
                 }
                 ActionData actionData = value.getActionData();
@@ -437,7 +438,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
         CustomizableAppAction action;
         try {
-            if (mid.getActionData() != null && !(mid instanceof MenuLink)) {
+            if (mid.getActionData()._isValidDataForCreatingAnAction() && !(mid instanceof MenuLink)) {
                 if (shortcutLabel != null) {
                     shortcutLabel.setVisible(true);
                 }

@@ -5,8 +5,6 @@ import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
 
-import jd.controlling.proxy.ProxyController;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -14,7 +12,10 @@ import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.controlling.proxy.ProxyController;
 
 public class SaveAsProxyProfileAction extends AppAction {
 
@@ -23,7 +24,7 @@ public class SaveAsProxyProfileAction extends AppAction {
 
     public SaveAsProxyProfileAction(ProxyTable table) {
         setName(_GUI._.SaveAsProxyProfileAction_SaveAsProxyProfileAction_());
-        setIconKey("export");
+        setIconKey(IconKey.ICON_EXPORT);
         this.table = table;
     }
 

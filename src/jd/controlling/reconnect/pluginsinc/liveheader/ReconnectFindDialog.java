@@ -14,11 +14,6 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.ipcheck.IPConnectionState;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.ipcheck.event.IPControllListener;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
@@ -28,8 +23,14 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.ipcheck.IPConnectionState;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.ipcheck.event.IPControllListener;
 
 public abstract class ReconnectFindDialog extends AbstractDialog<Object> implements IPControllListener {
 
@@ -44,7 +45,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     }
 
     public void onIPOffline() {
-        setSubStatusState(_GUI._.ReconnectDialog_onIPOffline_(), NewTheme.I().getIcon("network-error", 16));
+        setSubStatusState(_GUI._.ReconnectDialog_onIPOffline_(), new AbstractIcon(IconKey.ICON_NETWORK_ERROR, 16));
         setNewIP(_GUI._.literally_offline());
     }
 
@@ -52,7 +53,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     }
 
     public void onIPOnline(IPConnectionState parameter) {
-        setSubStatusState(_GUI._.ReconnectDialog_onIPOnline_(), NewTheme.I().getIcon("network-idle", 16));
+        setSubStatusState(_GUI._.ReconnectDialog_onIPOnline_(), new AbstractIcon(IconKey.ICON_NETWORK_IDLE, 16));
     }
 
     public void onIPStateChanged(IPConnectionState parameter, IPConnectionState parameter2) {
@@ -113,11 +114,11 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         bar.setMaximum(100);
         p.add(bar);
         circle = new CircledProgressBar();
-        circle.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("reconnect", 26), 1.0f));
+        circle.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_RECONNECT, 26), 1.0f));
         ((ImagePainter) circle.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) circle.getValueClipPainter()).setForeground(Color.GREEN);
 
-        circle.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("reconnect", 26), 0.5f));
+        circle.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_RECONNECT, 26), 0.5f));
         ((ImagePainter) circle.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) circle.getNonvalueClipPainter()).setForeground(Color.GREEN);
         MigPanel sp = new MigPanel("ins 0", "[fill][fill][grow,fill][fill][fill]", "[fill][grow,fill]");
@@ -134,7 +135,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         sp.add(duration = new JLabel());
 
         state.setHorizontalAlignment(SwingConstants.RIGHT);
-        sp.add(new JLabel(NewTheme.I().getIcon("go-next", 18)));
+        sp.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
         sp.add(label(_GUI._.ReconnectDialog_layoutDialogContent_currentip()));
         sp.add(newIP = new JLabel(), "width 100!");
         newIP.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -147,10 +148,10 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
                     IPController.getInstance().invalidate();
                     IPController.getInstance().validate();
                     if (IPController.getInstance().getIpState().isOffline()) {
-                        setSubStatusState(_GUI._.ReconnectDialog_onIPOffline_(), NewTheme.I().getIcon("network-error", 16));
+                        setSubStatusState(_GUI._.ReconnectDialog_onIPOffline_(), new AbstractIcon(IconKey.ICON_NETWORK_ERROR, 16));
                         setNewIP(_GUI._.literally_offline());
                     } else {
-                        setSubStatusState(_GUI._.ReconnectDialog_onIPOnline_(), NewTheme.I().getIcon("network-idle", 16));
+                        setSubStatusState(_GUI._.ReconnectDialog_onIPOnline_(), new AbstractIcon(IconKey.ICON_NETWORK_IDLE, 16));
                         setNewIP(IPController.getInstance().getIpState().getExternalIp().toString());
                     }
 
@@ -216,7 +217,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
             @Override
             protected void runInEDT() {
                 okButton.setEnabled(true);
-                okButton.setIcon(NewTheme.I().getIcon("ok", 18));
+                okButton.setIcon(new AbstractIcon(IconKey.ICON_OK, 18));
                 okButton.setToolTipText(_GUI._.ReconnectFindDialog_packed_interrupt_tooltip());
             }
 
@@ -273,4 +274,3 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     }
 }
 //
-

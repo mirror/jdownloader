@@ -30,13 +30,6 @@ import javax.swing.Icon;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.txtresource.TranslationFactory;
@@ -74,6 +67,13 @@ import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
 
 public class GUISettings extends AbstractConfigPanel implements StateUpdateListener {
 
@@ -533,10 +533,10 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
             }
         });
 
-        this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
+        this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_GUI, 32));
         this.addDescription(_GUI._.GUISettings_GUISettings_description());
         // this.addHeader(getTitle(),
-        // NewTheme.I().getIcon("barrierfreesettings", 32));
+        // new AbstractIcon(IconKey.ICON_barrierfreesettings", 32));
         this.addPair(_GUI._.gui_config_language(), null, lng);
         this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
         this.addPair("", null, resetDialogPosition);
@@ -546,7 +546,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         UrlOrderContainer container = new UrlOrderContainer(new UrlOrderTable());
         addPair("", null, container);
 
-        this.addHeader(_GUI._.gui_config_menumanager_header(), NewTheme.I().getIcon("menu", 32));
+        this.addHeader(_GUI._.gui_config_menumanager_header(), new AbstractIcon(IconKey.ICON_MENU, 32));
 
         this.addDescription(_GUI._.gui_config_menumanager_desc());
         this.addPair("", null, contextMenuManagerDownloadList);
@@ -557,9 +557,9 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         this.addPair("", null, downloadBottomManager);
         this.addPair("", null, linkgrabberBottomManager);
 
-        this.addHeader(_GUI._.GUISettings_GUISettings_object_frames(), NewTheme.I().getIcon(IconKey.ICON_DESKTOP, 32));
+        this.addHeader(_GUI._.GUISettings_GUISettings_object_frames(), new AbstractIcon(IconKey.ICON_DESKTOP, 32));
         this.addDescription(_GUI._.GUISettings_GUISettings_object_frames_description());
-        // this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));
+        // this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), new AbstractIcon(IconKey.ICON_barrierfreesettings", 32));
         // this.addDescription(_JDT._.gui_settings_barrierfree_description());
         this.addDescriptionPlain(_GUI._.GUISettings_GUISettings_sielntMode_description());
         addPair(_GUI._.GUISettings_GUISettings_sielntMode(), null, new Checkbox(CFG_SILENTMODE.MANUAL_ENABLED));
@@ -616,7 +616,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("gui", 32);
+        return new AbstractIcon(IconKey.ICON_GUI, 32);
     }
 
     @Override

@@ -85,7 +85,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                             if (!lr.isVisible() && !full) {
                                 continue;
                             }
-                            if (lr.getActionData() != null && !(lr instanceof MenuLink)) {
+                            if (lr.getActionData()._isValidDataForCreatingAnAction() && !(lr instanceof MenuLink)) {
                                 lr.createAction();
                             }
 
@@ -169,7 +169,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                 parent = this;
             }
             for (MenuItemData mu : parent.getItems()) {
-                if (mu.getActionData() != null) {
+                if (mu.getActionData()._isValidDataForCreatingAnAction()) {
                     continue;
                 }
                 if (StringUtils.equals(mu.getClassName(), nodeToAdd.getClassName())) {

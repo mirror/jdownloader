@@ -14,10 +14,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -37,6 +33,10 @@ import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialog;
 import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialogInterface;
 import org.jdownloader.logging.LogController;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
     protected final DelayedRunnable               updateDelayer;
@@ -161,13 +161,29 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     ContextMenuConfigInterface         config;
     LogSource                          logger;
 
-    public List<ActionData> list() {
+    public List<Object> list() {
 
-        HashSet<String> unique = new HashSet<String>();
-        ArrayList<ActionData> ret = new ArrayList<ActionData>();
+        ArrayList<Object> ret = new ArrayList<Object>();
+        ret.add(new SeparatorData());
         for (MenuItemData mid : setupDefaultStructure().list()) {
-            if (!(mid instanceof MenuLink) && mid.getActionData() != null && unique.add(mid.getActionData().getClazzName())) {
+            if (mid instanceof MenuContainerRoot) {
+                continue;
+            }
+
+            if (MenuContainer.class.isAssignableFrom(mid.getClass().getSuperclass())) {
+                if (StringUtils.isEmpty(mid.getName())) {
+                    continue;
+                }
+                if (mid.getClass() == MenuContainer.class) {
+                    continue;
+                }
+                ret.add(mid);
+            } else if (mid instanceof MenuLink) {
+                ret.add(mid);
+            } else if (!(mid instanceof MenuLink) && mid.getActionData()._isValidDataForCreatingAnAction()) {
                 ret.add(mid.getActionData());
+            } else {
+
             }
         }
         return ret;
@@ -494,30 +510,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     public ArrayList<MenuExtenderHandler> listExtender() {
         return new ArrayList<MenuExtenderHandler>(extender);
-    }
-
-    public List<MenuItemData> listSpecialItems() {
-
-        HashSet<MenuItemData> specials = new HashSet<MenuItemData>();
-
-        for (MenuItemData mid : setupDefaultStructure().list()) {
-            if (mid instanceof MenuContainerRoot) {
-                continue;
-            }
-            if (StringUtils.isEmpty(mid.getName())) {
-                continue;
-            }
-            if (MenuContainer.class.isAssignableFrom(mid.getClass().getSuperclass())) {
-                specials.add(mid);
-            } else if (mid instanceof MenuLink) {
-                specials.add(mid);
-            }
-
-        }
-        ArrayList<MenuItemData> ret = new ArrayList<MenuItemData>(specials);
-
-        ret.add(0, new SeparatorData());
-        return ret;
     }
 
     public abstract String getFileExtension();

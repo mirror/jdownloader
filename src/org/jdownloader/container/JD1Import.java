@@ -13,6 +13,17 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.HexInputStream;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.config.DatabaseConnector;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -24,16 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginsC;
 import jd.utils.locale.JDL;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.HexInputStream;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
 public class JD1Import extends PluginsC {
 
@@ -82,7 +83,7 @@ public class JD1Import extends PluginsC {
                         for (final FilePackage p : packages) {
                             links += p.size();
                         }
-                        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI._.jd1_import_title(), _GUI._.jd1_import_message(packages.size(), links), NewTheme.I().getIcon("question", 16), _GUI._.jd_gui_swing_jdgui_views_downloadview_tab_title(), _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title()) {
+                        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI._.jd1_import_title(), _GUI._.jd1_import_message(packages.size(), links), new AbstractIcon(IconKey.ICON_QUESTION, 16), _GUI._.jd_gui_swing_jdgui_views_downloadview_tab_title(), _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title()) {
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;

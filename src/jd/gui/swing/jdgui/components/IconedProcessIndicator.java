@@ -70,6 +70,11 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         activeNonValuePainter.setForeground(c6);
     }
 
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+    }
+
     public ExtTooltip createExtTooltip(final Point mousePosition) {
         IconedProcessIndicator comp = new IconedProcessIndicator();
 

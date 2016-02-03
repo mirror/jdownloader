@@ -5,12 +5,13 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 
-import jd.plugins.Account;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.plugins.Account;
 
 public class EditAction extends AbstractAction {
     /**
@@ -22,7 +23,7 @@ public class EditAction extends AbstractAction {
     public EditAction(final List<AccountEntry> selectedObjects) {
         selection = selectedObjects;
         this.putValue(NAME, _GUI._.literally_edit());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("edit", 16));
+        this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_EDIT, 16));
     }
 
     public void actionPerformed(ActionEvent e) {

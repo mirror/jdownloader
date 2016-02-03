@@ -6,15 +6,16 @@ import javax.swing.AbstractButton;
 import javax.swing.Icon;
 import javax.swing.JToggleButton;
 
-import jd.gui.swing.jdgui.Flashable;
-import jd.gui.swing.jdgui.JDGui;
-
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.gui.swing.jdgui.Flashable;
+import jd.gui.swing.jdgui.JDGui;
 
 public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction implements Flashable {
 
@@ -25,7 +26,7 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
 
     public GlobalPremiumSwitchToggleAction() {
         super(org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS);
-        setIconKey("premium");
+        setIconKey(IconKey.ICON_PREMIUM);
         iconNormal = NewTheme.I().getCheckBoxImage(getIconKey(), false, 24);
         iconHighlight = NewTheme.I().getCheckBoxImage(getIconKey(), false, 24, new Color(0xFF9393));
         iconSelected = NewTheme.I().getCheckBoxImage(this.getIconKey(), true, 24);

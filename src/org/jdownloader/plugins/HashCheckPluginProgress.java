@@ -3,13 +3,14 @@ package org.jdownloader.plugins;
 import java.awt.Color;
 import java.io.File;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
+
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
 
 public class HashCheckPluginProgress extends PluginProgress {
 
@@ -20,7 +21,7 @@ public class HashCheckPluginProgress extends PluginProgress {
 
     public HashCheckPluginProgress(File file, Color color, TYPE type) {
         super(0, file != null ? file.length() : 1, color);
-        setIcon(NewTheme.I().getIcon("hashsum", 16));
+        setIcon(new AbstractIcon(IconKey.ICON_HASHSUM, 16));
         this.type = type;
         if (type != null) {
             message = _JDT._.system_download_doCRC2(type.name());

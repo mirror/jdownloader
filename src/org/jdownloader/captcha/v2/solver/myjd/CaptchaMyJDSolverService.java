@@ -7,16 +7,6 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
@@ -35,9 +25,18 @@ import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 public class CaptchaMyJDSolverService extends AbstractSolverService implements ServicePanelExtender, MyJDownloaderListener {
     private CaptchaMyJDSolverConfig config;
@@ -110,11 +109,11 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
 
             // public Icon getIcon(int i) {
-            // return NewTheme.I().getIcon("myjdownloader", i);
+            // return new AbstractIcon(IconKey.ICON_myjdownloader", i);
             // }
 
             {
-                addHeader(getTitle(), NewTheme.I().getIcon("myjdownloader", 32));
+                addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
                 addDescription(_GUI._.MyJDownloaderService_createPanel_description_2());
                 SettingsButton openMyJDownloader = new SettingsButton(new AppAction() {
                     {

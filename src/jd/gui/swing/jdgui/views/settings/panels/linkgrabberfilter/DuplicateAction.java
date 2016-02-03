@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.translate._JDT;
 
 public class DuplicateAction extends AppAction {
@@ -13,7 +14,7 @@ public class DuplicateAction extends AppAction {
 
     public DuplicateAction(LinkgrabberFilterRule contextObject, AbstractFilterTable filterTable) {
         setName(_JDT._.DuplicateAction_DuplicateAction_());
-        setIconKey("copy");
+        setIconKey(IconKey.ICON_COPY);
         this.contextObject = contextObject;
         this.filterTable = filterTable;
     }

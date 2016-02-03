@@ -16,13 +16,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
@@ -34,8 +27,16 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
+import net.miginfocom.swing.MigLayout;
 
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     private static final long              serialVersionUID = 6070464296168772795L;
@@ -90,15 +91,15 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         //
         // public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         // JLabel ret = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-        // ret.setIcon(value == _GUI._.LinkgrabberFilter_initComponents_filter_() ? NewTheme.I().getIcon("false", 20) :
-        // NewTheme.I().getIcon("true", 20));
+        // ret.setIcon(value == _GUI._.LinkgrabberFilter_initComponents_filter_() ? new AbstractIcon(IconKey.ICON_FALSE, 20) :
+        // new AbstractIcon(IconKey.ICON_TRUE, 20));
         // return ret;
         // }
         // });
         tab.addTab(_GUI._.LinkgrabberFilter_initComponents_filter__title(), createTab(_GUI._.LinkgrabberFilter_initComponents_filter_(), filterTable));
         tab.addTab(_GUI._.LinkgrabberFilter_initComponents_exceptions_title(), createTab(_GUI._.LinkgrabberFilter_initComponents_exceptions_(), exceptionsTable));
-        tab.setTabComponentAt(0, createHeader(_GUI._.LinkgrabberFilter_initComponents_filter_(), _GUI._.LinkgrabberFilter_initComponents_filter__title(), NewTheme.I().getIcon("false", 16)));
-        tab.setTabComponentAt(1, createHeader(_GUI._.LinkgrabberFilter_initComponents_exceptions_(), _GUI._.LinkgrabberFilter_initComponents_exceptions_title(), NewTheme.I().getIcon("true", 16)));
+        tab.setTabComponentAt(0, createHeader(_GUI._.LinkgrabberFilter_initComponents_filter_(), _GUI._.LinkgrabberFilter_initComponents_filter__title(), new AbstractIcon(IconKey.ICON_FALSE, 16)));
+        tab.setTabComponentAt(1, createHeader(_GUI._.LinkgrabberFilter_initComponents_exceptions_(), _GUI._.LinkgrabberFilter_initComponents_exceptions_title(), new AbstractIcon(IconKey.ICON_TRUE, 16)));
         tab.addChangeListener(new ChangeListener() {
 
             @Override
@@ -121,7 +122,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         txtTest.setHelpText(_GUI._.LinkgrabberFilter_LinkgrabberFilter_test_help_());
         btTest = new ExtButton(new AppAction() {
             {
-                setIconKey("media-playback-start");
+                setIconKey(IconKey.ICON_MEDIA_PLAYBACK_START);
                 setTooltipText(_GUI._.LinkgrabberFilter_LinkgrabberFilter_test_());
             }
 

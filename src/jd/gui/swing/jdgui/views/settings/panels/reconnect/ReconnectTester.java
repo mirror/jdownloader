@@ -10,6 +10,14 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.MigPanel;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.Reconnecter.ReconnectResult;
@@ -19,17 +27,9 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.nutils.Formatter;
 
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.MigPanel;
-
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
-
 public class ReconnectTester extends MigPanel implements SettingsComponent, ActionListener {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
     private JButton           btnTest;
@@ -75,7 +75,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
     private void initComponents() {
         this.btnTest = new JButton(_JDT._.gui_config_reconnect_showcase_reconnect2());
-        this.btnTest.setIcon(NewTheme.I().getIcon("play", 20));
+        this.btnTest.setIcon(new AbstractIcon(IconKey.ICON_PLAY, 20));
         this.btnTest.addActionListener(this);
 
         this.lblDuration = new JLabel(_JDT._.gui_config_reconnect_showcase_time());
@@ -83,7 +83,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         this.lblTime = new JLabel("---");
         this.lblCurrentIP = new JLabel("---");
 
-        this.lblSuccessIcon = new JLabel(NewTheme.I().getIcon("ok", 32));
+        this.lblSuccessIcon = new JLabel(new AbstractIcon(IconKey.ICON_OK, 32));
         this.lblSuccessIcon.setEnabled(false);
         this.lblSuccessIcon.setHorizontalTextPosition(SwingConstants.LEFT);
 
@@ -116,10 +116,10 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     }
 
     private void testReconnect() {
-              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Reconnect Testing");
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Reconnect Testing");
 
         btnTest.setEnabled(false);
-              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Start Reconnect");
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Start Reconnect");
         this.lblStatusMessage.setText(_JDT._.gui_warning_reconnect_running());
         this.lblStatusMessage.setEnabled(true);
         this.lblBeforeIP.setText(IPController.getInstance().getIP().toString());
@@ -170,7 +170,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                                 } else {
                                     lblStatusMessage.setText(_JDT._.gui_warning_reconnectSuccess());
                                 }
-                                lblSuccessIcon.setIcon(NewTheme.I().getIcon("true", 32));
+                                lblSuccessIcon.setIcon(new AbstractIcon(IconKey.ICON_TRUE, 32));
                                 lblSuccessIcon.setEnabled(true);
                                 lblStatusMessage.setEnabled(true);
                                 if (config.isIPCheckGloballyDisabled()) {
@@ -187,7 +187,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                             @Override
                             protected void runInEDT() {
                                 lblStatusMessage.setText(_JDT._.gui_warning_reconnectFailed());
-                                lblSuccessIcon.setIcon(NewTheme.I().getIcon("false", 32));
+                                lblSuccessIcon.setIcon(new AbstractIcon(IconKey.ICON_FALSE, 32));
                                 lblSuccessIcon.setEnabled(true);
                                 if (config.isIPCheckGloballyDisabled()) {
                                     lblCurrentIP.setText("?");

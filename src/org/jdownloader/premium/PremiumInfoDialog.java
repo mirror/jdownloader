@@ -11,19 +11,20 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.plugins.PluginForHost;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.images.IconIO;
-
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+
+import jd.plugins.PluginForHost;
 
 public class PremiumInfoDialog extends AbstractDialog<Object> {
 
@@ -66,7 +67,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         super.layoutDialog();
         getDialog().setContentPane(new JPanel() {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -111,7 +112,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         Icon icon = info.getIcon(h);
 
         // if (NewTheme.I().hasIcon("fav/large.wupload.com")) {
-        // JLabel lbl = new JLabel(NewTheme.I().getIcon("fav/large.wupload.com",
+        // JLabel lbl = new JLabel(new AbstractIcon("fav/large.wupload.com",
         // -1));
         // lbl.setHorizontalAlignment(SwingConstants.LEFT);
         // lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new
@@ -134,7 +135,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         // ret.add(new JSeparator(), "spanx,pushx,growx,gaptop 5");
 
         // ret.add(bt, "spanx,alignx center,gapbottom 15,gaptop 10");
-        // ret.add(createHeader(NewTheme.I().getIcon("prio_3",
+        // ret.add(createHeader(new AbstractIcon("prio_3",
         // 20),"Premium Mode?"));
 
         return ret;
@@ -150,27 +151,27 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         // for (PremiumFeature pf :
         // info.getAffiliateSettings().getPremiumfeatures()) {
         // if (pf == null) continue;
-        // JLabel ico = new JLabel(NewTheme.I().getIcon(pf.getIconKey(), 24));
+        // JLabel ico = new JLabel(new AbstractIcon(pf.getIconKey(), 24));
         // JLabel lbl = new JLabel(pf.getTranslation());
         // advantages.add(ico);
         // advantages.add((lbl));
         // }
-        advantages.add(new JLabel(NewTheme.I().getIcon("speed", 24)));
+        advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_SPEED, 24)));
         advantages.add(new JLabel(_GUI._.PremiumFeature_speed_()));
 
-        advantages.add(new JLabel(NewTheme.I().getIcon("batch", 24)));
+        advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_BATCH, 24)));
         advantages.add(new JLabel(_GUI._.PremiumFeature_bandwidth_()));
 
-        advantages.add(new JLabel(NewTheme.I().getIcon("paralell", 24)));
+        advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_PARALELL, 24)));
         advantages.add(new JLabel(_GUI._.PremiumFeature_parallel_()));
 
-        advantages.add(new JLabel(NewTheme.I().getIcon("resume", 24)));
+        advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_RESUME, 24)));
         advantages.add(new JLabel(_GUI._.PremiumFeature_resume_()));
 
-        advantages.add(new JLabel(NewTheme.I().getIcon("chunks", 24)));
+        advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_CHUNKS, 24)));
         advantages.add(new JLabel(_GUI._.PremiumFeature_chunkload_()));
 
-        advantages.add(new JLabel(NewTheme.I().getIcon("wait", 24)));
+        advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_WAIT, 24)));
         advantages.add(new JLabel(_GUI._.PremiumFeature_noWaittime_()));
 
         return advantages;

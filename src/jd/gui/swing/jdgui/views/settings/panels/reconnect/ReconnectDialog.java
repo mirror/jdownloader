@@ -10,15 +10,6 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.ipcheck.IPConnectionState;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.ipcheck.event.IPControllListener;
-import jd.gui.swing.laf.LookAndFeelController;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
@@ -32,9 +23,19 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.ipcheck.IPConnectionState;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.ipcheck.event.IPControllListener;
+import jd.gui.swing.laf.LookAndFeelController;
 
 public class ReconnectDialog extends AbstractDialog<Object> implements IPControllListener {
 
@@ -79,11 +80,11 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         MigPanel p = new MigPanel("ins 0,wrap 8", "[][][][][][][][]", "[grow,fill]");
         progress = new CircledProgressBar();
         progress.setIndeterminate(true);
-        progress.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("reconnect", 26), 1.0f));
+        progress.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_RECONNECT, 26), 1.0f));
         ((ImagePainter) progress.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getValueClipPainter()).setForeground(Color.GREEN);
 
-        progress.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("reconnect", 26), 0.5f));
+        progress.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_RECONNECT, 26), 0.5f));
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
         p.add(progress, "height 40!,width 40!,spany 2");
@@ -101,7 +102,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_old()));
         p.add(old = new JLabel(), "width 100!,alignx right");
         state.setHorizontalAlignment(SwingConstants.RIGHT);
-        p.add(new JLabel(NewTheme.I().getIcon("go-next", 18)));
+        p.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
         p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_currentip()));
         p.add(newIP = new JLabel(), "width 100!");
         newIP.setHorizontalAlignment(SwingConstants.RIGHT);

@@ -2,20 +2,21 @@ package org.jdownloader.plugins;
 
 import java.awt.Color;
 
+import org.jdownloader.api.downloads.ChannelCollector;
+import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
+import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
+import org.jdownloader.api.jdanywhere.api.Helper;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.TaskColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.tasks.PluginProgressTask;
+import org.jdownloader.translate._JDT;
+
 import jd.nutils.Formatter;
 import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.Downloadable;
-
-import org.jdownloader.api.downloads.ChannelCollector;
-import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
-import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
-import org.jdownloader.api.jdanywhere.api.Helper;
-import org.jdownloader.gui.views.downloads.columns.TaskColumn;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.tasks.PluginProgressTask;
-import org.jdownloader.translate._JDT;
 
 public class DownloadPluginProgress extends PluginProgress {
 
@@ -32,7 +33,7 @@ public class DownloadPluginProgress extends PluginProgress {
         setProgressSource(downloadInterface);
         this.downloadable = downloadable;
         this.downloadInterface = downloadInterface;
-        setIcon(NewTheme.I().getIcon("download", 16));
+        setIcon(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16));
         startTimeStamp = downloadInterface.getStartTimeStamp();
         normal = _JDT._.download_connection_normal();
     }

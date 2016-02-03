@@ -7,11 +7,12 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
+
+import net.miginfocom.swing.MigLayout;
 
 public class DummyRouterPlugin extends RouterPlugin {
 
@@ -24,7 +25,7 @@ public class DummyRouterPlugin extends RouterPlugin {
     private Icon icon;
 
     private DummyRouterPlugin() {
-        icon = NewTheme.I().getIcon("delete", 16);
+        icon = new AbstractIcon(IconKey.ICON_DELETE, 16);
     }
 
     @Override

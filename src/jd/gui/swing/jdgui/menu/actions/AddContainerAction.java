@@ -20,16 +20,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
+
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.gui.UserIO;
 import jd.nutils.io.JDFileFilter;
-
-import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
 public class AddContainerAction extends CustomizableAppAction {
 
@@ -38,7 +39,7 @@ public class AddContainerAction extends CustomizableAppAction {
     public AddContainerAction() {
         setName(_GUI._.action_addcontainer());
         setTooltipText(_GUI._.action_addcontainer_tooltip());
-        setIconKey("load");
+        setIconKey(IconKey.ICON_LOAD);
         setAccelerator(KeyEvent.VK_O);
     }
 

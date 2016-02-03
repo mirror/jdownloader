@@ -53,8 +53,11 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -169,7 +172,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_disable_package(getPackageName()));
-                    setSmallIcon(NewTheme.I().getIcon("package_open_error", 16));
+                    setSmallIcon(new BadgeIcon(IconKey.ICON_PACKAGE_OPEN, IconKey.ICON_SKIPPED, 16));
                 }
 
                 @Override
@@ -187,7 +190,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
 
                 {
                     setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download());
-                    setSmallIcon(NewTheme.I().getIcon("clear", 16));
+                    setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_CLEAR, 16));
                 }
 
                 @Override
@@ -204,7 +207,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads());
-                    setSmallIcon(NewTheme.I().getIcon("stop", 16));
+                    setSmallIcon(new AbstractIcon(IconKey.ICON_STOP, 16));
                 }
 
                 @Override
@@ -223,7 +226,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI._.AbstractCaptchaDialog_createPopup_cancel_linkgrabbing());
-                    setSmallIcon(NewTheme.I().getIcon("stop", 16));
+                    setSmallIcon(new AbstractIcon(IconKey.ICON_STOP, 16));
                 }
 
                 @Override
@@ -240,7 +243,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI._.AbstractCaptchaDialog_createPopup_cancel_stop_showing_crawlercaptchs());
-                    setSmallIcon(NewTheme.I().getIcon("find", 16));
+                    setSmallIcon(new AbstractIcon(IconKey.ICON_FIND, 16));
                 }
 
                 @Override
@@ -448,7 +451,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             public void addOKButton(JButton okButton) {
                 final ExtButton refreshBtn = new ExtButton(new AppAction() {
                     {
-                        setSmallIcon(NewTheme.I().getIcon("refresh", 18));
+                        setSmallIcon(new AbstractIcon(IconKey.ICON_REFRESH, 18));
                         setTooltipText(_GUI._.CaptchaDialog_layoutDialogContent_refresh());
                         KeyStroke ks = KeyStroke.getKeyStroke(CFG_GUI.CFG.getShortcutForCaptchaDialogRefresh());
                         if (ks == null) {
@@ -483,7 +486,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             public void addCancelButton(final JButton cancelButton) {
                 super.addCancelButton(cancelButton);
 
-                final JButton bt = new JButton(NewTheme.I().getIcon("popDownSmall", -1)) {
+                final JButton bt = new JButton(new AbstractIcon(IconKey.ICON_POPDOWNSMALL, -1)) {
 
                     public void setBounds(int x, int y, int width, int height) {
                         int delta = 5;

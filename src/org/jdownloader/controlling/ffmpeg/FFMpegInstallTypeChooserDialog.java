@@ -11,6 +11,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
@@ -65,7 +66,7 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
 
         JLabel lbl;
         p.add(header(_GUI._.FFMpegInstallTypeChooserDialog_layoutDialogContent_problem()), "spanx");
-        p.add(new JLabel(new AbstractIcon("ffmpeg", 32)), "gapleft 10,gapright 10");
+        p.add(new JLabel(new AbstractIcon(IconKey.ICON_LOGO_FFMPEG, 32)), "gapleft 10,gapright 10");
         // p.add(textField, "spanx");
         p.add(new JLabel(_GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd_2(task)), "spanx");
 

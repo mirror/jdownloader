@@ -12,6 +12,27 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.ExtButton;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
+
 import jd.controlling.reconnect.ProcessCallBack;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
@@ -27,27 +48,6 @@ import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
 import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.components.ExtButton;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.advanced.AdvancedConfigManager;
-import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
@@ -65,7 +65,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
     public UPNPRouterPlugin() {
         super();
-        icon = NewTheme.I().getIcon("upnp", 16);
+        icon = new AbstractIcon(IconKey.ICON_LOGO_UPNP, 16);
         settings = JsonConfig.create(UPUPReconnectSettings.class);
         AdvancedConfigManager.getInstance().register(settings);
 
@@ -73,7 +73,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
     /**
      * sets the correct router settings automatically
-     * 
+     *
      * @throws InterruptedException
      */
     @Override
@@ -122,7 +122,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
                         if (i < devices.size() - 1) {
 
                             if (ret.size() == 1) {
-                                Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
+                                Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), new AbstractIcon(IconKey.ICON_OK, 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
                             }
 
                         }

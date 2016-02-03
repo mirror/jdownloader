@@ -4,16 +4,16 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
 
     public AutoReconnectToggleAction() {
         super(CFG_RECONNECT.AUTO_RECONNECT_ENABLED);
-        setIconKey("auto-reconnect");
+        setIconKey(IconKey.ICON_AUTO_RECONNECT);
         org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getEventSender().addListener(new GenericConfigEventListener<String>() {
 
             @Override

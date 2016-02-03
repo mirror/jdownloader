@@ -38,9 +38,9 @@ public class AutoSetupAction extends BasicAction {
 
     public AutoSetupAction() {
         putValue(NAME, _JDT._.reconnectmanager_wizard());
-        putValue(SMALL_ICON, NewTheme.I().getIcon("wizard", 20));
+        putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_WIZARD, 20));
 
-        this.setTooltipFactory(new BasicTooltipFactory(getName(), _GUI._.AutoSetupAction_tt(), NewTheme.I().getIcon("wizard", 32)));
+        this.setTooltipFactory(new BasicTooltipFactory(getName(), _GUI._.AutoSetupAction_tt(), new AbstractIcon(IconKey.ICON_WIZARD, 32)));
 
     }
 

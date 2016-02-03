@@ -13,36 +13,38 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import jd.gui.swing.jdgui.JDGui;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEventListener;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.translate._JDT;
 
+import jd.gui.swing.jdgui.JDGui;
+
 public class AdvancedSettings extends AbstractConfigPanel implements DocumentListener, AdvancedConfigEventListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.jdownloader.gui.settings.AbstractConfigPanel#onShow()
      */
     @Override
     protected void onShow() {
         super.onShow();
         AdvancedConfigManager.getInstance().getEventSender().addListener(this);
-        JDGui.help(_GUI._.AdvancedSettings_onShow_title_(), _GUI._.AdvancedSettings_onShow_msg_(), NewTheme.I().getIcon("warning", 32));
+        JDGui.help(_GUI._.AdvancedSettings_onShow_title_(), _GUI._.AdvancedSettings_onShow_msg_(), new AbstractIcon(IconKey.ICON_WARNING, 32));
 
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.jdownloader.gui.settings.AbstractConfigPanel#onHide()
      */
     @Override
@@ -63,7 +65,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
     public AdvancedSettings() {
         super();
-        this.addHeader(getTitle(), NewTheme.I().getIcon("advancedConfig", 32));
+        this.addHeader(getTitle(), NewTheme.I().getIcon(IconKey.ICON_ADVANCEDCONFIG, 32));
         this.addDescription(_JDT._.gui_settings_advanced_description());
 
         filterText = new JTextField() {
@@ -78,7 +80,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
                 Composite comp = g2.getComposite();
 
                 g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
-                NewTheme.I().getIcon("search", 16).paintIcon(this, g2, 3, 3);
+                new AbstractIcon(IconKey.ICON_SEARCH, 16).paintIcon(this, g2, 3, 3);
 
                 g2.setComposite(comp);
             }
@@ -98,7 +100,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
         // filterText.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         // filterText.setBorder(null);
         filterText.setBorder(BorderFactory.createCompoundBorder(filterText.getBorder(), BorderFactory.createEmptyBorder(0, 20, 0, 0)));
-        add(filterText, "gapleft 37,spanx,growx,pushx");
+        add(filterText, "gapleft " + getLeftGap() + ",spanx,growx,pushx");
         filterText.getDocument().addDocumentListener(this);
         add(new JScrollPane(table = new AdvancedTable()));
         delayedRefresh = new DelayedRunnable(200, 1000) {
@@ -122,7 +124,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("advancedConfig", 20);
+        return NewTheme.I().getIcon(IconKey.ICON_ADVANCEDCONFIG, 20);
     }
 
     @Override

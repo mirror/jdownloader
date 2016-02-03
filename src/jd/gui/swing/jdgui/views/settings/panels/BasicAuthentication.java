@@ -18,15 +18,16 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.Icon;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.panels.basicauthentication.BasicAuthenticationPanel;
-
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.panels.basicauthentication.BasicAuthenticationPanel;
 
 public class BasicAuthentication extends AbstractConfigPanel {
 
@@ -38,14 +39,14 @@ public class BasicAuthentication extends AbstractConfigPanel {
 
     public BasicAuthentication() {
         super();
-        this.addHeader(getTitle(), NewTheme.I().getIcon("basicauth", 32));
+        this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_BASICAUTH, 32));
         this.addDescriptionPlain(_JDT._.gui_settings_basicauth_description());
         add(BasicAuthenticationPanel.getInstance());
     }
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("basicauth", 32);
+        return new AbstractIcon(IconKey.ICON_BASICAUTH, 32);
     }
 
     @Override

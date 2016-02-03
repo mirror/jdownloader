@@ -13,6 +13,14 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.TextComponentChangeListener;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
@@ -22,13 +30,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.TextComponentChangeListener;
-import org.jdownloader.images.NewTheme;
 
 /**
  * Plugin to use an extern tool for reconnection
@@ -57,7 +58,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     public ExternBatchReconnectPlugin() {
         super();
-        icon = NewTheme.I().getIcon("batch", 16);
+        icon = new AbstractIcon(IconKey.ICON_BATCH, 16);
         invoker = new ReconnectInvoker(this) {
 
             @Override
@@ -175,7 +176,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     /**
      * returns how long the execution should wait for the extern process to return
-     * 
+     *
      * @return
      */
     private int getWaitForReturn() {

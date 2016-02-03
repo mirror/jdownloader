@@ -23,8 +23,6 @@ import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
-import jd.nutils.JDFlags;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.ComboBoxDialogInterface;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -43,9 +41,12 @@ import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.InputDialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.nutils.JDFlags;
 
 public class UserIO {
 
@@ -254,13 +255,13 @@ public class UserIO {
     public static Icon getIcon(final int iconInfo) {
         switch (iconInfo) {
         case UserIO.ICON_ERROR:
-            return NewTheme.I().getIcon("stop", 32);
+            return new AbstractIcon(IconKey.ICON_STOP, 32);
         case UserIO.ICON_WARNING:
-            return NewTheme.I().getIcon("warning", 32);
+            return new AbstractIcon(IconKey.ICON_WARNING, 32);
         case UserIO.ICON_QUESTION:
-            return NewTheme.I().getIcon("help", 32);
+            return new AbstractIcon(IconKey.ICON_HELP, 32);
         default:
-            return NewTheme.I().getIcon("info", 32);
+            return new AbstractIcon(IconKey.ICON_INFO, 32);
         }
     }
 

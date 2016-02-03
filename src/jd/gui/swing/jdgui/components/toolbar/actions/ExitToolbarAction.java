@@ -6,9 +6,9 @@ import java.awt.event.KeyEvent;
 
 import javax.swing.KeyStroke;
 
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
@@ -16,7 +16,7 @@ public class ExitToolbarAction extends AbstractToolBarAction {
 
     public ExitToolbarAction() {
 
-        setIconKey("exit");
+        setIconKey(IconKey.ICON_EXIT);
         setName(_GUI._.action_exit());
         setTooltipText(_GUI._.action_exit_tooltip());
         setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));

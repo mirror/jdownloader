@@ -7,15 +7,6 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
@@ -32,10 +23,20 @@ import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHABROTHERHOOD;
 import org.jdownloader.settings.staticreferences.CFG_CBH;
+
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 public class CBSolverService extends AbstractSolverService implements ServicePanelExtender {
     public static final String         ID = "cb";
@@ -64,7 +65,7 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
 
                 @Override
                 public Icon getIcon() {
-                    return NewTheme.I().getIcon(IconKey.ICON_CBH, 16);
+                    return NewTheme.I().getIcon(IconKey.ICON_LOGO_CBH, 16);
                 }
 
                 @Override
@@ -93,7 +94,7 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
 
     @Override
     public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_CBH, size);
+        return NewTheme.I().getIcon(IconKey.ICON_LOGO_CBH, size);
     }
 
     @Override
@@ -114,7 +115,7 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
             }
 
             {
-                addHeader(getTitle(), NewTheme.I().getIcon("cbh", 32));
+                addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_CBH, 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
 
                 add(new SettingsButton(new AppAction() {

@@ -16,6 +16,16 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.TextComponentChangeListener;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.RouterPlugin;
@@ -24,15 +34,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
-import org.appwork.utils.Application;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.TextComponentChangeListener;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.images.NewTheme;
 
 /**
  * Plugin to use an extern tool for reconnection
@@ -61,7 +62,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
     public ExternReconnectPlugin() {
         super();
-        icon = NewTheme.I().getIcon("console", 16);
+        icon = new AbstractIcon(IconKey.ICON_CONSOLE, 16);
         invoker = new ReconnectInvoker(this) {
             @Override
             protected void testRun() throws ReconnectException, InterruptedException {
@@ -70,7 +71,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
             /**
              * get next available DummyBat for reconnect
-             * 
+             *
              * @return
              */
             private File getDummyBat() {
@@ -177,7 +178,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
     /**
      * Returns the path to the tool
-     * 
+     *
      * @return
      */
     private String getCommand() {
@@ -232,7 +233,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
     /**
      * Returns parameterstring. each line belongs to one parameter
-     * 
+     *
      * @return
      */
     private String getParameterString() {
@@ -243,7 +244,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
     /**
      * returns how long the execution should wait for the extern process to return
-     * 
+     *
      * @return
      */
     private int getWaitForReturn() {
@@ -255,7 +256,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     /**
      * Returns of dummy batch usage is enabled. for windows we create a temporary batchfile that calls our external tool and redirect its
      * streams to nul. This is a workaround for many IO STream caused errors
-     * 
+     *
      * @return
      */
     private boolean isDummyBatchEnabled() {

@@ -2,12 +2,13 @@ package org.jdownloader.plugins;
 
 import javax.swing.Icon;
 
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
 
 public class MirrorLoading implements ConditionalSkipReason, DownloadLinkCondition {
 
@@ -17,7 +18,7 @@ public class MirrorLoading implements ConditionalSkipReason, DownloadLinkConditi
 
     public MirrorLoading(DownloadLink dependency) {
         this.dependency = dependency;
-        icon = NewTheme.I().getIcon("download", 16);
+        icon = new AbstractIcon(IconKey.ICON_DOWNLOAD, 16);
         mirror = _JDT._.system_download_errors_linkisBlocked(dependency.getHost());
     }
 

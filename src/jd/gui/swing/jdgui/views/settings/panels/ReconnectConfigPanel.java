@@ -18,15 +18,16 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectManager;
-
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.translate._JDT;
+
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectManager;
 
 public class ReconnectConfigPanel extends AbstractConfigPanel {
 
@@ -40,7 +41,7 @@ public class ReconnectConfigPanel extends AbstractConfigPanel {
 
     public ReconnectConfigPanel() {
         super();
-        this.addHeader(_GUI._.ReconnectSettings_ReconnectSettings_settings_(), NewTheme.I().getIcon("settings", 32));
+        this.addHeader(_GUI._.ReconnectSettings_ReconnectSettings_settings_(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
         this.addDescription(_GUI._.ReconnectSettings_ReconnectSettings_settings_desc2());
 
         addPair(_GUI._.ReconnectSettings_ReconnectSettings_enabled_(), null, new Checkbox(CFG_RECONNECT.AUTO_RECONNECT_ENABLED));
@@ -48,7 +49,7 @@ public class ReconnectConfigPanel extends AbstractConfigPanel {
         addPair(_GUI._.ReconnectSettings_ReconnectSettings_prefer_reconnect_desc(), null, new Checkbox(CFG_RECONNECT.DOWNLOAD_CONTROLLER_PREFERS_RECONNECT_ENABLED));
         addPair(_GUI._.ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed(), null, new Checkbox(CFG_RECONNECT.RECONNECT_ALLOWED_TO_INTERRUPT_RESUMABLE_DOWNLOADS));
 
-        this.addHeader(_JDT._.gui_settings_reconnect_title_method(), NewTheme.I().getIcon("reconnect", 32));
+        this.addHeader(_JDT._.gui_settings_reconnect_title_method(), new AbstractIcon(IconKey.ICON_RECONNECT, 32));
 
         add(new ReconnectManager());
 
@@ -56,7 +57,7 @@ public class ReconnectConfigPanel extends AbstractConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("reconnect", 32);
+        return new AbstractIcon(IconKey.ICON_RECONNECT, 32);
     }
 
     @Override

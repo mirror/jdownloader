@@ -46,9 +46,9 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE                = SH.getKeyHandler("LinkgrabberTabPropertiesPanelVisible", BooleanKeyHandler.class);
 
-    public static final EnumKeyHandler                                 DONATE_BUTTON_STATE                                     = SH.getKeyHandler("DonateButtonState", EnumKeyHandler.class);
-
     public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE              = SH.getKeyHandler("DownloadsPropertiesPanelSaveToVisible", BooleanKeyHandler.class);
+
+    public static final EnumKeyHandler                                 DONATE_BUTTON_STATE                                     = SH.getKeyHandler("DonateButtonState", EnumKeyHandler.class);
 
     /**
      * Presentation mode peforms tasks like: account username obstruction throughout GUI
@@ -80,11 +80,9 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              PREMIUM_DISABLED_WARNING_FLASH_ENABLED                  = SH.getKeyHandler("PremiumDisabledWarningFlashEnabled", BooleanKeyHandler.class);
 
-    public static final BooleanKeyHandler                              CLIPBOARD_DISABLED_WARNING_FLASH_ENABLED                = SH.getKeyHandler("ClipboardDisabledWarningFlashEnabled", BooleanKeyHandler.class);
+    public static final IntegerKeyHandler                              SPEED_METER_TIME_FRAME                                  = SH.getKeyHandler("SpeedMeterTimeFrame", IntegerKeyHandler.class);
 
     public static final BooleanKeyHandler                              TASK_BAR_FLASH_ENABLED                                  = SH.getKeyHandler("TaskBarFlashEnabled", BooleanKeyHandler.class);
-
-    public static final IntegerKeyHandler                              SPEED_METER_TIME_FRAME                                  = SH.getKeyHandler("SpeedMeterTimeFrame", IntegerKeyHandler.class);
 
     public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                             = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
 
@@ -115,19 +113,19 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              HIDE_SINGLE_CHILD_PACKAGES                              = SH.getKeyHandler("HideSingleChildPackages", BooleanKeyHandler.class);
 
+    public static final BooleanKeyHandler                              CAPTCHA_DIALOG_UNIQUE_POSITION_BY_HOSTER_ENABLED        = SH.getKeyHandler("CaptchaDialogUniquePositionByHosterEnabled", BooleanKeyHandler.class);
+
     /**
      * Paint all labels/text with or without antialias. Default value is false.
      **/
     public static final BooleanKeyHandler                              SPEEDMETER_ANTI_ALIASING_ENABLED                        = SH.getKeyHandler("SpeedmeterAntiAliasingEnabled", BooleanKeyHandler.class);
 
+    public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE           = SH.getKeyHandler("LinkPropertiesPanelArchivepasswordVisible", BooleanKeyHandler.class);
+
     /**
      * Choose what should happen when you click on the [Start Downloads] Button when you are in the Linkgrabber Tab
      **/
     public static final EnumKeyHandler                                 START_BUTTON_ACTION_IN_LINKGRABBER_CONTEXT              = SH.getKeyHandler("StartButtonActionInLinkgrabberContext", EnumKeyHandler.class);
-
-    public static final BooleanKeyHandler                              CAPTCHA_DIALOG_UNIQUE_POSITION_BY_HOSTER_ENABLED        = SH.getKeyHandler("CaptchaDialogUniquePositionByHosterEnabled", BooleanKeyHandler.class);
-
-    public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE           = SH.getKeyHandler("LinkPropertiesPanelArchivepasswordVisible", BooleanKeyHandler.class);
 
     public static final EnumKeyHandler                                 SPEED_IN_WINDOW_TITLE                                   = SH.getKeyHandler("SpeedInWindowTitle", EnumKeyHandler.class);
 
@@ -135,9 +133,9 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              AVAILABLE_COLUMN_TEXT_VISIBLE                           = SH.getKeyHandler("AvailableColumnTextVisible", BooleanKeyHandler.class);
 
-    public static final EnumKeyHandler                                 FILE_CHOOSER_VIEW                                       = SH.getKeyHandler("FileChooserView", EnumKeyHandler.class);
-
     public static final ObjectKeyHandler                               LAST_FRAME_STATUS                                       = SH.getKeyHandler("LastFrameStatus", ObjectKeyHandler.class);
+
+    public static final EnumKeyHandler                                 FILE_CHOOSER_VIEW                                       = SH.getKeyHandler("FileChooserView", EnumKeyHandler.class);
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_LINKS_SKIPPED_COUNT_VISIBLE     = SH.getKeyHandler("OverviewPanelDownloadLinksSkippedCountVisible", BooleanKeyHandler.class);
 
@@ -156,6 +154,11 @@ public class CFG_GUI {
      * Interval of the Downloads Table Refresher. Default 1000ms (once per second). Decreasing this value will cost CPU Power
      **/
     public static final LongKeyHandler                                 DOWNLOADS_TABLE_REFRESH_INTERVAL                        = SH.getKeyHandler("DownloadsTableRefreshInterval", LongKeyHandler.class);
+
+    /**
+     * If Enabled, JDownloader will try to be always on top of all other windows
+     **/
+    public static final BooleanKeyHandler                              MAIN_WINDOW_ALWAYS_ON_TOP                               = SH.getKeyHandler("MainWindowAlwaysOnTop", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE    = SH.getKeyHandler("DownloadsPropertiesPanelDownloadPasswordVisible", BooleanKeyHandler.class);
 
@@ -187,19 +190,9 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE             = SH.getKeyHandler("LinkPropertiesPanelDownloadFromVisible", BooleanKeyHandler.class);
 
-    /**
-     * by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.
-     **/
-    public static final IntegerKeyHandler                              CUSTOM_TABLE_ROW_HEIGHT                                 = SH.getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
-
     public static final ListHandler<int[]>                             LINKGRABBER_LIST_SCROLL_POSITION                        = SH.getKeyHandler("LinkgrabberListScrollPosition", ListHandler.class);
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_RUNNING_DOWNLOADS_COUNT_VISIBLE = SH.getKeyHandler("OverviewPanelDownloadRunningDownloadsCountVisible", BooleanKeyHandler.class);
-
-    /**
-     * Icon Theme ID. Make sure that ./themes/<ID>/ exists
-     **/
-    public static final StringKeyHandler                               THEME_ID                                                = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
 
     /**
      * If Enabled, Variants will get a more detailed, technical name.
@@ -207,6 +200,8 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              EXTENDED_VARIANT_NAMES_ENABLED                          = SH.getKeyHandler("ExtendedVariantNamesEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              BYPASS_ALL_RLY_DELETE_DIALOGS_ENABLED                   = SH.getKeyHandler("BypassAllRlyDeleteDialogsEnabled", BooleanKeyHandler.class);
+
+    public static final BooleanKeyHandler                              CLIPBOARD_DISABLED_WARNING_FLASH_ENABLED                = SH.getKeyHandler("ClipboardDisabledWarningFlashEnabled", BooleanKeyHandler.class);
 
     /**
      * Highlight Table in Downloadview if table is filtered
@@ -217,7 +212,15 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              LOG_VIEW_VISIBLE                                        = SH.getKeyHandler("LogViewVisible", BooleanKeyHandler.class);
 
+    /**
+     * Choose how many 'Are you sure?' warnings you want to see (Bug me not).
+     **/
     public static final EnumKeyHandler                                 RLY_WARN_LEVEL                                          = SH.getKeyHandler("RlyWarnLevel", EnumKeyHandler.class);
+
+    /**
+     * If disabled, The Hostercolumn will show gray disabled icons if the link is disabled
+     **/
+    public static final BooleanKeyHandler                              COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED        = SH.getKeyHandler("ColoredIconsForDisabledHosterColumnEnabled", BooleanKeyHandler.class);
 
     /**
      * Refreshrate in ms for the DownloadView
@@ -225,11 +228,6 @@ public class CFG_GUI {
     public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                                   = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
 
     public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                        = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
-
-    /**
-     * If disabled, The Hostercolumn will show gray disabled icons if the link is disabled
-     **/
-    public static final BooleanKeyHandler                              COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED        = SH.getKeyHandler("ColoredIconsForDisabledHosterColumnEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_TOTAL_BYTES_VISIBLE             = SH.getKeyHandler("OverviewPanelDownloadTotalBytesVisible", BooleanKeyHandler.class);
 
@@ -269,9 +267,9 @@ public class CFG_GUI {
 
     public static final EnumKeyHandler                                 LINK_DOUBLE_CLICK_ACTION                                = SH.getKeyHandler("LinkDoubleClickAction", EnumKeyHandler.class);
 
-    public static final BooleanKeyHandler                              OVERVIEW_PANEL_LINKGRABBER_TOTAL_BYTES_VISIBLE          = SH.getKeyHandler("OverviewPanelLinkgrabberTotalBytesVisible", BooleanKeyHandler.class);
-
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_SPEED_VISIBLE                   = SH.getKeyHandler("OverviewPanelDownloadSpeedVisible", BooleanKeyHandler.class);
+
+    public static final BooleanKeyHandler                              OVERVIEW_PANEL_LINKGRABBER_TOTAL_BYTES_VISIBLE          = SH.getKeyHandler("OverviewPanelLinkgrabberTotalBytesVisible", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_BYTES_LOADED_VISIBLE            = SH.getKeyHandler("OverviewPanelDownloadBytesLoadedVisible", BooleanKeyHandler.class);
 
@@ -455,11 +453,6 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              ULBANNER_ENABLED                                        = SH.getKeyHandler("ULBannerEnabled", BooleanKeyHandler.class);
 
     public static final LongKeyHandler                                 DONATE_BUTTON_LATEST_AUTO_CHANGE                        = SH.getKeyHandler("DonateButtonLatestAutoChange", LongKeyHandler.class);
-
-    /**
-     * Every odd row get's a light shadow if enabled
-     **/
-    public static final BooleanKeyHandler                              TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED                   = SH.getKeyHandler("TableAlternateRowHighlightEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_FILENAME_VISIBLE                  = SH.getKeyHandler("LinkPropertiesPanelFilenameVisible", BooleanKeyHandler.class);
 }

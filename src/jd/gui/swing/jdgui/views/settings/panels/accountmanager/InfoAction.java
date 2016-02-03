@@ -4,14 +4,15 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.statistics.StatsManager;
+
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.plugins.infogenerator.PluginInfoGenerator;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.statistics.StatsManager;
 
 public class InfoAction extends TableBarAction {
     private static final long serialVersionUID = 8927011292367107922L;
@@ -19,7 +20,7 @@ public class InfoAction extends TableBarAction {
     public InfoAction() {
 
         this.putValue(NAME, _GUI._.settings_accountmanager_info());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("info", ActionColumn.SIZE));
+        this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_INFO, ActionColumn.SIZE));
     }
 
     public void actionPerformed(ActionEvent e) {

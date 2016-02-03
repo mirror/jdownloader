@@ -30,6 +30,17 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+
 import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
@@ -42,16 +53,6 @@ import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Regex;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 
 public class Gui extends AbstractDialog<Object> {
 
@@ -74,9 +75,9 @@ public class Gui extends AbstractDialog<Object> {
             private final String      strGood;
 
             public RRStatus() {
-                this.imageProgress = NewTheme.I().getIcon("record", 32);
-                this.imageBad = NewTheme.I().getIcon("false", 32);
-                this.imageGood = NewTheme.I().getIcon("true", 32);
+                this.imageProgress = new AbstractIcon(IconKey.ICON_RECORD, 32);
+                this.imageBad = new AbstractIcon(IconKey.ICON_FALSE, 32);
+                this.imageGood = new AbstractIcon(IconKey.ICON_TRUE, 32);
                 this.strProgress = T._.jd_router_reconnectrecorder_Gui_icon_progress();
                 this.strBad = T._.jd_router_reconnectrecorder_Gui_icon_bad();
                 this.strGood = T._.jd_router_reconnectrecorder_Gui_icon_good();

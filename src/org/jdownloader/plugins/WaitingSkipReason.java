@@ -2,20 +2,21 @@ package org.jdownloader.plugins;
 
 import javax.swing.Icon;
 
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackageView;
-
 import org.jdownloader.api.downloads.ChannelCollector;
 import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackageView;
 
 public class WaitingSkipReason implements ConditionalSkipReason, TimeOutCondition, ValidatableConditionalSkipReason {
 
@@ -58,16 +59,16 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
         this.message = message;
         switch (cause) {
         case FILE_TEMP_UNAVAILABLE:
-            icon = NewTheme.I().getIcon("warning_green", 16);
+            icon = new AbstractIcon(IconKey.ICON_WARNING_GREEN, 16);
             break;
         case HOST_TEMP_UNAVAILABLE:
-            icon = NewTheme.I().getIcon("warning_red", 16);
+            icon = new AbstractIcon(IconKey.ICON_WARNING_RED, 16);
             break;
         case IP_BLOCKED:
             icon = NewTheme.I().getIcon(IconKey.ICON_AUTO_RECONNECT, 16);
             break;
         default:
-            icon = NewTheme.I().getIcon("wait", 16);
+            icon = new AbstractIcon(IconKey.ICON_WAIT, 16);
             break;
         }
     }

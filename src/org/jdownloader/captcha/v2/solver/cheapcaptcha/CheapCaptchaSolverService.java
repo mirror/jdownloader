@@ -7,15 +7,6 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
@@ -28,9 +19,18 @@ import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CHEAP_CAPTCHA;
+
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 public class CheapCaptchaSolverService extends AbstractSolverService implements ServicePanelExtender {
     private CheapCaptchaConfigInterface config;
@@ -54,7 +54,7 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
 
     @Override
     public Icon getIcon(int size) {
-        return NewTheme.I().getIcon("cheapCaptcha", size);
+        return new AbstractIcon("logo/cheapCaptcha", size);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
             }
 
             {
-                addHeader(getTitle(), NewTheme.I().getIcon("cheapCaptcha", 32));
+                addHeader(getTitle(), new AbstractIcon("logo/cheapCaptcha", 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_paid_service());
 
                 add(new SettingsButton(new AppAction() {
@@ -88,7 +88,7 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
                 username = new TextInput(CFG_CHEAP_CAPTCHA.USER_NAME);
                 password = new PasswordInput(CFG_CHEAP_CAPTCHA.PASSWORD);
 
-                this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
+                this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), new AbstractIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI._.captchasolver_configpanel_my_account_description(CheapCaptchaSolverService.this.getName()));
                 addPair(_GUI._.captchasolver_configpanel_enabled(CheapCaptchaSolverService.this.getName()), null, new Checkbox(CFG_CHEAP_CAPTCHA.ENABLED, username, password));

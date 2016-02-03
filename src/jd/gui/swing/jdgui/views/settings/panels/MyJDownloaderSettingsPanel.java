@@ -24,11 +24,6 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-
 import org.appwork.storage.StorageException;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -47,8 +42,14 @@ import org.jdownloader.api.myjdownloader.event.MyJDownloaderListener;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
 public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements GenericConfigEventListener<Enum>, MyJDownloaderListener {
 
@@ -210,7 +211,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("myjdownloader", 32);
+        return new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32);
     }
 
     @Override

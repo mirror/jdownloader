@@ -22,8 +22,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -38,6 +39,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
     public JDownloaderMainFrame(String string, final LogSource logger) {
         super(string);
         this.logger = logger;
+
         delayedStateSaver = new DelayedRunnable(500, 10000l) {
 
             @Override
@@ -188,7 +190,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
                 try {
 
                     dialogShowing = true;
-                    password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.JDGui_setVisible_password_(), _GUI._.JDGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
+                    password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.JDGui_setVisible_password_(), _GUI._.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
                     String internPw = CFG_GUI.PASSWORD.getValue();
                     if (!internPw.equals(password)) {
 

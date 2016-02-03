@@ -56,4 +56,6 @@ public interface UpdateHandler {
 
     void requestFullExtensionUpdate(String... parameters);
 
+    void setGuiAlwaysOnTop(boolean enabled);
+
 }

@@ -5,7 +5,19 @@ import java.awt.event.FocusListener;
 
 import javax.swing.JLabel;
 import javax.swing.JSpinner.DefaultEditor;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
+import org.appwork.swing.components.ExtCheckBox;
+import org.appwork.swing.components.SizeSpinner;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.locale._AWU;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
@@ -15,21 +27,11 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
-import org.appwork.swing.components.ExtCheckBox;
-import org.appwork.swing.components.SizeSpinner;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.locale._AWU;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-
 public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogListener {
 
     /**
-	 * 
-	 */
+     *
+     */
     private static final long serialVersionUID = 5406904697287119514L;
     private JLabel            lbl;
     private SizeSpinner       spinner;
@@ -41,14 +43,14 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
 
     public SpeedlimitEditor(boolean b) {
         super(b);
-        setLayout(new MigLayout("ins 0", "6[grow,fill][][]", "[]"));
+        setLayout(new MigLayout("ins " + getInsetsString(), "6[grow,fill][][]", "[" + getComponentHeight() + "!]"));
 
         setOpaque(false);
 
-        lbl = getLbl(_GUI._.SpeedlimitEditor_SpeedlimitEditor_(), NewTheme.I().getIcon("speed", 18));
+        lbl = getLbl(_GUI._.SpeedlimitEditor_SpeedlimitEditor_(), new AbstractIcon(IconKey.ICON_SPEED, 18));
         spinner = new SizeSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT) {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = -8549816276073605186L;
 
@@ -65,7 +67,7 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
             }
         }) {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -111,8 +113,9 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
         }
         add(lbl);
         add(checkbox = new ExtCheckBox(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED, lbl, spinner), "width 20!");
+        checkbox.setVerticalAlignment(SwingConstants.CENTER);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
-        add(spinner, "height " + Math.max(spinner.getEditor().getPreferredSize().height, 20) + "!,width " + getEditorWidth() + "!");
+        add(spinner, "width " + getEditorWidth() + "!");
         DownloadWatchDog.getInstance().notifyCurrentState(this);
 
     }

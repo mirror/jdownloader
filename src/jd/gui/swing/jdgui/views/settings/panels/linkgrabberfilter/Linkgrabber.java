@@ -18,17 +18,18 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import javax.swing.Icon;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
 public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry {
 
@@ -49,7 +50,7 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
     public Linkgrabber() {
         super();
 
-        add(new Header(getTitle(), NewTheme.I().getIcon("linkgrabber", 32), org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED), "spanx,growx,pushx");
+        add(new Header(getTitle(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32), org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED), "spanx,growx,pushx");
         this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_filter_description2());
         filter = LinkgrabberFilter.getInstance();
 
@@ -59,7 +60,7 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("linkgrabber", 32);
+        return new AbstractIcon(IconKey.ICON_LINKGRABBER, 32);
     }
 
     @Override

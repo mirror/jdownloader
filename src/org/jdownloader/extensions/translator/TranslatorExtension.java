@@ -12,13 +12,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.captcha.translate.CaptchaTranslation;
-import jd.controlling.reconnect.pluginsinc.batch.translate.BatchTranslation;
-import jd.controlling.reconnect.pluginsinc.extern.translate.ExternTranslation;
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.LiveheaderTranslation;
-import jd.controlling.reconnect.pluginsinc.upnp.translate.UpnpTranslation;
-import jd.gui.swing.jdgui.JDGui;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -64,6 +57,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.translator.gui.GuiToggleAction;
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
@@ -71,7 +65,7 @@ import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.translate.GuiTranslation;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.UpdaterTranslation;
 import org.tmatesoft.svn.core.SVNDepth;
@@ -79,6 +73,13 @@ import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNRevision;
+
+import jd.captcha.translate.CaptchaTranslation;
+import jd.controlling.reconnect.pluginsinc.batch.translate.BatchTranslation;
+import jd.controlling.reconnect.pluginsinc.extern.translate.ExternTranslation;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.LiveheaderTranslation;
+import jd.controlling.reconnect.pluginsinc.upnp.translate.UpnpTranslation;
+import jd.gui.swing.jdgui.JDGui;
 
 /**
  * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
@@ -660,7 +661,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
         if (saveCount > 0 && System.currentTimeMillis() - lastSave < 20 * 60 * 1000) {
 
-            JDGui.help("Upload Changes", "Please do not upload your changes too often.\r\nSave your changes locally first, and upload them when you stop translating or maybe once per hour.", NewTheme.I().getIcon("warning", 32));
+            JDGui.help("Upload Changes", "Please do not upload your changes too often.\r\nSave your changes locally first, and upload them when you stop translating or maybe once per hour.", new AbstractIcon(IconKey.ICON_WARNING, 32));
             try {
                 Dialog.I().showConfirmDialog(0, "Sure?", "Are you sure that you want to upload the changes?\r\n Your latest commit has been " + ((System.currentTimeMillis() - lastSave) / 1000) + " seconds ago!");
             } catch (DialogNoAnswerException e) {

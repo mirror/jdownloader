@@ -43,12 +43,6 @@ import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.MainFrameClosingHandler;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-import jd.plugins.AddonPanel;
-
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -69,14 +63,22 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
+
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainFrameClosingHandler;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
+import jd.plugins.AddonPanel;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
     @Override
@@ -99,7 +101,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public String getIconKey() {
-        return "minimize";
+        return IconKey.ICON_MINIMIZE;
     }
 
     public String getName() {
@@ -219,7 +221,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     // public static int readShowInfoTip() throws UnsupportedEncodingException, IOException {
     // final String iconResult =
-    // IO.readInputStreamToString(Runtime.getRuntime().exec("reg query \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"ShowInfoTip\"").getInputStream());
+    // IO.readInputStreamToString(Runtime.getRuntime().exec("reg query
+    // \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"ShowInfoTip\"").getInputStream());
     // final Matcher matcher = Pattern.compile("ShowInfoTip\\s+REG_DWORD\\s+0x(.*)").matcher(iconResult);
     // matcher.find();
     // final String value = matcher.group(1);
@@ -230,7 +233,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     // try {
     //
     // final Process p =
-    // Runtime.getRuntime().exec("reg add \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"ShowInfoTip\" /t REG_DWORD /d 0x"
+    // Runtime.getRuntime().exec("reg add \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v
+    // \"ShowInfoTip\" /t REG_DWORD /d 0x"
     // + Integer.toHexString(foregroundLockTimeout) + " /f");
     // IO.readInputStreamToString(p.getInputStream());
     // final int exitCode = p.exitValue();
@@ -379,11 +383,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             * 
+                             *
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             * 
+                             *
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             * 
+                             *
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -471,7 +475,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
         String password;
         try {
-            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.JDGui_setVisible_password_(), _GUI._.JDGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
+            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.JDGui_setVisible_password_(), _GUI._.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
             if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
                 Dialog.getInstance().showMessageDialog(_GUI._.JDGui_setVisible_password_wrong());
                 return false;
@@ -611,7 +615,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;
-        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
+        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), new AbstractIcon(IconKey.ICON_EXIT, 32), _.JDGui_windowClosing_try_asnwer_close(), null);
 
         try {
 
@@ -661,7 +665,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;
-        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
+        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), new AbstractIcon(IconKey.ICON_EXIT, 32), _.JDGui_windowClosing_try_asnwer_close(), null);
 
         try {
 

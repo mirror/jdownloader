@@ -12,9 +12,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
-
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
@@ -24,8 +21,13 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public class ExtractorProgress extends IconedProcessIndicator {
     /**
@@ -90,7 +92,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
                              */
                             private static final long serialVersionUID = -2183896670625238331L;
                             {
-                                setSmallIcon(NewTheme.I().getIcon("cancel", 16));
+                                setSmallIcon(new AbstractIcon(IconKey.ICON_CANCEL, 16));
                             }
 
                             public void actionPerformed(ActionEvent e) {

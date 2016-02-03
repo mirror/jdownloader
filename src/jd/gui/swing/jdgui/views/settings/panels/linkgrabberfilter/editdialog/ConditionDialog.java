@@ -37,15 +37,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.VariousCrawledLinkFlags;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatus;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatusMatchtype;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.components.ExtButton;
@@ -69,8 +60,18 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.gui.views.components.PseudoMultiCombo;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.VariousCrawledLinkFlags;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatusMatchtype;
 
 public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
@@ -144,7 +145,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         ret.add(new ExtButton(new AppAction() {
             {
-                setIconKey("media-playback-start");
+                setIconKey(IconKey.ICON_MEDIA_PLAYBACK_START);
                 setTooltipText(_GUI._.LinkgrabberFilter_LinkgrabberFilter_test_());
             }
 
@@ -384,7 +385,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         if (iconKey != null) {
             btnIcon.setIcon(NewTheme.I().getIcon(iconKey, 16));
         } else {
-            btnIcon.setIcon(NewTheme.I().getIcon("help", 16));
+            btnIcon.setIcon(new AbstractIcon(IconKey.ICON_HELP, 16));
         }
     }
 
@@ -444,7 +445,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         btnIcon = new JButton(new AppAction() {
             {
-                setSmallIcon(NewTheme.I().getIcon("help", 16));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_HELP, 16));
                 setTooltipText(_GUI._.ConditionDialog_layoutDialogContent_object_());
             }
 
@@ -990,7 +991,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             public void actionPerformed(ActionEvent e) {
             }
         });
-        Image back = NewTheme.I().getImage("regexStar", 18);
+        Image back = NewTheme.I().getImage(IconKey.ICON_REGEXSTAR, 18);
 
         ret.setIcon(new ImageIcon(ImageProvider.merge(back, ImageProvider.scaleImageIcon(ImageProvider.toImageIcon(CheckBoxIcon.FALSE), 10, 10).getImage(), 3, -2, 1, back.getHeight(null) - 12 + 2)));
         // ret.setIcon(ImageProvider.toImageIcon(CheckBoxIcon.FALSE));
@@ -1122,7 +1123,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     private FilterPanel createSizeFilter() {
-        final JLabel to = new JLabel(NewTheme.I().getIcon("right", 14));
+        final JLabel to = new JLabel(new AbstractIcon(IconKey.ICON_RIGHT, 14));
 
         minSizeModel = new SpinnerNumberModel(50000, 0l, Long.MAX_VALUE, 1) {
 

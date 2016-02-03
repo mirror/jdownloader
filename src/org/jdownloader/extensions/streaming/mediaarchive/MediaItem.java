@@ -2,16 +2,17 @@ package org.jdownloader.extensions.streaming.mediaarchive;
 
 import javax.swing.Icon;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.PrepareJob;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 public abstract class MediaItem implements MediaNode {
     private static final LogSource LOGGER = LogController.getInstance().getLogger(PrepareJob.class.getName());
@@ -105,7 +106,7 @@ public abstract class MediaItem implements MediaNode {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("video", 20);
+        return new AbstractIcon(IconKey.ICON_VIDEO, 20);
     }
 
     public String getInfoString() {

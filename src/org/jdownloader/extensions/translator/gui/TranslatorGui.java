@@ -30,12 +30,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.BadLocationException;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.AddonPanel;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -48,7 +42,6 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -66,8 +59,9 @@ import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.extensions.translator.TranslatorExtensionEvent;
 import org.jdownloader.extensions.translator.TranslatorExtensionListener;
 import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
@@ -76,11 +70,17 @@ import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.AddonPanel;
+import net.miginfocom.swing.MigLayout;
+
 /**
  * Extension gui
- * 
+ *
  * @author thomas
- * 
+ *
  */
 public class TranslatorGui extends AddonPanel<TranslatorExtension> implements ListSelectionListener, TranslatorExtensionListener, ShutdownVetoListener {
     static {
@@ -88,6 +88,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             throw new HeadlessException();
         }
     }
+
     private static final String   ID = "TRANSLATORGUI";
     private TranslateTableModel   tableModel;
     private TranslateTable        table;
@@ -242,7 +243,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     if (pre == null) {
                         pre = new TLocale(TranslationFactory.getDesiredLocale().toString());
                     }
-                    final ComboBoxDialog d = new ComboBoxDialog(0, "Choose Translation", "Please choose the Translation you want to modify, or create a new one", getExtension().getTranslations().toArray(new TLocale[] {}), pre == null ? 0 : getExtension().getTranslations().indexOf(pre), NewTheme.I().getIcon("language", 32), null, null, null);
+                    final ComboBoxDialog d = new ComboBoxDialog(0, "Choose Translation", "Please choose the Translation you want to modify, or create a new one", getExtension().getTranslations().toArray(new TLocale[] {}), pre == null ? 0 : getExtension().getTranslations().indexOf(pre), new AbstractIcon(IconKey.ICON_LANGUAGE, 32), null, null, null);
                     d.setLeftActions(new NewTranslationAction(TranslatorGui.this) {
 
                         @Override
@@ -583,7 +584,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                                                             ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
                                                             if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
-                                                                HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
+                                                                HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", new AbstractIcon(IconKey.ICON_HELP, 32));
                                                             }
                                                         } catch (BadLocationException e1) {
                                                             e1.printStackTrace();
@@ -681,7 +682,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         menuPanel2.add(revert = new ExtButton(new AppAction() {
             {
                 setName("Revert");
-                setSmallIcon(NewTheme.I().getIcon("undo", 18));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_UNDO, 18));
                 setTooltipText("Revert all your changes");
 
             }
@@ -749,7 +750,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         menuPanel2.add(restart = new ExtButton(new AppAction() {
             {
                 setName("Restart");
-                setSmallIcon(NewTheme.I().getIcon("restart", 18));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_RESTART, 18));
                 setTooltipText("Restart JDownloader to test the translation.");
 
             }
@@ -762,7 +763,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         menuPanel2.add(logout = new ExtButton(new AppAction() {
             {
                 setName("Logout");
-                setSmallIcon(NewTheme.I().getIcon("logout", 18));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_LOGOUT, 18));
 
             }
 
@@ -818,7 +819,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
      */
     @Override
     protected void onDeactivated() {
-              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("onDeactivated " + getClass().getSimpleName());
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("onDeactivated " + getClass().getSimpleName());
         if (!getExtension().getSettings().isRememberLoginsEnabled()) {
             try {
                 getExtension().doLogout();
@@ -833,7 +834,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
      */
     @Override
     protected void onActivated() {
-              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("onActivated " + getClass().getSimpleName());
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("onActivated " + getClass().getSimpleName());
 
     }
 
@@ -866,7 +867,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         ti.start();
         ShutdownController.getInstance().addShutdownVetoListener(this);
 
-              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Shown " + getClass().getSimpleName());
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("Shown " + getClass().getSimpleName());
         if (getExtension().isLoggedIn()) {
             return;
         }
@@ -920,7 +921,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
      */
     @Override
     protected void onHide() {
-              org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("hidden " + getClass().getSimpleName());
+        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().finer("hidden " + getClass().getSimpleName());
         ShutdownController.getInstance().removeShutdownVetoListener(this);
         ti.stop();
     }
@@ -1086,7 +1087,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         }
         stopEditing = true;
         try {
-                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Wait for editstop");
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Wait for editstop");
 
             while (new EDTHelper<Boolean>() {
 
@@ -1100,7 +1101,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
         } finally {
             stopEditing = false;
-                  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Editing has stopped");
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Editing has stopped");
         }
     }
 

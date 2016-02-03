@@ -2,6 +2,14 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
 
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -12,17 +20,10 @@ import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.controlling.contextmenu.ActionContext;
-import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.translate._JDT;
-
 public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarAction implements DownloadWatchdogListener, ActionContext {
 
     public StopDownloadsButFinishRunningOnesAction() {
-        setIconKey("stop_conditional");
+        setIconKey(IconKey.ICON_STOP_CONDITIONAL);
         setSelected(false);
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);

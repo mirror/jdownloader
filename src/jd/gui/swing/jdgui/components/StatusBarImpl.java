@@ -35,6 +35,18 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.updatev2.gui.LAFOptions;
+
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
@@ -54,17 +66,6 @@ import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.utils.Application;
-import org.appwork.utils.swing.EDTHelper;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
     static {
@@ -139,7 +140,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         // NewTheme.I().getImageUrl("reconnect") +
         // "\"></img>Waiting for new IP - Reconnect in progress</html>");
 
-        linkGrabberIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("linkgrabber", 16));
+        linkGrabberIndicator = new IconedProcessIndicator(new AbstractIcon(IconKey.ICON_LINKGRABBER, 16));
 
         linkGrabberIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_linkgrabber());
         linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
@@ -158,7 +159,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                         private static final long serialVersionUID = -968768342263254431L;
 
                         {
-                            this.setIconKey("cancel");
+                            this.setIconKey(IconKey.ICON_CANCEL);
                             this.setName(_GUI._.StatusBarImpl_initGUI_abort_linkgrabber());
                             this.setEnabled(linkGrabberIndicator.isEnabled());
                         }
@@ -346,7 +347,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 if (downloadWatchdogIndicator != null) {
                     return downloadWatchdogIndicator;
                 }
-                IconedProcessIndicator ldownloadWatchdogIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("skipped", 16));
+                IconedProcessIndicator ldownloadWatchdogIndicator = new IconedProcessIndicator(new AbstractIcon(IconKey.ICON_SKIPPED, 16));
 
                 ldownloadWatchdogIndicator.setTitle(_GUI._.StatusBarImpl_skippedLinksMarker_title());
 
