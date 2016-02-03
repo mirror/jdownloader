@@ -18,7 +18,13 @@ package jd.plugins;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -29,11 +35,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
-
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Cookie;
-import jd.http.Cookies;
 
 public class Account extends Property {
 
@@ -128,10 +129,24 @@ public class Account extends Property {
         return Math.max(-1, tmpDisabledTimeout);
     }
 
-    private transient UniqueAlltimeID       id           = new UniqueAlltimeID();
+    private transient UniqueAlltimeID id            = new UniqueAlltimeID();
 
     /* keep for comp. reasons */
-    private String                          hoster       = null;
+    private String                    hoster        = null;
+    private List<String>              hosterHistory = null;
+
+    public List<String> getHosterHistory() {
+        return hosterHistory;
+    }
+
+    public void setHosterHistory(List<String> hosterHistory) {
+        if (hosterHistory != null && hosterHistory.size() > 0) {
+            this.hosterHistory = new CopyOnWriteArrayList<String>(hosterHistory);
+        } else {
+            this.hosterHistory = null;
+        }
+    }
+
     private AccountInfo                     accinfo      = null;
 
     private long                            updatetime   = 0;

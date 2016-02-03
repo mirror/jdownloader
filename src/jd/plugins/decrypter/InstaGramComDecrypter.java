@@ -33,6 +33,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!p/)[^/]+" }, flags = { 0 })
 public class InstaGramComDecrypter extends PluginForDecrypt {
 
@@ -139,15 +141,21 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 final String linkid = (String) entries.get("code");
                 final boolean isVideo = ((Boolean) entries.get("is_video")).booleanValue();
                 final String filename;
+                final String ext;
                 if (isVideo) {
-                    filename = username_url + " - " + linkid + ".mp4";
+                    ext = ".mp4";
                 } else {
-                    filename = username_url + " - " + linkid + ".jpg";
+                    ext = ".jpg";
+                }
+                if (StringUtils.isNotEmpty(username_url)) {
+                    filename = username_url + " - " + linkid + ext;
+                } else {
+                    filename = linkid + ext;
                 }
                 final String content_url = "https://www.instagram.com/p/" + linkid;
                 final DownloadLink dl = this.createDownloadlink(content_url);
                 dl.setContentUrl(content_url);
-                dl.setLinkID(linkid);
+                dl.setLinkID(getHost() + "://" + linkid);
                 dl._setFilePackage(fp);
                 dl.setAvailable(true);
                 dl.setName(filename);
