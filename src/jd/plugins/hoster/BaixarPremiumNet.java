@@ -252,14 +252,7 @@ public class BaixarPremiumNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // br.getPage("/gerador/");
                 account.saveCookies(br.getCookies(currenthost), "");
-                // br.postPage("http://comprarpremium.com/acoes/deslogado/logar.php",
-                // "login=Jdownloader&senha=2s4f6a87sf&method=pag&x=63&y=15");
-                // final String keypass = br.getCookie(account.getHoster(), "utmhb");
-                // br.setCookie("baixarpremium.net", "utmhb", keypass);
-                // final String dllink = br.getPage("http://baixarpremium.net/api/index.php?cp=1&link=" +
-                // Encoding.base16Encode("http://uploaded.net/file/yuud9gtn") + "&keypass=" + keypass);
                 return true;
             } catch (final PluginException e) {
                 account.clearCookies("");
