@@ -58,6 +58,21 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.nutils.Screen;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -134,21 +149,6 @@ import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
-
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.nutils.Screen;
-import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
     private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
@@ -325,7 +325,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
             @Override
             public void run() {
-                UpdateHandler handler = UpdateController.getInstance().getHandler();
+                final UpdateHandler handler = UpdateController.getInstance().getHandler();
                 if (handler != null) {
 
                     handler.setGuiAlwaysOnTop(CFG_GUI.MAIN_WINDOW_ALWAYS_ON_TOP.isEnabled());
