@@ -95,7 +95,7 @@ public class LinkInfo {
                             final String  desc;
                             final Pattern pattern;
                             {
-                                if (fileNameExtension != null && fileNameExtension.matches("^[a-zA-Z0-9]{1,4}§")) {
+                                if (fileNameExtension != null && fileNameExtension.matches("^[a-zA-Z0-9]{1,4}$")) {
                                     extension = fileNameExtension;
                                     desc = fileNameExtension;
                                     pattern = Pattern.compile(Pattern.quote(fileNameExtension), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
