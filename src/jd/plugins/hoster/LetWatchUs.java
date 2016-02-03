@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letwatch.us" }, urls = { "https?://(www\\.)?letwatch\\.us(\\.com)?/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letwatch.us" }, urls = { "https?://(?:www\\.)?letwatch\\.us(?:\\.com)?/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class LetWatchUs extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -60,7 +60,7 @@ public class LetWatchUs extends PluginForHost {
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(letwatch\\.us|letwatch\\.us\\.com)";
+    private static final String            DOMAINS                      = "(letwatch\\.us|letwatch\\.us\\.com|movyo\\.to)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -133,6 +133,9 @@ public class LetWatchUs extends PluginForHost {
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.getURL().contains(Browser.getHost(link.getDownloadURL()))) {
+            /* e.g. redirect to 'movyo.to' */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

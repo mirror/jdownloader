@@ -19,11 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,7 +30,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "toutbox.fr" }, urls = { "http://(www\\.)?toutbox\\.fr/.+" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "toutbox.fr" }, urls = { "http://(?:www\\.)?(toutbox\\.fr|partageurs\\.com)/.+" }, flags = { 0 })
 public class ToutBoxFrDecrypter extends PluginForDecrypt {
 
     /* DEV NOTES */
@@ -53,7 +52,7 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
         return ret;
     }
 
-    private static final String domain           = "toutbox.fr";
+    private static final String domain           = "partageurs.com";
     private static final String decrypter_domain = "toutboxdecrypted.fr";
 
     private DownloadLink createDecrypterURL() {
@@ -63,52 +62,26 @@ public class ToutBoxFrDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            final DownloadLink dl = createDecrypterURL();
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
+        br.getPage(parameter);
 
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
-            final DownloadLink dl = createDecrypterURL();
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createDownloadlink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("ico/adult_medium\\.png\"")) {
             /* Adult link */
-            final DownloadLink dl = createDecrypterURL();
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createDownloadlink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (!br.containsHTML("class=\"fileinfo tab\"|id=\"fileDetails\"")) {
             /* Link redirected to mainpage or category page --> Offline */
-            final DownloadLink dl = createDecrypterURL();
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createDownloadlink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("id=\"ProtectedFolderChomikLogin\"")) {
             /* Password protected link --> Not yet supported --> Offline */
-            final DownloadLink dl = createDecrypterURL();
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createDownloadlink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

@@ -40,17 +40,17 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toutbox.fr" }, urls = { "http://(www\\.)?toutboxdecrypted\\.fr/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partageurs.com", "toutbox.fr" }, urls = { "http://(www\\.)?toutboxdecrypted\\.fr/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 2 })
 public class ToutBoxFr extends PluginForHost {
 
     public ToutBoxFr(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://toutbox.fr/");
+        this.enablePremium("http://partageurs.com/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://toutbox.fr/Regulations.aspx";
+        return "http://partageurs.com/Regulations.aspx";
     }
 
     /* Connection stuff */
@@ -72,6 +72,16 @@ public class ToutBoxFr extends PluginForHost {
     // other: similar plugins: AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr
     // TODO: Add correct stream handling - will also need fixFilename
     /* ChomikujPlScript */
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("toutbox.fr".equals(getHost())) {
+            if (host == null || "toutbox.fr".equals(host)) {
+                return "partageurs.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -158,7 +168,7 @@ public class ToutBoxFr extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://toutbox.fr";
+    private static final String MAINPAGE = "http://partageurs.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")

@@ -20,13 +20,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -51,7 +49,6 @@ public class RapidoxPl extends PluginForHost {
     private static final String                            DOMAIN                       = "http://rapidox.pl/";
     private static final String                            NICE_HOST                    = "rapidox.pl";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
     private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
 
     /* Connection limits */
@@ -148,7 +145,7 @@ public class RapidoxPl extends PluginForHost {
             this.postAPISafe("http://rapidox.pl/panel/pobierz-plik", "check_links=" + Encoding.urlEncode(link.getDownloadURL()));
             final String requestId = br.getRegex("rapidox.pl/panel/pobierz\\-plik/(\\d+)").getMatch(0);
             if (requestId == null) {
-                handleErrorRetries("requestIdnull", 5);
+                handleErrorRetries("requestIdnull", 5, 2 * 60 * 1000l);
             }
             String hash = null;
             String dlid = null;
@@ -161,7 +158,7 @@ public class RapidoxPl extends PluginForHost {
                 dlid = br.getRegex("name=\"download\\[\\]\" value=\"(\\d+)\"").getMatch(0);
             } while (hash == null && dlid == null && counter <= getreadymaxreloads);
             if (hash == null || dlid == null) {
-                handleErrorRetries("hash_requestid_null", 5);
+                handleErrorRetries("hash_requestid_null", 5, 2 * 60 * 1000l);
             }
             /* Modify name so we can actually find our final downloadlink. */
             String fname = link.getName();
@@ -186,7 +183,7 @@ public class RapidoxPl extends PluginForHost {
             } while (counter <= maxreloads && dllink == null);
             if (dllink == null) {
                 /* Should never happen */
-                handleErrorRetries("dllinknull", 5);
+                handleErrorRetries("dllinknull", 5, 2 * 60 * 1000l);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
         }
@@ -197,22 +194,18 @@ public class RapidoxPl extends PluginForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
-        if (link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
         boolean resume = ACCOUNT_PREMIUM_RESUME;
-        if (link.getBooleanProperty(RapidoxPl.NORESUME, false)) {
+        if (link.getBooleanProperty(NORESUME, false)) {
             resume = false;
-            link.setProperty(RapidoxPl.NORESUME, Boolean.valueOf(false));
+            link.setProperty(NORESUME, Boolean.valueOf(false));
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume impossible, disabling it for the next try");
                 link.setChunksProgress(null);
-                link.setProperty(RapidoxPl.NORESUME, Boolean.valueOf(true));
+                link.setProperty(NORESUME, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             final String contenttype = dl.getConnection().getContentType();
@@ -220,32 +213,9 @@ public class RapidoxPl extends PluginForHost {
                 br.followConnection();
                 updatestatuscode();
                 handleAPIErrors(this.br);
-                handleErrorRetries("unknowndlerror", 5);
+                handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
             }
-            try {
-                if (!this.dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
-                    }
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(NICE_HOSTproperty + RapidoxPl.NOCHUNKS, false) == false) {
-                        link.setProperty(NICE_HOSTproperty + RapidoxPl.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
-            } catch (final PluginException e) {
-                e.printStackTrace();
-                // New V2 chunk errorhandling
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NICE_HOSTproperty + RapidoxPl.NOCHUNKS, false) == false) {
-                    link.setProperty(NICE_HOSTproperty + RapidoxPl.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                throw e;
-            }
+            this.dl.startDownload();
         } catch (final Throwable e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
         }
@@ -257,6 +227,7 @@ public class RapidoxPl extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
@@ -353,39 +324,27 @@ public class RapidoxPl extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 this.br = newBrowser();
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(DOMAIN, key, value);
-                        }
-                        if (force) {
-                            /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
-                            br.getPage("http://rapidox.pl/panel/index");
-                            if (br.containsHTML(">Wyloguj się<")) {
-                                return;
-                            }
-                            /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                            if (br.getCookies(DOMAIN) != null) {
-                                br.clearCookies(DOMAIN);
-                            }
-                        } else {
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (force) {
+                        /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
+                        br.getPage("http://rapidox.pl/panel/index");
+                        if (br.containsHTML(">Wyloguj się<")) {
                             return;
                         }
+                        /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
+                        if (br.getCookies(DOMAIN) != null) {
+                            br.clearCookies(DOMAIN);
+                        }
+                    } else {
+                        return;
                     }
                 }
                 br.setFollowRedirects(true);
@@ -452,17 +411,9 @@ public class RapidoxPl extends PluginForHost {
                 }
                 /* User-Agent might have been changed through the login process --> Make sure we're using the standard UA now. */
                 agent.set(default_UA);
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(DOMAIN);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -484,7 +435,6 @@ public class RapidoxPl extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    @SuppressWarnings("unused")
     private void getAPISafe(final String accesslink) throws IOException, PluginException {
         br.getPage(accesslink);
         updatestatuscode();
@@ -520,7 +470,7 @@ public class RapidoxPl extends PluginForHost {
             case 1:
                 /* Host currently not supported --> deactivate it for some hours. */
                 statusMessage = "Host is currently not supported";
-                tempUnavailableHoster(3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
                 break;
             case 2:
                 /* Host currently not supported --> deactivate it for some hours. */
@@ -534,7 +484,7 @@ public class RapidoxPl extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour IP has been banned!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             default:
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+                handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
@@ -551,7 +501,7 @@ public class RapidoxPl extends PluginForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrorRetries(final String error, final int maxRetries) throws PluginException {
+    private void handleErrorRetries(final String error, final int maxRetries, final long waittime) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
@@ -562,9 +512,7 @@ public class RapidoxPl extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
-            /* TODO: Remove plugin defect once all known errors are correctly handled */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
+            tempUnavailableHoster(waittime);
         }
     }
 
