@@ -18,13 +18,13 @@ public class DeviceAPIImpl implements DeviceAPI {
 
     @Override
     public DirectConnectionInfos getDirectConnectionInfos(RemoteAPIRequest request) {
-        MyJDownloaderDirectServer directServer = MyJDownloaderController.getInstance().getConnectThread().getDirectServer();
-        DirectConnectionInfos ret = new DirectConnectionInfos();
+        final MyJDownloaderDirectServer directServer = MyJDownloaderController.getInstance().getConnectThread().getDirectServer();
+        final DirectConnectionInfos ret = new DirectConnectionInfos();
         if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) {
             return ret;
         }
-        List<DirectConnectionInfo> infos = new ArrayList<DirectConnectionInfo>();
-        List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
+        final List<DirectConnectionInfo> infos = new ArrayList<DirectConnectionInfo>();
+        final List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
         if (localIPs != null) {
             for (InetAddress localIP : localIPs) {
                 DirectConnectionInfo info = new DirectConnectionInfo();
@@ -37,7 +37,7 @@ public class DeviceAPIImpl implements DeviceAPI {
             try {
                 final IP externalIP = new BalancedWebIPCheck().getExternalIP();
                 if (externalIP.getIP() != null) {
-                    DirectConnectionInfo info = new DirectConnectionInfo();
+                    final DirectConnectionInfo info = new DirectConnectionInfo();
                     info.setPort(directServer.getRemotePort());
                     info.setIp(externalIP.getIP());
                     infos.add(info);
