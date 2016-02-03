@@ -8,8 +8,6 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.gui.swing.components.linkbutton.JLink;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
@@ -21,8 +19,11 @@ import org.jdownloader.extensions.schedulerV2.gui.actions.CopyAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.EditAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.NewAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.RemoveAction;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.components.linkbutton.JLink;
 
 public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtension> {
 
@@ -52,7 +53,7 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
         myContainer.setLayout("ins 0, wrap 1", "[grow]", "[][]");
         JLink lnk;
         try {
-            lnk = new JLink("UNDER DEVELOPMENT: Feel free to test this extension. Click here to give Feedback.", NewTheme.I().getIcon("url", 16), new URL("http://board.jdownloader.org/showthread.php?t=59730"));
+            lnk = new JLink("UNDER DEVELOPMENT: Feel free to test this extension. Click here to give Feedback.", new AbstractIcon(IconKey.ICON_URL, 16), new URL("http://board.jdownloader.org/showthread.php?t=59730"));
         } catch (MalformedURLException e1) {
             lnk = null;
         }
@@ -71,7 +72,7 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
 
         NewAction na;
         bottomMenu.add(new ExtButton(na = new NewAction(table)), "sg 1,height 26!");
-        na.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
+        na.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_ADD, 20));
 
         RemoveAction ra;
         bottomMenu.add(new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");

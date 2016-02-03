@@ -40,24 +40,25 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.nutils.encoding.Encoding;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.jdownloader.images.NewTheme;
-
 public class ImportRouterDialog extends AbstractDialog<Integer> {
 
-    private static final long         serialVersionUID = 2043825047691368115L;
+    private static final long              serialVersionUID = 2043825047691368115L;
 
     private final java.util.List<String[]> scripts;
-    private JList                     list;
+    private JList                          list;
 
     public ImportRouterDialog(final java.util.List<String[]> scripts) {
-        super(UserIO.NO_COUNTDOWN, T._.gui_config_liveheader_dialog_importrouter(), NewTheme.I().getIcon("search", 32), null, null);
+        super(UserIO.NO_COUNTDOWN, T._.gui_config_liveheader_dialog_importrouter(), new AbstractIcon(IconKey.ICON_SEARCH, 32), null, null);
 
         this.scripts = scripts;
         Collections.sort(this.scripts, new Comparator<String[]>() {
@@ -152,7 +153,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
         final JTextArea preview = new JTextArea();
         preview.setFocusable(true);
 
-        final JButton reset = Factory.createButton(null, NewTheme.I().getIcon("undo", 16), new ActionListener() {
+        final JButton reset = Factory.createButton(null, new AbstractIcon(IconKey.ICON_UNDO, 16), new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 searchField.setForeground(Color.lightGray);
                 searchField.setText(text);

@@ -16,9 +16,6 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.TreePath;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
@@ -43,9 +40,13 @@ import org.jdownloader.controlling.contextmenu.MenuStructure;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 
 public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSelectionListener, MenuManagerDialogInterface {
 
@@ -80,16 +81,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         // TODO Auto-generated method stub
         MigPanel ret = new MigPanel("ins 0", "[]20[grow,fill][]", "[][]");
 
-        MigPanel topline = new MigPanel("ins 0", "[][][][grow,fill][][][][]", "[]");
+        MigPanel topline = new MigPanel("ins 0", "[][][grow,fill][][][][]", "[]");
         // bottom.add(topline, "spanx,pushx,growx,wrap");
         topline.setOpaque(false);
-
-        ExtButton add = new ExtButton(new AddActionAction(this)) {
-            @Override
-            public int getTooltipDelay(Point mousePositionOnScreen) {
-                return 500;
-            }
-        };
 
         ExtButton addSubmenu = new ExtButton(new AddSubMenuAction(this)) {
             @Override
@@ -97,7 +91,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                 return 500;
             }
         };
-        ExtButton addSpecials = new ExtButton(new AddSpecialAction(this)) {
+        ExtButton add = new ExtButton(new AddSpecialAction(this)) {
             @Override
             public int getTooltipDelay(Point mousePositionOnScreen) {
                 return 500;
@@ -216,7 +210,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         ExtButton reset = new ExtButton(new AppAction() {
             {
                 setTooltipText(_GUI._.ManagerFrame_layoutPanel_resettodefault());
-                setSmallIcon(NewTheme.I().getIcon("undo", 20));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_UNDO, 20));
 
             }
 
@@ -250,11 +244,10 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         ExtButton remove = new ExtButton(new RemoveAction(this));
         add.setText(null);
         addSubmenu.setText(null);
-        addSpecials.setText(null);
+
         remove.setText(null);
         topline.add(add, "height 24!");
         topline.add(addSubmenu, "height 24!");
-        topline.add(addSpecials, "height 24!");
 
         topline.add(Box.createHorizontalBox());
 
@@ -272,7 +265,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         ExtButton save = new ExtButton(new AppAction() {
             {
                 setName(_GUI._.lit_save());
-                setSmallIcon(NewTheme.I().getIcon("save", 20));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_SAVE, 20));
             }
 
             @Override
@@ -289,7 +282,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         ExtButton cancel = new ExtButton(new AppAction() {
             {
                 setName(_GUI._.lit_cancel());
-                setSmallIcon(NewTheme.I().getIcon("cancel", 20));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_CANCEL, 20));
             }
 
             @Override

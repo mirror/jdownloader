@@ -19,7 +19,9 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeparatorData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 public class Renderer implements TreeCellRenderer {
@@ -40,7 +42,7 @@ public class Renderer implements TreeCellRenderer {
         dim = new Dimension(500, 24);
         defFont = renderer.getFont();
         bold = defFont.deriveFont(Font.BOLD);
-        right = NewTheme.I().getIcon("right", 20);
+        right = new AbstractIcon(IconKey.ICON_RIGHT, 20);
 
     }
 

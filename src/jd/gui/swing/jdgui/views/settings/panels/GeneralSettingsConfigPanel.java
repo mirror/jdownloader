@@ -22,6 +22,25 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
+import org.appwork.swing.components.ExtCheckBox;
+import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.settings.Pair;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.AutoDownloadStartOption;
+import org.jdownloader.settings.CleanAfterDownloadAction;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
+import org.jdownloader.translate._JDT;
+
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
@@ -31,24 +50,6 @@ import net.miginfocom.layout.AC;
 import net.miginfocom.layout.ConstraintParser;
 import net.miginfocom.layout.LC;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.handler.BooleanKeyHandler;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
-import org.appwork.swing.components.ExtCheckBox;
-import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.gui.settings.Pair;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.AutoDownloadStartOption;
-import org.jdownloader.settings.CleanAfterDownloadAction;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.IfFileExistsAction;
-import org.jdownloader.settings.staticreferences.CFG_GENERAL;
-import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
-import org.jdownloader.translate._JDT;
 
 public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
@@ -104,7 +105,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         /* Download folder */
 
         downloadFolder = new FolderChooser();
-        this.addHeader(_GUI._.gui_config_general_downloaddirectory(), NewTheme.I().getIcon("downloadpath", 32));
+        this.addHeader(_GUI._.gui_config_general_downloaddirectory(), new AbstractIcon(IconKey.ICON_DOWNLOADPATH, 32));
         this.addDescription(_JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
 
@@ -119,7 +120,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
         ifFileExists = new ComboBox<IfFileExistsAction>(IfFileExistsAction.values(), fileExists);
 
-        this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), NewTheme.I().getIcon("downloadmanagment", 32));
+        this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), new AbstractIcon(IconKey.ICON_DOWNLOADMANAGMENT, 32));
         this.addDescription(_JDT._.gui_settings_downloadcontroll_description());
         this.addPair(_GUI._.gui_config_download_simultan_downloads(), null, maxSim);
         this.addPair(_GUI._.gui_config_download_simultan_downloads_per_host2(), org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED, maxSimPerHost);
@@ -131,7 +132,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
         startDownloadsAfterAppStart = new ComboBox<AutoDownloadStartOption>(CFG_GENERAL.SH.getKeyHandler("AutoStartDownloadOption", KeyHandler.class), AutoDownloadStartOption.values(), new String[] { _GUI._.gui_config_general_AutoDownloadStartOption_always(), _GUI._.gui_config_general_AutoDownloadStartOption_only_if_closed_running(), _GUI._.gui_config_general_AutoDownloadStartOption_never() });
         startDownloadTimeout = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_START_COUNTDOWN_SECONDS));
-        this.addHeader(_GUI._.gui_config_download_autostart(), NewTheme.I().getIcon("resume", 32));
+        this.addHeader(_GUI._.gui_config_download_autostart(), new AbstractIcon(IconKey.ICON_RESUME, 32));
         this.addDescription(_GUI._.gui_config_download_autostart_desc());
         this.addPair(_GUI._.system_download_autostart(), null, startDownloadsAfterAppStart);
         this.addPair(_GUI._.system_download_autostart_countdown(), CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS, startDownloadTimeout);
@@ -139,13 +140,13 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         /* Linkgrabber */
 
         linkGrabberFilesPackages = new Checkbox(CFG_LINKGRABBER.VARIOUS_PACKAGE_ENABLED);
-        this.addHeader(_GUI._.GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_linkgrabber(), NewTheme.I().getIcon("linkgrabber", 32));
+        this.addHeader(_GUI._.GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_linkgrabber(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
         this.addPair(_GUI._.GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_various_package(), null, linkGrabberFilesPackages);
 
         /* File Writing */
 
         autoCRC = new Checkbox();
-        this.addHeader(_GUI._.gui_config_download_write(), NewTheme.I().getIcon("hashsum", 32));
+        this.addHeader(_GUI._.gui_config_download_write(), new AbstractIcon(IconKey.ICON_HASHSUM, 32));
         this.addDescription(_JDT._.gui_settings_filewriting_description());
         this.addPair(_GUI._.gui_config_download_crc(), null, autoCRC);
 
@@ -155,7 +156,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         /* Miscellaneous */
 
         simpleContainer = new Checkbox();
-        this.addHeader(_GUI._.gui_config_various(), NewTheme.I().getIcon("settings", 32));
+        this.addHeader(_GUI._.gui_config_various(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
         this.addPair(_GUI._.gui_config_simple_container(), null, simpleContainer);
     }
 
@@ -218,7 +219,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("home", 32);
+        return new AbstractIcon(IconKey.ICON_HOME, 32);
     }
 
     @Override

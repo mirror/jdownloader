@@ -6,17 +6,18 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.extensions.translator.TranslatorExtensionEvent;
+import org.jdownloader.gui.IconKey;
 
 public class ResetTranslationAction extends AppAction {
 
-    private TranslatorExtension       owner;
+    private TranslatorExtension            owner;
     private java.util.List<TranslateEntry> selection;
 
     public ResetTranslationAction(TranslatorExtension owner, java.util.List<TranslateEntry> selection) {
         this.owner = owner;
         this.selection = selection;
         setName("Reset Changes");
-        setIconKey("reset");
+        setIconKey(IconKey.ICON_RESET);
     }
 
     @Override

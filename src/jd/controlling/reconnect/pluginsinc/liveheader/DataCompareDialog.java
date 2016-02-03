@@ -10,15 +10,17 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
 public class DataCompareDialog extends AbstractDialog<Object> {
 
@@ -89,7 +91,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
         JButton btnWebinterface = new JButton(new AbstractAction() {
             {
                 putValue(NAME, T._.DataCompareDialog_open_webinterface());
-                putValue(SMALL_ICON, NewTheme.I().getIcon("url", 18));
+                putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_URL, 18));
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -101,13 +103,13 @@ public class DataCompareDialog extends AbstractDialog<Object> {
         desc.setLabelMode(true);
         p.add(desc, "spanx");
         if (!loginsOnly) {
-            p.add(header(NewTheme.I().getIcon("modem", ICONSIZE), T._.DataCompareDialog_layoutDialogContent_router(), T._.DataCompareDialog_layoutDialogContent_router_desc()), "spanx");
+            p.add(header(NewTheme.I().getIcon(IconKey.ICON_MODEM, ICONSIZE), T._.DataCompareDialog_layoutDialogContent_router(), T._.DataCompareDialog_layoutDialogContent_router_desc()), "spanx");
             txtName = addField(p, T._.DataCompareDialog_layoutDialogContent_name(), routerName, T._.DataCompareDialog_layoutDialogContent_name_help(), null);
             txtManufactor = addField(p, T._.DataCompareDialog_layoutDialogContent_manufactorName(), manufactor, T._.DataCompareDialog_layoutDialogContent_manufactorName_help(), null);
             txtFirmware = addField(p, T._.DataCompareDialog_layoutDialogContent_firmware(), firmware, T._.DataCompareDialog_layoutDialogContent_firmware_help(), null);
         }
         if (!noLogins) {
-            p.add(header(NewTheme.I().getIcon("basicauth", ICONSIZE), T._.DataCompareDialog_layoutDialogContent_webinterface(), loginDesc), "spanx");
+            p.add(header(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_BASICAUTH, ICONSIZE), T._.DataCompareDialog_layoutDialogContent_webinterface(), loginDesc), "spanx");
             txtIP = addField(p, T._.DataCompareDialog_layoutDialogContent_ip(), hostName, T._.DataCompareDialog_layoutDialogContent_ip_help(), btnWebinterface);
 
             txtUser = addField(p, T._.DataCompareDialog_layoutDialogContent_user(), username, T._.DataCompareDialog_layoutDialogContent_user_help(), null);

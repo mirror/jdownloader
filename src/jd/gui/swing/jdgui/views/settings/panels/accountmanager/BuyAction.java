@@ -13,9 +13,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
-import jd.controlling.TaskQueue;
-import jd.plugins.PluginForHost;
-
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
@@ -27,15 +24,20 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.sponsor.Sponsor;
 import org.jdownloader.gui.sponsor.SponsorUtils;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
 import org.jdownloader.statistics.StatsManager;
+
+import jd.controlling.TaskQueue;
+import jd.plugins.PluginForHost;
 
 public class BuyAction extends AbstractAction {
     /**
@@ -47,7 +49,7 @@ public class BuyAction extends AbstractAction {
     public BuyAction(PremiumAccountTable table) {
         this.table = table;
         this.putValue(NAME, _GUI._.settings_accountmanager_buy());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("buy", 20));
+        this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_BUY, 20));
     }
 
     public BuyAction() {
@@ -56,7 +58,7 @@ public class BuyAction extends AbstractAction {
 
     public BuyAction(LazyHostPlugin hoster) {
         this.putValue(NAME, _GUI._.settings_accountmanager_buy());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("buy", 16));
+        this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_BUY, 16));
     }
 
     public static String getPreselectedHoster() {
@@ -108,7 +110,7 @@ public class BuyAction extends AbstractAction {
                     @Override
                     protected void runInEDT() {
                         try {
-                            final ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.buyaction_title(), _GUI._.buyaction_message(), options, 0, NewTheme.I().getIcon("buy", 32), _GUI._.buyaction_title_buy_account(), null, null) {
+                            final ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.buyaction_title(), _GUI._.buyaction_message(), options, 0, new AbstractIcon(IconKey.ICON_BUY, 32), _GUI._.buyaction_title_buy_account(), null, null) {
                                 private SearchComboBox<LazyHostPlugin> combo;
 
                                 @Override

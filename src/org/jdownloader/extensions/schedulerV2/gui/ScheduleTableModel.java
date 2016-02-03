@@ -19,7 +19,8 @@ import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.TIME_OPTIONS;
 import org.jdownloader.extensions.schedulerV2.model.ScheduleEntry;
 import org.jdownloader.extensions.schedulerV2.translate.T;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 
 public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
 
@@ -37,7 +38,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
     }
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -4395270044662213519L;
 
@@ -56,7 +57,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("ok", 14));
+                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

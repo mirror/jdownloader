@@ -16,29 +16,6 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
-import jd.controlling.faviconcontroller.FavIcons;
-import jd.controlling.reconnect.ProcessCallBack;
-import jd.controlling.reconnect.ProcessCallBackAdapter;
-import jd.controlling.reconnect.ReconnectConfig;
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.RouterUtils;
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.pluginsinc.liveheader.recoll.AddRouterResponse;
-import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-import jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript;
-import jd.controlling.reconnect.pluginsinc.liveheader.validate.ScriptValidationExeption;
-import jd.controlling.reconnect.pluginsinc.liveheader.validate.Scriptvalidator;
-import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
-import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
-import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -62,10 +39,32 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.faviconcontroller.FavIcons;
+import jd.controlling.reconnect.ProcessCallBack;
+import jd.controlling.reconnect.ProcessCallBackAdapter;
+import jd.controlling.reconnect.ReconnectConfig;
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.RouterUtils;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.pluginsinc.liveheader.recoll.AddRouterResponse;
+import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
+import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
+import jd.controlling.reconnect.pluginsinc.liveheader.validate.RetryWithReplacedScript;
+import jd.controlling.reconnect.pluginsinc.liveheader.validate.ScriptValidationExeption;
+import jd.controlling.reconnect.pluginsinc.liveheader.validate.Scriptvalidator;
+import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
+import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 
 public class LiveHeaderDetectionWizard {
 
@@ -197,14 +196,16 @@ public class LiveHeaderDetectionWizard {
     // this.txtPass.getText().trim().length() < 2) {
     //
     // NewUIO.I().showConfirmDialog(0, "Warning",
-    // "Username and Password are not set. In most cases, \r\nthese information is required for a successful reconnection.\r\n\r\nContinue anyway?");
+    // "Username and Password are not set. In most cases, \r\nthese information is required for a successful reconnection.\r\n\r\nContinue
+    // anyway?");
     //
     // }
     //
     // if (!RouterUtils.checkPort(this.txtIP.getText().trim())) {
     // NewUIO.I().showConfirmDialog(0, "Warning",
     // "There is no Webinterface at http://" + this.txtIP.getText() +
-    // "\r\nAre you sure that the Router IP is correct?\r\nA correct Router IP is required to find the correct settings.\r\n\r\nContinue anyway?");
+    // "\r\nAre you sure that the Router IP is correct?\r\nA correct Router IP is required to find the correct settings.\r\n\r\nContinue
+    // anyway?");
     // }
     // String man = this.txtManufactor.getText().trim();
     // String name = this.txtName.getText().trim();
@@ -417,7 +418,7 @@ public class LiveHeaderDetectionWizard {
                     if (i < tests.size() - 1) {
 
                         if (ret.size() == 1) {
-                            if (!UIOManager.I().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use())) {
+                            if (!UIOManager.I().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), new AbstractIcon(IconKey.ICON_OK, 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use())) {
                                 break;
                             }
                         }
@@ -462,7 +463,7 @@ public class LiveHeaderDetectionWizard {
             processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
 
             if (!RecollController.getInstance().isAlive()) {
-                UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), NewTheme.I().getIcon("error", 32), null, _JDT._.lit_hide());
+                UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), new AbstractIcon(IconKey.ICON_ERROR, 32), null, _JDT._.lit_hide());
 
                 throw new InterruptedException("RecollServ not available");
             }
@@ -474,7 +475,7 @@ public class LiveHeaderDetectionWizard {
 
                 if (!IP.isValidRouterIP(gatewayAdressIP)) {
 
-                    if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
+                    if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
                         continue;
                     }
                 }
@@ -642,6 +643,7 @@ public class LiveHeaderDetectionWizard {
     }
 
     final static private HashSet<String> ALLOWED_HEADER_KEYS = new HashSet<String>();
+
     static {
         ALLOWED_HEADER_KEYS.add("Accept-Ranges".toLowerCase());
         ALLOWED_HEADER_KEYS.add("Allow".toLowerCase());
@@ -797,7 +799,7 @@ public class LiveHeaderDetectionWizard {
                 gatewayAdressHost = gatewayAdress.getHostName();
                 break;
             } catch (IOException e) {
-                new ConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null).show().throwCloseExceptions();
+                new ConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI._.literally_edit(), null).show().throwCloseExceptions();
 
             }
         }
@@ -947,7 +949,7 @@ public class LiveHeaderDetectionWizard {
                                 break;
                             } catch (IOException e) {
 
-                                if (UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null)) {
+                                if (UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI._.literally_edit(), null)) {
                                     continue;
                                 } else {
                                     return;
@@ -959,7 +961,7 @@ public class LiveHeaderDetectionWizard {
 
                         if (!IP.isValidRouterIP(gatewayAdressIP)) {
 
-                            if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
+                            if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
                                 continue;
                             }
 

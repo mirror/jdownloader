@@ -9,6 +9,10 @@ import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
@@ -17,9 +21,6 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.HosterOrderPanel;
 import net.miginfocom.swing.MigLayout;
-
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
 public class AccountManager extends SwitchPanel implements SettingsComponent {
     private static final long serialVersionUID = 1473756660999062848L;
@@ -84,7 +85,7 @@ public class AccountManager extends SwitchPanel implements SettingsComponent {
     /**
      * Create a new instance of AccountManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
      * .
-     * 
+     *
      * @param accountManagerSettings
      */
     public AccountManager(AccountManagerSettings accountManagerSettings) {
@@ -97,8 +98,8 @@ public class AccountManager extends SwitchPanel implements SettingsComponent {
         accountListPanel = new AccountListPanel(this);
         tab.addTab(_GUI._.AccountManager_AccountManager_accounts_(), accountListPanel);
         tab.addTab(_GUI._.AccountManager_AccountManager_hosterorder(), hosterOrderPanel);
-        tab.setTabComponentAt(0, createHeader(_GUI._.AccountManager_AccountManager_accounts_tt(), _GUI._.AccountManager_AccountManager_accounts_(), NewTheme.I().getIcon("list", 16)));
-        tab.setTabComponentAt(1, createHeader(_GUI._.AccountManager_AccountManager_hosterorder_tt(), _GUI._.AccountManager_AccountManager_hosterorder(), NewTheme.I().getIcon("order", 16)));
+        tab.setTabComponentAt(0, createHeader(_GUI._.AccountManager_AccountManager_accounts_tt(), _GUI._.AccountManager_AccountManager_accounts_(), new AbstractIcon(IconKey.ICON_LIST, 16)));
+        tab.setTabComponentAt(1, createHeader(_GUI._.AccountManager_AccountManager_hosterorder_tt(), _GUI._.AccountManager_AccountManager_hosterorder(), new AbstractIcon(IconKey.ICON_ORDER, 16)));
         //
         tab.addChangeListener(new ChangeListener() {
 

@@ -13,8 +13,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.gui.swing.jdgui.TriStateSorterTableModel;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -25,8 +23,11 @@ import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.gui.swing.jdgui.TriStateSorterTableModel;
 
 public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implements TriStateSorterTableModel {
 
@@ -74,7 +75,7 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("ok", 14));
+                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;
@@ -218,7 +219,7 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("edit", 14));
+                        setIcon(new AbstractIcon(IconKey.ICON_EDIT, 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

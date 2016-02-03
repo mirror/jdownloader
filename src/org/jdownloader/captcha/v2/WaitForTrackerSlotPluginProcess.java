@@ -1,11 +1,12 @@
 package org.jdownloader.captcha.v2;
 
-import jd.nutils.Formatter;
-import jd.plugins.PluginProgress;
-
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.translate._JDT;
+
+import jd.nutils.Formatter;
+import jd.plugins.PluginProgress;
 
 public class WaitForTrackerSlotPluginProcess extends PluginProgress {
     /**
@@ -18,7 +19,7 @@ public class WaitForTrackerSlotPluginProcess extends PluginProgress {
     public WaitForTrackerSlotPluginProcess(long total, String message) {
         super(0, total, null);
 
-        setIcon(NewTheme.I().getIcon("wait", 16));
+        setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
         this.message = message;
         pluginMessage = _JDT._.WaitForTrackerSlotPluginProcess(message, Formatter.formatSeconds(total / 1000));
     }

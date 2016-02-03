@@ -53,7 +53,7 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
 
             // public Icon getIcon(int i) {
-            // return NewTheme.I().getIcon("myjdownloader", i);
+            // return new AbstractIcon(IconKey.ICON_myjdownloader", i);
             // }
 
             {

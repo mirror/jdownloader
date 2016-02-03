@@ -25,8 +25,9 @@ import org.appwork.utils.logging2.LogSourceProvider;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.jdserv.JDServUtils;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.startup.commands.ThreadDump;
@@ -38,7 +39,7 @@ public class LogAction extends AbstractLogAction {
     public LogAction() {
         super();
         setName(_GUI._.LogAction());
-        setSmallIcon(NewTheme.I().getIcon("log", 22));
+        setSmallIcon(new AbstractIcon(IconKey.ICON_LOG, 22));
         setTooltipText(_GUI._.LogAction_tooltip());
         id = null;
     }

@@ -2,26 +2,26 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 public class ShowSettingsAction extends AbstractToolBarAction {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
     public ShowSettingsAction() {
 
-        setIconKey("settings");
+        setIconKey(IconKey.ICON_SETTINGS);
 
     }
 

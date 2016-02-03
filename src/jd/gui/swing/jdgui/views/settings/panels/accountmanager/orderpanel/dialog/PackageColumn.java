@@ -12,11 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountInterface;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountWrapper;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.swing.exttable.renderercomponents.RendererTextField;
 import org.appwork.swing.exttable.tree.ExtTreeTableModel;
@@ -24,13 +19,19 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.renderer.RendererCheckBox;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.hosterrule.FreeAccountReference;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountInterface;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountWrapper;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
+import net.miginfocom.swing.MigLayout;
 
 public class PackageColumn extends ExtTextColumn<AccountInterface> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID       = -2963955407564917958L;
     protected Border          leftGapBorder;
@@ -176,7 +177,7 @@ public class PackageColumn extends ExtTextColumn<AccountInterface> {
     @Override
     protected Icon getIcon(AccountInterface value) {
         if (value instanceof GroupWrapper) {
-            return NewTheme.I().getIcon("package_open", 18);
+            return new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 18);
         } else {
             return DomainInfo.getInstance(((AccountWrapper) value).getHost()).getFavIcon();
         }

@@ -22,6 +22,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
@@ -34,7 +35,7 @@ public class RestartAction extends CustomizableAppAction {
         //
         setTooltipText(_GUI._.action_restart_tooltip());
         setName(_GUI._.action_restart());
-        setIconKey("restart");
+        setIconKey(IconKey.ICON_RESTART);
         setAccelerator(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_MASK);
     }
 

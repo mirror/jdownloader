@@ -35,7 +35,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
         startTime = System.currentTimeMillis();
         // super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
 
-        // , _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32)
+        // , _GUI._.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
 
         layoutComponents();
 

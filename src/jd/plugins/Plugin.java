@@ -33,6 +33,31 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.config.ConfigInterface;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.auth.Login;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForCryptedLinkPasswordDialog;
+import org.jdownloader.gui.dialog.AskForPasswordDialog;
+import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
+import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.UserIOProgress;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
@@ -53,30 +78,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.auth.Login;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskForCryptedLinkPasswordDialog;
-import org.jdownloader.gui.dialog.AskForPasswordDialog;
-import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
-import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.UserIOProgress;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-import org.jdownloader.translate._JDT;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -529,7 +530,7 @@ public abstract class Plugin implements ActionListener {
                  */
                 @Override
                 public Icon getIcon() {
-                    return NewTheme.I().getIcon("warning", 16);
+                    return new AbstractIcon(IconKey.ICON_WARNING, 16);
                 }
 
                 @Override

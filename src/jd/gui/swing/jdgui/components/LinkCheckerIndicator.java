@@ -5,14 +5,15 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.JPopupMenu;
 
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
 import jd.controlling.linkchecker.LinkCheckerListener;
-
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
 public class LinkCheckerIndicator extends IconedProcessIndicator implements LinkCheckerListener {
 
@@ -24,7 +25,7 @@ public class LinkCheckerIndicator extends IconedProcessIndicator implements Link
     private final StatusBarImpl  statusBar;
 
     public LinkCheckerIndicator(final StatusBarImpl statusBar, final LinkChecker<?> linkChecker) {
-        super(NewTheme.I().getIcon("search", 16));
+        super(new AbstractIcon(IconKey.ICON_SEARCH, 16));
         this.linkChecker = linkChecker;
         this.statusBar = statusBar;
         setTitle(_GUI._.StatusBarImpl_initGUI_linkchecker());
@@ -66,7 +67,7 @@ public class LinkCheckerIndicator extends IconedProcessIndicator implements Link
                 private static final long serialVersionUID = -968768342263254431L;
 
                 {
-                    this.setIconKey("cancel");
+                    this.setIconKey(IconKey.ICON_CANCEL);
                     this.setName(_GUI._.StatusBarImpl_initGUI_abort_linkchecker());
                     this.setEnabled(linkChecker.isRunning());
                 }

@@ -12,22 +12,6 @@ import java.util.Locale;
 
 import javax.swing.Icon;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-import net.sf.image4j.codec.ico.ICOEncoder;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
@@ -45,7 +29,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
-
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.PublicSuffixList;
 import org.appwork.utils.net.httpserver.requests.HttpRequestInterface;
@@ -54,9 +37,26 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+import net.sf.image4j.codec.ico.ICOEncoder;
 
 public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
@@ -192,6 +192,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
             private HashSet<String> pws = null;
+
             {
                 if (StringUtils.isNotEmpty(finalPasswords)) {
                     pws = new HashSet<String>();
@@ -310,6 +311,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             final String finalPackageName = request.getParameterbyKey("package");
             final CrawledLinkModifier modifier = new CrawledLinkModifier() {
                 private HashSet<String> pws = null;
+
                 {
                     if (StringUtils.isNotEmpty(finalPasswords)) {
                         pws = new HashSet<String>();
@@ -450,7 +452,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         try {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/x-icon", false));
             out = RemoteAPI.getOutputStream(response, null, false, false);
-            Icon logo = NewTheme.I().getIcon("logo/jd_logo_128_128", 32);
+            Icon logo = new AbstractIcon(IconKey.ICON_LOGO_JD_LOGO_128_128, 32);
             ICOEncoder.write(IconIO.toBufferedImage(logo), out);
         } catch (Throwable e) {
             throw new InternalApiException(e);
@@ -492,6 +494,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
                 final CrawledLinkModifier modifier = new CrawledLinkModifier() {
                     private HashSet<String> pws = null;
+
                     {
                         if (archivePasswords != null) {
                             pws = new HashSet<String>();

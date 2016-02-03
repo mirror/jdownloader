@@ -2,11 +2,12 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
 public class ReconnectRecorderAction extends BasicAction {
 
@@ -15,8 +16,8 @@ public class ReconnectRecorderAction extends BasicAction {
     public ReconnectRecorderAction(LiveHeaderReconnect liveHeaderReconnect) {
         this.liveHeaderReconnect = liveHeaderReconnect;
         setName(T._.ReconnectRecorderAction_ReconnectRecorderAction_());
-        setSmallIcon(NewTheme.I().getIcon("record", 18));
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.ReconnectRecorderAction_ReconnectRecorderAction_tt(), NewTheme.I().getIcon("record", 32)));
+        setSmallIcon(new AbstractIcon(IconKey.ICON_RECORD, 18));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T._.ReconnectRecorderAction_ReconnectRecorderAction_tt(), new AbstractIcon(IconKey.ICON_RECORD, 32)));
     }
 
     public void actionPerformed(ActionEvent e) {

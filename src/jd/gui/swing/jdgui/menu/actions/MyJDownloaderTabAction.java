@@ -19,20 +19,21 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
 
 public class MyJDownloaderTabAction extends CustomizableAppAction {
 
     private static final long serialVersionUID = 2547991585530678706L;
 
     public MyJDownloaderTabAction() {
-        setIconKey("myjdownloader");
+        setIconKey(IconKey.ICON_LOGO_MYJDOWNLOADER);
         setTooltipText(_GUI._.action_myjdownloader_menu_tooltip());
         setName(_GUI._.action_myjdownloader_menu());
         setAccelerator(KeyEvent.VK_M);

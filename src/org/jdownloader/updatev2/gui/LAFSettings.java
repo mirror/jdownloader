@@ -3,13 +3,21 @@ package org.jdownloader.updatev2.gui;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultByteValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntArrayValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LAFSettings extends ConfigInterface {
+
+    // Static Mappings for interface
+
+    // org.jdownloader.settings.GraphicalUserInterfaceSettings
+
     public static final String ALICE_BLUE_APPROX                                 = "ffF5FCFF";
     public static final String ALPHA_CC_TROPICAL_BLUE_APPROX                     = "ccCAE8FA";
 
@@ -256,13 +264,6 @@ public interface LAFSettings extends ConfigInterface {
     @DefaultStringValue(ORANGE)
     String getColorForTableSortedColumnView();
 
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @HexColorString
-    @DefaultStringValue("ff3B3B3B")
-    public String getColorForTooltipBackground();
-
     // if (StringUtils.isNotEmpty(c)) lafOptions.setTooltipForegroundColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
@@ -275,11 +276,29 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @DefaultStringValue(DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER)
-    public abstract String getMenuBackgroundPainterClass();
+    public String getMenuBackgroundPainterClass();
 
     @AboutConfig
     @DefaultIntArrayValue({ 0, 2, 4, 2 })
-    public abstract int[] getPopupBorderInsets();
+    public int[] getPopupBorderInsets();
+
+    @AboutConfig
+    @DefaultIntArrayValue({ 0, 0, 1, 0 })
+    public int[] getInfoPanelHeaderInsets();
+
+    public void setInfoPanelHeaderInsets(int[] insets);
+
+    @AboutConfig
+    @DefaultIntArrayValue({ 0, 0, 0, 0 })
+    public int[] getInfoPanelContentInsets();
+
+    public void setInfoPanelContentInsets(int[] insets);
+
+    @AboutConfig
+    @DefaultIntArrayValue({ 0, 0, 0, 0 })
+    public int[] getPanelHeaderBorder();
+
+    public void setPanelHeaderBorder(int[] insets);
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
@@ -337,8 +356,6 @@ public interface LAFSettings extends ConfigInterface {
     void setColorForTableSelectedRowsForeground(String color);
 
     void setColorForTableSortedColumnView(String colorHex);
-
-    public void setColorForTooltipBackground(String background);
 
     public void setColorForTooltipForeground(String colorHex);
 
@@ -441,5 +458,87 @@ public interface LAFSettings extends ConfigInterface {
     public String getColorForTableRowGap();
 
     public void setColorForTableRowGap(String str);
+
+    @RequiresRestart("A JDownloader Restart is Required")
+    @AboutConfig
+    @DefaultIntValue(0)
+    @DescriptionForConfigEntry("Increase this value and set ColorForTableRowGap to show a gap between two links. Check CustomTableRowHeight as well")
+
+    int getLinkTableHorizontalRowLineWeight();
+
+    void setLinkTableHorizontalRowLineWeight(int i);
+
+    @AboutConfig
+    @DefaultIntValue(0)
+    @DescriptionForConfigEntry("by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.")
+    int getCustomTableRowHeight();
+
+    void setCustomTableRowHeight(int height);
+
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Every  odd row get's a light shadow if enabled")
+    @AboutConfig
+    boolean isTableAlternateRowHighlightEnabled();
+
+    void setTableAlternateRowHighlightEnabled(boolean b);
+
+    @DefaultStringValue("standard")
+    @AboutConfig
+    @DescriptionForConfigEntry("Icon Set ID. Make sure that ./themes/<ID>/ exists")
+
+    String getIconSetID();
+
+    void setIconSetID(String themeID);
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+
+    @DefaultEnumValue("CENTER")
+    @DescriptionForConfigEntry("Choose the text position in the propgress column.")
+    public HorizontalPostion getProgressColumnTextPosition();
+
+    public void setProgressColumnTextPosition(HorizontalPostion p);
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Show % Letter in the Progressbar if possible")
+    public boolean isProgressColumnFormatAddPercentEnabled();
+
+    public void setProgressColumnFormatAddPercentEnabled(boolean b);
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultByteValue(2)
+    @DescriptionForConfigEntry("Choose the amount of decimal letters for the Progress column. 2->12.34% 1->12.3%")
+    public void setProgressColumnFractionDigits(byte digits);
+
+    public byte getProgressColumnFractionDigits();
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultIntValue(39)
+    @DescriptionForConfigEntry("The left gap/indent/inset in the config/settings panels")
+    public int getConfigPanelLeftIndent();
+
+    public void setConfigPanelLeftIndent(int i);
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultIntValue(7)
+    @DescriptionForConfigEntry("The left gap between icon and text for some menu items (chunks, simultanous downloads, speed, ...)")
+    public int getMainMenuIconTextGap();
+
+    public void setMainMenuIconTextGap(int i);
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultIntValue(26)
+    @DescriptionForConfigEntry("Extra left indent for the menu items if there is a toggle checkbox menu entry in the layer")
+
+    public int getMenuIconExtraIndentForToggleItems();
+
+    public void setMenuIconExtraIndentForToggleItems(int i);
 
 }

@@ -1,13 +1,14 @@
 package org.jdownloader.updatev2;
 
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 
-import org.jdownloader.images.NewTheme;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public class UpdateProgress extends IconedProcessIndicator {
 
     public UpdateProgress() {
-        super(NewTheme.I().getIcon("update", 16));
+        super(new AbstractIcon(IconKey.ICON_UPDATE, 16));
     }
 
 }

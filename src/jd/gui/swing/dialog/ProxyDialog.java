@@ -33,6 +33,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.PseudoCombo;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.InternetConnectionSettings;
@@ -61,7 +62,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
     private DelayedRunnable delayer;
 
     public ProxyDialog() {
-        super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), NewTheme.I().getIcon("proxy_rotate", 32), null, null);
+        super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), new AbstractIcon(IconKey.ICON_PROXY_ROTATE, 32), null, null);
 
     }
 

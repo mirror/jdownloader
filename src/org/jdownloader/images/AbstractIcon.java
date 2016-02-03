@@ -31,9 +31,10 @@ public class AbstractIcon implements Icon, IDIcon {
         update();
     }
 
-    private int size;
-    private int width;
-    private int height;
+    private int     size;
+    private int     width;
+    private int     height;
+    private boolean autoDisabledIconEnabled;
 
     public AbstractIcon(String key, int size) {
         this.key = key;
@@ -66,7 +67,7 @@ public class AbstractIcon implements Icon, IDIcon {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         final Icon icon = NewTheme.I().getIcon(getKey(), getSize());
-        if (c != null && !c.isEnabled()) {
+        if (c != null && !c.isEnabled() && isAutoDisabledIconEnabled()) {
             org.jdownloader.images.NewTheme.I().getDisabledIcon(icon).paintIcon(c, g, x, y);
         } else {
             icon.paintIcon(c, g, x, y);
@@ -86,6 +87,14 @@ public class AbstractIcon implements Icon, IDIcon {
     @Override
     public IconIdentifier getIdentifier() {
         return new IconIdentifier(null, key);
+    }
+
+    public void setAutoDisabledIconEnabled(boolean b) {
+        autoDisabledIconEnabled = b;
+    }
+
+    public boolean isAutoDisabledIconEnabled() {
+        return autoDisabledIconEnabled;
     }
 
 }

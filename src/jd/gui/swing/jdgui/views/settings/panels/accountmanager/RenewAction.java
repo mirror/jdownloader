@@ -4,20 +4,21 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.statistics.StatsManager;
+
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.statistics.StatsManager;
 
 public class RenewAction extends TableBarAction {
     private static final long serialVersionUID = 8346982706972553448L;
 
     public RenewAction() {
         this.putValue(NAME, _GUI._.settings_accountmanager_renew());
-        this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("renew", ActionColumn.SIZE));
+        this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_RENEW, ActionColumn.SIZE));
     }
 
     public void actionPerformed(ActionEvent e) {

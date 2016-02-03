@@ -1,10 +1,11 @@
 package org.jdownloader.plugins;
 
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
+
 import jd.nutils.Formatter;
 import jd.plugins.PluginProgress;
-
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
 
 public class SleepPluginProgress extends PluginProgress {
     /**
@@ -17,7 +18,7 @@ public class SleepPluginProgress extends PluginProgress {
     public SleepPluginProgress(long total, String message) {
         super(0, total, null);
 
-        setIcon(NewTheme.I().getIcon("wait", 16));
+        setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
         this.message = message;
         pluginMessage = message;
     }

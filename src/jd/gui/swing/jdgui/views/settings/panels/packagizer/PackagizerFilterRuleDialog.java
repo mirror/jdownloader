@@ -270,7 +270,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         ret.add(new JSeparator());
         JLabel label;
         ret.add(SwingUtils.toBold(label = new JLabel(string)));
-        label.setIcon(NewTheme.I().getIcon("packagizer", 14));
+        label.setIcon(new AbstractIcon(IconKey.ICON_PACKAGIZER, 14));
         ret.add(new JSeparator());
         return ret;
     }

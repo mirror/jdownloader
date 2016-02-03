@@ -23,6 +23,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,12 +45,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class HighWayMe extends UseNet {
@@ -440,7 +441,7 @@ public class HighWayMe extends UseNet {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
@@ -450,7 +451,7 @@ public class HighWayMe extends UseNet {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
@@ -554,7 +555,7 @@ public class HighWayMe extends UseNet {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num) {
         synchronized (UPDATELOCK) {
             final String currentHost = correctHost(this.currDownloadLink.getHost());
@@ -690,7 +691,7 @@ public class HighWayMe extends UseNet {
 
                         @Override
                         public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                            return new BasicNotify("Weniger als 10% Traffic verbleibend", "Weniger als 10% Traffic verbleibend", NewTheme.I().getIcon("info", 32));
+                            return new BasicNotify("Weniger als 10% Traffic verbleibend", "Weniger als 10% Traffic verbleibend", new AbstractIcon(IconKey.ICON_INFO, 32));
                         }
                     });
                 }

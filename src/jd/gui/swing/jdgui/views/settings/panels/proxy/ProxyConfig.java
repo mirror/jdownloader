@@ -5,20 +5,21 @@ import javax.swing.Icon;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.AbstractProxySelectorImpl.Type;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.ProxyEvent;
-import jd.gui.swing.jdgui.views.settings.ConfigPanel;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 import org.appwork.utils.event.DefaultEventListener;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.AbstractProxySelectorImpl.Type;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.ProxyEvent;
+import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
 public class ProxyConfig extends AbstractConfigPanel implements DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>> {
 
@@ -48,7 +49,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
     public ProxyConfig() {
         super();
 
-        this.addHeader(getTitle(), NewTheme.I().getIcon("proxy_rotate", 32));
+        this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_PROXY_ROTATE, 32));
         this.addDescriptionPlain(_JDT._.gui_settings_proxy_description());
         this.addDescriptionPlain(_JDT._.gui_settings_proxy_description_new());
         table = new ProxyTable();
@@ -66,7 +67,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
         impPopup = new ExtButton(new ImportPopupAction(btImport, table)) {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -76,7 +77,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         };
         expPopup = new ExtButton(new ExportPopupAction(btExport, table)) {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -129,7 +130,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("proxy_rotate", ConfigPanel.ICON_SIZE);
+        return new AbstractIcon(IconKey.ICON_PROXY_ROTATE, ConfigPanel.ICON_SIZE);
     }
 
     @Override
@@ -144,7 +145,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.jdownloader.gui.settings.AbstractConfigPanel#onShow()
      */
     @Override
@@ -155,7 +156,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.jdownloader.gui.settings.AbstractConfigPanel#onHide()
      */
     @Override

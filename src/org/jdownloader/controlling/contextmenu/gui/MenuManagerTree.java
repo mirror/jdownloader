@@ -130,9 +130,9 @@ public class MenuManagerTree extends JTree {
                     JPopupMenu popup = new JPopupMenu();
 
                     // JMenuItem mi = new JMenuItem(T._.jd_plugins_optional_infobar_InfoDialog_hideWindow());
-                    // mi.setIcon(NewTheme.I().getIcon("close", -1));
+                    // mi.setIcon(new AbstractIcon(IconKey.ICON_CLOSE, -1));
                     // mi.addActionListener(this);
-                    popup.add(new AddActionAction(managerFrame));
+
                     popup.add(new AddSubMenuAction(managerFrame));
                     popup.add(new AddSpecialAction(managerFrame));
                     popup.add(new AddGenericItem(managerFrame, new SeparatorData()));

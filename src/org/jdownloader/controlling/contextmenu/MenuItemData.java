@@ -34,17 +34,16 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     private String                  name;
     private String                  iconKey;
     private String                  className;
-    private ActionData              actionData;
+    private ActionData              actionData = new ActionData();
 
     public String _getIdentifier() {
-        if (actionData != null) {
-
+        ActionData actionData = getActionData();
+        if (actionData._isValidDataForCreatingAnAction()) {
             if (actionData.getData() != null) {
                 return actionData.getClazzName() + ":" + actionData.getData() + ":" + actionData.getSetup();
             }
 
             return actionData.getClazzName() + ":" + actionData.getSetup();
-
         }
         if (getClass() != MenuContainer.class && getClass() != MenuItemData.class) {
             return getClass().getName();
@@ -71,11 +70,14 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public ActionData getActionData() {
+
         return actionData;
     }
 
     public void setActionData(ActionData actionData) {
-
+        if (actionData == null) {
+            actionData = new ActionData();
+        }
         this.actionData = actionData;
     }
 
@@ -228,7 +230,7 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
-        if (actionData == null) {
+        if (!getActionData()._isValidDataForCreatingAnAction()) {
             //
             throw new WTFException("No ACTION");
         }
@@ -355,7 +357,7 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public String _getDescription() {
-        if (getActionData() != null) {
+        if (getActionData()._isValidDataForCreatingAnAction()) {
             try {
                 return createAction().getTooltipText();
             } catch (Exception e) {

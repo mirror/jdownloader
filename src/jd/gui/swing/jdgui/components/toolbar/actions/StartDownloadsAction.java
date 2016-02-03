@@ -7,6 +7,31 @@ import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Icon;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
@@ -23,30 +48,6 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
-
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.controlling.contextmenu.ActionContext;
-import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.extensions.extraction.BooleanStatus;
-import org.jdownloader.gui.event.GUIEventSender;
-import org.jdownloader.gui.event.GUIListener;
-import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
-import org.jdownloader.translate._JDT;
 
 public class StartDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum>, ActionContext {
 
@@ -162,7 +163,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     }
 
     private String        badge        = null;
-    private static String BADGE_FORCED = "prio_3_clear";
+    private static String BADGE_FORCED = IconKey.ICON_PRIO_3_CLEAR;
 
     private void updateEnableState() {
 

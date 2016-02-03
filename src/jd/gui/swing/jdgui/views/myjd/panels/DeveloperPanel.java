@@ -5,8 +5,6 @@ import java.awt.event.ActionEvent;
 import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-
 import org.appwork.storage.StorageException;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
@@ -14,6 +12,8 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 
 public class DeveloperPanel extends AbstractConfigPanel {
 
@@ -25,7 +25,7 @@ public class DeveloperPanel extends AbstractConfigPanel {
         this.addDescription(_GUI._.RemoteControlPanel_Webinterface());
         addButton("http://my.jdownloader.org?referer=JDownloader", "robot_info", "<html>" + _GUI._.RemoteControlPanel_website_open().replace("\r\n", "<br>") + "</html>");
 
-        this.addHeader("Mobile Apps", new AbstractIcon("mobile", 32));
+        this.addHeader("Mobile Apps", new AbstractIcon(IconKey.ICON_MOBILE, 32));
         this.addDescription(_GUI._.RemoteControlPanel_mobile_desc());
 
         addButton("https://play.google.com/store/apps/details?id=org.appwork.myjdandroid", "android", "<html>" + _GUI._.RemoteControlPanel_android_open().replace("\r\n", "<br>") + "</html>");
@@ -70,7 +70,7 @@ public class DeveloperPanel extends AbstractConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return new AbstractIcon("cloud_sync", 32);
+        return new AbstractIcon(IconKey.ICON_CLOUD_SYNC, 32);
     }
 
     @Override

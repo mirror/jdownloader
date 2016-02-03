@@ -10,15 +10,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
@@ -33,8 +24,18 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
 public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
 
@@ -183,11 +184,11 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         MigPanel p = new MigPanel("ins 0,wrap 3", "[][][grow,fill]", "[][][grow,fill]");
         progress = new CircledProgressBar();
         progress.setIndeterminate(true);
-        progress.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("filter", 26), 1.0f));
+        progress.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_FILTER, 26), 1.0f));
         ((ImagePainter) progress.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getValueClipPainter()).setForeground(Color.GREEN);
 
-        progress.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("filter", 26), 0.5f));
+        progress.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_FILTER, 26), 0.5f));
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
         p.add(progress, "height 40!,width 40!,spany 2");

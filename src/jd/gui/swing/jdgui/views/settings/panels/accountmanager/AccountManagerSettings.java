@@ -18,16 +18,17 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 
 public class AccountManagerSettings extends AbstractConfigPanel {
 
@@ -41,7 +42,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
     public AccountManagerSettings() {
         super();
 
-        this.addHeader(getTitle(), NewTheme.I().getIcon("premium", 32));
+        this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_PREMIUM, 32));
         this.addDescriptionPlain(_JDT._.gui_settings_premium_description());
 
         addPair(_GUI._.AccountManagerSettings_AccountManagerSettings_disable_global(), null, new Checkbox(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS));
@@ -67,7 +68,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("premium", 32);
+        return new AbstractIcon(IconKey.ICON_PREMIUM, 32);
     }
 
     @Override

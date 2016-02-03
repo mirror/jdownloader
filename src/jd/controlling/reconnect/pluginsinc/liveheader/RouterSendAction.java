@@ -2,9 +2,6 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.reconnect.ProcessCallBackAdapter;
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -12,14 +9,18 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.reconnect.ProcessCallBackAdapter;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
 public class RouterSendAction extends BasicAction {
 
     public RouterSendAction(LiveHeaderReconnect liveHeaderReconnect) {
         super(T._.RouterSendAction_RouterSendAction_());
-        putValue(SMALL_ICON, NewTheme.I().getIcon("upload", 18));
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.RouterSendAction_RouterSendAction_tt(), NewTheme.I().getIcon("upload", 32)));
+        putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_UPLOAD, 18));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T._.RouterSendAction_RouterSendAction_tt(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)));
         setEnabled(true);
     }
 
@@ -64,7 +65,7 @@ public class RouterSendAction extends BasicAction {
             }
         };
         try {
-            Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg2(), NewTheme.I().getIcon("upload", 32), null, null).setPreferredWidth(500));
+            Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg2(), new AbstractIcon(IconKey.ICON_UPLOAD, 32), null, null).setPreferredWidth(500));
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

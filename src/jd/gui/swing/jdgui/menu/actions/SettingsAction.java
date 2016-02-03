@@ -19,21 +19,22 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class SettingsAction extends CustomizableAppAction {
 
     private static final long serialVersionUID = 2547991585530678706L;
 
     public SettingsAction() {
-        setIconKey("settings");
+        setIconKey(IconKey.ICON_SETTINGS);
         setTooltipText(_GUI._.action_settings_menu_tooltip());
         setName(_GUI._.action_settings_menu());
         setAccelerator(KeyEvent.VK_P);

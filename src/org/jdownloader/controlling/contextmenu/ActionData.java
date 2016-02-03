@@ -24,6 +24,14 @@ public class ActionData extends AbstractJsonData {
         return data;
     }
 
+    public boolean _isValidDataForCreatingAnAction() {
+        try {
+            return _getClazz() != null;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
     public Class<?> _getClazz() throws ClassNotFoundException, ExtensionNotLoadedException {
 
         if (clazz == null) {

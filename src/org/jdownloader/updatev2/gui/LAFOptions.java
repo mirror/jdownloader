@@ -8,12 +8,30 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.storage.config.handler.DefaultFactoryInterface;
+import org.appwork.storage.config.handler.IntegerKeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.handler.StorageHandler;
+import org.appwork.storage.config.handler.WriteStrategy;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.updatev2.UpdateController;
+
+import jd.SecondLevelLaunch;
 
 public class LAFOptions {
 
-    private static LAFOptions INSTANCE;
+    public static BooleanKeyHandler TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED = null;
+    public static IntegerKeyHandler CUSTOM_TABLE_ROW_HEIGHT;
+    private static LAFOptions       INSTANCE;
+    /**
+     * Increase this value and set ColorForTableRowGap to show a gap between two links. Check CustomTableRowHeight as well
+     **/
+    public static IntegerKeyHandler LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT;
 
     /**
      * get the only existing instance of LAFOptions. This is a singleton
@@ -39,8 +57,39 @@ public class LAFOptions {
      */
     private LAFOptions(String laf) {
         int i = laf.lastIndexOf(".");
-        String path = "cfg/laf/" + (i >= 0 ? laf.substring(i + 1) : laf);
+        String name = (i >= 0 ? laf.substring(i + 1) : laf);
+        String path = "cfg/laf/" + name;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
+        String rel = laf.replace(".", "/") + ".defaults";
+        if (getClass().getResource("/" + rel + ".json") != null) {
+            final LAFSettings defaultStorage = JsonConfig.create(rel, LAFSettings.class);
+            defaultStorage._getStorageHandler().getPrimitiveStorage().setAutoPutValues(false);
+            cfg._getStorageHandler().getPrimitiveStorage().setAutoPutValues(false);
+            defaultStorage._getStorageHandler().setSaveInShutdownHookEnabled(false);
+            defaultStorage._getStorageHandler().setWriteStrategy(new WriteStrategy() {
+
+                @Override
+                public void write(StorageHandler<?> storageHandler, KeyHandler<?> keyHandler) {
+                    System.out.println("Do not write");
+                }
+            });
+            cfg._getStorageHandler().setDefaultFactory(new DefaultFactoryInterface() {
+
+                @Override
+                public Object getDefaultValue(KeyHandler<?> handler, Object o) {
+                    KeyHandler<Object> defKeyHandler = defaultStorage._getStorageHandler().getKeyHandler(handler.getKey());
+                    Object v = defKeyHandler.getValue();
+                    // Object def = defKeyHandler.getDefaultValue();
+                    //
+                    // if (def != v) {
+                    //
+                    // System.out.println("def");
+                    // }
+                    return v;
+
+                }
+            });
+        }
 
     }
 
@@ -49,6 +98,46 @@ public class LAFOptions {
             return;
         }
         INSTANCE = new LAFOptions(laf);
+
+        LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("LinkTableHorizontalRowLineWeight", IntegerKeyHandler.class);
+        CUSTOM_TABLE_ROW_HEIGHT = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
+        TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("TableAlternateRowHighlightEnabled", BooleanKeyHandler.class);
+        // INSTANCE.getCfg()._getStorageHandler().getKeyHandler("ThemeID", StringKeyHandler.class).getEventSender().addListener(new
+        // GenericConfigEventListener<String>() {
+        //
+        // @Override
+        // public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
+        //
+        // try {
+        // UpdateController.getInstance().runExtensionInstallation("icons-" + LAFOptions.getInstance().getCfg().getThemeID());
+        // } catch (InterruptedException e) {
+        // e.printStackTrace();
+        // }
+        // }
+        //
+        // @Override
+        // public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
+        // }
+        // });
+        String theme = INSTANCE.getCfg().getIconSetID();
+        NewTheme.getInstance().setTheme(theme);
+        if (StringUtils.equals("standard", theme)) {
+            SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
+
+                @Override
+                public void run() {
+                    String extensionID = "iconset-" + theme;
+                    if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
+                        try {
+                            UpdateController.getInstance().runExtensionInstallation(extensionID);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+
+        }
 
     }
 
@@ -68,7 +157,8 @@ public class LAFOptions {
     }
 
     public static void main(String[] args) {
-        System.out.println(0x474747);
+        ConfigUtils.printStaticMappings(LAFSettings.class);
+
     }
 
     public static Color createColor(String str) {
@@ -266,10 +356,6 @@ public class LAFOptions {
 
     public Color getColorForPanelHeaderForeGround() {
         return createColor(cfg.getColorForPanelHeaderForeground());
-    }
-
-    public Color getColorForTooltipBackground() {
-        return createColor(cfg.getColorForTooltipBackground());
     }
 
     public Color getColorForSpeedMeterAverage() {

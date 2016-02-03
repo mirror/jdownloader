@@ -7,6 +7,18 @@ import javax.swing.AbstractAction;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtButton;
+import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.controlling.hosterrule.AccountUsageRule;
+import org.jdownloader.controlling.hosterrule.HosterRuleController;
+import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -18,17 +30,6 @@ import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.PremiumAccountTable;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.RefreshAction;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtButton;
-import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.controlling.hosterrule.AccountUsageRule;
-import org.jdownloader.controlling.hosterrule.HosterRuleController;
-import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
 public class HosterOrderPanel extends SwitchPanel implements ActionListener, AccountControllerListener, AccountCheckerEventListener, HosterRuleControllerListener {
 
@@ -61,7 +62,7 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
 
         NewRuleAction na;
         tb.add(new ExtButton(na = new NewRuleAction()), "sg 1,height 26!");
-        na.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
+        na.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_ADD, 20));
         RemoveAction ra;
         tb.add(new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));

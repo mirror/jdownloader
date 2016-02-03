@@ -18,12 +18,13 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.dialog.AboutDialog;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.gui.swing.dialog.AboutDialog;
 
 public class AboutAction extends CustomizableAppAction {
 
@@ -32,7 +33,7 @@ public class AboutAction extends CustomizableAppAction {
     public AboutAction() {
         super();
         setName(_GUI._.action_aboutaction());
-        setIconKey("about");
+        setIconKey(IconKey.ICON_ABOUT);
         setTooltipText(_GUI._.action_aboutaction_tooltip());
 
     }

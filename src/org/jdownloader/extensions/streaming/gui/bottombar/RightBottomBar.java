@@ -13,6 +13,7 @@ import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -72,7 +73,7 @@ public class RightBottomBar extends MigPanel {
         addButton(new AppAction() {
             {
                 setTooltipText(_GUI._.BottomBar_BottomBar_settings());
-                setIconKey("settings");
+                setIconKey(IconKey.ICON_SETTINGS);
                 // setIconSizes(18);
             }
 

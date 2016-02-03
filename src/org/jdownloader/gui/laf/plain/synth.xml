@@ -1,0 +1,2718 @@
+<synth>
+
+<!-- 
+*******************************************************************************
+Defaults
+*******************************************************************************
+-->
+  <style id="default">
+    <!-- <object id="graphicsUtils" class="de.javasoft.plaf.synthetica.GraphicsUtils"/>  -->
+    <object id="graphicsUtils" class="de.javasoft.plaf.synthetica.plain.GraphicsUtils"/>
+    <graphicsUtils idref="graphicsUtils"/>
+
+    <object id="syntheticaPainter" class="de.javasoft.plaf.synthetica.painter.SyntheticaPainter" />
+    <state>
+      <font id="SyntheticaDefaultFont" name="Segoe UI" size="12"/>
+      <color type="FOREGROUND" value="#222222" /> 
+  	</state>
+
+  	<state value="DISABLED">
+  	  <color type="TEXT_FOREGROUND" value="#A0A0A0" />
+  	</state>
+
+    <defaultsProperty key="Synthetica.window.decoration" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.window.opaque" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.animation.enabled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.cellRenderer.respectFocus" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.cellRenderer.selectionBackground.enabled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.background.alpha" type="integer" value="20"/>
+    <!-- <defaultsProperty key="Synthetica.font.disabled" type="boolean" value="true"/> -->
+  </style>
+  <bind style="default" type="region" key=".*" />
+
+
+<!-- 
+*******************************************************************************
+ArrowButton
+*******************************************************************************
+-->
+  <style id="arrowButton">
+    <property key="ArrowButton.size" type="integer" value="16"/>
+
+    <state>
+      <!-- Background (Button) -->
+      <string id="arrowButtonXBackground">plain/images/arrowButton_hover3.png,plain/images/arrowButton_hover2.png,plain/images/arrowButton_hover.png,plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background" type="idref" value="arrowButtonXBackground"/>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.insets" type="insets" value="2 2 2 2"/>
+
+      <string id="comboBoxButton">plain/images/comboBoxButton_hover3.png,plain/images/comboBoxButton_hover2.png,plain/images/comboBoxButton_hover.png,plain/images/comboBoxButton.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.ComboBox.arrowButton" type="idref" value="comboBoxButton"/>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.insets.ComboBox.arrowButton" type="insets" value="4 4 4 4"/>
+
+      <string id="spinnerButton">plain/images/spinnerButton_hover3.png,plain/images/spinnerButton_hover2.png,plain/images/spinnerButton_hover.png,plain/images/spinnerButton.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.Spinner.nextButton" type="idref" value="spinnerButton"/>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.Spinner.previousButton" type="idref" value="spinnerButton"/>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.Spinner.nextButton" type="idref" value="spinnerButton"/>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.Spinner.previousButton" type="idref" value="spinnerButton"/>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.insets.Spinner.nextButton" type="insets" value="1 1 1 1"/>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.insets.Spinner.previousButton" type="insets" value="1 1 1 1"/>
+
+      <string id="arrowButtonYBackground">plain/images/arrowButton_hover3.png,plain/images/arrowButton_hover2.png,plain/images/arrowButton_hover.png,plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.y.background" type="idref" value="arrowButtonYBackground"/>
+      <defaultsProperty key="Synthetica.arrowButton.y.background.insets" type="insets" value="2 2 2 2"/>
+
+      <string id="arrowButton8x8Background">plain/images/arrowButton_hover3.png,plain/images/arrowButton_hover2.png,plain/images/arrowButton_hover.png,plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background" type="idref" value="arrowButton8x8Background"/>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.insets" type="insets" value="2 2 2 2"/>
+
+
+      <!-- Foreground (Arrow) -->
+      <string id="arrowUp">plain/images/arrowUp.png</string>
+      <defaultsProperty key="Synthetica.arrow.up" type="idref" value="arrowUp"/>
+
+      <string id="arrowDown">plain/images/arrowDown.png</string>
+      <defaultsProperty key="Synthetica.arrow.down" type="idref" value="arrowDown"/>
+
+      <string id="arrowLeft">plain/images/arrowLeft.png</string>
+      <defaultsProperty key="Synthetica.arrow.left" type="idref" value="arrowLeft"/>
+
+      <string id="arrowRight">plain/images/arrowRight.png</string>
+      <defaultsProperty key="Synthetica.arrow.right" type="idref" value="arrowRight"/>
+
+      <string id="arrow8x8Up">plain/images/arrow8x8Up.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.up" type="idref" value="arrow8x8Up"/>
+
+      <string id="arrow8x8Down">plain/images/arrow8x8Down.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.down" type="idref" value="arrow8x8Down"/>
+
+      <string id="arrow8x8Left">plain/images/arrow8x8Left.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.left" type="idref" value="arrow8x8Left"/>
+
+      <string id="arrow8x8Right">plain/images/arrow8x8Right.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.right" type="idref" value="arrow8x8Right"/>
+
+      <string id="arrowUpSpinner">plain/images/arrowUpSpinner.png</string>
+      <defaultsProperty key="Synthetica.arrow.up.Spinner.nextButton" type="idref" value="arrowUpSpinner"/>
+      <string id="arrowUpSpinner">plain/images/arrowUpSpinner8x8.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.up.Spinner.nextButton" type="idref" value="arrowUpSpinner"/>
+
+      <string id="arrowDownSpinner">plain/images/arrowDownSpinner.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.Spinner.previousButton" type="idref" value="arrowDownSpinner"/>
+      <string id="arrowDownSpinner">plain/images/arrowDownSpinner8x8.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.down.Spinner.previousButton" type="idref" value="arrowDownSpinner"/>
+
+      <string id="arrowDownCombo">plain/images/arrowDownComboBox.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.ComboBox.arrowButton" type="idref" value="arrowDownCombo"/>
+
+      <painter method="arrowButtonBackground" idref="syntheticaPainter" />
+	  <painter method="arrowButtonForeground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="MOUSE_OVER">
+      <!-- Background (Button) -->
+      <string id="arrowButtonXBackground">plain/images/arrowButton_hover.png,plain/images/arrowButton_hover2.png,plain/images/arrowButton_hover3.png,plain/images/arrowButton_hover4.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.hover" type="idref" value="arrowButtonXBackground"/>
+
+      <string id="comboBoxButtonHover">plain/images/comboBoxButton_hover.png,plain/images/comboBoxButton_hover2.png,plain/images/comboBoxButton_hover3.png,plain/images/comboBoxButton_hover4.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.hover.ComboBox.arrowButton" type="idref" value="comboBoxButtonHover"/>
+
+      <string id="spinnerButtonHover">plain/images/spinnerButton_hover.png,plain/images/spinnerButton_hover2.png,plain/images/spinnerButton_hover3.png,plain/images/spinnerButton_hover4.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.hover.Spinner.nextButton" type="idref" value="spinnerButtonHover"/>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.hover.Spinner.previousButton" type="idref" value="spinnerButtonHover"/>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.hover.Spinner.nextButton" type="idref" value="spinnerButtonHover"/>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.hover.Spinner.previousButton" type="idref" value="spinnerButtonHover"/>
+
+      <string id="arrowButtonYBackground">plain/images/arrowButton_hover.png,plain/images/arrowButton_hover2.png,plain/images/arrowButton_hover3.png,plain/images/arrowButton_hover4.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.y.background.hover" type="idref" value="arrowButtonYBackground"/>
+
+      <string id="arrowButton8x8Background">plain/images/arrowButton_hover.png,plain/images/arrowButton_hover2.png,plain/images/arrowButton_hover3.png,plain/images/arrowButton_hover4.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.hover" type="idref" value="arrowButton8x8Background"/>
+
+      <!-- Foreground (Arrow) -->
+      <string id="arrowUp">plain/images/arrowUp.png</string>
+      <defaultsProperty key="Synthetica.arrow.up.hover" type="idref" value="arrowUp"/>
+
+      <string id="arrowDown">plain/images/arrowDown.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.hover" type="idref" value="arrowDown"/>
+
+      <string id="arrowLeft">plain/images/arrowLeft.png</string>
+      <defaultsProperty key="Synthetica.arrow.left.hover" type="idref" value="arrowLeft"/>
+
+      <string id="arrowRight">plain/images/arrowRight.png</string>
+      <defaultsProperty key="Synthetica.arrow.right.hover" type="idref" value="arrowRight"/>
+
+      <string id="arrow8x8Up">plain/images/arrow8x8Up.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.up.hover" type="idref" value="arrow8x8Up"/>
+
+      <string id="arrow8x8Down">plain/images/arrow8x8Down.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.down.hover" type="idref" value="arrow8x8Down"/>
+
+      <string id="arrow8x8Left">plain/images/arrow8x8Left.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.left.hover" type="idref" value="arrow8x8Left"/>
+
+      <string id="arrow8x8Right">plain/images/arrow8x8Right.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.right.hover" type="idref" value="arrow8x8Right"/>
+
+      <string id="arrowUpSpinner">plain/images/arrowUpSpinner.png</string>
+      <defaultsProperty key="Synthetica.arrow.up.hover.Spinner.nextButton" type="idref" value="arrowUpSpinner"/>
+      <string id="arrowUpSpinner">plain/images/arrowUpSpinner8x8.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.up.hover.Spinner.nextButton" type="idref" value="arrowUpSpinner"/>
+
+      <string id="arrowDownSpinner">plain/images/arrowDownSpinner.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.hover.Spinner.previousButton" type="idref" value="arrowDownSpinner"/>
+      <string id="arrowDownSpinner">plain/images/arrowDownSpinner8x8.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.down.hover.Spinner.previousButton" type="idref" value="arrowDownSpinner"/>
+
+      <string id="arrowDownComboHover">plain/images/arrowDownComboBox.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.hover.ComboBox.arrowButton" type="idref" value="arrowDownComboHover"/>
+
+	  <painter method="arrowButtonBackground" idref="syntheticaPainter" />
+	  <painter method="arrowButtonForeground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="PRESSED">
+      <!-- Background (Button) -->
+      <string id="arrowButtonXBackground">plain/images/arrowButton_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.pressed" type="idref" value="arrowButtonXBackground"/>
+
+      <string id="comboBoxButton">plain/images/comboBoxButton_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.pressed.ComboBox.arrowButton" type="idref" value="comboBoxButton"/>
+
+      <string id="spinnerButton">plain/images/spinnerButton_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.pressed.Spinner.nextButton" type="idref" value="spinnerButton"/>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.pressed.Spinner.previousButton" type="idref" value="spinnerButton"/>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.pressed.Spinner.nextButton" type="idref" value="spinnerButton"/>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.pressed.Spinner.previousButton" type="idref" value="spinnerButton"/>
+
+      <string id="arrowButtonYBackground">plain/images/arrowButton_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.y.background.pressed" type="idref" value="arrowButtonYBackground"/>
+
+      <string id="arrowButton8x8BackgroundPressed">plain/images/arrowButton_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.pressed" type="idref" value="arrowButton8x8BackgroundPressed"/>
+
+      <!-- Foreground (Arrow) -->
+      <string id="arrowUp">plain/images/arrowUp_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.up.pressed" type="idref" value="arrowUp"/>
+
+      <string id="arrowDown">plain/images/arrowDown_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.pressed" type="idref" value="arrowDown"/>
+
+      <string id="arrowLeft">plain/images/arrowLeft_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.left.pressed" type="idref" value="arrowLeft"/>
+
+      <string id="arrowRight">plain/images/arrowRight_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.right.pressed" type="idref" value="arrowRight"/>
+
+      <string id="arrow8x8Up">plain/images/arrow8x8Up_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.up.pressed" type="idref" value="arrow8x8Up"/>
+
+      <string id="arrow8x8Down">plain/images/arrow8x8Down_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.down.pressed" type="idref" value="arrow8x8Down"/>
+
+      <string id="arrow8x8Left">plain/images/arrow8x8Left_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.left.pressed" type="idref" value="arrow8x8Left"/>
+
+      <string id="arrow8x8Right">plain/images/arrow8x8Right_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.right.pressed" type="idref" value="arrow8x8Right"/>
+
+      <string id="arrowUpSpinner">plain/images/arrowUpSpinner_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.up.pressed.Spinner.nextButton" type="idref" value="arrowUpSpinner"/>
+      <string id="arrowUpSpinner">plain/images/arrowUpSpinner8x8_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.up.pressed.Spinner.nextButton" type="idref" value="arrowUpSpinner"/>
+
+      <string id="arrowDownSpinner">plain/images/arrowDownSpinner_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.pressed.Spinner.previousButton" type="idref" value="arrowDownSpinner"/>
+      <string id="arrowDownSpinner">plain/images/arrowDownSpinner8x8_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.down.pressed.Spinner.previousButton" type="idref" value="arrowDownSpinner"/>
+
+      <string id="arrowDownComboPressed">plain/images/arrowDownComboBox_pressed.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.pressed.ComboBox.arrowButton" type="idref" value="arrowDownComboPressed"/>
+
+	  <painter method="arrowButtonBackground" idref="syntheticaPainter" />
+	  <painter method="arrowButtonForeground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <!-- Background (Button) -->
+      <string id="arrowButtonXBackground">plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.x.background.disabled" type="idref" value="arrowButtonXBackground"/>
+
+      <string id="arrowButtonYBackground">plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.y.background.disabled" type="idref" value="arrowButtonYBackground"/>
+
+      <string id="arrowButton8x8Background">plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.arrowButton.8x8.background.disabled" type="idref" value="arrowButton8x8Background"/>
+
+      <!-- Foreground (Arrow) -->
+      <string id="arrowUp">plain/images/arrowUp_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.up.disabled" type="idref" value="arrowUp"/>
+
+      <string id="arrowDown">plain/images/arrowDown_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.disabled" type="idref" value="arrowDown"/>
+
+      <string id="arrowLeft">plain/images/arrowLeft_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.left.disabled" type="idref" value="arrowLeft"/>
+
+      <string id="arrowRight">plain/images/arrowRight_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.right.disabled" type="idref" value="arrowRight"/>
+
+      <string id="arrow8x8Up">plain/images/arrow8x8Up_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.up.disabled" type="idref" value="arrow8x8Up"/>
+
+      <string id="arrow8x8Down">plain/images/arrow8x8Down_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.down.disabled" type="idref" value="arrow8x8Down"/>
+
+      <string id="arrow8x8Left">plain/images/arrow8x8Left_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.left.disabled" type="idref" value="arrow8x8Left"/>
+
+      <string id="arrow8x8Right">plain/images/arrow8x8Right_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.right.disabled" type="idref" value="arrow8x8Right"/>
+
+      <string id="arrowUpSpinner">plain/images/arrowUpSpinner_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.up.disabled.Spinner.nextButton" type="idref" value="arrowUpSpinner"/>
+      <string id="arrowUpSpinner">plain/images/arrowUpSpinner8x8_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.up.disabled.Spinner.nextButton" type="idref" value="arrowUpSpinner"/>
+
+      <string id="arrowDownSpinner">plain/images/arrowDownSpinner_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.disabled.Spinner.previousButton" type="idref" value="arrowDownSpinner"/>
+      <string id="arrowDownSpinner">plain/images/arrowDownSpinner8x8_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.8x8.down.disabled.Spinner.previousButton" type="idref" value="arrowDownSpinner"/>
+
+      <string id="arrowDownComboBox">plain/images/arrowDownComboBox_disabled.png</string>
+      <defaultsProperty key="Synthetica.arrow.down.disabled.ComboBox.arrowButton" type="idref" value="arrowDownComboBox"/>
+
+	  <painter method="arrowButtonBackground" idref="syntheticaPainter" />
+	  <painter method="arrowButtonForeground" idref="syntheticaPainter" />
+    </state>
+
+  </style>
+  <bind style="arrowButton" type="region" key="ArrowButton"/>
+
+
+<!-- 
+*******************************************************************************
+Button
+*******************************************************************************
+-->
+  <style id="button">
+    <property key="Button.textShiftOffset" type="integer" value="0"/>
+
+    <state>
+      <insets top="6" left="6" bottom="6" right="6"/>
+      <property key="Button.margin" type="insets" value="0 10 0 10"/>
+
+      <defaultsProperty key="Synthetica.button.border.insets" type="insets" value="6 6 6 6"/>
+      <defaultsProperty key="Synthetica.button.12x12.border.insets" type="insets" value="3 3 3 3"/>
+
+      <string id="buttonBorder">plain/images/button_hover3.png,plain/images/button_hover2.png,plain/images/button_hover.png,plain/images/button.png</string>
+      <defaultsProperty key="Synthetica.button.border" type="idref" value="buttonBorder"/>
+      <defaultsProperty key="Synthetica.button.animation.cycles" type="integer" value="1"/>
+      <defaultsProperty key="Synthetica.button.animation.hoverOut" type="boolean" value="true"/>
+
+      <string id="buttonBorder12x12">plain/images/button.png</string>
+      <defaultsProperty key="Synthetica.button.12x12.border" type="idref" value="buttonBorder12x12"/>
+
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="MOUSE_OVER">
+      <color type="TEXT_FOREGROUND" value="#333333" />
+      <string id="buttonBorderHover">plain/images/button_hover.png,plain/images/button_hover2.png,plain/images/button_hover3.png,plain/images/button_hover4.png</string>
+      <defaultsProperty key="Synthetica.button.border.hover" type="idref" value="buttonBorderHover"/>
+
+      <string id="buttonBorder12x12Hover">plain/images/button_hover.png</string>
+      <defaultsProperty key="Synthetica.button.12x12.border.hover" type="idref" value="buttonBorder12x12Hover"/>
+
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED">
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="PRESSED">
+      <color type="TEXT_FOREGROUND" value="#222222" />
+      <string id="buttonBorderPressed">plain/images/button_pressed.png</string>
+      <defaultsProperty key="Synthetica.button.border.pressed" type="idref" value="buttonBorderPressed"/>
+
+      <string id="buttonBorder12x12Pressed">plain/images/button_pressed.png</string>
+      <defaultsProperty key="Synthetica.button.12x12.border.pressed" type="idref" value="buttonBorder12x12Pressed"/>
+
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DEFAULT">
+      <defaultsProperty key="Synthetica.button.default.animation.cycles" type="integer" value="1"/>
+      <defaultsProperty key="Synthetica.button.default.animation.delay" type="integer" value="50"/>
+      <defaultsProperty key="Synthetica.button.default.animation.type" type="integer" value="2"/>
+      <defaultsProperty key="Synthetica.button.default.hover.animation.cycles" type="integer" value="1"/>
+      <defaultsProperty key="Synthetica.button.default.hover.animation.delay" type="integer" value="50"/>
+      <defaultsProperty key="Synthetica.button.default.hover.animation.type" type="integer" value="1"/>
+
+      <string id="buttonBorder">plain/images/button_defaultHover3.png,plain/images/button_defaultHover2.png,plain/images/button_defaultHover.png,plain/images/button_default.png</string>
+      <defaultsProperty key="Synthetica.button.border.default" type="idref" value="buttonBorder"/>
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <color type="TEXT_FOREGROUND" value="#A0A0A0" />
+      <string id="buttonBorderDisabled">plain/images/button.png</string>
+      <defaultsProperty key="Synthetica.button.border.disabled" type="idref" value="buttonBorderDisabled"/>
+
+      <string id="buttonBorder12x12Disabled">plain/images/button.png</string>
+      <defaultsProperty key="Synthetica.button.12x12.border.disabled" type="idref" value="buttonBorder12x12Disabled"/>
+
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED AND MOUSE_OVER">
+      <color type="TEXT_FOREGROUND" value="#333333"/>
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED AND PRESSED">
+      <color type="TEXT_FOREGROUND" value="#222222" />
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED AND MOUSE_OVER AND PRESSED">
+      <color type="TEXT_FOREGROUND" value="#222222" />
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DEFAULT AND FOCUSED">
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DEFAULT AND PRESSED">
+	  <imagePainter method="buttonBackground" path="plain/images/button_defaultPressed.png"
+                    sourceInsets="6 6 6 6" paintCenter="true" stretch="true"/>
+    </state>
+
+    <state value="DEFAULT AND MOUSE_OVER">
+      <color type="TEXT_FOREGROUND" value="#333333"/>
+      <string id="buttonBorder">plain/images/button_defaultHover.png,plain/images/button_defaultHover2.png,plain/images/button_defaultHover3.png,plain/images/button_defaultHover4.png</string>
+      <defaultsProperty key="Synthetica.button.border.default.hover" type="idref" value="buttonBorder"/>
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state> 
+
+    <state value="DEFAULT AND DISABLED">
+      <color type="TEXT_FOREGROUND" value="#A0A0A0"/>
+	  <imagePainter method="buttonBackground" path="plain/images/button.png"
+                    sourceInsets="6 6 6 6" paintCenter="true" stretch="true"/>
+    </state>
+
+    <state value="DEFAULT AND PRESSED AND FOCUSED">
+      <string id="buttonBorder">plain/images/button_defaultPressed.png</string>
+      <defaultsProperty key="Synthetica.button.border.default.pressed" type="idref" value="buttonBorder"/>
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DEFAULT AND MOUSE_OVER AND FOCUSED">
+      <color type="TEXT_FOREGROUND" value="#333333"/>
+	  <painter method="buttonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED AND PRESSED">
+      <imagePainter method="buttonBackground" path="plain/images/button_pressed.png"
+                    sourceInsets="6 6 6 6" paintCenter="true" stretch="true"/>
+    </state>
+
+  </style>
+  <bind style="button" type="region" key="Button"/>
+
+
+<!-- 
+*******************************************************************************
+CheckBox
+*******************************************************************************
+-->
+  <style id="checkBox">
+    <insets top="4" left="4" bottom="4" right="4"/>
+    <!-- dummy image defines icon size -->
+    <imageIcon id="checkBoxDefault" path="plain/images/dummy.png"/>
+
+    <state>
+      <property key="CheckBox.icon" value="checkBoxDefault"/>
+      <opaque value="false"/>
+
+      <string id="checkBoxImage">plain/images/checkBox_hover3.png,plain/images/checkBox_hover2.png,plain/images/checkBox_hover.png,plain/images/checkBox.png</string>
+      <defaultsProperty key="Synthetica.checkBox.image" type="idref" value="checkBoxImage"/>
+
+      <string id="checkBoxFocus">plain/images/focus_checkBox.png,plain/images/focus_checkBox2.png,plain/images/focus_checkBox3.png,plain/images/focus_checkBox4.png</string>
+      <defaultsProperty key="Synthetica.checkBox.focus" type="idref" value="checkBoxFocus"/>
+
+      <string id="checkBoxBorder">plain/images/titledBorder.png</string>
+      <defaultsProperty key="Synthetica.checkBox.border" type="idref" value="checkBoxBorder"/>
+      <defaultsProperty key="Synthetica.checkBox.border.insets" type="insets" value="4 4 4 4"/>
+	  <painter method="checkBoxBorder" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <string id="checkBoxImage">plain/images/checkBox_hoverSelected3.png,plain/images/checkBox_hoverSelected2.png,plain/images/checkBox_hoverSelected.png,plain/images/checkBox_selected.png</string>
+      <defaultsProperty key="Synthetica.checkBox.selected.image" type="idref" value="checkBoxImage"/>
+	</state>
+
+    <state value="PRESSED">
+      <string id="checkBoxPressed">plain/images/checkBox_pressed.png</string>
+      <defaultsProperty key="Synthetica.checkBox.pressed.image" type="idref" value="checkBoxPressed"/>
+      <string id="checkBoxPressedSelected">plain/images/checkBox_pressed.png</string>
+      <defaultsProperty key="Synthetica.checkBox.pressed.selected.image" type="idref" value="checkBoxPressedSelected"/>
+	</state>
+
+    <state value="MOUSE_OVER">
+      <string id="checkBoxImage">plain/images/checkBox_hover.png,plain/images/checkBox_hover2.png,plain/images/checkBox_hover3.png,plain/images/checkBox_hover4.png</string>
+      <defaultsProperty key="Synthetica.checkBox.hover.image" type="idref" value="checkBoxImage"/>
+	</state>
+
+    <state value="MOUSE_OVER AND SELECTED">
+      <string id="checkBoxImage">plain/images/checkBox_hoverSelected.png,plain/images/checkBox_hoverSelected2.png,plain/images/checkBox_hoverSelected3.png,plain/images/checkBox_hoverSelected4.png</string>
+      <defaultsProperty key="Synthetica.checkBox.hover.selected.image" type="idref" value="checkBoxImage"/>
+	</state>
+
+    <state value="FOCUSED">
+	  <painter method="checkBoxBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+  	  <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+      <string id="checkBoxImage">plain/images/checkBox_disabled.png</string>
+      <defaultsProperty key="Synthetica.checkBox.disabled.image" type="idref" value="checkBoxImage"/>
+	</state>
+
+    <state value="DISABLED AND SELECTED">
+  	  <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+      <string id="checkBoxImage">plain/images/checkBox_disabledSelected.png</string>
+      <defaultsProperty key="Synthetica.checkBox.disabled.selected.image" type="idref" value="checkBoxImage"/>
+	</state>
+
+  </style>
+  <bind style="checkBox" type="region" key="CheckBox"/>	 
+
+
+<!-- 
+*******************************************************************************
+ColorChooser
+*******************************************************************************
+-->
+  <style id="colorChooser">
+    <insets top="8" left="8" bottom="8" right="8"/>
+  </style>
+  <bind style="colorChooser" type="region" key="ColorChooser"/>
+
+
+<!-- 
+*******************************************************************************
+ComboBox
+Note: editable ComboBox contains TextField and ArrowButton
+      non editable ComboBox contains Label and ArrowButton
+*******************************************************************************
+-->
+  <style id="comboBox">
+    <insets top="2" left="5" bottom="2" right="2"/>
+    <defaultsProperty key="Synthetica.comboBox.viewport.border.insets" type="insets" value="0 0 0 0" />
+    <!-- <object class="de.javasoft.plaf.synthetica.plain.ComboBoxPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ComboBoxPainter" type="idref" value="painter"/> -->
+    
+    <!-- relative comboBox popup location, use negative left/right/bottom values to increase width/height - see SynthComboPopup -->
+    <property key="ComboBox.popupInsets" type="insets" value="0 -3 0 -3"/>
+
+    <!-- keep button size when resized -->
+    <string id="lmcn">de.javasoft.plaf.synthetica.SyntheticaComboBoxLayoutManager</string>
+    <defaultsProperty key="Synthetica.comboBox.layoutManager.className" type="idref" value="lmcn"/>
+
+    <string id="comboListCellRenderer">de.javasoft.plaf.synthetica.plain.ComboListCellRenderer</string>
+    <defaultsProperty key="Synthetica.comboBox.defaultRenderer.className" type="idref" value="comboListCellRenderer"/>
+
+    <string id="comboListSelectionBackground">plain/images/selectionBackground.png</string>
+    <defaultsProperty key="Synthetica.comboBox.listSelectionBackground" type="idref" value="comboListSelectionBackground"/>
+    <defaultsProperty key="Synthetica.comboBox.listSelectionBackground.insets" type="insets" value="1 1 1 1"/>
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedTextColor">
+        <!-- #222222 -->
+        <int>34</int>
+        <int>34</int>
+        <int>34</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.locked.textColor" type="idref" value="lockedTextColor"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedBackgroundColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.locked.backgroundColor" type="idref" value="lockedBackgroundColor"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.lockedColor" type="idref" value="lockedColor"/>
+
+      <string id="comboBoxBorder">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.comboBox.border" type="idref" value="comboBoxBorder"/>
+      
+      <defaultsProperty key="Synthetica.comboBox.border.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.comboBox.border.fillInsets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.comboBox.border.arcWidth" type="integer" value="0"/>
+      <defaultsProperty key="Synthetica.comboBox.border.arcHeight" type="integer" value="0"/>
+
+      <!-- <string id="comboBoxBorderPressed">plain/images/comboBox_pressed.png</string>
+      <defaultsProperty key="Synthetica.comboBox.border.pressed" type="idref" value="comboBoxBorderPressed"/>
+      <string id="comboBoxBorderHover">plain/images/comboBox_hover.png,plain/images/comboBox_hover2.png,plain/images/comboBox_hover3.png,plain/images/comboBox_hover4.png</string>
+      <defaultsProperty key="Synthetica.comboBox.border.hover" type="idref" value="comboBoxBorderHover"/>
+      <string id="comboBoxBorderLocked">plain/images/comboBox_hover3.png,plain/images/comboBox_hover2.png,plain/images/comboBox_hover.png,plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.comboBox.border.locked" type="idref" value="comboBoxBorderLocked"/>
+      <string id="comboBoxBorderHoverLocked">plain/images/comboBox_hover.png,plain/images/comboBox_hover2.png,plain/images/comboBox_hover3.png,plain/images/comboBox_hover4.png</string>
+      <defaultsProperty key="Synthetica.comboBox.border.hover.locked" type="idref" value="comboBoxBorderHoverLocked"/>
+      <string id="comboBoxBorderDisabledLocked">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.comboBox.border.disabled.locked" type="idref" value="comboBoxBorderDisabledLocked"/> -->
+      <string id="comboBoxBorderLocked">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.comboBox.border.locked" type="idref" value="comboBoxBorderLocked"/>     
+
+	  <painter method="comboBoxBorder" idref="syntheticaPainter" />
+	  <painter method="comboBoxBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED">
+      <object class="javax.swing.plaf.ColorUIResource" id="focusedTextColor">
+        <!-- #222222 -->
+        <int>34</int>
+        <int>34</int>
+        <int>34</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.focused.textColor" type="idref" value="focusedTextColor"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="focusedBackgroundColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.focused.backgroundColor" type="idref" value="focusedBackgroundColor"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="focusedColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.focusedColor" type="idref" value="focusedColor"/>
+
+	  <painter method="comboBoxBorder" idref="syntheticaPainter" />
+	  <painter method="comboBoxBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <string id="comboBoxBorderDisabled">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.comboBox.border.disabled" type="idref" value="comboBoxBorderDisabled"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="disabledTextColor">
+        <!-- #A0A0A0 -->
+        <int>160</int>
+        <int>160</int>
+        <int>160</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.disabled.textColor" type="idref" value="disabledTextColor"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="disabledBackgroundColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.disabled.backgroundColor" type="idref" value="disabledBackgroundColor"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="disabledColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.disabledColor" type="idref" value="disabledColor"/>
+
+	  <painter method="comboBoxBorder" idref="syntheticaPainter" />
+	  <painter method="comboBoxBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="comboBox" type="region" key="ComboBox"/>
+
+
+<!-- 
+*******************************************************************************
+DesktopIcon
+*******************************************************************************
+-->
+  <style id="desktopIcon">
+    <state>
+      <opaque value="true" />
+      <color type="BACKGROUND" value="#4080F3" />
+    </state>
+  </style>
+  <bind style="desktopIcon" type="region" key="DesktopIcon"/>
+
+
+<!-- 
+*******************************************************************************
+DesktopPane
+*******************************************************************************
+-->
+  <style id="desktopPane">
+    <state>
+      <opaque value="true" />
+      <color type="BACKGROUND" value="#FFFFFF" />
+    </state>
+  </style>
+  <bind style="desktopPane" type="region" key="DesktopPane"/>
+
+
+<!-- 
+*******************************************************************************
+EditorPane
+*******************************************************************************
+-->
+  <style id="editorPane">
+    <insets top="0" left="4" bottom="0" right="4"/>
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.editorPane.lockedColor" type="idref" value="lockedColor"/>
+
+      <string id="editorPaneBorderLocked">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.editorPane.border.locked" type="idref" value="editorPaneBorderLocked"/>
+
+	  <painter method="editorPaneBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#EFEFEF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="disabledColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.editorPane.disabledColor" type="idref" value="disabledColor"/>
+	  <painter method="editorPaneBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="editorPane" type="region" key="EditorPane"/>
+
+
+<!-- 
+*******************************************************************************
+FileChooser
+*******************************************************************************
+-->
+  <style id="fileChooser">
+    <insets top="10" left="10" bottom="10" right="10"/>
+    <imageIcon id="directoryIcon" path="plain/images/folderClosedIcon.png"/>
+    <imageIcon id="fileIcon" path="plain/images/treeLeafIcon.png"/>
+    <imageIcon id="computerIcon" path="standard/images/computerIcon.png"/>
+    <imageIcon id="hardDriveIcon" path="standard/images/hardDriveIcon.png"/>
+    <imageIcon id="floppyDriveIcon" path="standard/images/floppyDriveIcon.png"/>
+    <imageIcon id="newFolderIcon" path="plain/images/newFolderIcon.png"/>
+    <imageIcon id="upFolderIcon" path="plain/images/upFolderIcon.png"/>
+    <imageIcon id="homeFolderIcon" path="plain/images/homeFolderIcon.png"/>
+    <imageIcon id="detailsViewIcon" path="plain/images/detailsViewIcon.png"/>
+    <imageIcon id="listViewIcon" path="plain/images/listViewIcon.png"/>
+    <defaultsProperty key="FileView.directoryIcon" type="idref" value="directoryIcon"/>
+    <defaultsProperty key="FileView.fileIcon" type="idref" value="fileIcon"/>
+    <defaultsProperty key="FileView.computerIcon" type="idref" value="computerIcon"/>
+    <defaultsProperty key="FileView.hardDriveIcon" type="idref" value="hardDriveIcon"/>
+    <defaultsProperty key="FileView.floppyDriveIcon" type="idref" value="floppyDriveIcon"/>
+    <defaultsProperty key="FileChooser.newFolderIcon" type="idref" value="newFolderIcon"/>
+    <defaultsProperty key="FileChooser.upFolderIcon" type="idref" value="upFolderIcon"/>
+    <defaultsProperty key="FileChooser.homeFolderIcon" type="idref" value="homeFolderIcon"/>
+    <defaultsProperty key="FileChooser.detailsViewIcon" type="idref" value="detailsViewIcon"/>
+    <defaultsProperty key="FileChooser.listViewIcon" type="idref" value="listViewIcon"/>
+
+    <defaultsProperty key="Synthetica.extendedFileChooser.enabled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.extendedFileChooser.rememberPreferences" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.extendedFileChooser.useSystemFileIcons" type="boolean" value="true"/>
+
+    <string id="arrowUp">plain/images/arrowUp.png</string>
+    <defaultsProperty key="Synthetica.fileChooser.tableView.arrowUp" type="idref" value="arrowUp"/>
+
+    <string id="arrowDown">plain/images/arrowDown.png</string>
+    <defaultsProperty key="Synthetica.fileChooser.tableView.arrowDown" type="idref" value="arrowDown"/>
+
+    <object class="java.awt.Color" id="sortColumnColor">
+      <int>0</int>
+      <int>0</int>
+      <int>0</int>
+      <int>5</int>
+    </object>
+    <defaultsProperty key="Synthetica.fileChooser.tableView.sortColumnColor" type="idref" value="sortColumnColor"/>
+
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.size" type="integer" value="20"/>
+    <object class="javax.swing.plaf.ColorUIResource" id="titleColor">
+      <!-- #333333 -->
+      <int>51</int>
+      <int>51</int>
+      <int>51</int>
+    </object>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.color" type="idref" value="titleColor"/>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.xPos" type="integer" value="10"/>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.yPos" type="integer" value="35"/>
+
+    <string id="copyBackground">plain/images/copyOperationDialog.png</string>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.copyBackground" type="idref" value="copyBackground"/>
+
+    <string id="moveBackground">plain/images/moveOperationDialog.png</string>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.moveBackground" type="idref" value="moveBackground"/>
+
+    <string id="deleteBackground">plain/images/deleteOperationDialog.png</string>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.deleteBackground" type="idref" value="deleteBackground"/>
+
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.size" type="integer" value="20"/>
+    <object class="javax.swing.plaf.ColorUIResource" id="propertiesTitleColor">
+      <!-- #333333 -->
+      <int>51</int>
+      <int>51</int>
+      <int>51</int>
+    </object>
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.color" type="idref" value="propertiesTitleColor"/>
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.xPos" type="integer" value="10"/>
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.yPos" type="integer" value="35"/>
+
+    <string id="propertiesBackground">plain/images/filePropertiesDialog.png</string>
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.background" type="idref" value="propertiesBackground"/>
+
+  </style>
+  <bind style="fileChooser" type="region" key="FileChooser"/>
+
+
+<!-- 
+*******************************************************************************
+Focus
+*******************************************************************************
+-->
+  <!-- default focus -->
+  <string id="focus">plain/images/focus.png,plain/images/focus2.png,plain/images/focus3.png,plain/images/focus4.png</string>
+  <defaultsProperty key="Synthetica.focus" type="idref" value="focus"/>
+  <defaultsProperty key="Synthetica.focus.insets" type="insets" value="3 3 3 3"/>
+
+  <defaultsProperty key="Synthetica.focus.animation.cycles" type="integer" value="1"/>
+  <defaultsProperty key="Synthetica.focus.animation.delay" type="integer" value="70"/>
+  <defaultsProperty key="Synthetica.focus.scrollPane.animation.maxWidth" type="integer" value="10000"/>  
+  <defaultsProperty key="Synthetica.focus.scrollPane.animation.maxHeight" type="integer" value="10000"/>
+
+  <string id="focusCheckBox">plain/images/dummy.png</string>
+  <defaultsProperty key="Synthetica.focus.checkBox" type="idref" value="focusCheckBox"/>
+  <defaultsProperty key="Synthetica.focus.checkBox.insets" type="insets" value="0 0 0 0"/>
+
+  <string id="focusRadioButton">plain/images/dummy.png</string>
+  <defaultsProperty key="Synthetica.focus.radioButton" type="idref" value="focusRadioButton"/>
+  <defaultsProperty key="Synthetica.focus.radioButton.insets" type="insets" value="0 0 0 0"/>
+
+  <string id="focusSlider">plain/images/dummy.png</string>
+  <defaultsProperty key="Synthetica.focus.slider" type="idref" value="focusSlider"/>
+  <defaultsProperty key="Synthetica.focus.slider.insets" type="insets" value="0 0 0 0"/>
+
+  <string id="focusSliderThumb">plain/images/focus_sliderThumb.png,plain/images/focus_sliderThumb2.png,plain/images/focus_sliderThumb3.png,plain/images/focus_sliderThumb4.png</string>
+  <defaultsProperty key="Synthetica.focus.slider.thumb.x" type="idref" value="focusSliderThumb"/>
+  <defaultsProperty key="Synthetica.focus.slider.thumb.x.insets" type="insets" value="0 0 0 0"/>
+
+  <string id="focusSliderThumb">plain/images/focus_sliderThumb.png,plain/images/focus_sliderThumb2.png,plain/images/focus_sliderThumb3.png,plain/images/focus_sliderThumb4.png</string>
+  <defaultsProperty key="Synthetica.focus.slider.thumb.y" type="idref" value="focusSliderThumb"/>
+  <defaultsProperty key="Synthetica.focus.slider.thumb.y.insets" type="insets" value="0 0 0 0"/>
+
+  <string id="focusTabbedPaneTabTop">plain/images/focus_tabbedPaneTop.png,plain/images/focus_tabbedPaneTop2.png,plain/images/focus_tabbedPaneTop3.png,plain/images/focus_tabbedPaneTop4.png</string>
+  <defaultsProperty key="Synthetica.focus.tabbedPane.tab.top" type="idref" value="focusTabbedPaneTabTop"/>
+  <defaultsProperty key="Synthetica.focus.tabbedPane.tab.top.insets" type="insets" value="2 2 2 2"/>
+
+  <string id="focusTabbedPaneTabLeft">plain/images/focus_tabbedPaneLeft.png,plain/images/focus_tabbedPaneLeft2.png,plain/images/focus_tabbedPaneLeft3.png,plain/images/focus_tabbedPaneLeft4.png</string>
+  <defaultsProperty key="Synthetica.focus.tabbedPane.tab.left" type="idref" value="focusTabbedPaneTabLeft"/>
+  <defaultsProperty key="Synthetica.focus.tabbedPane.tab.left.insets" type="insets" value="2 2 2 2"/>
+
+  <string id="focusTabbedPaneTabBottom">plain/images/focus_tabbedPaneBottom.png,plain/images/focus_tabbedPaneBottom2.png,plain/images/focus_tabbedPaneBottom3.png,plain/images/focus_tabbedPaneBottom4.png</string>
+  <defaultsProperty key="Synthetica.focus.tabbedPane.tab.bottom" type="idref" value="focusTabbedPaneTabBottom"/>
+  <defaultsProperty key="Synthetica.focus.tabbedPane.tab.bottom.insets" type="insets" value="2 2 2 2"/>
+
+  <string id="focusTabbedPaneTabRight">plain/images/focus_tabbedPaneRight.png,plain/images/focus_tabbedPaneRight2.png,plain/images/focus_tabbedPaneRight3.png,plain/images/focus_tabbedPaneRight4.png</string>
+  <defaultsProperty key="Synthetica.focus.tabbedPane.tab.right" type="idref" value="focusTabbedPaneTabRight"/>
+  <defaultsProperty key="Synthetica.focus.tabbedPane.tab.right.insets" type="insets" value="2 2 2 2"/>
+
+
+<!-- 
+*******************************************************************************
+FormattedTextField
+*******************************************************************************
+-->
+  <style id="formattedTextField">
+    <insets top="4" left="6" bottom="4" right="6"/>
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.formattedTextField.lockedColor" type="idref" value="lockedColor"/>
+
+      <string id="formattedTextFieldBorder">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.formattedTextField.border" type="idref" value="formattedTextFieldBorder"/>
+      <defaultsProperty key="Synthetica.formattedTextField.border.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.formattedTextField.border.fillInsets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.formattedTextField.border.arcWidth" type="integer" value="0"/>
+      <defaultsProperty key="Synthetica.formattedTextField.border.arcHeight" type="integer" value="0"/>
+
+      <string id="formattedTextFieldBorderLocked">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.formattedTextField.border.locked" type="idref" value="formattedTextFieldBorderLocked"/>
+
+	  <painter method="formattedTextFieldBackground" idref="syntheticaPainter" />
+	  <painter method="formattedTextFieldBorder" idref="syntheticaPainter" />	  
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#EFEFEF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="disabledColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.formattedTextField.disabledColor" type="idref" value="disabledColor"/>
+
+      <string id="formattedTextFieldBorderDisabled">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.formattedTextField.border.disabled" type="idref" value="formattedTextFieldBorderDisabled"/>
+
+	  <painter method="formattedTextFieldBackground" idref="syntheticaPainter" />
+	  <painter method="formattedTextFieldBorder" idref="syntheticaPainter" />	  
+    </state>
+  </style>
+  <bind style="formattedTextField" type="region" key="FormattedTextField"/>
+
+
+<!-- 
+*******************************************************************************
+InternalFrame
+*******************************************************************************
+-->
+  <style id="internalFrame">
+    <insets top="6" left="8" bottom="8" right="8"/>
+    <imageIcon id="internalFrameIcon" path="standard/images/icon.png"/>
+    <property key="InternalFrame.icon" value="internalFrameIcon"/>
+    <defaultsProperty key="Synthetica.internalFrame.titlePane.buttons.paintBorder" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.internalFrame.titlePane.background.horizontalTiled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.internalFrame.titlePane.background.verticalTiled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.internalFrame.titlePane.title.center" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.internalFrame.desktopIcon.size" type="dimension" value="150 24"/>
+    
+    <state>
+      <opaque value="false"/>
+      <color type="BACKGROUND" value="#8D9AB1" />
+      
+      <string id="internalFrameBorder">plain/images/internalFrameBorder.png</string>
+      <defaultsProperty key="Synthetica.internalFrame.border" type="idref" value="internalFrameBorder"/>
+      <defaultsProperty key="Synthetica.internalFrame.border.insets" type="insets" value="40 20 20 20"/>
+
+      <string id="internalFrameBorderSelected">plain/images/internalFrameBorder_selected.png</string>
+      <defaultsProperty key="Synthetica.internalFrame.border.selected" type="idref" value="internalFrameBorderSelected"/>
+
+	  <painter method="internalFrameBorder" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="internalFrame" type="region" key="InternalFrame"/>  
+
+  <style id="internalFrameTitlePane">
+    <imageIcon id="internalFrameCloseIcon" path="plain/images/closeIcon.png"/>
+    <imageIcon id="internalFrameMaximizeIcon" path="plain/images/maximizeIcon.png"/>
+    <imageIcon id="internalFrameMinimizeIcon" path="plain/images/minimizeIcon.png"/>
+    <imageIcon id="internalFrameIconifyIcon" path="plain/images/iconifyIcon.png"/>
+
+    <imageIcon id="internalFrameCloseIconHover" path="plain/images/closeIcon_hover.png"/>
+    <imageIcon id="internalFrameMaximizeIconHover" path="plain/images/maximizeIcon_hover.png"/>
+    <imageIcon id="internalFrameMinimizeIconHover" path="plain/images/minimizeIcon_hover.png"/>
+    <imageIcon id="internalFrameIconifyIconHover" path="plain/images/iconifyIcon_hover.png"/>
+
+    <imageIcon id="internalFrameCloseIconInactive" path="plain/images/closeIcon.png"/>
+    <imageIcon id="internalFrameMaximizeIconInactive" path="plain/images/maximizeIcon.png"/>
+    <imageIcon id="internalFrameMinimizeIconInactive" path="plain/images/minimizeIcon.png"/>
+    <imageIcon id="internalFrameIconifyIconInactive" path="plain/images/iconifyIcon.png"/>
+
+    <imageIcon id="internalFrameCloseIconPressed" path="plain/images/closeIcon_pressed.png"/>
+    <imageIcon id="internalFrameMaximizeIconPressed" path="plain/images/maximizeIcon_pressed.png"/>
+    <imageIcon id="internalFrameMinimizeIconPressed" path="plain/images/minimizeIcon_pressed.png"/>
+    <imageIcon id="internalFrameIconifyIconPressed" path="plain/images/iconifyIcon_pressed.png"/>
+
+    <state>
+      <property key="InternalFrameTitlePane.closeIcon" value="internalFrameCloseIconInactive"/>
+      <property key="InternalFrameTitlePane.minimizeIcon" value="internalFrameMinimizeIconInactive"/>
+      <property key="InternalFrameTitlePane.maximizeIcon" value="internalFrameMaximizeIconInactive"/>
+      <property key="InternalFrameTitlePane.iconifyIcon" value="internalFrameIconifyIconInactive"/>
+
+      <font name="Segoe UI" size="12" style="BOLD" />
+      <insets top="2" left="2" bottom="4" right="2"/>
+      <color type="FOREGROUND" value="#FFFFFF" />
+      <color type="BACKGROUND" value="#8D9AB1" />
+
+      <string id="internalFrameTitlePaneBackground">plain/images/internalFrameTitlePaneBackground.png</string>
+      <defaultsProperty key="Synthetica.internalFrameTitlePane.background" type="idref" value="internalFrameTitlePaneBackground"/>
+      <defaultsProperty key="Synthetica.internalFrameTitlePane.background.insets" type="insets" value="0 0 0 0"/>
+
+      <string id="internalFrameTitlePaneBackgroundSelected">plain/images/internalFrameTitlePaneBackground_selected.png</string>
+      <defaultsProperty key="Synthetica.internalFrameTitlePane.background.selected" type="idref" value="internalFrameTitlePaneBackgroundSelected"/>
+
+	  <painter method="internalFrameTitlePaneBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <property key="InternalFrameTitlePane.closeIcon" value="internalFrameCloseIcon"/>
+      <property key="InternalFrameTitlePane.minimizeIcon" value="internalFrameMinimizeIcon"/>
+      <property key="InternalFrameTitlePane.maximizeIcon" value="internalFrameMaximizeIcon"/>
+      <property key="InternalFrameTitlePane.iconifyIcon" value="internalFrameIconifyIcon"/>
+
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+      <color type="FOREGROUND" value="#FFFFFF" />
+      <color type="BACKGROUND" value="#4080F3" />
+	  <painter method="internalFrameTitlePaneBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="MOUSE_OVER">
+      <property key="InternalFrameTitlePane.closeIcon" value="internalFrameCloseIconHover"/>
+      <property key="InternalFrameTitlePane.minimizeIcon" value="internalFrameMinimizeIconHover"/>
+      <property key="InternalFrameTitlePane.maximizeIcon" value="internalFrameMaximizeIconHover"/>
+      <property key="InternalFrameTitlePane.iconifyIcon" value="internalFrameIconifyIconHover"/>
+    </state>
+
+    <state value="PRESSED">
+      <property key="InternalFrameTitlePane.closeIcon" value="internalFrameCloseIconPressed"/>
+      <property key="InternalFrameTitlePane.minimizeIcon" value="internalFrameMinimizeIconPressed"/>
+      <property key="InternalFrameTitlePane.maximizeIcon" value="internalFrameMaximizeIconPressed"/>
+      <property key="InternalFrameTitlePane.iconifyIcon" value="internalFrameIconifyIconPressed"/>
+    </state>
+
+  </style>
+  <bind style="internalFrameTitlePane" type="region" key="InternalFrameTitlePane"/>  
+
+  <style id="internalFrameMenuButton">
+    <insets top="0" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="internalFrameMenuButton" type="name" key="InternalFrameTitlePane.menuButton"/>  
+  
+  <style id="internalFrameIconifyButton">
+    <insets top="0" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="internalFrameIconifyButton" type="name" key="InternalFrameTitlePane.iconifyButton"/>  
+
+  <style id="internalFrameMaximizeButton">
+    <insets top="0" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="internalFrameMaximizeButton" type="name" key="InternalFrameTitlePane.maximizeButton"/>  
+
+  <style id="internalFrameCloseButton">
+    <insets top="0" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="internalFrameCloseButton" type="name" key="InternalFrameTitlePane.closeButton"/>  
+
+
+<!-- 
+*******************************************************************************
+Label
+*******************************************************************************
+-->
+  <style id="label">
+    <insets top="1" left="1" bottom="1" right="1"/>
+
+    <state>      
+	  <painter method="labelBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="label" type="region" key="Label"/>
+
+
+<!-- 
+*******************************************************************************
+List
+*******************************************************************************
+-->
+  <style id="list">
+    <property key="List.rendererUseListColors" type="boolean" value="false"/>
+
+    <string id="listCellRenderer">de.javasoft.plaf.synthetica.plain.ListCellRenderer</string>
+    <defaultsProperty key="Synthetica.list.defaultCellRenderer.className" type="idref" value="listCellRenderer"/>
+
+    <object class="javax.swing.plaf.ColorUIResource" id="hlBorderColor">
+      <!-- #00C0FF -->
+      <int>0</int>
+      <int>192</int>
+      <int>255</int>
+    </object>
+    <defaultsProperty key="Synthetica.list.focusCellHighlightBorder.color" type="idref" value="hlBorderColor" />
+
+    <state>
+      <color type="BACKGROUND" value="#FFFFFF" /> 
+      <color type="FOREGROUND" value="#222222" /> 
+    </state>
+
+    <!-- Note: Opaque has to be set to true for region Label.selected -->
+    <state value="SELECTED">
+      <string id="listSelectionBackground">plain/images/selectionBackground.png</string>
+      <defaultsProperty key="Synthetica.list.selectionBackground" type="idref" value="listSelectionBackground"/>
+      <defaultsProperty key="Synthetica.list.selectionBackground.insets" type="insets" value="1 1 1 1"/>
+      <string id="inactiveListSelectionBackground">plain/images/selectionBackground_inactive.png</string>
+      <defaultsProperty key="Synthetica.list.selectionBackground.inactive" type="idref" value="inactiveListSelectionBackground"/>
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+    </state>
+  </style>
+  <bind style="list" type="region" key="List"/>
+
+
+<!-- 
+*******************************************************************************
+Menu
+*******************************************************************************
+-->
+  <style id="menu">
+    <insets top="4" left="3" bottom="4" right="3"/>
+    <property key="Menu.textIconGap" type="integer" value="8"/>
+    <defaultsProperty key="Synthetica.menu.animation.delay" type="integer" value="25"/>
+    <defaultsProperty key="Synthetica.menu.hover.animation.delay" type="integer" value="25"/>
+
+    <imageIcon id="arrowIcon" path="plain/images/menuArrow.png"/>
+    <imageIcon id="arrowIconSelected" path="plain/images/menuArrow_hover.png"/>
+    <imageIcon id="arrowIconDisabled" path="plain/images/menuArrow_disabled.png"/>
+
+    <state>
+      <opaque value="false" />
+      <color type="BACKGROUND" value="#57AAF1" />
+      <color type="FOREGROUND" value="#000000" />
+      <color type="TEXT_FOREGROUND" value="#000000" />
+      <property key="Menu.arrowIcon" value="arrowIcon"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="toplevelTextColor">
+        <!-- #FFFFFF -->
+        <int>255</int>
+        <int>255</int>
+        <int>255</int>
+      </object>
+      <defaultsProperty key="Synthetica.menu.toplevel.textColor" type="idref" value="toplevelTextColor"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="toplevelInactiveTextColor">
+        <!-- #FFFFFF -->
+        <int>255</int>
+        <int>255</int>
+        <int>255</int>
+      </object>
+      <defaultsProperty key="Synthetica.menu.toplevel.textColor.inactive" type="idref" value="toplevelInactiveTextColor"/>
+      <defaultsProperty key="Synthetica.menu.toplevel.background.insets" type="insets" value="8 8 8 8"/>
+
+      <!-- <string id="menuBackground">plain/images/menuItem_hover7.png,plain/images/menuItem_hover6.png,plain/images/menuItem_hover5.png,plain/images/menuItem_hover4.png,plain/images/menuItem_hover3.png,plain/images/menuItem_hover2.png,plain/images/menuItem_hover.png,plain/images/menuItem_clear.png</string> -->
+      <string id="menuBackground">plain/images/menuItem_clear.png</string>
+      <defaultsProperty key="Synthetica.menu" type="idref" value="menuBackground"/>
+      <defaultsProperty key="Synthetica.menu.insets" type="insets" value="0 1 0 1"/>
+
+	  <painter method="menuBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <opaque value="true" />
+      <color type="BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+      <property key="Menu.arrowIcon" value="arrowIconSelected"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="toplevelSelectedTextColor">
+        <!-- #FFFFFF -->
+        <int>255</int>
+        <int>255</int>
+        <int>255</int>
+      </object>
+      <defaultsProperty key="Synthetica.menu.toplevel.textColor.selected" type="idref" value="toplevelSelectedTextColor"/>
+
+      <string id="menuToplevelBackground">plain/images/menuItem_clear.png</string>
+      <defaultsProperty key="Synthetica.menu.toplevel.background" type="idref" value="menuToplevelBackground"/>
+      <string id="menuToplevelBackground">plain/images/menuBar_selected.png,plain/images/menuBar_selected2.png,plain/images/menuBar_selected3.png,plain/images/menuBar_selected4.png</string>
+      <defaultsProperty key="Synthetica.menu.toplevel.background.selected" type="idref" value="menuToplevelBackground"/>
+
+      <!-- <string id="menuBackground">plain/images/menuItem_hover.png,plain/images/menuItem_hover2.png,plain/images/menuItem_hover3.png,plain/images/menuItem_hover4.png,plain/images/menuItem_hover5.png,plain/images/menuItem_hover6.png,plain/images/menuItem_hover7.png,plain/images/menuItem_hover8.png</string> -->
+      <string id="menuBackground">plain/images/menuItem_hover2.png,plain/images/menuItem_hover4.png,plain/images/menuItem_hover6.png,plain/images/menuItem_hover7.png,plain/images/menuItem_hover8.png</string>
+      <defaultsProperty key="Synthetica.menu.hover" type="idref" value="menuBackground"/>
+
+      <!-- <string id="menuBackground">plain/images/menuItem_hover.png,plain/images/menuItem_hover2.png,plain/images/menuItem_hover3.png,plain/images/menuItem_hover4.png,plain/images/menuItem_hover5.png,plain/images/menuItem_hover6.png,plain/images/menuItem_hover7.png,plain/images/menuItem_hover8.png</string> -->
+      <string id="menuBackground">plain/images/menuItem_hover2.png,plain/images/menuItem_hover4.png,plain/images/menuItem_hover6.png,plain/images/menuItem_hover7.png,plain/images/menuItem_hover8.png</string>
+      <defaultsProperty key="Synthetica.menu.selected" type="idref" value="menuBackground"/>
+
+	  <painter method="menuBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <color type="TEXT_FOREGROUND" value="#B7B7B7" />
+      <property key="Menu.arrowIcon" value="arrowIconDisabled"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="toplevelDisabledTextColor">
+        <!-- #B1C6F9 -->
+        <int>177</int>
+        <int>198</int>
+        <int>249</int>
+      </object>
+      <defaultsProperty key="Synthetica.menu.toplevel.textColor.disabled" type="idref" value="toplevelDisabledTextColor"/>
+
+      <string id="menuBackground">plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.menu.disabled" type="idref" value="menuBackground"/>
+
+	  <painter method="menuBackground" idref="syntheticaPainter" />
+    </state>
+
+  </style>
+  <bind style="menu" type="region" key="Menu"/>
+
+
+<!-- 
+*******************************************************************************
+MenuBar
+*******************************************************************************
+-->
+  <style id="menuBar">
+    <state>
+      <opaque value="false" />
+      <color type="BACKGROUND" value="#57AAF1" />
+      <string id="menuBarBackground">/org/jdownloader/gui/laf/plain/menuBarBackground.png</string>
+      <defaultsProperty key="Synthetica.menuBar.background.active" type="idref" value="menuBarBackground"/>
+      <string id="menuBarBackground">/org/jdownloader/gui/laf/plain/menuBarBackground4_inactive.png,/org/jdownloader/gui/laf/plain/menuBarBackground3_inactive.png,/org/jdownloader/gui/laf/plain/menuBarBackground2_inactive.png,/org/jdownloader/gui/laf/plain/menuBarBackground_inactive.png</string>
+      <defaultsProperty key="Synthetica.menuBar.background.inactive" type="idref" value="menuBarBackground"/>
+      <defaultsProperty key="Synthetica.menuBar.background.insets" type="insets" value="0 0 0 0"/>
+	  <painter method="menuBarBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="menuBar" type="region" key="MenuBar"/>
+
+
+<!-- 
+*******************************************************************************
+MenuItem
+*******************************************************************************
+-->
+  <style id="menuItem">
+    <insets top="4" left="0" bottom="4" right="0"/>
+    <property key="MenuItem.textIconGap" type="integer" value="8"/>
+    <defaultsProperty key="Synthetica.menuItem.icon.width" type="integer" value="16"/>
+    <defaultsProperty key="Synthetica.menuItem.checkRadioIcon.width" type="integer" value="16"/>
+    <defaultsProperty key="Synthetica.menuItem.animation.delay" type="integer" value="25"/>
+    <defaultsProperty key="Synthetica.menuItem.hover.animation.delay" type="integer" value="25"/>
+    
+    <imageIcon id="radioButtonIconDefault" path="plain/images/dummy.png"/>
+    <imageIcon id="radioButtonIconSelected" path="plain/images/radioButtonIcon_selected.png"/>
+    <imageIcon id="radioButtonIconHoverSelected" path="plain/images/radioButtonIcon_hoverSelected.png"/>
+    <imageIcon id="radioButtonIconDisabled" path="plain/images/dummy.png"/>
+    <imageIcon id="radioButtonIconDisabledAndSelected" path="plain/images/radioButtonIcon_disabledSelected.png"/>
+    <imageIcon id="checkBoxIconDefault" path="plain/images/dummy.png"/>
+    <imageIcon id="checkBoxIconSelected" path="plain/images/checkBoxIcon_selected.png"/>
+    <imageIcon id="checkBoxIconHoverSelected" path="plain/images/checkBoxIcon_hoverSelected.png"/>
+    <imageIcon id="checkBoxIconDisabled" path="plain/images/dummy.png"/>
+    <imageIcon id="checkBoxIconDisabledAndSelected" path="plain/images/checkBoxIcon_disabledSelected.png"/>
+
+    <state>
+      <color type="FOREGROUND" value="#000000" />
+      <color type="TEXT_FOREGROUND" value="#000000" />
+      <property key="RadioButtonMenuItem.checkIcon" value="radioButtonIconDefault"/>
+      <property key="CheckBoxMenuItem.checkIcon" value="checkBoxIconDefault"/>
+      <defaultsProperty key="Synthetica.menuItem.insets" type="insets" value="0 1 0 1"/>
+
+      <!-- <string id="menuItemBackground">plain/images/menuItem_hover7.png,plain/images/menuItem_hover6.png,plain/images/menuItem_hover5.png,plain/images/menuItem_hover4.png,plain/images/menuItem_hover3.png,plain/images/menuItem_hover2.png,plain/images/menuItem_hover.png,plain/images/menuItem_clear.png</string>-->
+      <string id="menuItemBackground">plain/images/menuItem_clear.png</string>
+      <defaultsProperty key="Synthetica.menuItem" type="idref" value="menuItemBackground"/>
+
+	  <painter method="menuItemBackground" idref="syntheticaPainter" />
+	  <painter method="radioButtonMenuItemBackground" idref="syntheticaPainter" />
+	  <painter method="checkBoxMenuItemBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="MOUSE_OVER">
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+      <!-- <string id="menuItemBackground">plain/images/menuItem_hover.png,plain/images/menuItem_hover2.png,plain/images/menuItem_hover3.png,plain/images/menuItem_hover4.png,plain/images/menuItem_hover5.png,plain/images/menuItem_hover6.png,plain/images/menuItem_hover7.png,plain/images/menuItem_hover8.png</string> -->
+      <string id="menuItemBackground">plain/images/menuItem_hover2.png,plain/images/menuItem_hover4.png,plain/images/menuItem_hover6.png,plain/images/menuItem_hover7.png,plain/images/menuItem_hover8.png</string>
+      <defaultsProperty key="Synthetica.menuItem.hover" type="idref" value="menuItemBackground"/>
+	  <painter method="menuItemBackground" idref="syntheticaPainter" />
+	  <painter method="radioButtonMenuItemBackground" idref="syntheticaPainter" />
+	  <painter method="checkBoxMenuItemBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_FOREGROUND" value="#000000" />
+      <property key="RadioButtonMenuItem.checkIcon" value="radioButtonIconSelected"/>
+      <property key="CheckBoxMenuItem.checkIcon" value="checkBoxIconSelected"/>
+    </state>
+
+    <state value="MOUSE_OVER AND SELECTED">
+      <property key="RadioButtonMenuItem.checkIcon" value="radioButtonIconHoverSelected"/>
+      <property key="CheckBoxMenuItem.checkIcon" value="checkBoxIconHoverSelected"/>
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+
+	  <painter method="menuItemBackground" idref="syntheticaPainter" />
+	  <painter method="radioButtonMenuItemBackground" idref="syntheticaPainter" />
+	  <painter method="checkBoxMenuItemBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+  	  <color type="TEXT_FOREGROUND" value="#B7B7B7" /> 
+      <property key="RadioButtonMenuItem.checkIcon" value="radioButtonIconDisabled"/>
+      <property key="CheckBoxMenuItem.checkIcon" value="checkBoxIconDisabled"/>
+
+      <string id="menuItemBackground">plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.menuItem.disabled" type="idref" value="menuItemBackground"/>
+
+	  <painter method="menuItemBackground" idref="syntheticaPainter" />
+	  <painter method="radioButtonMenuItemBackground" idref="syntheticaPainter" />
+	  <painter method="checkBoxMenuItemBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED AND SELECTED">
+  	  <color type="TEXT_FOREGROUND" value="#B7B7B7" /> 
+      <color type="BACKGROUND" value="#FFFFFF" />
+      <property key="RadioButtonMenuItem.checkIcon" value="radioButtonIconDisabledAndSelected"/>
+      <property key="CheckBoxMenuItem.checkIcon" value="checkBoxIconDisabledAndSelected"/>
+    </state>
+
+  </style>
+  <bind style="menuItem" type="region" key="MenuItem"/>
+  <bind style="menuItem" type="region" key="RadioButtonMenuItem"/>
+  <bind style="menuItem" type="region" key="CheckBoxMenuItem"/>
+  
+
+<!-- 
+*******************************************************************************
+MenuItemAccelerator
+*******************************************************************************
+-->
+  <style id="menuItemAccelerator">
+    <state>
+      <opaque value="true" />
+      <color type="BACKGROUND" value="#FFFFFF" />
+      <color type="TEXT_FOREGROUND" value="#A0A090" />
+    </state>
+    <state value="MOUSE_OVER">
+      <opaque value="true" />
+      <color type="BACKGROUND" value="#57AAF1" />
+      <color type="TEXT_FOREGROUND" value="#EFEFEF" />
+    </state>
+    <state value="DISABLED">
+      <color type="TEXT_FOREGROUND" value="#CCCCCC" />
+    </state>
+  </style>
+  <bind style="menuItemAccelerator" type="region" key="MenuItemAccelerator"/>
+
+
+<!-- 
+*******************************************************************************
+OptionPane
+*******************************************************************************
+-->
+  <style id="optionPane">
+    <insets top="8" left="8" bottom="8" right="8"/>
+    <state>
+      <imageIcon id="infoIcon" path="plain/images/infoIcon.png"/>
+      <imageIcon id="questionIcon" path="plain/images/questionIcon.png"/>
+      <imageIcon id="warningIcon" path="plain/images/warningIcon.png"/>
+      <imageIcon id="errorIcon" path="plain/images/errorIcon.png"/>
+      <imageIcon id="stopIcon" path="plain/images/stopIcon.png"/>
+      <property key="OptionPane.informationIcon" value="infoIcon"/>
+      <property key="OptionPane.questionIcon" value="questionIcon"/>
+      <property key="OptionPane.warningIcon" value="warningIcon"/>
+      <property key="OptionPane.errorIcon" value="errorIcon"/>
+      <property key="OptionPane.stopIcon" value="stopIcon"/>
+      <defaultsProperty key="OptionPane.buttonPadding" type="integer" value="12"/>      
+    </state>
+  </style>
+  <bind style="optionPane" type="region" key="OptionPane"/>
+
+  <style id="optionPaneButton">
+    <insets top="4" left="10" bottom="4" right="10"/>
+  </style>
+  <bind style="optionPaneButton" type="name" key="OptionPane.button"/>
+
+  <style id="optionPaneButtonArea">
+    <insets top="8" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="optionPaneButtonArea" type="name" key="OptionPane.buttonArea"/>
+
+
+<!-- 
+*******************************************************************************
+Panel
+*******************************************************************************
+-->
+  <style id="panel">    
+    <object class="javax.swing.plaf.ColorUIResource" id="titledBorderTitleColor">
+      <!-- #777777 -->
+      <int>119</int>
+      <int>119</int>
+      <int>119</int>
+    </object>
+    <defaultsProperty key="TitledBorder.titleColor" type="idref" value="titledBorderTitleColor"/>
+    <defaultsProperty key="Synthetica.titledBorder.title.position" type="integer" value="0"/>
+
+    <string id="titledBorder">plain/images/titledBorder.png</string>
+    <defaultsProperty key="Synthetica.titledBorder" type="idref" value="titledBorder"/>
+    <defaultsProperty key="Synthetica.titledBorder.insets" type="insets" value="4 4 4 4"/>
+
+    <state>
+      <color type="BACKGROUND" value="#EFEFEF" /> 
+      <opaque value="true"/>
+	  <painter method="panelBackground" idref="syntheticaPainter" />      
+    </state>
+  </style>
+  <bind style="panel" type="region" key="Panel"/>  
+
+
+<!-- 
+*******************************************************************************
+PasswordField
+*******************************************************************************
+-->
+  <style id="passwordField">
+    <insets top="4" left="6" bottom="4" right="6"/>
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.passwordField.lockedColor" type="idref" value="lockedColor"/>
+
+      <string id="passwordFieldBorder">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.passwordField.border" type="idref" value="passwordFieldBorder"/>
+      <defaultsProperty key="Synthetica.passwordField.border.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.passwordField.border.fillInsets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.passwordField.border.arcWidth" type="integer" value="0"/>
+      <defaultsProperty key="Synthetica.passwordField.border.arcHeight" type="integer" value="0"/>
+
+      <string id="passwordFieldBorderLocked">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.passwordField.border.locked" type="idref" value="passwordFieldBorderLocked"/>
+
+	  <painter method="passwordFieldBackground" idref="syntheticaPainter" />
+	  <painter method="passwordFieldBorder" idref="syntheticaPainter" />	  
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#EFEFEF" type="BACKGROUND"/>
+
+      <string id="passwordFieldBorderDisabled">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.passwordField.border.disabled" type="idref" value="passwordFieldBorderDisabled"/>
+
+	  <painter method="passwordFieldBackground" idref="syntheticaPainter" />
+	  <painter method="passwordFieldBorder" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="passwordField" type="region" key="PasswordField"/>
+
+
+<!-- 
+*******************************************************************************
+PopupMenu
+*******************************************************************************
+-->
+  <style id="popupMenu">
+    <insets top="3" left="3" bottom="8" right="3"/>
+    <defaultsProperty key="Synthetica.popup.osShadow.enabled" type="boolean" value="false" />
+    <defaultsProperty key="Synthetica.popupType" type="integer" value="2"/>
+    <defaultsProperty key="Synthetica.popupMenu.fade-in.enabled" type="boolean" value="true" />
+    <!-- see JMenu class -->
+    <defaultsProperty key="Menu.submenuPopupOffsetX" type="integer" value="-5"/>
+    <defaultsProperty key="Menu.submenuPopupOffsetY" type="integer" value="-3"/>
+
+    <state>
+      <string id="popupMenuBackground">plain/images/popupMenuBackground.png</string>
+      <defaultsProperty key="Synthetica.popupMenu.background" type="idref" value="popupMenuBackground"/>
+      <defaultsProperty key="Synthetica.popupMenu.background.insets" type="insets" value="2 5 8 5"/>
+
+      <string id="popupMenuBackground">plain/images/popupMenuBackground.png</string>
+      <defaultsProperty key="Synthetica.popupMenu.background.ComboPopup.popup" type="idref" value="popupMenuBackground"/>
+      <defaultsProperty key="Synthetica.comboPopup.insets" type="insets" value="1 4 6 4"/>
+
+      <string id="popupMenuBackground">plain/images/popupMenuIconSeparator.png</string>
+      <defaultsProperty key="Synthetica.popupMenu.iconSeparator" type="idref" value="popupMenuBackground"/>
+      <defaultsProperty key="Synthetica.popupMenu.iconSeparator.gap" type="integer" value="4"/>
+      <defaultsProperty key="Synthetica.popupMenu.iconSeparator.width" type="integer" value="35"/>
+      <defaultsProperty key="Synthetica.popupMenu.iconSeparatorGap" type="integer" value="8"/>
+
+	  <painter method="popupMenuBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="popupMenu" type="region" key="PopupMenu"/>
+
+
+<!-- 
+*******************************************************************************
+ToplevelPopupMenu
+*******************************************************************************
+-->
+  <style id="toplevelPopupMenu">
+    <defaultsProperty key="Menu.menuPopupOffsetX" type="integer" value="-3"/>
+    <defaultsProperty key="Menu.menuPopupOffsetY" type="integer" value="0"/>
+    <defaultsProperty key="Synthetica.popupMenu.toplevel.enabled" type="boolean" value="true"/>
+
+    <defaultsProperty key="Synthetica.popupMenu.toplevel.insets" type="insets" value="9 3 9 3"/>
+    <defaultsProperty key="Synthetica.popupMenu.centerText" type="boolean" value="false"/>
+
+    <string id="popupMenuTopMarker">plain/images/popupMenuTopMarkerIcon.png</string>
+    <defaultsProperty key="Synthetica.popupMenu.toplevel.topMarker.image" type="idref" value="popupMenuTopMarker"/>
+    <string id="popupMenuBottomMarker">plain/images/popupMenuBottomMarkerIcon.png</string>
+    <defaultsProperty key="Synthetica.popupMenu.toplevel.bottomMarker.image" type="idref" value="popupMenuBottomMarker"/>
+        
+    <string id="toplevelPopupMenuBackground">plain/images/popupMenuBackgroundTopLevel.png</string>
+    <defaultsProperty key="Synthetica.popupMenu.toplevel.background" type="idref" value="toplevelPopupMenuBackground"/>
+    <defaultsProperty key="Synthetica.popupMenu.toplevel.background.insets" type="insets" value="8 5 8 5"/>
+  </style>
+
+
+<!-- 
+*******************************************************************************
+PopupMenuSeparator
+*******************************************************************************
+-->
+  <style id="popupMenuSeparator">
+    <insets top="0" left="0" bottom="0" right="0"/>
+    <property key="Separator.thickness" type="integer" value="5"/>     
+
+    <state>
+      <opaque value="false" />
+      <string id="popupMenuSeparatorBackground">plain/images/popupMenuSeparator.png</string>
+      <defaultsProperty key="Synthetica.popupMenuSeparator" type="idref" value="popupMenuSeparatorBackground"/>
+      <defaultsProperty key="Synthetica.popupMenuSeparator.insets" type="insets" value="0 1 0 1"/>
+      <defaultsProperty key="Synthetica.popupMenuSeparator.iconSeparatorGap" type="integer" value="0"/>
+	  <painter method="separatorBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="popupMenuSeparator" type="region" key="PopupMenuSeparator"/>
+
+
+<!-- 
+*******************************************************************************
+ProgressBar
+*******************************************************************************
+-->
+  <style id="progressBar">
+    <insets top="1" left="1" bottom="1" right="1" />
+    <defaultsProperty key="Synthetica.progressBar.continuous" type="boolean" value="true" />
+    <!-- <defaultsProperty key="Synthetica.progressBar.continuous" type="boolean" value="false" />
+    <property key="ProgressBar.tileWhenIndeterminate" type="boolean" value="true"/> 
+    <property key="ProgressBar.tileWidth" type="integer" value="32"/>-->
+
+    <!-- <property key="ProgressBar.rotateText" type="boolean" value="true"/>   -->
+
+    <!-- <object class="java.awt.Dimension" id="hPrefSize">
+      <int>146</int>
+      <int>12</int>
+    </object>
+    <defaultsProperty key="ProgressBar.horizontalSize" type="idref" value="hPrefSize"/>
+    <object class="java.awt.Dimension" id="vPrefSize">
+      <int>12</int>
+      <int>146</int>
+    </object>
+    <defaultsProperty key="ProgressBar.verticalSize" type="idref" value="vPrefSize"/>  -->
+
+    <state>
+      <color type="TEXT_FOREGROUND" value="#000000" /> 
+      
+      <string id="progressBarXBackground">plain/images/progressBarXBackground.png</string>
+      <defaultsProperty key="Synthetica.progressBar.x.background" type="idref" value="progressBarXBackground"/>
+      <defaultsProperty key="Synthetica.progressBar.x.background.insets" type="insets" value="2 2 2 2"/>
+
+      <string id="progressBarYBackground">plain/images/progressBarYBackground.png</string>
+      <defaultsProperty key="Synthetica.progressBar.y.background" type="idref" value="progressBarYBackground"/>
+      <defaultsProperty key="Synthetica.progressBar.y.background.insets" type="insets" value="2 2 2 2"/>
+
+      <string id="progressBarX">plain/images/progressBarX.png</string>
+      <defaultsProperty key="Synthetica.progressBar.x" type="idref" value="progressBarX"/>
+      <defaultsProperty key="Synthetica.progressBar.x.indeterminate" type="idref" value="progressBarX"/>      
+      <defaultsProperty key="Synthetica.progressBar.x.insets" type="insets" value="1 1 1 1"/>
+
+      <string id="progressBarY">plain/images/progressBarY.png</string>
+      <defaultsProperty key="Synthetica.progressBar.y" type="idref" value="progressBarY"/>
+      <defaultsProperty key="Synthetica.progressBar.y.indeterminate" type="idref" value="progressBarY"/>      
+      <defaultsProperty key="Synthetica.progressBar.y.insets" type="insets" value="1 1 1 1"/>
+
+	  <painter method="progressBarForeground" idref="syntheticaPainter" />
+	  <painter method="progressBarBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <string id="progressBarXBackground">plain/images/progressBarXBackground.png</string>
+      <defaultsProperty key="Synthetica.progressBar.x.background.disabled" type="idref" value="progressBarXBackground"/>
+
+      <string id="progressBarYBackground">plain/images/progressBarYBackground.png</string>
+      <defaultsProperty key="Synthetica.progressBar.y.background.disabled" type="idref" value="progressBarYBackground"/>
+
+      <string id="progressBarXDisabled">plain/images/progressBarX_disabled.png</string>
+      <defaultsProperty key="Synthetica.progressBar.x.disabled" type="idref" value="progressBarXDisabled"/>
+
+      <string id="progressBarYDisabled">plain/images/progressBarY_disabled.png</string>
+      <defaultsProperty key="Synthetica.progressBar.y.disabled" type="idref" value="progressBarYDisabled"/>
+
+	  <painter method="progressBarForeground" idref="syntheticaPainter" />
+	  <painter method="progressBarBackground" idref="syntheticaPainter" />
+    </state>
+
+  </style>
+  <bind style="progressBar" type="region" key="ProgressBar"/>
+
+
+<!-- 
+*******************************************************************************
+RadioButton
+*******************************************************************************
+-->
+  <style id="radioButton">
+    <insets top="4" left="4" bottom="4" right="4"/>
+    <!-- dummy image defines icon size -->
+    <imageIcon id="radioButtonDefault" path="plain/images/dummy.png"/>
+    <!-- <property key="RadioButton.iconTextGap" type="integer" value="8"/> -->
+
+    <state>
+      <property key="RadioButton.icon" value="radioButtonDefault"/>
+      <opaque value="false"/>
+
+      <string id="radioButtonImage">plain/images/radioButton_hover3.png,plain/images/radioButton_hover2.png,plain/images/radioButton_hover.png,plain/images/radioButton.png</string>
+      <defaultsProperty key="Synthetica.radioButton.image" type="idref" value="radioButtonImage"/>
+
+      <string id="radioButtonFocus">plain/images/focus_radioButton.png,plain/images/focus_radioButton2.png,plain/images/focus_radioButton3.png,plain/images/focus_radioButton4.png</string>
+      <defaultsProperty key="Synthetica.radioButton.focus" type="idref" value="radioButtonFocus"/>
+
+      <string id="radioButtonBorder">plain/images/titledBorder.png</string>
+      <defaultsProperty key="Synthetica.radioButton.border" type="idref" value="radioButtonBorder"/>
+      <defaultsProperty key="Synthetica.radioButton.border.insets" type="insets" value="4 4 4 4"/>
+
+	  <painter method="radioButtonBorder" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">   
+      <string id="radioButtonImage">plain/images/radioButton_hoverSelected3.png,plain/images/radioButton_hoverSelected2.png,plain/images/radioButton_hoverSelected.png,plain/images/radioButton_selected.png</string>
+      <defaultsProperty key="Synthetica.radioButton.selected.image" type="idref" value="radioButtonImage"/>
+	</state>
+
+    <state value="PRESSED">
+      <string id="radioButtonPressed">plain/images/radioButton_pressed.png</string>
+      <defaultsProperty key="Synthetica.radioButton.pressed.image" type="idref" value="radioButtonPressed"/>
+      <string id="radioButtonPressedSelected">plain/images/radioButton_pressed.png</string>
+      <defaultsProperty key="Synthetica.radioButton.pressed.selected.image" type="idref" value="radioButtonPressedSelected"/>
+	</state>
+
+    <state value="MOUSE_OVER">   
+      <string id="radioButtonImage">plain/images/radioButton_hover.png,plain/images/radioButton_hover2.png,plain/images/radioButton_hover3.png,plain/images/radioButton_hover4.png</string>
+      <defaultsProperty key="Synthetica.radioButton.hover.image" type="idref" value="radioButtonImage"/>
+	</state>
+
+    <state value="MOUSE_OVER AND SELECTED">
+      <string id="radioButtonImage">plain/images/radioButton_hoverSelected.png,plain/images/radioButton_hoverSelected2.png,plain/images/radioButton_hoverSelected3.png,plain/images/radioButton_hoverSelected4.png</string>
+      <defaultsProperty key="Synthetica.radioButton.hover.selected.image" type="idref" value="radioButtonImage"/>
+	</state>
+
+    <state value="FOCUSED">
+	  <painter method="radioButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+  	  <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+      <string id="radioButtonImage">plain/images/radioButton_disabled.png</string>
+      <defaultsProperty key="Synthetica.radioButton.disabled.image" type="idref" value="radioButtonImage"/>
+	</state>
+
+    <state value="DISABLED AND SELECTED">
+  	  <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+      <string id="radioButtonImage">plain/images/radioButton_disabledSelected.png</string>
+      <defaultsProperty key="Synthetica.radioButton.disabled.selected.image" type="idref" value="radioButtonImage"/>
+	</state>
+
+  </style>
+  <bind style="radioButton" type="region" key="RadioButton"/>
+
+
+<!-- 
+*******************************************************************************
+RootPane
+*******************************************************************************
+-->
+  <style id="rootPane">
+    <!-- <defaultsProperty key="Synthetica.rootPane.minimumWindowSize" type="dimension" value="200 200"/>  -->
+    <defaultsProperty key="Synthetica.rootPane.titlePane.opaque" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.background.verticalTiled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.background.horizontalTiled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.buttons.paintBorder" type="boolean" value="false"/>    
+    <defaultsProperty key="Synthetica.rootPane.titlePane.dropShadow" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.dropShadow.distance" type="integer" value="0"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.title.fontSize" type="integer" value="14"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.title.center" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.iconifyButton.gap" type="integer" value="0"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.toggleButton.gap" type="integer" value="0"/>
+    
+    <defaultsProperty key="Synthetica.rootPane.headerShadow.type" type="String" value="NORMAL"/>
+    <string id="headerShadowBackground">plain/images/headerShadowBackground.png</string>
+    <defaultsProperty key="Synthetica.rootPane.headerShadow.background.image" type="idref" value="headerShadowBackground"/>
+
+    <imageIcon id="rootPaneIcon" path="standard/images/icon.png"/>
+
+    <imageIcon id="rootPaneCloseIcon" path="plain/images/closeIcon.png"/>
+    <imageIcon id="rootPaneMaximizeIcon" path="plain/images/maximizeIcon.png"/>
+    <imageIcon id="rootPaneMinimizeIcon" path="plain/images/minimizeIcon.png"/>
+    <imageIcon id="rootPaneIconifyIcon" path="plain/images/iconifyIcon.png"/>
+
+    <imageIcon id="rootPaneCloseIconHover" path="plain/images/closeIcon_hover.png"/>
+    <imageIcon id="rootPaneMaximizeIconHover" path="plain/images/maximizeIcon_hover.png"/>
+    <imageIcon id="rootPaneMinimizeIconHover" path="plain/images/minimizeIcon_hover.png"/>
+    <imageIcon id="rootPaneIconifyIconHover" path="plain/images/iconifyIcon_hover.png"/>
+
+    <imageIcon id="rootPaneCloseIconPressed" path="plain/images/closeIcon_pressed.png"/>
+    <imageIcon id="rootPaneMaximizeIconPressed" path="plain/images/maximizeIcon_pressed.png"/>
+    <imageIcon id="rootPaneMinimizeIconPressed" path="plain/images/minimizeIcon_pressed.png"/>
+    <imageIcon id="rootPaneIconifyIconPressed" path="plain/images/iconifyIcon_pressed.png"/>
+
+    <imageIcon id="rootPaneCloseIconInactive" path="plain/images/closeIcon.png"/>
+    <imageIcon id="rootPaneMaximizeIconInactive" path="plain/images/maximizeIcon.png"/>
+    <imageIcon id="rootPaneMinimizeIconInactive" path="plain/images/minimizeIcon.png"/>
+    <imageIcon id="rootPaneIconifyIconInactive" path="plain/images/iconifyIcon.png"/>
+
+    <string id="rootPaneBorder">plain/images/rootPaneBorder4.png,plain/images/rootPaneBorder3.png,plain/images/rootPaneBorder2.png,plain/images/rootPaneBorder.png</string>
+    <defaultsProperty key="Synthetica.rootPane.border" type="idref" value="rootPaneBorder"/>
+
+    <string id="rootPaneBorderSelected">plain/images/rootPaneBorder_selected.png</string>
+    <defaultsProperty key="Synthetica.rootPane.border.selected" type="idref" value="rootPaneBorderSelected"/>
+
+    <defaultsProperty key="Synthetica.rootPane.border.insets" type="insets" value="100 1 1 1"/>
+    <defaultsProperty key="Synthetica.rootPane.border.size" type="insets" value="1 1 1 1"/>
+    <defaultsProperty key="Synthetica.rootPane.resizeInsets" type="insets" value="8 8 8 8"/>
+
+    <defaultsProperty key="Synthetica.rootPane.titlePane.gap" type="integer" value="0"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.title.insets" type="insets" value="2 4 4 4"/>
+
+    <defaultsProperty key="Synthetica.rootPane.titlePane.menuButton.insets" type="insets" value="2 4 5 0"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.iconifyButton.insets" type="insets" value="-4 0 5 0"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.toggleButton.insets" type="insets" value="-4 0 5 0"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.closeButton.insets" type="insets" value="-4 0 5 8"/>
+
+    <state>
+      <property key="RootPane.icon" value="rootPaneIcon"/>
+      <property key="RootPane.closeIcon" value="rootPaneCloseIcon"/>
+      <property key="RootPane.minimizeIcon" value="rootPaneMinimizeIcon"/>
+      <property key="RootPane.maximizeIcon" value="rootPaneMaximizeIcon"/>
+      <property key="RootPane.iconifyIcon" value="rootPaneIconifyIcon"/>
+
+      <property key="RootPane.closeIcon.inactive" value="rootPaneCloseIconInactive"/>
+      <property key="RootPane.minimizeIcon.inactive" value="rootPaneMinimizeIconInactive"/>
+      <property key="RootPane.maximizeIcon.inactive" value="rootPaneMaximizeIconInactive"/>
+      <property key="RootPane.iconifyIcon.inactive" value="rootPaneIconifyIconInactive"/>
+    </state>
+
+    <state value="MOUSE_OVER">
+      <property key="RootPane.closeIcon" value="rootPaneCloseIconHover"/>
+      <property key="RootPane.minimizeIcon" value="rootPaneMinimizeIconHover"/>
+      <property key="RootPane.maximizeIcon" value="rootPaneMaximizeIconHover"/>
+      <property key="RootPane.iconifyIcon" value="rootPaneIconifyIconHover"/>
+    </state>
+
+    <state value="PRESSED">
+      <property key="RootPane.closeIcon" value="rootPaneCloseIconPressed"/>
+      <property key="RootPane.minimizeIcon" value="rootPaneMinimizeIconPressed"/>
+      <property key="RootPane.maximizeIcon" value="rootPaneMaximizeIconPressed"/>
+      <property key="RootPane.iconifyIcon" value="rootPaneIconifyIconPressed"/>
+    </state>
+
+  </style>
+  <bind style="rootPane" type="region" key="RootPane"/>
+
+
+<!--
+*******************************************************************************
+Spinner
+*******************************************************************************
+-->
+  <style id="spinner">
+    <insets top="2" left="6" bottom="2" right="2"/>
+    <defaultsProperty key="Synthetica.spinner.arrowButton.width" type="integer" value="16" />
+
+    <state>
+      <color type="BACKGROUND" value="#FFFFFF"/>
+      <string id="spinnerBorder">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.spinner.border" type="idref" value="spinnerBorder"/>      
+      <defaultsProperty key="Synthetica.spinner.border.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.spinner.border.fillInsets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.spinner.border.arcWidth" type="integer" value="0"/>
+      <defaultsProperty key="Synthetica.spinner.border.arcHeight" type="integer" value="0"/>
+
+      <painter method="spinnerBorder" idref="syntheticaPainter" />
+      <painter method="spinnerBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <color type="BACKGROUND" value="#EFEFEF"/>
+      <string id="spinnerBorderDisabled">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.spinner.border.disabled" type="idref" value="spinnerBorderDisabled"/>
+      <painter method="spinnerBorder" idref="syntheticaPainter" />
+      <painter method="spinnerBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="spinner" type="region" key="Spinner"/>
+
+  <style id="spinnerEditor">
+    <insets top="2" left="0" bottom="2" right="-3"/>
+  </style>
+  <bind style="spinnerEditor" type="name" key="Spinner.editor"/>
+
+
+<!-- 
+*******************************************************************************
+ScrollPane
+*******************************************************************************
+-->
+  <style id="scrollPane">
+    <insets top="2" left="2" bottom="2" right="2"/>
+    <property key="ScrollPane.viewportBorderInsets" type="insets" value="0 0 0 0" />
+    <!-- use Synthetica LayoutManager to adjust ScrollBar position --> 
+    <!-- <string id="lmcn">de.javasoft.plaf.synthetica.SyntheticaScrollPaneLayoutManager</string>
+    <defaultsProperty key="Synthetica.scrollPane.layoutManager.className" type="idref" value="lmcn"/>     
+    <defaultsProperty key="Synthetica.scrollPane.nonOpaque" type="boolean" value="true"/> -->
+
+    <state>
+      <string id="scrollPaneBorder">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.scrollPane.border" type="idref" value="scrollPaneBorder"/>
+      <defaultsProperty key="Synthetica.scrollPane.border.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.scrollPane.border.fillInsets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.scrollPane.border.arcWidth" type="integer" value="0"/>
+      <defaultsProperty key="Synthetica.scrollPane.border.arcHeight" type="integer" value="0"/>
+
+      <string id="scrollPaneBorderDisabled">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.scrollPane.border.disabled" type="idref" value="scrollPaneBorderDisabled"/>
+
+	  <painter method="scrollPaneBackground" idref="syntheticaPainter" />
+	  <painter method="scrollPaneBorder" idref="syntheticaPainter" />
+    </state>
+    
+  </style>
+  <bind style="scrollPane" type="region" key="ScrollPane"/>
+
+
+<!-- 
+*******************************************************************************
+ScrollBar
+*******************************************************************************
+-->
+  <style id="scrollBar">
+    <state>
+      <opaque value="false" />
+      <property key="ScrollBar.squareButtons" type="boolean" value="true"/>
+      <property key="ScrollBar.thumbHeight" type="integer" value="16"/>
+      <property key="ScrollBar.minimumThumbSize" type="dimension" value="40 40" />
+    </state>
+  </style>
+  <bind style="scrollBar" type="region" key="ScrollBar"/>
+
+  <style id="scrollBarThumb">
+    <state>
+      <string id="scrollBarThumbXBackground">plain/images/scrollBarThumb_hover3.png,plain/images/scrollBarThumb_hover2.png,plain/images/scrollBarThumb_hover.png,plain/images/scrollBarThumb.png</string>
+      <defaultsProperty key="Synthetica.scrollBarThumb.x.background" type="idref" value="scrollBarThumbXBackground"/>
+
+      <string id="scrollBarThumbXBackgroundHover">plain/images/scrollBarThumb_hover.png,plain/images/scrollBarThumb_hover2.png,plain/images/scrollBarThumb_hover3.png,plain/images/scrollBarThumb_hover4.png</string>
+      <defaultsProperty key="Synthetica.scrollBarThumb.x.background.hover" type="idref" value="scrollBarThumbXBackgroundHover"/>
+
+      <string id="scrollBarThumbYBackground">plain/images/scrollBarThumb_hover3.png,plain/images/scrollBarThumb_hover2.png,plain/images/scrollBarThumb_hover.png,plain/images/scrollBarThumb.png</string>
+      <defaultsProperty key="Synthetica.scrollBarThumb.y.background" type="idref" value="scrollBarThumbYBackground"/>
+
+      <string id="scrollBarThumbYBackgroundHover">plain/images/scrollBarThumb_hover.png,plain/images/scrollBarThumb_hover2.png,plain/images/scrollBarThumb_hover3.png,plain/images/scrollBarThumb_hover4.png</string>
+      <defaultsProperty key="Synthetica.scrollBarThumb.y.background.hover" type="idref" value="scrollBarThumbYBackgroundHover"/>
+
+      <defaultsProperty key="Synthetica.scrollBarThumb.x.background.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.scrollBarThumb.y.background.insets" type="insets" value="2 2 2 2"/>
+
+	  <painter method="scrollBarThumbBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="scrollBarThumb" type="region" key="ScrollBarThumb"/>
+
+  <style id="scrollBarTrack">
+    <state>
+      <string id="scrollBarTrackXBackground">plain/images/scrollBarTrack.png</string>
+      <defaultsProperty key="Synthetica.scrollBarTrack.x.background" type="idref" value="scrollBarTrackXBackground"/>
+
+      <string id="scrollBarTrackXBackgroundHover">plain/images/scrollBarTrack.png</string>
+      <defaultsProperty key="Synthetica.scrollBarTrack.x.background.hover" type="idref" value="scrollBarTrackXBackgroundHover"/>
+
+      <string id="scrollBarTrackYBackground">plain/images/scrollBarTrack.png</string>
+      <defaultsProperty key="Synthetica.scrollBarTrack.y.background" type="idref" value="scrollBarTrackYBackground"/>
+
+      <string id="scrollBarTrackYBackgroundHover">plain/images/scrollBarTrack.png</string>
+      <defaultsProperty key="Synthetica.scrollBarTrack.y.background.hover" type="idref" value="scrollBarTrackYBackgroundHover"/>
+
+      <defaultsProperty key="Synthetica.scrollBarTrack.x.background.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.scrollBarTrack.y.background.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.scrollBarTrack.hoverAndPressed.enabled" type="boolean" value="true"/>
+      <defaultsProperty key="Synthetica.scrollBarTrack.hoverOnButtons.enabled" type="boolean" value="true"/>
+
+	  <painter method="scrollBarTrackBackground" idref="syntheticaPainter" />
+    </state>
+
+  </style>
+  <bind style="scrollBarTrack" type="region" key="ScrollBarTrack"/>
+
+  <style id="scrollBarButton">
+    <property key="ArrowButton.size" type="integer" value="16"/>
+  </style>
+  <bind style="scrollBarButton" type="name" key="ScrollBar.button"/>
+
+
+<!-- 
+*******************************************************************************
+Separator
+*******************************************************************************
+-->
+  <style id="separator">
+    <property key="Separator.thickness" type="integer" value="3"/>
+    <state>
+      <opaque value="false" />
+      <color type="BACKGROUND" value="#C0C0C0" />
+      <string id="separatorX">plain/images/separatorX.png</string>
+      <defaultsProperty key="Synthetica.separator.image.x" type="idref" value="separatorX"/>
+      <string id="separatorY">plain/images/separatorY.png</string>
+      <defaultsProperty key="Synthetica.separator.image.y" type="idref" value="separatorY"/>
+      <defaultsProperty key="Synthetica.separator.image.insets" type="insets" value="1 1 2 1"/>
+	  <painter method="separatorForeground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="separator" type="region" key="Separator"/>
+
+  <!-- disable separator for option pane -->
+  <style id="optionPaneSeparator">
+    <property key="Separator.thickness" type="integer" value="0"/>
+  </style>
+  <bind style="optionPaneSeparator" type="name" key="OptionPane.separator"/>
+
+
+<!-- 
+*******************************************************************************
+Slider
+*******************************************************************************
+-->
+  <style id="slider">
+    <insets top="2" left="2" bottom="2" right="2"/>
+    <property key="Slider.thumbWidth" type="integer" value="18"/>
+    <property key="Slider.thumbHeight" type="integer" value="18"/>
+    <property key="Slider.trackBorder" type="integer" value="0"/>
+    <property key="Slider.paintValue" type="boolean" value="false"/>
+
+    <state>
+      <defaultsProperty key="Synthetica.slider.hoverAndPressed.enabled" type="boolean" value="true"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="tickColor">
+        <!-- #808080 -->
+        <int>128</int>
+        <int>128</int>
+        <int>128</int>
+      </object>
+      <defaultsProperty key="Slider.tickColor" type="idref" value="tickColor"/>
+    </state>  
+
+    <state value="FOCUSED">
+	  <painter method="sliderBorder" idref="syntheticaPainter" />
+    </state>
+
+  </style>
+  <bind style="slider" type="region" key="Slider"/>
+
+  <style id="sliderTrack">
+    <state>
+      <string id="sliderTrackX">plain/images/sliderTrackX.png</string>      
+      <defaultsProperty key="Synthetica.slider.track.x.image" type="idref" value="sliderTrackX"/>
+      <defaultsProperty key="Synthetica.slider.track.x.image.insets" type="insets" value="0 5 0 5"/>
+      <string id="sliderTrackMarkX">plain/images/sliderTrackMarkX.png</string>      
+      <defaultsProperty key="Synthetica.slider.trackMark.x.image" type="idref" value="sliderTrackMarkX"/>
+      <defaultsProperty key="Synthetica.slider.trackMark.x.pressed.image" type="idref" value="sliderTrackMarkX"/>
+      <defaultsProperty key="Synthetica.slider.trackMark.x.image.insets" type="insets" value="0 5 0 5"/>
+
+      <string id="sliderTrackY">plain/images/sliderTrackY.png</string>
+      <defaultsProperty key="Synthetica.slider.track.y.image" type="idref" value="sliderTrackY"/>
+      <defaultsProperty key="Synthetica.slider.track.y.image.insets" type="insets" value="5 0 5 0"/>
+      <string id="sliderTrackMarkY">plain/images/sliderTrackMarkY.png</string>      
+      <defaultsProperty key="Synthetica.slider.trackMark.y.image" type="idref" value="sliderTrackMarkY"/>
+      <defaultsProperty key="Synthetica.slider.trackMark.y.pressed.image" type="idref" value="sliderTrackMarkY"/>
+      <defaultsProperty key="Synthetica.slider.trackMark.y.image.insets" type="insets" value="5 0 5 0"/>
+
+      <painter method="sliderTrackBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="MOUSE_OVER">
+      <string id="sliderTrackMarkX">plain/images/sliderTrackMarkX.png</string>      
+      <defaultsProperty key="Synthetica.slider.trackMark.x.hover.image" type="idref" value="sliderTrackMarkX"/>
+      <string id="sliderTrackMarkY">plain/images/sliderTrackMarkY.png</string>      
+      <defaultsProperty key="Synthetica.slider.trackMark.y.hover.image" type="idref" value="sliderTrackMarkY"/>
+      <painter method="sliderTrackBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <string id="sliderTrackX">plain/images/sliderTrackX_disabled.png</string>
+      <defaultsProperty key="Synthetica.slider.track.x.disabled.image" type="idref" value="sliderTrackX"/>
+      <string id="sliderTrackX">plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.slider.trackMark.x.disabled.image" type="idref" value="sliderTrackX"/>
+
+      <string id="sliderTrackY">plain/images/sliderTrackY_disabled.png</string>
+      <defaultsProperty key="Synthetica.slider.track.y.disabled.image" type="idref" value="sliderTrackY"/>
+      <string id="sliderTrackY">plain/images/dummy.png</string>
+      <defaultsProperty key="Synthetica.slider.trackMark.y.disabled.image" type="idref" value="sliderTrackY"/>
+      <painter method="sliderTrackBackground" idref="syntheticaPainter" />
+
+      <object class="javax.swing.plaf.ColorUIResource" id="tickColorDisabled">
+        <!-- #A0A0A0 -->
+        <int>160</int>
+        <int>160</int>
+        <int>160</int>
+      </object>
+      <defaultsProperty key="Slider.tickColor.disabled" type="idref" value="tickColorDisabled"/>
+    </state>
+  </style>
+  <bind style="sliderTrack" type="region" key="SliderTrack"/>
+
+  <style id="sliderThumb">
+    <state>
+      <string id="sliderThumbX">plain/images/sliderThumb_hover3.png,plain/images/sliderThumb_hover2.png,plain/images/sliderThumb_hover.png,plain/images/sliderThumb.png</string>
+      <defaultsProperty key="Synthetica.slider.thumb.x.image" type="idref" value="sliderThumbX"/>
+      <defaultsProperty key="Synthetica.slider.thumb.x.image.insets" type="insets" value="0 0 0 0"/>
+
+      <string id="sliderThumbY">plain/images/sliderThumb_hover3.png,plain/images/sliderThumb_hover2.png,plain/images/sliderThumb_hover.png,plain/images/sliderThumb.png</string>
+      <defaultsProperty key="Synthetica.slider.thumb.y.image" type="idref" value="sliderThumbY"/>
+      <defaultsProperty key="Synthetica.slider.thumb.y.image.insets" type="insets" value="0 0 0 0"/>
+
+      <painter method="sliderThumbBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="MOUSE_OVER">
+      <string id="sliderThumbX">plain/images/sliderThumb_hover.png,plain/images/sliderThumb_hover2.png,plain/images/sliderThumb_hover3.png,plain/images/sliderThumb_hover4.png</string>
+      <defaultsProperty key="Synthetica.slider.thumb.x.hover.image" type="idref" value="sliderThumbX"/>
+
+      <string id="sliderThumbY">plain/images/sliderThumb_hover.png,plain/images/sliderThumb_hover2.png,plain/images/sliderThumb_hover3.png,plain/images/sliderThumb_hover4.png</string>
+      <defaultsProperty key="Synthetica.slider.thumb.y.hover.image" type="idref" value="sliderThumbY"/>
+
+      <painter method="sliderThumbBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <imagePainter method="sliderThumbBackground" path="plain/images/sliderThumb_disabled.png" direction="horizontal"
+                    sourceInsets="0 0 0 0" paintCenter="true" stretch="false"/>
+      <imagePainter method="sliderThumbBackground" path="plain/images/sliderThumb_disabled.png" direction="vertical"
+                    sourceInsets="0 0 0 0" paintCenter="true" stretch="false"/>
+    </state>
+  </style>
+  <bind style="sliderThumb" type="region" key="SliderThumb"/>
+
+
+<!-- 
+*******************************************************************************
+SplitPane
+*******************************************************************************
+-->
+  <style id="splitPane">
+    <property key="SplitPane.size" type="integer" value="7"/>
+    <property key="SplitPane.oneTouchButtonSize" type="integer" value="25"/>
+    <property key="SplitPane.oneTouchButtonOffset" type="integer" value="0"/>
+    <property key="SplitPane.oneTouchExpandable" type="boolean" value="true"/>
+    <property key="SplitPane.centerOneTouchButtons" type="boolean" value="true"/>
+    <defaultsProperty key="Syntetica.splitPane.centerOneTouchButtons" type="boolean" value="true"/>
+    <state>
+      <opaque value="false"/>
+      <color type="BACKGROUND" value="#EFEFEF" />
+    </state>
+  </style>
+  <bind style="splitPane" type="region" key="SplitPane"/>
+
+  <style id="splitPaneDivider">
+    <state>
+      <imagePainter method="splitPaneDragDivider" path="plain/images/splitPaneDragDivider.png" direction="horizontal_split"
+                      sourceInsets="2 2 2 2" paintCenter="true" stretch="false"/>
+      <imagePainter method="splitPaneDragDivider" path="plain/images/splitPaneDragDivider.png" direction="vertical_split"
+                      sourceInsets="2 2 2 2" paintCenter="true" stretch="false"/>
+
+      <string id="splitPaneDividerXGrip">plain/images/splitPaneDividerGripX.png</string>
+      <defaultsProperty key="Synthetica.splitPaneDivider.x.grip" type="idref" value="splitPaneDividerXGrip"/>
+
+      <string id="splitPaneDividerXGripHover">plain/images/splitPaneDividerGripX_hover.png</string>
+      <defaultsProperty key="Synthetica.splitPaneDivider.x.grip.hover" type="idref" value="splitPaneDividerXGripHover"/>
+
+      <string id="splitPaneDividerYGrip">plain/images/splitPaneDividerGripY.png</string>
+      <defaultsProperty key="Synthetica.splitPaneDivider.y.grip" type="idref" value="splitPaneDividerYGrip"/>
+
+      <string id="splitPaneDividerYGripHover">plain/images/splitPaneDividerGripY_hover.png</string>
+      <defaultsProperty key="Synthetica.splitPaneDivider.y.grip.hover" type="idref" value="splitPaneDividerYGripHover"/>
+
+      <defaultsProperty key="Synthetica.splitPaneDivider.background.insets" type="insets" value="2 2 2 2"/>
+	  <painter method="splitPaneDividerForeground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="splitPaneDivider" type="region" key="SplitPaneDivider"/>
+
+
+<!-- 
+*******************************************************************************
+TabbedPane
+*******************************************************************************
+-->
+  <style id="tabbedPane">
+    <insets top="0" left="0" bottom="0" right="0"/>
+    <state>
+      <color type="FOREGROUND" value="#222222"/>
+    </state>
+  </style>
+  <bind style="tabbedPane" type="region" key="TabbedPane"/>
+
+  <style id="tabbedPaneContent">
+    <insets top="2" left="2" bottom="2" right="2"/>
+    <defaultsProperty key="Synthetica.tabbedPane.keepOpacity" type="boolean" value="false"/>
+    <state>
+      <opaque value="true"/>
+      <color type="BACKGROUND" value="#FFFFFF"/>
+      <string id="tabbedPaneContentBorderImage">plain/images/tabbedPaneContentBorder.png</string>
+      <defaultsProperty key="Synthetica.tabbedPane.contentBorder.image" type="idref" value="tabbedPaneContentBorderImage"/>
+      <defaultsProperty key="Synthetica.tabbedPane.contentBorder.image.top.sourceInsets" type="insets" value="1 1 1 1"/>
+      <defaultsProperty key="Synthetica.tabbedPane.contentBorder.image.left.sourceInsets" type="insets" value="1 1 1 1"/>
+      <defaultsProperty key="Synthetica.tabbedPane.contentBorder.image.bottom.sourceInsets" type="insets" value="1 1 1 1"/>
+      <defaultsProperty key="Synthetica.tabbedPane.contentBorder.image.right.sourceInsets" type="insets" value="1 1 1 1"/>
+	  <painter method="tabbedPaneContentBorder" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="tabbedPaneContent" type="region" key="TabbedPaneContent"/>
+
+  <style id="tabbedPaneTabArea">
+    <insets top="2" left="2" bottom="0" right="2"/>    
+    <painter method="tabbedPaneTabAreaBackground" idref="syntheticaPainter"/>
+    <painter method="tabbedPaneTabAreaBorder" idref="syntheticaPainter"/>
+  </style>
+  <bind style="tabbedPaneTabArea" type="region" key="TabbedPaneTabArea"/>
+
+  <style id="tabbedPaneTab">
+    <insets top="2" left="10" bottom="2" right="10"/>
+    <defaultsProperty key="Synthetica.tabbedPane.tab.selected.bold" type="boolean" value="false"/>
+
+    <state>
+      <color type="TEXT_FOREGROUND" value="#222222"/>
+      <string id="tabbedPaneTabTop">plain/images/tabbedPaneTab_hover3.png,plain/images/tabbedPaneTab_hover2.png,plain/images/tabbedPaneTab_hover.png,plain/images/tabbedPaneTab.png</string>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.top" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.bottom" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.left" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.right" type="idref" value="tabbedPaneTabTop"/>
+
+      <string id="tabbedPaneTabTopHover">plain/images/tabbedPaneTab_hover.png,plain/images/tabbedPaneTab_hover2.png,plain/images/tabbedPaneTab_hover3.png,plain/images/tabbedPaneTab_hover4.png</string>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.hover.top" type="idref" value="tabbedPaneTabTopHover"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.hover.bottom" type="idref" value="tabbedPaneTabTopHover"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.hover.left" type="idref" value="tabbedPaneTabTopHover"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.hover.right" type="idref" value="tabbedPaneTabTopHover"/>
+
+      <defaultsProperty key="Synthetica.tabbedPane.tab.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.text.insets" type="insets" value="0 0 0 0"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.icon.insets" type="insets" value="0 0 0 0"/>
+
+	  <painter method="tabbedPaneTabBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED">
+      <color type="TEXT_FOREGROUND" value="#292929"/>
+	  <painter method="tabbedPaneTabBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_FOREGROUND" value="#333333"/>
+
+      <string id="tabbedPaneTabTop">plain/images/tabbedPaneTab_selected.png</string>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.top" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.bottom" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.left" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.right" type="idref" value="tabbedPaneTabTop"/>
+
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.text.insets" type="insets" value="2 0 2 0"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.icon.insets" type="insets" value="2 0 2 0"/>
+
+	  <painter method="tabbedPaneTabBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <string id="tabbedPaneTabTop">plain/images/tabbedPaneTab.png</string>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.disabled.top" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.disabled.bottom" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.disabled.left" type="idref" value="tabbedPaneTabTop"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.disabled.right" type="idref" value="tabbedPaneTabTop"/>
+
+      <defaultsProperty key="Synthetica.tabbedPane.tab.disabled.insets" type="insets" value="2 2 2 2"/>
+
+	  <painter method="tabbedPaneTabBackground" idref="syntheticaPainter" />
+    </state>
+
+  </style>
+  <bind style="tabbedPaneTab" type="region" key="TabbedPaneTab"/>
+
+
+<!-- 
+*******************************************************************************
+Table
+*******************************************************************************
+-->
+  <style id="table">
+    <property key="Table.rowHeight" type="integer" value="21"/>
+    <!-- set to false to respect table cell renderer insets defined by "cellRenderer" style -->
+    <property key="Table.rendererUseUIBorder" type="boolean" value="false"/>
+    
+    <!-- disable grid -->
+    <defaultsProperty key="Synthetica.table.columnMargin" type="integer" value="0" />
+    <defaultsProperty key="Synthetica.table.rowMargin" type="integer" value="1" />
+    <defaultsProperty key="Synthetica.table.useScrollPaneBorder" type="boolean" value="true" />
+    
+    <string id="defaultTableCellRenderer">de.javasoft.plaf.synthetica.SyntheticaDefaultTableCellRenderer</string>
+    <defaultsProperty key="Synthetica.table.defaultRenderer.className" type="idref" value="defaultTableCellRenderer"/>    
+
+    <string id="defaultTableCellEditor">de.javasoft.plaf.synthetica.SyntheticaDefaultTableCellEditor</string>
+    <defaultsProperty key="Synthetica.table.defaultEditor.className" type="idref" value="defaultTableCellEditor"/>    
+
+    <state>
+      <insets top="3" left="3" bottom="3" right="3"/>
+      <color type="BACKGROUND" value="#FCFCFC" /> 
+      <color type="FOREGROUND" value="#222222" />
+
+      <!-- Note: alternateRowColor requieres Java 6 -->
+      <object class="javax.swing.plaf.ColorUIResource" id="alternateRowColor">
+        <!-- #FFFFFF -->
+        <int>255</int>
+        <int>255</int>
+        <int>255</int>
+      </object>
+      <defaultsProperty key="Table.alternateRowColor" type="idref" value="alternateRowColor" />
+
+      <object class="javax.swing.plaf.ColorUIResource" id="hlBorderColor">
+        <!-- #00C0FF -->
+        <int>0</int>
+        <int>192</int>
+        <int>255</int>
+      </object>
+      <defaultsProperty key="Synthetica.table.focusCellHighlightBorder.color" type="idref" value="hlBorderColor" />
+      <defaultsProperty key="Synthetica.table.cellEditor.focus.color" type="idref" value="hlBorderColor" />
+      <defaultsProperty key="Synthetica.table.cellEditor.opaque" type="boolean" value="true" />
+      <defaultsProperty key="Synthetica.table.cellEditor.focus.size" type="integer" value="2"/>
+
+      <object class="javax.swing.plaf.ColorUIResource" id="gridColor">
+        <!-- #F5F5F5 -->
+        <int>245</int>
+        <int>245</int>
+        <int>245</int>
+      </object>
+      <property key="Table.gridColor" type="idref" value="gridColor"/>
+
+	  <painter method="tableBorder" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <string id="tableSelectionBackground">plain/images/selectionBackground.png</string>
+      <defaultsProperty key="Synthetica.table.selectionBackground" type="idref" value="tableSelectionBackground"/>
+      <defaultsProperty key="Synthetica.table.selectionBackground.insets" type="insets" value="1 1 1 1"/>
+
+      <string id="inactiveTableSelectionBackground">plain/images/selectionBackground_inactive.png</string>
+      <defaultsProperty key="Synthetica.table.selectionBackground.inactive" type="idref" value="inactiveTableSelectionBackground"/>
+
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+    </state>    
+  </style>
+  <bind style="table" type="region" key="Table"/>
+
+  <style id="tableHeader">
+    <state>
+      <insets top="3" left="10" bottom="5" right="10"/>
+
+      <!-- <font name="Seago UI" size="14" style="BOLD"/>  -->
+      <color type="FOREGROUND" value="#222222" /> 
+      <color type="BACKGROUND" value="#FFFFFF" />
+
+      <object class="javax.swing.plaf.ColorUIResource" id="gridColor">
+        <!-- #DFDFDF -->
+        <int>223</int>
+        <int>223</int>
+        <int>223</int>
+      </object>
+      <defaultsProperty key="Synthetica.tableHeader.gridColor" type="idref" value="gridColor"/>
+      
+      <!-- 10=LEADING -->
+      <defaultsProperty key="Synthetica.tableHeader.horizontalAlignment" type="integer" value="10"/>
+      <defaultsProperty key="Synthetica.tableHeader.showVerticalGrid" type="boolean" value="false"/>
+
+      <!--  <string id="tableHeaderCellBorder">de.javasoft.plaf.synthetica.plain.TableHeaderCellBorder</string>
+      <defaultsProperty key="Synthetica.tableHeader.cellBorder.className" type="idref" value="tableHeaderCellBorder"/>  -->
+      
+      <string id="tableHeaderBackground">plain/images/tableHeaderBackground.png</string>
+      <defaultsProperty key="Synthetica.tableHeader.background.image" type="idref" value="tableHeaderBackground"/>
+      <defaultsProperty key="Synthetica.tableHeader.background.image.insets" type="insets" value="0 0 1 0"/>
+
+      <string id="tableHeaderCellBackground">plain/images/tableHeaderCellBackground.png</string>
+      <defaultsProperty key="Synthetica.tableHeader.cell.background.image" type="idref" value="tableHeaderCellBackground"/>
+      <defaultsProperty key="Synthetica.tableHeader.cell.background.image.insets" type="insets" value="0 1 1 1"/>
+            
+      <string id="tableHeaderAscBackground">plain/images/tableHeaderSortBackground.png</string>
+      <defaultsProperty key="Synthetica.tableHeader.ascendingSort.background.image" type="idref" value="tableHeaderAscBackground"/>
+      <defaultsProperty key="Synthetica.tableHeader.ascendingSort.background.image.insets" type="insets" value="0 1 1 1"/>
+
+      <string id="tableHeaderDescBackground">plain/images/tableHeaderSortBackground.png</string>
+      <defaultsProperty key="Synthetica.tableHeader.descendingSort.background.image" type="idref" value="tableHeaderDescBackground"/>
+      <defaultsProperty key="Synthetica.tableHeader.descendingSort.background.image.insets" type="insets" value="0 1 1 1"/>
+            
+      <painter method="tableHeaderBackground" idref="syntheticaPainter"/>
+    </state>
+  </style>
+  <bind style="tableHeader" type="region" key="TableHeader"/>
+  <!-- avoids plain header text with Java SE 6 on MOUSE_OVER -->
+  <bind style="tableHeader" type="name" key="TableHeader.renderer"/>
+
+  <style id="cellRenderer">
+    <state>
+      <opaque value="true"/>
+      <insets top="3" left="10" bottom="3" right="10"/>
+    </state>
+  </style>  
+  <bind style="cellRenderer" type="name" key="Table.cellRenderer"/>
+
+  <!-- <style id="tableEditor">
+    <state>
+      <opaque value="true"/>
+      <insets top="3" left="10" bottom="3" right="10"/>
+    </state>
+  </style>  
+  <bind style="tableEditor" type="name" key="Table.editor"/> -->
+
+
+<!-- 
+*******************************************************************************
+TextArea
+*******************************************************************************
+-->
+  <style id="textArea">
+    <insets top="0" left="4" bottom="0" right="4"/>
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.textArea.lockedColor" type="idref" value="lockedColor"/>
+
+      <string id="textAreaBorderLocked">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.textArea.border.locked" type="idref" value="textAreaBorderLocked"/>
+
+	  <painter method="textAreaBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#EFEFEF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="disabledColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.textArea.disabledColor" type="idref" value="disabledColor"/>
+	  <painter method="textAreaBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="textArea" type="region" key="TextArea"/>
+
+
+<!-- 
+*******************************************************************************
+TextField
+*******************************************************************************
+-->
+  <style id="textField">
+    <insets top="4" left="6" bottom="4" right="6"/>
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.textField.lockedColor" type="idref" value="lockedColor"/>
+      
+      <string id="textFieldBorder">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.textField.border" type="idref" value="textFieldBorder"/>
+      <defaultsProperty key="Synthetica.textField.border.insets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.textField.border.fillInsets" type="insets" value="2 2 2 2"/>
+      <defaultsProperty key="Synthetica.textField.border.arcWidth" type="integer" value="0"/>
+      <defaultsProperty key="Synthetica.textField.border.arcHeight" type="integer" value="0"/>
+
+      <string id="textFieldBorderLocked">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.textField.border.locked" type="idref" value="textFieldBorderLocked"/>
+
+	  <painter method="textFieldBackground" idref="syntheticaPainter" />
+	  <painter method="textFieldBorder" idref="syntheticaPainter" />	  
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#EFEFEF" type="BACKGROUND"/>
+      <string id="textFieldBorderDisabled">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.textField.border.disabled" type="idref" value="textFieldBorderDisabled"/>
+      <painter method="textFieldBackground" idref="syntheticaPainter" />
+	  <painter method="textFieldBorder" idref="syntheticaPainter" />	  
+    </state>
+  </style>
+  <bind style="textField" type="region" key="TextField"/>
+
+
+<!-- 
+*******************************************************************************
+TextPane
+*******************************************************************************
+-->
+  <style id="textPane">
+    <insets top="0" left="4" bottom="0" right="4"/>
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="lockedColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.textPane.lockedColor" type="idref" value="lockedColor"/>
+
+      <string id="textPaneBorderLocked">plain/images/border.png</string>
+      <defaultsProperty key="Synthetica.textPane.border.locked" type="idref" value="textPaneBorderLocked"/>
+
+	  <painter method="textPaneBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#EFEFEF" type="BACKGROUND"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="disabledColor">
+        <!-- #EFEFEF -->
+        <int>239</int>
+        <int>239</int>
+        <int>239</int>
+      </object>
+      <defaultsProperty key="Synthetica.textPane.disabledColor" type="idref" value="disabledColor"/>
+	  <painter method="textPaneBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="textPane" type="region" key="TextPane"/>
+
+
+<!--
+*******************************************************************************
+ToggleButton
+*******************************************************************************
+-->
+  <style id="toggleButton">
+    <insets top="6" left="6" bottom="6" right="6"/>
+    <property key="ToggleButton.margin" type="insets" value="0 0 0 0"/>
+    <property key="ToggleButton.textShiftOffset" type="integer" value="0"/>
+
+    <state>
+      <color type="FOREGROUND" value="#222222" /> 
+      <defaultsProperty key="Synthetica.toggleButton.border.insets" type="insets" value="6 6 6 6"/>
+
+      <string id="buttonBorder">plain/images/button_hover3.png,plain/images/button_hover2.png,plain/images/button_hover.png,plain/images/button.png</string>
+      <defaultsProperty key="Synthetica.toggleButton.border" type="idref" value="buttonBorder"/>
+
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="MOUSE_OVER">
+      <string id="buttonBorder">plain/images/button_hover.png,plain/images/button_hover2.png,plain/images/button_hover3.png,plain/images/button_hover4.png</string>
+      <defaultsProperty key="Synthetica.toggleButton.border.hover" type="idref" value="buttonBorder"/>
+
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED">
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED">
+      <string id="buttonBorder">plain/images/button_selectedHover3.png,plain/images/button_selectedHover2.png,plain/images/button_selectedHover.png,plain/images/button_selected.png</string>
+      <defaultsProperty key="Synthetica.toggleButton.border.selected" type="idref" value="buttonBorder"/>
+
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="SELECTED AND MOUSE_OVER">
+      <string id="buttonBorder">plain/images/button_selectedHover.png,plain/images/button_selectedHover2.png,plain/images/button_selectedHover3.png,plain/images/button_selectedHover4.png</string>
+      <defaultsProperty key="Synthetica.toggleButton.border.selected.hover" type="idref" value="buttonBorder"/>
+
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+      <color type="TEXT_FOREGROUND" value="#A0A0A0" />
+      <string id="buttonBorder">plain/images/button.png</string>
+      <defaultsProperty key="Synthetica.toggleButton.border.disabled" type="idref" value="buttonBorder"/>
+
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED AND SELECTED">
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED AND MOUSE_OVER">
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="FOCUSED AND SELECTED AND MOUSE_OVER">
+	  <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED AND SELECTED">
+  	  <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+	  <imagePainter method="toggleButtonBackground" path="plain/images/button_selected.png"
+                    sourceInsets="6 6 6 6" paintCenter="true" stretch="true"/>
+    </state>
+
+  </style>
+  <bind style="toggleButton" type="region" key="ToggleButton"/>
+
+
+<!-- 
+*******************************************************************************
+ToolBar
+*******************************************************************************
+-->
+  <style id="toolBar">
+    <object class="de.javasoft.plaf.synthetica.painter.ToolBarHandle" id="toolBarHandle" />
+    <property key="ToolBar.handleIcon" type="idref" value="toolBarHandle"/>
+    <string id="toolBarHandleX">plain/images/toolBarHandle.png</string>
+    <defaultsProperty key="Synthetica.toolBar.handle.image.x" type="idref" value="toolBarHandleX"/>
+    <string id="toolBarHandleY">plain/images/toolBarHandle.png</string>
+    <defaultsProperty key="Synthetica.toolBar.handle.image.y" type="idref" value="toolBarHandleY"/>
+    <defaultsProperty key="Synthetica.toolBar.handle.image.insets" type="insets" value="0 0 0 0"/>
+    <defaultsProperty key="Synthetica.toolBar.handle.size" type="integer" value="9"/>
+    <defaultsProperty key="Synthetica.toolBar.handle.image.x.tiled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.toolBar.handle.image.y.tiled" type="boolean" value="true"/>
+     
+    <defaultsProperty key="Synthetica.toolBar.button.pressed.paintBorder" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.toolBar.buttons.paintBorder" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.toolBar.margin.horizontal" type="insets" value="2 0 2 0"/>
+    <defaultsProperty key="Synthetica.toolBar.margin.vertical" type="insets" value="0 2 0 2"/>
+
+    <defaultsProperty key="Synthetica.toolBar.opaque" type="boolean" value="false"/>
+    <state>
+      <opaque value="true"/>
+      <color type="BACKGROUND" value="#FF0000" />
+      <color type="FOREGROUND" value="#FFFFFF" />
+
+      <string id="toolBarBackground">/org/jdownloader/gui/laf/plain/toolBarBackground.png</string>
+      <defaultsProperty key="Synthetica.toolBar.background" type="idref" value="toolBarBackground"/>
+      <string id="toolBarBackground">/org/jdownloader/gui/laf/plain/toolBarBackground4_inactive.png,/org/jdownloader/gui/laf/plain/toolBarBackground3_inactive.png,/org/jdownloader/gui/laf/plain/toolBarBackground2_inactive.png,/org/jdownloader/gui/laf/plain/toolBarBackground_inactive.png</string>
+      <defaultsProperty key="Synthetica.toolBar.background.inactive" type="idref" value="toolBarBackground"/>
+      <defaultsProperty key="Synthetica.toolBar.background.insets" type="insets" value="0 0 0 0"/>
+      <defaultsProperty key="Synthetica.toolBar.background.horizontalTiled" type="boolean" value="true"/>
+      <defaultsProperty key="Synthetica.toolBar.background.verticalTiled" type="boolean" value="true"/>
+
+      <string id="buttonBorder">plain/images/toolBarButton_hover3.png,plain/images/toolBarButton_hover2.png,plain/images/toolBarButton_hover.png,plain/images/toolBarButton.png</string>
+      <defaultsProperty key="Synthetica.toolBar.button.border" type="idref" value="buttonBorder"/>
+      
+      <string id="buttonBorder">plain/images/toolBarButton_hover.png,plain/images/toolBarButton_hover2.png,plain/images/toolBarButton_hover3.png,plain/images/toolBarButton_hover4.png</string>
+      <defaultsProperty key="Synthetica.toolBar.button.border.hover" type="idref" value="buttonBorder"/>
+
+      <string id="buttonBorder">plain/images/toolBarButton_pressed.png</string>
+      <defaultsProperty key="Synthetica.toolBar.button.border.pressed" type="idref" value="buttonBorder"/>
+      
+      <string id="buttonBorder">plain/images/toolBarButton_hover3.png,plain/images/toolBarButton_hover2.png,plain/images/toolBarButton_hover.png,plain/images/toolBarButton.png</string>
+      <defaultsProperty key="Synthetica.toolBar.toggleButton.border" type="idref" value="buttonBorder"/>
+
+      <string id="buttonBorderSelected">plain/images/toolBarButton_selectedHover3.png,plain/images/toolBarButton_selectedHover2.png,plain/images/toolBarButton_selectedHover.png,plain/images/toolBarButton_selected.png</string>
+      <defaultsProperty key="Synthetica.toolBar.toggleButton.border.selected" type="idref" value="buttonBorderSelected"/>
+
+      <string id="buttonBorderSelectedAndHover">plain/images/toolBarButton_selectedHover.png,plain/images/toolBarButton_selectedHover2.png,plain/images/toolBarButton_selectedHover3.png,plain/images/toolBarButton_selectedHover4.png</string>
+      <defaultsProperty key="Synthetica.toolBar.toggleButton.border.selectedAndHover" type="idref" value="buttonBorderSelectedAndHover"/>
+
+	  <painter method="toolBarBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="toolBar" type="region" key="ToolBar"/>
+
+  <style id="toolBarSeparator">
+    <property key="ToolBar.separatorSize" type="dimension" value="7 7"/>
+
+    <state>
+      <opaque value="false"/>
+      <color type="BACKGROUND" value="#4080F3" />
+
+      <!-- horizontal separator / vertical toolbar -->
+      <string id="toolBarSeparatorX">plain/images/toolBarSeparatorX.png</string>
+      <defaultsProperty key="Synthetica.separator.toolBar.image.x" type="idref" value="toolBarSeparatorX"/>
+
+      <!-- vertical separator / horizontal toolbar -->
+      <string id="toolBarSeparatorY">plain/images/toolBarSeparatorY.png</string>
+      <defaultsProperty key="Synthetica.separator.toolBar.image.y" type="idref" value="toolBarSeparatorY"/>
+
+      <defaultsProperty key="Synthetica.separator.toolBar.image.insets" type="insets" value="3 3 4 4"/>
+
+	  <painter method="separatorForeground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="toolBarSeparator" type="region" key="ToolBarSeparator"/>
+
+  <style id="toolBarContent">
+    <state>
+    </state>
+  </style>
+  <bind style="toolBarContent" type="region" key="ToolBarContent"/>
+
+  <style id="toolBarDragWindow">
+    <state>
+      <opaque value="false"/>
+      <color type="BACKGROUND" value="#EFEFEF" />
+    </state>
+  </style>
+  <bind style="toolBarDragWindow" type="region" key="ToolBarDragWindow"/>
+
+
+<!-- 
+*******************************************************************************
+ToolTip
+*******************************************************************************
+-->
+  <style id="toolTip">
+    <insets top="6" left="10" bottom="12" right="10"/>
+
+    <state>
+      <color type="BACKGROUND" value="#F7F7F7"/>
+      <string id="toolTipBackground">plain/images/toolTipBackground.png,plain/images/toolTipBackground2.png,plain/images/toolTipBackground3.png,plain/images/toolTipBackground4.png</string>
+      <defaultsProperty key="Synthetica.toolTip.background" type="idref" value="toolTipBackground"/>
+      <defaultsProperty key="Synthetica.toolTip.background.insets" type="insets" value="8 6 14 6"/>
+
+	  <painter method="toolTipBackground" idref="syntheticaPainter" />
+    </state>
+
+    <state value="DISABLED">
+  	  <color type="TEXT_FOREGROUND" value="#222222" /> 
+	  <painter method="toolTipBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="toolTip" type="region" key="ToolTip"/>
+
+
+<!-- 
+*******************************************************************************
+Tree
+*******************************************************************************
+-->
+  <style id="tree">
+    <object class="de.javasoft.plaf.synthetica.painter.TreeExpandedIconPainter" id="treeExpandedIcon"/>
+    <object class="de.javasoft.plaf.synthetica.painter.TreeCollapsedIconPainter" id="treeCollapsedIcon"/>
+
+    <string id="expandedIcon">plain/images/treeExpandedIcon.png</string>
+    <defaultsProperty key="Synthetica.tree.expandedIcon" type="idref" value="expandedIcon"/>
+    <string id="expandedIcon">plain/images/treeExpandedIcon_selected.png</string>
+    <defaultsProperty key="Synthetica.tree.selected.expandedIcon" type="idref" value="expandedIcon"/>
+
+    <string id="collapsedIcon">plain/images/treeCollapsedIcon.png</string>
+    <defaultsProperty key="Synthetica.tree.collapsedIcon" type="idref" value="collapsedIcon"/>
+    <string id="collapsedIcon">plain/images/treeCollapsedIcon_selected.png</string>
+    <defaultsProperty key="Synthetica.tree.selected.collapsedIcon" type="idref" value="collapsedIcon"/>
+
+    <imageIcon id="treeLeafIcon" path="plain/images/treeLeafIcon.png" />
+    <imageIcon id="treeOpenIcon" path="plain/images/folderOpenIcon.png" />
+    <imageIcon id="treeClosedIcon" path="plain/images/folderClosedIcon.png" />
+
+    <property key="Tree.leftChildIndent" type="integer" value="4"/>
+    <property key="Tree.rightChildIndent" type="integer" value="12"/>
+    <property key="Tree.scrollsHorizontallyAndVertically" type="boolean" value="true"/>
+    <property key="Tree.rowHeight" type="integer" value="-1"/>
+
+    <string id="treeCellRenderer">de.javasoft.plaf.synthetica.plain.TreeCellRenderer</string>
+    <defaultsProperty key="Synthetica.tree.defaultCellRenderer.className" type="idref" value="treeCellRenderer"/>
+    <!-- for custom tree cell renderers -->
+    <defaultsProperty key="Tree.rendererFillBackground" type="boolean" value="false"/>
+    
+    <state>
+      <property key="Tree.expandedIcon" value="treeExpandedIcon"/>
+      <property key="Tree.collapsedIcon" value="treeCollapsedIcon"/>
+      <defaultsProperty key="Tree.leafIcon" type="idref" value="treeLeafIcon"/>
+      <defaultsProperty key="Tree.openIcon" type="idref" value="treeOpenIcon"/>
+      <defaultsProperty key="Tree.closedIcon" type="idref" value="treeClosedIcon"/>
+
+      <string id="lineType">NONE</string>
+      <defaultsProperty key="Synthetica.tree.line.type" type="idref" value="lineType"/>
+
+	  <painter method="treeBackground" idref="syntheticaPainter" />
+      <opaque value="true"/>
+      <color value="#F0F9FF" type="BACKGROUND"/>
+      <!-- Text color can be separately set through "TreeCell-Section" (TEXT_FOREGROUND) -->
+      <!-- <color type="FOREGROUND" value="#CCCCCC" /> -->
+    </state>
+  </style>
+  <bind style="tree" type="region" key="Tree"/>
+
+  <style id="treeCell">
+    <state>
+    </state>
+    <state value="SELECTED">
+      <string id="treeSelectionBackground">plain/images/selectionBackground.png</string>
+      <defaultsProperty key="Synthetica.tree.selectionBackground" type="idref" value="treeSelectionBackground"/>
+      <defaultsProperty key="Synthetica.tree.selectionBackground.insets" type="insets" value="1 1 1 1"/>
+      <string id="inactiveTreeSelectionBackground">plain/images/selectionBackground_inactive.png</string>
+      <defaultsProperty key="Synthetica.tree.selectionBackground.inactive" type="idref" value="inactiveTreeSelectionBackground"/>
+      <opaque value="true"/>
+      <color type="TEXT_BACKGROUND" value="#4080F3" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+      <color type="BACKGROUND" value="#4080F3" />
+      <painter method="treeCellBackground" idref="syntheticaPainter" />
+    </state>
+  </style>
+  <bind style="treeCell" type="region" key="TreeCell"/>
+
+
+<!-- 
+*******************************************************************************
+Viewport
+*******************************************************************************
+-->
+  <style id="viewport">
+    <defaultsProperty key="Synthetica.viewport.dynamicBackgroundColorEnabled" type="boolean" value="true"/>
+    <state>
+    </state>
+  </style>    
+  <bind style="viewport" type="region" key="Viewport"/>
+
+
+</synth>

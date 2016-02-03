@@ -32,7 +32,8 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
 
 import jd.PluginWrapper;
@@ -381,7 +382,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
 
             };
             progress.setProgressSource(this);
-            progress.setIcon(NewTheme.I().getIcon("lock", 16));
+            progress.setIcon(new AbstractIcon(IconKey.ICON_LOCK, 16));
             link.getLinkStatus().setStatusText("Decrypting");
             link.addPluginProgress(progress);
             fis = new FileInputStream(src);

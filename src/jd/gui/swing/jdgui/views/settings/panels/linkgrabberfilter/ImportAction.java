@@ -20,6 +20,7 @@ import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
@@ -28,13 +29,13 @@ public class ImportAction extends AppAction {
     public static final String EXT              = ".filter";
     public static final String VIEW             = ".views";
     /**
-     * 
+     *
      */
     private static final long  serialVersionUID = 1L;
     private LinkgrabberFilter  table;
 
     public ImportAction(LinkgrabberFilter linkgrabberFilter) {
-        setIconKey("import");
+        setIconKey(IconKey.ICON_IMPORT);
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_import());
         this.table = linkgrabberFilter;
         setTooltipText(_JDT._.ImportAction_tt());
@@ -67,7 +68,9 @@ public class ImportAction extends AppAction {
             Dialog.I().showDialog(d);
 
             File[] filterFiles = d.getSelection();
-            if (filterFiles == null) return;
+            if (filterFiles == null) {
+                return;
+            }
             java.util.List<LinkgrabberFilterRule> all = new ArrayList<LinkgrabberFilterRule>();
             for (File f : filterFiles) {
                 java.util.List<LinkgrabberFilterRule> contents = null;

@@ -18,8 +18,8 @@ public enum SkipReason {
     INVALID_DESTINATION(_JDT._.DownloadLink_setSkipped_statusmessage_invalid_path(), IconKey.ICON_SAVETO),
     FILE_EXISTS(_JDT._.DownloadLink_setSkipped_statusmessage_file_exists(), IconKey.ICON_COPY),
     UPDATE_RESTART_REQUIRED(_JDT._.DownloadLink_setSkipped_statusmessage_update_restart(), IconKey.ICON_RESTART),
-    FFMPEG_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffmpeg(), "ffmpeg"),
-    FFPROBE_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffprobe(), "ffmpeg");
+    FFMPEG_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffmpeg(), IconKey.ICON_LOGO_FFMPEG),
+    FFPROBE_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffprobe(), IconKey.ICON_LOGO_FFMPEG);
     private final String exp;
     private final String iconKey;
 

@@ -1,13 +1,15 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
-import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class AddSubMenuAction extends AppAction {
@@ -17,7 +19,7 @@ public class AddSubMenuAction extends AppAction {
     public AddSubMenuAction(MenuManagerDialog managerFrame) {
         this.managerFrame = managerFrame;
         setTooltipText(_GUI._.ManagerFrame_layoutPanel_addSubmenu());
-        setIconKey("menu");
+        setIconKey(IconKey.ICON_MENU);
         setName(_GUI._.ManagerFrame_layoutPanel_addSubmenu());
     }
 
@@ -26,12 +28,18 @@ public class AddSubMenuAction extends AppAction {
 
         try {
 
-            NewSubMenuDialog newDialog = new NewSubMenuDialog();
+            NewSubMenuDialog newDialog = new NewSubMenuDialog() {
+                @Override
+                public Window getOwner() {
+                    return managerFrame.getDialog();
+                }
+            };
+            newDialog.setLocator(new RememberRelativeDialogLocator("NewSubMenuDialog", managerFrame.getDialog()));
             Dialog.getInstance().showDialog(newDialog);
             String name = newDialog.getName();
             String iconKey = newDialog.getIconKey();
 
-            managerFrame.addMenuItem((MenuItemData) new MenuContainer(name, iconKey));
+            managerFrame.addMenuItem(new MenuContainer(name, iconKey));
 
         } catch (DialogClosedException e1) {
             e1.printStackTrace();

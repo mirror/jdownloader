@@ -34,6 +34,7 @@ import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -95,7 +96,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         // Tab 1
         JPanel Tab1_9kw = new JPanel(new MigLayout("ins 0"));
-        Tab1_9kw.add(new Header(getTitle(), NewTheme.I().getIcon(IconKey.ICON_9KW, 32)), "spanx,growx,pushx");
+        Tab1_9kw.add(new Header(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_9KW, 32)), "spanx,growx,pushx");
         JLabel txt = addDescriptionPlain9kw(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
         Tab1_9kw.add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
         Tab1_9kw.add(new JSeparator(), "gapleft " + getLeftGap() + ",spanx,growx,pushx,gapbottom 5");

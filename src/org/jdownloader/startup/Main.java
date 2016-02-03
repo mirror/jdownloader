@@ -24,9 +24,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
-import jd.gui.swing.laf.LookAndFeelController;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
@@ -47,6 +44,9 @@ import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
+import jd.gui.swing.laf.LookAndFeelController;
 
 public class Main {
 
@@ -160,6 +160,9 @@ public class Main {
             if (!Application.isJared(null) && Application.getRessourceURL("org/jdownloader/update/JDUpdateClient.class") == null) {
 
                 File workspace = new File(Main.class.getResource("/").toURI()).getParentFile();
+                if (workspace.getName().equals("JDownloaderUpdater")) {
+                    workspace = new File(workspace.getParentFile(), "JDownloader");
+                }
                 File svnEntriesFile = new File(workspace, ".svn/entries");
                 if (svnEntriesFile.exists()) {
                     long lastMod = svnEntriesFile.lastModified();

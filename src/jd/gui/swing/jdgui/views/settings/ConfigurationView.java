@@ -21,13 +21,14 @@ import java.awt.Color;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
-
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ConfigurationView extends ClosableView {
 
@@ -36,7 +37,9 @@ public class ConfigurationView extends ClosableView {
     private static ConfigurationView INSTANCE         = null;
 
     public synchronized static ConfigurationView getInstance() {
-        if (INSTANCE == null) INSTANCE = new ConfigurationView();
+        if (INSTANCE == null) {
+            INSTANCE = new ConfigurationView();
+        }
         return INSTANCE;
     }
 
@@ -49,7 +52,7 @@ public class ConfigurationView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("settings", ICON_SIZE);
+        return new AbstractIcon(IconKey.ICON_SETTINGS, ICON_SIZE);
     }
 
     @Override
@@ -70,7 +73,9 @@ public class ConfigurationView extends ClosableView {
     protected void onShow() {
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         SwitchPanel panel = this.getContent();
-        if (panel != null) panel.setShown();
+        if (panel != null) {
+            panel.setShown();
+        }
     }
 
     @Override

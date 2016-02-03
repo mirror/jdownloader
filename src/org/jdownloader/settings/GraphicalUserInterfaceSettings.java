@@ -5,9 +5,7 @@ import java.util.HashMap;
 
 import org.appwork.storage.Storable;
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.AbstractValidator;
 import org.appwork.storage.config.annotations.ConfigEntryKeywords;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
@@ -21,34 +19,16 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.LookUpKeys;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
-import org.appwork.storage.config.annotations.ValidatorFactory;
-import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
+import org.jdownloader.gui.laf.plain.PlainLookAndFeel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
-
-    // Static Mappings for interface
-
-    // org.jdownloader.settings.GraphicalUserInterfaceSettings
-
-    class ThemeValidator extends AbstractValidator<String> {
-
-        @Override
-        public void validate(String themeID) throws ValidationException {
-            if (!Application.getResource("themes/" + themeID).exists()) {
-                throw new ValidationException(Application.getResource("themes/" + themeID) + " must exist");
-            } else if (!Application.getResource("themes/" + themeID).isDirectory()) {
-                throw new ValidationException(Application.getResource("themes/" + themeID) + " must be a directory");
-            }
-        }
-
-    }
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
@@ -109,12 +89,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     LinktablesSearchCategory getSelectedDownloadSearchCategory();
 
     LinktablesSearchCategory getSelectedLinkgrabberSearchCategory();
-
-    @DefaultStringValue("standard")
-    @AboutConfig
-    @DescriptionForConfigEntry("Icon Theme ID. Make sure that ./themes/<ID>/ exists")
-    @ValidatorFactory(ThemeValidator.class)
-    String getThemeID();
 
     // @AboutConfig
     // @Description("Enable/Disable the Linkgrabber Sidebar")
@@ -386,8 +360,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setSortColumnHighlightEnabled(boolean b);
 
-    void setThemeID(String themeID);
-
     void setPresentationModeEnabled(boolean b);
 
     @AboutConfig
@@ -489,21 +461,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setHorizontalScrollbarsInLinkgrabberTableEnabled(boolean b);
 
-    @AboutConfig
-    @DefaultIntValue(0)
-    @DescriptionForConfigEntry("by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.")
-    int getCustomTableRowHeight();
-
-    void setCustomTableRowHeight(int height);
-
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Every  odd row get's a light shadow if enabled")
-    @AboutConfig
-    boolean isTableAlternateRowHighlightEnabled();
-
-    void setTableAlternateRowHighlightEnabled(boolean b);
-
     @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("The row that is 'touched' by the mouse cursor gets a darker shadow")
@@ -547,7 +504,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         SKY_METALLIC("de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel"),
         STANDARD("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel"),
         WHITE_VISION("de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel"),
-
+        JD_PLAIN(PlainLookAndFeel.class.getName()),
         DEFAULT(JDDefaultLookAndFeel.class.getName());
         private final String clazz;
 
@@ -788,6 +745,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     }
 
     @AboutConfig
+    @DescriptionForConfigEntry("Choose how many 'Are you sure?' warnings you want to see (Bug me not).")
     @DefaultEnumValue("NORMAL")
     public RlyWarnLevel getRlyWarnLevel();
 
@@ -1288,12 +1246,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setClipboardDisabledWarningFlashEnabled(boolean b);
 
-    @RequiresRestart("A JDownloader Restart is Required")
     @AboutConfig
-    @DefaultIntValue(0)
-    @DescriptionForConfigEntry("Increase this value and set ColorForTableRowGap to show a gap between two links. Check CustomTableRowHeight as well")
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If Enabled, JDownloader will try to be always on top of all other windows")
+    boolean isMainWindowAlwaysOnTop();
 
-    int getLinkTableHorizontalRowLineWeight();
+    void setMainWindowAlwaysOnTop(boolean b);
 
-    void setLinkTableHorizontalRowLineWeight(int i);
 }

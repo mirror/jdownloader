@@ -2,15 +2,16 @@ package org.jdownloader.extensions.extraction.gui;
 
 import javax.swing.Icon;
 
-import jd.plugins.DownloadLink.AvailableStatus;
-
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
 import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFile> {
 
@@ -72,10 +73,10 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
 
             {
 
-                unknown = NewTheme.I().getIcon("help", 16);
-                online = NewTheme.I().getIcon("true", 16);
+                unknown = new AbstractIcon(IconKey.ICON_HELP, 16);
+                online = new AbstractIcon(IconKey.ICON_TRUE, 16);
 
-                offline = NewTheme.I().getIcon("error", 16);
+                offline = new AbstractIcon(IconKey.ICON_ERROR, 16);
             }
 
             @Override
@@ -118,9 +119,9 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
             @Override
             protected Icon getIcon(DummyArchiveFile value) {
                 if (value.isLocalFileAvailable()) {
-                    return NewTheme.I().getIcon("true", 16);
+                    return new AbstractIcon(IconKey.ICON_TRUE, 16);
                 }
-                return NewTheme.I().getIcon("false", 16);
+                return new AbstractIcon(IconKey.ICON_FALSE, 16);
 
             }
 

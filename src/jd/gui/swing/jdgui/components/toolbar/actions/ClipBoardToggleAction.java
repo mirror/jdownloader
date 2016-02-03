@@ -6,15 +6,16 @@ import javax.swing.AbstractButton;
 import javax.swing.Icon;
 import javax.swing.JToggleButton;
 
-import jd.gui.swing.jdgui.Flashable;
-import jd.gui.swing.jdgui.JDGui;
-
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.gui.swing.jdgui.Flashable;
+import jd.gui.swing.jdgui.JDGui;
 
 public class ClipBoardToggleAction extends AbstractToolbarToggleAction implements Flashable {
     private final Icon    iconNormal;
@@ -24,7 +25,7 @@ public class ClipBoardToggleAction extends AbstractToolbarToggleAction implement
 
     public ClipBoardToggleAction() {
         super(org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED);
-        setIconKey("clipboard");
+        setIconKey(IconKey.ICON_CLIPBOARD);
         iconNormal = NewTheme.I().getCheckBoxImage(getIconKey(), false, 24);
         iconHighlight = NewTheme.I().getCheckBoxImage(getIconKey(), false, 24, new Color(0xFF9393));
         iconSelected = NewTheme.I().getCheckBoxImage(this.getIconKey(), true, 24);

@@ -53,8 +53,16 @@ public class NewTheme extends Theme {
      */
     private NewTheme() {
         super("org/jdownloader/");
+
         AWUTheme.getInstance().setNameSpace(getNameSpace());
         AWUTheme.I().setDelegate(this);
+    }
+
+    @Override
+    public void setTheme(String theme) {
+        super.setTheme(theme);
+        AWUTheme.getInstance().setTheme(theme);
+
     }
 
     protected String getCacheKey(final Object... objects) {
@@ -80,6 +88,7 @@ public class NewTheme extends Theme {
 
     @Override
     public Image getImage(String key, int size, boolean useCache) {
+
         Icon ico = this.getIcon(key, size, useCache);
         if (ico instanceof IdentifierWrapperIcon) {
             return IconIO.toBufferedImage(((IdentifierWrapperIcon) ico).getIcon());
@@ -109,7 +118,11 @@ public class NewTheme extends Theme {
             Icon back = getIcon(path, size - 5, false);
             Icon checkBox = selected ? CheckBoxIcon.TRUE : CheckBoxIcon.FALSE;
             if (red != null) {// works for synthetica default LAF only
-                if (UIManager.getLookAndFeel().getClass().getSimpleName().equals("JDDefaultLookAndFeel")) {
+                if (UIManager.getLookAndFeel().getClass().getSimpleName().equals("PlainLookAndFeel")) {
+                    checkBox = IconIO.replaceColor(checkBox, new Color(!selected ? 0xFFF0F0F0 : 0xFFEBEBEB), 50, red, true);
+                } else if (UIManager.getLookAndFeel().getClass().getSimpleName().equals("SyntheticaPlainLookAndFeel")) {
+                    checkBox = IconIO.replaceColor(checkBox, new Color(!selected ? 0xFFF0F0F0 : 0xFFEBEBEB), 50, red, true);
+                } else if (UIManager.getLookAndFeel().getClass().getSimpleName().equals("JDDefaultLookAndFeel")) {
                     checkBox = IconIO.replaceColor(checkBox, new Color(!selected ? 0xFFF0F0F0 : 0xFFEBEBEB), 50, red, true);
                 } else {
                     BufferedImage img = IconIO.toBufferedImage(checkBox);

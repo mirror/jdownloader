@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class LatestChangesAction extends CustomizableAppAction {
@@ -28,7 +29,7 @@ public class LatestChangesAction extends CustomizableAppAction {
 
     public LatestChangesAction() {
         setTooltipText(_GUI._.action_changelog_tooltip());
-        setIconKey("help");
+        setIconKey(IconKey.ICON_CHANGELOG);
         setName(_GUI._.action_changelog());
     }
 

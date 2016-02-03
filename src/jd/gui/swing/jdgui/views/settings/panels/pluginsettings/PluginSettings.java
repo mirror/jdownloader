@@ -2,15 +2,16 @@ package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
 import javax.swing.Icon;
 
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
+
+import jd.plugins.PluginForHost;
 
 public class PluginSettings extends AbstractConfigPanel {
     private static final long   serialVersionUID = 1L;
@@ -26,12 +27,12 @@ public class PluginSettings extends AbstractConfigPanel {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("plugin", 32);
+        return new AbstractIcon(IconKey.ICON_PLUGIN, 32);
     }
 
     @Override
     protected void onShow() {
-        this.addHeader(getTitle(), NewTheme.I().getIcon("plugin", 32));
+        this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_PLUGIN, 32));
         this.addDescriptionPlain(_JDT._.gui_settings_plugins_description(HostPluginController.getInstance().list().size()));
 
         add(getPanel());

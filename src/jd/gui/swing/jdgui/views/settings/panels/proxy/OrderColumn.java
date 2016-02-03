@@ -5,15 +5,16 @@ import java.util.ArrayList;
 
 import javax.swing.JComponent;
 
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 
 public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
 
@@ -39,10 +40,10 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
         renderer.setOpaque(false);
 
         rendererUp = new RenderLabel();
-        rendererUp.setIcon(NewTheme.I().getIcon("go-up", 18));
+        rendererUp.setIcon(new AbstractIcon(IconKey.ICON_GO_UP, 18));
 
         rendererDown = new RenderLabel();
-        rendererDown.setIcon(NewTheme.I().getIcon("go-down", 18));
+        rendererDown.setIcon(new AbstractIcon(IconKey.ICON_GO_DOWN, 18));
 
         editorUp = new ExtButton(new AppAction() {
             /**
@@ -51,7 +52,7 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
             private static final long serialVersionUID = -6373308629670760194L;
 
             {
-                setSmallIcon(NewTheme.I().getIcon("go-up", 18));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_UP, 18));
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -70,7 +71,7 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
             private static final long serialVersionUID = 359422892536364704L;
 
             {
-                setSmallIcon(NewTheme.I().getIcon("go-down", 18));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_DOWN, 18));
             }
 
             public void actionPerformed(ActionEvent e) {

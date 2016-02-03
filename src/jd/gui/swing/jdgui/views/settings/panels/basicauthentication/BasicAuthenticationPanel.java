@@ -4,13 +4,14 @@ import javax.swing.AbstractAction;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import net.miginfocom.swing.MigLayout;
 
 public class BasicAuthenticationPanel extends JPanel implements SettingsComponent {
     private static final long                     serialVersionUID = 1L;
@@ -40,7 +41,7 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
         table = new AuthTable();
         NewAction na;
         tb.add(new ExtButton(na = new NewAction(table)), "sg 1,height 26!");
-        na.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
+        na.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_ADD, 20));
         RemoveAction ra;
         tb.add(new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));

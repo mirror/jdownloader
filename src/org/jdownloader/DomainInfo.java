@@ -7,24 +7,27 @@ import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import org.appwork.utils.Application;
+import org.appwork.utils.images.IconIO;
+import org.appwork.utils.images.Interpolation;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
+
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.faviconcontroller.FavIcons;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Application;
-import org.appwork.utils.images.IconIO;
-import org.appwork.utils.images.Interpolation;
-import org.jdownloader.images.NewTheme;
-
 public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
 
     private static final HashMap<String, String> HARDCODEDFAVICONS = new HashMap<String, String>();
+
     static {
         HARDCODEDFAVICONS.put("usenet", "nzb");
     }
-    private static final int                     WIDTH             = 16;
-    private static final int                     HEIGHT            = 16;
+
+    private static final int WIDTH  = 16;
+    private static final int HEIGHT = 16;
 
     private DomainInfo(String tld) {
         if (Application.getJavaVersion() >= Application.JAVA17) {
@@ -125,10 +128,10 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         Icon ret = null;
         final String tld = getTld();
         if (NewTheme.I().hasIcon("fav/big." + tld)) {
-            ret = NewTheme.I().getIcon("fav/big." + tld, -1);
+            ret = new AbstractIcon("fav/big." + tld, -1);
         }
         if (ret == null && NewTheme.I().hasIcon("fav/" + tld)) {
-            ret = NewTheme.I().getIcon("fav/" + tld, -1);
+            ret = new AbstractIcon("fav/" + tld, -1);
         }
         if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) {
             return IconIO.getScaledInstance(ret, size, size);

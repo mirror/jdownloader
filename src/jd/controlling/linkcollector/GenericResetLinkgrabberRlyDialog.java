@@ -9,17 +9,18 @@ import javax.swing.JSeparator;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import net.miginfocom.swing.MigLayout;
 
 public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
 
@@ -42,7 +43,7 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
     private JLabel            lblFiltered;
 
     public GenericResetLinkgrabberRlyDialog(List<CrawledLink> nodesToDelete, boolean containsOnline, String string, boolean CancelLinkcrawlerJobs, boolean ClearFilteredLinks, boolean ClearSearchFilter, boolean ResetTableSorter) {
-        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_are_you_sure(), _GUI._.GenericResetLinkgrabberRlyDialog_GenericResetLinkgrabberRlyDialog_sure_(string), NewTheme.I().getIcon("robot_del", -1), _GUI._.lit_continue(), _GUI._.lit_cancel());
+        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_are_you_sure(), _GUI._.GenericResetLinkgrabberRlyDialog_GenericResetLinkgrabberRlyDialog_sure_(string), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_DEL, -1), _GUI._.lit_continue(), _GUI._.lit_cancel());
         this.nodesToDelete = nodesToDelete;
         this.containsOnline = containsOnline;
         this.cancelLinkcrawlerJobs = CancelLinkcrawlerJobs;

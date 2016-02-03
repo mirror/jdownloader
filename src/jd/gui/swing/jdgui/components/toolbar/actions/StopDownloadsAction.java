@@ -3,6 +3,18 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -12,21 +24,10 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.controlling.contextmenu.ActionContext;
-import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
-
 public class StopDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, ActionContext {
 
     public StopDownloadsAction() {
-        setIconKey("media-playback-stop");
+        setIconKey(IconKey.ICON_MEDIA_PLAYBACK_STOP);
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
@@ -52,7 +53,7 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
                 level = WarnLevel.SEVERE;
             }
             if (JDGui.bugme(level)) {
-                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(bytesToLoose), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(bytesToLoose), count), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
                     return;
                 }
             }

@@ -22,11 +22,6 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.http.Browser;
-import jd.nutils.Formatter;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -39,12 +34,18 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GeneralSettings.DeleteContainerAction;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
+import jd.nutils.Formatter;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -173,7 +174,7 @@ public abstract class PluginsC {
             } else if (cls.size() > 0 && askFileDeletion()) {
                 switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
                 case ASK_FOR_DELETE:
-                    final ConfirmDialog d = new ConfirmDialog(0, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
+                    final ConfirmDialog d = new ConfirmDialog(0, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), new AbstractIcon(IconKey.ICON_HELP, 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
                         @Override
                         public String getDontShowAgainKey() {
                             return null;

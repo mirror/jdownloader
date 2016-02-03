@@ -19,8 +19,9 @@ import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.UrlDisplayEntry;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
@@ -102,7 +103,7 @@ public class UrlOrderTableModel extends ExtTableModel<UrlDisplayEntry> implement
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("ok", 14));
+                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

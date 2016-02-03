@@ -7,11 +7,6 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.SingleFilterResultTableModel;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
-import jd.gui.swing.laf.LookAndFeelController;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.SwingUtils;
@@ -22,8 +17,14 @@ import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.SingleFilterResultTableModel;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
+import jd.gui.swing.laf.LookAndFeelController;
 
 public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
@@ -68,7 +69,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         ret.add(new JSeparator());
         JLabel label;
         ret.add(SwingUtils.toBold(label = new JLabel(string)));
-        label.setIcon(NewTheme.I().getIcon("linkgrabber", 14));
+        label.setIcon(new AbstractIcon(IconKey.ICON_LINKGRABBER, 14));
         ret.add(new JSeparator());
         return ret;
     }
@@ -99,7 +100,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
     /**
      * Returns a Linkgrabberfilter representing current settings. does NOT save the original one
-     * 
+     *
      * @return
      */
     private LinkgrabberFilterRule getCurrentCopy() {

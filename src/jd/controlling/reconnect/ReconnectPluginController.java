@@ -14,16 +14,6 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
-import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
-import jd.controlling.reconnect.pluginsinc.extern.ExternReconnectPlugin;
-import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
-import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
-import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
-import jd.nutils.io.JDFileFilter;
-import jd.utils.JDUtilities;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
@@ -35,10 +25,21 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.statistics.StatsManager;
+
+import jd.config.Configuration;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
+import jd.controlling.reconnect.pluginsinc.extern.ExternReconnectPlugin;
+import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
+import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
+import jd.nutils.io.JDFileFilter;
+import jd.utils.JDUtilities;
 
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";
@@ -60,7 +61,7 @@ public class ReconnectPluginController {
 
     public static void main(String[] args) {
         try {
-            Dialog.getInstance().showConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(1, "ff", "ggf"), NewTheme.I().getIcon("ok", 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization());
+            Dialog.getInstance().showConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(1, "ff", "ggf"), new AbstractIcon(IconKey.ICON_OK, 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization());
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
@@ -117,7 +118,7 @@ public class ReconnectPluginController {
             }
             try {
 
-                Dialog.getInstance().showConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), NewTheme.I().getIcon("ok", 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization());
+                Dialog.getInstance().showConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), new AbstractIcon(IconKey.ICON_OK, 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization());
                 feedback.setProgress(this, 0);
                 for (int ii = 0; ii < scripts.size(); ii++) {
                     ReconnectResult found = scripts.get(ii);

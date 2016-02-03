@@ -2,7 +2,8 @@ package jd.gui.swing.jdgui.components;
 
 import javax.swing.ImageIcon;
 
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 
 public class ReconnectProgress extends IconedProcessIndicator {
     /**
@@ -11,7 +12,7 @@ public class ReconnectProgress extends IconedProcessIndicator {
     private static final long serialVersionUID = 3717078119913109215L;
 
     public ReconnectProgress() {
-        super(NewTheme.I().getIcon("auto-reconnect", 16));
+        super(new AbstractIcon(IconKey.ICON_AUTO_RECONNECT, 16));
     }
 
     public ReconnectProgress(ImageIcon icon) {

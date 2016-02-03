@@ -20,6 +20,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.components.MergedIcon;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
@@ -29,11 +30,11 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     static class InfoAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
-        private Icon                iconEnabled      = NewTheme.I().getIcon("help", 16);
-        private Icon                iconDisabled     = NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("help", 16));
+        private Icon                iconEnabled      = new AbstractIcon(IconKey.ICON_HELP, 16);
+        private Icon                iconDisabled     = NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_HELP, 16));
 
         public InfoAction() {
-            super("Help", NewTheme.I().getIcon("help", 16));
+            super("Help", new AbstractIcon(IconKey.ICON_HELP, 16));
         }
 
         @Override
@@ -199,10 +200,10 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     public EditColumn() {
         super("Actions");
 
-        iconDD = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("help", 16)), org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("reset", 16)));
-        iconED = new MergedIcon(NewTheme.I().getIcon("help", 16), org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("reset", 16)));
-        iconDE = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("help", 16)), NewTheme.I().getIcon("reset", 16));
-        iconEE = new MergedIcon(NewTheme.I().getIcon("help", 16), NewTheme.I().getIcon("reset", 16));
+        iconDD = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_HELP, 16)), org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_RESET, 16)));
+        iconED = new MergedIcon(new AbstractIcon(IconKey.ICON_HELP, 16), org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_RESET, 16)));
+        iconDE = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_HELP, 16)), new AbstractIcon(IconKey.ICON_RESET, 16));
+        iconEE = new MergedIcon(new AbstractIcon(IconKey.ICON_HELP, 16), new AbstractIcon(IconKey.ICON_RESET, 16));
         info = new InfoAction();
         reset = new ResetAction();
         setRowSorter(new ExtDefaultRowSorter<AdvancedConfigEntry>() {

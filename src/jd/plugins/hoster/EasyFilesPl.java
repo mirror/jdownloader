@@ -22,6 +22,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,11 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.PluginTaskID;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class EasyFilesPl extends PluginForHost {
@@ -235,7 +236,7 @@ public class EasyFilesPl extends PluginForHost {
                     this.setETA(eta);
                 }
             };
-            waitProgress.setIcon(NewTheme.I().getIcon("wait", 16));
+            waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
             waitProgress.setProgressSource(this);
             try {
                 link.addPluginProgress(waitProgress);

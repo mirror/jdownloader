@@ -7,9 +7,6 @@ import javax.swing.Icon;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -22,6 +19,9 @@ import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
 public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDownloaderListener {
     private ConnectedDevicesTable table;
@@ -83,7 +83,7 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
 
     @Override
     public Icon getIcon() {
-        return new AbstractIcon(IconKey.ICON_BOARD, 32);
+        return new AbstractIcon(IconKey.ICON_PROFILE, 32);
     }
 
     @Override

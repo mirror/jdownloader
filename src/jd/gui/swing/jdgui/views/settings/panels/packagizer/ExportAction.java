@@ -18,19 +18,20 @@ import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
 public class ExportAction extends AppAction {
     /**
-     * 
+     *
      */
     private static final long              serialVersionUID = 1L;
     private java.util.List<PackagizerRule> rules;
 
     public ExportAction() {
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
-        setIconKey("export");
+        setIconKey(IconKey.ICON_EXPORT);
         setTooltipText(_JDT._.ExportAction_ExportAction_tt());
 
     }
@@ -77,7 +78,9 @@ public class ExportAction extends AppAction {
             }
             String str = JSonStorage.serializeToJson(rules);
             File saveto = d.getSelectedFile();
-            if (saveto == null) return;
+            if (saveto == null) {
+                return;
+            }
             if (!saveto.getName().endsWith(ext)) {
                 saveto = new File(saveto.getAbsolutePath() + ext);
             }

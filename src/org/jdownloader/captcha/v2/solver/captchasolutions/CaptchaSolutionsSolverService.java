@@ -19,6 +19,7 @@ import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA_SOLUTIONS;
@@ -56,7 +57,7 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
 
     @Override
     public Icon getIcon(int size) {
-        return NewTheme.I().getIcon("CaptchaSolutions", size);
+        return new AbstractIcon(IconKey.ICON_LOGO_CAPTCHASOLUTIONS, size);
     }
 
     @Override
@@ -72,7 +73,7 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
             }
 
             {
-                addHeader(getTitle(), NewTheme.I().getIcon("CaptchaSolutions", 32));
+                addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_CAPTCHASOLUTIONS, 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_paid_service());
 
                 add(new SettingsButton(new AppAction() {

@@ -2,13 +2,14 @@ package org.jdownloader.plugins;
 
 import javax.swing.Icon;
 
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.translate._JDT;
 
 public class WaitForAccountSkipReason implements ConditionalSkipReason, IgnorableConditionalSkipReason, TimeOutCondition {
 
@@ -17,7 +18,7 @@ public class WaitForAccountSkipReason implements ConditionalSkipReason, Ignorabl
 
     public WaitForAccountSkipReason(Account account) {
         this.account = account;
-        icon = NewTheme.I().getIcon("wait", 16);
+        icon = new AbstractIcon(IconKey.ICON_WAIT, 16);
     }
 
     public Account getAccount() {

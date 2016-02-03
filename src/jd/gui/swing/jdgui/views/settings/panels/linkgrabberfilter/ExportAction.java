@@ -17,12 +17,13 @@ import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
 public class ExportAction extends AppAction {
     /**
-     * 
+     *
      */
     private static final long                     serialVersionUID = 1L;
     private java.util.List<LinkgrabberFilterRule> rules;
@@ -31,7 +32,7 @@ public class ExportAction extends AppAction {
 
     public ExportAction(LinkgrabberFilter linkgrabberFilter) {
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
-        setIconKey("export");
+        setIconKey(IconKey.ICON_EXPORT);
         setTooltipText(_JDT._.ExportAction_ExportAction_tt());
         this.linkgrabberFilter = linkgrabberFilter;
 
@@ -43,7 +44,7 @@ public class ExportAction extends AppAction {
 
     public ExportAction(java.util.List<LinkgrabberFilterRule> selection) {
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
-        setIconKey("export");
+        setIconKey(IconKey.ICON_EXPORT);
         setTooltipText(_JDT._.ExportAction_ExportAction_tt());
         rules = selection;
     }
@@ -54,10 +55,14 @@ public class ExportAction extends AppAction {
             java.util.List<LinkgrabberFilterRule> exportList = rules;
 
             if (exportList == null) {
-                if (linkgrabberFilter == null) return;
+                if (linkgrabberFilter == null) {
+                    return;
+                }
                 exportList = linkgrabberFilter.getView().getModel().getTableData();
             }
-            if (exportList.size() == 0) return;
+            if (exportList.size() == 0) {
+                return;
+            }
             final String ext = exportList.get(0).isAccept() ? ImportAction.VIEW : ImportAction.EXT;
 
             ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.LinkgrabberFilter_export_dialog_title(), null, null);

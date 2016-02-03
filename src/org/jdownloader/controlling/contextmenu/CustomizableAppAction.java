@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
@@ -15,6 +16,7 @@ import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
@@ -187,7 +189,20 @@ public abstract class CustomizableAppAction extends AppAction {
                 return null;
             }
             return NewTheme.I().getIcon(iconKey, size);
+        } else if (LARGE_ICON_KEY.equalsIgnoreCase(key)) {
+            Object ret = super.getValue(key);
+            if (ret != null && ret instanceof Icon && (((Icon) ret).getIconWidth() > size || ((Icon) ret).getIconHeight() > size)) {
+                return IconIO.getScaledInstance((Icon) ret, size, size);
+            }
+
+        } else if (SMALL_ICON.equalsIgnoreCase(key)) {
+            Object ret = super.getValue(key);
+            if (ret != null && ret instanceof Icon && (((Icon) ret).getIconWidth() > size || ((Icon) ret).getIconHeight() > size)) {
+                return IconIO.getScaledInstance((Icon) ret, size, size);
+            }
+
         }
+
         return super.getValue(key);
     }
 

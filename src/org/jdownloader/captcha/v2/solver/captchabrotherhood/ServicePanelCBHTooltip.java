@@ -9,9 +9,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.TooltipPanel;
@@ -22,6 +19,9 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import net.miginfocom.swing.MigLayout;
 
 public class ServicePanelCBHTooltip extends PanelToolTip {
     private Color        color;
@@ -49,7 +49,7 @@ public class ServicePanelCBHTooltip extends PanelToolTip {
         JProgressBar progress = new JProgressBar();
         progress.setIndeterminate(true);
         panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-        JLabel header = new JLabel("Captchabrotherhood Solver", NewTheme.I().getIcon(IconKey.ICON_CBH, 18), JLabel.LEFT);
+        JLabel header = new JLabel("Captchabrotherhood Solver", NewTheme.I().getIcon(IconKey.ICON_LOGO_CBH, 18), JLabel.LEFT);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
         SwingUtils.toBold(header);
         header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -68,7 +68,7 @@ public class ServicePanelCBHTooltip extends PanelToolTip {
                         // panel.setPreferredSize(null);
                         if (!account.isValid()) {
                             panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-                            JLabel header = new JLabel("captchabrotherhood.com Captcha Solver", NewTheme.I().getIcon(IconKey.ICON_CBH, 18), JLabel.LEFT);
+                            JLabel header = new JLabel("captchabrotherhood.com Captcha Solver", NewTheme.I().getIcon(IconKey.ICON_LOGO_CBH, 18), JLabel.LEFT);
                             header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -77,7 +77,7 @@ public class ServicePanelCBHTooltip extends PanelToolTip {
                             panel.add(lbl(account.getError()), "gapleft 22");
                         } else {
                             panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
-                            JLabel header = new JLabel("captchabrotherhood.com Captcha Solver", NewTheme.I().getIcon(IconKey.ICON_CBH, 18), JLabel.LEFT);
+                            JLabel header = new JLabel("captchabrotherhood.com Captcha Solver", NewTheme.I().getIcon(IconKey.ICON_LOGO_CBH, 18), JLabel.LEFT);
                             header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());

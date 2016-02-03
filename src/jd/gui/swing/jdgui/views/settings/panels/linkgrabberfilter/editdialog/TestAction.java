@@ -14,8 +14,9 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledRegexFilter;
 import org.jdownloader.controlling.filter.FiletypeFilter;
 import org.jdownloader.controlling.filter.RegexFilter;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 
 public class TestAction extends AppAction {
 
@@ -28,7 +29,7 @@ public class TestAction extends AppAction {
     public TestAction(RegexFilter sourceFilter, String name) {
         super();
         setName(_GUI._.TestAction_TestAction_object_(name));
-        setSmallIcon(NewTheme.I().getIcon("test", 18));
+        setSmallIcon(new AbstractIcon(IconKey.ICON_TEST, 18));
         this.name = name;
         this.sourceFilter = sourceFilter;
         desc = sourceFilter.toString();
@@ -37,7 +38,7 @@ public class TestAction extends AppAction {
     public TestAction(FiletypeFilter filetypeFilter, String name) {
         super();
         setName(_GUI._.TestAction_TestAction_object_(name));
-        setSmallIcon(NewTheme.I().getIcon("test", 18));
+        setSmallIcon(new AbstractIcon(IconKey.ICON_TEST, 18));
         this.name = name;
 
         filetypefilter = new CompiledFiletypeFilter(filetypeFilter);
@@ -50,7 +51,7 @@ public class TestAction extends AppAction {
         try {
             this.filter = new CompiledRegexFilter(sourceFilter);
             if (filetypefilter == null) {
-                String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(filter.getPattern().pattern(), name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), NewTheme.I().getIcon("test", 32), null, null);
+                String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(filter.getPattern().pattern(), name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), new AbstractIcon(IconKey.ICON_TEST, 32), null, null);
                 JSonStorage.getPlainStorage("packagizertesturls").put(name, input);
                 String[] matches;
                 switch (filter.getMatchType()) {
@@ -102,7 +103,7 @@ public class TestAction extends AppAction {
                 }
             } else {
 
-                String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(desc, name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), NewTheme.I().getIcon("Test", 32), null, null);
+                String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(desc, name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), new AbstractIcon(IconKey.ICON_TEST, 32), null, null);
                 JSonStorage.getPlainStorage("packagizertesturls").put(name, input);
                 String extension = Files.getExtension(input);
                 switch (filetypefilter.getMatchType()) {

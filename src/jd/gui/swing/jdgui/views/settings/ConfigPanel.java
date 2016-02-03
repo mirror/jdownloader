@@ -29,6 +29,14 @@ import javax.swing.JSeparator;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.swing.MigPanel;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyRestartRequest;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
@@ -38,13 +46,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.swing.MigPanel;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.updatev2.RestartController;
-import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
 public abstract class ConfigPanel extends SwitchPanel {
 
@@ -264,7 +265,7 @@ public abstract class ConfigPanel extends SwitchPanel {
     }
 
     public Icon getIcon() {
-        return NewTheme.I().getIcon("settings", 32);
+        return new AbstractIcon(IconKey.ICON_SETTINGS, 32);
     }
 
 }

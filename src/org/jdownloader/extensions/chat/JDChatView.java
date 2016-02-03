@@ -18,11 +18,12 @@ package org.jdownloader.extensions.chat;
 
 import javax.swing.Icon;
 
-import jd.plugins.AddonPanel;
-
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+
+import jd.plugins.AddonPanel;
 
 public class JDChatView extends AddonPanel<ChatExtension> {
 
@@ -35,7 +36,7 @@ public class JDChatView extends AddonPanel<ChatExtension> {
 
     @Override
     public Icon getIcon() {
-        return NewTheme.I().getIcon("chat", 16);
+        return new AbstractIcon(IconKey.ICON_CHAT, 16);
     }
 
     @Override

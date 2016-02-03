@@ -9,20 +9,21 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ExportPopupAction extends AppAction {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -1041794723138925672L;
     private JButton           positionComp;
     private ProxyTable        table;
 
     public ExportPopupAction(JButton addLinks, ProxyTable table) {
-        setSmallIcon(NewTheme.I().getIcon("popUpSmall", -1));
+        setSmallIcon(new AbstractIcon(IconKey.ICON_POPUPSMALL, -1));
         setTooltipText(_GUI._.AddOptionsAction_AddOptionsAction_tt());
         positionComp = addLinks;
         this.table = table;

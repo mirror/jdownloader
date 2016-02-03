@@ -16,12 +16,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.components.JDProgressBar;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.nutils.Formatter;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTHelper;
@@ -30,9 +24,16 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.extensions.infobar.translate.T;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.components.JDProgressBar;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.nutils.Formatter;
+import net.miginfocom.swing.MigLayout;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener {
 
@@ -92,7 +93,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         prgTotal.setStringPainted(true);
 
         lblHelp = new JLabel(T._.jd_plugins_optional_infobar_InfoDialog_help());
-        lblHelp.setIcon(NewTheme.I().getIcon("clipboard", 16));
+        lblHelp.setIcon(new AbstractIcon(IconKey.ICON_CLIPBOARD, 16));
         lblHelp.setHorizontalTextPosition(JLabel.LEADING);
         lblHelp.setHorizontalAlignment(JLabel.CENTER);
         lblHelp.setToolTipText(T._.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());
@@ -194,7 +195,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             JMenuItem mi = new JMenuItem(T._.jd_plugins_optional_infobar_InfoDialog_hideWindow());
-            mi.setIcon(NewTheme.I().getIcon("close", -1));
+            mi.setIcon(new AbstractIcon(IconKey.ICON_CLOSE, -1));
             mi.addActionListener(this);
 
             JPopupMenu popup = new JPopupMenu();

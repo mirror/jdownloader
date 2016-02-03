@@ -106,7 +106,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     }
 
     protected void initAlternateRowHighlighter() {
-        if (CFG_GUI.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED.isEnabled()) {
+        if (LAFOptions.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED.isEnabled()) {
 
             this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null));
         }
@@ -207,8 +207,8 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         col.configureRendererComponent("T§gj²*", true, true, 1, 1);
         int prefHeight = rend.getPreferredSize().height;
 
-        Integer custom = CFG_GUI.CUSTOM_TABLE_ROW_HEIGHT.getValue();
-        CFG_GUI.CUSTOM_TABLE_ROW_HEIGHT.getEventSender().addListener(this, true);
+        Integer custom = LAFOptions.CUSTOM_TABLE_ROW_HEIGHT.getValue();
+        LAFOptions.CUSTOM_TABLE_ROW_HEIGHT.getEventSender().addListener(this, true);
 
         if (custom != null && custom > 0) {
             return custom;

@@ -8,7 +8,9 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilte
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 public enum FileType {
@@ -20,7 +22,7 @@ public enum FileType {
     CUSTOM(null) {
         @Override
         public Icon getIcon() {
-            return NewTheme.I().getIcon("help", 18);
+            return new AbstractIcon(IconKey.ICON_HELP, 18);
         }
 
         @Override

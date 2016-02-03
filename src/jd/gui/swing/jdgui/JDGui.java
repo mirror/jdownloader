@@ -58,21 +58,6 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.nutils.Screen;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -118,6 +103,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.crosssystem.idlegetter.IdleGetter;
 import org.jdownloader.gui.GuiUtils;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
@@ -129,6 +115,7 @@ import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
@@ -145,7 +132,23 @@ import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
+import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
+
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.nutils.Screen;
+import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
     private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
@@ -295,6 +298,71 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
             @Override
             public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+            }
+        });
+
+        getMainFrame().setAlwaysOnTop(CFG_GUI.MAIN_WINDOW_ALWAYS_ON_TOP.isEnabled());
+
+        CFG_GUI.MAIN_WINDOW_ALWAYS_ON_TOP.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        getMainFrame().setAlwaysOnTop(CFG_GUI.MAIN_WINDOW_ALWAYS_ON_TOP.isEnabled());
+                    }
+                };
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
+
+        jd.SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                UpdateHandler handler = UpdateController.getInstance().getHandler();
+                if (handler != null) {
+
+                    handler.setGuiAlwaysOnTop(CFG_GUI.MAIN_WINDOW_ALWAYS_ON_TOP.isEnabled());
+
+                    CFG_GUI.MAIN_WINDOW_ALWAYS_ON_TOP.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                        @Override
+                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                            handler.setGuiAlwaysOnTop(CFG_GUI.MAIN_WINDOW_ALWAYS_ON_TOP.isEnabled());
+
+                        }
+
+                        @Override
+                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                        }
+                    });
+
+                }
+            }
+        });
+        getMainFrame().addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+                // required for some synthetica themes.
+                // without this, there will be a repaint error for inactiv painters in the mainmenu and toolbar
+
+                menuBar.repaint();
+                toolBar.repaint();
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+                // required for some synthetica themes.
+                // without this, there will be a repaint error for inactiv painters in the mainmenu and toolbar
+                menuBar.repaint();
+                toolBar.repaint();
             }
         });
 
@@ -526,7 +594,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         if (maxHeap > 0 && maxHeap < (100 * 1024 * 1024)) {
                             new Thread("AskForRestart") {
                                 public void run() {
-                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _GUI._.MEMORY_RESTART_TITLE(), _GUI._.MEMORY_RESTART_MSG(), NewTheme.I().getIcon("restart", 32), _GUI._.lit_restart(), null) {
+                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _GUI._.MEMORY_RESTART_TITLE(), _GUI._.MEMORY_RESTART_MSG(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI._.lit_restart(), null) {
                                         @Override
                                         public ModalityType getModalityType() {
                                             return ModalityType.MODELESS;
@@ -558,7 +626,9 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                                 };
                             }.start();
 
-                            // Dialog.getInstance().showMessageDialog("It seems that there is a memory Problem with your JDownloader installation.\r\nPlease Download the latest JDownloader 2 Installer, or visit our supportchat to ask for help.");
+                            // Dialog.getInstance().showMessageDialog("It seems that there is a memory Problem with your JDownloader
+                            // installation.\r\nPlease Download the latest JDownloader 2 Installer, or visit our supportchat to ask for
+                            // help.");
                             // CrossSystem.openURL("http://jdownloader.org/download/offline");
                             // CrossSystem.openURL("http://jdownloader.org/knowledge/chat");
                         }
@@ -1751,7 +1821,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     protected void showStatsDialog() {
 
-        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), NewTheme.I().getIcon("bug", 32), _GUI._.JDGui_showStatsDialog_yes_(), _GUI._.JDGui_showStatsDialog_no_());
+        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), new AbstractIcon(IconKey.ICON_BUG, 32), _GUI._.JDGui_showStatsDialog_yes_(), _GUI._.JDGui_showStatsDialog_no_());
         d.setDoNotShowAgainSelected(true);
         try {
             Dialog.getInstance().showDialog(d);

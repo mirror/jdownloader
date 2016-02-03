@@ -2,6 +2,17 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -9,20 +20,10 @@ import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.controlling.contextmenu.ActionContext;
-import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.translate._JDT;
-
 public class PauseDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GenericConfigEventListener<Integer>, ActionContext {
 
     public PauseDownloadsAction() {
-        setIconKey("media-playback-pause");
+        setIconKey(IconKey.ICON_MEDIA_PLAYBACK_PAUSE);
         setSelected(false);
         setEnabled(false);
         setTooltipText(_GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024));
