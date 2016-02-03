@@ -578,11 +578,11 @@ public class FilesloopCom extends PluginForHost {
                 if ("de".equalsIgnoreCase(lang)) {
                     statusMessage = "\r\nFataler API Fehler";
                     this.currAcc.setError(AccountError.INVALID, statusMessage);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
                     statusMessage = "\r\nFatal API failure";
                     this.currAcc.setError(AccountError.INVALID, statusMessage);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             case 5:
                 /* "invalid-file" --> The name itself has no meaning - its just a general error so we should retry */
