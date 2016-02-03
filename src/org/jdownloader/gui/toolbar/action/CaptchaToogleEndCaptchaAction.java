@@ -3,6 +3,7 @@ package org.jdownloader.gui.toolbar.action;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class CaptchaToogleEndCaptchaAction extends AbstractToolbarToggleAction {
@@ -10,7 +11,7 @@ public class CaptchaToogleEndCaptchaAction extends AbstractToolbarToggleAction {
     public CaptchaToogleEndCaptchaAction() {
         super(EndCaptchaSolver.getInstance().getService().getConfig()._getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class));
 
-        setIconKey("endCaptcha");
+        setIconKey(IconKey.ICON_LOGO_ENDCAPTCHA);
 
     }
 

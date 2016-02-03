@@ -17,21 +17,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorCrawler;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorHighlightListener;
-import jd.controlling.linkcollector.LinkCollectorListener;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.http.Browser;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -45,6 +30,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
@@ -62,7 +48,7 @@ import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
 import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberProperties;
 import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberPropertiesHeader;
 import org.jdownloader.gui.views.linkgrabber.properties.PropertiesScrollPane;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DockingPosition;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -70,6 +56,21 @@ import org.jdownloader.updatev2.SimpleHttpInterface;
 import org.jdownloader.updatev2.SimpleHttpResponse;
 import org.jdownloader.updatev2.SponsoringPanelInterface;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorHighlightListener;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.http.Browser;
+import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
     /**
@@ -338,7 +339,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     Point loc = rightBar.getLocationOnScreen();
 
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                     }
 
                 }
@@ -524,7 +525,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 CustomizeableActionBar iconComp = rightBar;
                 Point loc = iconComp.getLocationOnScreen();
                 if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                 }
 
             }
@@ -693,7 +694,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                         if (table.getRowCount() == 0) {
 
                             if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                                HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI._.LinkGrabberPanel_setPropertiesPanelVisible_help(), NewTheme.I().getIcon("bottombar", 32));
+                                HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI._.LinkGrabberPanel_setPropertiesPanelVisible_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                             }
 
                         } else {
@@ -706,7 +707,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         }
 
         if (!newValue && keyHandler == org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE) {
-            JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(), _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(), NewTheme.I().getIcon("warning_green", 32));
+            JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(), _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(), new AbstractIcon(IconKey.ICON_WARNING_GREEN, 32));
         }
         fireRelayout();
     }

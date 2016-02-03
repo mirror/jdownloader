@@ -2,12 +2,13 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
-import org.jdownloader.gui.translate._GUI;
 
 public class ResumeAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -16,7 +17,7 @@ public class ResumeAction extends CustomizableTableContextAppAction<FilePackage,
     private final static String NAME             = _GUI._.gui_table_contextmenu_resume();
 
     public ResumeAction() {
-        setIconKey("resume");
+        setIconKey(IconKey.ICON_RESUME);
         setName(NAME);
     }
 

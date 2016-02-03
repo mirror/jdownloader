@@ -86,7 +86,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     public boolean onSingleClick(MouseEvent e, AbstractNode obj) {
         // JDGui.help(_GUI._.literall_usage_tipp(),
         // _GUI._.DownloadFolderColumn_onSingleClick_object_(),
-        // NewTheme.I().getIcon("smart", 48));
+        // new AbstractIcon(IconKey.ICON_smart", 48));
         return false;
     }
 

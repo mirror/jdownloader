@@ -15,13 +15,6 @@ import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
@@ -32,9 +25,17 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.images.NewTheme;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
 
@@ -65,7 +66,7 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setIcon(NewTheme.I().getIcon("prio_3", 14));
+                setIcon(new AbstractIcon(IconKey.ICON_PRIO_3, 14));
                 setHorizontalAlignment(CENTER);
                 setText(null);
                 return this;
@@ -84,11 +85,11 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
 
     public PriorityColumn() {
         super(_GUI._.PriorityColumn_PriorityColumn(), new DefaultComboBoxModel<Priority>(Priority.values()));
-        imgPriorityS = NewTheme.I().getIcon("prio_-1", 16);
-        imgPriority0 = NewTheme.I().getIcon("prio_0", 16);
-        imgPriority1 = NewTheme.I().getIcon("prio_1", 16);
-        imgPriority2 = NewTheme.I().getIcon("prio_2", 16);
-        imgPriority3 = NewTheme.I().getIcon("prio_3", 16);
+        imgPriorityS = new AbstractIcon(IconKey.ICON_PRIO__1, 16);
+        imgPriority0 = new AbstractIcon(IconKey.ICON_PRIO_0, 16);
+        imgPriority1 = new AbstractIcon(IconKey.ICON_PRIO_1, 16);
+        imgPriority2 = new AbstractIcon(IconKey.ICON_PRIO_2, 16);
+        imgPriority3 = new AbstractIcon(IconKey.ICON_PRIO_3, 16);
         imgPriority0_S = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriorityS, 12, 12), 4, 2);
         imgPriority0_1 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority1, 12, 12), 4, 2);
         imgPriority0_2 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority2, 12, 12), 4, 2);

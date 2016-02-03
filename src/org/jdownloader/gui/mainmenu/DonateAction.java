@@ -5,9 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
@@ -19,6 +16,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.donate.DonateFeedback;
 import org.jdownloader.gui.donate.DonationDetails;
 import org.jdownloader.gui.donate.DonationDialog;
@@ -26,9 +24,13 @@ import org.jdownloader.gui.donate.PaymentProvider;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.statistics.StatsManager;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+
 public class DonateAction extends CustomizableAppAction {
     protected static final long A_WEEK = 1 * 7 * 24 * 60 * 60 * 1000l;
     public static String        SERVER = "https://payments.appwork.org/";
+
     static {
         if (!Application.isJared(null) && false) {
             SERVER = "https://payments.appwork.org/test/";
@@ -36,7 +38,7 @@ public class DonateAction extends CustomizableAppAction {
     }
 
     public DonateAction() {
-        setIconKey("heart");
+        setIconKey(IconKey.ICON_HEART);
         setName(_GUI._.DonateAction());
         setTooltipText(_GUI._.DonateAction_tt());
     }

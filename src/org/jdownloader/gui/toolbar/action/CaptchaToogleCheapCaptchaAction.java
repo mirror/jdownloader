@@ -3,6 +3,7 @@ package org.jdownloader.gui.toolbar.action;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class CaptchaToogleCheapCaptchaAction extends AbstractToolbarToggleAction {
@@ -10,7 +11,7 @@ public class CaptchaToogleCheapCaptchaAction extends AbstractToolbarToggleAction
     public CaptchaToogleCheapCaptchaAction() {
         super(CheapCaptchaSolver.getInstance().getService().getConfig()._getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class));
 
-        setIconKey("cheapCaptcha");
+        setIconKey(IconKey.ICON_LOGO_CHEAPCAPTCHA);
 
     }
 

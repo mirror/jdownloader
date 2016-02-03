@@ -6,17 +6,11 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.gui.ExtMenuImpl;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.DownloadsView;
@@ -25,12 +19,20 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 public class SettingsMenuContainer extends MenuContainer {
     private final static String NAME     = _GUI._.ContextMenuFactory_createPopup_properties_package();
 
     private final static Image  SETTINGS = NewTheme.I().getImage("settings", 14);
     private final static Icon   OPEN_PACKAGE;
     private final static Icon   CLOSED_PACKAGE;
+
     static {
         final Image openPackage = NewTheme.I().getImage("tree_package_open", 32);
         final Image closedPackage = NewTheme.I().getImage("tree_package_closed", 32);
@@ -40,7 +42,7 @@ public class SettingsMenuContainer extends MenuContainer {
 
     public SettingsMenuContainer() {
         setName(NAME);
-        setIconKey("settings");
+        setIconKey(IconKey.ICON_SETTINGS);
     }
 
     @Override

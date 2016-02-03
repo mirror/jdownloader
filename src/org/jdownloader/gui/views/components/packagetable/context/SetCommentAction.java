@@ -2,6 +2,16 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -11,21 +21,12 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-
 public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
     public SetCommentAction() {
         super();
         setName(_GUI._.SetCommentAction_SetCommentAction_object_());
-        setIconKey("list");
+        setIconKey(IconKey.ICON_LIST);
     }
 
     @Override

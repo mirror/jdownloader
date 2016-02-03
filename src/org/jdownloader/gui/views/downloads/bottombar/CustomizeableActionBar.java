@@ -23,12 +23,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.components.SetIconInterface;
-import jd.gui.swing.components.SetLabelInterface;
-import jd.gui.swing.jdgui.JDGui;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
@@ -47,6 +41,12 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.SecondLevelLaunch;
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
+import jd.gui.swing.jdgui.JDGui;
+import net.miginfocom.swing.MigLayout;
 
 public class CustomizeableActionBar extends MigPanel implements PropertyChangeListener {
 
@@ -117,7 +117,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 } else if (menudata instanceof MenuLink) {
                     addLink(menudata);
 
-                } else if (menudata.getActionData() != null) {
+                } else if (menudata.getActionData()._isValidDataForCreatingAnAction()) {
                     addAction(menudata);
 
                 }
@@ -274,6 +274,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             private Component    positionComp;
             private ExtPopupMenu popup;
             private long         lastHide = 0;
+
             {
                 updateIcon(true);
                 setName(menudata.getName());

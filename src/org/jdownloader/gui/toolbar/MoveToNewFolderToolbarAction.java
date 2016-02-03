@@ -2,13 +2,14 @@ package org.jdownloader.gui.toolbar;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.JDGui.Panels;
-import jd.gui.swing.jdgui.interfaces.View;
-
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.JDGui.Panels;
+import jd.gui.swing.jdgui.interfaces.View;
 
 public class MoveToNewFolderToolbarAction extends AbstractToolBarAction {
 
@@ -16,7 +17,7 @@ public class MoveToNewFolderToolbarAction extends AbstractToolBarAction {
 
     public MoveToNewFolderToolbarAction() {
         setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
-        setIconKey("package_new");
+        setIconKey(IconKey.ICON_PACKAGE_NEW);
         setupDelegate = new MergeToPackageAction();
         addContextSetup(setupDelegate);
 

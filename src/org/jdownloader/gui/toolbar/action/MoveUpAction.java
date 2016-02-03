@@ -1,7 +1,6 @@
 package org.jdownloader.gui.toolbar.action;
 
-import jd.gui.swing.jdgui.interfaces.View;
-
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.DownloadsView;
@@ -11,11 +10,13 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
+import jd.gui.swing.jdgui.interfaces.View;
+
 public class MoveUpAction extends AbstractMoveAction {
 
     public MoveUpAction() {
         setName(_GUI._.MoveUpAction_MoveUpAction());
-        setIconKey("go-up");
+        setIconKey(IconKey.ICON_GO_UP);
 
         setAccelerator(PackageControllerTable.KEY_STROKE_ALT_UP);
 

@@ -2,16 +2,17 @@ package org.jdownloader.gui.mainmenu.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
-
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 
 public class LogSendAction extends CustomizableAppAction {
 
     public LogSendAction() {
         setName(_GUI._.LogAction());
-        setIconKey("log");
+        setIconKey(IconKey.ICON_LOG);
         setTooltipText(_GUI._.LogAction_tooltip());
 
     }

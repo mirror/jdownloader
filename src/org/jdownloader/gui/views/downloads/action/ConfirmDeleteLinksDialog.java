@@ -11,7 +11,9 @@ import javax.swing.JComponent;
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 
@@ -26,7 +28,7 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog {
     private DeleteFileOptions mode;
 
     public ConfirmDeleteLinksDialog(String msg, long bytes) {
-        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), msg, NewTheme.I().getIcon("robot_del", -1), _GUI._.lit_delete(), _GUI._.lit_cancel());
+        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), msg, new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_DEL, -1), _GUI._.lit_delete(), _GUI._.lit_cancel());
         this.bytes = bytes;
 
     }
@@ -43,7 +45,7 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog {
 
     @Override
     public JComponent layoutDialogContent() {
-        image = NewTheme.I().getImage("botty_stop", 128);
+        image = NewTheme.I().getImage("botty/stop", 128);
         getDialog().setContentPane(new MigPanel("ins 5,wrap 1", "[grow,fill]", "[grow,fill][]") {
 
             @Override

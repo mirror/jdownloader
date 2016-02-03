@@ -11,17 +11,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.nutils.Formatter;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -34,12 +23,24 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.nutils.Formatter;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
 
 public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
@@ -67,7 +68,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-        warningIcon = NewTheme.I().getIcon("warning", 16);
+        warningIcon = new AbstractIcon(IconKey.ICON_WARNING, 16);
         defaultColor = rendererField.getForeground();
         speedLimiterEnabled.set(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -89,7 +90,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         ret.add(new JCheckBoxMenuItem(new AppAction() {
             {
                 setName(_GUI._.literall_premium_alert());
-                setSmallIcon(NewTheme.I().getIcon("warning", 16));
+                setSmallIcon(new AbstractIcon(IconKey.ICON_WARNING, 16));
                 setSelected(JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertSpeedColumnEnabled());
             }
 

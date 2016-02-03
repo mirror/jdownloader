@@ -4,15 +4,13 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.KeyStroke;
 
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.View;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.rename.RenameDialog;
 import org.jdownloader.gui.views.downloads.DownloadsPanel;
@@ -24,6 +22,9 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.translate._JDT;
 
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
+
 public class RenameAction extends CustomizableTableContextAppAction implements ActionContext {
 
     public RenameAction() {
@@ -31,7 +32,7 @@ public class RenameAction extends CustomizableTableContextAppAction implements A
         super();
         setName(_GUI._.RenameAction_RenameAction());
         setTooltipText(_GUI._.RenameAction_RenameAction_tt());
-        setIconKey("edit");
+        setIconKey(IconKey.ICON_EDIT);
         setAccelerator(KeyStroke.getKeyStroke("F2"));
 
     }

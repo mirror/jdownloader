@@ -3,6 +3,17 @@ package org.jdownloader.gui.views.downloads.columns;
 import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -10,16 +21,6 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.swing.exttable.ExtDefaultRowSorter;
-import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class AvailabilityColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
 
@@ -48,10 +49,10 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> implements G
 
     public AvailabilityColumn() {
         super(_GUI._.AvailabilityColumn_AvailabilityColumn());
-        unknown = NewTheme.I().getIcon("help", 16);
-        online = NewTheme.I().getIcon("true", 16);
-        mixed = NewTheme.I().getIcon("true-orange", 16);
-        offline = NewTheme.I().getIcon("error", 16);
+        unknown = new AbstractIcon(IconKey.ICON_HELP, 16);
+        online = new AbstractIcon(IconKey.ICON_TRUE, 16);
+        mixed = new AbstractIcon(IconKey.ICON_TRUE_ORANGE, 16);
+        offline = new AbstractIcon(IconKey.ICON_ERROR, 16);
 
         CFG_GUI.AVAILABLE_COLUMN_TEXT_VISIBLE.getEventSender().addListener(this, true);
         textVisible = CFG_GUI.CFG.isAvailableColumnTextVisible();

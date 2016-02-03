@@ -12,8 +12,12 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.KeyStroke;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.KeyUtils;
 import org.appwork.utils.swing.EDTRunner;
@@ -33,20 +37,25 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         DownloadsTableSearchField item = DownloadsTableSearchField.getInstance();
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
         try {
-            ActionData ad = this.getActionData();
-            if (ad != null) {
-                Object sc = ad.fetchSetup("shortcut");
-                if (sc != null && sc instanceof String) {
 
-                    ks = KeyStroke.getKeyStroke((String) sc);
-                }
+            ActionData ad = this.getActionData();
+            Object sc = ad.fetchSetup("shortcut");
+            if (sc != null && sc instanceof String) {
+
+                ks = KeyStroke.getKeyStroke((String) sc);
             }
+
         } catch (Throwable e) {
         }
         AppAction a = item.getFocusAction();
         a.setAccelerator(ks);
         ret.add(a);
         return ret;
+    }
+
+    @Override
+    public void setActionData(ActionData actionData) {
+        super.setActionData(actionData);
     }
 
     @Override
@@ -59,7 +68,7 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         }
 
         final ActionData actionData = ad;
-        MigPanel p = new MigPanel("ins 0", "[grow,fill][]", "[]");
+        MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][100:n:n,fill]", "[]");
         SwingUtils.setOpaque(p, false);
         final ExtTextField shortcut = new ExtTextField();
         shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp2());
@@ -98,11 +107,11 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         });
 
         p.add(new JLabel(_GUI._.InfoPanel_InfoPanel_shortcuts()));
-        p.add(shortcut, "newline");
+        p.add(shortcut, "split 2");
         JButton shortCutReset;
         p.add(shortCutReset = new JButton(new AppAction() {
             {
-                setIconKey("reset");
+                setIconKey(IconKey.ICON_RESET);
             }
 
             @Override
@@ -122,6 +131,46 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
 
         }), "width 22!,height 22!");
 
+        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_min()), "newline");
+        int width = getMinWidth();
+
+        final ExtSpinner minSpin = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
+        minSpin.addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                actionData.putSetup("minWidth", ((Number) minSpin.getValue()).intValue());
+            }
+        });
+        p.add(minSpin);
+        //
+
+        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_pref()));
+        width = getPrefWidth();
+
+        final ExtSpinner prefSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
+        prefSpin.addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                actionData.putSetup("prefWidth", ((Number) prefSpin.getValue()).intValue());
+            }
+        });
+        p.add(prefSpin);
+        //
+        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_max()));
+        width = getMaxWidth();
+
+        final ExtSpinner maxSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
+        maxSpin.addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                actionData.putSetup("maxWidth", ((Number) maxSpin.getValue()).intValue());
+            }
+        });
+        p.add(maxSpin);
+
         return p;
     }
 
@@ -133,9 +182,39 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         //
     }
 
+    protected int getPrefWidth() {
+        int width = 10000;
+
+        try {
+            width = ((Number) getActionData().fetchSetup("prefWidth")).intValue();
+        } catch (Throwable e) {
+        }
+        return width;
+    }
+
+    protected int getMaxWidth() {
+        int width = 10000;
+
+        try {
+            width = ((Number) getActionData().fetchSetup("maxWidth")).intValue();
+        } catch (Throwable e) {
+        }
+        return width;
+    }
+
+    protected int getMinWidth() {
+        int width = 0;
+
+        try {
+            width = ((Number) getActionData().fetchSetup("minWidth")).intValue();
+        } catch (Throwable e) {
+        }
+        return width;
+    }
+
     @Override
     public String createConstraints() {
-        return "height 24!,aligny top,gapleft 2,pushx,growx";
+        return "height 24!,aligny top,gapleft 2,width " + getMinWidth() + ":" + getPrefWidth() + ":" + getMaxWidth();
     }
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {

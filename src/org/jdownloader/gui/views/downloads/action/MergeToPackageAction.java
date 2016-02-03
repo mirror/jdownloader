@@ -4,10 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -17,6 +13,7 @@ import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -24,6 +21,10 @@ import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
@@ -34,7 +35,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
 
     public MergeToPackageAction() {
         setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
-        setIconKey("package_new");
+        setIconKey(IconKey.ICON_PACKAGE_NEW);
         setLastPathDefault(true);
     }
 

@@ -4,6 +4,14 @@ import java.awt.Dimension;
 
 import javax.swing.JPopupMenu;
 
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.properties.AbstractPanelHeader;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.updatev2.gui.LAFOptions;
+
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -14,20 +22,13 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.properties.AbstractPanelHeader;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.updatev2.gui.LAFOptions;
-
 public class DownloadPropertiesHeader extends AbstractPanelHeader implements LinkCollectorListener {
 
     protected AbstractNode              current;
     private DownloadPropertiesBasePanel card;
 
     public DownloadPropertiesHeader(DownloadPropertiesBasePanel loverView) {
-        super("", NewTheme.I().getIcon("download", 16));
+        super("", new AbstractIcon(IconKey.ICON_DOWNLOAD, 16));
         this.card = loverView;
         // setBackground(Color.RED);
         // setOpaque(true);
@@ -48,7 +49,7 @@ public class DownloadPropertiesHeader extends AbstractPanelHeader implements Lin
                 String str = "";
                 if (objectbyRow instanceof FilePackage) {
                     final FilePackage pkg = (FilePackage) objectbyRow;
-                    setIcon(NewTheme.I().getIcon("package_open", 16));
+                    setIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16));
                     str = (_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
                 } else if (objectbyRow instanceof DownloadLink) {
                     final DownloadLink link = (DownloadLink) objectbyRow;

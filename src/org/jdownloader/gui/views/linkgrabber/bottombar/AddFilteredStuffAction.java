@@ -4,6 +4,18 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.JComponent;
 
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.bottombar.SelfComponentFactoryInterface;
+import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
+import org.jdownloader.translate._JDT;
+
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -11,23 +23,12 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 
-import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.controlling.contextmenu.ActionContext;
-import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
-import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.bottombar.SelfComponentFactoryInterface;
-import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
-import org.jdownloader.translate._JDT;
-
 public class AddFilteredStuffAction extends CustomizableAppAction implements ActionContext, SelfComponentFactoryInterface, SelfLayoutInterface {
 
     private boolean onlyVisibleIfThereIsFilteredStuff = true;
 
     public AddFilteredStuffAction() {
-        setIconKey("filter");
+        setIconKey(IconKey.ICON_FILTER);
 
     }
 

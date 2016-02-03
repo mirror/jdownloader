@@ -4,9 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -20,13 +17,16 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+
 public class OpenInBrowserAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> {
 
     private static final long serialVersionUID = 7911375550836173693L;
 
     public OpenInBrowserAction() {
 
-        setIconKey("browse");
+        setIconKey(IconKey.ICON_BROWSE);
         setName(_GUI._.gui_table_contextmenu_browselink());
     }
 

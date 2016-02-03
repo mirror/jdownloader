@@ -4,24 +4,25 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.AddLinksDialog;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+
 public class AddLinksAction extends CustomizableAppAction {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -1824957567580275989L;
 
     public AddLinksAction(String string) {
         setName(string);
-        setIconKey("add");
+        setIconKey(IconKey.ICON_ADD);
         setTooltipText(_GUI._.AddLinksAction_AddLinksAction_tt());
         setAccelerator(KeyEvent.VK_L, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
     }

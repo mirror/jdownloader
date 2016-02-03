@@ -3,12 +3,6 @@ package org.jdownloader.gui.views.downloads.action;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UserIO;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -19,8 +13,15 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UserIO;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class ResetAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -29,7 +30,7 @@ public class ResetAction extends CustomizableTableContextAppAction<FilePackage, 
     private final static String NAME             = _GUI._.gui_table_contextmenu_reset();
 
     public ResetAction() {
-        setIconKey("undo");
+        setIconKey(IconKey.ICON_UNDO);
         setName(NAME);
     }
 

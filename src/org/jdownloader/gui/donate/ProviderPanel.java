@@ -151,7 +151,7 @@ public class ProviderPanel extends MigPanel {
         MigPanel left = new MigPanel("ins 0,wrap 2", "[][grow,fill]", "[]");
         add(left, "pushy,growy");
 
-        JLabel icon = new JLabel(new AbstractIcon("botty_heart", -1));
+        JLabel icon = new JLabel(new AbstractIcon("botty/heart", -1));
         icon.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.gray));
         add(icon, "aligny bottom");
 

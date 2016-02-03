@@ -6,16 +6,18 @@ import java.awt.event.ActionEvent;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import org.appwork.utils.ImageProvider.ImageProvider;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.appwork.utils.ImageProvider.ImageProvider;
-import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.images.NewTheme;
 
 public class ForceDownloadAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -46,7 +48,7 @@ public class ForceDownloadAction extends CustomizableTableContextAppAction<FileP
             return;
         }
         final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
-        JDGui.help(_GUI._.ForceDownloadAction_actionPerformed_help_title_(), _GUI._.ForceDownloadAction_actionPerformed_help_msg_(), NewTheme.I().getIcon("robot_info", -1));
+        JDGui.help(_GUI._.ForceDownloadAction_actionPerformed_help_title_(), _GUI._.ForceDownloadAction_actionPerformed_help_msg_(), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_INFO, -1));
         DownloadWatchDog.getInstance().resume(selection.getChildren());
         DownloadWatchDog.getInstance().forceDownload(selection.getChildren());
 

@@ -29,20 +29,6 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.ClipboardContent;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.parser.html.HTMLParser;
-import jd.plugins.DownloadLink;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -79,11 +65,25 @@ import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.parser.html.HTMLParser;
+import jd.plugins.DownloadLink;
 
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
@@ -116,7 +116,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextField                        comment;
 
-    private JCheckBox                           overwritePackagizer;                   ;
+    private JCheckBox                           overwritePackagizer;;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -450,7 +450,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
         MigPanel p = new MigPanel("ins 0 0 3 0,wrap 3", "[][grow,fill][]", "[fill,grow][grow," + height + "!][grow," + height + "!][grow," + height + "!][grow," + height + "!]");
 
-        p.add(new JLabel(NewTheme.I().getIcon("linkgrabber", 32)), "aligny top,height 32!,width 32!");
+        p.add(new JLabel(new AbstractIcon(IconKey.ICON_LINKGRABBER, 32)), "aligny top,height 32!,width 32!");
 
         p.add(sp, "height 30:100:n,spanx");
         p.add(createIconLabel("save", _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!,height " + height + "!");
@@ -474,7 +474,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         lbl.setHorizontalAlignment(SwingConstants.RIGHT);
         subpanel.add(extractToggle, "aligny center");
 
-        p.add(createIconLabel("downloadpassword", _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
+        p.add(createIconLabel(new BadgeIcon("password", "download", 24), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
 
         p.add(downloadPassword);
         p.add(priority, "sg right");
@@ -680,7 +680,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     protected void runInEDT() {
                         if (input.isShowing()) {
                             if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                                HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32));
+                                HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
                             }
                         }
                     }
@@ -721,7 +721,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     private Component createIconLabel(String iconKey, String tooltip) {
-        JLabel ret = new JLabel(NewTheme.I().getIcon(iconKey, 24));
+        JLabel ret = new JLabel(new AbstractIcon(iconKey, 24));
         ret.setToolTipText(tooltip);
         return ret;
     }

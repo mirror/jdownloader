@@ -2,20 +2,21 @@ package org.jdownloader.gui.notify.downloads;
 
 import java.io.File;
 
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
+import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.NoProxySelector;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
-import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
 
@@ -57,12 +58,12 @@ public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_PROXY_VISIBLE.isEnabled()) {
             if (proxy != null && !(proxy instanceof NoProxySelector)) {
 
-                this.proxy = addPair(this.proxy, _GUI._.lit_proxy() + ":", NewTheme.I().getIcon("proxy", 18));
+                this.proxy = addPair(this.proxy, _GUI._.lit_proxy() + ":", new AbstractIcon(IconKey.ICON_PROXY, 18));
                 this.proxy.setText(proxy.toString());
             }
         }
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_SAVE_TO_VISIBLE.isEnabled()) {
-            this.saveTo = addPair(saveTo, _GUI._.lit_save_to() + ":", NewTheme.I().getIcon("folder", 18));
+            this.saveTo = addPair(saveTo, _GUI._.lit_save_to() + ":", new AbstractIcon(IconKey.ICON_FOLDER, 18));
 
             saveTo.setText(new File(downloadLink.getFileOutput()).getParent());
         }

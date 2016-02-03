@@ -1,13 +1,14 @@
 package org.jdownloader.gui.views.downloads.context.submenu;
 
 import org.jdownloader.controlling.contextmenu.MenuContainer;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
-public class ChunksMenuContainer extends MenuContainer {
+public class DevChunksMenuContainer extends MenuContainer {
     final static String NAME = _GUI._.ChunksEditor_ChunksEditor_();
 
-    public ChunksMenuContainer() {
+    public DevChunksMenuContainer() {
         setName(NAME);
-        setIconKey("chunks");
+        setIconKey(IconKey.ICON_CHUNKS);
     }
 }

@@ -7,11 +7,12 @@ import javax.swing.JSeparator;
 
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.controlling.AggregatedCrawlerNumbers;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.overviewpanel.DataEntry;
 import org.jdownloader.gui.views.linkgrabber.properties.AbstractPanelHeader;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -20,7 +21,7 @@ public class LinkgrabberOverViewHeader extends AbstractPanelHeader {
     private LinkgrabberOverview overview;
 
     public LinkgrabberOverViewHeader(LinkgrabberOverview loverView) {
-        super(_GUI._.LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_(), NewTheme.I().getIcon("download", 16));
+        super(_GUI._.LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_(), new AbstractIcon(IconKey.ICON_DOWNLOAD, 16));
         this.overview = loverView;
 
     }

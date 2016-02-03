@@ -13,15 +13,6 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.View;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
@@ -60,11 +51,21 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncompleteArchiveAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.View;
 
 public class ConfirmLinksContextAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements GUIListener, ActionContext {
 
@@ -291,7 +292,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                         break;
                                     }
                                 }
-                                ComboBoxDialog guiDialog = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), options, def, NewTheme.I().getIcon("stop", 32), _GUI._.lit_continue(), null, null) {
+                                ComboBoxDialog guiDialog = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), options, def, new AbstractIcon(IconKey.ICON_STOP, 32), _GUI._.lit_continue(), null, null) {
 
                                     public String getDontShowAgainKey() {
                                         return null;

@@ -9,14 +9,6 @@ import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -29,15 +21,24 @@ import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.HosterToolTip;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import net.miginfocom.swing.MigLayout;
+
 public class HosterColumn extends ExtColumn<AbstractNode> {
-    private static boolean    COLORED_ICONS;
-    private static boolean    FULL_HOSTNAME;
+    private static boolean COLORED_ICONS;
+    private static boolean FULL_HOSTNAME;
 
     static {
         COLORED_ICONS = CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.isEnabled();
@@ -65,6 +66,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             }
         });
     }
+
     /**
      *
      */
@@ -101,14 +103,14 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             sb.append("[18!]");
             panel.add(labels[i]);
         }
-        moreIcon = NewTheme.I().getIcon("more", -1);
+        moreIcon = new AbstractIcon(IconKey.ICON_MORE, -1);
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[fill,grow]"));
         // panel.add(Box.createGlue(), "pushx,growx");
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 
             /*
              * (non-Javadoc)
-             * 
+             *
              * @see org.appwork.swing.exttable.ExtDefaultRowSorter#compare(java.lang .Object, java.lang.Object)
              */
             @Override

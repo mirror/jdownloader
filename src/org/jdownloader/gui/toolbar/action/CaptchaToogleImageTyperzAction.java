@@ -3,6 +3,7 @@ package org.jdownloader.gui.toolbar.action;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class CaptchaToogleImageTyperzAction extends AbstractToolbarToggleAction {
@@ -10,7 +11,7 @@ public class CaptchaToogleImageTyperzAction extends AbstractToolbarToggleAction 
     public CaptchaToogleImageTyperzAction() {
         super(ImageTyperzCaptchaSolver.getInstance().getService().getConfig()._getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class));
 
-        setIconKey("image_typerz");
+        setIconKey(IconKey.ICON_LOGO_IMAGE_TYPERZ);
 
     }
 

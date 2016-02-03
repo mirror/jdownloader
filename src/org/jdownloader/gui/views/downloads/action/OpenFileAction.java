@@ -3,13 +3,14 @@ package org.jdownloader.gui.views.downloads.action;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class OpenFileAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -20,7 +21,7 @@ public class OpenFileAction extends CustomizableTableContextAppAction<FilePackag
 
     public OpenFileAction() {
         super();
-        setIconKey("file");
+        setIconKey(IconKey.ICON_FILE);
         setName(NAME);
     }
 
@@ -43,7 +44,7 @@ public class OpenFileAction extends CustomizableTableContextAppAction<FilePackag
     public OpenFileAction(File file) {
         super();
         this.file = file;
-        setIconKey("file");
+        setIconKey(IconKey.ICON_FILE);
         setName(NAME);
     }
 

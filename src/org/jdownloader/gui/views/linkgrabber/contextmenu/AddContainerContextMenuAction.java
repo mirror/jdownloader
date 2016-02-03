@@ -3,10 +3,11 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
-import jd.gui.swing.jdgui.menu.actions.AddContainerAction;
-
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.gui.swing.jdgui.menu.actions.AddContainerAction;
 
 public class AddContainerContextMenuAction extends CustomizableTableContextAppAction {
 
@@ -17,7 +18,7 @@ public class AddContainerContextMenuAction extends CustomizableTableContextAppAc
 
         setName(_GUI._.action_addcontainer());
         setTooltipText(_GUI._.action_addcontainer_tooltip());
-        setIconKey("load");
+        setIconKey(IconKey.ICON_LOAD);
         setAccelerator(KeyEvent.VK_L);
 
     }

@@ -2,6 +2,47 @@ package org.jdownloader.gui.toolbar;
 
 import javax.swing.JPopupMenu;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.Application;
+import org.jdownloader.controlling.contextmenu.ActionData;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.mainmenu.ChunksEditorLink;
+import org.jdownloader.gui.mainmenu.ParalellDownloadsEditorLink;
+import org.jdownloader.gui.mainmenu.ParallelDownloadsPerHostEditorLink;
+import org.jdownloader.gui.mainmenu.SpeedlimitEditorLink;
+import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
+import org.jdownloader.gui.mainmenu.action.LogSendAction;
+import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
+import org.jdownloader.gui.toolbar.action.CaptchaModeChangeAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogle9KWAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleBrowserSolverAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleCBAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleCheapCaptchaAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleDBCAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleJACAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDAutoAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
+import org.jdownloader.gui.toolbar.action.CollapseExpandAllAction;
+import org.jdownloader.gui.toolbar.action.GenericDeleteFromTableToolbarAction;
+import org.jdownloader.gui.toolbar.action.MoveDownAction;
+import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
+import org.jdownloader.gui.toolbar.action.MoveToTopAction;
+import org.jdownloader.gui.toolbar.action.MoveUpAction;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
+import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
+import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
+import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
+
+import jd.gui.swing.jdgui.components.toolbar.AlwaysOnTopGuiToogleAction;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
@@ -25,53 +66,13 @@ import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.Application;
-import org.jdownloader.controlling.contextmenu.ActionData;
-import org.jdownloader.controlling.contextmenu.ContextMenuManager;
-import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
-import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeparatorData;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.mainmenu.ChunksEditorLink;
-import org.jdownloader.gui.mainmenu.ParalellDownloadsEditorLink;
-import org.jdownloader.gui.mainmenu.ParallelDownloadsPerHostEditorLink;
-import org.jdownloader.gui.mainmenu.SpeedlimitEditorLink;
-import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
-import org.jdownloader.gui.mainmenu.action.LogSendAction;
-import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
-import org.jdownloader.gui.mainmenu.container.OptionalContainer;
-import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
-import org.jdownloader.gui.toolbar.action.CaptchaModeChangeAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogle9KWAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleBrowserSolverAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleCBAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleDBCAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleCheapCaptchaAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleJACAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDAutoAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
-import org.jdownloader.gui.toolbar.action.CollapseExpandAllAction;
-import org.jdownloader.gui.toolbar.action.GenericDeleteFromTableToolbarAction;
-import org.jdownloader.gui.toolbar.action.MoveDownAction;
-import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
-import org.jdownloader.gui.toolbar.action.MoveToTopAction;
-import org.jdownloader.gui.toolbar.action.MoveUpAction;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
-import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
-import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
-import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
-
 public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, DownloadLink> {
 
     private static final MenuManagerMainToolbar INSTANCE = new MenuManagerMainToolbar();
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerMainToolbar getInstance() {
@@ -157,6 +158,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         opt.add(new MenuItemData(ExitToolbarAction.class));
         opt.add(UnskipAllSkippedLinksAction.class);
         //
+        opt.add(AlwaysOnTopGuiToogleAction.class);
         opt.add(AddLinksMenuAction.class);
         opt.add(AddContainerAction.class);
         opt.add(SetProxySetupAction.class);

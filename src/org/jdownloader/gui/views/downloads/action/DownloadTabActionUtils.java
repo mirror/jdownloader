@@ -1,24 +1,25 @@
 package org.jdownloader.gui.views.downloads.action;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.IconDialog;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.utils.JDFileUtils;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class DownloadTabActionUtils {
 
@@ -34,7 +35,7 @@ public class DownloadTabActionUtils {
             @Override
             public Void edtRun() {
                 if (agg.getTotalCount() == 0) {
-                    new IconDialog(0, _GUI._.lit_ups_something_is_wrong(), _GUI._.DownloadController_deleteLinksRequest_nolinks(), NewTheme.I().getIcon("robot_sos", 256), null).show();
+                    new IconDialog(0, _GUI._.lit_ups_something_is_wrong(), _GUI._.DownloadController_deleteLinksRequest_nolinks(), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_INFO, 256), null).show();
                     return null;
                 }
                 WarnLevel level = WarnLevel.LOW;

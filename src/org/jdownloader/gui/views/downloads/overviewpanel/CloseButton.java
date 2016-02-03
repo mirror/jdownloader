@@ -3,6 +3,8 @@ package org.jdownloader.gui.views.downloads.overviewpanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 public class CloseButton extends ExtButton {
@@ -27,12 +29,12 @@ public class CloseButton extends ExtButton {
     private static final long serialVersionUID = 1L;
 
     protected void onRollOut() {
-        setIcon(NewTheme.I().getIcon("close", -1));
+        setIcon(new AbstractIcon(IconKey.ICON_CLOSE, -1));
 
     }
 
     /**
-     * 
+     *
      */
     protected void onRollOver() {
         setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("close", -1), 0.5f));

@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.overviewpanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.NewTheme;
 
 public class SettingsButton extends ExtButton {
@@ -18,25 +19,25 @@ public class SettingsButton extends ExtButton {
     }
 
     /**
-     * 
+     *
      */
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
     protected void onRollOut() {
         setContentAreaFilled(false);
-        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("brightmix/wrench_8", -1), 0.6f));
+        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage(IconKey.ICON_WRENCH, 10), 0.6f));
 
     }
 
     /**
-     * 
+     *
      */
     protected void onRollOver() {
-        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("brightmix/wrench_8", -1), 0.3f));
+        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage(IconKey.ICON_WRENCH, 10), 0.3f));
 
     }
 }
