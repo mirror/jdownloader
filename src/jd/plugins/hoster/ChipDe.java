@@ -165,9 +165,9 @@ public class ChipDe extends PluginForHost {
 
             /*
              * Include linkid in this case because otherwise links could be identified as duplicates / mirrors wrongly e.g.
-             *
+             * 
              * http://download.chip.eu/en/Firefox_115074.html
-             *
+             * 
              * http://download.chip.eu/en/Firefox_106534.html
              */
             if (filename == null) {
@@ -334,7 +334,7 @@ public class ChipDe extends PluginForHost {
                      * Happens for software whos manufactors do not allow direct mirrors from chip servers e.g.
                      * http://download.chip.eu/en/Graffiti-Studio_1066113.html
                      */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "External download - not possible via JDownloader!");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Externer download - nicht per JDownloader ladbar!");
                 }
                 this.br.getPage(getfile_url);
                 DLLINK = br.getRegex("If not, please click <a href=\"(http[^<>\"]*?)\"").getMatch(0);

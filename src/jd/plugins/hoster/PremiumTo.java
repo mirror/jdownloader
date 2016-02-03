@@ -269,8 +269,6 @@ public class PremiumTo extends UseNet {
                     url = url.replaceFirst("freakshare.com/", "fs.com/");
                 } else if (url.startsWith("depositfiles.com/")) {
                     url = url.replaceFirst("depositfiles.com/", "df.com/");
-                } else if (url.startsWith("netload.in/")) {
-                    url = url.replaceFirst("netload.in/", "nl.in/");
                 } else if (url.startsWith("filepost.com/")) {
                     url = url.replaceFirst("filepost.com/", "fp.com/");
                 } else if (url.startsWith("turbobit.net/")) {
@@ -522,11 +520,11 @@ public class PremiumTo extends UseNet {
             shareOnlineLocked.set(true);
         }
         // some routine to check traffic allocations: normalTraffic specialTraffic
-        // if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|netload\\.in|filemonkey\\.in|oboom\\.com")) {
+        // if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|filemonkey\\.in|oboom\\.com")) {
         // We no longer sell Special traffic! Special traffic works only with our Usenet servers and for these 5 filehosts: uploaded.net**,
-        // netload.in, share-online.biz**, rapidgator.net, filer.net
+        // share-online.biz**, rapidgator.net, filer.net
         // special traffic
-        if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|netload\\.in|share-online\\.biz|rapidgator\\.net|filer\\.net")) {
+        if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|share-online\\.biz|rapidgator\\.net|filer\\.net")) {
             if (account != null && account.getLongProperty(specialTraffic, 0) > 0) {
                 return true;
             }
