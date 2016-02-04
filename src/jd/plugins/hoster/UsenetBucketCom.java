@@ -62,9 +62,13 @@ public class UsenetBucketCom extends UseNet {
             }
             if (br.getCookie(getHost(), "PHPSESSID") == null) {
                 account.clearCookies("");
+                final String userName = Encoding.urlEncode(account.getUser());
+                if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for usenetbucket.com website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.getPage("https://www.usenetbucket.com/en/");
                 login = br.getFormbyActionRegex("/login/form/");
-                login.put("u", Encoding.urlEncode(account.getUser()));
+                login.put("u", userName);
                 login.put("p", Encoding.urlEncode(account.getPass()));
                 login.put("_xclick", "doLogin");
                 br.submitForm(login);
