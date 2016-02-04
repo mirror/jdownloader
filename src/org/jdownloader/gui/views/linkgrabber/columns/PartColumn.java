@@ -12,12 +12,12 @@ import org.jdownloader.gui.translate._GUI;
 
 public class PartColumn extends ExtTextColumn<AbstractNode> {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
     /**
-     * 
+     *
      */
 
     public PartColumn() {
@@ -25,10 +25,10 @@ public class PartColumn extends ExtTextColumn<AbstractNode> {
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
-                LinkInfo p1 = getLinkInfo(o1);
-                LinkInfo p2 = getLinkInfo(o2);
-                int l1 = p1 == null ? -1 : p1.getPartNum();
-                int l2 = p2 == null ? -1 : p2.getPartNum();
+                final LinkInfo p1 = getLinkInfo(o1);
+                final LinkInfo p2 = getLinkInfo(o2);
+                final int l1 = p1 == null ? -1 : p1.getPartNum();
+                final int l2 = p2 == null ? -1 : p2.getPartNum();
 
                 if (l1 == l2) {
                     return 0;
@@ -80,9 +80,9 @@ public class PartColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode value) {
-        LinkInfo linkInfo = getLinkInfo(value);
+        final LinkInfo linkInfo = getLinkInfo(value);
         if (linkInfo != null) {
-            int num = linkInfo.getPartNum();
+            final int num = linkInfo.getPartNum();
             if (num >= 0) {
                 return String.valueOf(num);
             }
@@ -95,13 +95,12 @@ public class PartColumn extends ExtTextColumn<AbstractNode> {
      * @return
      */
     public LinkInfo getLinkInfo(AbstractNode value) {
-        LinkInfo linkInfo = null;
         if (value instanceof CrawledLink) {
-            linkInfo = ((CrawledLink) value).getLinkInfo();
+            return ((CrawledLink) value).getLinkInfo();
         }
         if (value instanceof DownloadLink) {
-            linkInfo = ((DownloadLink) value).getLinkInfo();
+            return ((DownloadLink) value).getLinkInfo();
         }
-        return linkInfo;
+        return null;
     }
 }
