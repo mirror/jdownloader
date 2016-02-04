@@ -8,6 +8,7 @@ import java.awt.event.MouseEvent;
 import java.util.List;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JTable;
@@ -83,13 +84,13 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
+                    private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                     private static final long serialVersionUID = 3938290423337000265L;
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon(IconKey.ICON_OK, 14));
+                        setIcon(ok);
                         // defaultProxy
                         setHorizontalAlignment(CENTER);
                         setText(null);

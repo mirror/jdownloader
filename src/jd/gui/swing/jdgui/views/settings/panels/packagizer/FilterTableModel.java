@@ -8,6 +8,8 @@ import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.linkcrawler.CrawledLink;
+
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
@@ -19,8 +21,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-
-import jd.controlling.linkcrawler.CrawledLink;
 
 public class FilterTableModel extends ExtTableModel<PackagizerRule> implements PackagizerControllerListener {
 
@@ -45,11 +45,12 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
 
                     private static final long serialVersionUID = 3938290423337000265L;
+                    private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
+                        setIcon(ok);
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;
@@ -97,8 +98,8 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
         addColumn(new ExtTextColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
 
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = 2457046463046132551L;
 
             @Override
@@ -112,7 +113,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
             }
 
             protected Icon getIcon(final PackagizerRule value) {
-                String key = value.getIconKey();
+                final String key = value.getIconKey();
                 if (key == null) {
                     return null;
                 } else {
@@ -135,8 +136,8 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
         addColumn(new ExtTextColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_cond()) {
 
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = -5750253374104171542L;
 
             @Override

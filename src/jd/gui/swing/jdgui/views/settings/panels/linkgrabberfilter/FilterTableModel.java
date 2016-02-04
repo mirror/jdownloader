@@ -42,11 +42,12 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
 
                     private static final long serialVersionUID = 3938290423337000265L;
+                    private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
+                        setIcon(ok);
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;
@@ -97,7 +98,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
             }
 
             protected Icon getIcon(final LinkgrabberFilterRule value) {
-                String key = value.getIconKey();
+                final String key = value.getIconKey();
                 if (key == null) {
                     return null;
                 } else {

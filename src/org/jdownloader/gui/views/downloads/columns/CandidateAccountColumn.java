@@ -22,12 +22,12 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateTooltip;
-import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
+import org.jdownloader.images.NewTheme;
 
 public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
 
-    private Icon iconDownload = new AbstractIcon(IconKey.ICON_DOWNLOAD, 20);
+    private final Icon iconDownload = NewTheme.I().getIcon(IconKey.ICON_DOWNLOAD, 20);
 
     public CandidateAccountColumn() {
         super(_GUI._.CandidateAccountColumn());

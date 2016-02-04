@@ -34,7 +34,7 @@ import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateTooltip;
-import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
@@ -69,15 +69,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     }
 
     /**
-     * 
+     *
      */
     private static final long  serialVersionUID = 1L;
 
     private final Icon         trueIcon;
-
-    private final Icon         infoIcon;
-
-    private final Icon         iconWait;
 
     private final Icon         trueIconExtracted;
 
@@ -112,14 +108,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     public TaskColumn() {
         super(_GUI._.StatusColumn_StatusColumn2());
-        this.trueIcon = new AbstractIcon("true", 16);
-
-        this.infoIcon = new AbstractIcon("info", 16);
-        this.iconWait = new AbstractIcon("wait", 16);
-        this.extracting = new AbstractIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
-        startingIcon = new AbstractIcon("run", 16);
-        trueIconExtracted = new AbstractIcon(IconKey.ICON_EXTRACTION_TRUE, 32);
-        trueIconExtractedFailed = new AbstractIcon(IconKey.ICON_EXTRACTION_TRUE_FAILED, 32);
+        this.trueIcon = NewTheme.I().getIcon(IconKey.ICON_TRUE, 16);
+        this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
+        startingIcon = NewTheme.I().getIcon(IconKey.ICON_RUN, 16);
+        trueIconExtracted = NewTheme.I().getIcon(IconKey.ICON_EXTRACTION_TRUE, 32);
+        trueIconExtractedFailed = NewTheme.I().getIcon(IconKey.ICON_EXTRACTION_TRUE_FAILED, 32);
         startingString = _GUI._.TaskColumn_fillColumnHelper_starting();
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 

@@ -5,8 +5,11 @@ import java.util.ArrayList;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
+
+import jd.gui.swing.jdgui.GUIUtils;
 
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -21,10 +24,8 @@ import org.jdownloader.auth.AuthenticationInfo;
 import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.gui.swing.jdgui.GUIUtils;
 
 public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements ChangeListener {
     private static final long serialVersionUID = 1L;
@@ -44,11 +45,12 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
                     private static final long serialVersionUID = 1L;
+                    private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
+                        setIcon(ok);
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

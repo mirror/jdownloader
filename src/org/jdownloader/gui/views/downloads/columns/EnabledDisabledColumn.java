@@ -8,6 +8,9 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
@@ -15,9 +18,6 @@ import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtIconColumn;
 import org.appwork.utils.ModifyLock;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 
 /**
  * Class giving the implementation details of the enabled / disabled column type
@@ -30,8 +30,8 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
     /**
      *
      */
-    private Icon iconNo;
-    private Icon iconYes;
+    private final Icon iconNo;
+    private final Icon iconYes;
 
     public EnabledDisabledColumn() {
         super(_GUI._.EnabledDisabledColumn_EnabledDisabledColumn());
@@ -148,7 +148,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setIcon(new CheckBoxIcon(true));
+                setIcon(CheckBoxIcon.TRUE);
                 // defaultProxy
                 setHorizontalAlignment(CENTER);
                 setText(null);

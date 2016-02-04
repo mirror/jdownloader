@@ -15,24 +15,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.tooltips.ExtTooltip;
-import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.swing.components.tooltips.TooltipPanel;
-import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.swing.exttable.ExtDefaultRowSorter;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.SwingUtils;
-import org.appwork.utils.swing.renderer.RenderLabel;
-import org.appwork.utils.swing.renderer.RendererMigPanel;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.SkipReason;
-
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -50,6 +32,24 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.swing.components.tooltips.TooltipPanel;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.renderer.RenderLabel;
+import org.appwork.utils.swing.renderer.RendererMigPanel;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.SkipReason;
 
 public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
@@ -100,12 +100,12 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
         }
         dlWatchdog = DownloadWatchDog.getInstance();
-        skipped = new AbstractIcon(IconKey.ICON_SKIPPED, 16);
-        forced = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START_FORCED, 16);
-        resumeIndicator = new AbstractIcon(IconKey.ICON_REFRESH, 16);
-        directConnection = new AbstractIcon(IconKey.ICON_MODEM, 16);
-        proxyConnection = new AbstractIcon(IconKey.ICON_PROXY_ROTATE, 16);
-        connections = new AbstractIcon(IconKey.ICON_PARALELL, 16);
+        skipped = NewTheme.I().getIcon(IconKey.ICON_SKIPPED, 16);
+        forced = NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_START_FORCED, 16);
+        resumeIndicator = NewTheme.I().getIcon(IconKey.ICON_REFRESH, 16);
+        directConnection = NewTheme.I().getIcon(IconKey.ICON_MODEM, 16);
+        proxyConnection = NewTheme.I().getIcon(IconKey.ICON_PROXY_ROTATE, 16);
+        connections = NewTheme.I().getIcon(IconKey.ICON_PARALELL, 16);
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[grow,fill]"));
         // panel.add(Box.createGlue(), "pushx,growx");
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
