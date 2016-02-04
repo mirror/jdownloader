@@ -33,6 +33,14 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.Factory;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.io.JDIO;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -56,14 +64,6 @@ import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.Factory;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog<Integer> {
 
@@ -187,17 +187,17 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(stats, "pushx,growx,spanx");
 
         stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_core()), "");
-        stats.add(disable("Copyright \u00A9 2009-2015 AppWork GmbH"));
+        stats.add(disable("Copyright \u00A9 2009-2016 AppWork GmbH"));
         stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_plugins()), "");
-        stats.add(disable("Copyright \u00A9 2009-2015 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2016 JDownloader Community"));
 
         stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_translations()), "");
-        stats.add(disable("Copyright \u00A9 2009-2015 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2016 JDownloader Community"));
         try {
             stats.add(new JLabel("Java:"), "");
             java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
             ExtButton comp;
-            stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version") + " (" + SizeFormatter.formatBytes(memory.getUsed()) + "/" + SizeFormatter.formatBytes(memory.getCommitted()) + "/" + SizeFormatter.formatBytes(memory.getMax()) + ")"));
+            stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit)" : "(32bit)") + " (" + SizeFormatter.formatBytes(memory.getUsed()) + "/" + SizeFormatter.formatBytes(memory.getCommitted()) + "/" + SizeFormatter.formatBytes(memory.getMax()) + ")"));
             comp.addActionListener(new ActionListener() {
 
                 @Override
