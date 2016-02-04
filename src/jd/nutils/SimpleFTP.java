@@ -293,7 +293,7 @@ public class SimpleFTP {
     public boolean wasLatestOperationNotPermitted() {
         final String latest = getLastestResponseLine();
         if (latest != null) {
-            return StringUtils.containsIgnoreCase(latest, "operation not permitted") || StringUtils.containsIgnoreCase(latest, "Access is denied");
+            return StringUtils.containsIgnoreCase(latest, "No permission") || StringUtils.containsIgnoreCase(latest, "operation not permitted") || StringUtils.containsIgnoreCase(latest, "Access is denied");
         }
         return false;
     }
@@ -385,16 +385,16 @@ public class SimpleFTP {
 
     public long getSize(String file) throws IOException {
         sendLine("SIZE " + file);
-        String Size = null;
+        String size = null;
         try {
-            Size = readLines(new int[] { 213 }, "SIZE failed");
+            size = readLines(new int[] { 213 }, "SIZE failed");
         } catch (IOException e) {
             LogSource.exception(logger, e);
             if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) {
                 return -1;
             }
         }
-        String[] split = Size.split(" ");
+        String[] split = size.split(" ");
         return Long.parseLong(split[1].trim());
     }
 
@@ -801,6 +801,11 @@ public class SimpleFTP {
                     sb.append(buffer, 0, bytesRead);
                 }
             }
+        } catch (IOException e) {
+            if (e.getMessage().contains("550")) {
+                return null;
+            }
+            throw e;
         } finally {
             try {
                 input.close();
