@@ -26,11 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,6 +46,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indishare.com" }, urls = { "https?://(www\\.)?indishare\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class IndiShareCom extends antiDDoSForHost {
@@ -82,7 +82,7 @@ public class IndiShareCom extends antiDDoSForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.4
-    // mods:
+    // mods: checkErrors[Added handling for "Expired download session" error]
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -818,6 +818,8 @@ public class IndiShareCom extends antiDDoSForHost {
         } else if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PREMIUMONLY2, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (correctedBR.contains(">Expired download session")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
