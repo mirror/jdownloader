@@ -46,7 +46,7 @@ public class LAFOptions {
         return LAFOptions.INSTANCE;
     }
 
-    private LAFSettings cfg;
+    private final LAFSettings cfg;
 
     public LAFSettings getCfg() {
         return cfg;
@@ -57,10 +57,10 @@ public class LAFOptions {
      */
     private LAFOptions(String laf) {
         int i = laf.lastIndexOf(".");
-        String name = (i >= 0 ? laf.substring(i + 1) : laf);
-        String path = "cfg/laf/" + name;
+        final String name = (i >= 0 ? laf.substring(i + 1) : laf);
+        final String path = "cfg/laf/" + name;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
-        String rel = laf.replace(".", "/");
+        final String rel = laf.replace(".", "/");
         if (getClass().getResource("/" + rel + ".json") != null) {
             final LAFSettings defaultStorage = JsonConfig.create(rel, LAFSettings.class);
             defaultStorage._getStorageHandler().getPrimitiveStorage().setAutoPutValues(false);

@@ -14,6 +14,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -33,10 +37,6 @@ import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialog;
 import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialogInterface;
 import org.jdownloader.logging.LogController;
-
-import jd.SecondLevelLaunch;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
     protected final DelayedRunnable               updateDelayer;
@@ -180,10 +180,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 ret.add(mid);
             } else if (mid instanceof MenuLink) {
                 ret.add(mid);
-            } else if (!(mid instanceof MenuLink) && mid.getActionData()._isValidDataForCreatingAnAction()) {
+            } else if (!(mid instanceof MenuLink) && mid.getActionData() != null && mid.getActionData()._isValidDataForCreatingAnAction()) {
                 ret.add(mid.getActionData());
-            } else {
-
             }
         }
         return ret;

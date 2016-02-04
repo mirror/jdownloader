@@ -361,7 +361,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         } else {
             try {
 
-                if (!value.getActionData()._isValidDataForCreatingAnAction() || (value instanceof MenuLink)) {
+                if (value.getActionData() == null || !value.getActionData()._isValidDataForCreatingAnAction() || (value instanceof MenuLink)) {
                     return;
                 }
                 ActionData actionData = value.getActionData();
@@ -438,7 +438,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
         CustomizableAppAction action;
         try {
-            if (mid.getActionData()._isValidDataForCreatingAnAction() && !(mid instanceof MenuLink)) {
+            if (mid.getActionData() != null && mid.getActionData()._isValidDataForCreatingAnAction() && !(mid instanceof MenuLink)) {
                 if (shortcutLabel != null) {
                     shortcutLabel.setVisible(true);
                 }

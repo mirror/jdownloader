@@ -230,7 +230,7 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
-        if (!getActionData()._isValidDataForCreatingAnAction()) {
+        if (getActionData() == null || !getActionData()._isValidDataForCreatingAnAction()) {
             //
             throw new WTFException("No ACTION");
         }

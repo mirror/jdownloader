@@ -34,6 +34,16 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.AbstractBugFinderWindow;
+import jd.gui.swing.jdgui.DirectFeedback;
+import jd.gui.swing.jdgui.DirectFeedbackInterface;
+import jd.gui.swing.jdgui.DownloadFeedBack;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
@@ -64,16 +74,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.AbstractBugFinderWindow;
-import jd.gui.swing.jdgui.DirectFeedback;
-import jd.gui.swing.jdgui.DirectFeedbackInterface;
-import jd.gui.swing.jdgui.DownloadFeedBack;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.miginfocom.swing.MigLayout;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> implements DirectFeedbackInterface {
 
@@ -424,7 +424,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             } else {
                 AppAction action;
                 try {
-                    if (!mi.getActionData()._isValidDataForCreatingAnAction()) {
+                    if (mi.getActionData() == null || !mi.getActionData()._isValidDataForCreatingAnAction()) {
                         continue;
                     }
                     action = mi.createAction();
