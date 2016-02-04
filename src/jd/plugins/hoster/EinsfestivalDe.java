@@ -23,7 +23,6 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -49,6 +48,7 @@ public class EinsfestivalDe extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private String               DLLINK            = null;
+    private boolean              SERVERERROR       = false;
 
     @Override
     public String getAGBLink() {
@@ -61,6 +61,7 @@ public class EinsfestivalDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         final String vid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         DLLINK = null;
+        SERVERERROR = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         downloadLink.setName(vid);
@@ -140,17 +141,12 @@ public class EinsfestivalDe extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br.openHeadConnection(DLLINK);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                con = br.openHeadConnection(DLLINK);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    SERVERERROR = true;
                 }
-                downloadLink.setProperty("directlink", DLLINK);
             } finally {
                 try {
                     con.disconnect();
@@ -166,6 +162,8 @@ public class EinsfestivalDe extends PluginForHost {
         requestFileInformation(downloadLink);
         if (this.br.containsHTML("id=\"fskInfo\"")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung aus Jugendschutzgründen aktuell nicht verfügbar", 60 * 60 * 1000l);
+        } else if (SERVERERROR) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video offline/not playable", 30 * 60 * 1000l);
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

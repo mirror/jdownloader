@@ -26,11 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,6 +48,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
@@ -132,7 +132,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                            = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.1.6<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.1.7<br />
      * Tags: Script, template<br />
      * mods:<br />
      * limit-info:<br />
@@ -856,6 +856,7 @@ public class XFileSharingProBasic extends PluginForHost {
             ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
         }
         if (ttt != null) {
+            logger.info("Found waittime: " + ttt);
             wait = Integer.parseInt(ttt);
             if (WAITFORCED && (wait >= WAITSECONDSMAX || wait <= WAITSECONDSMIN)) {
                 logger.warning("Wait exceeds max/min, using forced wait!");
@@ -868,9 +869,13 @@ public class XFileSharingProBasic extends PluginForHost {
             }
             wait = i;
         }
+
         wait -= passedTime;
         if (wait > 0) {
+            logger.info("Waiting waittime: " + wait);
             sleep(wait * 1000l, downloadLink);
+        } else {
+            logger.info("Found no waittime");
         }
     }
 
@@ -1049,6 +1054,8 @@ public class XFileSharingProBasic extends PluginForHost {
         } else if (br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (correctedBR.contains(">Expired download session")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
         }
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);

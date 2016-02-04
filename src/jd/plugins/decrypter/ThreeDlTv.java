@@ -93,7 +93,7 @@ public class ThreeDlTv extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final String code = getCaptchaCode(captchaLink, param);
+                final String code = getCaptchaCode("3dlcaptcharecognition_is_broken", captchaLink, param);
                 br.postPage(parameter, "answer=" + code);
                 if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) {
                     this.sleep(3 * 1000l, param);

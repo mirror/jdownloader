@@ -61,6 +61,7 @@ public class DeviantArtCom extends PluginForHost {
     private static final String GENERALFILENAMEREGEX         = "<title>([^<>\"]*?) on deviantART</title>";
     private static final String DLLINK_REFRESH_NEEDED        = "http://(www\\.)?deviantart\\.com/download/.+";
     private static final String TYPE_DOWNLOADALLOWED_PDF     = ">Download PDF<";
+    private static final String TYPE_DOWNLOADALLOWED_SWF     = ">SWF download";
     private static final String TYPE_DOWNLOADALLOWED_TXT     = ">TXT download<";
     private static final String TYPE_DOWNLOADALLOWED_ZIP     = ">ZIP download<";
     private static final String TYPE_DOWNLOADALLOWED_GENERAL = ">Download File<";
@@ -180,6 +181,15 @@ public class DeviantArtCom extends PluginForHost {
              */
             // DLLINK = getDOWNLOADdownloadlink();
             DLLINK = br.getRegex("new PDFObject\\(\\{url: \\'(https?://[^<>\"]*?)\\'\\}").getMatch(0);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            DLLINK = Encoding.htmlDecode(DLLINK.trim());
+            filesize = getfileSize();
+        } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_SWF)) {
+            /* For officially downloadable .swf files */
+            ext = "swf";
+            DLLINK = getDOWNLOADdownloadlink();
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
