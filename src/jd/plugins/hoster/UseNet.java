@@ -296,7 +296,7 @@ public class UseNet extends PluginForHost {
         }
         final List<HTTPProxy> list;
         try {
-            list = selector.getProxiesByURI(new URI("http://" + getHost()));
+            list = selector.getProxiesByURI(new URI("socket://" + getHost()));
         } catch (Throwable e) {
             throw new NoGateWayException(selector, e);
         }

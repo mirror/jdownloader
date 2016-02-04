@@ -1,0 +1,132 @@
+package jd.plugins.hoster;
+
+import java.util.Arrays;
+
+import jd.PluginWrapper;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+
+@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "usenetbucket.com" }, urls = { "" }, flags = { 0 })
+public class UsenetBucketCom extends UseNet {
+
+    public UsenetBucketCom(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("https://www.usenetbucket.com/de/order/");
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "https://www.usenetbucket.com/de/legal/terms-and-conditions/";
+    }
+
+    private final String USENET_USERNAME = "USENET_USERNAME";
+    private final String USENET_PASSWORD = "USENET_PASSWORD";
+
+    @Override
+    protected String getUsername(Account account) {
+        return account.getStringProperty(USENET_USERNAME, account.getUser());
+    }
+
+    @Override
+    protected String getPassword(Account account) {
+        return account.getStringProperty(USENET_PASSWORD, account.getUser());
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        setBrowserExclusive();
+        final AccountInfo ai = new AccountInfo();
+        br.setFollowRedirects(true);
+        final Cookies cookies = account.loadCookies("");
+        try {
+            Form login = null;
+            if (cookies != null) {
+                br.setCookies(getHost(), cookies);
+                br.getPage("https://www.usenetbucket.com/en/");
+                login = br.getFormbyActionRegex("/login/form/");
+                if (login != null && login.containsHTML("name=\"u\"") && login.containsHTML("name=\"p\"")) {
+                    br.getCookies(getHost()).clear();
+                } else if (br.getCookie(getHost(), "PHPSESSID") == null) {
+                    br.getCookies(getHost()).clear();
+                } else {
+                    br.getPage("https://www.usenetbucket.com/en/controlpanel/");
+                }
+            }
+            if (br.getCookie(getHost(), "PHPSESSID") == null) {
+                account.clearCookies("");
+                br.getPage("https://www.usenetbucket.com/en/");
+                login = br.getFormbyActionRegex("/login/form/");
+                login.put("u", Encoding.urlEncode(account.getUser()));
+                login.put("p", Encoding.urlEncode(account.getPass()));
+                login.put("_xclick", "doLogin");
+                br.submitForm(login);
+                login = br.getFormbyActionRegex("/login/form/");
+                if (login != null && login.containsHTML("name=\"u\"") && login.containsHTML("name=\"p\"")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.getCookie(getHost(), "PHPSESSID") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(br.getCookies(getHost()), "");
+            final String userName = br.getRegex("<td>Username</td>.*?<td>(.*?)</td>").getMatch(0);
+            final String passWord = br.getRegex("<td>Password</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (userName == null || passWord == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                account.setProperty(USENET_USERNAME, userName);
+                account.setProperty(USENET_PASSWORD, passWord);
+            }
+            final String connections = br.getRegex("<td>\\s*Connections</td>.*?<td>(\\d+)</td>").getMatch(0);
+            if (connections != null) {
+                account.setMaxSimultanDownloads(Integer.parseInt(connections));
+            } else {
+                account.setMaxSimultanDownloads(25);
+            }
+            final String validUntil = br.getRegex("<td>Valid until</td>.*?<td>(.*?)</td>").getMatch(0);
+            final String bucketType = br.getRegex("<h3>((Basic|Comfort|Ultimate|Free) Bucket)</h3>").getMatch(0);
+            if (bucketType != null) {
+                ai.setStatus(bucketType);
+            } else {
+                ai.setStatus("Unknown Bucket");
+            }
+            if (validUntil != null) {
+                final String daysLeft = new Regex(validUntil, "\\((\\d+) days left").getMatch(0);
+                if (daysLeft != null) {
+                    ai.setValidUntil(System.currentTimeMillis() + (Integer.parseInt(daysLeft) * (24 * 60 * 60 * 1000l)));
+                }
+            }
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.clearCookies("");
+            }
+            throw e;
+        }
+        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+        return ai;
+    }
+
+    @Override
+    protected String getServerAddress() {
+        return "reader.usenetbucket.com";
+    }
+
+    @Override
+    protected int[] getAvailablePorts() {
+        return new int[] { 80, 119 };
+    }
+
+    @Override
+    protected int[] getAvailableSSLPorts() {
+        return new int[] { 563, 443 };
+    }
+
+}

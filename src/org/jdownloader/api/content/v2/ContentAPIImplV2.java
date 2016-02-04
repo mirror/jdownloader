@@ -25,7 +25,6 @@ import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.IDIcon;
 import org.appwork.utils.Hash;
 import org.appwork.utils.images.IconIO;
-
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
