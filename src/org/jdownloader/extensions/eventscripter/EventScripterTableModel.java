@@ -7,6 +7,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JTable;
@@ -87,13 +88,13 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
+                    private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                     private static final long serialVersionUID = 3224931991570756349L;
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
+                        setIcon(ok);
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

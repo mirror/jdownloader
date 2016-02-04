@@ -13,7 +13,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 
 public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
 
@@ -44,10 +44,10 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
         editorLbl = new RenderLabel();
 
         rendererUp = new RenderLabel();
-        rendererUp.setIcon(new AbstractIcon(IconKey.ICON_GO_UP, 18));
+        rendererUp.setIcon(NewTheme.I().getIcon(IconKey.ICON_GO_UP, 18));
 
         rendererDown = new RenderLabel();
-        rendererDown.setIcon(new AbstractIcon(IconKey.ICON_GO_DOWN, 18));
+        rendererDown.setIcon(NewTheme.I().getIcon(IconKey.ICON_GO_DOWN, 18));
 
         editorUp = new ExtButton(new AppAction() {
             /**
@@ -56,7 +56,7 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
             private static final long serialVersionUID = -6373308629670760194L;
 
             {
-                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_UP, 18));
+                setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_GO_UP, 18));
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -75,7 +75,7 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
             private static final long serialVersionUID = 359422892536364704L;
 
             {
-                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_DOWN, 18));
+                setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_GO_DOWN, 18));
             }
 
             public void actionPerformed(ActionEvent e) {

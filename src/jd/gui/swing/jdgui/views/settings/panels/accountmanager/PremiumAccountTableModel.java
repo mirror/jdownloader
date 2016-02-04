@@ -154,13 +154,13 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
+                    private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                     private static final long serialVersionUID = 3224931991570756349L;
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
+                        setIcon(ok);
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;
@@ -266,31 +266,34 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                 return true;
             }
 
+            final Icon refresh = NewTheme.I().getIcon(IconKey.ICON_REFRESH, 16);
+            final Icon okay    = NewTheme.I().getIcon(IconKey.ICON_OK, 16);
+            final Icon wait    = NewTheme.I().getIcon(IconKey.ICON_WAIT, 16);
+            final Icon error   = NewTheme.I().getIcon(IconKey.ICON_ERROR, 16);
+            final Icon expired = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_ERROR, 18)).add(new AbstractIcon(IconKey.ICON_WAIT, 12), 6, 6);
+
             @Override
             protected Icon getIcon(AccountEntry value) {
                 if (value.getAccount().isChecking()) {
-                    return new AbstractIcon(IconKey.ICON_REFRESH, 16);
+                    return refresh;
                 }
                 if (value.getAccount().getError() == null) {
-
                     if (value.getAccount().isTempDisabled()) {
-                        return new AbstractIcon(IconKey.ICON_WAIT, 16);
+                        return wait;
                     }
-                    return new AbstractIcon(IconKey.ICON_OK, 16);
+                    return okay;
                 }
                 switch (value.getAccount().getError()) {
                 case EXPIRED:
-                    return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_ERROR, 18)).add(new AbstractIcon(IconKey.ICON_WAIT, 12), 6, 6);
+                    return expired;
                 case INVALID:
-
-                    return new AbstractIcon(IconKey.ICON_ERROR, 16);
+                    return error;
                 case PLUGIN_ERROR:
-                    return new AbstractIcon(IconKey.ICON_ERROR, 16);
+                    return error;
                 case TEMP_DISABLED:
-                    return new AbstractIcon(IconKey.ICON_WAIT, 16);
+                    return wait;
                 }
-
-                return new AbstractIcon(IconKey.ICON_OK, 16);
+                return okay;
             }
 
             @Override

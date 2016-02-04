@@ -40,13 +40,13 @@ public class ExceptionsTableModel extends ExtTableModel<LinkgrabberFilterRule> i
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
+                    private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                     private static final long serialVersionUID = 3938290423337000265L;
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
+                        setIcon(ok);
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;
@@ -98,7 +98,7 @@ public class ExceptionsTableModel extends ExtTableModel<LinkgrabberFilterRule> i
             }
 
             protected Icon getIcon(final LinkgrabberFilterRule value) {
-                String key = value.getIconKey();
+                final String key = value.getIconKey();
                 if (key == null) {
                     return null;
                 } else {

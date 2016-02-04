@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
@@ -21,7 +22,7 @@ import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.UrlDisplayEntry;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
@@ -99,11 +100,12 @@ public class UrlOrderTableModel extends ExtTableModel<UrlDisplayEntry> implement
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+                    private final Icon ok = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(new AbstractIcon(IconKey.ICON_OK, 14));
+                        setIcon(ok);
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

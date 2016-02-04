@@ -93,8 +93,8 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     class ResetAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
-        private Icon                reset_no         = NewTheme.I().getIcon(IconKey.ICON_RESET, 16);
-        private Icon                reset_yes        = NewTheme.I().getDisabledIcon(NewTheme.I().getIcon(IconKey.ICON_RESET, 16));
+        private final Icon          reset_no         = NewTheme.I().getIcon(IconKey.ICON_RESET, 16);
+        private final Icon          reset_yes        = NewTheme.I().getDisabledIcon(reset_no);
         private boolean             resetable        = false;
 
         public ResetAction() {

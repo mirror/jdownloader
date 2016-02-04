@@ -340,7 +340,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             {
                 this.renderer.setHorizontalAlignment(SwingConstants.RIGHT);
                 renderer.setHorizontalTextPosition(SwingConstants.LEFT);
-
                 this.editor.setHorizontalAlignment(SwingConstants.RIGHT);
             }
 

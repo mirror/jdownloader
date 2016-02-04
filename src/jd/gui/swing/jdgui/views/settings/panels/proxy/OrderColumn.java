@@ -5,6 +5,8 @@ import java.util.ArrayList;
 
 import javax.swing.JComponent;
 
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
@@ -12,9 +14,7 @@ import org.appwork.utils.swing.renderer.RenderLabel;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-
-import jd.controlling.proxy.AbstractProxySelectorImpl;
+import org.jdownloader.images.NewTheme;
 
 public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
 
@@ -40,10 +40,10 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
         renderer.setOpaque(false);
 
         rendererUp = new RenderLabel();
-        rendererUp.setIcon(new AbstractIcon(IconKey.ICON_GO_UP, 18));
+        rendererUp.setIcon(NewTheme.I().getIcon(IconKey.ICON_GO_UP, 18));
 
         rendererDown = new RenderLabel();
-        rendererDown.setIcon(new AbstractIcon(IconKey.ICON_GO_DOWN, 18));
+        rendererDown.setIcon(NewTheme.I().getIcon(IconKey.ICON_GO_DOWN, 18));
 
         editorUp = new ExtButton(new AppAction() {
             /**
@@ -52,7 +52,7 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
             private static final long serialVersionUID = -6373308629670760194L;
 
             {
-                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_UP, 18));
+                setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_GO_UP, 18));
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -71,7 +71,7 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
             private static final long serialVersionUID = 359422892536364704L;
 
             {
-                setSmallIcon(new AbstractIcon(IconKey.ICON_GO_DOWN, 18));
+                setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_GO_DOWN, 18));
             }
 
             public void actionPerformed(ActionEvent e) {

@@ -30,14 +30,12 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
      *
      */
     private static final long serialVersionUID = 1L;
-    private Icon              iconNo;
-    private Icon              iconYes;
+    private final Icon        iconNo;
+    private final Icon        iconYes;
 
     public HasCaptchaColumn() {
         super(_GUI._.HasCaptchaColumn_HasCaptchaColumn_());
-
         iconYes = new CheckBoxIcon(true, true);
-
         iconNo = new CheckBoxIcon(false, true);
     }
 
@@ -46,11 +44,12 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
         final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
 
             private static final long serialVersionUID = 3938290423337000265L;
+            final Icon                ocr              = NewTheme.I().getIcon(IconKey.ICON_OCR, 14);
 
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setIcon(NewTheme.I().getIcon(IconKey.ICON_OCR, 14));
+                setIcon(ocr);
                 // defaultProxy
                 setHorizontalAlignment(CENTER);
                 setText(null);

@@ -22,6 +22,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
 import javax.swing.text.BadLocationException;
 
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
@@ -36,9 +38,8 @@ import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.nutils.encoding.Encoding;
 
 /**
  * The Tablemodel defines all columns and renderers
@@ -105,11 +106,12 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
 
                     private static final long serialVersionUID = 3224931991570756349L;
+                    final Icon                icon             = NewTheme.I().getIcon(IconKey.ICON_INFO, 16);
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(new AbstractIcon(IconKey.ICON_INFO, 16));
+                        setIcon(icon);
                         setHorizontalAlignment(CENTER);
                         setText(null);
                         return this;

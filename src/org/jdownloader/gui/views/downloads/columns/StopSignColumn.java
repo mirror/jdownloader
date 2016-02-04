@@ -7,18 +7,19 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
+import org.jdownloader.images.NewTheme;
 
 public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
-    private Icon icon;
+    private final Icon icon;
 
     public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -51,7 +52,7 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
     public StopSignColumn() {
         super(_GUI._.StopSignColumn_StopSignColumn());
-        icon = new AbstractIcon(IconKey.ICON_STOPSIGN, 16);
+        icon = NewTheme.I().getIcon(IconKey.ICON_STOPSIGN, 16);
     }
 
     @Override

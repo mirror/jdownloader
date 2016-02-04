@@ -12,6 +12,18 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.border.Border;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcrawler.ArchiveCrawledPackage;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.NaturalOrderComparator;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -34,20 +46,8 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTableM
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
-import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcrawler.ArchiveCrawledPackage;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.NaturalOrderComparator;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
 
@@ -56,10 +56,10 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
      */
     private static final long serialVersionUID  = -2963955407564917958L;
     protected Border          leftGapBorder;
-    private Icon              iconPackageOpen;
-    private Icon              iconPackageClosed;
-    private Icon              iconArchive;
-    private Icon              iconArchiveOpen;
+    private final Icon        iconPackageOpen;
+    private final Icon        iconPackageClosed;
+    private final Icon        iconArchive;
+    private final Icon        iconArchiveOpen;
     protected Border          normalBorder;
     private boolean           selectAll         = false;
     private boolean           hideSinglePackage = true;
@@ -68,10 +68,10 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         super(_GUI._.filecolumn_title());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
         normalBorder = BorderFactory.createEmptyBorder(0, 0, 0, 0);
-        iconPackageOpen = new AbstractIcon(IconKey.ICON_TREE_PACKAGE_OPEN, 32);
-        iconArchiveOpen = new AbstractIcon(IconKey.ICON_TREE_ARCHIVE_OPEN, 32);
-        iconArchive = new AbstractIcon(IconKey.ICON_TREE_ARCHIVE, 32);
-        iconPackageClosed = new AbstractIcon(IconKey.ICON_TREE_PACKAGE_CLOSED, 32);
+        iconPackageOpen = NewTheme.I().getIcon(IconKey.ICON_TREE_PACKAGE_OPEN, 32);
+        iconArchiveOpen = NewTheme.I().getIcon(IconKey.ICON_TREE_ARCHIVE_OPEN, 32);
+        iconArchive = NewTheme.I().getIcon(IconKey.ICON_TREE_ARCHIVE, 32);
+        iconPackageClosed = NewTheme.I().getIcon(IconKey.ICON_TREE_PACKAGE_CLOSED, 32);
         setClickcount(0);
         hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
@@ -276,7 +276,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();
-                Icon icon = new AbstractIcon(IconKey.ICON_WARNING, 32);
+                final Icon icon = NewTheme.I().getIcon(IconKey.ICON_WARNING, 32);
                 JDGui.help(title, msg, icon);
             }
         } else if (object instanceof DownloadLink) {
@@ -295,7 +295,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();
-                Icon icon = new AbstractIcon(IconKey.ICON_WARNING, 32);
+                final Icon icon = NewTheme.I().getIcon(IconKey.ICON_WARNING, 32);
                 JDGui.help(title, msg, icon);
             }
         }

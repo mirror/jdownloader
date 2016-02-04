@@ -2,19 +2,18 @@ package org.jdownloader.gui.views.components.packagetable.context.rename;
 
 import javax.swing.Icon;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
+
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.Files;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.http.Browser;
 
 public class SingleFilterResultTableModel extends ExtTableModel<CrawledLink> {
 
@@ -204,8 +203,7 @@ public class SingleFilterResultTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-
-                return Files.getExtension(value.getName());
+                return value.getLinkInfo().getExtension().name();
             }
         });
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_hoster()) {
