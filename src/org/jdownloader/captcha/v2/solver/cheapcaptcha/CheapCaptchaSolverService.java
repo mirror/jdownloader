@@ -7,6 +7,15 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
@@ -22,15 +31,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CHEAP_CAPTCHA;
-
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 public class CheapCaptchaSolverService extends AbstractSolverService implements ServicePanelExtender {
     private CheapCaptchaConfigInterface config;
@@ -70,7 +70,7 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
             }
 
             {
-                addHeader(getTitle(), new AbstractIcon("logo/cheapCaptcha", 32));
+                addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_CHEAPCAPTCHA, 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_paid_service());
 
                 add(new SettingsButton(new AppAction() {

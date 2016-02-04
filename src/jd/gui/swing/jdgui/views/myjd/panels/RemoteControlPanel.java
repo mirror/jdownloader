@@ -24,7 +24,7 @@ public class RemoteControlPanel extends AbstractConfigPanel {
         this.addHeader(getTitle(), getIcon());
         this.addDescription(_GUI._.RemoteControlPanel_description());
 
-        this.addHeader("Webinterface @ my.jdownloader.org", new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, 32));
+        this.addHeader("Webinterface @ my.jdownloader.org", new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
         this.addDescription(_GUI._.RemoteControlPanel_Webinterface());
         addButton("http://my.jdownloader.org?referer=JDownloader", "botty/robot_info", "<html>" + _GUI._.RemoteControlPanel_website_open().replace("\r\n", "<br>") + "</html>");
 

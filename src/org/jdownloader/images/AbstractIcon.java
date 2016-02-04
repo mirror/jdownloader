@@ -10,45 +10,35 @@ import org.appwork.swing.components.IconIdentifier;
 
 public class AbstractIcon implements Icon, IDIcon {
 
-    private String key;
+    private final String key;
 
     public String getKey() {
         return key;
     }
 
-    public void setKey(String key) {
-        this.key = key;
-        update();
-    }
-
     public int getSize() {
-
         return size;
     }
 
-    public void setSize(int size) {
-        this.size = size;
-        update();
-    }
-
-    private int     size;
-    private int     width;
-    private int     height;
-    private boolean autoDisabledIconEnabled;
+    private final int size;
+    private int       width  = -1;
+    private int       height = 1;
+    private boolean   autoDisabledIconEnabled;
 
     public AbstractIcon(String key, int size) {
         this.key = key;
         this.size = size;
-        update();
     }
 
     /**
      *
      */
-    protected void update() {
-        Icon icon = NewTheme.I().getIcon(getKey(), getSize());
-        width = icon.getIconWidth();
-        height = icon.getIconHeight();
+    protected void lazyUpdate() {
+        if (width == -1 || height == -1) {
+            final Icon icon = NewTheme.I().getIcon(getKey(), getSize());
+            width = icon.getIconWidth();
+            height = icon.getIconHeight();
+        }
     }
 
     @Override
@@ -67,6 +57,10 @@ public class AbstractIcon implements Icon, IDIcon {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         final Icon icon = NewTheme.I().getIcon(getKey(), getSize());
+        if (width == -1 || height == -1) {
+            width = icon.getIconWidth();
+            height = icon.getIconHeight();
+        }
         if (c != null && !c.isEnabled() && isAutoDisabledIconEnabled()) {
             org.jdownloader.images.NewTheme.I().getDisabledIcon(icon).paintIcon(c, g, x, y);
         } else {
@@ -76,11 +70,13 @@ public class AbstractIcon implements Icon, IDIcon {
 
     @Override
     public int getIconWidth() {
+        lazyUpdate();
         return width;
     }
 
     @Override
     public int getIconHeight() {
+        lazyUpdate();
         return height;
     }
 

@@ -11,7 +11,7 @@ public class CaptchaToogleMyJDAutoAction extends AbstractToolbarToggleAction {
     public CaptchaToogleMyJDAutoAction() {
         super(CaptchaMyJDSolver.getInstance().getService().getConfig()._getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class));
 
-        setIconKey(IconKey.ICON_MYJDOWNLOADER);
+        setIconKey(IconKey.ICON_LOGO_MYJDOWNLOADER);
 
     }
 

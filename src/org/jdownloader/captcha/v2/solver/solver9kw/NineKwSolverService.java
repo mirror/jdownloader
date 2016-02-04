@@ -30,6 +30,7 @@ import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -267,7 +268,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
     @Override
     public Icon getIcon(int size) {
-        return new AbstractIcon("logo/9kw", size);
+        return new AbstractIcon(IconKey.ICON_LOGO_9KW, size);
     }
 
     @Override
