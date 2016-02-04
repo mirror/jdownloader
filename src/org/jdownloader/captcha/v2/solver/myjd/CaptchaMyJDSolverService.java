@@ -7,6 +7,16 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
@@ -27,16 +37,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 public class CaptchaMyJDSolverService extends AbstractSolverService implements ServicePanelExtender, MyJDownloaderListener {
     private CaptchaMyJDSolverConfig config;
@@ -77,7 +77,7 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
 
                 @Override
                 public Icon getIcon() {
-                    return new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, 18);
+                    return new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 18);
                 }
 
                 @Override
@@ -168,7 +168,7 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
 
     @Override
     public Icon getIcon(int size) {
-        return new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, size);
+        return new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, size);
     }
 
     @Override

@@ -25,7 +25,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class ServicePanelMyJDCESTooltip extends PanelToolTip {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
     private JComponent        activeComponent;
@@ -48,7 +48,7 @@ public class ServicePanelMyJDCESTooltip extends PanelToolTip {
         JProgressBar progress = new JProgressBar();
         progress.setIndeterminate(true);
         panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-        JLabel header = new JLabel("My.JDownloader Captcha Solver", new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, 18), JLabel.LEFT);
+        JLabel header = new JLabel("My.JDownloader Captcha Solver", new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 18), JLabel.LEFT);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
         SwingUtils.toBold(header);
         header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -72,7 +72,7 @@ public class ServicePanelMyJDCESTooltip extends PanelToolTip {
                             // panel.setPreferredSize(null);
                             panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
 
-                            JLabel header = new JLabel("My.JDownloader Captcha Solver", new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, 18), JLabel.LEFT);
+                            JLabel header = new JLabel("My.JDownloader Captcha Solver", new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 18), JLabel.LEFT);
                             header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());

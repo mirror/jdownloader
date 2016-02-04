@@ -45,7 +45,7 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
 
     @Override
     public Icon getIcon(int size) {
-        return new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, size);
+        return new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, size);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
             // }
 
             {
-                addHeader(getTitle(), new AbstractIcon(IconKey.ICON_MYJDOWNLOADER, 32));
+                addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
                 addDescription(_GUI._.CaptchaAPIManualRemoteSolverService_getConfigPanel_description());
                 SettingsButton openMyJDownloader = new SettingsButton(new AppAction() {
                     {

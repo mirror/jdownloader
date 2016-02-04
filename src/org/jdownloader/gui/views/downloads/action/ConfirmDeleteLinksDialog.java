@@ -45,7 +45,7 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog {
 
     @Override
     public JComponent layoutDialogContent() {
-        image = NewTheme.I().getImage("botty/stop", 128);
+        image = NewTheme.I().getImage(IconKey.ICON_BOTTY_STOP, 128);
         getDialog().setContentPane(new MigPanel("ins 5,wrap 1", "[grow,fill]", "[grow,fill][]") {
 
             @Override

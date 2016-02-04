@@ -209,7 +209,7 @@ public class IconKey {
     public static final String ICON_MODEM                       = "modem";
     public static final String ICON_MONEY                       = "money";
     public static final String ICON_MORE                        = "more";
-    public static final String ICON_MYJDOWNLOADER               = "logo/myjdownloader";
+
     public static final String ICON_NETWORK_ERROR               = "network-error";
     public static final String ICON_NETWORK_IDLE                = "network-idle";
 
