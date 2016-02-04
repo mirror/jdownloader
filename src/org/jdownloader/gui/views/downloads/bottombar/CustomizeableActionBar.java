@@ -23,6 +23,12 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
+import jd.gui.swing.jdgui.JDGui;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
@@ -42,21 +48,14 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.components.SetIconInterface;
-import jd.gui.swing.components.SetLabelInterface;
-import jd.gui.swing.jdgui.JDGui;
-import net.miginfocom.swing.MigLayout;
-
 public class CustomizeableActionBar extends MigPanel implements PropertyChangeListener {
 
-    private AbstractBottomBarMenuManager manager;
+    private final AbstractBottomBarMenuManager manager;
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if ("visible".equals(evt.getPropertyName())) {
             manager.refresh();
-
         }
     }
 
@@ -69,7 +68,6 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             @Override
             public void run() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         updateGui();
@@ -77,7 +75,6 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 };
             }
         });
-
     }
 
     public void updateGui() {
@@ -86,14 +83,12 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         }
         removeAll();
         MenuContainerRoot items = prepare(manager.getMenuData());
-
         this.setLayout(new MigLayout("ins 0 0 1 0", "[]1[]1[]1[]", "[]"));
         AbstractButton ab;
         // System.out.println(this.getColConstraints(list.length));
         MenuItemData last = null;
         for (MenuItemData menudata : items.getItems()) {
             // "height 24!,aligny top"
-
             try {
                 if (!menudata.isVisible()) {
                     continue;
@@ -110,22 +105,17 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 if (menudata._getValidateException() != null) {
                     continue;
                 }
-
                 if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
                     addContainer(menudata);
                     continue;
                 } else if (menudata instanceof MenuLink) {
                     addLink(menudata);
-
-                } else if (menudata.getActionData()._isValidDataForCreatingAnAction()) {
+                } else if (menudata.getActionData() != null && menudata.getActionData()._isValidDataForCreatingAnAction()) {
                     addAction(menudata);
-
                 }
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
         revalidate();
         repaint();
@@ -141,27 +131,21 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
     private void addLink(MenuItemData menudata) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         final JComponent item = menudata.createItem();
-
         if (StringUtils.isNotEmpty(menudata.getIconKey())) {
             if (item instanceof SetIconInterface) {
                 ((SetIconInterface) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 20));
-
             }
         }
-
         if (StringUtils.isNotEmpty(menudata.getName())) {
             if (item instanceof SetLabelInterface) {
                 ((SetLabelInterface) item).setText(menudata.getName());
-
             }
         }
-
         if (menudata instanceof SelfLayoutInterface) {
             add(item, ((SelfLayoutInterface) menudata).createConstraints());
         } else {
             add(item, "height 24!");
         }
-
     }
 
     private void addAction(MenuItemData menudata) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ExtensionNotLoadedException {
@@ -177,7 +161,6 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         } else if (MenuItemData.isEmptyValue(menudata.getShortcut())) {
             action.setAccelerator(null);
         }
-
         JComponent bt = null;
         if (action instanceof SelfComponentFactoryInterface) {
             action.requestUpdate(this);
@@ -202,12 +185,10 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 add(bt, "height 24!,aligny top");
             }
         }
-
     }
 
     private void addContainer(MenuItemData menudata) {
         if (StringUtils.isEmpty(menudata.getName()) && StringUtils.isEmpty(validateIconKey(menudata.getIconKey()))) {
-
             ExtButton bt = new ExtButton(createPopupAction(menudata, getComponentCount() > 0 ? getComponent(getComponentCount() - 1) : null)) {
                 /**
                  *
@@ -221,7 +202,6 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             add(bt, "height 24!,width 12!,aligny top");
         } else {
             AppAction action = createPopupAction(menudata, null);
-
             ExtButton bt = new ExtButton(action);
             if (StringUtils.isEmpty(menudata.getName())) {
                 add(bt, "height 24!,width " + (Math.max(24, action.getSmallIcon().getIconWidth() + 6)) + "!,aligny top");
@@ -229,7 +209,6 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 add(bt, "height 24!,aligny top");
             }
         }
-
     }
 
     private String validateIconKey(String iconKey) {

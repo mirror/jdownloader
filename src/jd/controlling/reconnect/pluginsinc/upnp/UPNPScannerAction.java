@@ -7,6 +7,10 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
+import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
+
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -17,13 +21,9 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
-import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
-import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
-
 public class UPNPScannerAction extends BasicAction {
 
-    private UPNPRouterPlugin plugin;
+    private final UPNPRouterPlugin plugin;
 
     public UPNPScannerAction(UPNPRouterPlugin upnpRouterPlugin) {
         super(T._.literally_choose_router());
@@ -46,7 +46,6 @@ public class UPNPScannerAction extends BasicAction {
             }
 
             public void run() throws Exception {
-
                 final java.util.List<UpnpRouterDevice> devices = new UPNPDeviceScanner().scan();
                 if (devices.size() == 0) {
                     Dialog.getInstance().showErrorDialog(T._.UPNPRouterPlugin_run_error());
@@ -56,7 +55,6 @@ public class UPNPScannerAction extends BasicAction {
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
-
                 int ret = Dialog.getInstance().showComboDialog(0, T._.UPNPRouterPlugin_run_wizard_title(), T._.UPNPRouterPlugin_run_mesg(), devices.toArray(new UpnpRouterDevice[] {}), 0, new AbstractIcon(IconKey.ICON_LOGO_UPNP, 32), null, null, new DefaultListCellRenderer() {
 
                     private static final long serialVersionUID = 3607383089555373774L;
@@ -84,20 +82,11 @@ public class UPNPScannerAction extends BasicAction {
             }
 
         }, 0, "Looking for routers", "Wait while JDownloader is looking for router interfaces", null);
-
         try {
             Dialog.getInstance().showDialog(dialog);
-        } catch (
-
-        DialogClosedException e1)
-
-        {
+        } catch (DialogClosedException e1) {
             e1.printStackTrace();
-        } catch (
-
-        DialogCanceledException e1)
-
-        {
+        } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         }
     }

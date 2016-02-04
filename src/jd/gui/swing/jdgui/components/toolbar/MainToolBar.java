@@ -49,6 +49,21 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -77,21 +92,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.gui.swing.components.SetIconInterface;
-import jd.gui.swing.components.SetLabelInterface;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import net.miginfocom.swing.MigLayout;
 
 public class MainToolBar extends JToolBar implements MouseListener, DownloadWatchdogListener, GenericConfigEventListener<Boolean> {
 
@@ -250,7 +250,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
             } else {
                 AppAction action;
                 try {
-                    if (!mi.getActionData()._isValidDataForCreatingAnAction()) {
+                    if (mi.getActionData() == null || !mi.getActionData()._isValidDataForCreatingAnAction()) {
                         continue;
                     }
                     action = mi.createAction();
@@ -609,7 +609,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     } else {
                         add(item, "aligny center,hidemode 3");
                     }
-                } else if (menudata.getActionData()._isValidDataForCreatingAnAction()) {
+                } else if (menudata.getActionData() != null && menudata.getActionData()._isValidDataForCreatingAnAction()) {
 
                     action = menudata.createAction();
 

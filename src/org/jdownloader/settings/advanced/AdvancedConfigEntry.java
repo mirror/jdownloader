@@ -4,6 +4,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Locale;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.ConfigEntryKeywords;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
@@ -17,9 +20,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
 
 public class AdvancedConfigEntry {
 
@@ -149,7 +149,7 @@ public class AdvancedConfigEntry {
 
                             @Override
                             public String getDontShowAgainKey() {
-                                return "RestartRequiredAdvancedConfig_" + keyHandler.getStorageHandler().getConfigInterface().getClass().getSimpleName() + "." + keyHandler.getKey();
+                                return "RestartRequiredAdvancedConfig_" + getKey();
                             }
 
                         };

@@ -21,6 +21,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.plugins.AddonPanel;
+import jd.utils.JDUtilities;
+
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
@@ -57,11 +62,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.plugins.AddonPanel;
-import jd.utils.JDUtilities;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
 
@@ -650,7 +650,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             // try to search a toggle action and queue it after it.
             for (int i = mr.getItems().size() - 1; i >= 0; i--) {
                 MenuItemData mid = mr.getItems().get(i);
-                if (!mid.getActionData()._isValidDataForCreatingAnAction() || mid instanceof MenuLink) {
+                if (mid.getActionData() == null || !mid.getActionData()._isValidDataForCreatingAnAction() || mid instanceof MenuLink) {
                     continue;
                 }
                 boolean val = mid._isValidated();
