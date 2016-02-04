@@ -4,13 +4,6 @@ import java.awt.Dimension;
 
 import javax.swing.JPopupMenu;
 
-import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.updatev2.gui.LAFOptions;
-
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -20,13 +13,21 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.updatev2.gui.LAFOptions;
+
 public class LinkgrabberPropertiesHeader extends AbstractPanelHeader implements LinkCollectorListener {
 
     protected AbstractNode        current;
     private LinkgrabberProperties card;
 
     public LinkgrabberPropertiesHeader(LinkgrabberProperties loverView) {
-        super("", new AbstractIcon(IconKey.ICON_DOWNLOAD, 16));
+        super("", NewTheme.I().getIcon(IconKey.ICON_DOWNLOAD, 16));
         this.card = loverView;
         // setBackground(Color.RED);
         // setOpaque(true);
