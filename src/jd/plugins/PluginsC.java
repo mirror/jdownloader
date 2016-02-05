@@ -212,7 +212,7 @@ public abstract class PluginsC {
             final LinkOriginDetails origin = link.getOrigin();
             if (origin != null) {
                 switch (origin.getOrigin()) {
-                case CLIPBOARD:
+                case DRAG_DROP_ACTION:
                 case PASTE_LINKS_ACTION:
                     return false;
                 default:
