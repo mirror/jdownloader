@@ -49,7 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -57,6 +56,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userscloud.com" }, urls = { "https?://(www\\.)?userscloud\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class UsersCloudCom extends PluginForHost {
@@ -102,7 +102,7 @@ public class UsersCloudCom extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
-    // mods: File name and size regex, check direct link
+    // mods: heavily modified, do NOT upgrade!
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
     // captchatype: null
@@ -267,12 +267,18 @@ public class UsersCloudCom extends PluginForHost {
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "ribbon\">([^<>]+)<").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                }
-            }
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "color=\"#FFFFFF\">\\(([^<>\"]+)\\)</font>").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "\\((\\d+(\\.\\d+)? ?(KB|MB|GB))\\)").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
         }
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -1112,45 +1118,21 @@ public class UsersCloudCom extends PluginForHost {
             doFree(downloadLink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "freelink2");
             // The following code doesn't work any more
             /*
-            String dllink = checkDirectLink(downloadLink, "premlink");
-            if (dllink == null) {
-                br.setFollowRedirects(false);
-                getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
-                if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                        passCode = handlePassword(dlform, downloadLink);
-                    }
-                    checkErrors(downloadLink, true);
-                    if (dlform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    sendForm(dlform);
-                    checkErrors(downloadLink, true);
-                    dllink = getDllink();
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                handlePluginBroken(downloadLink, "dllinknofile", 3);
-            }
-            fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
-            dl.startDownload();
-            */
+             * String dllink = checkDirectLink(downloadLink, "premlink"); if (dllink == null) { br.setFollowRedirects(false);
+             * getPage(downloadLink.getDownloadURL()); dllink = getDllink(); if (dllink == null) { Form dlform =
+             * br.getFormbyProperty("name", "F1"); if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) { passCode =
+             * handlePassword(dlform, downloadLink); } checkErrors(downloadLink, true); if (dlform == null) { throw new
+             * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } sendForm(dlform); checkErrors(downloadLink, true); dllink = getDllink(); }
+             * } if (dllink == null) { logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!"); throw new
+             * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } logger.info("Final downloadlink = " + dllink +
+             * " starting the download..."); dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME,
+             * ACCOUNT_PREMIUM_MAXCHUNKS); if (dl.getConnection().getContentType().contains("html")) { if
+             * (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
+             * "Connection limit reached, please contact our support!", 5 * 60 * 1000l); }
+             * logger.warning("The final dllink seems not to be a file!"); br.followConnection(); correctBR(); checkServerErrors();
+             * handlePluginBroken(downloadLink, "dllinknofile", 3); } fixFilename(downloadLink); downloadLink.setProperty("premlink",
+             * dllink); dl.startDownload();
+             */
         }
     }
 

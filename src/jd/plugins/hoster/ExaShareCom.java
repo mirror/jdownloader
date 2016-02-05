@@ -69,6 +69,7 @@ public class ExaShareCom extends PluginForHost {
     private static final boolean VIDEOHOSTER_2                = false;
     private static final boolean VIDEOHOSTER_3                = true;
     private static final boolean SUPPORTSHTTPS                = false;
+    private final boolean        EVENTUALLY_NOT_DOWNLOADABLE  = true;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
@@ -89,7 +90,7 @@ public class ExaShareCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.2
-    // mods: modified, attention if you upgrade XFS!!
+    // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -139,13 +140,14 @@ public class ExaShareCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (!br.getURL().matches("https?://(www\\.)?exashare\\.com/((vid)?embed\\-)?[a-z0-9]{12}") || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|class=\"error\\-container\")").matches()) {
+        if (!br.getURL().matches("https?://(www\\.)?exashare\\.com/((vid)?embed\\-)?[a-z0-9]{12}") || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|class=\"error\\-container\"|File Not Found<|The file you were looking for could not be found)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -209,6 +211,9 @@ public class ExaShareCom extends PluginForHost {
         }
         if (fileInfo[0] == null) {
             fileInfo[0] = info.getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "id=\"title\">([^<>\"]+)<").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -327,6 +332,9 @@ public class ExaShareCom extends PluginForHost {
                 dlForm = br.getFormbyKey("op");
             }
             if (dlForm == null) {
+                if (EVENTUALLY_NOT_DOWNLOADABLE) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // how many forms deep do you want to try.
@@ -441,6 +449,9 @@ public class ExaShareCom extends PluginForHost {
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                    if (EVENTUALLY_NOT_DOWNLOADABLE) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    }
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {

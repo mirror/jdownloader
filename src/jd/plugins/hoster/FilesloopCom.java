@@ -171,9 +171,9 @@ public class FilesloopCom extends PluginForHost {
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            /* request creation of downloadlink */
             br.setFollowRedirects(true);
-            /* Make sure that the file exists - unnecessary step in my opinion but admin wanted to have it implemented this way. */
+            /* request creation of downloadlink */
+            /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
             this.getAPISafe(DOMAIN + "exists?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
             /* Create downloadlink */
             this.getAPISafe(DOMAIN + "filelink?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -235,7 +235,6 @@ public class FilesloopCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();

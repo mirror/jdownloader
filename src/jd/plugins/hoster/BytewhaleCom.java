@@ -60,7 +60,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bytewhale.com" }, urls = { "https?://(www\\.)?bytewhale\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bytewhale.com" }, urls = { "https?://(?:www\\.)?bytewhale\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class BytewhaleCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -285,6 +285,9 @@ public class BytewhaleCom extends PluginForHost {
         }
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, ">Download File:</h2>[\t\n\r ]+<span style=\"[^<>\"]+\">([^<>\"]*?) \\[\\d+(?:\\.\\d+)? ?(?:KB|MB|GB)\\]</span>").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "alt=\"Download file ([^<>\"]*?)\"").getMatch(0);
         }
         if (fileInfo[0] == null) {
             /* For premiumonly files */

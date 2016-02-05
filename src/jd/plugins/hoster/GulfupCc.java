@@ -44,7 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
@@ -55,7 +54,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gulfup.cc" }, urls = { "https?://(www\\.)?gulfup\\.cc/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class GulfupCc extends PluginForHost {
+public class GulfupCc extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -146,7 +145,7 @@ public class GulfupCc extends PluginForHost {
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
      * captchatype: null 4dignum solvemedia recaptcha<br />
-     * other:<br />
+     * other: has cloudflare on /login.html page<br />
      */
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -810,34 +809,34 @@ public class GulfupCc extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
+    protected void getPage(final String page) throws Exception {
         getPage(br, page, true);
     }
 
     private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
-        br.getPage(page);
+        super.getPage(br, page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
+    protected void postPage(final String page, final String postdata) throws Exception {
         postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
-        br.postPage(page, postdata);
+        super.postPage(br, page, postdata);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void submitForm(final Form form) throws Exception {
+    protected void submitForm(final Form form) throws Exception {
         submitForm(br, form, true);
     }
 
     private void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        br.submitForm(form);
+        super.submitForm(br, form);
         if (correctBr) {
             correctBR();
         }
@@ -877,22 +876,6 @@ public class GulfupCc extends PluginForHost {
         wait -= passedTime;
         if (wait > 0) {
             sleep(wait * 1000l, downloadLink);
-        }
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
         }
     }
 
