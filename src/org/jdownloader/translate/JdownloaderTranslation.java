@@ -469,6 +469,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Paste Links Action" })
     String LinkSource_PASTE_LINKS_ACTION();
 
+    @Default(lngs = { "en" }, values = { "Drag&Drop Action" })
+    String LinkSource_DRAG_DROP_ACTION();
+
     @Default(lngs = { "en" }, values = { "Downloaded Container" })
     String LinkSource_DOWNLOADED_CONTAINER();
 

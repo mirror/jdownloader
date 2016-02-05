@@ -24,7 +24,7 @@ public class LinkGrabberTableTransferHandler extends PackageControllerTableTrans
 
     @Override
     protected boolean importTransferable(TransferSupport support) {
-        ClipboardMonitoring.processSupportedTransferData(support.getTransferable(), support.isDrop() ? LinkOrigin.PASTE_LINKS_ACTION : LinkOrigin.CLIPBOARD);
+        ClipboardMonitoring.processSupportedTransferData(support.getTransferable(), support.isDrop() ? LinkOrigin.DRAG_DROP_ACTION : LinkOrigin.PASTE_LINKS_ACTION);
         return true;
     }
 
