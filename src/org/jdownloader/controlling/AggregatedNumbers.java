@@ -18,34 +18,46 @@ public class AggregatedNumbers {
 
     public String getFinishedString(boolean inclDisabled) {
         long ret = downloadsFinished;
-        if (inclDisabled) ret += disabledDownloadsFinished;
+        if (inclDisabled) {
+            ret += disabledDownloadsFinished;
+        }
         return ret + "";
     }
 
     public String getSkippedString(boolean inclDisabled) {
         long ret = downloadsSkipped;
-        if (inclDisabled) ret += disabledDownloadsSkipped;
+        if (inclDisabled) {
+            ret += disabledDownloadsSkipped;
+        }
         return ret + "";
     }
 
     public String getFailedString(boolean inclDisabled) {
         long ret = downloadsFailed;
-        if (inclDisabled) ret += disabledDownloadsFailed;
+        if (inclDisabled) {
+            ret += disabledDownloadsFailed;
+        }
         return ret + "";
     }
 
     public String getTotalBytesString(boolean inclDisabled) {
-        if (inclDisabled) return format(totalBytes + disabledTotalBytes);
+        if (inclDisabled) {
+            return format(totalBytes + disabledTotalBytes);
+        }
         return format(totalBytes);
     }
 
     private String format(long totalBytes2) {
-        if (totalBytes2 < 0) { return _GUI._.lit_unknown(); }
+        if (totalBytes2 < 0) {
+            return _GUI._.lit_unknown();
+        }
         return SizeFormatter.formatBytes(totalBytes2);
     }
 
     public String getLoadedBytesString(boolean inclDisabled) {
-        if (inclDisabled) format(loadedBytes + disabledLoadedBytes);
+        if (inclDisabled) {
+            format(loadedBytes + disabledLoadedBytes);
+        }
         return format(loadedBytes);
     }
 
@@ -99,7 +111,7 @@ public class AggregatedNumbers {
         return disabledLoadedBytes;
     }
 
-    public AggregatedNumbers(SelectionInfo<FilePackage, DownloadLink> selection) {
+    public AggregatedNumbers(final SelectionInfo<FilePackage, DownloadLink> selection) {
         totalBytes = 0l;
         disabledTotalBytes = 0l;
         disabledLoadedBytes = 0l;
@@ -117,7 +129,9 @@ public class AggregatedNumbers {
         disabledDownloadsFailed = 0l;
         disabledDownloadsSkipped = 0l;
         for (DownloadLink dl : selection.getChildren()) {
-            if (dl == null) continue;
+            if (dl == null) {
+                continue;
+            }
 
             if (dl.isEnabled()) {
                 FinalLinkState state = dl.getFinalLinkState();

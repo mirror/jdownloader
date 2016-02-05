@@ -16,7 +16,6 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -99,15 +98,15 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
 
-        @Override
-        public void killQueue() {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
-            /*
-             * this queue can't be killed
-             */
-        }
+                                    @Override
+                                    public void killQueue() {
+                                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
+                                        /*
+                                         * this queue can't be killed
+                                         */
+                                    }
 
-    };
+                                };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
@@ -937,7 +936,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     public SelectionInfo<PackageType, ChildType> getSelectionInfo() {
         final long version = getBackendChanged();
-        PackageControllerSelectionInfo<PackageType, ChildType> lSelectionInfo = selectionInfo;
+        final PackageControllerSelectionInfo<PackageType, ChildType> lSelectionInfo = selectionInfo;
         if (lSelectionInfo != null && lSelectionInfo.getBackendVersion() == version) {
             return lSelectionInfo;
         }
