@@ -22,6 +22,11 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
+import jd.nutils.Formatter;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -41,11 +46,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GeneralSettings.DeleteContainerAction;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.http.Browser;
-import jd.nutils.Formatter;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -213,6 +213,7 @@ public abstract class PluginsC {
             if (origin != null) {
                 switch (origin.getOrigin()) {
                 case CLIPBOARD:
+                case PASTE_LINKS_ACTION:
                     return false;
                 default:
                     break;

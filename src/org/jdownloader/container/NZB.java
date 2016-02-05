@@ -44,7 +44,7 @@ public class NZB extends PluginsC {
         try {
             fileInputStream = new FileInputStream(nzbFile);
             final String nzbPassword = new Regex(nzbFile.getAbsolutePath(), "\\{\\{(.*?)\\}\\}\\.nzb$").getMatch(0);
-            final DefaultHandler handler = new NZBSAXHandler(downloadLinks);
+            final NZBSAXHandler handler = new NZBSAXHandler(downloadLinks);
             final SAXParserFactory factory = SAXParserFactory.newInstance();
             final SAXParser saxParser = factory.newSAXParser();
             try {
@@ -52,6 +52,8 @@ public class NZB extends PluginsC {
             } catch (final Throwable e) {
                 // parser can throw exceptions (eg trailing chars)
                 logger.log(e);
+            } finally {
+                handler.finishCurrentFile();
             }
             final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(downloadLinks.size());
             final ArchiveInfo archiveInfo;
@@ -93,15 +95,15 @@ public class NZB extends PluginsC {
         private boolean                             isyEnc            = false;
         private final Comparator<UsenetFileSegment> segmentComparator = new Comparator<UsenetFileSegment>() {
 
-                                                                          public int compare(int x, int y) {
-                                                                              return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                          }
+            public int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
 
-                                                                          @Override
-                                                                          public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
-                                                                              return compare(o1.getIndex(), o2.getIndex());
-                                                                          }
-                                                                      };
+            @Override
+            public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
+                return compare(o1.getIndex(), o2.getIndex());
+            }
+        };
 
         private NZBSAXHandler(ArrayList<DownloadLink> downloadLinks) {
             this.downloadLinks = downloadLinks;
@@ -113,83 +115,88 @@ public class NZB extends PluginsC {
             return new InputSource(new StringReader(""));
         }
 
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            if ("file".equalsIgnoreCase(qName)) {
-                if (currentFile != null) {
-                    final ArrayList<UsenetFileSegment> segments = currentFile.getSegments();
-                    Collections.sort(segments, segmentComparator);
-                    final BitSet segmentSet = new BitSet();
-                    long estimatedFileSize = 0;
+        public void finishCurrentFile() {
+            if (currentFile != null) {
+                final ArrayList<UsenetFileSegment> segments = currentFile.getSegments();
+                Collections.sort(segments, segmentComparator);
+                final BitSet segmentSet = new BitSet();
+                long estimatedFileSize = 0;
+                for (final UsenetFileSegment segment : segments) {
+                    final int index = segment.getIndex();
+                    if (!segmentSet.get(index)) {
+                        segmentSet.set(index);
+                        estimatedFileSize += Math.max(0, segment.getSize());
+                    }
+                }
+                if (isyEnc) {
+                    segmentSet.clear();
+                    final int numOfSegments = segmentSet.length();
+                    final long estimatedFileSizeTemp = estimatedFileSize;
+                    estimatedFileSize = 0;
+                    long processedSize = 0;
                     for (final UsenetFileSegment segment : segments) {
                         final int index = segment.getIndex();
                         if (!segmentSet.get(index)) {
                             segmentSet.set(index);
-                            estimatedFileSize += Math.max(0, segment.getSize());
-                        }
-                    }
-                    if (isyEnc) {
-                        segmentSet.clear();
-                        final int numOfSegments = segmentSet.length();
-                        final long estimatedFileSizeTemp = estimatedFileSize;
-                        estimatedFileSize = 0;
-                        long processedSize = 0;
-                        for (final UsenetFileSegment segment : segments) {
-                            final int index = segment.getIndex();
-                            if (!segmentSet.get(index)) {
-                                segmentSet.set(index);
-                                long estimatedSegmentSize = segment.getSize();
-                                estimatedSegmentSize -= ("=ybegin part=" + index + " total=" + numOfSegments + " line=... size=" + estimatedFileSizeTemp + " name=" + currentFile.getName() + "\r\n").length();
-                                if (index == numOfSegments) {
-                                    estimatedSegmentSize -= ("=yend size=" + estimatedSegmentSize + " part=" + index + " pcrc32=........ crc32=........\r\n").length();
-                                } else {
-                                    estimatedSegmentSize -= ("=yend size=" + estimatedSegmentSize + " part=" + index + " pcrc32=........\r\n").length();
-                                }
-                                estimatedSegmentSize -= ("=ypart begin=" + processedSize + " end=" + processedSize + estimatedSegmentSize + "\r\n").length();
-                                estimatedSegmentSize -= (estimatedSegmentSize / 128) * 2;// CRLF for each line
-                                estimatedSegmentSize = (long) (estimatedSegmentSize / 1.015f); // ~ 1.5% overhead because of yEnc
-                                processedSize += estimatedSegmentSize;
+                            long estimatedSegmentSize = segment.getSize();
+                            estimatedSegmentSize -= ("=ybegin part=" + index + " total=" + numOfSegments + " line=... size=" + estimatedFileSizeTemp + " name=" + currentFile.getName() + "\r\n").length();
+                            if (index == numOfSegments) {
+                                estimatedSegmentSize -= ("=yend size=" + estimatedSegmentSize + " part=" + index + " pcrc32=........ crc32=........\r\n").length();
+                            } else {
+                                estimatedSegmentSize -= ("=yend size=" + estimatedSegmentSize + " part=" + index + " pcrc32=........\r\n").length();
                             }
-                        }
-                        estimatedFileSize = processedSize;
-                    }
-                    if (currentFile.getSize() != -1) {
-                        estimatedFileSize = Math.min(estimatedFileSize, currentFile.getSize());
-                        if (estimatedFileSize != currentFile.getSize()) {
-                            currentFile.setSize(-1);
+                            estimatedSegmentSize -= ("=ypart begin=" + processedSize + " end=" + processedSize + estimatedSegmentSize + "\r\n").length();
+                            estimatedSegmentSize -= (estimatedSegmentSize / 128) * 2;// CRLF for each line
+                            estimatedSegmentSize = (long) (estimatedSegmentSize / 1.015f); // ~ 1.5% overhead because of yEnc
+                            processedSize += estimatedSegmentSize;
                         }
                     }
-                    final String usenetURL = "usenet://" + currentFile.getName() + "|" + currentFile.getNumSegments() + "|" + date;
-                    final DownloadLink downloadLink = new DownloadLink(null, currentFile.getName(), "usenet", usenetURL, true);
-                    downloadLink.setUrlProtection(UrlProtection.PROTECTED_CONTAINER);
-                    if (estimatedFileSize > 0) {
-                        downloadLink.setDownloadSize(estimatedFileSize);
+                    estimatedFileSize = processedSize;
+                }
+                if (currentFile.getSize() != -1) {
+                    estimatedFileSize = Math.min(estimatedFileSize, currentFile.getSize());
+                    if (estimatedFileSize != currentFile.getSize()) {
+                        currentFile.setSize(-1);
                     }
-                    // check for missing segments
-                    final int maxSegments = Math.max(currentFile.getNumSegments(), segmentSet.length() - 1);
-                    for (int i = 1; i <= maxSegments; i++) {
-                        if (!segmentSet.get(i)) {
-                            logger.info(currentFile.getName() + " is missing segment " + i);
-                            downloadLink.setProperty("incomplete", Boolean.TRUE);
-                            downloadLink.setAvailableStatus(AvailableStatus.FALSE);
-                            break;
-                        }
-                    }
-                    try {
-                        // compress the jsonString with gzip and encode as base64
-                        currentFile._write(downloadLink);
-                    } catch (final IOException e) {
-                        logger.info("Exception for " + currentFile.getName());
-                        logger.log(e);
+                }
+                final String usenetURL = "usenet://" + currentFile.getName() + "|" + currentFile.getNumSegments() + "|" + date;
+                final DownloadLink downloadLink = new DownloadLink(null, currentFile.getName(), "usenet", usenetURL, true);
+                downloadLink.setUrlProtection(UrlProtection.PROTECTED_CONTAINER);
+                if (estimatedFileSize > 0) {
+                    downloadLink.setDownloadSize(estimatedFileSize);
+                }
+                // check for missing segments
+                final int maxSegments = Math.max(currentFile.getNumSegments(), segmentSet.length() - 1);
+                for (int i = 1; i <= maxSegments; i++) {
+                    if (!segmentSet.get(i)) {
+                        logger.info(currentFile.getName() + " is missing segment " + i);
                         downloadLink.setProperty("incomplete", Boolean.TRUE);
                         downloadLink.setAvailableStatus(AvailableStatus.FALSE);
+                        break;
                     }
-                    downloadLinks.add(downloadLink);
                 }
+                try {
+                    // compress the jsonString with gzip and encode as base64
+                    currentFile._write(downloadLink);
+                } catch (final IOException e) {
+                    logger.info("Exception for " + currentFile.getName());
+                    logger.log(e);
+                    downloadLink.setProperty("incomplete", Boolean.TRUE);
+                    downloadLink.setAvailableStatus(AvailableStatus.FALSE);
+                }
+                downloadLinks.add(downloadLink);
+                currentFile = null;
+            }
+        }
+
+        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            if ("file".equalsIgnoreCase(qName)) {
+                finishCurrentFile();
                 currentFile = new UsenetFile();
                 date = attributes.getValue("date");
                 final String subject = attributes.getValue("subject");
                 // XXXXX - "Filename.jpg" [XX/XX] 52,44 MB yEnc (1/41)
-                String nameBySubject = new Regex(subject, "( |^)\"(.*?)\" ").getMatch(1);
+                String nameBySubject = new Regex(subject, "( |^)\"([^\"]*?\\.[a-z0-9]{2,4})\"").getMatch(1);
                 if (nameBySubject == null) {
                     // XXX - NNNNNNNN - XXX XXX - NNNNNN - [0001 of 0100] - XX - 100.52 Kb - Filename.jpg (1/1)
                     nameBySubject = new Regex(subject, "(.+ |^)(.*?) \\(1/\\d+").getMatch(1);
