@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 public class CompiledRegexFilter extends RegexFilter {
 
-    private Pattern pattern;
+    private final Pattern pattern;
 
     public CompiledRegexFilter(RegexFilter filter) {
         super(filter.enabled, filter.getMatchType(), filter.getRegex(), filter.isUseRegex());
@@ -16,18 +16,25 @@ public class CompiledRegexFilter extends RegexFilter {
     }
 
     public boolean matches(String string) {
-
+        final boolean ret;
         switch (getMatchType()) {
         case CONTAINS:
-            return pattern.matcher(string).find();
+            ret = pattern.matcher(string).find();
+            break;
         case EQUALS:
-            return pattern.matcher(string).matches();
+            ret = pattern.matcher(string).matches();
+            break;
         case CONTAINS_NOT:
-            return !pattern.matcher(string).find();
+            ret = !pattern.matcher(string).find();
+            break;
         case EQUALS_NOT:
-            return !pattern.matcher(string).matches();
+            ret = !pattern.matcher(string).matches();
+            break;
+        default:
+            ret = false;
+            break;
         }
-        return false;
+        return ret;
 
     }
 }

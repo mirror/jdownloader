@@ -232,7 +232,7 @@ public class RuleWrapper<T extends FilterRule> {
             if (dlLink == null || link.gethPlugin() == null) {
                 throw new NoDownloadLinkException();
             } else {
-                final String host = dlLink.getHost();
+                final String host = dlLink.getServiceHost();
                 switch (hosterRule.getMatchType()) {
                 case CONTAINS:
                 case EQUALS:
@@ -247,12 +247,13 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkSource(CrawledLink link) {
-        if (getSourceRule() != null) {
+        final CompiledRegexFilter sourceRule = getSourceRule();
+        if (sourceRule != null) {
             String[] sources = link.getSourceUrls();
             int i = 1;
-            String pattern = getSourceRule().getPattern().pattern();
-            boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
-            boolean inverted = pattern.startsWith("-");
+            final String pattern = sourceRule.getPattern().pattern();
+            final boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
+            final boolean inverted = pattern.startsWith("-");
             if (sources == null || sources.length == 0) {
                 /* the first link never has sourceURLs */
                 sources = new String[2];
@@ -263,19 +264,19 @@ public class RuleWrapper<T extends FilterRule> {
                 }
             }
             for (int j = inverted ? 0 : sources.length - 1; (inverted ? (j < sources.length) : (j >= 0)); j = (inverted ? (j + 1) : (j - 1))) {
-                String url = sources[j];
+                final String url = sources[j];
                 if (url == null) {
                     continue;
                 }
-                String toMatch = indexed ? (inverted ? "-" : "") + (i++) + ". " + url : url;
-                if (getSourceRule().matches(toMatch)) {
+                final String toMatch = indexed ? (inverted ? "-" : "") + (i++) + ". " + url : url;
+                if (sourceRule.matches(toMatch)) {
                     return true;
                 } else if (indexed) {
                     // for equals matchtypes, we need to ignore the index
-                    switch (getSourceRule().getMatchType()) {
+                    switch (sourceRule.getMatchType()) {
                     case EQUALS:
                     case EQUALS_NOT:
-                        if (getSourceRule().matches(url)) {
+                        if (sourceRule.matches(url)) {
                             return true;
                         }
                     default:
