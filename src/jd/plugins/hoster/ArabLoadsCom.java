@@ -73,6 +73,7 @@ public class ArabLoadsCom extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
+    private static final boolean SUPPORTS_AVAILABLECHECK_ALT  = true;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(10);
     // don't touch the following!
@@ -82,7 +83,7 @@ public class ArabLoadsCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.5
-    // mods: scanInfo[Added another filesize RegEx]
+    // mods: scanInfo[Added another filesize RegEx] NEXT TIME THIS PLUGIN FAILS UPDATE ITS XFS VERSION!!!
     // non account: chunks * maxdls
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
@@ -148,8 +149,10 @@ public class ArabLoadsCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        Browser altbr = null;
         br.setFollowRedirects(true);
         correctDownloadLink(link);
         prepBrowser(br);
@@ -165,6 +168,7 @@ public class ArabLoadsCom extends PluginForHost {
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
             return AvailableStatus.UNCHECKABLE;
         }
+        altbr = this.br.cloneBrowser();
         final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
@@ -180,6 +184,11 @@ public class ArabLoadsCom extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
+        if (fileInfo[1] == null && SUPPORTS_AVAILABLECHECK_ALT) {
+            /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
+            logger.info("Filesize not available, trying altAvailablecheck");
+            fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
+        }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
@@ -220,15 +229,26 @@ public class ArabLoadsCom extends PluginForHost {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                }
+                // if (fileInfo[1] == null) {
+                // fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                // }
             }
         }
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
+        String filesize = null;
+        try {
+            br.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()));
+            filesize = br.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+        } catch (final Throwable e) {
+        }
+        return filesize;
     }
 
     @Override

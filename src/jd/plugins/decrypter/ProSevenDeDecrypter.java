@@ -67,8 +67,7 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
         }
         fpName = Encoding.htmlDecode(fpName.trim());
         if (json == null || date == null) {
-            /* Probably this is not a video */
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            /* Probably this is not a video - return nothing */
             return decryptedLinks;
         }
         final DecimalFormat df = new DecimalFormat("00");

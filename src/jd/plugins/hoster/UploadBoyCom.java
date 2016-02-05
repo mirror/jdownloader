@@ -160,12 +160,16 @@ public class UploadBoyCom extends antiDDoSForHost {
         return prepBr;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", getRef(link));
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|The file was removed by|Reason for deletion:)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!correctedBR.contains("value=\"download1\"")) {
+            /* No downloadform --> Offline e.g. http://uploadboy.com/0p261ko2dkga.html */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -227,6 +231,9 @@ public class UploadBoyCom extends antiDDoSForHost {
                     }
                 }
             }
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<h3>Downloading([^<>\"]+)</h3>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -819,26 +826,19 @@ public class UploadBoyCom extends antiDDoSForHost {
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
         }
-        if (expire == null || !ai.isExpired()) {
+        final boolean is_free = new Regex(correctedBR, ">User Type</small>[\t\n\r ]*?<h1>Free").matches();
+        if ((expire == null || !ai.isExpired()) && !is_free) {
             ai.setStatus("Premium Account");
-            try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
+            maxPrem.set(1);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
         } else {
             ai.setStatus("Free Account");
-            try {
-                maxPrem.set(2);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
+            maxPrem.set(2);
+            // free accounts can still have captcha.
+            totalMaxSimultanFreeDownload.set(maxPrem.get());
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
         }
         return ai;
     }
@@ -882,6 +882,9 @@ public class UploadBoyCom extends antiDDoSForHost {
                 // check form for login captcha crap.
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
+                loginform.remove(null);
+                /* Wait or site will show errormessage "Wrong captcha" */
+                Thread.sleep(5000l);
                 // end of check form for login captcha crap.
                 submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
@@ -899,6 +902,7 @@ public class UploadBoyCom extends antiDDoSForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");

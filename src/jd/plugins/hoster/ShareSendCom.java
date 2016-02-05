@@ -44,15 +44,21 @@ public class ShareSendCom extends PluginForHost {
 
     private static final String NOCHUNKS = "NOCHUNKS";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 401, 500 });
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 \\- Not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getHttpConnection().getResponseCode() != 200 || br.containsHTML("404 \\- Not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("class=\"filename\">[\t\n\r ]+<div>([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex("class=\"filesize\">([^<>\"]*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -62,11 +68,15 @@ public class ShareSendCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("\"(https?://[a-z0-9\\-_]+\\.sharesend\\.com/download\\?[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.htmlDecode(dllink);
         /* Fix dllink */
         final String ctype = new Regex(dllink, "content_type=([^<>\"]*?)&").getMatch(0);
-        if (ctype != null) dllink = dllink.replace(ctype, Encoding.urlEncode(ctype));
+        if (ctype != null) {
+            dllink = dllink.replace(ctype, Encoding.urlEncode(ctype));
+        }
 
         /* Waittime is skippable */
         // final String waittime = br.getRegex("<span>(\\d+)</span> seconds</p>").getMatch(0);
@@ -75,19 +85,25 @@ public class ShareSendCom extends PluginForHost {
         // sleep(wait * 1001l, downloadLink);
 
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             /* Usually happens when we try with too many connections (refering to simultan downloads) */
-            if (br.containsHTML("\"error_code\": 2")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (br.containsHTML("\"error_code\": 2")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */

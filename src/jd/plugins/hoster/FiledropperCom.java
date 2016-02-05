@@ -45,7 +45,23 @@ public class FiledropperCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("ISO-8859-1");
+        br.getPage(downloadLink.getDownloadURL());
+        String filename = br.getRegex("File Details:.*?Filename: (.*?) <br>").getMatch(0);
+        String filesize = br.getRegex("File Details:.*?Size: (.*?), Type:.*?<br>").getMatch(0);
+        if (!(filename == null || filesize == null)) {
+            filename = Encoding.htmlDecode(filename);
+            downloadLink.setName(filename);
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")) / 1024);
+            return AvailableStatus.TRUE;
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
@@ -84,22 +100,6 @@ public class FiledropperCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("ISO-8859-1");
-        br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("File Details:.*?Filename: (.*?) <br>").getMatch(0);
-        String filesize = br.getRegex("File Details:.*?Size: (.*?), Type:.*?<br>").getMatch(0);
-        if (!(filename == null || filesize == null)) {
-            filename = Encoding.htmlDecode(filename);
-            downloadLink.setName(filename);
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")) / 1024);
-            return AvailableStatus.TRUE;
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
