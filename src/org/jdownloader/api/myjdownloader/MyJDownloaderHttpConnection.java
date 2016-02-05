@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,6 +58,29 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     private final LogSource                                                 logger;
 
     private static final HashMap<String, List<MyJDownloaderHttpConnection>> CONNECTIONS    = new HashMap<String, List<MyJDownloaderHttpConnection>>();
+    private static final HashMap<String, KeyPair>                           RSAKEYPAIRS    = new HashMap<String, KeyPair>();
+
+    public KeyPair getRSAKeyPair() {
+        final String token = getRequestConnectToken();
+        if (token != null) {
+            KeyPair keyPair = null;
+            synchronized (RSAKEYPAIRS) {
+                keyPair = RSAKEYPAIRS.get(token);
+                if (keyPair == null) {
+                    try {
+                        final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+                        keyPairGenerator.initialize(2048);
+                        keyPair = keyPairGenerator.genKeyPair();
+                        RSAKEYPAIRS.put(token, keyPair);
+                    } catch (final Throwable e) {
+                        getLogger().log(e);
+                    }
+                }
+            }
+            return keyPair;
+        }
+        return null;
+    }
 
     public static List<MyJDownloaderHttpConnection> getConnectionsByToken(final String connectToken) {
         synchronized (CONNECTIONS) {
@@ -65,12 +90,16 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     public static MyJDownloaderHttpConnection getMyJDownloaderHttpConnection(RemoteAPIRequest request) {
         if (request instanceof SessionRemoteAPIRequest<?>) {
-            Object session = ((SessionRemoteAPIRequest<?>) request).getSession();
+            final Object session = ((SessionRemoteAPIRequest<?>) request).getSession();
             if (session != null && session instanceof MyJDownloaderAPISession) {
                 return ((MyJDownloaderAPISession) session).getConnection();
             }
         }
         return null;
+    }
+
+    public LogSource getLogger() {
+        return logger;
     }
 
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {

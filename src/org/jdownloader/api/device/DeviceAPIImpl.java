@@ -1,6 +1,9 @@
 package org.jdownloader.api.device;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,16 +11,18 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IP;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectServer;
+import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfo;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
 
 public class DeviceAPIImpl implements DeviceAPI {
 
     @Override
-    public DirectConnectionInfos getDirectConnectionInfos(RemoteAPIRequest request) {
+    public DirectConnectionInfos getDirectConnectionInfos(final RemoteAPIRequest request) {
         final MyJDownloaderDirectServer directServer = MyJDownloaderController.getInstance().getConnectThread().getDirectServer();
         final DirectConnectionInfos ret = new DirectConnectionInfos();
         if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) {
@@ -55,6 +60,26 @@ public class DeviceAPIImpl implements DeviceAPI {
     @Override
     public boolean ping() {
         return true;
+    }
+
+    @Override
+    public String getSessionPublicKey(RemoteAPIRequest request) {
+        final MyJDownloaderHttpConnection connection = MyJDownloaderHttpConnection.getMyJDownloaderHttpConnection(request);
+        if (connection != null) {
+            final KeyPair keyPair = connection.getRSAKeyPair();
+            if (keyPair != null) {
+                try {
+                    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    final Base64OutputStream b64 = new Base64OutputStream(bos);
+                    b64.write(keyPair.getPublic().getEncoded());
+                    b64.close();
+                    return bos.toString("UTF-8");
+                } catch (IOException e) {
+                    connection.getLogger().log(e);
+                }
+            }
+        }
+        return null;
     }
 
 }

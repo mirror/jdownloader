@@ -8,10 +8,12 @@ import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
 
 @ApiNamespace("device")
 public interface DeviceAPI extends RemoteAPIInterface {
-    
+
     public boolean ping();
-    
+
     @AllowNonStorableObjects
     public DirectConnectionInfos getDirectConnectionInfos(RemoteAPIRequest request);
-    
+
+    public String getSessionPublicKey(RemoteAPIRequest request);
+
 }
