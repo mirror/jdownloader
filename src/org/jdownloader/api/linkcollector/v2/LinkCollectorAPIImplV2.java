@@ -30,6 +30,7 @@ import jd.plugins.DownloadLink;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
@@ -317,6 +318,29 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         add(query);
     }
 
+    private static List<File> processDataURLs(final AddLinksQueryStorable query) {
+        final List<File> ret = new ArrayList<File>();
+        final String[] dataURLs = query.getDataURLs();
+        if (dataURLs != null) {
+            for (final String dataURL : dataURLs) {
+                final String extension = new Regex(dataURL, "data:application/([a-z0-9A-Z]{1,4})").getMatch(0);
+                if (extension != null) {
+                    try {
+                        final byte[] write = IO.readStream(-1, getInputStream(dataURL));
+                        final File tmp = Application.getTempResource("linkcollectorAPI" + System.nanoTime() + "." + extension);
+                        IO.writeToFile(tmp, write);
+                        ret.add(tmp);
+                    } catch (final IOException e) {
+                        LogController.getInstance().getLogger(LinkCollectorAPIImplV2.class.getName()).log(e);
+                    }
+                }
+            }
+            // clear reference
+            query.setDataURLs(null);
+        }
+        return ret;
+    }
+
     public static void add(final AddLinksQueryStorable query) {
         Priority p = Priority.DEFAULT;
         try {
@@ -324,13 +348,28 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         } catch (Throwable ignore) {
         }
         final Priority fp = p;
-        LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null/* add useragent? */), query.getLinks());
-        HashSet<String> extPws = null;
-        if (StringUtils.isNotEmpty(query.getExtractPassword())) {
-            extPws = new HashSet<String>();
-            extPws.add(query.getExtractPassword());
+        final StringBuilder sb = new StringBuilder();
+        if (query.getLinks() != null) {
+            sb.append(query.getLinks());
+            query.setLinks(null);
         }
-        final HashSet<String> finalExtPws = extPws;
+        final List<File> files = processDataURLs(query);
+        if (files != null) {
+            for (final File file : files) {
+                if (sb.length() > 0) {
+                    sb.append("\r\n");
+                }
+                sb.append(file.toURI().toString());
+            }
+        }
+        final LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null/* add useragent? */), sb.toString());
+        final HashSet<String> finalExtPws;
+        if (StringUtils.isNotEmpty(query.getExtractPassword())) {
+            finalExtPws = new HashSet<String>();
+            finalExtPws.add(query.getExtractPassword());
+        } else {
+            finalExtPws = null;
+        }
         final BooleanStatus finalExtractStatus = BooleanStatus.convert(query.isAutoExtract());
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
