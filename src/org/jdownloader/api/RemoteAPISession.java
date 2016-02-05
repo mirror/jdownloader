@@ -6,14 +6,13 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class RemoteAPISession implements HttpSession {
 
-    private boolean                                      alive      = true;
-    private String                                       sessionID  = null;
-    private HttpSessionController<? extends HttpSession> controller = null;
+    private boolean                                            alive = true;
+    private final String                                       sessionID;
+    private final HttpSessionController<? extends HttpSession> controller;
 
     protected RemoteAPISession(HttpSessionController<? extends HttpSession> controller) {
         this.sessionID = "" + new UniqueAlltimeID() + ("_" + System.currentTimeMillis()).hashCode() + System.currentTimeMillis();
         this.controller = controller;
-
     }
 
     // public HttpSessionController<? extends HttpSession> _getSessionController() {
