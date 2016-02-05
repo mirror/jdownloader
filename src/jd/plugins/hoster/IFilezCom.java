@@ -19,7 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -28,6 +30,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -37,18 +40,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "UNUSED_REGEX_BHAHAHHAHAHAHA", "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" }, flags = { 0, 2 })
 public class IFilezCom extends PluginForHost {
 
-    private static final String  CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
-    private static final String  MAINPAGE             = "http://depfile.com/";
-    private static Object        LOCK                 = new Object();
-    private static final String  ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
-    private static final String  ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
-    private static AtomicInteger maxPrem              = new AtomicInteger(1);
+    private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
+    private static final String MAINPAGE             = "http://depfile.com/";
+    private static Object       LOCK                 = new Object();
+    private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
+    private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
 
     public IFilezCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -118,11 +117,6 @@ public class IFilezCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
-    }
-
-    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
@@ -130,14 +124,7 @@ public class IFilezCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML(ONLY4PREMIUM)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT), PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         String verifycode = br.getRegex("name='vvcid\' value=\'(\\d+)\'").getMatch(0);
         if (verifycode == null) {
@@ -231,10 +218,10 @@ public class IFilezCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.containsHTML("/myspace/space/premium")) {
-                    account.setProperty("freeacc", true);
+                if (isAccountPremium() || isAccountAffiliate()) {
+                    account.setType(AccountType.PREMIUM);
                 } else {
-                    account.setProperty("freeacc", false);
+                    account.setType(AccountType.FREE);
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -252,11 +239,17 @@ public class IFilezCom extends PluginForHost {
         }
     }
 
+    private boolean isAccountAffiliate() {
+        return br.containsHTML("/myspace/space/income");
+    }
+
+    private boolean isAccountPremium() {
+        return br.containsHTML("/myspace/space/premium");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -272,34 +265,27 @@ public class IFilezCom extends PluginForHost {
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        if (account.getBooleanProperty("freeacc", true)) {
-            try {
-                maxPrem.set(1);
-                // free accounts can still have captcha.
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
+        if (AccountType.FREE.equals(account.getType())) {
+            // free accounts can still have captcha.
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
             String expire = br.getRegex("href='/myspace/space/premium'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})<").getMatch(0);
-            if (expire == null) {
+            // only premium accounts expire, affiliate doesn't.. they are a form of premium according to admin.
+            if (expire == null && isAccountPremium()) {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
-            } else {
+            } else if (expire != null && isAccountPremium()) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yy hh:mm", null));
+                ai.setStatus("Premium Account");
+            } else if (expire == null && isAccountAffiliate()) {
+                ai.setStatus("Affiliate Account");
             }
-            try {
-                /* Max 20 downloads * each 1 connection in total */
-                maxPrem.set(20);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-            ai.setStatus("Premium Account");
+            /* Max 20 downloads * each 1 connection in total */
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
         }
         return ai;
     }
@@ -308,7 +294,7 @@ public class IFilezCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        if (account.getBooleanProperty("freeacc", false)) {
+        if (AccountType.FREE.equals(account.getType())) {
             br.getPage(link.getDownloadURL());
             doFree(link);
         } else {
@@ -372,13 +358,13 @@ public class IFilezCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (AccountType.FREE.equals(acc.getType())) {
             /* free accounts also have captchas */
             return true;
         }
