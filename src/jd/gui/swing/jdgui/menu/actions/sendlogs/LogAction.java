@@ -50,7 +50,7 @@ public class LogAction extends AbstractLogAction {
         new ThreadDump().run(null, new String[0]);
         super.createPackage(selection);
         if (id != null) {
-            String name = format(selection.get(0).getCreated()) + "to" + format(selection.get(selection.size() - 1).getLastModified());
+            String name = format(selection.get(0).getCreated()) + " <--> " + format(selection.get(selection.size() - 1).getLastModified());
             Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), name + " jdlog://" + id + "/");
         }
     }
