@@ -15,11 +15,14 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.Base64InputStream;
+import org.appwork.utils.net.HexInputStream;
 import org.appwork.utils.net.httpserver.requests.KeyValuePair;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.jdownloader.api.myjdownloader.MyJDownloaderGetRequest.GetData;
@@ -31,7 +34,6 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
 
     public MyJDownloaderPostRequest(MyJDownloaderHttpConnection myJDownloaderHttpConnection) {
         super(myJDownloaderHttpConnection);
-
     }
 
     @Override
@@ -47,20 +49,15 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
     @Override
     public void setRequestedURLParameters(final List<KeyValuePair> requestedURLParameters) {
         super.setRequestedURLParameters(requestedURLParameters);
-
         requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);
-
     }
 
     public int getApiVersion() {
         if (requestProperties.apiVersion >= 0) {
             return requestProperties.apiVersion;
         }
-        JSonRequest jsonr;
-
         try {
-            jsonr = getJsonRequest();
-
+            final JSonRequest jsonr = getJsonRequest();
             if (jsonr != null) {
                 return jsonr.getApiVer();
             }
@@ -68,7 +65,6 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
             e.printStackTrace();
         }
         return -1;
-
     }
 
     @Override
@@ -94,9 +90,8 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         if (postParameterParsed) {
             return postParameters;
         }
-
         postParameters = new LinkedList<KeyValuePair>();
-        Object[] params = getJsonRequest().getParams();
+        final Object[] params = getJsonRequest().getParams();
         if (params != null) {
             for (final Object parameter : params) {
                 if (parameter instanceof JSonObject) {
@@ -147,16 +142,11 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         if (requestProperties.rid >= 0) {
             return requestProperties.rid;
         }
-        JSonRequest jsonr;
-
-        jsonr = getJsonRequest();
-
+        final JSonRequest jsonr = getJsonRequest();
         if (jsonr != null) {
-
             return jsonr.getRid();
         }
         return -1;
-
     }
 
     public JSonRequest getJsonRequest() throws IOException {
@@ -180,14 +170,70 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         }
     }
 
+    private InputStream finalInputStream = null;
+
     @Override
     public synchronized InputStream getInputStream() throws IOException {
+        if (finalInputStream != null) {
+            return finalInputStream;
+        }
         try {
-            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(getConnection().getPayloadEncryptionToken(), 0, 16));
-            final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(getConnection().getPayloadEncryptionToken(), 16, 32), "AES");
-            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-            return new CipherInputStream(new Base64InputStream(super.getInputStream()), cipher);
+            final String contentType = getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
+            final InputStream aesInputStream;
+            if (StringUtils.startsWithCaseInsensitive(contentType, "application/rsajson")) {
+                final InputStream is = super.getInputStream();
+                final InputStream rsaKey = new InputStream() {
+
+                    private boolean eof = false;
+
+                    @Override
+                    public void close() throws IOException {
+                    }
+
+                    @Override
+                    public int read() throws IOException {
+                        if (eof) {
+                            return -1;
+                        } else {
+                            final int ret = is.read();
+                            if (ret == -1) {
+                                eof = true;
+                                return -1;
+                            } else if (ret == '|') {
+                                // Delimiter between rsaKey and aes encrypted content
+                                eof = true;
+                                return -1;
+                            } else {
+                                return ret;
+                            }
+                        }
+                    }
+                };
+                final Base64InputStream rsaKeyStream = new Base64InputStream(rsaKey);
+                final Cipher rsaCipher = Cipher.getInstance("RSA");
+                rsaCipher.init(Cipher.DECRYPT_MODE, getConnection().getRSAKeyPair().getPrivate());
+                final byte[] ivAesBytes = IO.readStream(-1, new HexInputStream(new CipherInputStream(rsaKeyStream, rsaCipher)));
+                final byte[] iv;
+                final byte[] key;
+                if (ivAesBytes.length == 32) {
+                    iv = Arrays.copyOfRange(ivAesBytes, 0, 16);
+                    key = Arrays.copyOfRange(ivAesBytes, 16, 32);
+                } else {
+                    iv = Arrays.copyOfRange(ivAesBytes, 0, 16);
+                    key = Arrays.copyOfRange(ivAesBytes, 16, 48);
+                }
+                getConnection().setKey(key);
+                getConnection().setIv(iv);
+                aesInputStream = is;
+            } else {
+                aesInputStream = super.getInputStream();
+            }
+            final IvParameterSpec ivSpec = new IvParameterSpec(getConnection().getIv());
+            final SecretKeySpec skeySpec = new SecretKeySpec(getConnection().getKey(), "AES");
+            final Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            aesCipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            finalInputStream = new CipherInputStream(new Base64InputStream(aesInputStream), aesCipher);
+            return finalInputStream;
         } catch (final NoSuchPaddingException e) {
             throw new IOException(e);
         } catch (final NoSuchAlgorithmException e) {
@@ -197,7 +243,6 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         } catch (final InvalidAlgorithmParameterException e) {
             throw new IOException(e);
         }
-
     }
 
     @Override
@@ -205,12 +250,8 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         if (requestProperties.diffKeepalive >= 0) {
             return requestProperties.diffKeepalive;
         }
-        JSonRequest jsonr;
-
-        jsonr = getJsonRequest();
-
+        final JSonRequest jsonr = getJsonRequest();
         if (jsonr != null) {
-
             return jsonr.getDiffKA();
         }
         return 0;
@@ -221,12 +262,8 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         if (requestProperties.diffID != null) {
             return requestProperties.diffID;
         }
-        JSonRequest jsonr;
-
-        jsonr = getJsonRequest();
-
+        final JSonRequest jsonr = getJsonRequest();
         if (jsonr != null) {
-
             return jsonr.getDiffID();
         }
         return null;
@@ -237,12 +274,8 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         if (requestProperties.diffType != null) {
             return requestProperties.diffType;
         }
-        JSonRequest jsonr;
-
-        jsonr = getJsonRequest();
-
+        final JSonRequest jsonr = getJsonRequest();
         if (jsonr != null) {
-
             return jsonr.getDiffType();
         }
         return null;

@@ -131,11 +131,29 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         return new MyJDownloaderPostRequest(this);
     }
 
-    private OutputStream os                     = null;
-    private byte[]       payloadEncryptionToken = null;
+    private OutputStream os = null;
+    private byte[]       iv = null;
 
-    private String       requestConnectToken;
-    private HTTPHeader   accept_encoding;
+    public byte[] getIv() {
+        return iv;
+    }
+
+    public byte[] getKey() {
+        return key;
+    }
+
+    private byte[] key = null;
+
+    protected void setIv(byte[] iv) {
+        this.iv = iv;
+    }
+
+    protected void setKey(byte[] key) {
+        this.key = key;
+    }
+
+    private String     requestConnectToken;
+    private HTTPHeader accept_encoding;
 
     @Override
     public List<HttpRequestHandler> getHandler() {
@@ -157,10 +175,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         logger.log(apiException);
         this.response = new HttpResponse(this);
         return apiException.handle(this.response);
-    }
-
-    public byte[] getPayloadEncryptionToken() {
-        return payloadEncryptionToken;
     }
 
     public String getRequestConnectToken() {
@@ -220,14 +234,16 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         }
         try {
             SessionInfo session = api.getSessionInfo();
+            final byte[] payloadEncryptionToken;
             if (StringUtils.equals(parser.getSessionToken(), session.getSessionToken())) {
                 // the request origin is the My JDownloader Server
                 payloadEncryptionToken = session.getServerEncryptionToken();
             } else {
                 // The request origin is a remote client
                 payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
-
             }
+            iv = Arrays.copyOfRange(payloadEncryptionToken, 0, 16);
+            key = Arrays.copyOfRange(payloadEncryptionToken, 16, 32);
         } catch (final MyJDownloaderException e) {
             throw new IOException(e);
         }
@@ -241,7 +257,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
             return this.os;
         }
         HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
-        if (contentType != null && "application/json".equalsIgnoreCase(contentType.getValue())) {
+        if (contentType != null && StringUtils.startsWithCaseInsensitive(contentType.getValue(), "application/json")) {
             /* check for json response */
             try {
                 boolean deChunk = false;
@@ -255,8 +271,8 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 }
                 final boolean useDeChunkingOutputStream = deChunk;
                 final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(payloadEncryptionToken, 0, 16));
-                final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(payloadEncryptionToken, 16, 32), "AES");
+                final IvParameterSpec ivSpec = new IvParameterSpec(getIv());
+                final SecretKeySpec skeySpec = new SecretKeySpec(getKey(), "AES");
                 cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
                 /* remove content-length because we use chunked+base64+aes */
                 response.getResponseHeaders().remove(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH);
