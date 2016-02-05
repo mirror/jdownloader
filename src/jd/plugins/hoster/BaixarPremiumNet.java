@@ -90,10 +90,12 @@ public class BaixarPremiumNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
+        br.getPage("/gerador/");
+        final boolean is_premium = br.containsHTML("id=\"BaixarLinkstxt\"");
         br.getPage("/contas-ativas/");
         /* free accounts are not supported */
         final String hoststext = br.getRegex("premium aos servidores <span style=\"[^\"]+\">(.*?)<").getMatch(0);
-        if (br.containsHTML(">\\s*Você não possui nenhum pacote de Conta Premium\\.\\s*<") || hoststext == null) {
+        if (br.containsHTML(">\\s*Você não possui nenhum pacote de Conta Premium\\.\\s*<") || !is_premium) {
             account.setType(AccountType.FREE);
             ac.setStatus("Free Account");
             ac.setTrafficLeft(0);
@@ -105,25 +107,34 @@ public class BaixarPremiumNet extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ac.setStatus("Premium Account");
             ac.setUnlimitedTraffic();
-            // now let's get a list of all supported hosts:
-            final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
-            final ArrayList<String> supportedHosts = new ArrayList<String>();
-            final String[] crippledHosts = hoststext.split(", ");
-            for (String crippledhost : crippledHosts) {
-                crippledhost = crippledhost.trim();
-                crippledhost = crippledhost.toLowerCase();
-                if (crippledhost.equals("shareonline")) {
-                    supportedHosts.add("share-online.biz");
-                } else {
-                    /* Go insane */
-                    for (final String possibledomain : possible_domains) {
-                        final String full_possible_host = crippledhost + "." + possibledomain;
-                        supportedHosts.add(full_possible_host);
-                    }
+        }
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", ".nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
+        String[] crippledHosts;
+        if (hoststext != null) {
+            crippledHosts = hoststext.split(", ");
+        } else {
+            br.getPage("http://" + account.getHoster() + "/");
+            crippledHosts = br.getRegex("theme/img/([A-Za-z0-9\\-]+)\\.(?:jpg|jpeg|png)\"").getColumn(0);
+            if (crippledHosts.length == 0 || crippledHosts.length <= 5) {
+                /* Especially for comprarpremium.com */
+                crippledHosts = br.getRegex("/srv/([A-Za-z0-9\\-]+)\\-logo\\.(?:jpg|jpeg|png)\"").getColumn(0);
+            }
+        }
+        for (String crippledhost : crippledHosts) {
+            crippledhost = crippledhost.trim();
+            crippledhost = crippledhost.toLowerCase();
+            if (crippledhost.equals("shareonline")) {
+                supportedHosts.add("share-online.biz");
+            } else {
+                /* Go insane */
+                for (final String possibledomain : possible_domains) {
+                    final String full_possible_host = crippledhost + "." + possibledomain;
+                    supportedHosts.add(full_possible_host);
                 }
             }
-            ac.setMultiHostSupport(plugin, supportedHosts);
         }
+        ac.setMultiHostSupport(plugin, supportedHosts);
         return ac;
     }
 
