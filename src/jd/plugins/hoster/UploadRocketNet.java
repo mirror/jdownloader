@@ -27,6 +27,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,13 +52,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadrocket.net" }, urls = { "https?://(www\\.)?uploadrocket\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class UploadRocketNet extends PluginForHost {
@@ -89,7 +89,6 @@ public class UploadRocketNet extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
     private String               fuid                         = null;
 
@@ -466,16 +465,11 @@ public class UploadRocketNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = getFormDownload2();
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    invalidateLastChallengeResponse();
+
                     continue;
                 } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    validateLastChallengeResponse();
                     break;
                 }
             }
@@ -599,7 +593,7 @@ public class UploadRocketNet extends PluginForHost {
             }
         }
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
+        correctedBR = correctedBR.replaceAll("<\\s*(h\\d+)[^>]*>.*?<\\s*/\\1\\s*>", "");
         // generic cleanup
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<td[^>]+style=(\"|')[\\w:;\\s#-]*color\\s*:\\s*transparent\\s*;[^>]*>.*?</td>)");
@@ -619,10 +613,10 @@ public class UploadRocketNet extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "var download_url = \\'(http://[^<>\"]*?)\\';").getMatch(0);
+            dllink = new Regex(correctedBR, "var download_url = '(http://[^<>\"]*?)';").getMatch(0);
         }
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)\\1").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -756,7 +750,7 @@ public class UploadRocketNet extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -771,7 +765,7 @@ public class UploadRocketNet extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -846,7 +840,7 @@ public class UploadRocketNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (correctedBR.contains("Wrong captcha")) {
-                logger.warning("Wrong captcha or wrong password!");
+                logger.warning("Wrong captcha!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (correctedBR.contains("\">Skipped countdown<")) {
@@ -949,8 +943,6 @@ public class UploadRocketNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -985,26 +977,15 @@ public class UploadRocketNet extends PluginForHost {
             expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
-            try {
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-            ai.setStatus("Registered (free) user");
+            // free accounts can still have captcha.
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(expiretime);
-            try {
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-            ai.setStatus("Premium user");
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -1136,12 +1117,6 @@ public class UploadRocketNet extends PluginForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
