@@ -410,27 +410,31 @@ public class CompiledFiletypeFilter {
     }
 
     public boolean matches(final String extension, final LinkInfo linkInfo) {
-        final boolean ret;
-        switch (matchType) {
-        case IS:
-            ret = true;
-            break;
-        case IS_NOT:
-            ret = false;
-            break;
-        default:
-            return false;
-        }
-        for (final ExtensionsFilterInterface filterInterfaces : this.filterInterfaces) {
-            if (linkInfo != null && filterInterfaces.isSameExtensionGroup(linkInfo.getExtension())) {
-                return ret;
+        boolean matches = false;
+        if (StringUtils.isNotEmpty(extension)) {
+            for (final ExtensionsFilterInterface filterInterfaces : this.filterInterfaces) {
+                if (!matches) {
+                    for (final ExtensionsFilterInterface filterInterface : filterInterfaces.listSameGroup()) {
+                        final Pattern pattern = filterInterface.getPattern();
+                        try {
+                            if (pattern != null && pattern.matcher(extension).matches()) {
+                                matches = true;
+                                break;
+                            }
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else {
+                    break;
+                }
             }
-            if (StringUtils.isNotEmpty(extension)) {
-                for (final ExtensionsFilterInterface filterInterface : filterInterfaces.listSameGroup()) {
-                    final Pattern pattern = filterInterface.getPattern();
+            if (matches == false) {
+                for (final Pattern pattern : this.list) {
                     try {
                         if (pattern != null && pattern.matcher(extension).matches()) {
-                            return ret;
+                            matches = true;
+                            break;
                         }
                     } catch (Throwable e) {
                         e.printStackTrace();
@@ -438,17 +442,11 @@ public class CompiledFiletypeFilter {
                 }
             }
         }
-        if (StringUtils.isNotEmpty(extension)) {
-            for (final Pattern pattern : this.list) {
-                try {
-                    if (pattern != null && pattern.matcher(extension).matches()) {
-                        return ret;
-                    }
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
-            return !ret;
+        switch (matchType) {
+        case IS:
+            return matches;
+        case IS_NOT:
+            return !matches;
         }
         return false;
     }
