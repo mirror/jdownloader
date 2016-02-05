@@ -214,6 +214,7 @@ public abstract class PluginsC {
                 switch (origin.getOrigin()) {
                 case DRAG_DROP_ACTION:
                 case PASTE_LINKS_ACTION:
+                case EXTENSION:
                     return false;
                 default:
                     break;

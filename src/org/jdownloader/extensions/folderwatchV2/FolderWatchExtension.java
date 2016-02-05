@@ -17,7 +17,6 @@
 package org.jdownloader.extensions.folderwatchV2;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +40,7 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginsC;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
@@ -69,14 +69,16 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, FolderWatchTranslation> implements MenuExtenderHandler, Runnable, GenericConfigEventListener<Long> {
 
     private FolderWatchConfigPanel   configPanel;
     private ScheduledExecutorService scheduler;
-    private final Object             lock = new Object();
-    private ScheduledFuture<?>       job  = null;
+    private final Object             lock           = new Object();
+    private ScheduledFuture<?>       job            = null;
+    private boolean                  isDebugEnabled = false;
 
     @Override
     public boolean isHeadlessRunnable() {
@@ -130,6 +132,11 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             job = scheduler.scheduleAtFixedRate(this, 0, getSettings().getCheckInterval(), TimeUnit.MILLISECONDS);
         }
         CFG_FOLDER_WATCH.CHECK_INTERVAL.getEventSender().addListener(this, true);
+        isDebugEnabled = CFG_FOLDER_WATCH.CFG.isDebugEnabled();
+    }
+
+    private boolean isDebugEnabled() {
+        return isDebugEnabled;
     }
 
     protected void createDefaultFolder() {
@@ -172,45 +179,53 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     @Override
     public void run() {
-        if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+        if (isDebugEnabled()) {
             getLogger().info("RUN");
         }
         try {
-
             String[] folders = getSettings().getFolders();
             if (folders != null) {
                 for (String s : folders) {
-
                     if (s != null) {
                         File folder = new File(s);
                         if (!folder.isAbsolute()) {
                             folder = Application.getResource(s);
                         }
-                        if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+                        if (isDebugEnabled()) {
                             getLogger().info("Scan " + s + " - " + folder.getAbsolutePath());
                             getLogger().info("exists: " + folder.exists());
                             getLogger().info("isDirectory: " + folder.isDirectory());
                         }
                         if (folder.exists() && folder.isDirectory()) {
-                            if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
-                                getLogger().info(Arrays.toString(folder.list()));
+                            final File[] files = folder.listFiles();
+                            if (isDebugEnabled()) {
+                                getLogger().info(Arrays.asList(files).toString());
                             }
-                            for (File f : folder.listFiles(new FilenameFilter() {
-
-                                @Override
-                                public boolean accept(File dir, String name) {
-                                    if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
-                                        getLogger().info(name + " : " + name.toLowerCase(Locale.ENGLISH).endsWith(".crawljob"));
+                            for (final File file : files) {
+                                if (file.isFile() && file.length() > 0) {
+                                    final String name = file.getName();
+                                    if (StringUtils.endsWithCaseInsensitive(name, ".crawljob")) {
+                                        try {
+                                            addCrawlJob(file);
+                                        } catch (Exception e) {
+                                            getLogger().log(e);
+                                        } finally {
+                                            move(file);
+                                        }
+                                    } else {
+                                        for (final PluginsC pCon : ContainerPluginController.getInstance().list()) {
+                                            if (pCon.canHandle(file.toURI().toString())) {
+                                                try {
+                                                    addContainerFile(file);
+                                                    break;
+                                                } catch (Exception e) {
+                                                    getLogger().log(e);
+                                                } finally {
+                                                    move(file);
+                                                }
+                                            }
+                                        }
                                     }
-                                    return name.toLowerCase(Locale.ENGLISH).endsWith(".crawljob");
-                                }
-                            })) {
-                                try {
-                                    addCrawlJob(f);
-
-                                } catch (Exception e) {
-                                    getLogger().log(e);
-
                                 }
                             }
                         }
@@ -219,19 +234,18 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             }
         } catch (Exception e) {
             getLogger().log(e);
-
         } finally {
-            if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+            if (isDebugEnabled()) {
                 getLogger().info("DONE");
             }
         }
     }
 
     private void move(File f) {
-        if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+        if (isDebugEnabled()) {
             getLogger().info("Move " + f);
         }
-        File dir = new File(f.getParentFile(), "added");
+        final File dir = new File(f.getParentFile(), "added");
         dir.mkdirs();
         int i = 1;
         File dst = new File(dir, f.getName() + "." + i);
@@ -244,19 +258,24 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     private void addCrawlJob(File f) throws IOException {
         if (f.length() == 0) {
-            if (CFG_FOLDER_WATCH.CFG.isDebugEnabled()) {
+            if (isDebugEnabled()) {
                 getLogger().info("Ignore " + f);
             }
-            return;
-        }
-        getLogger().info("Parse " + f);
-        String str = IO.readFileToString(f);
-        if (str.trim().startsWith("[")) {
-            parseJson(f, str);
         } else {
-            parseProperties(f, str);
+            getLogger().info("Parse " + f);
+            final String str = IO.readFileToString(f);
+            if (str.trim().startsWith("[")) {
+                parseJson(f, str);
+            } else {
+                parseProperties(f, str);
+            }
         }
-        move(f);
+    }
+
+    private void addContainerFile(final File file) {
+        final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.EXTENSION, "FolderWatch:" + file.getAbsolutePath()), file.toURI().toString());
+        final LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
+        lc.waitForCrawling();
     }
 
     private void parseProperties(File f, String str) {
