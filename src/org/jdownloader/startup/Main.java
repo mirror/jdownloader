@@ -155,9 +155,9 @@ public class Main {
         }
     }
 
-    private static void copySVNtoHome() {
+    public static void copySVNtoHome() {
         try {
-            if (!Application.isJared(null) && Application.getRessourceURL("org/jdownloader/update/JDUpdateClient.class") == null) {
+            if (!Application.isJared(null) && Application.getRessourceURL("org/jdownloader/update/JDUpdateClient.class") == null || System.getProperty("copysvn") != null) {
 
                 File workspace = new File(Main.class.getResource("/").toURI()).getParentFile();
                 if (workspace.getName().equals("JDownloaderUpdater")) {
