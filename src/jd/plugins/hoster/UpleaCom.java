@@ -16,17 +16,17 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -37,14 +37,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplea.com" }, urls = { "http://(www\\.)?uplea\\.com/dl/[A-Z0-9]+" }, flags = { 2 })
-public class UpleaCom extends PluginForHost {
+public class UpleaCom extends antiDDoSForHost {
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
     public UpleaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,25 +56,27 @@ public class UpleaCom extends PluginForHost {
         return "http://www.uplea.com/register";
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>(null);
-
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        prepBr();
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML(">You followed an invalid or expired link")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("class=\"(agmd size18|gold-text)\">([^<>\"]*?)<").getMatch(1);
-        String filesize = br.getRegex("class=\"label label\\-info agmd( size14)?\">([^<>\"]*?)</span>").getMatch(1);
+        // filename needs to be able to catch filenames with @ which are obstructed via cloudflare
+        String filename = br.getRegex("class=\"(?:agmd size18|gold-text)\">(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("class=\"label label-info agmd(?: size14)?\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filesize = filesize.replace("ko", "KB");
         filesize = filesize.replace("Mo", "MB");
         filesize = filesize.replace("Go", "GB");
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (StringUtils.contains(filename, "__cf_email")) {
+            // hackery required
+            filename = getStringFromCloudFlareEmailProtection(filename.split("</script>")[0]) + filename.split("</script>")[1];
+        }
+        link.setName((Encoding.htmlDecode(filename.trim())));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -94,13 +96,13 @@ public class UpleaCom extends PluginForHost {
         brad.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
         try {
-            brad.cloneBrowser().getPage("http://uplea.com/socials/" + fid);
+            getPage(brad.cloneBrowser(), "http://uplea.com/socials/" + fid);
             brad.getHeaders().put("Referer", free_link);
-            brad.postPage("http://uplea.com/ajax/web-init", "state=true");
+            postPage(brad, "http://uplea.com/ajax/web-init", "state=true");
         } catch (final Throwable e) {
         }
 
-        br.getPage(free_link);
+        getPage(free_link);
         final String wait_seconds = br.getRegex("timeText:(\\d+)").getMatch(0);
         if (wait_seconds != null) {
             final int intwaitsecs = Integer.parseInt(wait_seconds);
@@ -115,13 +117,13 @@ public class UpleaCom extends PluginForHost {
         }
 
         try {
-            brad.cloneBrowser().getPage("http://uplea.com/socials/" + fid);
+            getPage(brad.cloneBrowser(), "http://uplea.com/socials/" + fid);
             brad.getHeaders().put("Referer", free_link);
-            brad.postPage("http://uplea.com/ajax/web-init", "state=true");
+            postPage(brad, "http://uplea.com/ajax/web-init", "state=true");
         } catch (final Throwable e) {
         }
 
-        final String wait = br.getRegex("ulCounter\\(\\{\\'timer\\':(\\d+)\\}\\)").getMatch(0);
+        final String wait = br.getRegex("ulCounter\\(\\{'timer':(\\d+)\\}\\)").getMatch(0);
         int waitt = 10;
         if (wait != null) {
             waitt = Integer.parseInt(wait);
@@ -134,16 +136,6 @@ public class UpleaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
         dl.startDownload();
-    }
-
-    private void prepBr() {
-        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
-        if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-        }
-        br.getHeaders().put("User-Agent", agent.get());
     }
 
     final String getFID(final DownloadLink dl) {
@@ -181,9 +173,8 @@ public class UpleaCom extends PluginForHost {
                         return;
                     }
                 }
-                prepBr();
                 br.setFollowRedirects(false);
-                br.postPage("http://uplea.com/?lang=en", "remember=1&login-form=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage("http://uplea.com/?lang=en", "remember=1&login-form=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "uplea") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -191,15 +182,9 @@ public class UpleaCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(MAINPAGE));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -216,21 +201,19 @@ public class UpleaCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("/account");
+        getPage("/account");
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("You\\'re premium member until  <span class=\"cyan\">([^<>\"]*?) \\(").getMatch(0);
+        String expire = br.getRegex("You're premium member until  <span class=\"cyan\">([^<>\"]*?) \\(").getMatch(0);
         if (expire == null) {
             expire = br.getRegex("(\\d{2}/\\d{2}/\\d{4}) \\(\\d+ days\\(s\\) ").getMatch(0);
         }
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", Locale.ENGLISH));
-            account.setProperty("free", false);
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         } else {
-            account.setProperty("free", true);
             account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
         }
         account.setValid(true);
         return ai;
@@ -242,8 +225,8 @@ public class UpleaCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (account.getBooleanProperty("free", false)) {
+        getPage(link.getDownloadURL());
+        if (AccountType.FREE.equals(account.getType())) {
             doFree(link);
         } else {
             final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.uplea.com/premium/[^<>\"]*?)\"").getMatch(0);
