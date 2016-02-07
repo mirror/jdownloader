@@ -22,10 +22,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -36,19 +40,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" }, flags = { 0 })
 public class Rlnks extends PluginForDecrypt {
 
-    ProgressController   PROGRESS;
-    private Form         ALLFORM = null;
-    private String       UA      = RandomUserAgent.generate();
+    private Form         allForm = null;
     public static Object LOCK    = new Object();
 
     public Rlnks(final PluginWrapper wrapper) {
@@ -87,20 +85,16 @@ public class Rlnks extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         synchronized (LOCK) {
-            PROGRESS = progress;
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             final String parameter = correctCryptedLink(param.toString());
             setBrowserExclusive();
             br.setFollowRedirects(true);
-            br.getHeaders().put("User-Agent", UA);
+            br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
 
             /* Handle Captcha and/or password */
             handleCaptchaAndPassword(parameter, param);
             if (!br.getURL().contains("relink.us/")) {
-                try {
-                    validateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
+                validateLastChallengeResponse();
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -108,10 +102,10 @@ public class Rlnks extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            if (ALLFORM != null && ALLFORM.getRegex("password").matches()) {
+            if (allForm != null && allForm.getRegex("password").matches()) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) {
+            if (allForm != null && allForm.getRegex("captcha").matches()) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
 
@@ -137,48 +131,25 @@ public class Rlnks extends PluginForDecrypt {
                     }
                 }
                 if (cnlForm != null) {
-
-                    if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                        String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
-                        HashMap<String, String> infos = new HashMap<String, String>();
-                        infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
-                        infos.put("jk", jk);
-                        String source = cnlForm.getInputField("source").getValue();
-                        if (StringUtils.isEmpty(source)) {
-                            source = parameter.toString();
-                        } else {
-                            source = Encoding.urlDecode(source, true);
-                        }
-                        infos.put("source", source);
-                        String json = JSonStorage.toString(infos);
-                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-                        if (fp != null) {
-                            fp.add(dl);
-                        }
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            /* does not exist in 09581 */
-                        }
-                        decryptedLinks.add(dl);
-                        return decryptedLinks;
+                    String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
+                    HashMap<String, String> infos = new HashMap<String, String>();
+                    infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
+                    infos.put("jk", jk);
+                    String source = cnlForm.getInputField("source").getValue();
+                    if (StringUtils.isEmpty(source)) {
+                        source = parameter.toString();
                     } else {
-                        String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
-                        cnlForm.remove("jk");
-                        cnlForm.put("jk", (jk != null ? jk.replaceAll("\\+", "%2B") : "nothing"));
-                        try {
-                            cnlbr.submitForm(cnlForm);
-                            if (cnlbr.containsHTML("success")) {
-                                return decryptedLinks;
-                            }
-                            if (cnlbr.containsHTML("^failed")) {
-                                logger.warning("relink.us: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
-                                logger.warning("relink.us: CNL2 Message: " + cnlbr.toString());
-                            }
-                        } catch (Throwable e) {
-                            logger.info("relink.us: ExternInterface(CNL2) is disabled!");
-                        }
+                        source = Encoding.urlDecode(source, true);
                     }
+                    infos.put("source", source);
+                    String json = JSonStorage.toString(infos);
+                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
+                    distribute(dl);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
                 }
             }
             if (!br.containsHTML("download.php\\?id=[a-f0-9]+") && !br.containsHTML("getFile\\(")) {
@@ -201,10 +172,7 @@ public class Rlnks extends PluginForDecrypt {
             if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) {
                 throw new DecrypterException("CNL2 only, open this link in Browser");
             }
-            try {
-                validateLastChallengeResponse();
-            } catch (final Throwable e) {
-            }
+            validateLastChallengeResponse();
             if (fp != null) {
                 fp.addLinks(decryptedLinks);
             }
@@ -220,7 +188,7 @@ public class Rlnks extends PluginForDecrypt {
             for (final String match : matches) {
                 Thread.sleep(2333);
                 handleCaptchaAndPassword("http://www.relink.us/frame.php?" + match, param);
-                if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) {
+                if (allForm != null && allForm.getRegex("captcha").matches()) {
                     logger.warning("Falsche Captcheingabe, Link wird übersprungen!");
                     continue;
                 }
@@ -230,29 +198,20 @@ public class Rlnks extends PluginForDecrypt {
                 }
                 if (brc.getRedirectLocation() != null) {
                     final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation()));
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
+                    distribute(dl);
                     decryptedLinks.add(dl);
                     break;
                 } else {
                     final String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
                     final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(url));
                     if (url != null) {
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            /* does not exist in 09581 */
-                        }
+                        distribute(dl);
                         decryptedLinks.add(dl);
                     } else {
                         /* as bot detected */
                         return;
                     }
                 }
-                PROGRESS.increase(1);
             }
         } finally {
             br.setFollowRedirects(true);
@@ -261,16 +220,16 @@ public class Rlnks extends PluginForDecrypt {
 
     private void handleCaptchaAndPassword(final String partLink, final CryptedLink param) throws Exception {
         br.getPage(partLink);
-        ALLFORM = br.getFormbyProperty("name", "form");
-        boolean b = ALLFORM == null ? true : false;
+        allForm = br.getFormbyProperty("name", "form");
+        boolean b = allForm == null ? true : false;
         // 20150120 - raztoki
-        if (ALLFORM == null && br.containsHTML(">Please Wait\\.\\.\\.<") && br.containsHTML("class=\"timer\">\\d+</span>\\s*seconds</div>")) {
+        if (allForm == null && br.containsHTML(">Please Wait\\.\\.\\.<") && br.containsHTML("class=\"timer\">\\d+</span>\\s*seconds</div>")) {
             // pile of redirects happen here
             final String link = br.getRegex("class=\"timer\">\\d+</span>\\s*seconds</div>\\s*<a href=\"\\s*(https?://(\\w+\\.)?relink\\.us/.*?)\\s*\"").getMatch(0);
             if (link != null) {
                 br.getPage(link.trim());
-                ALLFORM = br.getFormbyProperty("name", "form");
-                b = ALLFORM == null ? true : false;
+                allForm = br.getFormbyProperty("name", "form");
+                b = allForm == null ? true : false;
             } else {
                 // possible plugin defect
                 logger.warning("Possible Plugin Defect!");
@@ -278,38 +237,38 @@ public class Rlnks extends PluginForDecrypt {
         }
 
         if (b) {
-            ALLFORM = br.getForm(0);
-            ALLFORM = ALLFORM != null && ALLFORM.getAction() != null && ALLFORM.getAction().matches("^https?://(\\w+\\.)?relink\\.us/container_password\\.php.*") ? ALLFORM : null;
+            allForm = br.getForm(0);
+            allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^https?://(\\w+\\.)?relink\\.us/container_password\\.php.*") ? allForm : null;
         }
-        if (ALLFORM != null) {
+        if (allForm != null) {
             for (int i = 0; i < 5; i++) {
-                if (ALLFORM.containsHTML("password")) {
+                if (allForm.containsHTML("password")) {
                     final String passCode = Plugin.getUserInput(null, param);
-                    ALLFORM.put("password", passCode);
+                    allForm.put("password", passCode);
                 }
-                if (ALLFORM.containsHTML("captcha")) {
-                    ALLFORM.remove("button");
-                    final String captchaLink = ALLFORM.getRegex("src=\"(.*?)\"").getMatch(0);
+                if (allForm.containsHTML("captcha")) {
+                    allForm.remove("button");
+                    final String captchaLink = allForm.getRegex("src=\"(.*?)\"").getMatch(0);
                     if (captchaLink == null) {
                         break;
                     }
                     final File captchaFile = this.getLocalCaptchaFile();
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.relink.us/" + captchaLink));
                     final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, "relink.us | " + String.valueOf(i + 1) + "/5", null);
-                    ALLFORM.put("button.x", String.valueOf(cp.getX()));
-                    ALLFORM.put("button.y", String.valueOf(cp.getY()));
+                    allForm.put("button.x", String.valueOf(cp.getX()));
+                    allForm.put("button.y", String.valueOf(cp.getY()));
                 }
-                br.submitForm(ALLFORM);
+                br.submitForm(allForm);
                 if (br.getURL().contains("error.php")) {
                     br.getPage(partLink);
                     continue;
                 }
-                ALLFORM = br.getFormbyProperty("name", "form");
-                ALLFORM = ALLFORM == null && b ? br.getForm(0) : ALLFORM;
-                if (ALLFORM != null && (ALLFORM.containsHTML("password") || ALLFORM.containsHTML("captcha"))) {
+                allForm = br.getFormbyProperty("name", "form");
+                allForm = allForm == null && b ? br.getForm(0) : allForm;
+                if (allForm != null && (allForm.containsHTML("password") || allForm.containsHTML("captcha"))) {
                     continue;
                 }
-                ALLFORM = null;
+                allForm = null;
                 break;
             }
         }
