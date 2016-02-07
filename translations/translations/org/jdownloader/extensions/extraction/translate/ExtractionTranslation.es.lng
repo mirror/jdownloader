@@ -29,6 +29,7 @@ context_password_msg=Establecer contraseña para extraer %s1
 context_password_msg2=Establecer contraseña para extraer %s1:\r\nContraseña sugerida:\r\n%s2
 context_password_msg2_multi=Establecer contraseña:\r\nContraseña sugerida:\r\n%s1
 context_password_msg_multi=Establecer contraseña
+contextmenu_abort=Abortar extracción
 contextmenu_autodeletefiles=Autoeliminación de archivos
 contextmenu_autodeletelinks=Autoeliminación de Enlaces de Descargas
 contextmenu_autoextract=Autoextraer activado
