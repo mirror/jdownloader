@@ -73,8 +73,11 @@ public class UpleaCom extends antiDDoSForHost {
         filesize = filesize.replace("Mo", "MB");
         filesize = filesize.replace("Go", "GB");
         if (StringUtils.contains(filename, "__cf_email")) {
-            // hackery required
-            filename = getStringFromCloudFlareEmailProtection(filename.split("</script>")[0]) + filename.split("</script>")[1];
+            // possible to be either of these three combinations, prefix, email, postfix
+            final String prefix = new Regex(filename, "(.+\\.)<a ").getMatch(0);
+            final String email = getStringFromCloudFlareEmailProtection(filename);
+            final String postfix = new Regex(filename, "</script>(.+)").getMatch(0);
+            filename = (prefix != null ? prefix : "") + email + (postfix != null ? postfix : "");
         }
         link.setName((Encoding.htmlDecode(filename.trim())));
         if (filesize != null) {
