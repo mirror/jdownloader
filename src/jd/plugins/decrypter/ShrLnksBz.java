@@ -26,6 +26,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -44,14 +51,7 @@ import jd.plugins.PluginException;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
 public class ShrLnksBz extends antiDDoSForDecrypt {
 
     private String MAINPAGE = "http://share-links.biz/";
@@ -64,11 +64,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink ret = super.createDownloadlink(link);
-        try {
-            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
-        } catch (final Throwable e) {
-
-        }
+        ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
         return ret;
     }
 
@@ -103,11 +99,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
         getPage(parameter);
         if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
             logger.info("Link offline: " + parameter);
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         /* Very important! */
@@ -239,48 +231,21 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                 if (encVars == null || encVars.length < 3) {
                     logger.warning("CNL code broken!");
                 } else {
-                    if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                        final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
-                        final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
-                        HashMap<String, String> infos = new HashMap<String, String>();
-                        infos.put("crypted", crypted);
-                        infos.put("jk", jk);
-                        infos.put("source", parameter.toString());
-                        String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
-                        if (pkgName != null && pkgName.length() > 0) {
-                            infos.put("package", pkgName);
-                        }
-                        String json = JSonStorage.toString(infos);
-
-                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            /* does not exist in 09581 */
-                        }
-                        decryptedLinks.add(dl);
-                        return decryptedLinks;
-
-                    } else {
-                        final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
-                        final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
-                        String pkgName = br.getRegex("<title>Share.*?\\.biz - (.*?)</title>").getMatch(0);
-                        if (pkgName != null && pkgName.length() > 0 && !pkgName.equals("unnamed Folder")) {
-                            pkgName = "package=" + Encoding.formEncoding(pkgName) + "&";
-                        }
-                        flashVars = pkgName + "passwords=&crypted=" + Encoding.formEncoding(crypted) + "&jk=" + Encoding.formEncoding(jk) + "&source=" + Encoding.formEncoding(parameter);
-                        cnlbr.setConnectTimeout(5000);
-                        cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
-                        try {
-                            postPage(cnlbr, "http://127.0.0.1:9666/flash/addcrypted2", flashVars);
-                            if (cnlbr.containsHTML("success")) {
-                                return decryptedLinks;
-                            } else {
-                                logger.warning("Click-N-Load failed!");
-                            }
-                        } catch (final Throwable e) {
-                        }
+                    final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
+                    final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
+                    HashMap<String, String> infos = new HashMap<String, String>();
+                    infos.put("crypted", crypted);
+                    infos.put("jk", jk);
+                    infos.put("source", parameter.toString());
+                    String pkgName = br.getRegex("<title>Share.*?\\.biz \\- (.*?)</title>").getMatch(0);
+                    if (pkgName != null && pkgName.length() > 0) {
+                        infos.put("package", pkgName);
                     }
+                    String json = JSonStorage.toString(infos);
+                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                    distribute(dl);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
                 }
             }
         }
@@ -309,10 +274,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             links.addAll(Arrays.asList(linki));
         }
         if (links.size() == 0) {
-            try {
-                invalidateLastChallengeResponse();
-            } catch (final Throwable e) {
-            }
+            invalidateLastChallengeResponse();
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -337,11 +299,7 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
                         }
                     }
                     final DownloadLink dl = createDownloadlink(result);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
+                    distribute(dl);
                     decryptedLinks.add(dl);
                 } else {
                     continue;
@@ -349,17 +307,11 @@ public class ShrLnksBz extends antiDDoSForDecrypt {
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            try {
-                invalidateLastChallengeResponse();
-            } catch (final Throwable e) {
-            }
+            invalidateLastChallengeResponse();
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         } else {
-            try {
-                validateLastChallengeResponse();
-            } catch (final Throwable e) {
-            }
+            validateLastChallengeResponse();
         }
         return decryptedLinks;
     }

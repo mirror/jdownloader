@@ -110,7 +110,6 @@ public class Rlnks extends PluginForDecrypt {
             }
 
             final String page = br.toString();
-            progress.setRange(0);
             final String title = br.getRegex("shrink\"><th>(Titel|Baslik|Title)</th><td>(.*?)</td></tr>").getMatch(1);
             FilePackage fp = null;
             if (title != null && title.trim().length() > 0) {
@@ -128,6 +127,7 @@ public class Rlnks extends PluginForDecrypt {
                 for (Form f : cnlbr.getForms()) {
                     if (f.containsHTML(cnlUrl)) {
                         cnlForm = f;
+                        break;
                     }
                 }
                 if (cnlForm != null) {

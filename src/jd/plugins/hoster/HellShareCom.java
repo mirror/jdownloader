@@ -20,11 +20,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -39,12 +41,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://(download\\.|www\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/[a-z0-9\\-/]+/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hellshare.com" }, urls = { "http://(download\\.|www\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/[a-z0-9\\-/]+/\\d+" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
 
     /*
@@ -94,23 +94,27 @@ public class HellShareCom extends PluginForHost {
         }
     }
 
+    private Browser prepBrowser(final Browser prepBr) {
+        prepBr.setCustomCharset("utf-8");
+        prepBr.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
+        prepBr.addAllowedResponseCodes(502);
+        return prepBr;
+
+    }
+
     /** TODO: Improve overall errorhandling. */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
+        prepBrowser(br);
         /* To prefer english page UPDATE: English does not work anymore */
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
         changeToEnglish();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502) {
-                link.getLinkStatus().setStatusText("We are sorry, but HellShare is unavailable in your country");
-                return AvailableStatus.UNCHECKABLE;
-            }
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 502) {
+            link.getLinkStatus().setStatusText("We are sorry, but HellShare is unavailable in your country");
+            return AvailableStatus.UNCHECKABLE;
         }
         if (br.containsHTML(">File not found|>File was deleted|>The file is private and can only be downloaded owner") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -186,14 +190,7 @@ public class HellShareCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         if (ALL_PREMIUMONLY) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (br.containsHTML(LIMITREACHED)) {
             // edt: to support bug when server load = 100% and daily limit
@@ -345,7 +342,7 @@ public class HellShareCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -391,10 +388,10 @@ public class HellShareCom extends PluginForHost {
                     br.followConnection();
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
-                        dllink = getJson("redirect");
+                        dllink = PluginJSonUtils.getJson(br, "redirect");
                     }
                     if (dllink == null) {
-                        if (br.containsHTML("button\\-download\\-full\\-nocredit")) {
+                        if (br.containsHTML("button-download-full-nocredit")) {
                             logger.info("not enough credits to download");
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                         }
@@ -425,7 +422,6 @@ public class HellShareCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            dllink = dllink.replaceAll("\\\\", "");
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
@@ -583,45 +579,15 @@ public class HellShareCom extends PluginForHost {
     /* Changes the language to English. */
     private void changeToEnglish() throws PluginException, IOException {
         br.getPage("http://www.hellshare.cz");
+        if (br.getHttpConnection().getResponseCode() == 502) {
+            // connection is blocked.
+            return;
+        }
         final String cookie = br.getCookie(br.getURL(), "PHPSESSID");
         if (cookie == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("http://www.hellshare.com/--" + cookie + "-/");
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
