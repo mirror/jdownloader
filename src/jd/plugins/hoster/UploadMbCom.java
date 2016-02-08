@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -28,8 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadmb.com" }, urls = { "http://[\\w\\.]*?uploadmb\\.com/dw\\.php\\?id=\\d+" }, flags = { 0 })
 public class UploadMbCom extends PluginForHost {
@@ -95,7 +95,7 @@ public class UploadMbCom extends PluginForHost {
         br.postPage(downloadLink.getDownloadURL(), "turingno=" + specialStuff + "&id=" + new Regex(downloadLink.getDownloadURL(), "dw\\.php\\?id=(\\d+)").getMatch(0) + "&DownloadNow=Download+File&PHPSESSID=" + br.getCookie("http://uploadmb.com/", "PHPSESSID"));
         String dllink = br.getRegex("or <a href=\\'(/.*?)\\'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(\\'|\")(/file\\.php\\?id=\\d+\\&/.*?)(\\'|\")").getMatch(1);
+            dllink = br.getRegex("(\\'|\")(/file\\.php\\?id=\\d+\\&/.*?)\\1").getMatch(1);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -118,6 +118,9 @@ public class UploadMbCom extends PluginForHost {
             br.setCookie(this.getHost(), "PHPSESSID", PHPSESSID.get());
             br.getPage(page);
             final String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                return;
+            }
             if (redirect != null) {
                 // some adveritsing bullshit when phpsessid == null
                 if (redirect.matches(".+uploadmb\\.com/dvv\\.php\\?id=" + fuid)) {
@@ -128,7 +131,6 @@ public class UploadMbCom extends PluginForHost {
                     return;
                 }
             }
-            return;
         }
         // set a new user-agent
         userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());

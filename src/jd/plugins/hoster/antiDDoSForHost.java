@@ -453,11 +453,11 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 processCloudflare(ibr, request, cookies);
             }
             // Incapsula
-            if (containsIncapsulaCookies(ibr)) {
+            else if (containsIncapsulaCookies(ibr)) {
                 processIncapsula(ibr, cookies);
             }
             // Sucuri
-            if (requestHeadersHasKeyNValueContains(ibr, "server", "Sucuri/Cloudproxy")) {
+            else if (requestHeadersHasKeyNValueContains(ibr, "server", "Sucuri/Cloudproxy")) {
                 processSucuri(ibr, cookies);
             }
             // save the session!
