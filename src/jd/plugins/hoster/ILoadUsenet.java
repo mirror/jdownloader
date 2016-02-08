@@ -1,6 +1,8 @@
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Cookies;
@@ -12,6 +14,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.UseNet;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetServer;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -22,6 +27,15 @@ public class ILoadUsenet extends UseNet {
     public ILoadUsenet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.iload-usenet.com/prices");
+    }
+
+    public static interface ILoadUsenetConfigInterface extends UsenetConfigInterface {
+
+    };
+
+    @Override
+    public Class<ILoadUsenetConfigInterface> getConfigInterface() {
+        return ILoadUsenetConfigInterface.class;
     }
 
     @Override
@@ -118,22 +132,11 @@ public class ILoadUsenet extends UseNet {
     }
 
     @Override
-    protected String getServerAddress() {
-        return "news.iload-usenet.com";
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("news.iload-usenet.com", false, 119, 23, 443, 8080, 9000));
+        ret.addAll(UsenetServer.createServerList("secure.news.iload-usenet.com", true, 563, 81, 81));
+        return ret;
     }
 
-    @Override
-    protected String getSSLServerAddress() throws Exception {
-        return "secure.news.iload-usenet.com";
-    }
-
-    @Override
-    protected int[] getAvailablePorts() {
-        return new int[] { 119, 23, 443, 8080, 9000 };
-    }
-
-    @Override
-    protected int[] getAvailableSSLPorts() {
-        return new int[] { 563, 81, 81 };
-    }
 }

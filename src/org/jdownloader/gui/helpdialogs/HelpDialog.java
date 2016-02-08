@@ -10,8 +10,8 @@ import javax.swing.Icon;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
-
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -28,11 +28,15 @@ public class HelpDialog {
     }
 
     public static Point getMouseLocation() {
-        PointerInfo pointerInfo = MouseInfo.getPointerInfo();
-        if (pointerInfo == null) {
+        if (Application.isHeadless()) {
             return null;
+        } else {
+            final PointerInfo pointerInfo = MouseInfo.getPointerInfo();
+            if (pointerInfo == null) {
+                return null;
+            }
+            return pointerInfo.getLocation();
         }
-        return pointerInfo.getLocation();
     }
 
     public static void show(final Boolean expandToBottom, final Boolean expandToRight, final Point point, final String dontShowAgainKey, int flags, String title, String msg, Icon icon) {
@@ -40,17 +44,13 @@ public class HelpDialog {
         if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isBalloonNotificationEnabled()) {
             return;
         }
-
         if (dontShowAgainKey != null) {
-
-            Integer ret = JSonStorage.getPlainStorage("Dialogs").get(dontShowAgainKey, -1);
+            final Integer ret = JSonStorage.getPlainStorage("Dialogs").get(dontShowAgainKey, -1);
             if (ret != null && ret > 0) {
                 return;
             }
         }
-
         try {
-
             ConfirmDialog d = new ConfirmDialog(flags | UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, _GUI._.literall_usage_tipp() + "\r\n\r\n..." + msg, icon, null, null) {
                 {
                     if (point != null) {
@@ -90,9 +90,7 @@ public class HelpDialog {
                     setReturnmask(false);
                     this.dispose();
                 }
-
             };
-
             if (BinaryLogic.containsAll(flags, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN)) {
                 d.setDoNotShowAgainSelected(true);
             }
@@ -104,7 +102,6 @@ public class HelpDialog {
         } catch (Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
-
     }
 
     public static void show(int flags, String title, String msg, Icon icon) {

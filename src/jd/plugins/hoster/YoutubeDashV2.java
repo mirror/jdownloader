@@ -893,7 +893,6 @@ public class YoutubeDashV2 extends PluginForHost {
                 }
                 LinkCollector.getInstance().setActiveVariantForLink(link, variant);
             }
-
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Old Link. Please readd the Link");
         }
@@ -958,8 +957,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-             * 15.12.2014
-             */"This video is not available.")) {
+                                                                                                                                 * 15.12.2014
+                                                                                                                                 */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);

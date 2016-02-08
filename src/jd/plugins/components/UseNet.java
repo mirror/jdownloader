@@ -1,4 +1,4 @@
-package jd.plugins.hoster;
+package jd.plugins.components;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
+import jd.controlling.proxy.ProxyController;
 import jd.http.BrowserSettingsThread;
 import jd.http.NoGateWayException;
 import jd.http.ProxySelectorInterface;
@@ -19,73 +18,51 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.UsenetFile;
-import jd.plugins.components.UsenetFileSegment;
 import jd.plugins.download.usenet.SimpleUseNetDownloadInterface;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.usenet.InvalidAuthException;
 import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
 import org.appwork.utils.net.usenet.SimpleUseNet;
 import org.appwork.utils.net.usenet.UnrecognizedCommandException;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
-public class UseNet extends PluginForHost {
-
-    private final String USENET_SELECTED_PORT    = "usenet_selected_port";
-    private final String USENET_SELECTED_SSLPORT = "usenet_selected_sslport";
-    private final String USENET_PREFER_SSL       = "usenet_prefer_ssl";
+public abstract class UseNet extends PluginForHost {
 
     public UseNet(PluginWrapper wrapper) {
         super(wrapper);
-        setUseNetConfigElements();
     }
 
     protected boolean isUsenetLink(DownloadLink link) {
         return link != null && "usenet".equals(link.getHost());
     }
 
-    public void setUseNetConfigElements() {
+    private UsenetConfigPanel<?> configPanel;
+
+    @Override
+    public PluginConfigPanelNG createConfigPanel() {
         if (!"usenet".equals(getHost())) {
-            final Integer[] ports = getPortSelection(getAvailablePorts());
-            if (ports.length > 1) {
-                getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), USENET_SELECTED_PORT, ports, "Select (Usenet)ServerPort").setDefaultValue(0));
+            UsenetConfigPanel<?> panel = this.configPanel;
+            if (panel == null) {
+                panel = new UsenetConfigPanel(this, getUsenetConfig());
+                this.configPanel = panel;
             }
-            if (supportsSSL()) {
-                final Integer[] sslPorts = getPortSelection(getAvailableSSLPorts());
-                if (sslPorts.length > 1) {
-                    getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), USENET_SELECTED_SSLPORT, sslPorts, "Select (Usenet)ServerPort(SSL)").setDefaultValue(0));
-                }
-                if (sslPorts.length > 0 && ports.length > 0) {
-                    getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USENET_PREFER_SSL, "Use (Usenet)SSL?").setDefaultValue(false));
-                }
-            }
+            return panel;
         }
+        return null;
     }
 
-    protected boolean supportsSSL() {
-        return (getAvailableSSLPorts().length > 0 && Application.getJavaVersion() >= Application.JAVA17);
+    protected UsenetConfigInterface getUsenetConfig() {
+        return PluginJsonConfig.get(getConfigInterface());
     }
 
-    protected boolean useSSL() {
-        return Application.getJavaVersion() >= Application.JAVA17 && getPluginConfig().getBooleanProperty(USENET_PREFER_SSL, false) && getAvailableSSLPorts().length > 0;
-    }
-
-    protected int getPort(final String ID, int[] ports) {
-        if (ports.length == 0) {
-            return -1;
-        } else {
-            final int index = getPluginConfig().getIntegerProperty(ID, 0);
-            if (index >= ports.length) {
-                return ports[0];
-            } else {
-                return ports[index];
-            }
-        }
-    }
+    @Override
+    public abstract Class<? extends UsenetConfigInterface> getConfigInterface();
 
     protected String getUsername(final Account account) {
         return account.getUser();
@@ -93,14 +70,6 @@ public class UseNet extends PluginForHost {
 
     protected String getPassword(final Account account) {
         return account.getPass();
-    }
-
-    protected Integer[] getPortSelection(int[] ports) {
-        final Integer[] ret = new Integer[ports.length];
-        for (int i = 0; i < ports.length; i++) {
-            ret[i] = ports[i];
-        }
-        return ret;
     }
 
     @Override
@@ -150,21 +119,16 @@ public class UseNet extends PluginForHost {
         return 1;
     }
 
-    protected String getServerAddress() throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    @Override
+    public boolean hasConfig() {
+        if (!"usenet".equals(getHost())) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    protected String getSSLServerAddress() throws Exception {
-        return null;
-    }
-
-    protected int[] getAvailablePorts() {
-        return new int[] { 119 };
-    }
-
-    protected int[] getAvailableSSLPorts() {
-        return new int[0];
-    }
+    public abstract List<UsenetServer> getAvailableUsenetServer();
 
     private final AtomicReference<SimpleUseNet> client = new AtomicReference<SimpleUseNet>(null);
 
@@ -176,7 +140,19 @@ public class UseNet extends PluginForHost {
             setIncomplete(downloadLink, true);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final List<HTTPProxy> proxies = selectProxies();
+
+        final String username = getUsername(account);
+        final String password = getPassword(account);
+        final UsenetConfigInterface config = getUsenetConfig();
+        UsenetServer server = config.getUsenetServer();
+        if (server == null) {
+            server = getAvailableUsenetServer().get(0);
+        }
+        if (server == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final URI uri = new URI("socket://" + server.getHost() + ":" + server.getPort());
+        final List<HTTPProxy> proxies = selectProxies(uri);
         final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger()) {
 
             @Override
@@ -185,37 +161,16 @@ public class UseNet extends PluginForHost {
             }
 
         };
-        this.client.set(client);
         try {
-            final String username = getUsername(account);
-            final String password = getPassword(account);
-            final boolean useSSL;
-            final String serverAddress;
-            final int port;
-            if (useSSL()) {
-                final String sslServerAddress = getSSLServerAddress();
-                if (sslServerAddress != null) {
-                    serverAddress = sslServerAddress;
-                } else {
-                    serverAddress = getServerAddress();
-                }
-                useSSL = true;
-                port = getPort(USENET_SELECTED_SSLPORT, getAvailableSSLPorts());
-            } else {
-                serverAddress = getServerAddress();
-                useSSL = false;
-                port = getPort(USENET_SELECTED_PORT, getAvailablePorts());
-            }
-            if (serverAddress == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (port == -1) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            client.connect(serverAddress, port, useSSL, username, password);
+            this.client.set(client);
+            client.connect(server.getHost(), server.getPort(), server.isSSL(), username, password);
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } catch (HTTPProxyException e) {
+            ProxyController.getInstance().reportHTTPProxyException(proxies.get(0), uri, e);
+            throw e;
         }
+        // TODO: proxy exception handling
         // checkCompleteness(downloadLink, client, usenetFile);
         dl = new SimpleUseNetDownloadInterface(client, downloadLink, usenetFile);
         try {
@@ -287,7 +242,7 @@ public class UseNet extends PluginForHost {
         }
     }
 
-    protected List<HTTPProxy> selectProxies() throws IOException {
+    protected List<HTTPProxy> selectProxies(URI uri) throws IOException {
         final ProxySelectorInterface selector = getProxySelector();
         if (selector == null) {
             final ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
@@ -296,12 +251,12 @@ public class UseNet extends PluginForHost {
         }
         final List<HTTPProxy> list;
         try {
-            list = selector.getProxiesByURI(new URI("socket://" + getHost()));
+            list = selector.getProxiesByURI(uri);
         } catch (Throwable e) {
             throw new NoGateWayException(selector, e);
         }
         if (list == null || list.size() == 0) {
-            throw new NoGateWayException(selector, "No Gateway or Proxy Found");
+            throw new NoGateWayException(selector, "No Gateway or Proxy Found: " + uri);
         }
         return list;
     }

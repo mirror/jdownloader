@@ -527,7 +527,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     basicauth = null;
                     this.br.getHeaders().remove("Authorization");
                 }
-                if (raz) {
+                if (!raz) {
                     // test, identifying as german will redirect on direct links.
                     br.getHeaders().put("Accept-Language", "en");
                 }

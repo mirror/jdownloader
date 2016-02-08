@@ -1,6 +1,8 @@
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -13,6 +15,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.UseNet;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetServer;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -32,6 +37,15 @@ public class SnelNLUsenet extends UseNet {
     @Override
     protected String getUsername(Account account) {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
+    }
+
+    public static interface SnelNLUsenetConfigInterface extends UsenetConfigInterface {
+
+    };
+
+    @Override
+    public Class<SnelNLUsenetConfigInterface> getConfigInterface() {
+        return SnelNLUsenetConfigInterface.class;
     }
 
     private boolean containsSessionCookie(final Cookies cookies) {
@@ -126,22 +140,11 @@ public class SnelNLUsenet extends UseNet {
     }
 
     @Override
-    protected String getServerAddress() {
-        return "reader.snelnl.com";
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("reader.snelnl.com", false, 119, 443, 8080));
+        ret.addAll(UsenetServer.createServerList("reader.snelnl.com", true, 563, 80, 81));
+        return ret;
     }
 
-    @Override
-    protected String getSSLServerAddress() throws Exception {
-        return "reader.snelnl.com";
-    }
-
-    @Override
-    protected int[] getAvailablePorts() {
-        return new int[] { 119, 443, 8080 };
-    }
-
-    @Override
-    protected int[] getAvailableSSLPorts() {
-        return new int[] { 80, 81, 563 };
-    }
 }

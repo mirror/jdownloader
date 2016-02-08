@@ -1,6 +1,8 @@
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Cookies;
@@ -12,6 +14,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.UseNet;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetServer;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -27,6 +32,15 @@ public class NewsTweaknewsEu extends UseNet {
     @Override
     public String getAGBLink() {
         return "http://www.tweaknews.eu/en/conditions";
+    }
+
+    public static interface NewsTweakConfigInterface extends UsenetConfigInterface {
+
+    };
+
+    @Override
+    public Class<NewsTweakConfigInterface> getConfigInterface() {
+        return NewsTweakConfigInterface.class;
     }
 
     private final String USENET_USERNAME = "USENET_USERNAME";
@@ -144,17 +158,11 @@ public class NewsTweaknewsEu extends UseNet {
     }
 
     @Override
-    protected String getServerAddress() {
-        return "news.tweaknews.eu";
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("news.tweaknews.eu", false, 119, 80));
+        ret.addAll(UsenetServer.createServerList("news.tweaknews.eu", true, 563, 443));
+        return ret;
     }
 
-    @Override
-    protected int[] getAvailablePorts() {
-        return new int[] { 119, 80 };
-    }
-
-    @Override
-    protected int[] getAvailableSSLPorts() {
-        return new int[] { 563, 443 };
-    }
 }

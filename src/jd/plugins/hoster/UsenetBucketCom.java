@@ -1,6 +1,8 @@
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Cookies;
@@ -11,6 +13,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.UseNet;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetServer;
 
 import org.appwork.utils.Regex;
 
@@ -40,6 +45,15 @@ public class UsenetBucketCom extends UseNet {
         return account.getStringProperty(USENET_PASSWORD, account.getUser());
     }
 
+    public static interface UsenetBucketConfigInterface extends UsenetConfigInterface {
+
+    };
+
+    @Override
+    public Class<UsenetBucketConfigInterface> getConfigInterface() {
+        return UsenetBucketConfigInterface.class;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
@@ -62,13 +76,13 @@ public class UsenetBucketCom extends UseNet {
             }
             if (br.getCookie(getHost(), "PHPSESSID") == null) {
                 account.clearCookies("");
-                final String userName = Encoding.urlEncode(account.getUser());
+                final String userName = account.getUser();
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for usenetbucket.com website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 br.getPage("https://www.usenetbucket.com/en/");
                 login = br.getFormbyActionRegex("/login/form/");
-                login.put("u", userName);
+                login.put("u", Encoding.urlEncode(userName));
                 login.put("p", Encoding.urlEncode(account.getPass()));
                 login.put("_xclick", "doLogin");
                 br.submitForm(login);
@@ -119,18 +133,11 @@ public class UsenetBucketCom extends UseNet {
     }
 
     @Override
-    protected String getServerAddress() {
-        return "reader.usenetbucket.com";
-    }
-
-    @Override
-    protected int[] getAvailablePorts() {
-        return new int[] { 80, 119 };
-    }
-
-    @Override
-    protected int[] getAvailableSSLPorts() {
-        return new int[] { 563, 443 };
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("reader.usenetbucket.com", false, 119, 80));
+        ret.addAll(UsenetServer.createServerList("reader.usenetbucket.com", true, 563, 443));
+        return ret;
     }
 
 }

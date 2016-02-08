@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,6 +42,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.UseNet;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetServer;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
@@ -74,6 +78,15 @@ public class PremiumTo extends UseNet {
             connectionLimits.put("keep2share.cc", 1);
             connectionLimits.put("k2s.cc", 1);
         }
+    }
+
+    public static interface PremiumToConfigInterface extends UsenetConfigInterface {
+
+    };
+
+    @Override
+    public Class<PremiumToConfigInterface> getConfigInterface() {
+        return PremiumToConfigInterface.class;
     }
 
     @Override
@@ -572,18 +585,11 @@ public class PremiumTo extends UseNet {
     }
 
     @Override
-    protected String getServerAddress() throws Exception {
-        return "usenet2.premium.to";
-    }
-
-    @Override
-    protected int[] getAvailablePorts() {
-        return new int[] { 81, 119 };
-    }
-
-    @Override
-    protected int[] getAvailableSSLPorts() {
-        return new int[] { 444, 563 };
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", false, 119, 81));
+        ret.addAll(UsenetServer.createServerList("usenet2.premium.to", true, 563, 444));
+        return ret;
     }
 
 }
