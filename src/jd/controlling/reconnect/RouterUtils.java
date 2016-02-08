@@ -139,7 +139,7 @@ public class RouterUtils {
 
     private static boolean checkPort(String host, int port) {
         URLConnectionAdapter con = null;
-        LogSource logger = LogController.CL(false);
+        final LogSource logger = LogController.CL(false);
         logger.setAllowTimeoutFlush(false);
         try {
             logger.info("Check " + host + ":" + port);
@@ -172,6 +172,9 @@ public class RouterUtils {
                         }
                     }
                     break;
+                } catch (final UnknownHostException ignore) {
+                    logger.clear();
+                    return false;
                 } catch (BrowserException e) {
                     e.printStackTrace();
                     SocketTimeoutException timeout = Exceptions.getInstanceof(e, SocketTimeoutException.class);

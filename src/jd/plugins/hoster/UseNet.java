@@ -1,4 +1,4 @@
-package jd.plugins.components;
+package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -21,6 +21,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetConfigPanel;
+import jd.plugins.components.UsenetFile;
+import jd.plugins.components.UsenetFileSegment;
+import jd.plugins.components.UsenetServer;
 import jd.plugins.download.usenet.SimpleUseNetDownloadInterface;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -32,7 +37,7 @@ import org.appwork.utils.net.usenet.UnrecognizedCommandException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
-public abstract class UseNet extends PluginForHost {
+public class UseNet extends PluginForHost {
 
     public UseNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +54,7 @@ public abstract class UseNet extends PluginForHost {
         if (!"usenet".equals(getHost())) {
             UsenetConfigPanel<?> panel = this.configPanel;
             if (panel == null) {
-                panel = new UsenetConfigPanel(this, getUsenetConfig());
+                panel = new UsenetConfigPanel(getHost(), getAvailableUsenetServer().toArray(new UsenetServer[0]), getUsenetConfig());
                 this.configPanel = panel;
             }
             return panel;
@@ -62,7 +67,9 @@ public abstract class UseNet extends PluginForHost {
     }
 
     @Override
-    public abstract Class<? extends UsenetConfigInterface> getConfigInterface();
+    public Class<? extends UsenetConfigInterface> getConfigInterface() {
+        return UsenetConfigInterface.class;
+    }
 
     protected String getUsername(final Account account) {
         return account.getUser();
@@ -128,7 +135,9 @@ public abstract class UseNet extends PluginForHost {
         }
     }
 
-    public abstract List<UsenetServer> getAvailableUsenetServer();
+    public List<UsenetServer> getAvailableUsenetServer() {
+        return new ArrayList<UsenetServer>();
+    }
 
     private final AtomicReference<SimpleUseNet> client = new AtomicReference<SimpleUseNet>(null);
 

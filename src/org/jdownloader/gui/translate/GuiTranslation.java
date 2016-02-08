@@ -562,6 +562,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Downloading with %s1 chunk(s)" })
     String ConnectionColumn_getStringValue_chunks(int currentChunks);
 
+    @Default(lngs = { "en" }, values = { "Downloading from %s1" })
+    String ConnectionColumn_getStringValue_from(String host);
+
     @Default(lngs = { "en" }, values = { "Sorted by '%s1'-Column" })
     String DownloadsTable_actionPerformed_sortwarner_title(String column);
 
@@ -5998,7 +6001,6 @@ public interface GuiTranslation extends TranslateInterface {
     String StopDownloadsAction();
 
     @Default(lngs = { "en" }, values = { "CaptchaSolutions.com" })
-
     String CaptchaSolutionsSolver_gettypeName_();
 
     @Default(lngs = { "en" }, values = { "Invalid answer: %s1" })
@@ -6014,7 +6016,6 @@ public interface GuiTranslation extends TranslateInterface {
     String AddSubMenuAction_getListCellRendererComponent_container(String name);
 
     @Default(lngs = { "en" }, values = { "%s1 (Component)" })
-
     String AddSubMenuAction_component(String name);
 
     @Default(lngs = { "en" }, values = { "Main Window is always on top of other windows" })
@@ -6036,6 +6037,5 @@ public interface GuiTranslation extends TranslateInterface {
     String MenuEditors_boxwidth_min();
 
     @Default(lngs = { "en" }, values = { "Preferred width" })
-
     String MenuEditors_boxwidth_pref();
 }
