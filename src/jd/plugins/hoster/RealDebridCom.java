@@ -197,13 +197,19 @@ public class RealDebridCom extends antiDDoSForHost {
     private void handleDL(final Account acc, final DownloadLink link, final String dllink) throws Exception {
         // real debrid connections are flakey at times! Do this instead of repeating download steps.
         for (int i = 0; i <= repeat; i++) {
-            DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+            final String host = Browser.getHost(dllink);
+            final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
                 @Override
                 public HashInfo getHashInfo() {
                     if (swapped) {
                         return null;
                     }
                     return super.getHashInfo();
+                }
+
+                @Override
+                public String getHost() {
+                    return host;
                 }
             };
             final Browser br2 = br.cloneBrowser();

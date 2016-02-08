@@ -31,6 +31,7 @@ import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -957,8 +958,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-                                                                                                                                 * 15.12.2014
-                                                                                                                                 */"This video is not available.")) {
+             * 15.12.2014
+             */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1096,6 +1097,7 @@ public class YoutubeDashV2 extends PluginForHost {
         final DownloadLink dashLink = new DownloadLink(this, dashName, getHost(), request.getUrl(), true);
         dashLink.setLivePlugin(this);
         final LinkStatus videoLinkStatus = new LinkStatus(dashLink);
+        final String host = Browser.getHost(request.getUrl());
         Downloadable dashDownloadable = new DownloadLinkDownloadable(dashLink) {
 
             volatile long[] chunkProgress = null;
@@ -1114,6 +1116,11 @@ public class YoutubeDashV2 extends PluginForHost {
                         chunkProgress = ret2;
                     }
                 }
+            }
+
+            @Override
+            public String getHost() {
+                return host;
             }
 
             @Override

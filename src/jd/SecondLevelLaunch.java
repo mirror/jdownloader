@@ -44,6 +44,21 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
 
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.resources.AWUTheme;
@@ -78,6 +93,7 @@ import org.appwork.utils.os.SecuritySoftwareInfo;
 import org.appwork.utils.os.SecuritySoftwareResponse;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SlowEDTDetector;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -122,21 +138,6 @@ import com.btr.proxy.selector.pac.PacScriptParser;
 import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
-
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.jdgui.JDGui;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
 
 public class SecondLevelLaunch {
     static {
@@ -915,13 +916,18 @@ public class SecondLevelLaunch {
                             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
                                 @Override
                                 public void run() {
-                                    new Thread("ExecuteWhenGuiReachedThread: Init Clipboard and ChallengeResponseController") {
-                                        public void run() {
+                                    final GraphicalUserInterfaceSettings guiConfig = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+                                    new EDTRunner() {
+                                        /*
+                                         * moved to edt. rar init freezes under linux
+                                         */
+                                        @Override
+                                        protected void runInEDT() {
                                             /* init clipboardMonitoring stuff */
-                                            if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSkipClipboardMonitorFirstRound()) {
+                                            if (guiConfig.isSkipClipboardMonitorFirstRound()) {
                                                 ClipboardMonitoring.setFirstRoundDone(false);
                                             }
-                                            if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isClipboardMonitorProcessHTMLFlavor()) {
+                                            if (!guiConfig.isClipboardMonitorProcessHTMLFlavor()) {
                                                 ClipboardMonitoring.setHtmlFlavorAllowed(false);
                                             }
                                             if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
@@ -940,6 +946,10 @@ public class SecondLevelLaunch {
                                                 public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                                                 }
                                             });
+                                        }
+                                    }.start(true);
+                                    new Thread("ExecuteWhenGuiReachedThread: Init Clipboard and ChallengeResponseController") {
+                                        public void run() {
                                             ChallengeResponseController.getInstance().init();
                                         };
                                     }.start();
