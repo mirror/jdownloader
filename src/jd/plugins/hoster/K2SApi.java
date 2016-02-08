@@ -21,6 +21,9 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,8 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -845,7 +846,7 @@ public abstract class K2SApi extends PluginForHost {
                 }
             } catch (final PluginException p) {
                 logger.warning(getRevisionInfo());
-                logger.warning("ERROR :: " + getAPIRevision() + " :: " + msg);
+                logger.warning("ERROR :: " + msg);
                 throw p;
             }
         } else if (errCode != null && !errCode.matches("\\d+")) {
@@ -1475,7 +1476,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private int responseCode429 = 0;
-    private int responseCode52x = 0;
+    private int responseCode5xx = 0;
 
     /**
      * Performs Cloudflare and Incapsula requirements.<br />
@@ -1491,7 +1492,6 @@ public abstract class K2SApi extends PluginForHost {
         }
         final HashMap<String, String> cookies = new HashMap<String, String>();
         if (ibr.getHttpConnection() != null) {
-            final String URL = ibr.getURL();
             final int responseCode = ibr.getHttpConnection().getResponseCode();
             if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
                 Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
@@ -1501,38 +1501,49 @@ public abstract class K2SApi extends PluginForHost {
                 if (responseCode == 403 && cloudflare != null) {
                     // new method seems to be within 403
                     if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                        // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                        // we will manually remove all those
-                        while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                            cloudflare.remove("recaptcha_response_field");
-                        }
-                        while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                            cloudflare.remove("recaptcha_challenge_field");
-                        }
-                        // this one is null, needs to be ""
-                        if (cloudflare.hasInputFieldByName("message")) {
-                            cloudflare.remove("message");
-                            cloudflare.put("messsage", "\"\"");
-                        }
-                        // recaptcha bullshit
-                        String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                        if (apiKey == null) {
-                            apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                            if (apiKey == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        // recapthcha v2
+                        if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                            final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                            this.setDownloadLink(dllink);
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr).getToken();
+                            cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        } else {
+                            // recapthca v1
+                            if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                                // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                                // we will manually remove all those
+                                while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                                    cloudflare.remove("recaptcha_response_field");
+                                }
+                                while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                                    cloudflare.remove("recaptcha_challenge_field");
+                                }
+                                // this one is null, needs to be ""
+                                if (cloudflare.hasInputFieldByName("message")) {
+                                    cloudflare.remove("message");
+                                    cloudflare.put("messsage", "\"\"");
+                                }
+                                // recaptcha bullshit,
+                                String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                                if (apiKey == null) {
+                                    apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                                    if (apiKey == null) {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                    }
+                                }
+                                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                                final Recaptcha rc = new Recaptcha(ibr, this);
+                                rc.setId(apiKey);
+                                rc.load();
+                                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                                final String response = getCaptchaCode("recaptcha", cf, dllink);
+                                if (inValidate(response)) {
+                                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                                }
+                                cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                                cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                             }
                         }
-                        final DownloadLink dllink = new DownloadLink(null, "antiDDoS Provider 'Clouldflare' requires Captcha", getDomain(), getProtocol() + getDomain(), true);
-                        final Recaptcha rc = new Recaptcha(ibr, this);
-                        rc.setId(apiKey);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String response = getCaptchaCode("recaptcha", cf, dllink);
-                        if (inValidate(response)) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                        cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         ibr.submitForm(cloudflare);
                         if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
                             logger.warning("Wrong captcha");
@@ -1571,13 +1582,31 @@ public abstract class K2SApi extends PluginForHost {
                     if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                         ibr.getPage(ibr.getRedirectLocation());
                     }
-                } else if (responseCode == 520 || responseCode == 522) {
+                } else if (responseCode == 521) {
+                    // this basically indicates that the site is down, no need to retry.
+                    // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
+                    responseCode5xx++;
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"Origin Sever\" is down!", 5 * 60 * 1000l);
+                } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 525) {
+                    // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
+                    // additional request could work via additional IP
+                    /**
+                     * @see clouldflare_504_snippet.html
+                     */
+                    // HTTP/1.1 504 Gateway Time-out
                     // HTTP/1.1 520 Origin Error
                     // HTTP/1.1 522 Origin Connection Time-out
+                    /**
+                     * @see cloudflare_523_snippet.html
+                     */
+                    // HTTP/1.1 523 Origin Unreachable
+                    // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
+                    // server.<
                     // cache system with possible origin dependency... we will wait and retry
-                    if (responseCode52x == 4) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                    if (responseCode5xx == 4) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare can not contact \"Origin Server\"", 5 * 60 * 1000l);
                     }
+                    responseCode5xx++;
                     // this html based cookie, set by <meta (for responseCode 522)
                     // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
                     String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
@@ -1600,8 +1629,13 @@ public abstract class K2SApi extends PluginForHost {
                     // effectively refresh page!
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Throwable t) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                    } catch (final Exception t) {
+                        // we want to preserve proper exceptions!
+                        if (t instanceof PluginException) {
+                            throw t;
+                        }
+                        t.printStackTrace();
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
                     }
                     // new sendRequest saves.
                     return;
@@ -1615,7 +1649,11 @@ public abstract class K2SApi extends PluginForHost {
                     // try again! -NOTE: this isn't stable compliant-
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Throwable t) {
+                    } catch (final Exception t) {
+                        // we want to preserve proper exceptions!
+                        if (t instanceof PluginException) {
+                            throw t;
+                        }
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                     }
                     return;

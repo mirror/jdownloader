@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,14 +28,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -65,20 +63,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
-public class BackinNet extends PluginForHost {
+public class BackinNet extends antiDDoSForHost {
 
     // Site Setters
     // primary website url, take note of redirects
@@ -90,7 +81,6 @@ public class BackinNet extends PluginForHost {
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|dw/dw\\.php\\?[^\"]+)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
@@ -104,6 +94,11 @@ public class BackinNet extends PluginForHost {
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
     // DEV NOTES
     // XfileShare Version 3.0.8.5
@@ -167,43 +162,19 @@ public class BackinNet extends PluginForHost {
      * @author raztoki
      *
      * @category 'Experimental', Mods written July 2012 - 2013
-     * */
+     */
     public BackinNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    /**
-     * defines custom browser requirements.
-     * */
-    private Browser prepBrowser(final Browser prepBr) {
-        HashMap<String, String> map = null;
-        synchronized (cloudflareCookies) {
-            map = new HashMap<String, String>(cloudflareCookies);
-        }
-        if (!map.isEmpty()) {
-            for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final String value = cookieEntry.getValue();
-                prepBr.setCookie(this.getHost(), key, value);
-            }
-        }
-        if (useRUA) {
-            if (userAgent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            prepBr.getHeaders().put("User-Agent", userAgent.get());
-        }
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        prepBr.setCookie(COOKIE_HOST, "lang", "english");
-        // required for native cloudflare support, without the need to repeat requests.
-        try {
-            /* not available in old stable */
-            prepBr.setAllowedResponseCodes(new int[] { 503 });
-        } catch (Throwable e) {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            br.setCookie(COOKIE_HOST, "lang", "english");
         }
         return prepBr;
     }
@@ -214,7 +185,6 @@ public class BackinNet extends PluginForHost {
         correctDownloadLink(downloadLink);
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         br.setFollowRedirects(true);
-        prepBrowser(br);
 
         String[] fileInfo = new String[2];
 
@@ -254,13 +224,20 @@ public class BackinNet extends PluginForHost {
         }
         // scan the first page
         scanInfo(downloadLink, fileInfo);
+
+        // abbreviated over x chars long
+        if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;")) {
+            logger.warning("filename length is larrrge");
+            altAvailReport(downloadLink, fileInfo);
+        }
+
         // scan the second page. filesize[1] isn't mission critical
         if (inValidate(fileInfo[0])) {
             Form download1 = getFormByKey(cbr, "op", "download1");
             if (download1 != null) {
                 download1 = cleanForm(download1);
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 scanInfo(downloadLink, fileInfo);
             }
             if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
@@ -336,13 +313,12 @@ public class BackinNet extends PluginForHost {
      * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
      * method doesn't give filename...
      *
-     * */
-    private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
+     */
+    private void altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
-        prepBrowser(alt);
         // cloudflare initial support is within getPage.. otherwise not needed.
-        alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
-        alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
+        getPage(alt, COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
+        postPage(alt, "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
@@ -356,7 +332,13 @@ public class BackinNet extends PluginForHost {
         if (!inValidate(fuid) && inValidate(fileInfo[0])) {
             fileInfo[0] = fuid;
         }
-        return fileInfo;
+        return;
+    }
+
+    private void altAvailReport(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
+        final Browser alt = new Browser();
+        getPage(alt, COOKIE_HOST + "/?op=report_file&id=" + fuid);
+        fileInfo[0] = alt.getRegex(">Filename:?</b></td><td>([^<]+)</td>").getMatch(0);
     }
 
     @SuppressWarnings("unused")
@@ -420,7 +402,7 @@ public class BackinNet extends PluginForHost {
                 captchaForm(downloadLink, dl);
                 if (!skipWaitTime) {
                     waitTime(timeBefore, downloadLink);
-                    sendForm(dl);
+                    submitForm(dl);
                 }
             }
             checkErrors(downloadLink, account, true);
@@ -436,7 +418,7 @@ public class BackinNet extends PluginForHost {
                     download1 = cleanForm(download1);
                     // end of backward compatibility
                     download1.remove("method_premium");
-                    sendForm(download1);
+                    submitForm(download1);
                     checkErrors(downloadLink, account, false);
                     getDllink();
                 }
@@ -463,7 +445,7 @@ public class BackinNet extends PluginForHost {
                     if (!skipWaitTime) {
                         waitTime(timeBefore, downloadLink);
                     }
-                    sendForm(dlForm);
+                    submitForm(dlForm);
                     logger.info("Submitted DLForm");
                     checkErrors(downloadLink, account, true);
                     getDllink();
@@ -750,14 +732,7 @@ public class BackinNet extends PluginForHost {
                 }
             }
             logger.warning(msg);
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (cbr.containsHTML(MAINTENANCE)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
@@ -874,7 +849,7 @@ public class BackinNet extends PluginForHost {
             }
             account.setProperty("totalMaxSim", 20);
             ai.setValidUntil(expire);
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -884,7 +859,6 @@ public class BackinNet extends PluginForHost {
         synchronized (ACCLOCK) {
             try {
                 /** Load cookies */
-                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -920,7 +894,7 @@ public class BackinNet extends PluginForHost {
                 loginform = captchaForm(dummyLink, loginform);
                 // end of check form for login captcha crap.loginform
                 loginform.remove(null);
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(language)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -989,7 +963,7 @@ public class BackinNet extends PluginForHost {
                     } else if (cbr.containsHTML(PASSWORDTEXT)) {
                         dlform = handlePassword(dlform, downloadLink);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     checkErrors(downloadLink, account, true);
                     getDllink();
                     if (inValidate(dllink)) {
@@ -1099,7 +1073,7 @@ public class BackinNet extends PluginForHost {
     /**
      * Rules to prevent new downloads from commencing
      *
-     * */
+     */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
             // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account
@@ -1133,7 +1107,7 @@ public class BackinNet extends PluginForHost {
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
      *
      * @author raztoki
-     * */
+     */
     @SuppressWarnings("unused")
     @Override
     public void correctDownloadLink(final DownloadLink downloadLink) {
@@ -1204,141 +1178,21 @@ public class BackinNet extends PluginForHost {
         downloadLink.setProperty("requiresPremiumAccount", Property.NULL);
     }
 
-    /**
-     * Gets page <br />
-     * - natively supports silly cloudflare anti DDoS crapola
-     *
-     * @author raztoki
-     */
-    private void getPage(final String page) throws Exception {
-        if (page == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        try {
-            br.getPage(page);
-        } catch (Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-            // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-                logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else {
-                throw e;
-            }
-        }
-        // prevention is better than cure
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-            Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) {
-                cloudflare = br.getFormbyProperty("id", "challenge-form");
-            }
-            if (cloudflare != null) {
-                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) {
-                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                }
-                if (math == null) {
-                    String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) {
-                        variableName = variableName.trim();
-                    }
-                    math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                }
-                if (math == null) {
-                    logger.warning("Couldn't find 'math'");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                // author.
-                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-                ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                cloudflare.put("jschl_answer", value + "");
-                Thread.sleep(5500);
-                br.submitForm(cloudflare);
-                if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                    logger.warning("Possible plugin error within cloudflare handling");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
-                synchronized (cloudflareCookies) {
-                    cloudflareCookies.clear();
-                    cloudflareCookies.putAll(cookies);
-                }
-            }
-        }
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    @SuppressWarnings("unused")
-    private void postPage(String page, final String postData) throws Exception {
-        if (page == null || postData == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // stable sucks
-        if (isJava7nJDStable() && page.startsWith("https")) {
-            page = page.replaceFirst("https://", "http://");
-        }
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        try {
-            br.postPage(page, postData);
-        } finally {
-            br.getHeaders().put("Content-Type", null);
-        }
+    @Override
+    protected void postPage(String page, final String postData) throws Exception {
+        super.postPage(page, postData);
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
-        if (form == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
-        if (Form.MethodType.POST.equals(form.getMethod())) {
-            // if the form doesn't contain an action lets set one based on current br.getURL().
-            if (form.getAction() == null || form.getAction().equals("")) {
-                form.setAction(br.getURL());
-            }
-            if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
-                if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
-                    // change relative path into full path, with protocol correction
-                    String basepath = new Regex(br.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
-                    String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
-                    String path = form.getAction();
-                    String finalpath = null;
-                    if (path.startsWith("/")) {
-                        finalpath = basedomain.replaceFirst("https://", "http://") + path;
-                    } else if (!path.startsWith(".")) {
-                        finalpath = basepath.replaceFirst("https://", "http://") + path;
-                    } else {
-                        // lacking builder for ../relative paths. this will do for now.
-                        logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                    form.setAction(finalpath);
-                } else {
-                    form.setAction(form.getAction().replaceFirst("https?://", "http://"));
-                }
-                if (!stableSucks.get()) {
-                    showSSLWarning(this.getHost());
-                }
-            }
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        }
-        try {
-            br.submitForm(form);
-        } finally {
-            br.getHeaders().put("Content-Type", null);
-        }
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -1355,7 +1209,7 @@ public class BackinNet extends PluginForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -1440,7 +1294,7 @@ public class BackinNet extends PluginForHost {
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
      *
      * @author raztoki
-     * */
+     */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
         if (form.containsHTML(";background:#ccc;text-align")) {
@@ -1549,7 +1403,7 @@ public class BackinNet extends PluginForHost {
      * @param source
      *            for the Regular Expression match against
      * @return String result
-     * */
+     */
     private String regexDllink(final String source) {
         if (inValidate(source)) {
             return null;
@@ -1584,7 +1438,7 @@ public class BackinNet extends PluginForHost {
      * @param source
      *            String for decoder to process
      * @return String result
-     * */
+     */
     private void decodeDownloadLink(final String s) {
         String decoded = null;
 
@@ -1624,7 +1478,7 @@ public class BackinNet extends PluginForHost {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
@@ -1646,7 +1500,7 @@ public class BackinNet extends PluginForHost {
      * @param account
      *
      * @category 'Experimental', Mod written February 2013
-     * */
+     */
     private void controlSimHost(final Account account) {
         synchronized (CTRLLOCK) {
             if (usedHost == null) {
@@ -1688,7 +1542,7 @@ public class BackinNet extends PluginForHost {
      * @param action
      *            To add or remove slot, true == adds, false == removes
      * @throws Exception
-     * */
+     */
     private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
         synchronized (CTRLLOCK) {
             // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
@@ -1791,7 +1645,7 @@ public class BackinNet extends PluginForHost {
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
-     * */
+     */
     private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
         if (usedHost == null || x == null) {
             return;
@@ -1834,7 +1688,7 @@ public class BackinNet extends PluginForHost {
      *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private synchronized String getHashedHashedKey(final Account account) {
         if (usedHost == null) {
             return null;
@@ -1856,7 +1710,7 @@ public class BackinNet extends PluginForHost {
      *
      * @param account
      *            Account that's been used, can be null
-     * */
+     */
     private synchronized Integer getHashedHashedValue(final Account account) {
         if (usedHost == null) {
             return null;
@@ -1880,7 +1734,7 @@ public class BackinNet extends PluginForHost {
      *            Account that's been used, can be null
      * @param key
      *            String of what ever you want to find
-     * */
+     */
     private synchronized boolean isHashedHashedKey(final Account account, final String key) {
         if (key == null) {
             return false;
@@ -1898,22 +1752,6 @@ public class BackinNet extends PluginForHost {
         return false;
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
@@ -1924,7 +1762,7 @@ public class BackinNet extends PluginForHost {
      *            expected value
      * @param ibr
      *            import browser
-     * */
+     */
     private Form getFormByKey(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();
         if (workaround != null) {
@@ -1951,7 +1789,7 @@ public class BackinNet extends PluginForHost {
      * TODO: remove after JD2 goes stable!
      *
      * @author raztoki
-     * */
+     */
     private Form cleanForm(Form form) {
         if (form == null) {
             return null;
@@ -1985,7 +1823,7 @@ public class BackinNet extends PluginForHost {
      * @param t
      *            Provided replacement string output browser
      * @author raztoki
-     * */
+     */
     private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
         String dMD5 = JDHash.getMD5(ibr.toString());
         // preserve valuable original request components.
@@ -2041,74 +1879,6 @@ public class BackinNet extends PluginForHost {
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
-    }
-
-    private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-
-    public static void showSSLWarning(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            } else {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else if ("es".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
-                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            } else {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            } else {
-                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        }
-                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) {
-                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                        }
-                        stableSucks.set(true);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
     @Override
