@@ -65,14 +65,18 @@ public class NmStrm24Com extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             fpName = br.getRegex("'pageName': '([^<>\"']+)'").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("class='post-title entry-title'>[\t\n\r ]+<a href='http://[^<>\"']+'>([^<>\"']+)</a>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("class='post-title entry-title'>[\t\n\r ]+<a href='http://[^<>\"']+'>([^<>\"']+)</a>").getMatch(0);
+            }
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             fpName = Encoding.htmlDecode(fpName.trim());
             String[] fragments = br.getRegex("<div id=\"fragment-\\d+\"(.*?)[\r\n]+</script><br />[\r\n]+</div>").getColumn(0);
-            if (fragments == null || fragments.length == 0) fragments = br.getRegex("<div id=\"fragment-\\d+\"(.*?)<br />[\r\n]").getColumn(0);
+            if (fragments == null || fragments.length == 0) {
+                fragments = br.getRegex("<div id=\"fragment-\\d+\"(.*?)<br />[\r\n]").getColumn(0);
+            }
             if ((fragments == null || fragments.length == 0) && !br.containsHTML(">Mirror")) {
                 logger.warning("Link doesn't contain any downloadable links: " + parameter);
                 return decryptedLinks;
@@ -92,7 +96,9 @@ public class NmStrm24Com extends PluginForDecrypt {
                     logger.info("A offline hoster was referenced. Continuing anyway....");
                 } else {
                     final DownloadLink dl = createDownloadlink(dllink);
-                    if (filename != null) dl.setFinalFileName(filename);
+                    if (filename != null) {
+                        dl.setFinalFileName(filename);
+                    }
                     decryptedLinks.add(dl);
                 }
             }
@@ -124,21 +130,25 @@ public class NmStrm24Com extends PluginForDecrypt {
         if (externID != null) {
             br.getPage(externID);
             final String finallink = br.getRegex("\"stream_h264_url\":\"(http:[^<>\"']+)\"").getMatch(0);
-            if (finallink != null)
+            if (finallink != null) {
                 return ("directhttp://" + finallink.replace("\\", ""));
-            else
+            } else {
                 return null;
+            }
         }
         externID = new Regex(fragment, "/pl/mod\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
-        if (externID == null) externID = new Regex(fragment, "modovideo\\.com/frame\\.php\\?v=([a-z0-9]+)\\&").getMatch(0);
         if (externID != null) {
             // hoster offline
             return "offline";
         }
         externID = new Regex(fragment, "/pl/y\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
-        if (externID != null) { return "http://yourupload.com/file/" + externID; }
+        if (externID != null) {
+            return "http://yourupload.com/file/" + externID;
+        }
         externID = new Regex(fragment, "nowvideo\\.(eu|co)/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=([a-z0-9]+)'").getMatch(1);
-        if (externID != null) { return "http://www.nowvideo.co/video/" + externID; }
+        if (externID != null) {
+            return "http://www.nowvideo.co/video/" + externID;
+        }
         externID = br.getRegex("dwn\\.so/player/embed\\.php\\?v=([A-Z0-9]+)\\&width=\\d+.*?").getMatch(0);
         if (externID != null) {
             br.getPage("http://dwn.so/player/embed.php?v=" + externID);
@@ -146,27 +156,39 @@ public class NmStrm24Com extends PluginForDecrypt {
             if (yk != null) {
                 br.getPage("http://dwn.so/xml/videolink.php?v=" + externID + "&yk=" + yk);
                 final String finallink = br.getRegex("downloadurl=\"(http://dwn\\.so/[^<>\"]*?)\"").getMatch(0);
-                if (finallink != null) return finallink;
+                if (finallink != null) {
+                    return finallink;
+                }
             }
         }
         externID = new Regex(fragment, "player\\.mixturecloud\\.com/video/([A-Za-z0-9]+)\\.swf\"").getMatch(0);
-        if (externID != null) { return "http://www.mixturecloud.com/media/" + externID; }
+        if (externID != null) {
+            return "http://www.mixturecloud.com/media/" + externID;
+        }
         // For rutube.ru and probably more
         externID = new Regex(fragment, "name=\"movie\" value=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) { return externID; }
+        if (externID != null) {
+            return externID;
+        }
         // Redirect to other domain?
         externID = new Regex(fragment, "\"(http://(www\\.)?anime\\-stream24\\.tv/[^<>\"]*?)\" target=\"_blank\">Hier klicken um die Folge anzuschauen</a>").getMatch(0);
-        if (externID != null) { return externID; }
+        if (externID != null) {
+            return externID;
+        }
         // Many directlinks or embed links are in here
         externID = new Regex(fragment, "flashvars='file=(http://[^<>\"]*?)\\&").getMatch(0);
-        if (externID == null) externID = new Regex(fragment, "file: \"(http[^\"]+)").getMatch(0);
+        if (externID == null) {
+            externID = new Regex(fragment, "file: \"(http[^\"]+)").getMatch(0);
+        }
         if (externID != null) {
             filename = fpName + externID.substring(externID.lastIndexOf("."));
             return externID;
         }
         // Most links are in the iframes
         externID = new Regex(fragment, Pattern.compile("<iframe.+(http[^\"'><]+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (externID != null) { return externID; }
+        if (externID != null) {
+            return externID;
+        }
         return null;
     }
 

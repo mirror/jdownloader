@@ -19,10 +19,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -35,8 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder|minifolder)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
@@ -55,7 +56,7 @@ public class FrShrdFldr extends PluginForDecrypt {
 
     /**
      * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
-     * */
+     */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         host = new Regex(param.toString(), "(https?://[^/]+)").getMatch(0);
@@ -63,10 +64,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         parameter = new Regex(param.toString(), "(https?://(www\\.)?4shared(\\-china)?\\.com/)").getMatch(0);
         parameter = parameter + "folder/" + uid;
         br.setFollowRedirects(true);
-        try {
-            br.setCookie(this.getHost(), "4langcookie", "en");
-        } catch (final Throwable e) {
-        }
+        br.setCookie(this.getHost(), "4langcookie", "en");
 
         // check the folder/ page for password stuff and validity of url
         br.getPage(parameter);
@@ -141,65 +139,63 @@ public class FrShrdFldr extends PluginForDecrypt {
         if (sid == null) {
             sid = br.getRegex("<input type=\"hidden\" name=\"sId\" value=\"([a-zA-Z0-9]+)\"").getMatch(0);
         }
-        if (sid == null) {
-            if (sid != null) {
-                parsePage("0");
-                parseNextPage();
-            } else {
-                final ArrayList<String> pages = new ArrayList<String>();
-                pages.add(parameter);
-                final String folderText = br.getRegex("<div id=\"folderToolbar\" class=\"simplePagerAndUpload\">(.*?)</div>").getMatch(0);
-                if (folderText != null) {
-                    final String[] pageLinks = new Regex(folderText, "<a href=\"(/folder/[^<>\"]*?)\" >\\d+</a>").getColumn(0);
-                    if (pageLinks != null && pageLinks.length > 0) {
-                        for (String aPage : pageLinks) {
-                            aPage = "http://www.4shared.com" + aPage;
-                            if (!pages.contains(aPage)) {
-                                pages.add(aPage);
-                            }
+        if (sid != null) {
+            parsePage("0");
+            parseNextPage();
+        } else {
+            final ArrayList<String> pages = new ArrayList<String>();
+            pages.add(parameter);
+            final String folderText = br.getRegex("<div id=\"folderToolbar\" class=\"simplePagerAndUpload\">(.*?)</div>").getMatch(0);
+            if (folderText != null) {
+                final String[] pageLinks = new Regex(folderText, "<a href=\"(/folder/[^<>\"]*?)\" >\\d+</a>").getColumn(0);
+                if (pageLinks != null && pageLinks.length > 0) {
+                    for (String aPage : pageLinks) {
+                        aPage = Request.getLocation(aPage, br.getRequest());
+                        if (!pages.contains(aPage)) {
+                            pages.add(aPage);
                         }
                     }
                 }
+            }
 
-                int pagecounter = 1;
-                for (final String page : pages) {
-                    if (pagecounter > 1) {
-                        logger.info("Decrypting page " + pagecounter + " of " + pages.size());
-                        br.getPage(page);
-                    }
-                    String[] linkInfo = br.getRegex("<tr align=\"center\">(.*?)</tr>").getColumn(0);
-                    if (linkInfo == null || linkInfo.length == 0) {
+            int pagecounter = 1;
+            for (final String page : pages) {
+                if (pagecounter > 1) {
+                    logger.info("Decrypting page " + pagecounter + " of " + pages.size());
+                    br.getPage(page);
+                }
+                String[] linkInfo = br.getRegex("<tr align=\"center\">(.*?)</tr>").getColumn(0);
+                if (linkInfo == null || linkInfo.length == 0) {
+                    /* E.g. video */
+                    linkInfo = br.getRegex("<div class=\"jsThumbPreview simpleTumbPreviewWrapper\\s*\">(.*?)</div>[\t\n\r ]*?</div>").getColumn(0);
+                }
+                if (linkInfo == null || linkInfo.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                for (final String singleInfo : linkInfo) {
+                    final String dlink = new Regex(singleInfo, "\"(http://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?)\"").getMatch(0);
+                    String filename = new Regex(singleInfo, "data\\-element=\"72\">([^<>\"]*?)<").getMatch(0);
+                    if (filename == null) {
                         /* E.g. video */
-                        linkInfo = br.getRegex("<div class=\"simpleTumbItem thumbWithPreview\">(.*?)</div>[\t\n\r ]*?</div>").getColumn(0);
+                        filename = new Regex(singleInfo, "class=\"bluelink\" target=\"_blank\">([^<>\"]*?)<").getMatch(0);
                     }
-                    if (linkInfo == null || linkInfo.length == 0) {
+                    final String filesize = new Regex(singleInfo, "<div class=\"itemSizeInfo\">([^<>\"]*?)</div>").getMatch(0);
+                    if (dlink == null || filename == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
-                    for (final String singleInfo : linkInfo) {
-                        final String dlink = new Regex(singleInfo, "\"(http://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?)\"").getMatch(0);
-                        String filename = new Regex(singleInfo, "data\\-element=\"72\">([^<>\"]*?)<").getMatch(0);
-                        if (filename == null) {
-                            /* E.g. video */
-                            filename = new Regex(singleInfo, "class=\"bluelink\" target=\"_blank\">([^<>\"]*?)<").getMatch(0);
-                        }
-                        final String filesize = new Regex(singleInfo, "<div class=\"itemSizeInfo\">([^<>\"]*?)</div>").getMatch(0);
-                        if (dlink == null || filename == null) {
-                            logger.warning("Decrypter broken for link: " + parameter);
-                            return null;
-                        }
-                        final DownloadLink fina = createDownloadlink(dlink);
-                        fina.setName(Encoding.htmlDecode(filename.trim()));
-                        fina.setProperty("decrypterfilename", filename);
-                        if (filesize != null) {
-                            fina.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()).replace(",", "")));
-                        }
-                        /* Do NOT set available true because status is not known! */
-                        // fina.setAvailable(true);
-                        decryptedLinks.add(fina);
+                    final DownloadLink fina = createDownloadlink(dlink);
+                    fina.setName(Encoding.htmlDecode(filename.trim()));
+                    fina.setProperty("decrypterfilename", filename);
+                    if (filesize != null) {
+                        fina.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()).replace(",", "")));
                     }
-                    pagecounter++;
+                    /* Do NOT set available true because status is not known! */
+                    // fina.setAvailable(true);
+                    decryptedLinks.add(fina);
                 }
+                pagecounter++;
             }
         }
 
