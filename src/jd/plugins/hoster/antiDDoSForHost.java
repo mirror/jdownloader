@@ -23,6 +23,7 @@ import javax.script.ScriptEngineManager;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.ScriptableObject;
@@ -64,6 +65,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     public static final String                    cfRequiredCookies = "__cfduid|cf_clearance";
     public static final String                    icRequiredCookies = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
+    public static final String                    suRequiredCookies = "sucuri_cloudproxy_uuid_[a-f0-9]+";
     protected static HashMap<String, Cookies>     antiDDoSCookies   = new HashMap<String, Cookies>();
     protected static AtomicReference<String>      userAgent         = new AtomicReference<String>(null);
     protected final WeakHashMap<Browser, Boolean> browserPrepped    = new WeakHashMap<Browser, Boolean>();
@@ -433,7 +435,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     /**
-     * Performs Cloudflare and Incapsula requirements.<br />
+     * Performs Cloudflare, Incapsula, Sucuri requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
      *
@@ -446,326 +448,378 @@ public abstract class antiDDoSForHost extends PluginForHost {
         }
         final Cookies cookies = new Cookies();
         if (ibr.getHttpConnection() != null) {
-            final String URL = ibr.getURL();
-            final int responseCode = ibr.getHttpConnection().getResponseCode();
+            // Cloudflare
             if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
-                if (request != null) {
-                    // used soley by openAntiDDoSRequestConnection/DirectHTTP plugin when open connection is used.
-                    if (request instanceof HeadRequest && (responseCode == 403 || responseCode == 429 || (responseCode >= 503 && responseCode <= 525))) {
-                        openAntiDDoSRequestConnection(ibr, new GetRequest(request));
-                        return;
-                    }
-                    // all blocks with cloudflare are within "text/*", we only need to follow the connection when this happens! Otherwise
-                    // data could be grabbed and we don't want that to happen.
-                    if (StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/")) {
-                        ibr.followConnection();
-                    }
-                }
-                Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
-                if (cloudflare == null) {
-                    cloudflare = ibr.getFormbyProperty("id", "challenge-form");
-                }
-                if (responseCode == 403 && cloudflare != null) {
-                    // recapthcha v2
-                    if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
-                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                        this.setDownloadLink(dllink);
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr).getToken();
-                        cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    } else {
-                        // recapthca v1
-                        if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                            // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                            // we will manually remove all those
-                            while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                                cloudflare.remove("recaptcha_response_field");
-                            }
-                            while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                                cloudflare.remove("recaptcha_challenge_field");
-                            }
-                            // this one is null, needs to be ""
-                            if (cloudflare.hasInputFieldByName("message")) {
-                                cloudflare.remove("message");
-                                cloudflare.put("messsage", "\"\"");
-                            }
-                            // recaptcha bullshit,
-                            String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                            if (apiKey == null) {
-                                apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                                if (apiKey == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                            }
-                            final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                            final Recaptcha rc = new Recaptcha(ibr, this);
-                            rc.setId(apiKey);
-                            rc.load();
-                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                            final String response = getCaptchaCode("recaptcha", cf, dllink);
-                            if (inValidate(response)) {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            }
-                            cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                            cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
-                        }
-                    }
-                    if (request != null) {
-                        ibr.openFormConnection(cloudflare);
-                    } else {
-                        ibr.submitForm(cloudflare);
-                    }
-                    if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                        logger.warning("Wrong captcha");
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    // if it works, there should be a redirect.
-                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                        ibr.getPage(ibr.getRedirectLocation());
-                    }
-                } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
-                    // website address could be www. or what ever prefixes, need to make sure
-                    // eg. within 403 response code,
-                    // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
-                    // also common when proxies are used?? see keep2share.cc jdlog://5562413173041
-                    String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
-                    String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
-                    logger.warning(message);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
-                } else if (responseCode == 503 && cloudflare != null) {
-                    // 503 response code with javascript math section && with 5 second pause
-                    final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
-                    String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURI(), true) + "\";\r\n");
-                    sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
-                    sb.append(line2);
-
-                    ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-                    ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                    long answer = ((Number) engine.eval(sb.toString())).longValue();
-                    cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
-                    Thread.sleep(5500);
-                    if (request != null) {
-                        ibr.openFormConnection(cloudflare);
-                    } else {
-                        ibr.submitForm(cloudflare);
-                    }
-                    // if it works, there should be a redirect.
-                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                        ibr.getPage(ibr.getRedirectLocation());
-                    }
-                } else if (responseCode == 521) {
-                    // this basically indicates that the site is down, no need to retry.
-                    // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
-                    responseCode5xx++;
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"Origin Sever\" is down!", 5 * 60 * 1000l);
-                } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 525) {
-                    // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
-                    // additional request could work via additional IP
-                    /**
-                     * @see clouldflare_504_snippet.html
-                     */
-                    // HTTP/1.1 504 Gateway Time-out
-                    // HTTP/1.1 520 Origin Error
-                    // HTTP/1.1 522 Origin Connection Time-out
-                    /**
-                     * @see cloudflare_523_snippet.html
-                     */
-                    // HTTP/1.1 523 Origin Unreachable
-                    // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
-                    // server.<
-                    // cache system with possible origin dependency... we will wait and retry
-                    if (responseCode5xx == 4) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare can not contact \"Origin Server\"", 5 * 60 * 1000l);
-                    }
-                    responseCode5xx++;
-                    // this html based cookie, set by <meta (for responseCode 522)
-                    // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
-                    String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
-                    if (metaCookies != null && metaCookies.length != 0) {
-                        final List<String> cookieHeaders = Arrays.asList(metaCookies);
-                        final String date = ibr.getHeaders().get("Date");
-                        final String host = Browser.getHost(ibr.getURL());
-                        // get current cookies
-                        final Cookies ckies = ibr.getCookies(host);
-                        // add meta cookies to current previous request cookies
-                        for (int i = 0; i < cookieHeaders.size(); i++) {
-                            final String header = cookieHeaders.get(i);
-                            ckies.add(Cookies.parseCookies(header, host, date));
-                        }
-                        // set ckies as current cookies
-                        ibr.getHttpConnection().getRequest().setCookies(ckies);
-                    }
-
-                    Thread.sleep(2500);
-                    // effectively refresh page!
-                    try {
-                        sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Exception t) {
-                        // we want to preserve proper exceptions!
-                        if (t instanceof PluginException) {
-                            throw t;
-                        }
-                        t.printStackTrace();
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
-                    }
-                    // new sendRequest saves.
-                    return;
-                } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
-                    if (responseCode429 == 4) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
-                    }
-                    responseCode429++;
-                    // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
-                    Thread.sleep(61000);
-                    // try again! -NOTE: this isn't stable compliant-
-                    try {
-                        sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Exception t) {
-                        // we want to preserve proper exceptions!
-                        if (t instanceof PluginException) {
-                            throw t;
-                        }
-                        t.printStackTrace();
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
-                    }
-                    return;
-
-                    // new code here...
-                    // <script type="text/javascript">
-                    // //<![CDATA[
-                    // try{if (!window.CloudFlare) {var
-                    // CloudFlare=[{verbose:0,p:1408958160,byc:0,owlid:"cf",bag2:1,mirage2:0,oracle:0,paths:{cloudflare:"/cdn-cgi/nexp/dokv=88e434a982/"},atok:"661da6801927b0eeec95f9f3e160b03a",petok:"107d6db055b8700cf1e7eec1324dbb7be6b978d0-1408974417-1800",zone:"fileboom.me",rocket:"0",apps:{}}];CloudFlare.push({"apps":{"ape":"3a15e211d076b73aac068065e559c1e4"}});!function(a,b){a=document.createElement("script"),b=document.getElementsByTagName("script")[0],a.async=!0,a.src="//ajax.cloudflare.com/cdn-cgi/nexp/dokv=97fb4d042e/cloudflare.min.js",b.parentNode.insertBefore(a,b)}()}}catch(e){};
-                    // //]]>
-                    // </script>
-
-                } else {
-                    // nothing wrong, or something wrong (unsupported format)....
-                    // commenting out return prevents caching of cookies per request
-                    // return;
-                }
-
-                // get cookies we want/need.
-                // refresh these with every getPage/postPage/submitForm?
-                final Cookies add = ibr.getCookies(ibr.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
-                        cookies.add(c);
-                    }
-                }
+                processCloudflare(ibr, request, cookies);
             }
-            // incapsula
+            // Incapsula
             if (containsIncapsulaCookies(ibr)) {
-                // they also rdns there servers to themsevles. we could use this.. but I think cookie is fine for now
-                // nslookup 103.28.250.173
-                // Name: 103.28.250.173.ip.incapdns.net
-                // Address: 103.28.250.173
-
-                // they also have additional header response, X-Iinfo or ("X-CDN", "Incapsula")**. ** = optional
-
-                // not sure if this is the best way to detect this. could be done via line count (13) or html tag count (13 also including
-                // closing tags)..
-                final String functionz = ibr.getRegex("function\\(\\)\\s*\\{\\s*var z\\s*=\\s*\"\";.*?\\}\\)\\(\\);").getMatch(-1);
-                final String[] crudeyes = ibr.toString().split("[\r\n]{1,2}");
-                if (functionz != null && crudeyes != null && crudeyes.length < 15) {
-                    final String b = new Regex(functionz, "var b\\s*=\\s*\"(.*?)\";").getMatch(0);
-                    if (b != null) {
-                        String z = "";
-                        for (int i = 0; i < b.length(); i += 2) {
-                            z = z + Integer.parseInt(b.substring(i, i + 2), 16) + ",";
-                        }
-                        z = z.substring(0, z.length() - 1);
-                        String a = "";
-                        for (String zz : z.split(",")) {
-                            final int zzz = Integer.parseInt(zz);
-                            a += Character.toString((char) zzz);
-                        }
-                        // now z contains two requests, first one unlocks, second is feedback, third is failover. don't think any
-                        // feedbacks/failovers are required but most likely improves your cookie health.
-                        final String c = new Regex(a, "xhr\\.open\\(\"GET\",\"(/_Incapsula_Resource\\?.*?)\"").getMatch(0);
-                        if (c != null) {
-                            final Browser ajax = ibr.cloneBrowser();
-                            ajax.getHeaders().put("Accept", "*/*");
-                            ajax.getHeaders().put("Cache-Control", null);
-                            ajax.getPage(c);
-                            // now it should say "window.location.reload(true);"
-                            if (ajax.containsHTML("window\\.location\\.reload\\(true\\);")) {
-                                ibr.getPage(ibr.getURL());
-                            } else {
-                                // lag/delay between = no html
-                                // should only happen in debug mode breakpointing!
-                                // System.out.println("error");
-                            }
-                        }
-                    }
-                }
-                // written support based on logged output from JDownloader.. not the best, but here goes! refine if it fails!
-                // recaptcha events are loaded from iframe,
-                // z reference is within the script src url (contains md5checksum), once decoded their is no magic within, unlike above.
-
-                // on a single line
-                if (crudeyes != null && crudeyes.length == 1) {
-                    // xinfo in the iframe is the same as header info...
-                    final String xinfo = ibr.getHttpConnection().getHeaderField("X-Iinfo");
-                    // so far in logs ive only seen this trigger after one does NOT answer a function z..
-                    String azas = "<iframe[^<]*\\s+src=\"(/_Incapsula_Resource\\?(?:[^\"]+&|)xinfo=" + (!inValidate(xinfo) ? Pattern.quote(xinfo) : "") + "[^\"]*)\"";
-                    final String iframe = ibr.getRegex(azas).getMatch(0);
-                    if (iframe != null) {
-                        final Browser ifr = ibr.cloneBrowser();
-                        // will need referrer,, but what other custom headers??
-                        ifr.getPage(iframe);
-                        final Form captcha = ifr.getFormbyProperty("id", "captcha-form");
-                        if (captcha == null) {
-                            System.out.println("error");
-                        }
-                        String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                        if (apiKey == null) {
-                            apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
-                        }
-                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Incapsula' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                        final Recaptcha rc = new Recaptcha(ibr, this);
-                        rc.setId(apiKey);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String response = getCaptchaCode("recaptcha", cf, dllink);
-                        if (inValidate(response)) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        // they have no script value and our form parser adds the input field when it shouldn't
-                        while (captcha.hasInputFieldByName("recaptcha_response_field")) {
-                            captcha.remove("recaptcha_response_field");
-                        }
-                        captcha.put("recaptcha_challenge_field", rc.getChallenge());
-                        captcha.put("recaptcha_response_field", Encoding.urlEncode(response));
-                        ifr.submitForm(captcha);
-                        if (ifr.getFormbyProperty("id", "captcha-form") != null) {
-                            logger.warning("Wrong captcha");
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {
-                            // they show z again after captcha...
-                            getPage(ibr.getURL());
-                            // above request saves, as it re-enters this method!
-                            return;
-                        } else {
-                            // shouldn't happen???
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                }
-
-                // get cookies we want/need.
-                // refresh these with every getPage/postPage/submitForm?
-                final Cookies add = ibr.getCookies(ibr.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), icRequiredCookies).matches()) {
-                        cookies.add(c);
-                    }
-                }
+                processIncapsula(ibr, cookies);
             }
-
+            // Sucuri
+            if (requestHeadersHasKeyNValueContains(ibr, "server", "Sucuri/Cloudproxy")) {
+                processSucuri(ibr, cookies);
+            }
             // save the session!
             synchronized (antiDDoSCookies) {
                 antiDDoSCookies.put(ibr.getHost(), cookies);
+            }
+        }
+    }
+
+    private void processCloudflare(final Browser ibr, final Request request, final Cookies cookies) throws Exception {
+        final int responseCode = ibr.getHttpConnection().getResponseCode();
+        if (request != null) {
+            // used soley by openAntiDDoSRequestConnection/DirectHTTP plugin when open connection is used.
+            if (request instanceof HeadRequest && (responseCode == 403 || responseCode == 429 || (responseCode >= 503 && responseCode <= 525))) {
+                openAntiDDoSRequestConnection(ibr, new GetRequest(request));
+                return;
+            }
+            // all blocks with cloudflare are within "text/*", we only need to follow the connection when this happens! Otherwise
+            // data could be grabbed and we don't want that to happen.
+            if (StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/")) {
+                ibr.followConnection();
+            }
+        }
+        Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
+        if (cloudflare == null) {
+            cloudflare = ibr.getFormbyProperty("id", "challenge-form");
+        }
+        if (responseCode == 403 && cloudflare != null) {
+            // recapthcha v2
+            if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                this.setDownloadLink(dllink);
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr).getToken();
+                cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            } else {
+                // recapthca v1
+                if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                    // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                    // we will manually remove all those
+                    while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                        cloudflare.remove("recaptcha_response_field");
+                    }
+                    while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                        cloudflare.remove("recaptcha_challenge_field");
+                    }
+                    // this one is null, needs to be ""
+                    if (cloudflare.hasInputFieldByName("message")) {
+                        cloudflare.remove("message");
+                        cloudflare.put("messsage", "\"\"");
+                    }
+                    // recaptcha bullshit,
+                    String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                    if (apiKey == null) {
+                        apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                        if (apiKey == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                    final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                    final Recaptcha rc = new Recaptcha(ibr, this);
+                    rc.setId(apiKey);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String response = getCaptchaCode("recaptcha", cf, dllink);
+                    if (inValidate(response)) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                    cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+                }
+            }
+            if (request != null) {
+                ibr.openFormConnection(cloudflare);
+            } else {
+                ibr.submitForm(cloudflare);
+            }
+            if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
+                logger.warning("Wrong captcha");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            // if it works, there should be a redirect.
+            if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                ibr.getPage(ibr.getRedirectLocation());
+            }
+        } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
+            // website address could be www. or what ever prefixes, need to make sure
+            // eg. within 403 response code,
+            // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
+            // also common when proxies are used?? see keep2share.cc jdlog://5562413173041
+            String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
+            String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
+            logger.warning(message);
+            throw new PluginException(LinkStatus.ERROR_FATAL, message);
+        } else if (responseCode == 503 && cloudflare != null) {
+            // 503 response code with javascript math section && with 5 second pause
+            final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+            String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
+            StringBuilder sb = new StringBuilder();
+            sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURI(), true) + "\";\r\n");
+            sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
+            sb.append(line2);
+
+            ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            ScriptEngine engine = mgr.getEngineByName("JavaScript");
+            long answer = ((Number) engine.eval(sb.toString())).longValue();
+            cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
+            Thread.sleep(5500);
+            if (request != null) {
+                ibr.openFormConnection(cloudflare);
+            } else {
+                ibr.submitForm(cloudflare);
+            }
+            // if it works, there should be a redirect.
+            if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                ibr.getPage(ibr.getRedirectLocation());
+            }
+        } else if (responseCode == 521) {
+            // this basically indicates that the site is down, no need to retry.
+            // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
+            responseCode5xx++;
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"Origin Sever\" is down!", 5 * 60 * 1000l);
+        } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 525) {
+            // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
+            // additional request could work via additional IP
+            /**
+             * @see clouldflare_504_snippet.html
+             */
+            // HTTP/1.1 504 Gateway Time-out
+            // HTTP/1.1 520 Origin Error
+            // HTTP/1.1 522 Origin Connection Time-out
+            /**
+             * @see cloudflare_523_snippet.html
+             */
+            // HTTP/1.1 523 Origin Unreachable
+            // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
+            // server.<
+            // cache system with possible origin dependency... we will wait and retry
+            if (responseCode5xx == 4) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare can not contact \"Origin Server\"", 5 * 60 * 1000l);
+            }
+            responseCode5xx++;
+            // this html based cookie, set by <meta (for responseCode 522)
+            // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
+            String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
+            if (metaCookies != null && metaCookies.length != 0) {
+                final List<String> cookieHeaders = Arrays.asList(metaCookies);
+                final String date = ibr.getHeaders().get("Date");
+                final String host = Browser.getHost(ibr.getURL());
+                // get current cookies
+                final Cookies ckies = ibr.getCookies(host);
+                // add meta cookies to current previous request cookies
+                for (int i = 0; i < cookieHeaders.size(); i++) {
+                    final String header = cookieHeaders.get(i);
+                    ckies.add(Cookies.parseCookies(header, host, date));
+                }
+                // set ckies as current cookies
+                ibr.getHttpConnection().getRequest().setCookies(ckies);
+            }
+
+            Thread.sleep(2500);
+            // effectively refresh page!
+            try {
+                sendRequest(ibr, ibr.getRequest().cloneRequest());
+            } catch (final Exception t) {
+                // we want to preserve proper exceptions!
+                if (t instanceof PluginException) {
+                    throw t;
+                }
+                t.printStackTrace();
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+            }
+            // new sendRequest saves.
+            return;
+        } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
+            if (responseCode429 == 4) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+            }
+            responseCode429++;
+            // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
+            Thread.sleep(61000);
+            // try again! -NOTE: this isn't stable compliant-
+            try {
+                sendRequest(ibr, ibr.getRequest().cloneRequest());
+            } catch (final Exception t) {
+                // we want to preserve proper exceptions!
+                if (t instanceof PluginException) {
+                    throw t;
+                }
+                t.printStackTrace();
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+            }
+            return;
+
+            // new code here...
+            // <script type="text/javascript">
+            // //<![CDATA[
+            // try{if (!window.CloudFlare) {var
+            // CloudFlare=[{verbose:0,p:1408958160,byc:0,owlid:"cf",bag2:1,mirage2:0,oracle:0,paths:{cloudflare:"/cdn-cgi/nexp/dokv=88e434a982/"},atok:"661da6801927b0eeec95f9f3e160b03a",petok:"107d6db055b8700cf1e7eec1324dbb7be6b978d0-1408974417-1800",zone:"fileboom.me",rocket:"0",apps:{}}];CloudFlare.push({"apps":{"ape":"3a15e211d076b73aac068065e559c1e4"}});!function(a,b){a=document.createElement("script"),b=document.getElementsByTagName("script")[0],a.async=!0,a.src="//ajax.cloudflare.com/cdn-cgi/nexp/dokv=97fb4d042e/cloudflare.min.js",b.parentNode.insertBefore(a,b)}()}}catch(e){};
+            // //]]>
+            // </script>
+
+        } else {
+            // nothing wrong, or something wrong (unsupported format)....
+            // commenting out return prevents caching of cookies per request
+            // return;
+        }
+
+        // get cookies we want/need.
+        // refresh these with every getPage/postPage/submitForm?
+        final Cookies add = ibr.getCookies(ibr.getHost());
+        for (final Cookie c : add.getCookies()) {
+            if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
+                cookies.add(c);
+            }
+        }
+    }
+
+    private void processIncapsula(final Browser ibr, final Cookies cookies) throws Exception {
+        // they also rdns there servers to themsevles. we could use this.. but I think cookie is fine for now
+        // nslookup 103.28.250.173
+        // Name: 103.28.250.173.ip.incapdns.net
+        // Address: 103.28.250.173
+
+        // they also have additional header response, X-Iinfo or ("X-CDN", "Incapsula")**. ** = optional
+
+        // not sure if this is the best way to detect this. could be done via line count (13) or html tag count (13 also including
+        // closing tags)..
+        final String functionz = ibr.getRegex("function\\(\\)\\s*\\{\\s*var z\\s*=\\s*\"\";.*?\\}\\)\\(\\);").getMatch(-1);
+        final String[] crudeyes = ibr.toString().split("[\r\n]{1,2}");
+        if (functionz != null && crudeyes != null && crudeyes.length < 15) {
+            final String b = new Regex(functionz, "var b\\s*=\\s*\"(.*?)\";").getMatch(0);
+            if (b != null) {
+                String z = "";
+                for (int i = 0; i < b.length(); i += 2) {
+                    z = z + Integer.parseInt(b.substring(i, i + 2), 16) + ",";
+                }
+                z = z.substring(0, z.length() - 1);
+                String a = "";
+                for (String zz : z.split(",")) {
+                    final int zzz = Integer.parseInt(zz);
+                    a += Character.toString((char) zzz);
+                }
+                // now z contains two requests, first one unlocks, second is feedback, third is failover. don't think any
+                // feedbacks/failovers are required but most likely improves your cookie health.
+                final String c = new Regex(a, "xhr\\.open\\(\"GET\",\"(/_Incapsula_Resource\\?.*?)\"").getMatch(0);
+                if (c != null) {
+                    final Browser ajax = ibr.cloneBrowser();
+                    ajax.getHeaders().put("Accept", "*/*");
+                    ajax.getHeaders().put("Cache-Control", null);
+                    ajax.getPage(c);
+                    // now it should say "window.location.reload(true);"
+                    if (ajax.containsHTML("window\\.location\\.reload\\(true\\);")) {
+                        ibr.getPage(ibr.getURL());
+                    } else {
+                        // lag/delay between = no html
+                        // should only happen in debug mode breakpointing!
+                        // System.out.println("error");
+                    }
+                }
+            }
+        }
+        // written support based on logged output from JDownloader.. not the best, but here goes! refine if it fails!
+        // recaptcha events are loaded from iframe,
+        // z reference is within the script src url (contains md5checksum), once decoded their is no magic within, unlike above.
+
+        // on a single line
+        if (crudeyes != null && crudeyes.length == 1) {
+            // xinfo in the iframe is the same as header info...
+            final String xinfo = ibr.getHttpConnection().getHeaderField("X-Iinfo");
+            // so far in logs ive only seen this trigger after one does NOT answer a function z..
+            String azas = "<iframe[^<]*\\s+src=\"(/_Incapsula_Resource\\?(?:[^\"]+&|)xinfo=" + (!inValidate(xinfo) ? Pattern.quote(xinfo) : "") + "[^\"]*)\"";
+            final String iframe = ibr.getRegex(azas).getMatch(0);
+            if (iframe != null) {
+                final Browser ifr = ibr.cloneBrowser();
+                // will need referrer,, but what other custom headers??
+                ifr.getPage(iframe);
+                final Form captcha = ifr.getFormbyProperty("id", "captcha-form");
+                if (captcha == null) {
+                    System.out.println("error");
+                }
+                String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                if (apiKey == null) {
+                    apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
+                }
+                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Incapsula' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                final Recaptcha rc = new Recaptcha(ibr, this);
+                rc.setId(apiKey);
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String response = getCaptchaCode("recaptcha", cf, dllink);
+                if (inValidate(response)) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                // they have no script value and our form parser adds the input field when it shouldn't
+                while (captcha.hasInputFieldByName("recaptcha_response_field")) {
+                    captcha.remove("recaptcha_response_field");
+                }
+                captcha.put("recaptcha_challenge_field", rc.getChallenge());
+                captcha.put("recaptcha_response_field", Encoding.urlEncode(response));
+                ifr.submitForm(captcha);
+                if (ifr.getFormbyProperty("id", "captcha-form") != null) {
+                    logger.warning("Wrong captcha");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {
+                    // they show z again after captcha...
+                    getPage(ibr.getURL());
+                    // above request saves, as it re-enters this method!
+                    return;
+                } else {
+                    // shouldn't happen???
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
+
+        // get cookies we want/need.
+        // refresh these with every getPage/postPage/submitForm?
+        final Cookies add = ibr.getCookies(ibr.getHost());
+        for (final Cookie c : add.getCookies()) {
+            if (new Regex(c.getKey(), icRequiredCookies).matches()) {
+                cookies.add(c);
+            }
+        }
+    }
+
+    /**
+     * <a href="https://kb.sucuri.net/cloudproxy/index">CloudProxy</a> antiDDoS method by <a href="https://sucuri.net/">Sucuri</a>,
+     *
+     * @author raztoki
+     * @throws Exception
+     */
+    private void processSucuri(final Browser ibr, final Cookies cookies) throws Exception {
+        if (ibr.containsHTML("<title>You are being redirected\\.\\.\\.</title>")) {
+            // S = base encoded, the js is to just undo that.
+            final String base64 = ibr.getRegex("(?i-)S\\s*=\\s*'([^']+)';").getMatch(0);
+            if (base64 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String decode = Encoding.Base64Decode(base64);
+            decode = decode.replace("location.reload();", "").replace("document.cookie", "y");
+
+            Object result = new Object();
+            if (base64 != null) {
+                try {
+                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    engine.eval("document = \"\";");
+                    engine.eval(decode);
+                    final ConsString y = (ConsString) engine.get("y");
+                    ibr.setCookie(this.getHost(), y.toString().split("=")[0], y.toString().split("=")[1]);
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
+                ibr.getPage(ibr.getURL());
+            }
+        }
+        // get cookies we want/need.
+        // refresh these with every getPage/postPage/submitForm?
+        final Cookies add = ibr.getCookies(ibr.getHost());
+        for (final Cookie c : add.getCookies()) {
+            if (new Regex(c.getKey(), suRequiredCookies).matches()) {
+                cookies.add(c);
             }
         }
     }
@@ -837,7 +891,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         final HashMap<String, String> cookies = new HashMap<String, String>();
         final Cookies add = br.getCookies(host);
         for (final Cookie c : add.getCookies()) {
-            if (!c.getKey().matches(cfRequiredCookies + "|" + icRequiredCookies)) {
+            if (!c.getKey().matches(cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies)) {
                 cookies.put(c.getKey(), c.getValue());
             }
         }
