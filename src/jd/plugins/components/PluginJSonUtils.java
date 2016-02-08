@@ -207,6 +207,16 @@ public class PluginJSonUtils {
     }
 
     /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided Browser.
+     *
+     * @author raztoki
+     */
+    public static String getJsonArray(final Browser ibr, final String key) {
+        return getJsonArray(ibr.toString(), key);
+    }
+
+    /**
      * Tries to return value given JSon Array of Key from JSon response provided String source.
      *
      * @author raztoki
@@ -246,7 +256,19 @@ public class PluginJSonUtils {
     }
 
     /**
-     * pulls neested { } when object has key
+     * Wrapper<br/>
+     * Tries to gather nested \"key\":{.*?} from default Browser
+     *
+     * @author raztoki
+     * @param key
+     * @return
+     */
+    public static String getJsonNested(final Browser ibr, final String key) {
+        return getJsonNested(ibr.toString(), key);
+    }
+
+    /**
+     * pulls nested { } when object has key
      *
      * @author raztoki
      * @param source
@@ -267,7 +289,7 @@ public class PluginJSonUtils {
     }
 
     /**
-     * Creates and or Ammends Strings ready for JSon requests, with the correct JSon formatting and escaping.
+     * Creates and or Amends Strings ready for JSon requests, with the correct JSon formatting and escaping.
      *
      * @author raztoki
      * @param source

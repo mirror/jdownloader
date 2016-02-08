@@ -622,7 +622,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         String next_href = null;
         String offset = "0";
         do {
-            String base = "https://api-v2.soundcloud.com/stream/users/" + userID + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION;
+            final String base = "https://api-v2.soundcloud.com/stream/users/" + userID + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION;
             br.getPage(base);
             List<Map<String, Object>> collection = parseCollection();
             if (collection == null || collection.size() != maxPerCall) {
