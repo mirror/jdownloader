@@ -67,11 +67,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     private final int         DEFAULT_ICON_COUNT = 4;
 
-    private Icon              skipped;
+    private final Icon        skipped;
 
-    private Icon              forced;
+    private final Icon        forced;
 
     private DownloadWatchDog  dlWatchdog;
+
+    private final Icon        url;
 
     public JPopupMenu createHeaderPopup() {
 
@@ -106,6 +108,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         directConnection = NewTheme.I().getIcon(IconKey.ICON_MODEM, 16);
         proxyConnection = NewTheme.I().getIcon(IconKey.ICON_PROXY_ROTATE, 16);
         connections = NewTheme.I().getIcon(IconKey.ICON_PARALELL, 16);
+        url = NewTheme.I().getIcon(IconKey.ICON_URL, 16);
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[grow,fill]"));
         // panel.add(Box.createGlue(), "pushx,growx");
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
@@ -306,7 +309,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
-                SkipReason skipReason = link.getSkipReason();
+                final SkipReason skipReason = link.getSkipReason();
                 if (skipReason != null) {
                     panel.add(lbl = new JLabel(skipReason.getExplanation(ConnectionColumn.this), skipped, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
@@ -394,6 +397,10 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
             }
             if (dli != null) {
+                panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), url, JLabel.LEADING));
+                SwingUtils.setOpaque(lbl, false);
+                lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+
                 panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_chunks(dli.getManagedConnetionHandler().size()), connections, JLabel.LEADING));
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));

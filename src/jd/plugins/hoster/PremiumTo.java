@@ -42,7 +42,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.UseNet;
 import jd.plugins.components.UsenetConfigInterface;
 import jd.plugins.components.UsenetServer;
 import jd.utils.locale.JDL;

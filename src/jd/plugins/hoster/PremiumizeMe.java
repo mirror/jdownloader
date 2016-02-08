@@ -47,7 +47,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.components.UseNet;
 import jd.plugins.components.UsenetConfigInterface;
 import jd.plugins.components.UsenetServer;
 

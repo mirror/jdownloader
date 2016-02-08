@@ -29,12 +29,12 @@ public class PluginJsonConfig {
     private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
     protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
 
-                                                                                                                     @Override
-                                                                                                                     public void delayedrun() {
-                                                                                                                         saveAll();
-                                                                                                                         cleanup();
-                                                                                                                     }
-                                                                                                                 };
+        @Override
+        public void delayedrun() {
+            saveAll();
+            cleanup();
+        }
+    };
     private final static boolean                                                                   DEBUG         = false;
 
     static {
@@ -78,7 +78,7 @@ public class PluginJsonConfig {
         CONFIG_CACHE.size();
     }
 
-    public synchronized static <T extends ConfigInterface> T get(Class<T> configInterface) {
+    public synchronized static <T extends ConfigInterface> T get(Class<T> configInterface, final String prefix) {
         final String ID = configInterface.getName();
         final ClassLoader cl = configInterface.getClassLoader();
         if (!(cl instanceof PluginClassLoaderChild)) {
@@ -103,7 +103,7 @@ public class PluginJsonConfig {
             }
         }
 
-        JsonKeyValueStorage storage = STORAGE_CACHE.get(configInterface.getName());
+        JsonKeyValueStorage storage = STORAGE_CACHE.get(ID);
         if (storage == null) {
             final File storageFile = Application.getResource("cfg/plugins/" + ID);
             if (DEBUG) {
@@ -137,5 +137,9 @@ public class PluginJsonConfig {
         intf = (T) Proxy.newProxyInstance(configInterface.getClassLoader(), new Class<?>[] { configInterface }, storageHandler);
         classLoaderMap.put(ID, new WeakReference<ConfigInterface>(intf));
         return (T) intf;
+    }
+
+    public synchronized static <T extends ConfigInterface> T get(Class<T> configInterface) {
+        return get(configInterface, null);
     }
 }

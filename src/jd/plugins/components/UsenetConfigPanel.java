@@ -10,10 +10,10 @@ public class UsenetConfigPanel<T extends UsenetConfigInterface> extends PluginCo
     private final T              cf;
     private final UsenetServer[] availableServers;
 
-    public UsenetConfigPanel(final UseNet plugin, final T cf) {
+    public UsenetConfigPanel(final String host, final UsenetServer[] availableServers, final T cf) {
         this.cf = cf;
-        addStartDescription("Usenet settings for " + plugin.getHost());
-        availableServers = plugin.getAvailableUsenetServer().toArray(new UsenetServer[0]);
+        addStartDescription("Usenet settings for " + host);
+        this.availableServers = availableServers;
         addPair("Select server", null, null, new ComboBox<UsenetServer>(cf._getStorageHandler().getKeyHandler("UsenetServer", KeyHandler.class), availableServers, null) {
             @Override
             public void setSelectedItem(Object anObject) {
