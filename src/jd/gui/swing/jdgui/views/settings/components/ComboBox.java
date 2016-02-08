@@ -33,7 +33,7 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
                 if (!setting) {
                     eventSender.fireEvent(new StateUpdateEvent<ComboBox<ContentType>>(ComboBox.this));
                     if (keyHandler != null) {
-                        keyHandler.setValue((ContentType) getSelectedItem());
+                        keyHandler.setValue(getSelectedItem());
                     }
                 }
             }
@@ -45,8 +45,12 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
         orgRenderer = getRenderer();
         this.setRenderer(new ListCellRenderer() {
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                if (index == -1) index = getSelectedIndex();
-                if (index == -1) return orgRenderer.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
+                if (index == -1) {
+                    index = getSelectedIndex();
+                }
+                if (index == -1) {
+                    return orgRenderer.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
+                }
                 Component ret;
 
                 renderComponent(ret = orgRenderer.getListCellRendererComponent(list, getLabel(index, (ContentType) value), index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
@@ -57,7 +61,7 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
 
     @SuppressWarnings("unchecked")
     public ContentType getValue() {
-        return (ContentType) getSelectedItem();
+        return getSelectedItem();
     }
 
     public void setValue(ContentType selected) {
@@ -88,7 +92,9 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
                     Field field = value.getClass().getField(value.toString());
                     if (field != null) {
                         EnumLabel ann = field.getAnnotation(EnumLabel.class);
-                        if (ann != null) { return ann.value(); }
+                        if (ann != null) {
+                            return ann.value();
+                        }
                     }
                 } catch (Exception e) {
 
@@ -96,7 +102,9 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
                 }
             }
 
-            if (value instanceof LabelInterface) { return ((LabelInterface) value).getLabel(); }
+            if (value instanceof LabelInterface) {
+                return ((LabelInterface) value).getLabel();
+            }
             return value + "";
         }
         return translations[index];
@@ -111,7 +119,6 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
         this.keyHandler = keyHandler;
         keyHandler.getEventSender().addListener(this, true);
         setSelectedItem(keyHandler.getValue());
-
     }
 
     public KeyHandler<ContentType> getKeyHandler() {

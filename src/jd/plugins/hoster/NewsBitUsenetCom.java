@@ -1,6 +1,8 @@
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -10,6 +12,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.UseNet;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetServer;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -25,6 +30,15 @@ public class NewsBitUsenetCom extends UseNet {
     @Override
     public String getAGBLink() {
         return "https://www.bitusenet.com/tos";
+    }
+
+    public static interface NewsBitConfigInterface extends UsenetConfigInterface {
+
+    };
+
+    @Override
+    public Class<NewsBitConfigInterface> getConfigInterface() {
+        return NewsBitConfigInterface.class;
     }
 
     @Override
@@ -72,17 +86,11 @@ public class NewsBitUsenetCom extends UseNet {
     }
 
     @Override
-    protected String getServerAddress() {
-        return "news.bitusenet.com";
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("news.bitusenet.com", false, 119, 53, 80, 443, 8080, 9000));
+        ret.addAll(UsenetServer.createServerList("news.bitusenet.com", true, 563));
+        return ret;
     }
 
-    @Override
-    protected int[] getAvailablePorts() {
-        return new int[] { 119, 53, 80, 443, 8080, 9000 };
-    }
-
-    @Override
-    protected int[] getAvailableSSLPorts() {
-        return new int[] { 563 };
-    }
 }

@@ -22,6 +22,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
@@ -46,6 +47,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.UseNet;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetServer;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
@@ -80,6 +84,15 @@ public class PremiumizeMe extends UseNet {
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SENDDEBUGLOG, "Send debug logs to PremiumizeMe automatically?").setDefaultValue(true));
+    }
+
+    public static interface PremiumizeMeConfigInterface extends UsenetConfigInterface {
+
+    };
+
+    @Override
+    public Class<PremiumizeMeConfigInterface> getConfigInterface() {
+        return PremiumizeMeConfigInterface.class;
     }
 
     @Override
@@ -615,18 +628,11 @@ public class PremiumizeMe extends UseNet {
     }
 
     @Override
-    protected String getServerAddress() {
-        return "usenet.premiumize.me";
-    }
-
-    @Override
-    protected int[] getAvailablePorts() {
-        return new int[] { 119 };
-    }
-
-    @Override
-    protected int[] getAvailableSSLPorts() {
-        return new int[] { 563 };
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("usenet.premiumize.me", false, 119));
+        ret.addAll(UsenetServer.createServerList("usenet.premiumize.me", true, 563));
+        return ret;
     }
 
     @SuppressWarnings("deprecation")

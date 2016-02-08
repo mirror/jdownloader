@@ -20,15 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,6 +39,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.UseNet;
+import jd.plugins.components.UsenetConfigInterface;
+import jd.plugins.components.UsenetServer;
+
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class HighWayMe extends UseNet {
@@ -81,6 +85,15 @@ public class HighWayMe extends UseNet {
     private Account                                        currAcc                             = null;
     private DownloadLink                                   currDownloadLink                    = null;
     private long                                           currentWaittimeOnFailue             = 0;
+
+    public static interface HighWayMeConfigInterface extends UsenetConfigInterface {
+
+    };
+
+    @Override
+    public Class<HighWayMeConfigInterface> getConfigInterface() {
+        return HighWayMeConfigInterface.class;
+    }
 
     public HighWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -708,11 +721,6 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    protected String getServerAddress() {
-        return "reader.high-way.me";
-    }
-
-    @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
         if (account != null) {
             if (isUsenetLink(link)) {
@@ -734,18 +742,10 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    protected boolean useSSL() {
-        return true;
-    }
-
-    @Override
-    protected int[] getAvailablePorts() {
-        return new int[0];
-    }
-
-    @Override
-    protected int[] getAvailableSSLPorts() {
-        return new int[] { 563 };
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("reader.high-way.me", true, 563));
+        return ret;
     }
 
     @Override

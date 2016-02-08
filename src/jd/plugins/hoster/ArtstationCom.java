@@ -71,11 +71,12 @@ public class ArtstationCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
+                br2.getHeaders().put("Accept-Encoding", "identity");
                 con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK()) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 if (filename == null) {
                     filename = getFileNameFromHeader(con);
@@ -97,6 +98,7 @@ public class ArtstationCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        this.br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
