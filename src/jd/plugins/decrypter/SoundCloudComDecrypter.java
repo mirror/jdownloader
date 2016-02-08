@@ -615,20 +615,23 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (userID == null) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
-        // seems to be a limit of the API (12.02.14)
+        // seems to be a limit of the API (12.02.14),
+        // still valid far as I can see raztoki20160208
         int maxPerCall = 200;
-        int offset = 0;
         setFilePackage(username, playlistname);
-        while (true) {
-            br.getPage("https://api-v2.soundcloud.com/profile/soundcloud%3Ausers%3A" + userID + "?limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1");
-
+        String next_href = null;
+        String offset = "0";
+        do {
+            String base = "https://api-v2.soundcloud.com/stream/users/" + userID + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.APP_VERSION;
+            br.getPage(base);
             List<Map<String, Object>> collection = parseCollection();
             if (collection == null || collection.size() != maxPerCall) {
                 break;
-            } else {
-                offset += maxPerCall;
             }
-        }
+            this.data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
+            next_href = (String) this.data.get("next_href");
+            offset = new Regex(next_href, "offset=([^&]+)").getMatch(0);
+        } while (next_href != null);
 
     }
 
@@ -731,7 +734,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         } else {
             resolveurl = "https://soundcloud.com/" + url_username;
         }
-        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(resolveurl) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(resolveurl) + "&_status_code_map%5B302%5D=10&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
         if (br.containsHTML("\"404 \\- Not Found\"")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
