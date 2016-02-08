@@ -31,6 +31,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
 import org.appwork.utils.net.usenet.SimpleUseNet;
@@ -63,14 +64,20 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
     private final SimpleUseNet                      client;
     private final UsenetFile                        usenetFile;
 
-    public SimpleUseNetDownloadInterface(SimpleUseNet client, final DownloadLink link, final UsenetFile usenetFile) {
+    public SimpleUseNetDownloadInterface(final SimpleUseNet client, final DownloadLink link, final UsenetFile usenetFile) {
         connectionHandler = new ManagedThrottledConnectionHandler();
         this.usenetFile = usenetFile;
         final boolean resumeable = usenetFile.getNumSegments() > 1;
+        final String host = SocketConnection.getHostName(client.getSocket().getRemoteSocketAddress());
         downloadable = new DownloadLinkDownloadable(link) {
             @Override
             public boolean isResumable() {
                 return resumeable;
+            }
+
+            @Override
+            public String getHost() {
+                return host;
             }
 
             @Override

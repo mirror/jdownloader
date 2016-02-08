@@ -28,6 +28,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.plugins.DownloadPluginProgress;
@@ -56,6 +57,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
 
     public SimpleFTPDownloadInterface(SimpleFTP simpleFTP, final DownloadLink link, String filePath) {
         connectionHandler = new ManagedThrottledConnectionHandler();
+        final String host = SocketConnection.getHostName(simpleFTP.getSocket().getRemoteSocketAddress());
         downloadable = new DownloadLinkDownloadable(link) {
             @Override
             public boolean isResumable() {
@@ -66,6 +68,11 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             public void setResumeable(boolean value) {
                 link.setProperty("RESUME", value);
                 super.setResumeable(value);
+            }
+
+            @Override
+            public String getHost() {
+                return host;
             }
         };
         if (!link.hasProperty(DownloadLink.PROPERTY_RESUMEABLE)) {
