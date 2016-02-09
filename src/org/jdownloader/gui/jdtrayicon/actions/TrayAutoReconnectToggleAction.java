@@ -8,6 +8,6 @@ public class TrayAutoReconnectToggleAction extends AutoReconnectToggleAction {
 
     public TrayAutoReconnectToggleAction() {
         super();
-        setName(_TRAY._.popup_reconnecttoggle());
+        setName(_TRAY.T.popup_reconnecttoggle());
     }
 }

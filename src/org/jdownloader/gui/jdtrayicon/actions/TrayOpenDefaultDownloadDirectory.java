@@ -8,7 +8,7 @@ public class TrayOpenDefaultDownloadDirectory extends OpenDefaultDownloadFolderA
 
     public TrayOpenDefaultDownloadDirectory() {
         super();
-        setName(_TRAY._.popup_downloadfolder());
+        setName(_TRAY.T.popup_downloadfolder());
     }
 
 }

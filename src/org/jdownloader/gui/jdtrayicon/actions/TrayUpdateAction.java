@@ -20,11 +20,11 @@ public class TrayUpdateAction extends UpdateAction implements UpdaterListener {
 
     private void updateName() {
         if (UpdateController.getInstance().hasPendingUpdates()) {
-            setName(_TRAY._.popup_update_install());
-            setTooltipText(_TRAY._.popup_update_install_tt());
+            setName(_TRAY.T.popup_update_install());
+            setTooltipText(_TRAY.T.popup_update_install_tt());
         } else {
             setTooltipText(createTooltip());
-            setName(_TRAY._.popup_update());
+            setName(_TRAY.T.popup_update());
         }
     }
 

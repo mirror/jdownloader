@@ -8,7 +8,7 @@ public class TrayGlobalPremiumSwitchToggleAction extends GlobalPremiumSwitchTogg
 
     public TrayGlobalPremiumSwitchToggleAction() {
         super();
-        setName(_TRAY._.popup_premiumtoggle());
+        setName(_TRAY.T.popup_premiumtoggle());
     }
 
 }

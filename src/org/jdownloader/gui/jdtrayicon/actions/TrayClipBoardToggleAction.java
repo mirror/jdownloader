@@ -8,7 +8,7 @@ public class TrayClipBoardToggleAction extends ClipBoardToggleAction {
 
     public TrayClipBoardToggleAction() {
         super();
-        setName(_TRAY._.popup_clipboardtoggle());
+        setName(_TRAY.T.popup_clipboardtoggle());
     }
 
 }

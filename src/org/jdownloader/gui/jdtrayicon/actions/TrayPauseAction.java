@@ -8,7 +8,7 @@ public class TrayPauseAction extends PauseDownloadsAction {
 
     public TrayPauseAction() {
         super();
-        setName(_TRAY._.popup_pause());
+        setName(_TRAY.T.popup_pause());
     }
 
 }
