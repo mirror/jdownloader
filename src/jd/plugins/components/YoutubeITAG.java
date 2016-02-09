@@ -37,39 +37,39 @@ public enum YoutubeITAG {
     DASH_VIDEO_720_H264_FPS60(298, "H264", "720p 60fps", null, null, VideoResolution.P_720, VideoContainer.MP4, VideoCodec.H264, MediaTagsVarious.VIDEO_FPS_60),
 
     DASH_VIDEO_720P_H264(136, "H264", "720p", null, null, VideoResolution.P_720, VideoContainer.MP4, VideoCodec.H264),
-    DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, "vp9", "1440p 60fps", null, null, VideoResolution.P_1440, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
+    DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, "VP9", "1440p 60fps", null, null, VideoResolution.P_1440, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
     DASH_VIDEO_ITAG313_VP9_2160P_30FPS(313, "vp9 Low Quality Profile", "2160p", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9_WORSE_PROFILE_1),
-    DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, "vp9", "2160p 60fps", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
+    DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, "VP9", "2160p 60fps", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
     // has usually a lower quality than DASH_VIDEO_2160_H264_FPS_60
     DASH_VIDEO_ORIGINAL_H264(138, "H264", "Original (2160p)", null, null, VideoResolution.P_2160_ESTIMATED, VideoContainer.MP4, VideoCodec.H264),
     // https://www.youtube.com/watch?v=sLprVF6d7Ug
     DASH_VIDEO_ORIGINAL_H264_4320P_24FPS(138, "H264", "4320p 24fps", null, null, VideoResolution.P_4320, VideoContainer.MP4, VideoCodec.H264),
 
     // https://www.youtube.com/watch?v=ZSn3Tvc7jQU
-    // DASH_WEBM_VIDEO_1080P_VP9_60FPS(299, "vp9", "1080p", null, null, VideoResolution.VIDEO_RESOLUTION_1080P,
+    // DASH_WEBM_VIDEO_1080P_VP9_60FPS(299, "VP9", "1080p", null, null, VideoResolution.VIDEO_RESOLUTION_1080P,
     // VideoCodec.VIDEO_CODEC_VP9),
-    DASH_WEBM_VIDEO_1080P_VP9(248, "vp9", "1080p", null, null, VideoResolution.P_1080, VideoContainer.WEBM, VideoCodec.VP9),
+    DASH_WEBM_VIDEO_1080P_VP9(248, "VP9", "1080p", null, null, VideoResolution.P_1080, VideoContainer.WEBM, VideoCodec.VP9),
     // https://www.youtube.com/watch?v=T3ny9zIckP0
     // the 2610 stream on itag 266 is deklared as 60fps stream in the backend, but it is actually just 30fps. maybe 60fps will come soon on
     // the same itag?
 
-    DASH_WEBM_VIDEO_1080P_VP9_60FPS(303, "vp9", "1080p 60fps", null, null, VideoResolution.P_1080, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
-    DASH_WEBM_VIDEO_1440P_VP9(271, "vp9", "1440p", null, null, VideoResolution.P_1440, VideoContainer.WEBM, VideoCodec.VP9),
+    DASH_WEBM_VIDEO_1080P_VP9_60FPS(303, "VP9", "1080p 60fps", null, null, VideoResolution.P_1080, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
+    DASH_WEBM_VIDEO_1440P_VP9(271, "VP9", "1440p", null, null, VideoResolution.P_1440, VideoContainer.WEBM, VideoCodec.VP9),
 
-    DASH_WEBM_VIDEO_144P_VP9(278, "vp9", "144p", null, null, VideoResolution.P_144, VideoContainer.WEBM, VideoCodec.VP9),
-    // DASH_WEBM_VIDEO_720P_VP9(247, "vp9", "720p", null, null, VideoResolution.VIDEO_RESOLUTION_720P,
+    DASH_WEBM_VIDEO_144P_VP9(278, "VP9", "144p", null, null, VideoResolution.P_144, VideoContainer.WEBM, VideoCodec.VP9),
+    // DASH_WEBM_VIDEO_720P_VP9(247, "VP9", "720p", null, null, VideoResolution.VIDEO_RESOLUTION_720P,
     // VideoContainer.WEBM, VideoCodec.VIDEO_CODEC_VP9),
     // https://www.youtube.com/watch?v=kdKgvII-pAg
-    DASH_WEBM_VIDEO_2160P_VP9(272, "vp9", "2160p", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9),
-    DASH_WEBM_VIDEO_240P_VP9(242, "vp9", "240p", null, null, VideoResolution.P_240, VideoContainer.WEBM, VideoCodec.VP9),
-    DASH_WEBM_VIDEO_360P_VP9(243, "vp9", "360p", null, null, VideoResolution.P_360, VideoContainer.WEBM, VideoCodec.VP9),
-    DASH_WEBM_VIDEO_480P_VP9(244, "vp9", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9),
+    DASH_WEBM_VIDEO_2160P_VP9(272, "VP9", "2160p", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9),
+    DASH_WEBM_VIDEO_240P_VP9(242, "VP9", "240p", null, null, VideoResolution.P_240, VideoContainer.WEBM, VideoCodec.VP9),
+    DASH_WEBM_VIDEO_360P_VP9(243, "VP9", "360p", null, null, VideoResolution.P_360, VideoContainer.WEBM, VideoCodec.VP9),
+    DASH_WEBM_VIDEO_480P_VP9(244, "VP9", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9),
     DESCRIPTION(10002, "txt", null, null, null, MediaTagsVarious.DESCRIPTION),
     DASH_WEBM_VIDEO_480P_VP9_2(245, "vp9 High Quality Profile", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_1),
     DASH_WEBM_VIDEO_480P_VP9_3(246, "vp9 Higher Quality Profile", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_2),
-    DASH_WEBM_VIDEO_720P_VP9(247, "vp9", "720p", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9),
+    DASH_WEBM_VIDEO_720P_VP9(247, "VP9", "720p", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9),
     // https://www.youtube.com/watch?v=T3ny9zIckP0
-    DASH_WEBM_VIDEO_720P_VP9_60FPS(302, "vp9", "720p 60fps", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
+    DASH_WEBM_VIDEO_720P_VP9_60FPS(302, "VP9", "720p 60fps", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
     FLV_VIDEO_360P_H264_AUDIO_AAC(34, "H264", "360p", "AAC", "128kbit", VideoResolution.P_360, VideoContainer.FLV, VideoCodec.H264),
     FLV_VIDEO_480P_H264_AUDIO_AAC(35, "H264", "480p", "AAC", "128kbit", VideoResolution.P_480, VideoContainer.FLV, VideoCodec.H264),
     FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3(6, "Sorenson H.263", "270p", "MP3", "64kbit", VideoResolution.P_270, VideoContainer.FLV, VideoCodec.H263, AudioCodec.MP3, AudioBitrate.KBIT_64),
@@ -131,7 +131,7 @@ public enum YoutubeITAG {
     MP4_ITAG78_H264_480P_24FPS_AAC_128KBIT(78, "H264", "480p", "AAC", "128kbit", VideoResolution.P_480, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_128),
 
     // not sure - did not find testvideos
-    WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, "VP8", "720p", "Vorbis", "192kbit", VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP8, AudioCodec.VORBIS, AudioBitrate.KBIT_192),;
+    WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, "VP8", "720p", "Vorbis", "192kbit", VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP8, AudioCodec.VORBIS, AudioBitrate.KBIT_192), ;
     public static enum YoutubeITAGVersion {
         // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
         // Before March 2011, YouTube used these audio qualities for several years:
