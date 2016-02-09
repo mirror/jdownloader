@@ -16,12 +16,16 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -34,8 +38,10 @@ import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -46,8 +52,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 2 })
 public class XHamsterCom extends PluginForHost {
@@ -128,7 +132,7 @@ public class XHamsterCom extends PluginForHost {
 
     /**
      * NOTE: They also have .mp4 version of the videos in the html code -> For mobile devices Those are a bit smaller in size
-     * */
+     */
     @SuppressWarnings("deprecation")
     public String getDllink() throws IOException, PluginException {
         String dllink = null;
@@ -473,34 +477,52 @@ public class XHamsterCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://xhamster.com/login.php");
+                br.getPage("https://xhamster.com/login.php");
+                final Form login = br.getFormbyProperty("name", "loginForm");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                Browser br = this.br.cloneBrowser();
+                final long now = System.currentTimeMillis();
+                final String xsid;
+                {
+                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    engine.eval("res1 = Math.floor(Math.random()*100000000).toString(16);");
+                    engine.eval("now = " + now);
+                    engine.eval("res2 = now.toString(16).substring(0,8);");
+                    xsid = (String) engine.get("res1") + ":" + (String) engine.get("res2");
+                }
+                // set in login form and cookie to the correct section
+                login.put("stats", Encoding.urlEncode(xsid));
+                br.setCookie(MAINPAGE, "xsid", xsid);
+                // now some other fingerprint set via js, again cookie and login form
+                final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
+                br.setCookie(MAINPAGE, "fingerprint", fingerprint);
+                login.put("fingerprint", fingerprint);
+                // set action, website changes action in js!
+                login.setAction("https://xhamster.com/ajax/login.php");
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                login.put("remember", "on");
+                login.put("_", now + "");
                 br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("http://xhamster.com/ajax/login.php?act=login&ref=http%3A%2F%2Fxhamster.com%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_=" + System.currentTimeMillis());
+                br.submitForm(login);
                 // Account is fine but we need a stupid login captcha
-                if (br.containsHTML("'#loginCaptchaRow'")) {
-                    for (int i = 1; i <= 5; i++) {
-                        final String rcID = "6Ld7YsISAAAAAN-PZ6ABWPR9y5IhwiWbGZgeoqRa";
-                        final Recaptcha rc = new Recaptcha(br, this);
-                        rc.setId(rcID);
-                        rc.load();
+                if (br.containsHTML("\"errors\":\"invalid_captcha\"") && br.containsHTML("\\$\\('#loginCaptchaRow'\\)\\.show\\(\\)")) {
+                    // they use recaptchav2 now.
+                    if (this.getDownloadLink() == null) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                        final String loginlink = "http://xhamster.com/ajax/login.php?act=login&ref=http%3A%2F%2Fxhamster.com%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_=" + System.currentTimeMillis() + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
-                        br.getPage(loginlink);
-                        if (br.containsHTML("'Recaptcha does not match")) {
-                            continue;
-                        }
-                        break;
+                        this.setDownloadLink(dummyLink);
                     }
-                    if (br.containsHTML("'Recaptcha does not match")) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Login Captcha!\r\nVersuche es erneut und löse das Login Captcha richtig.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong login captcha!\r\nTry again and enter the login captcha correctly.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    br = this.br.cloneBrowser();
+                    login.put("_", System.currentTimeMillis() + "");
+                    br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    br.submitForm(login);
                 }
                 if (br.getCookie(MAINPAGE, "PWD") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
