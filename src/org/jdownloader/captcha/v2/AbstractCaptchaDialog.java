@@ -5,6 +5,7 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -35,13 +36,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -60,6 +54,7 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.captcha.v2.solver.gui.Header;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
@@ -75,6 +70,13 @@ import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> implements MouseListener, MouseMotionListener {
 
@@ -258,13 +260,13 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             popup.add(mi);
         }
 
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
-        pref.height = popup.getComponentCount() * 24 + insets[0] + insets[2];
+        pref.height = popup.getComponentCount() * 24 + insets.top + insets.bottom;
 
         popup.setPreferredSize(pref);
-        popup.show(cancelButton, +insets[1] - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
+        popup.show(cancelButton, +insets.left - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
     }
 
     @Override
@@ -646,16 +648,12 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         SwingUtils.setOpaque(panel, false);
         LAFOptions.applyBackground(lafOptions.getColorForPanelBackground(), field);
 
-        MigPanel headerPanel = null;
+        Header headerPanel = null;
         if (type == DialogType.HOSTER) {
 
             // setBorder(new JTextField().getBorder());
 
-            headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[]");
-            SwingUtils.setOpaque(headerPanel, false);
-            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForPanelHeaderLine()));
-
-            LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
+            headerPanel = new Header("ins 0 0 1 0", "[grow,fill]", "[]");
 
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
@@ -727,16 +725,8 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         } else {
             // setBorder(new JTextField().getBorder());
 
-            headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
-            SwingUtils.setOpaque(headerPanel, false);
-            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
+            headerPanel = new Header("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
 
-            LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
-
-            headerPanel.setOpaque(true);
-
-            // headerPanel.setOpaque(false);
-            // headerPanel.setOpaque(false);
             final String headerText;
             if (getCrawlerStatus() == null) {
                 headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));

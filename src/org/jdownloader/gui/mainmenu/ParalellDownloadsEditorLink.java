@@ -68,7 +68,6 @@ public class ParalellDownloadsEditorLink extends MenuItemData implements MenuLin
     }
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        final int gap = LAFOptions.getInstance().getCfg().getMainMenuIconTextGap();
 
         return new ParalellDownloadsEditor() {
             @Override
@@ -98,7 +97,7 @@ public class ParalellDownloadsEditorLink extends MenuItemData implements MenuLin
 
             @Override
             protected int getIconTextGap() {
-                return gap;
+                return LAFOptions.getInstance().getExtension().customizeMenuItemIconTextGap();
             }
         };
 

@@ -3,11 +3,6 @@ package org.jdownloader.gui.views.linkgrabber;
 import java.util.Iterator;
 import java.util.List;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.EDTRunner;
@@ -32,6 +27,11 @@ import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackage, CrawledLink> {
 
@@ -142,8 +142,9 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
     public void setVariantsColumnVisible(boolean b) {
         if (variantColumn != null) {
-            variantColumn.setAutoVisible(b);
-            this.getTable().updateColumns();
+            if (variantColumn.setAutoVisible(b)) {
+                this.getTable().updateColumns();
+            }
         }
     }
 

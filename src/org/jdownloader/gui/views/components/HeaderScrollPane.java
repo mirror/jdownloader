@@ -1,22 +1,25 @@
 package org.jdownloader.gui.views.components;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import javax.swing.JComponent;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JViewport;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.table.JTableHeader;
 
 import org.appwork.app.gui.BasicGui;
+import org.jdownloader.gui.laf.LookAndFeelExtension;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
 public class HeaderScrollPane extends JScrollPane {
-    private Color headerColor;
-    private Color headerlineColor;
+
+    private LookAndFeelExtension lafExtension;
 
     public static void main(String[] args) {
         LookAndFeelController.getInstance().setUIManager();
@@ -36,11 +39,8 @@ public class HeaderScrollPane extends JScrollPane {
 
     public HeaderScrollPane(JComponent sidebar) {
         super(sidebar);
-        Color c = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
 
-        headerColor = c;
-        // setBorder(new JTextField().getBorder());
-        headerlineColor = (LAFOptions.getInstance().getColorForPanelHeaderLine());
+        lafExtension = LAFOptions.getInstance().getExtension();
 
         JScrollBar sb;
         setVerticalScrollBar(sb = new JScrollBar() {
@@ -67,6 +67,9 @@ public class HeaderScrollPane extends JScrollPane {
         });
 
         this.getVerticalScrollBar().setBlockIncrement(15);
+        this.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, new JTableHeader());
+        LAFOptions.getInstance().getExtension().customizeHeaderScrollPane(this);
+
     }
 
     protected void paintComponent(Graphics g) {
@@ -75,19 +78,31 @@ public class HeaderScrollPane extends JScrollPane {
     }
 
     protected void paintBorder(Graphics g) {
-        if (getColumnHeader() != null) {
-            g.setColor(headerColor);
-            int in = getBorder().getBorderInsets(this).top;
-            g.fillRect(1, 1, getWidth() - 2, getHeaderHeight() + in - 1);
-            g.setColor(headerlineColor);
-            g.drawLine(1, getHeaderHeight() + in - 1, getWidth() - 2, getHeaderHeight() + in - 1);
-        }
+        lafExtension.customizePaintHeaderScrollPaneBorder(this, g);
 
         super.paintBorder(g);
 
     }
 
-    protected int getHeaderHeight() {
+    @Override
+    public void setColumnHeader(JViewport columnHeader) {
+        super.setColumnHeader(columnHeader);
+
+    }
+
+    // @Override
+    // public void setColumnHeaderView(Component view) {
+    // super.setColumnHeaderView(view);
+    // System.out.println(getColumnHeader().getHeight());
+    // }
+
+    protected int getPrefHeaderHeight() {
+
+        return getColumnHeader() == null ? 0 : getColumnHeader().getPreferredSize().height;
+    }
+
+    public int getHeaderHeight() {
+
         return getColumnHeader() == null ? 0 : getColumnHeader().getHeight();
     }
 

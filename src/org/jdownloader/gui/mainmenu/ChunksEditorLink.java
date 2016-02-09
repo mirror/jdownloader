@@ -40,7 +40,7 @@ public class ChunksEditorLink extends MenuItemData implements MenuLink {
     }
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        final int gap = LAFOptions.getInstance().getCfg().getMainMenuIconTextGap();
+
         ChunksEditor ret = new ChunksEditor() {
 
             @Override
@@ -70,7 +70,7 @@ public class ChunksEditorLink extends MenuItemData implements MenuLink {
 
             @Override
             protected int getIconTextGap() {
-                return gap;
+                return LAFOptions.getInstance().getExtension().customizeMenuItemIconTextGap();
             }
         };
 

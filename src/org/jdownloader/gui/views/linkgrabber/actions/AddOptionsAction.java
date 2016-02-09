@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
@@ -33,14 +34,14 @@ public class AddOptionsAction extends AppAction {
         ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
         popup.add(new JMenuItem(ala));
         popup.add(new JMenuItem(new AddContainerAction()));
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)
         // e.getSource()).getWidth() + insets[1] + insets[3];
         popup.setPreferredSize(pref);
 
-        popup.show(positionComp, -insets[1] - 1, -popup.getPreferredSize().height + insets[2]);
+        popup.show(positionComp, -insets.left - 1, -popup.getPreferredSize().height + insets.bottom);
     }
 
 }

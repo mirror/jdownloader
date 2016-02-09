@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 
 import javax.swing.JButton;
@@ -16,7 +17,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ImportPopupAction extends AppAction {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -1041794723138925672L;
     private JButton           positionComp;
@@ -36,13 +37,13 @@ public class ImportPopupAction extends AppAction {
         popup.add(new JMenuItem(new ImportPlainTextAction(table)));
         popup.add(new JMenuItem(new LoadProxyProfileAction(table)));
         // popup.add(new JMenuItem(new AddContainerAction()));
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
-        pref.width = Math.max(pref.width, positionComp.getWidth() + ((Component) e.getSource()).getWidth() + insets[1] + insets[3]);
+        pref.width = Math.max(pref.width, positionComp.getWidth() + ((Component) e.getSource()).getWidth() + insets.left + insets.right);
         popup.setPreferredSize(pref);
 
-        popup.show(positionComp, -insets[1] - 1, -popup.getPreferredSize().height + insets[2]);
+        popup.show(positionComp, -insets.left - 1, -popup.getPreferredSize().height + insets.bottom);
     }
 
 }

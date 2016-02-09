@@ -33,10 +33,6 @@ import javax.swing.KeyStroke;
 import javax.swing.text.DefaultEditorKit.CopyAction;
 import javax.swing.text.TextAction;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -69,6 +65,10 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperties> extends MigPanel implements ActionListener, GenericConfigEventListener<Boolean> {
 
@@ -566,7 +566,8 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
     protected void addArchiveLine(int height, MigPanel p) {
         p.add(createIconLabel(_GUI._.propertiespanel_archivepassword(), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(password, "pushx,growx,height " + height + "!,growx,width 10:10:n");
-        p.add(autoExtract, "sg right,height " + height + "!");
+        p.add(autoExtract, "sg right,height " + height + "!,aligny top");
+
     }
 
     protected void addChecksum(int height, MigPanel p) {
@@ -577,7 +578,8 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
     protected void addCommentLine(int height, MigPanel p) {
         p.add(createIconLabel(_GUI._.propertiespanel_comment(), _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "alignx right,aligny center,height " + height + "!");
         p.add(comment, "height " + height + "!,growx,width 10:10:n");
-        p.add(priority, "sg right,height " + height + "!");
+        p.add(priority, "sg right,height " + height + "!,aligny top");
+
     }
 
     protected void addDownloadFrom(int height, MigPanel p) {
@@ -641,7 +643,8 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         final int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
         final MigPanel p = this;
         p.removeAll();
-        p.setLayout(new MigLayout("ins 0 0 0 0,wrap 3", "[][grow,fill]2[]", "2[]0"));
+        // LAFOptions.getInstance().getExtension().customizeOverviewPanelInsets()
+        p.setLayout(new MigLayout("ins 0,wrap 3, gap " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap(), "[][grow,fill][]", "[]"));
         if (isPackagenameEnabled()) {
             addPackagename(height, p);
         }

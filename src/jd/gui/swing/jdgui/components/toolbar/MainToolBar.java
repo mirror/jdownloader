@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.components.toolbar;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -465,9 +466,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 }.run();
                                 Component button = (Component) e.getSource();
                                 Dimension prefSize = lroot.getPreferredSize();
-                                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+                                Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
                                 root = lroot;
-                                lroot.show(button, -insets[1], button.getHeight() - insets[0]);
+                                lroot.show(button, -insets.left, button.getHeight() - insets.top);
 
                             }
                         }
@@ -596,8 +597,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 if (e.getSource() instanceof Component) {
                                     Component button = (Component) e.getSource();
                                     Dimension prefSize = root.getPreferredSize();
-                                    int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-                                    root.show(button, -insets[1], button.getHeight() - insets[0]);
+                                    Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
+                                    root.show(button, -insets.left, button.getHeight() - insets.top);
 
                                 }
                             }

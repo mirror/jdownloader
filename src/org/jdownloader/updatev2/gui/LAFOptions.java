@@ -1,13 +1,13 @@
 package org.jdownloader.updatev2.gui;
 
 import java.awt.Color;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-
-import jd.SecondLevelLaunch;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.ConfigUtils;
@@ -16,12 +16,15 @@ import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.DefaultFactoryInterface;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.storage.config.handler.StorageHandler;
-import org.appwork.storage.config.handler.WriteStrategy;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.jdownloader.gui.laf.DefaultLookAndFeelExtension;
+import org.jdownloader.gui.laf.LookAndFeelExtension;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.UpdateController;
+
+import jd.SecondLevelLaunch;
 
 public class LAFOptions {
 
@@ -46,7 +49,8 @@ public class LAFOptions {
         return LAFOptions.INSTANCE;
     }
 
-    private final LAFSettings cfg;
+    private LAFSettings          cfg;
+    private LookAndFeelExtension extension;
 
     public LAFSettings getCfg() {
         return cfg;
@@ -57,41 +61,45 @@ public class LAFOptions {
      */
     private LAFOptions(String laf) {
         int i = laf.lastIndexOf(".");
-        final String name = (i >= 0 ? laf.substring(i + 1) : laf);
-        final String path = "cfg/laf/" + name;
+        String name = (i >= 0 ? laf.substring(i + 1) : laf);
+        String path = "cfg/laf/" + name;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
-        final String rel = laf.replace(".", "/");
-        if (getClass().getResource("/" + rel + ".json") != null) {
-            final LAFSettings defaultStorage = JsonConfig.create(rel, LAFSettings.class);
-            defaultStorage._getStorageHandler().getPrimitiveStorage().setAutoPutValues(false);
-            cfg._getStorageHandler().getPrimitiveStorage().setAutoPutValues(false);
-            defaultStorage._getStorageHandler().setSaveInShutdownHookEnabled(false);
-            defaultStorage._getStorageHandler().setWriteStrategy(new WriteStrategy() {
 
-                @Override
-                public void write(StorageHandler<?> storageHandler, KeyHandler<?> keyHandler) {
-                    System.out.println("Do not write");
-                }
-            });
-            cfg._getStorageHandler().setDefaultFactory(new DefaultFactoryInterface() {
-
-                @Override
-                public Object getDefaultValue(KeyHandler<?> handler, Object o) {
-
-                    KeyHandler<Object> defKeyHandler = defaultStorage._getStorageHandler().getKeyHandler(handler.getKey());
-                    Object v = defKeyHandler.getValue();
-                    // Object def = defKeyHandler.getDefaultValue();
-                    //
-                    // if (def != v) {
-                    //
-                    // System.out.println("def");
-                    // }
-                    return v;
-
-                }
-            });
+        try {
+            extension = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
+        } catch (Throwable e) {
+            LoggerFactory.getDefaultLogger().log(e);
+        }
+        if (extension == null) {
+            extension = new DefaultLookAndFeelExtension();
         }
 
+        for (Entry<Method, KeyHandler<?>> e : cfg._getStorageHandler().getMap().entrySet()) {
+            e.getValue().setAllowWriteDefaultObjects(false);
+        }
+
+        cfg._getStorageHandler().setDefaultFactory(new DefaultFactoryInterface() {
+
+            @Override
+            public Object getDefaultValue(KeyHandler<?> handler, Object o) {
+
+                Object def = o;
+                try {
+                    def = handler.getGetMethod().invoke(extension, new Object[] {});
+                } catch (Throwable e) {
+                    LoggerFactory.getDefaultLogger().log(e);
+
+                }
+
+                return def;
+
+            }
+        });
+
+    }
+
+    public LookAndFeelExtension getExtension() {
+        return extension;
     }
 
     public synchronized static void init(String laf) {
@@ -239,15 +247,6 @@ public class LAFOptions {
 
     }
 
-    public void applyHeaderColorBackground(JLabel lbl) {
-
-        Color c = createColor(cfg.getColorForPanelHeaderForeground());
-        if (c != null) {
-            lbl.setForeground(c);
-
-        }
-    }
-
     public void applyBackground(String color, JComponent field) {
 
         Color col = createColor(color);
@@ -265,10 +264,6 @@ public class LAFOptions {
         return createColor(cfg.getColorForPanelHeaderBackground());
     }
 
-    public int[] getPopupBorderInsets() {
-        return cfg.getPopupBorderInsets();
-    }
-
     public Color getColorForPanelBackground() {
         return createColor(cfg.getColorForPanelBackground());
     }
@@ -277,10 +272,6 @@ public class LAFOptions {
 
         field.setBackground(color);
         field.setOpaque(true);
-    }
-
-    public Color getColorForPanelHeaderLine() {
-        return createColor(cfg.getColorForPanelHeaderLine());
     }
 
     public Color getColorForTooltipForeground() {
@@ -429,6 +420,10 @@ public class LAFOptions {
 
     public Color getColorForTableRowGap() {
         return createColor(cfg.getColorForTableRowGap());
+    }
+
+    public Color getColorForPanelBorders() {
+        return createColor(cfg.getColorForPanelBorders());
     }
 
 }

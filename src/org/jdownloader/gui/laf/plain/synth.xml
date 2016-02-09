@@ -1191,9 +1191,9 @@ MenuBar
     <state>
       <opaque value="false" />
       <color type="BACKGROUND" value="#57AAF1" />
-      <string id="menuBarBackground">/org/jdownloader/gui/laf/plain/menuBarBackground.png</string>
+      <string id="menuBarBackground">/org/jdownloader/gui/laf/plain/images/menuBarBackground.png</string>
       <defaultsProperty key="Synthetica.menuBar.background.active" type="idref" value="menuBarBackground"/>
-      <string id="menuBarBackground">/org/jdownloader/gui/laf/plain/menuBarBackground4_inactive.png,/org/jdownloader/gui/laf/plain/menuBarBackground3_inactive.png,/org/jdownloader/gui/laf/plain/menuBarBackground2_inactive.png,/org/jdownloader/gui/laf/plain/menuBarBackground_inactive.png</string>
+      <string id="menuBarBackground">/org/jdownloader/gui/laf/plain/images/menuBarBackground4_inactive.png,/org/jdownloader/gui/laf/plain/images/menuBarBackground3_inactive.png,/org/jdownloader/gui/laf/plain/images/menuBarBackground2_inactive.png,/org/jdownloader/gui/laf/plain/images/menuBarBackground_inactive.png</string>
       <defaultsProperty key="Synthetica.menuBar.background.inactive" type="idref" value="menuBarBackground"/>
       <defaultsProperty key="Synthetica.menuBar.background.insets" type="insets" value="0 0 0 0"/>
 	  <painter method="menuBarBackground" idref="syntheticaPainter" />
@@ -1545,12 +1545,12 @@ ProgressBar
       <defaultsProperty key="Synthetica.progressBar.y.background" type="idref" value="progressBarYBackground"/>
       <defaultsProperty key="Synthetica.progressBar.y.background.insets" type="insets" value="2 2 2 2"/>
 
-      <string id="progressBarX">plain/images/progressBarX.png</string>
+      <string id="progressBarX">/org/jdownloader/gui/laf/plain/images/progressBarX.png</string>
       <defaultsProperty key="Synthetica.progressBar.x" type="idref" value="progressBarX"/>
       <defaultsProperty key="Synthetica.progressBar.x.indeterminate" type="idref" value="progressBarX"/>      
       <defaultsProperty key="Synthetica.progressBar.x.insets" type="insets" value="1 1 1 1"/>
 
-      <string id="progressBarY">plain/images/progressBarY.png</string>
+      <string id="progressBarY">/org/jdownloader/gui/laf/plain/images/progressBarY.png</string>
       <defaultsProperty key="Synthetica.progressBar.y" type="idref" value="progressBarY"/>
       <defaultsProperty key="Synthetica.progressBar.y.indeterminate" type="idref" value="progressBarY"/>      
       <defaultsProperty key="Synthetica.progressBar.y.insets" type="insets" value="1 1 1 1"/>
@@ -2538,9 +2538,9 @@ ToolBar
       <color type="BACKGROUND" value="#FF0000" />
       <color type="FOREGROUND" value="#FFFFFF" />
 
-      <string id="toolBarBackground">/org/jdownloader/gui/laf/plain/toolBarBackground.png</string>
+      <string id="toolBarBackground">/org/jdownloader/gui/laf/plain/images/toolBarBackground.png</string>
       <defaultsProperty key="Synthetica.toolBar.background" type="idref" value="toolBarBackground"/>
-      <string id="toolBarBackground">/org/jdownloader/gui/laf/plain/toolBarBackground4_inactive.png,/org/jdownloader/gui/laf/plain/toolBarBackground3_inactive.png,/org/jdownloader/gui/laf/plain/toolBarBackground2_inactive.png,/org/jdownloader/gui/laf/plain/toolBarBackground_inactive.png</string>
+      <string id="toolBarBackground">/org/jdownloader/gui/laf/plain/images/toolBarBackground4_inactive.png,/org/jdownloader/gui/laf/plain/images/toolBarBackground3_inactive.png,/org/jdownloader/gui/laf/plain/images/toolBarBackground2_inactive.png,/org/jdownloader/gui/laf/plain/images/toolBarBackground_inactive.png</string>
       <defaultsProperty key="Synthetica.toolBar.background.inactive" type="idref" value="toolBarBackground"/>
       <defaultsProperty key="Synthetica.toolBar.background.insets" type="insets" value="0 0 0 0"/>
       <defaultsProperty key="Synthetica.toolBar.background.horizontalTiled" type="boolean" value="true"/>

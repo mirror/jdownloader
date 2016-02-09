@@ -5424,6 +5424,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1 %s2-Video" })
     String YoutubeVariant_name_generic_video(String res, String codec);
 
+    @Default(lngs = { "en" }, values = { "%s1 %s2-Video %s3 %s4-Audio" })
+    String YoutubeVariant_name_generic_video2(String res, String codec, String abitrate, String acodec);
+
     @Default(lngs = { "en" }, values = { "%s1" })
     String YoutubeVariant_nametag_generic_video(String res);
 
@@ -6038,4 +6041,11 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Preferred width" })
     String MenuEditors_boxwidth_pref();
+
+    @Default(lngs = { "en" }, values = { "Link property panel" })
+    String help_enable_table_properties_title();
+
+    @Default(lngs = { "en" }, values = { "You enabled the link properties panel, but no link or package is selected.\r\nThis panel becomes visible if you select a link or a package." })
+
+    String help_enable_table_properties_msg();
 }

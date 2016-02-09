@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.downloads;
 
-import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
@@ -8,38 +8,24 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
-import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.extensions.extraction.ExtractionEvent;
 import org.jdownloader.extensions.extraction.ExtractionListener;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.components.OverviewHeaderScrollPane;
-import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.bottombar.CustomizeableActionBar;
-import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverViewHeader;
-import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
-import org.jdownloader.gui.views.downloads.properties.DownloadPropertiesBasePanel;
-import org.jdownloader.gui.views.downloads.properties.DownloadPropertiesHeader;
-import org.jdownloader.gui.views.downloads.properties.PropertiesScrollPane;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
@@ -62,58 +48,14 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     /**
      *
      */
-    private static final long                         serialVersionUID  = -2610465878903778445L;
-    private DownloadsTable                            table;
-    private JScrollPane                               tableScrollPane;
-    private DownloadsTableModel                       tableModel;
-    private ScheduledFuture<?>                        timer             = null;
-    private CustomizeableActionBar                    bottomBar;
-    private NullsafeAtomicReference<HeaderScrollPane> overViewScrollBar = new NullsafeAtomicReference<HeaderScrollPane>(null);
-    private PropertiesScrollPane                      propertiesPanel;
+    private static final long      serialVersionUID = -2610465878903778445L;
+    private DownloadsTable         table;
+    private JScrollPane            tableScrollPane;
+    private DownloadsTableModel    tableModel;
+    private ScheduledFuture<?>     timer            = null;
+    private CustomizeableActionBar bottomBar;
 
-    private PropertiesScrollPane createPropertiesPanel() {
-        final DownloadPropertiesBasePanel loverView = new DownloadPropertiesBasePanel(table);
-        PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table) {
-            @Override
-            public void setVisible(boolean aFlag) {
-                if (!aFlag) {
-                    loverView.save();
-                }
-                super.setVisible(aFlag);
-            }
-        };
-
-        LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
-        propertiesScrollPane.setColumnHeaderView(new DownloadPropertiesHeader(loverView) {
-
-            @Override
-            protected void onCloseAction() {
-                CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
-                CustomizeableActionBar iconComp = bottomBar;
-                Point loc = iconComp.getLocationOnScreen();
-                if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
-                }
-
-            }
-        });
-
-        propertiesScrollPane.setVisible(false);
-
-        propertiesScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0), propertiesScrollPane.getBorder()));
-        return propertiesScrollPane;
-    }
-
-    public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
-        // if (propertiesPanelVisible == this.propertiesPanelVisible) return;
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                propertiesPanel.setVisible(propertiesPanelVisible);
-                revalidate();
-            }
-        };
-    }
+    private WidgetContainer        panelContainer;
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));
@@ -141,8 +83,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             public void componentHidden(ComponentEvent e) {
             }
         });
+        LAFOptions.getInstance().getExtension().customizeLinksTable(table, tableScrollPane);
 
-        tableScrollPane.setBorder(null);
         HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED, table);
         bottomBar = new CustomizeableActionBar(MenuManagerDownloadTabBottomBar.getInstance()) {
             protected SelectionInfo<?, ?> getCurrentSelection() {
@@ -158,44 +100,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }
 
         };
-        propertiesPanel = createPropertiesPanel();
 
-        final DelayedRunnable propertiesDelayer = new DelayedRunnable(100l, 1000l) {
-
-            @Override
-            public void delayedrun() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        if (table.getSelectedRowCount() > 0) {
-                            setPropertiesPanelVisible(true);
-                            propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
-                        } else {
-                            setPropertiesPanelVisible(false);
-                            propertiesPanel.update((AbstractNode) null);
-                        }
-                    }
-                };
-            }
-
-            @Override
-            public String getID() {
-                return "updateDelayer";
-            }
-
-        };
-
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
-                    return;
-                }
-                propertiesDelayer.run();
-            }
-        });
         DownloadController.DOWNLOADLIST_LOADED.executeWhen(new Runnable() {
 
             @Override
@@ -227,36 +132,6 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }
         });
 
-        GenericConfigEventListener<Boolean> relayoutListener = new GenericConfigEventListener<Boolean>() {
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-
-            @Override
-            public void onConfigValueModified(final KeyHandler<Boolean> keyHandler, final Boolean newValue) {
-
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        removeAll();
-                        if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-                            getOverView();
-                        }
-
-                        layoutComponents(DownloadController.DOWNLOADLIST_LOADED.isReached());
-
-                        if (newValue && keyHandler == CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE) {
-                            setPropertiesPanelVisible(true);
-                            propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
-                        }
-                    }
-                };
-            }
-        };
-        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(relayoutListener);
-        CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.getEventSender().addListener(relayoutListener);
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getEventSender().addListener(this);
         //
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
@@ -321,90 +196,35 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         return table;
     }
 
+    @Override
+    public Dimension getPreferredSize() {
+        // new Exception("getporef").printStackTrace();
+
+        return super.getPreferredSize();
+    }
+
+    @Override
+    public void doLayout() {
+        // new Exception("doLayout").printStackTrace();
+
+        super.doLayout();
+    }
+
     private void layoutComponents(boolean downloadListLoaded) {
-        propertiesPanel.save();
+
         if (!downloadListLoaded) {
             MigPanel loader = createLoaderPanel();
             setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]"));
             add(new JScrollPane(loader), "alignx center,aligny 20%");
         } else {
-            if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-                // Dimension p = tableScrollPane.getPreferredSize();
-                // add(Box.createHorizontalGlue());
-                if (CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
-                    setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[]2[]2[]"));
-                    this.add(tableScrollPane, "");
-                    add(propertiesPanel, "hidemode 2");
-                    add(getOverView(), "");
-                    add(bottomBar, "height 24!");
-                } else {
-                    setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]2[]2[]"));
-                    this.add(tableScrollPane, "");
-                    add(getOverView(), "");
-                    add(bottomBar, "height 24!");
-                }
+            setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[]0[]"));
+            this.add(tableScrollPane);
+            this.panelContainer = new DownloadsPabelWidgetContainer(table, bottomBar);
+            panelContainer.relayout();
+            this.add(panelContainer, "hidemode 3,gaptop " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap());
+            add(bottomBar, "height 24!,gaptop " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap());
 
-            } else {
-                if (CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
-                    setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill]0[]2[]"));
-                    this.add(tableScrollPane, "");
-                    add(propertiesPanel, "hidemode 2");
-                    add(bottomBar, "height 24!");
-                } else {
-                    setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill]2[]"));
-                    this.add(tableScrollPane, "");
-                    add(bottomBar, "height 24!");
-                }
-            }
         }
-    }
-
-    private Component getOverView() {
-        HeaderScrollPane ret = overViewScrollBar.get();
-        if (ret != null) {
-            return ret;
-        } else {
-            ret = createInternalOverview();
-            overViewScrollBar.compareAndSet(null, ret);
-        }
-        return ret;
-    }
-
-    public HeaderScrollPane createInternalOverview() {
-        HeaderScrollPane ret;
-        final DownloadOverview overView = new DownloadOverview(table) {
-            @Override
-            public void removeListeners() {
-                super.removeListeners();
-                overViewScrollBar.set(null);
-            }
-        };
-        ret = new OverviewHeaderScrollPane(overView);
-        final HeaderScrollPane finalRet = ret;
-        LAFOptions.getInstance().applyPanelBackground(ret);
-        ret.setColumnHeaderView(new DownloadOverViewHeader(overView) {
-
-            /**
-             *
-             */
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            protected void onCloseAction() {
-                CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.setValue(false);
-                overView.removeListeners();
-
-                CustomizeableActionBar iconComp = bottomBar;
-                Point loc = bottomBar.getLocationOnScreen();
-
-                if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
-                }
-
-            }
-
-        });
-        return ret;
     }
 
     @Override
@@ -436,8 +256,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         }
         DownloadController.getInstance().addListener(this);
         table.requestFocusInWindow();
-        if (propertiesPanel != null) {
-            propertiesPanel.refreshAfterTabSwitch();
+
+        if (panelContainer != null) {
+            panelContainer.refreshAfterTabSwitch();
         }
     }
 

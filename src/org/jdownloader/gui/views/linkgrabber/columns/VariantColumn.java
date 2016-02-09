@@ -14,17 +14,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
-import jd.plugins.DownloadLink;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.JScrollPopupMenu;
@@ -39,6 +28,17 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
+import jd.plugins.DownloadLink;
 
 public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
@@ -286,8 +286,12 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         return (autoVisible || alwaysVisible) && savedValue;
     }
 
-    public void setAutoVisible(boolean b) {
+    public boolean setAutoVisible(boolean b) {
+        if (b == autoVisible) {
+            return false;
+        }
         this.autoVisible = b;
+        return true;
     }
 
 }

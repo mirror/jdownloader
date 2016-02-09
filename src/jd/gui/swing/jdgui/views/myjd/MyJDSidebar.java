@@ -167,7 +167,7 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
         });
 
         LAFOptions.getInstance().applyBackground(LAFOptions.getInstance().getColorForPanelBackground(), list);
-        sp.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
+        sp.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, (LAFOptions.getInstance().getColorForPanelBorders())));
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 

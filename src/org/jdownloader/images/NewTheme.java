@@ -115,8 +115,9 @@ public class NewTheme extends Theme {
         String key = this.getCacheKey(path + "/" + red, size, selected);
         ret = getCached(key);
         if (ret == null) {
-            Icon back = getIcon(path, size - 5, false);
+            Icon back = getIcon(path, size, false);
             Icon checkBox = selected ? CheckBoxIcon.TRUE : CheckBoxIcon.FALSE;
+            checkBox = IconIO.getScaledInstance(checkBox, (int) (size * 0.5), (int) (size * 0.5));
             if (red != null) {// works for synthetica default LAF only
                 if (UIManager.getLookAndFeel().getClass().getSimpleName().equals("PlainLookAndFeel")) {
                     checkBox = IconIO.replaceColor(checkBox, new Color(!selected ? 0xFFF0F0F0 : 0xFFEBEBEB), 50, red, true);
@@ -142,7 +143,7 @@ public class NewTheme extends Theme {
 
             }
 
-            ret = new ImageIcon(ImageProvider.merge(back, checkBox, 5, 0, 0, back.getIconHeight() - checkBox.getIconHeight() + 5));
+            ret = new ImageIcon(ImageProvider.merge(back, checkBox, 3, 0, 0, back.getIconHeight() - checkBox.getIconHeight() + 3));
             cache(ret, key);
         }
         return ret;

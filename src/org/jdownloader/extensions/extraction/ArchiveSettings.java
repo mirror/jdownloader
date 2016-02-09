@@ -80,6 +80,9 @@ public class ArchiveSettings implements Storable {
     }
 
     public void setAutoExtract(BooleanStatus overwriteFiles) {
+        if (overwriteFiles == null) {
+            overwriteFiles = BooleanStatus.UNSET;
+        }
         this.autoExtract = overwriteFiles;
         fireUpdate();
     }
@@ -134,7 +137,7 @@ public class ArchiveSettings implements Storable {
     }
 
     public static final TypeRef<ArchiveSettings> TYPEREF = new TypeRef<ArchiveSettings>() {
-                                                         };
+    };
 
     public boolean needsSaving() {
         return needsSaving;

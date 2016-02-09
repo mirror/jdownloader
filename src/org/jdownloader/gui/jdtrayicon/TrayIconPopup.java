@@ -23,6 +23,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
@@ -201,8 +202,8 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                             if (e.getSource() instanceof Component) {
                                 Component button = (Component) e.getSource();
                                 Dimension prefSize = root.getPreferredSize();
-                                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-                                root.show(button, button.getWidth(), -insets[0]);
+                                Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
+                                root.show(button, button.getWidth(), -insets.top);
                             }
 
                         }

@@ -130,7 +130,7 @@ public class MenuBuilder {
                 }
             }
         } finally {
-            System.out.println("Menu Creation Layer: " + md + " took " + (System.currentTimeMillis() - t));
+            // System.out.println("Menu Creation Layer: " + md + " took " + (System.currentTimeMillis() - t));
         }
 
     }
@@ -152,7 +152,7 @@ public class MenuBuilder {
         try {
             inst.addTo(root);
         } finally {
-            System.out.println("Action Creation " + inst + " took " + (System.currentTimeMillis() - t));
+            // System.out.println("Action Creation " + inst + " took " + (System.currentTimeMillis() - t));
         }
     }
 

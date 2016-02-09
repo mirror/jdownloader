@@ -39,7 +39,6 @@ public class SpeedlimitEditorLink extends MenuItemData implements MenuLink {
     }
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        final int gap = LAFOptions.getInstance().getCfg().getMainMenuIconTextGap();
 
         return new SpeedlimitEditor() {
             @Override
@@ -69,7 +68,7 @@ public class SpeedlimitEditorLink extends MenuItemData implements MenuLink {
 
             @Override
             protected int getIconTextGap() {
-                return gap;
+                return LAFOptions.getInstance().getExtension().customizeMenuItemIconTextGap();
             }
         };
 

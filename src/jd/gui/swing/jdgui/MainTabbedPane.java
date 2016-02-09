@@ -42,13 +42,6 @@ import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
-import jd.gui.swing.jdgui.maintab.CustomTabHeader;
-import jd.gui.swing.jdgui.maintab.TabHeader;
-import jd.gui.swing.jdgui.views.ClosableView;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -61,6 +54,13 @@ import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
+import jd.gui.swing.jdgui.maintab.CustomTabHeader;
+import jd.gui.swing.jdgui.maintab.TabHeader;
+import jd.gui.swing.jdgui.views.ClosableView;
 
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
@@ -383,8 +383,20 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         if (JDGui.getInstance() != null) {
             JDGui.getInstance().setWaiting(false);
         }
+        int rightest = Integer.MIN_VALUE;
 
+        for (int t = 0; t < getTabCount(); t++) {
+            // g.drawLine(tab.getX(), 0, tab.getX() + tab.getWidth(), 0);
+            Rectangle bounds = getUI().getTabBounds(this, t);
+            int right = bounds.x + bounds.width;
+            if (right > rightest) {
+                rightest = right;
+            }
+        }
+
+        // System.out.println(getPreferredSize().width - p.x);
         if (topRightPainter != null) {
+            g.setClip(rightest, 0, getWidth() - rightest, 32);
             specialDealBounds = topRightPainter.paint((Graphics2D) g);
         }
 
@@ -417,7 +429,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     /**
      * returns the component in this tab that equals view
-     * 
+     *
      * @param view
      * @return
      */
@@ -433,7 +445,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     /**
      * CHecks if there is already a tabbepanel of this type in this pane.
-     * 
+     *
      * @param view
      * @return
      */

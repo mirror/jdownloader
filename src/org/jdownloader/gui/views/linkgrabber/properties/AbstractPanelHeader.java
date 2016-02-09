@@ -1,17 +1,17 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 
-import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.table.JTableHeader;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
@@ -51,19 +51,19 @@ public abstract class AbstractPanelHeader extends MigPanel {
         updateLabelString();
     }
 
-    private static String getInsetsString() {
-        try {
-            int[] insets = LAFOptions.getInstance().getCfg().getInfoPanelHeaderInsets();
-            return insets[0] + " " + insets[1] + " " + insets[2] + " " + insets[3];
-        } catch (Throwable e) {
-            LoggerFactory.getDefaultLogger().log(e);
-            return "0 0 1 0";
-        }
+    private JTableHeader tableHeader;
+
+    @Override
+    public void paint(Graphics g) {
+        // tableHeader.setPreferredSize(getPreferredSize());
+        tableHeader.setSize(getSize());
+        tableHeader.paint(g);
+        super.paint(g);
     }
 
     public AbstractPanelHeader(String title, Icon imageIcon) {
-        super("ins " + getInsetsString(), "[]2[grow,fill][]0[]", "[grow,fill]");
-
+        super("ins " + LAFOptions.getInstance().getExtension().customizePanelHeaderInsets(), "[]2[grow,fill][]0[]", "[grow,fill]");
+        tableHeader = new JTableHeader();
         lbl = SwingUtils.toBold(new JLabel(""));
         this.addHierarchyBoundsListener(new HierarchyBoundsListener() {
 
@@ -76,7 +76,7 @@ public abstract class AbstractPanelHeader extends MigPanel {
             public void ancestorMoved(HierarchyEvent e) {
             }
         });
-        LAFOptions.getInstance().applyHeaderColorBackground(lbl);
+
         add(icon = new JLabel(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16)), "gapleft 1");
         add(lbl, "height 17!, wmax 100% - 61px");
 
@@ -93,12 +93,10 @@ public abstract class AbstractPanelHeader extends MigPanel {
             }
         });
 
-        setOpaque(true);
         SwingUtils.setOpaque(lbl, false);
 
-        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
+        setOpaque(false);
 
-        setBackground((LAFOptions.getInstance().getColorForPanelHeaderBackground()));
         bt = new CloseButton(new AppAction() {
 
             @Override

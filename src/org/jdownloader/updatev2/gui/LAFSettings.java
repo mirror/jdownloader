@@ -2,12 +2,6 @@ package org.jdownloader.updatev2.gui;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultByteValue;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.DefaultIntArrayValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.RequiresRestart;
@@ -67,7 +61,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(RED)
+
     public String getColorForErrorForeground();
 
     // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelBackgroundColor(c);
@@ -75,7 +69,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(ALICE_BLUE_APPROX)
+
     String getColorForPanelBackground();
 
     // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelHeaderColor(c);
@@ -83,50 +77,42 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(JAGGED_ICE_APPROX)
+
     String getColorForPanelHeaderBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(BLACK)
+
     public String getColorForPanelHeaderForeground();
 
-    // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelHeaderLineColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(GRAY)
-    String getColorForPanelHeaderLine();
 
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @HexColorString
-    @DefaultStringValue(PIGEON_POST_APPROX)
     String getColorForScrollbarsMouseOverState();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(JAGGED_ICE_APPROX)
+
     String getColorForScrollbarsNormalState();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("FF359E35")
+
     public String getColorForSpeedMeterAverage();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("FF222222")
+
     public String getColorForSpeedMeterAverageText();
 
     void setColorForSpeedMeterAverageText(String colorHex);
@@ -135,7 +121,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("FF222222")
+
     public String getColorForSpeedMeterText();
 
     void setColorForSpeedMeterText(String colorHex);
@@ -144,63 +130,63 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("CC3DC83D")
+
     public String getColorForSpeedmeterCurrentBottom();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("2051F251")
+
     public String getColorForSpeedmeterCurrentTop();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("00FF0000")
+
     public String getColorForSpeedmeterLimiterBottom();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("ccFF0000")
+
     public String getColorForSpeedmeterLimiterTop();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("7FFF0000")
+
     public String getColorForTableAccountErrorRowBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("FF000000")
+
     public String getColorForTableAccountErrorRowForeground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("7FFFC800")
+
     public String getColorForTableAccountTempErrorRowBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("FF000000")
+
     public String getColorForTableAccountTempErrorRowForeground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("06000000")
+
     String getColorForTableAlternateRowBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
@@ -214,14 +200,14 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(GREEN)
+
     String getColorForTableFilteredView();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("ffC9E0ED")
+
     String getColorForTableMouseOverRowBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
@@ -234,7 +220,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(MYSTIC_APPROX)
+
     public String getColorForTablePackageRowBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
@@ -247,7 +233,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(TROPICAL_BLUE_APPROX)
+
     String getColorForTableSelectedRowsBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
@@ -261,7 +247,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(ORANGE)
+
     String getColorForTableSortedColumnView();
 
     // if (StringUtils.isNotEmpty(c)) lafOptions.setTooltipForegroundColor(c);
@@ -269,40 +255,42 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(ALICE_BLUE_APPROX)
+
     public String getColorForTooltipForeground();
 
-    @DescriptionForConfigEntry("This Painter class is used to paint Main Menu Items without a popdown menu")
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultStringValue(DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER)
+    @HexColorString
+
+    public String getColorForPanelBorders();
+
+    public void setColorForPanelBorders(String color);
+
+    @DescriptionForConfigEntry("This Painter class is used to paint Main Menu Items without a popdown menu")
+
+    @RequiresRestart("A JDownloader Restart is Required")
+
     public String getMenuBackgroundPainterClass();
 
-    @AboutConfig
-    @DefaultIntArrayValue({ 0, 2, 4, 2 })
-    public int[] getPopupBorderInsets();
+    // @AboutConfig
+    // @DefaultIntArrayValue({ 0, 2, 4, 2 })
+    // public int[] getPopupBorderInsets();
+    //
+    // @AboutConfig
+    // @DefaultIntArrayValue({ 0, 0, 1, 0 })
+    // public int[] getInfoPanelHeaderInsets();
+    //
+    // public void setInfoPanelHeaderInsets(int[] insets);
+    //
+    // @AboutConfig
+    // @DefaultIntArrayValue({ 0, 0, 0, 0 })
+    // public int[] getInfoPanelContentInsets();
+    //
+    // public void setInfoPanelContentInsets(int[] insets);
 
-    @AboutConfig
-    @DefaultIntArrayValue({ 0, 0, 1, 0 })
-    public int[] getInfoPanelHeaderInsets();
-
-    public void setInfoPanelHeaderInsets(int[] insets);
-
-    @AboutConfig
-    @DefaultIntArrayValue({ 0, 0, 0, 0 })
-    public int[] getInfoPanelContentInsets();
-
-    public void setInfoPanelContentInsets(int[] insets);
-
-    @AboutConfig
-    @DefaultIntArrayValue({ 0, 0, 0, 0 })
-    public int[] getPanelHeaderBorder();
-
-    public void setPanelHeaderBorder(int[] insets);
-
-    @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultBooleanValue(false)
+
     public abstract boolean isPaintStatusbarTopBorder();
 
     public void setColorForErrorForeground(String errorForeground);
@@ -312,8 +300,6 @@ public interface LAFSettings extends ConfigInterface {
     void setColorForPanelHeaderBackground(String colorHex);
 
     void setColorForPanelHeaderForeground(String colorHex);
-
-    void setColorForPanelHeaderLine(String colorHex);
 
     void setColorForScrollbarsMouseOverState(String color);
 
@@ -363,36 +349,36 @@ public interface LAFSettings extends ConfigInterface {
 
     public abstract void setPaintStatusbarTopBorder(boolean paintStatusbarTopBorder);
 
-    public abstract void setPopupBorderInsets(int[] popupBorderInsets);
+    // public abstract void setPopupBorderInsets(int[] popupBorderInsets);
 
     @DescriptionForConfigEntry("Customized Color for the Progressbar 1/5 in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @HexColorString
-    @DefaultStringValue("5F70CCFF")
+
     public String getColorForProgressbarForeground1();
 
     @DescriptionForConfigEntry("Customized Color for the Progressbar 2/5 in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @HexColorString
-    @DefaultStringValue("5F80C7F7")
+
     public String getColorForProgressbarForeground2();
 
     @DescriptionForConfigEntry("Customized Color for the Progressbar 3/5 in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @HexColorString
-    @DefaultStringValue("8078C0EF")
+
     public String getColorForProgressbarForeground3();
 
     @DescriptionForConfigEntry("Customized Color for the Progressbar 4/5 in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @HexColorString
-    @DefaultStringValue("5F80C7F7")
+
     public String getColorForProgressbarForeground4();
 
     @DescriptionForConfigEntry("Customized Color for the Progressbar 5/5 in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @HexColorString
-    @DefaultStringValue("5F70CCFF")
+
     public String getColorForProgressbarForeground5();
 
     public void setColorForProgressbarForeground1(String color);
@@ -409,7 +395,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @HexColorString
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultStringValue("33FF0000")
+
     public String getColorForLinkgrabberDupeHighlighter();
 
     public void setColorForLinkgrabberDupeHighlighter(String color);
@@ -418,7 +404,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @HexColorString
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultStringValue("FF808080")
+
     public String getColorForConfigPanelDescriptionText();
 
     public void setColorForConfigPanelDescriptionText(String color);
@@ -427,7 +413,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("FF202020")
+
     public String getColorForConfigHeaderTextColor();
 
     public void setColorForConfigHeaderTextColor(String color);
@@ -436,14 +422,14 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("FF202020")
+
     public String getConfigLabelEnabledTextColor();
 
     @DescriptionForConfigEntry("Customized Color for the Config Panel Label text(disable) in the config panels in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue("FFA0A0A0")
+
     public String getConfigLabelDisabledTextColor();
 
     public void setConfigLabelEnabledTextColor(String str);
@@ -461,7 +447,7 @@ public interface LAFSettings extends ConfigInterface {
 
     @RequiresRestart("A JDownloader Restart is Required")
     @AboutConfig
-    @DefaultIntValue(0)
+
     @DescriptionForConfigEntry("Increase this value and set ColorForTableRowGap to show a gap between two links. Check CustomTableRowHeight as well")
 
     int getLinkTableHorizontalRowLineWeight();
@@ -469,21 +455,20 @@ public interface LAFSettings extends ConfigInterface {
     void setLinkTableHorizontalRowLineWeight(int i);
 
     @AboutConfig
-    @DefaultIntValue(0)
+
     @DescriptionForConfigEntry("by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.")
     int getCustomTableRowHeight();
 
     void setCustomTableRowHeight(int height);
 
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultBooleanValue(true)
+
     @DescriptionForConfigEntry("Every  odd row get's a light shadow if enabled")
     @AboutConfig
     boolean isTableAlternateRowHighlightEnabled();
 
     void setTableAlternateRowHighlightEnabled(boolean b);
 
-    @DefaultStringValue("standard")
     @AboutConfig
     @DescriptionForConfigEntry("Icon Set ID. Make sure that ./themes/<ID>/ exists")
 
@@ -494,7 +479,6 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
 
-    @DefaultEnumValue("CENTER")
     @DescriptionForConfigEntry("Choose the text position in the propgress column.")
     public HorizontalPostion getProgressColumnTextPosition();
 
@@ -502,7 +486,7 @@ public interface LAFSettings extends ConfigInterface {
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultBooleanValue(true)
+
     @DescriptionForConfigEntry("Show % Letter in the Progressbar if possible")
     public boolean isProgressColumnFormatAddPercentEnabled();
 
@@ -510,35 +494,18 @@ public interface LAFSettings extends ConfigInterface {
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultByteValue(2)
-    @DescriptionForConfigEntry("Choose the amount of decimal letters for the Progress column. 2->12.34% 1->12.3%")
-    public void setProgressColumnFractionDigits(byte digits);
 
-    public byte getProgressColumnFractionDigits();
+    @DescriptionForConfigEntry("Choose the amount of decimal letters for the Progress column. 2->12.34% 1->12.3%")
+    public void setProgressColumnFractionDigits(int digits);
+
+    public int getProgressColumnFractionDigits();
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultIntValue(39)
+
     @DescriptionForConfigEntry("The left gap/indent/inset in the config/settings panels")
     public int getConfigPanelLeftIndent();
 
     public void setConfigPanelLeftIndent(int i);
-
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultIntValue(7)
-    @DescriptionForConfigEntry("The left gap between icon and text for some menu items (chunks, simultanous downloads, speed, ...)")
-    public int getMainMenuIconTextGap();
-
-    public void setMainMenuIconTextGap(int i);
-
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultIntValue(26)
-    @DescriptionForConfigEntry("Extra left indent for the menu items if there is a toggle checkbox menu entry in the layer")
-
-    public int getMenuIconExtraIndentForToggleItems();
-
-    public void setMenuIconExtraIndentForToggleItems(int i);
 
 }
