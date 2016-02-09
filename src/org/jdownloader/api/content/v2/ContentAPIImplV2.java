@@ -8,14 +8,13 @@ import java.util.HashMap;
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
 
-import jd.plugins.FavitIcon;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.APIFileNotFoundException;
+import org.appwork.remoteapi.exceptions.BadRequestException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
@@ -35,6 +34,8 @@ import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface;
 import org.jdownloader.myjdownloader.client.json.IconDescriptor;
+
+import jd.plugins.FavitIcon;
 
 public class ContentAPIImplV2 implements ContentAPIV2 {
     private SimpleMapper                    mapper;
@@ -132,7 +133,10 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
     }
 
     @Override
-    public void getIcon(RemoteAPIRequest request, RemoteAPIResponse response, String key, int size) throws InternalApiException, APIFileNotFoundException {
+    public void getIcon(RemoteAPIRequest request, RemoteAPIResponse response, String key, int size) throws InternalApiException, APIFileNotFoundException, BadRequestException {
+        if (size > 128) {
+            throw new BadRequestException("Size is limited to 128px");
+        }
         OutputStream out = null;
         try {
             /* we force content type to image/png and allow caching of the image */
@@ -156,6 +160,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
                 out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
                 ImageIO.write(ico, "png", out);
             } else {
+
                 BufferedImage ico = IconIO.toBufferedImage(new AbstractIcon(key, size));
                 out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
                 ImageIO.write(ico, "png", out);
@@ -172,6 +177,8 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
     }
 
     private Icon createIcon(IconDescriptor desc, int size) throws InternalApiException, StorageException {
+        System.out.println("ICONget " + JSonStorage.serializeToJson(desc));
+
         if (desc.getCls() == null && desc.getKey() != null) {
             return NewTheme.I().getIcon(desc.getKey(), size);
         }

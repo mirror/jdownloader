@@ -19,7 +19,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -49,18 +48,9 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
     private static final ScheduledExecutorService     SERVICE      = DelayedRunnable.getNewScheduledExecutorService();
 
-    private static String getInsetsString() {
-        try {
-            int[] insets = LAFOptions.getInstance().getCfg().getInfoPanelContentInsets();
-            return insets[0] + " " + insets[1] + " " + insets[2] + " " + insets[3];
-        } catch (Throwable e) {
-            LoggerFactory.getDefaultLogger().log(e);
-            return "0 0 1 0";
-        }
-    }
-
     public AbstractOverviewPanel(PackageControllerTableModel tableModel) {
-        super("ins " + getInsetsString(), "[][grow,fill][]", "[grow,fill]");
+        super("ins " + LAFOptions.getInstance().getExtension().customizeOverviewPanelInsets(), "[][grow,fill][]", "[grow,fill]");
+
         this.tableModel = tableModel;
         LAFOptions.getInstance().applyPanelBackground(this);
         GUIEventSender.getInstance().addListener(this, true);

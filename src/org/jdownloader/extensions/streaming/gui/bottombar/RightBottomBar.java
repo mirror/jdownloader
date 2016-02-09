@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.streaming.gui.bottombar;
 
 import java.awt.Component;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -79,8 +80,8 @@ public class RightBottomBar extends MigPanel {
 
             public void actionPerformed(ActionEvent e) {
                 QuickSettingsPopup pu = new QuickSettingsPopup();
-                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-                pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 1, -pu.getPreferredSize().height + insets[2]);
+                Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
+                pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets.right + ((Component) e.getSource()).getWidth() + 1, -pu.getPreferredSize().height + insets.bottom);
                 // new CleanupMenu()
             }
         });

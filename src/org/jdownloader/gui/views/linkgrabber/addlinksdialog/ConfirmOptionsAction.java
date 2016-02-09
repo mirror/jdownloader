@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
 
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -65,9 +66,9 @@ public class ConfirmOptionsAction extends AbstractAction {
         // table.getModel().getSelectedObjects())));
         // selected.add(new JMenuItem(new ConfirmAction(true,
         // table.getModel().getSelectedObjects())));
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
         JComponent comp = (JComponent) e.getSource();
 
-        popup.show(comp, -popup.getPreferredSize().width + comp.getWidth() + insets[3], -popup.getPreferredSize().height + insets[2]);
+        popup.show(comp, -popup.getPreferredSize().width + comp.getWidth() + insets.right, -popup.getPreferredSize().height + insets.bottom);
     }
 }

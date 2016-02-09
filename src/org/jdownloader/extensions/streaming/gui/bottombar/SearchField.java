@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
@@ -15,7 +16,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
@@ -27,7 +27,6 @@ import javax.swing.border.Border;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
-
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.gui.views.components.SearchCatInterface;
@@ -205,6 +204,7 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
             }
             popup.add(new AppAction() {
                 private SearchCat category;
+
                 {
                     category = sc;
                     setName(sc.getLabel());
@@ -217,14 +217,13 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
                 }
             });
         }
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
         Dimension pref = popup.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)
         // e.getSource()).getWidth() + insets[1] + insets[3];
-        popup.setPreferredSize(new Dimension(labelWidth + 5 + iconGap + 8 + insets[1] + insets[1] + insets[3], (int) pref.getHeight()));
+        popup.setPreferredSize(new Dimension(labelWidth + 5 + iconGap + 8 + insets.left + insets.left + insets.right, (int) pref.getHeight()));
 
-        popup.show(this, -insets[1], -popup.getPreferredSize().height + insets[2]);
+        popup.show(this, -insets.left, -popup.getPreferredSize().height + insets.bottom);
     }
 
     public void mousePressed(MouseEvent e) {

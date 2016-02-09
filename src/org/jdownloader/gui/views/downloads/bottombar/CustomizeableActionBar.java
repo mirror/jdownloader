@@ -6,7 +6,9 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
@@ -22,12 +24,6 @@ import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.components.SetIconInterface;
-import jd.gui.swing.components.SetLabelInterface;
-import jd.gui.swing.jdgui.JDGui;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -48,6 +44,12 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
+import jd.gui.swing.jdgui.JDGui;
+import net.miginfocom.swing.MigLayout;
+
 public class CustomizeableActionBar extends MigPanel implements PropertyChangeListener {
 
     private final AbstractBottomBarMenuManager manager;
@@ -60,7 +62,8 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     public CustomizeableActionBar(AbstractBottomBarMenuManager bottomBarMenuManager) {
-        super("ins 0 0 1 0", "[]1[]1[]1[]", "[]");
+        super("ins 0 0 0 0,gap " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap(), "[]", "[]");
+        setOpaque(false);
         manager = bottomBarMenuManager;
         manager.addLink(this);
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
@@ -83,7 +86,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         }
         removeAll();
         MenuContainerRoot items = prepare(manager.getMenuData());
-        this.setLayout(new MigLayout("ins 0 0 1 0", "[]1[]1[]1[]", "[]"));
+        this.setLayout(new MigLayout("ins 0 0 0 0, gap " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap(), "[]", "[]"));
         AbstractButton ab;
         // System.out.println(this.getColConstraints(list.length));
         MenuItemData last = null;
@@ -173,6 +176,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             bt = new ExtButton(action);
         }
         bt.setEnabled(action.isEnabled());
+
         if (action instanceof SelfLayoutInterface) {
             add(bt, ((SelfLayoutInterface) action).createConstraints());
         } else if (menudata instanceof SelfLayoutInterface) {
@@ -196,7 +200,9 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 private static final long serialVersionUID = 1L;
 
                 public void setBounds(int x, int y, int width, int height) {
-                    super.setBounds(x - 2, y, width + 2, height);
+                    Rectangle bounds = new Rectangle(x, y, width, height);
+                    LAFOptions.getInstance().getExtension().customizeBoundsForBottombarPopupButton(bounds);
+                    super.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
                 }
             };
             add(bt, "height 24!,width 12!,aligny top");
@@ -293,7 +299,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                     }
                 }.run();
 
-                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+                Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
                 Dimension pref = popup.getPreferredSize();
                 popup.setPreferredSize(pref);
                 Component refComponent = positionComp == null ? ((Component) e.getSource()) : positionComp;
@@ -303,10 +309,10 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
                 if (converted.x > JDGui.getInstance().getMainFrame().getWidth() / 2) {
                     // right side
-                    popup.show((Component) e.getSource(), -popup.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 1, -popup.getPreferredSize().height + insets[2]);
+                    popup.show((Component) e.getSource(), -popup.getPreferredSize().width + insets.right + ((Component) e.getSource()).getWidth() + 1, -popup.getPreferredSize().height + insets.bottom);
 
                 } else {
-                    popup.show(refComponent, -insets[1] - 1, -popup.getPreferredSize().height + insets[2]);
+                    popup.show(refComponent, -insets.left - 1, -popup.getPreferredSize().height + insets.bottom);
                 }
 
             }

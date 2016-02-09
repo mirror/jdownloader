@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.bottombar;
 
+import java.awt.Color;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
@@ -84,7 +85,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
     }
 
     protected int getPrefWidth() {
-        int width = 10000;
+        int width = 0;
 
         try {
             width = ((Number) getActionData().fetchSetup("prefWidth")).intValue();
@@ -115,12 +116,15 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
-        return new MigPanel("ins 0", "[]", "[]");
+        MigPanel ret = new MigPanel("ins 0", "[]", "[]");
+        ret.setBackground(Color.RED);
+        ret.setOpaque(false);
+        return ret;
     }
 
     @Override
     public String createConstraints() {
-        return "height 24!,aligny top,gapleft 2,width " + getMinWidth() + ":" + getPrefWidth() + ":" + getMaxWidth();
+        return "height 24!,aligny top,gapleft 2,pushx,growx,width " + getMinWidth() + ":" + getPrefWidth() + ":" + getMaxWidth();
     }
 
 }

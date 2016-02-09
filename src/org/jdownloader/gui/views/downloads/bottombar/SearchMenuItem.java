@@ -183,7 +183,7 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
     }
 
     protected int getPrefWidth() {
-        int width = 10000;
+        int width = 300;
 
         try {
             width = ((Number) getActionData().fetchSetup("prefWidth")).intValue();
@@ -214,7 +214,7 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
 
     @Override
     public String createConstraints() {
-        return "height 24!,aligny top,gapleft 2,width " + getMinWidth() + ":" + getPrefWidth() + ":" + getMaxWidth();
+        return "height 24!,aligny top,pushx,growx,width " + getMinWidth() + ":" + getPrefWidth() + ":" + getMaxWidth();
     }
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {

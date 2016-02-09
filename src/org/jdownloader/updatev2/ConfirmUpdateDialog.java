@@ -1,6 +1,7 @@
 package org.jdownloader.updatev2;
 
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -71,13 +72,13 @@ public class ConfirmUpdateDialog extends org.appwork.utils.swing.dialog.ConfirmD
 
         popup.add(mi);
 
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
-        pref.height = 24 + insets[0] + insets[2];
+        pref.height = 24 + insets.top + insets.bottom;
 
         popup.setPreferredSize(pref);
-        popup.show(cancelButton, +insets[1] - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
+        popup.show(cancelButton, +insets.left - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
     }
 
     public boolean isClosedBySkipUntilNextRestart() {

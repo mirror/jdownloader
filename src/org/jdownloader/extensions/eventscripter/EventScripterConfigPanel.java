@@ -2,6 +2,7 @@ package org.jdownloader.extensions.eventscripter;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
@@ -11,8 +12,6 @@ import java.util.List;
 import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
-
-import jd.gui.swing.jdgui.views.settings.panels.proxy.ProxyDeleteAction;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -28,6 +27,8 @@ import org.jdownloader.gui.views.components.AbstractAddAction;
 import org.jdownloader.gui.views.components.AbstractRemoveAction;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.views.settings.panels.proxy.ProxyDeleteAction;
 
 public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripterExtension> {
 
@@ -115,8 +116,8 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
                 if (e.getSource() instanceof Component) {
                     Component button = (Component) e.getSource();
                     Dimension prefSize = p.getPreferredSize();
-                    int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-                    p.show(button, -insets[1], -insets[0] - prefSize.height);
+                    Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
+                    p.show(button, -insets.left, -insets.top - prefSize.height);
 
                 }
             }

@@ -22,6 +22,7 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -62,6 +63,7 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.captcha.v2.solver.gui.Header;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
@@ -299,13 +301,13 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             popup.add(mi);
         }
 
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
-        pref.height = popup.getComponentCount() * 24 + insets[0] + insets[2];
+        pref.height = popup.getComponentCount() * 24 + insets.top + insets.bottom;
 
         popup.setPreferredSize(pref);
-        popup.show(cancelButton, +insets[1] - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
+        popup.show(cancelButton, +insets.left - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
     }
 
     public boolean isStopCrawling() {
@@ -560,16 +562,12 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         SwingUtils.setOpaque(panel, false);
         LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelBackground(), field);
 
-        MigPanel headerPanel = null;
+        Header headerPanel = null;
         if (type == DialogType.HOSTER) {
 
             // setBorder(new JTextField().getBorder());
 
-            headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[]");
-            SwingUtils.setOpaque(headerPanel, false);
-            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForPanelHeaderLine()));
-
-            LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
+            headerPanel = new Header("ins 0 0 1 0", "[grow,fill]", "[]");
 
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
@@ -641,13 +639,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         } else {
             // setBorder(new JTextField().getBorder());
 
-            headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
-            SwingUtils.setOpaque(headerPanel, false);
-            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
-
-            LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
-
-            headerPanel.setOpaque(true);
+            headerPanel = new Header("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
 
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);

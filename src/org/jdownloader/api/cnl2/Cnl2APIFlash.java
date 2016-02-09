@@ -14,6 +14,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this is the addcrypted2 function of the cnl2 interface
+     * 
      * @param response
      * @param request
      */
@@ -23,6 +24,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this is the normal add function of the cnl2 interface
+     * 
      * @param response
      * @param request
      */
@@ -32,6 +34,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this is the normal addcrypted(dlc) function of the cnl2 interface
+     * 
      * @param response
      * @param request
      */
@@ -41,6 +44,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this function returns "JDownloader" and has no function name /flash/
+     * 
      * @param response
      * @param request
      */
@@ -49,6 +53,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
     @ApiMethodName("addcrypted2Remote")
     /**
      * this is the addcrypted2 function of the cnl2 interface for use with MyJDownloader
+     * 
      * @param response
      * @param request
      */
@@ -58,6 +63,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**
      * this is the normal add function of the cnl2 interface for use with MyJDownloader
+     * 
      * @param response
      * @param request
      */

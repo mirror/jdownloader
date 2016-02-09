@@ -4,14 +4,14 @@ import java.awt.Dimension;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.swing.MigPanel;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class DownloadPropertiesBasePanel extends MigPanel {
 

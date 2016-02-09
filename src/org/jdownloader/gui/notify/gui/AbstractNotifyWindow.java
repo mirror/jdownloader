@@ -679,7 +679,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
         g2.fillRect(0, TOP_MARGIN, width, height - TOP_MARGIN - BOTTOM_MARGIN);
 
-        g2.setColor(LAFOptions.getInstance().getColorForPanelHeaderLine());
+        g2.setColor(LAFOptions.getInstance().getColorForPanelBorders());
 
         g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, round, round);
         g2.dispose();

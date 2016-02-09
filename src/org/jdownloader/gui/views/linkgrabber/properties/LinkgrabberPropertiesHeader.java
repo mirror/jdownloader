@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
 import java.awt.Dimension;
+import java.awt.Insets;
 
 import javax.swing.JPopupMenu;
 
@@ -120,14 +121,13 @@ public class LinkgrabberPropertiesHeader extends AbstractPanelHeader implements 
         JPopupMenu pu = new JPopupMenu();
         card.fillPopup(pu);
 
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
         Dimension pref = pu.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)
         // e.getSource()).getWidth() + insets[1] + insets[3];
         // pu.setPreferredSize(new Dimension(optionsgetWidth() + insets[1] + insets[3], (int) pref.getHeight()));
 
-        pu.show(options, -insets[1], -pu.getPreferredSize().height + insets[2]);
+        pu.show(options, -insets.left, -pu.getPreferredSize().height + insets.bottom);
     }
 
     @Override

@@ -139,7 +139,7 @@ public class MenuEditor extends MigPanel implements ToolTipHandler, SetIconInter
     public void onAfterLayerDone(JComponent root, MenuContainer md) {
         for (Component c : root.getComponents()) {
             if (c instanceof JCheckBoxMenuItem) {
-                label.setBorder(BorderFactory.createEmptyBorder(0, LAFOptions.getInstance().getCfg().getMenuIconExtraIndentForToggleItems(), 0, 0));
+                label.setBorder(BorderFactory.createEmptyBorder(0, LAFOptions.getInstance().getExtension().customizeMenuItemIndentForToggleItems(), 0, 0));
 
                 return;
             }

@@ -24,8 +24,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.http.Browser;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
@@ -52,7 +50,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.http.Browser;
 
 public class DonationDialog extends AbstractDialog<Object> {
 
@@ -383,7 +382,7 @@ public class DonationDialog extends AbstractDialog<Object> {
             pu.add(new NotImplementedProvider(p));
 
         }
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+
         Point point = MouseInfo.getPointerInfo().getLocation();
         SwingUtilities.convertPointFromScreen(point, p);
         Dimension pref = pu.getPreferredSize();

@@ -50,7 +50,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setShowHorizontalLinesWithoutRepaint(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.isEnabled() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
-        Color c = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
 
         this.setBackground((LAFOptions.getInstance().getColorForPanelBackground()));
 

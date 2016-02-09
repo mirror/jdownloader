@@ -22,7 +22,7 @@ public class SidebarHeader extends MigPanel {
         add(Box.createHorizontalGlue());
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);
-        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
+        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelBorders())));
 
         setBackground((LAFOptions.getInstance().getColorForPanelHeaderBackground()));
 

@@ -1,7 +1,15 @@
 package org.jdownloader.iconsetter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
+
+import javax.imageio.ImageIO;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+
+import org.appwork.utils.Application;
+import org.appwork.utils.images.IconIO;
 
 public class IconResource {
 
@@ -32,6 +40,23 @@ public class IconResource {
         name = name.replaceAll("\\..+$", "");
         name = name.replaceAll("[^\\w]+", " ");
         return name;
+    }
+
+    public Icon getIcon(String name, int size) {
+        File file = Application.getResource("themes/" + name + "/" + getPath());
+
+        try {
+            return new ImageIcon(IconIO.getScaledInstance(ImageIO.read(file), size, size));
+        } catch (IOException e) {
+
+            return null;
+        }
+    }
+
+    public File getFile(ResourceSet resoureSet) {
+
+        return Application.getResource("themes/" + resoureSet.getName() + "/" + getPath());
+
     }
 
 }

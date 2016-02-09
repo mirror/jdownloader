@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 
 import javax.swing.JButton;
@@ -36,13 +37,13 @@ public class ExportPopupAction extends AppAction {
         popup.add(new JMenuItem(new ExportPlainTextAction(table)));
         popup.add(new JMenuItem(new SaveAsProxyProfileAction(table)));
         // popup.add(new JMenuItem(new AddContainerAction()));
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
-        pref.width = Math.max(pref.width, positionComp.getWidth() + ((Component) e.getSource()).getWidth() + insets[1] + insets[3]);
+        pref.width = Math.max(pref.width, positionComp.getWidth() + ((Component) e.getSource()).getWidth() + insets.left + insets.right);
         popup.setPreferredSize(pref);
 
-        popup.show(positionComp, -insets[1] - 1, -popup.getPreferredSize().height + insets[2]);
+        popup.show(positionComp, -insets.left - 1, -popup.getPreferredSize().height + insets.bottom);
     }
 
 }

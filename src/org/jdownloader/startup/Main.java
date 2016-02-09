@@ -20,7 +20,6 @@ package org.jdownloader.startup;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -208,7 +207,7 @@ public class Main {
         }
     }
 
-    private static void copyResource(File workspace, String from, String to) throws IOException {
+    public static void copyResource(File workspace, String from, String to) throws IOException {
         System.out.println("Copy SVN Resources " + new File(workspace, from) + " to " + Application.getResource(to));
         IO.copyFolderRecursive(new File(workspace, from), Application.getResource(to), true, new FileFilter() {
 
@@ -228,28 +227,6 @@ public class Main {
 
     public static void main(String[] args) {
         loadJXBrowser(Main.class.getClassLoader());
-        final boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswing") != null && !Application.isHeadless();
-        if (nativeSwing) {
-            long start = System.currentTimeMillis();
-            try {
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTCREATION.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTDISPOSAL.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTFAILEDMESSAGES.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTOPTIONS.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTSHAPECOMPUTING.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.INTERFACE_DEBUG_PRINTMESSAGES.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.PEERVM_DEBUG_PRINTCOMMANDLINE.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.PEERVM_DEBUG_PRINTSTARTMESSAGE.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.PEERVM_DEBUG_PRINTSTOPMESSAGE.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.SWT_DEVICE_DEBUG.set("true");
-                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.SWT_DEVICEDATA_DEBUG.set("true");
-                chrriis.dj.nativeswing.swtimpl.NativeInterface.open();
-            } catch (Throwable e) {
-                e.printStackTrace();
-            } finally {
-                System.out.println("Native Swing init took " + (System.currentTimeMillis() - start) + " ms");
-            }
-        }
 
         // USe Jacksonmapper in this project
 
@@ -311,30 +288,7 @@ public class Main {
         CrawlerPluginController.invalidateCacheIfRequired();
 
         jd.SecondLevelLaunch.mainStart(args);
-        if (nativeSwing) {
-            try {
-                final Class<?> updaterLauncherClass = Class.forName("org.jdownloader.update.launcher.JDLauncher");
-                final Field field = updaterLauncherClass.getField("END_OF_MAIN_HANDLER");
-                field.set(null, new Runnable() {
 
-                    @Override
-                    public void run() {
-                        try {
-                            chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
-                        } catch (Throwable e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            } catch (Throwable e1) {
-
-                try {
-                    chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     public static void loadJXBrowser(ClassLoader cl) {

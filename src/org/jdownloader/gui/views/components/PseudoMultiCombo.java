@@ -155,6 +155,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
             popup.add(mi = createMenuItem(sc, new AppAction() {
                 private Type value;
+
                 {
 
                     value = sc;
@@ -180,18 +181,18 @@ public class PseudoMultiCombo<Type> extends ExtButton {
             mi.setHideOnClick(false);
 
         }
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)
         // e.getSource()).getWidth() + insets[1] + insets[3];
-        popup.setPreferredSize(new Dimension((int) Math.max(getWidth() + insets[1] + insets[3], pref.getWidth()), (int) pref.getHeight()));
+        popup.setPreferredSize(new Dimension((int) Math.max(getWidth() + insets.left + insets.right, pref.getWidth()), (int) pref.getHeight()));
         // PseudoCombo.this.repaint();
         if (isPopDown()) {
-            popup.show(this, -insets[1], getHeight() + insets[0]);
+            popup.show(this, -insets.left, getHeight() + insets.top);
 
         } else {
-            popup.show(this, -insets[1], -popup.getPreferredSize().height + insets[2]);
+            popup.show(this, -insets.left, -popup.getPreferredSize().height + insets.bottom);
 
         }
         closed = false;

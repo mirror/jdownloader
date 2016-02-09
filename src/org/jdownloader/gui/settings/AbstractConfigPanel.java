@@ -1,7 +1,6 @@
 package org.jdownloader.gui.settings;
 
 import java.awt.Component;
-import java.awt.Point;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
@@ -12,7 +11,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
-import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -26,14 +24,11 @@ import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.gui.swing.jdgui.AbstractBugFinderWindow;
-import jd.gui.swing.jdgui.DirectFeedback;
-import jd.gui.swing.jdgui.DirectFeedbackInterface;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import net.miginfocom.swing.MigLayout;
 
-public abstract class AbstractConfigPanel extends SwitchPanel implements DirectFeedbackInterface {
+public abstract class AbstractConfigPanel extends SwitchPanel {
 
     private static final String       PAIR_CONDITION   = "PAIR_CONDITION";
     private static final long         serialVersionUID = -8483438886830392777L;
@@ -41,110 +36,6 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
 
     public AbstractConfigPanel() {
         this(15);
-    }
-
-    @Override
-    public DirectFeedback layoutDirectFeedback(Point mouse, MigPanel actualContent, AbstractBugFinderWindow window) {
-
-        // Component comp = this.getComponentAt(mouse);
-        // if (comp == this) return null;
-        // if (comp instanceof DirectFeedbackInterface) {
-        // SwingUtilities.convertPoint(this, mouse, comp);
-        // return ((DirectFeedbackInterface) comp).layoutDirectFeedback(mouse, positive, actualContent, window);
-        // }
-        // for (Pair<?> pair : pairs) {
-        // try {
-        //
-        // if (pair.getComponent() == comp || pair.getLabel() == comp || pair.getCondition() == comp) {
-        //
-        // String id = getFieldNameOf(pair);
-        // if (StringUtils.isEmpty(id)) id = getFieldNameOf(pair.getComponent());
-        // if (StringUtils.isEmpty(id)) id = getFieldNameOf(pair.getLabel());
-        // if (StringUtils.isEmpty(id)) id = getFieldNameOf(pair.getCondition());
-        // if (StringUtils.isEmpty(id)) {
-        // if (pair.getComponent() instanceof ExtCheckBox) {
-        // ButtonModel model = ((ExtCheckBox) pair.getComponent()).getModel();
-        // if (model != null && model instanceof ConfigToggleButtonModel) {
-        // BooleanKeyHandler keyHandler = ((ConfigToggleButtonModel) model).getKeyHandler();
-        // if (keyHandler != null) {
-        // id = keyHandler.getStorageHandler().getConfigInterface().getName() + "." + keyHandler.getKey();
-        // }
-        // }
-        //
-        // } else if (pair.getComponent() instanceof jd.gui.swing.jdgui.views.settings.components.ComboBox) {
-        //
-        // KeyHandler keyHandler = ((jd.gui.swing.jdgui.views.settings.components.ComboBox) pair.getComponent()).getKeyHandler();
-        // if (keyHandler != null) {
-        // id = keyHandler.getStorageHandler().getConfigInterface().getName() + "." + keyHandler.getKey();
-        // }
-        // } else if (pair.getComponent() instanceof jd.gui.swing.jdgui.views.settings.components.TextInput) {
-        //
-        // KeyHandler keyHandler = ((jd.gui.swing.jdgui.views.settings.components.TextInput) pair.getComponent()).getKeyhandler();
-        // if (keyHandler != null) {
-        // id = keyHandler.getStorageHandler().getConfigInterface().getName() + "." + keyHandler.getKey();
-        // }
-        // } else if (pair.getComponent() instanceof jd.gui.swing.jdgui.views.settings.components.Spinner) {
-        //
-        // SpinnerModel model = ((jd.gui.swing.jdgui.views.settings.components.Spinner) pair.getComponent()).getModel();
-        // if (model instanceof ConfigIntSpinnerModel) {
-        // IntegerKeyHandler keyHandler = ((ConfigIntSpinnerModel) model).getKeyHandler();
-        // if (keyHandler != null) {
-        // id = keyHandler.getStorageHandler().getConfigInterface().getName() + "." + keyHandler.getKey();
-        // }
-        // }
-        // }
-        // }
-        // if (StringUtils.isNotEmpty(id)) {
-        //
-        // Header lastHeader = null;
-        // for (Component c : getComponents()) {
-        // if (c instanceof Header) {
-        // lastHeader = (Header) c;
-        // }
-        // if (c == comp) break;
-        //
-        // }
-        // Icon icon = lastHeader != null ? lastHeader.getIconLabel().getIcon() : getIcon();
-        // actualContent.removeAll();
-        // actualContent.setLayout(new MigLayout("ins 0", "[]", "[][]"));
-        // // if (positive) {
-        // // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_positive()));
-        // // } else {
-        // // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_negative()));
-        // // }
-        // window.setIconVisible(icon == null);
-        //
-        // String text = pair.getLabel().getText();
-        // if (StringUtils.isNotEmpty(text)) {
-        // if (positive) {
-        //
-        // JLabel lbl = new JLabel(_GUI._.AbstractConfigPanel_layoutDirectFeedback_vote_positive(text));
-        //
-        // if (icon != null) lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 24), 0,
-        // 0).add(IconIO.getScaledInstance(icon, 22, 22), 10, 10));
-        //
-        // actualContent.add(lbl, "");
-        //
-        // } else {
-        // JLabel lbl = new JLabel(_GUI._.AbstractConfigPanel_layoutDirectFeedback_vote_negative(text));
-        //
-        // if (icon != null) lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0,
-        // 0).add(IconIO.getScaledInstance(icon, 22, 22), 10, 10));
-        //
-        // actualContent.add(lbl, "");
-        // }
-        // return new BasicIDFeedback(positive, getPanelID() + "." + id);
-        // }
-        // }
-        //
-        // }
-        //
-        // } catch (Exception e) {
-        // e.printStackTrace();
-        // }
-        // }
-
-        return null;
     }
 
     private String getFieldNameOf(Object input) {

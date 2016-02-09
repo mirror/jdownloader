@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
@@ -374,14 +375,13 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                 }
             });
         }
-        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-
+        Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
         Dimension pref = popup.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)
         // e.getSource()).getWidth() + insets[1] + insets[3];
-        popup.setPreferredSize(new Dimension(labelWidth + 5 + iconGap + 8 + insets[1] + insets[1] + insets[3], (int) pref.getHeight()));
+        popup.setPreferredSize(new Dimension(labelWidth + 5 + iconGap + 8 + insets.left + insets.left + insets.right, (int) pref.getHeight()));
 
-        popup.show(this, -insets[1], -popup.getPreferredSize().height + insets[2]);
+        popup.show(this, -insets.left, -popup.getPreferredSize().height + insets.bottom);
     }
 
     public void mousePressed(MouseEvent e) {

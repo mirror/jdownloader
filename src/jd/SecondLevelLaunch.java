@@ -44,21 +44,6 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
 
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.jdgui.JDGui;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
-
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.resources.AWUTheme;
@@ -110,6 +95,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.iconsetter.IconSetMakerAdapter;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -138,6 +124,21 @@ import com.btr.proxy.selector.pac.PacScriptParser;
 import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
+
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
 
 public class SecondLevelLaunch {
     static {
@@ -344,9 +345,7 @@ public class SecondLevelLaunch {
         } catch (final Throwable e) {
             SecondLevelLaunch.LOG.log(e);
         }
-        if (System.getProperty("nativeswing") != null) {
-            // JPopupMenu.setDefaultLightWeightPopupEnabled(false);
-        }
+
         try {
             JSHtmlUnitPermissionRestricter.init();
 
@@ -1080,6 +1079,10 @@ public class SecondLevelLaunch {
                     /* init gui here */
                     try {
 
+                        if (!Application.isJared(null) && System.getProperty("iconsets") != null) {
+                            Toolkit.getDefaultToolkit().addAWTEventListener(new IconSetMakerAdapter(), AWTEvent.MOUSE_EVENT_MASK);
+
+                        }
                         lafInit.waitForEDT();
                         SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                         JDGui.init();
