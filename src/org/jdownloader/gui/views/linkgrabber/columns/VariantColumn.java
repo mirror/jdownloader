@@ -46,7 +46,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     private boolean alwaysVisible;
 
     public VariantColumn(boolean alwaysVisible) {
-        super(_GUI._.VariantColumn_VariantColumn_name_(), null);
+        super(_GUI.T.VariantColumn_VariantColumn_name_(), null);
         this.alwaysVisible = alwaysVisible;
     }
 
@@ -113,7 +113,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                 parent.getModifyLock().readUnlock(readL);
             }
             popup.add(new JSeparator());
-            JMenu m = new JMenu(_GUI._.VariantColumn_fillPopup_add());
+            JMenu m = new JMenu(_GUI.T.VariantColumn_fillPopup_add());
             m.setIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
 
             for (int i = 0; i < dm.getSize(); i++) {
@@ -180,7 +180,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                 {
 
                     setSmallIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 18), DomainInfo.getInstance(link.getDownloadLink().getDefaultPlugin().getHost()).getIcon(10), 0, 0).crop(18, 18));
-                    setName(_GUI._.VariantColumn_fillPopup_settings(link.getDownloadLink().getDefaultPlugin().getHost()));
+                    setName(_GUI.T.VariantColumn_fillPopup_settings(link.getDownloadLink().getDefaultPlugin().getHost()));
 
                 }
 

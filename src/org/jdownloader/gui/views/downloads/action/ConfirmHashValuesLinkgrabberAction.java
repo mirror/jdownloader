@@ -32,7 +32,7 @@ public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContext
         super(true, true);
         setIconKey(IconKey.ICON_HASHSUM);
 
-        setName(_GUI._.ConfirmHashValuesAction());
+        setName(_GUI.T.ConfirmHashValuesAction());
         addContextSetup(includedSelection = new IncludedSelectionSetup(LinkGrabberTable.getInstance(), this, this));
     }
 

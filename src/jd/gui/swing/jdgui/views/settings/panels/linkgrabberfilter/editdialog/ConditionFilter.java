@@ -45,10 +45,10 @@ public class ConditionFilter extends Filter implements Storable {
             }
 
             if (sb.length() == 0) {
-                sb.append(_GUI._.OriginFilter_toString_nothing());
+                sb.append(_GUI.T.OriginFilter_toString_nothing());
             }
 
-            return _GUI._.OriginFilter_toString(sb.toString());
+            return _GUI.T.OriginFilter_toString(sb.toString());
 
         case IS_FALSE:
             sb = new StringBuilder();
@@ -62,10 +62,10 @@ public class ConditionFilter extends Filter implements Storable {
             }
 
             if (sb.length() == 0) {
-                sb.append(_GUI._.OriginFilter_toString_nothing());
+                sb.append(_GUI.T.OriginFilter_toString_nothing());
             }
 
-            return _GUI._.OriginFilter_toString_isNot(sb.toString());
+            return _GUI.T.OriginFilter_toString_isNot(sb.toString());
         }
         throw new WTFException();
     }

@@ -34,7 +34,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
     private final Icon iconYes;
 
     public EnabledDisabledColumn() {
-        super(_GUI._.EnabledDisabledColumn_EnabledDisabledColumn());
+        super(_GUI.T.EnabledDisabledColumn_EnabledDisabledColumn());
 
         iconYes = new CheckBoxIcon(true, true);
         iconNo = new CheckBoxIcon(false, true);
@@ -152,7 +152,7 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
                 // defaultProxy
                 setHorizontalAlignment(CENTER);
                 setText(null);
-                setToolTipText(_GUI._.StatusColumn_StatusColumn2());
+                setToolTipText(_GUI.T.StatusColumn_StatusColumn2());
                 return this;
             }
         };

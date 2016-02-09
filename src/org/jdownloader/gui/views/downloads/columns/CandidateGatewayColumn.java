@@ -20,7 +20,7 @@ import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateToo
 public class CandidateGatewayColumn extends ExtTextColumn<AbstractNode> {
 
     public CandidateGatewayColumn() {
-        super(_GUI._.CandidateGatewayColumn());
+        super(_GUI.T.CandidateGatewayColumn());
     }
 
     @Override

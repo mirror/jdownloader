@@ -40,13 +40,13 @@ public class AutoSetupAction extends BasicAction {
         putValue(NAME, _JDT._.reconnectmanager_wizard());
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_WIZARD, 20));
 
-        this.setTooltipFactory(new BasicTooltipFactory(getName(), _GUI._.AutoSetupAction_tt(), new AbstractIcon(IconKey.ICON_WIZARD, 32)));
+        this.setTooltipFactory(new BasicTooltipFactory(getName(), _GUI.T.AutoSetupAction_tt(), new AbstractIcon(IconKey.ICON_WIZARD, 32)));
 
     }
 
     public void actionPerformed(ActionEvent e) {
 
-        final ConfirmDialog confirm = new ConfirmDialog(0, _GUI._.AutoSetupAction_actionPerformed_warn_title(), _GUI._.AutoSetupAction_actionPerformed_warn_message(), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.AutoSetupAction_actionPerformed_warn_message_continue(), null) {
+        final ConfirmDialog confirm = new ConfirmDialog(0, _GUI.T.AutoSetupAction_actionPerformed_warn_title(), _GUI.T.AutoSetupAction_actionPerformed_warn_message(), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI.T.AutoSetupAction_actionPerformed_warn_message_continue(), null) {
             @Override
             protected int getPreferredWidth() {
                 return 750;
@@ -70,7 +70,7 @@ public class AutoSetupAction extends BasicAction {
         boolean pre = JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled();
         try {
             if (pre) {
-                if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T.T.ipcheck())) {
+                if (!UIOManager.I().showConfirmDialog(0, _GUI.T.literally_warning(), T.T.ipcheck())) {
                     return;
                 }
 
@@ -82,11 +82,11 @@ public class AutoSetupAction extends BasicAction {
 
                 @Override
                 public void run() throws InterruptedException {
-                    setBarText(_GUI._.LiveaheaderDetection_wait_for_online());
+                    setBarText(_GUI.T.LiveaheaderDetection_wait_for_online());
                     IPController.getInstance().waitUntilWeAreOnline();
-                    setBarText(_GUI._.LiveaheaderDetection_find_router());
+                    setBarText(_GUI.T.LiveaheaderDetection_find_router());
                     RouterUtils.getAddress(false);
-                    setBarText(_GUI._.LiveaheaderDetection_network_setup_check());
+                    setBarText(_GUI.T.LiveaheaderDetection_network_setup_check());
 
                     if (WizardUtils.modemCheck()) {
                         return;
@@ -107,7 +107,7 @@ public class AutoSetupAction extends BasicAction {
 
                         public void setStatus(Object caller, Object statusObject) {
                             if (caller instanceof RouterPlugin) {
-                                setSubStatusHeader(_GUI._.ReconnectDialog_layoutDialogContent_header(((RouterPlugin) caller).getName()));
+                                setSubStatusHeader(_GUI.T.ReconnectDialog_layoutDialogContent_header(((RouterPlugin) caller).getName()));
                             }
                             if (statusObject instanceof ArrayList) {
                                 try {

@@ -23,7 +23,7 @@ public class EditAction extends AbstractAddAction {
     public EditAction(SchedulerTable table) {
         super();
         this.table = table;
-        setName(_GUI._.literally_edit());
+        setName(_GUI.T.literally_edit());
         setIconKey(IconKey.ICON_EDIT);
     }
 

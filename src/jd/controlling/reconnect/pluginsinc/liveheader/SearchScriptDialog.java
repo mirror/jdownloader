@@ -138,7 +138,7 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
             }
         };
 
-        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T.T.searching(), _GUI._.lit_please_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), null, null);
+        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T.T.searching(), _GUI.T.lit_please_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), null, null);
         UIOManager.I().show(null, d);
     }
 

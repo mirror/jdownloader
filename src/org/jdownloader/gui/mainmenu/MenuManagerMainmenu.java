@@ -202,7 +202,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
 
     @Override
     public String getName() {
-        return _GUI._.MainMenuManager_getName();
+        return _GUI.T.MainMenuManager_getName();
     }
 
     @Override

@@ -43,7 +43,7 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
     private JLabel            lblFiltered;
 
     public GenericResetLinkgrabberRlyDialog(List<CrawledLink> nodesToDelete, boolean containsOnline, String string, boolean CancelLinkcrawlerJobs, boolean ClearFilteredLinks, boolean ClearSearchFilter, boolean ResetTableSorter) {
-        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_are_you_sure(), _GUI._.GenericResetLinkgrabberRlyDialog_GenericResetLinkgrabberRlyDialog_sure_(string), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_DEL, -1), _GUI._.lit_continue(), _GUI._.lit_cancel());
+        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.literally_are_you_sure(), _GUI.T.GenericResetLinkgrabberRlyDialog_GenericResetLinkgrabberRlyDialog_sure_(string), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_DEL, -1), _GUI.T.lit_continue(), _GUI.T.lit_cancel());
         this.nodesToDelete = nodesToDelete;
         this.containsOnline = containsOnline;
         this.cancelLinkcrawlerJobs = CancelLinkcrawlerJobs;
@@ -117,16 +117,16 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
         m.setLayout(new MigLayout("ins 0,wrap 2", "[][]", "[]0"));
 
         m.add(new JSeparator(), "spanx,growx,pushx,newline,gaptop 10");
-        m.add(new JLabel(_GUI._.GenericResetLinkgrabberRlyDialog_layoutDialogContent_todo_()), "spanx,");
-        m.add(lblLinks = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_remove_links2(nodesToDelete.size(), LinkCollector.getInstance().getChildrenCount() - nodesToDelete.size())), "hidemode 3");
+        m.add(new JLabel(_GUI.T.GenericResetLinkgrabberRlyDialog_layoutDialogContent_todo_()), "spanx,");
+        m.add(lblLinks = createLabel(_GUI.T.ResetLinkGrabberOptionDialog_layoutDialogContent_remove_links2(nodesToDelete.size(), LinkCollector.getInstance().getChildrenCount() - nodesToDelete.size())), "hidemode 3");
         m.add(cbLinks = new JCheckBox(), "hidemode 3");
-        m.add(lblSort = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_sort()), "hidemode 3");
+        m.add(lblSort = createLabel(_GUI.T.ResetLinkGrabberOptionDialog_layoutDialogContent_sort()), "hidemode 3");
         m.add(cbSort = new JCheckBox(), "hidemode 3");
-        m.add(lblSearch = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_search()), "hidemode 3");
+        m.add(lblSearch = createLabel(_GUI.T.ResetLinkGrabberOptionDialog_layoutDialogContent_search()), "hidemode 3");
         m.add(cbSearch = new JCheckBox(), "hidemode 3");
-        m.add(lblCrawler = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_interrup_crawler()), "hidemode 3");
+        m.add(lblCrawler = createLabel(_GUI.T.ResetLinkGrabberOptionDialog_layoutDialogContent_interrup_crawler()), "hidemode 3");
         m.add(cbCrawler = new JCheckBox(), "hidemode 3");
-        m.add(lblFiltered = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_filtered()), "hidemode 3");
+        m.add(lblFiltered = createLabel(_GUI.T.ResetLinkGrabberOptionDialog_layoutDialogContent_filtered()), "hidemode 3");
         m.add(cbFiltered = new JCheckBox(), "hidemode 3");
         cbLinks.setVisible(nodesToDelete.size() > 0);
         cbSort.setVisible(LinkGrabberTableModel.getInstance().getSortColumn() != null);

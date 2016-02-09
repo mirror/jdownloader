@@ -30,11 +30,11 @@ public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
 
         // , _GUI._.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
 
-        add(createHeaderLabel((_GUI._.ReconnectDialog_layoutDialogContent_duration())));
+        add(createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_duration())));
         add(duration = new JLabel(""));
-        add(createHeaderLabel((_GUI._.ReconnectDialog_layoutDialogContent_old())));
+        add(createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_old())));
         add(new JLabel(IPController.getInstance().getIpState().toString()));
-        add(createHeaderLabel((_GUI._.ReconnectDialog_layoutDialogContent_currentip())));
+        add(createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_currentip())));
         add(newIP = new JLabel(""));
         progressCircle.setIndeterminate(true);
         progressCircle.setValue(0);
@@ -50,13 +50,13 @@ public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
     public void onResult(ReconnectResult result) {
         switch (result) {
         case SUCCESSFUL:
-            add(createHeaderLabel(_GUI._.ReconnectBubbleContent_onResult_result()));
-            add(new JLabel(_GUI._.ReconnectDialog_onIPValidated_(), new AbstractIcon(IconKey.ICON_OK, 20), JLabel.LEFT));
+            add(createHeaderLabel(_GUI.T.ReconnectBubbleContent_onResult_result()));
+            add(new JLabel(_GUI.T.ReconnectDialog_onIPValidated_(), new AbstractIcon(IconKey.ICON_OK, 20), JLabel.LEFT));
 
             break;
         case FAILED:
-            add(createHeaderLabel(_GUI._.ReconnectBubbleContent_onResult_result()));
-            add(new JLabel(_GUI._.ReconnectDialog_failed(), new AbstractIcon(IconKey.ICON_ERROR, 20), JLabel.LEFT));
+            add(createHeaderLabel(_GUI.T.ReconnectBubbleContent_onResult_result()));
+            add(new JLabel(_GUI.T.ReconnectDialog_failed(), new AbstractIcon(IconKey.ICON_ERROR, 20), JLabel.LEFT));
 
             break;
         }

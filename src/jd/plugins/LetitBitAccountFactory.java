@@ -25,7 +25,7 @@ public class LetitBitAccountFactory extends AccountFactory {
         public LetitBitPanel() {
             super();
 
-            add(new JLabel(_GUI._.LetitBitAccountFactory_LetitBitPanel_key()), "newline");
+            add(new JLabel(_GUI.T.LetitBitAccountFactory_LetitBitPanel_key()), "newline");
             add(this.key = new ExtTextField() {
 
                 @Override
@@ -37,7 +37,7 @@ public class LetitBitAccountFactory extends AccountFactory {
 
             });
 
-            key.setHelpText(_GUI._.LetitBitAccountFactory_LetitBitPanel_key_help());
+            key.setHelpText(_GUI.T.LetitBitAccountFactory_LetitBitPanel_key_help());
 
         }
     }

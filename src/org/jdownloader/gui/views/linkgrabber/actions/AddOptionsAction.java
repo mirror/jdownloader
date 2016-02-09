@@ -24,14 +24,14 @@ public class AddOptionsAction extends AppAction {
 
     public AddOptionsAction(JButton addLinks) {
         setSmallIcon(new AbstractIcon(IconKey.ICON_POPUPSMALL, -1));
-        setTooltipText(_GUI._.AddOptionsAction_AddOptionsAction_tt());
+        setTooltipText(_GUI.T.AddOptionsAction_AddOptionsAction_tt());
         positionComp = addLinks;
     }
 
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
         AddLinksAction ala = new AddLinksAction();
-        ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
+        ala.putValue(AbstractAction.NAME, _GUI.T.AddOptionsAction_actionPerformed_addlinks());
         popup.add(new JMenuItem(ala));
         popup.add(new JMenuItem(new AddContainerAction()));
         Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();

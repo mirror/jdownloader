@@ -29,7 +29,7 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
     private Plugin      plugin;
 
     public AskForCryptedLinkPasswordDialog(String message, CryptedLink link, Plugin plugin) {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI._.AskForPasswordDialog_AskForPasswordDialog_title_(), message, null, new AbstractIcon(IconKey.ICON_PASSWORD, 32), _GUI._.lit_continue(), null);
+        super(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), message, null, new AbstractIcon(IconKey.ICON_PASSWORD, 32), _GUI.T.lit_continue(), null);
         this.link = link;
         setTimeout(10 * 60 * 1000);
         this.plugin = plugin;
@@ -69,9 +69,9 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
             textField.setPreferredSize(textField.getPreferredSize());
         }
 
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_url())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_url())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(link.getCryptedUrl()));
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_plugin())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_plugin())), "split 2,sizegroup left,alignx left");
 
         DomainInfo di = DomainInfo.getInstance(plugin.getHost());
 
@@ -83,7 +83,7 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
         input = getSmallInputComponent();
         // this.input.setBorder(BorderFactory.createEtchedBorder());
         input.setText(defaultMessage);
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
         p.add((JComponent) input, "w 450,pushx,growx");
 
         return p;

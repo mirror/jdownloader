@@ -54,7 +54,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     // private ExtComponentColumn<AdvancedConfigEntry> actionColumn;
 
     public AdvancedValueColumn() {
-        super(_GUI._.AdvancedValueColumn_AdvancedValueColumn_object_());
+        super(_GUI.T.AdvancedValueColumn_AdvancedValueColumn_object_());
         columns = new ArrayList<ExtColumn<AdvancedConfigEntry>>();
         initColumns();
     }
@@ -203,7 +203,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
                 Object v = value.getValue();
                 Color c = v == null ? null : LAFOptions.createColor(v.toString());
-                Color newColor = JColorChooser.showDialog(getModel().getTable(), _GUI._.AdvancedValueColumn_onSingleClick_colorchooser_title_(), c);
+                Color newColor = JColorChooser.showDialog(getModel().getTable(), _GUI.T.AdvancedValueColumn_onSingleClick_colorchooser_title_(), c);
                 if (newColor != null) {
                     setStringValue("#" + LAFOptions.toHex(newColor), value);
                 }

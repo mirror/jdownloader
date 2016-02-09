@@ -24,7 +24,7 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
     }
 
     public RemainingColumn() {
-        super(_GUI._.RemainingColumn_RemainingColumn());
+        super(_GUI.T.RemainingColumn_RemainingColumn());
     }
 
     @Override

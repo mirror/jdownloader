@@ -47,7 +47,7 @@ public class SubtitleVariant implements YoutubeVariantInterface {
     }
 
     public String _getName() {
-        return _GUI._.YoutubeDash_getName_subtitles_(locale.getDisplayName());
+        return _GUI.T.YoutubeDash_getName_subtitles_(locale.getDisplayName());
     }
 
     public Icon _getIcon() {
@@ -130,7 +130,7 @@ public class SubtitleVariant implements YoutubeVariantInterface {
 
     @Override
     public String _getExtendedName() {
-        return _GUI._.YoutubeDash_getName_subtitles_(locale.getDisplayName());
+        return _GUI.T.YoutubeDash_getName_subtitles_(locale.getDisplayName());
     }
 
 }

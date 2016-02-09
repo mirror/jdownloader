@@ -42,9 +42,9 @@ public class OriginFilter extends Filter implements Storable {
                 }
             }
 
-            if (sb.length() == 0) sb.append(_GUI._.OriginFilter_toString_nothing());
+            if (sb.length() == 0) sb.append(_GUI.T.OriginFilter_toString_nothing());
 
-            return _GUI._.OriginFilter_toString(sb.toString());
+            return _GUI.T.OriginFilter_toString(sb.toString());
 
         case ISNOT:
             sb = new StringBuilder();
@@ -55,9 +55,9 @@ public class OriginFilter extends Filter implements Storable {
                 }
             }
 
-            if (sb.length() == 0) sb.append(_GUI._.OriginFilter_toString_nothing());
+            if (sb.length() == 0) sb.append(_GUI.T.OriginFilter_toString_nothing());
 
-            return _GUI._.OriginFilter_toString_isNot(sb.toString());
+            return _GUI.T.OriginFilter_toString_isNot(sb.toString());
         }
         throw new WTFException();
     }

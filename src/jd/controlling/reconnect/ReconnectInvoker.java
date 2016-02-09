@@ -45,7 +45,7 @@ public abstract class ReconnectInvoker {
             Thread.sleep(1000);
             IPController.getInstance().validate();
             if (IPController.getInstance().getIpState().isOffline()) {
-                throw new ReconnectException(_GUI._.ReconnectInvoker_validate_offline_());
+                throw new ReconnectException(_GUI.T.ReconnectInvoker_validate_offline_());
             }
 
         }

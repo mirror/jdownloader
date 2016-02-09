@@ -17,19 +17,19 @@ public class CaptchaToogleBrowserSolverAction extends AbstractToolbarToggleActio
     @Override
     protected String createTooltip() {
         BrowserSolverService service = BrowserSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenDisabled() {
         BrowserSolverService service = BrowserSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenEnabled() {
         BrowserSolverService service = BrowserSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
     }
 
 }

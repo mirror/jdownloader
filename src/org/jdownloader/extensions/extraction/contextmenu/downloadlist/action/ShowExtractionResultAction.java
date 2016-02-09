@@ -63,7 +63,7 @@ public class ShowExtractionResultAction extends AbstractExtractionContextAction 
             for (Archive archive : lArchives) {
                 if (archive.getExtractLogFile().exists()) {
                     try {
-                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, T.T.showextractlog(archive.getName()), IO.readFileToString(archive.getExtractLogFile()), null, null, _GUI._.lit_close()) {
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, T.T.showextractlog(archive.getName()), IO.readFileToString(archive.getExtractLogFile()), null, null, _GUI.T.lit_close()) {
 
                             @Override
                             protected int getPreferredHeight() {
@@ -83,7 +83,7 @@ public class ShowExtractionResultAction extends AbstractExtractionContextAction 
                             e1.printStackTrace();
                         }
                     } catch (IOException e1) {
-                        Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+                        Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
                     }
                 }
             }

@@ -420,21 +420,21 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     }
 
     protected List<DataEntry<AggregatedNumbers>> createDataEntries() {
-        DataEntry<AggregatedNumbers> packageCount = new PackagesEntry(_GUI._.DownloadOverview_DownloadOverview_packages());
-        DataEntry<AggregatedNumbers> size = new BytesTotalEntry(_GUI._.DownloadOverview_DownloadOverview_size());
-        DataEntry<AggregatedNumbers> bytesLoaded = new BytesLoadedEntry(_GUI._.DownloadOverview_DownloadOverview_loaded());
-        DataEntry<AggregatedNumbers> runningDownloads = new DownloadsEntry(_GUI._.DownloadOverview_DownloadOverview_running_downloads());
+        DataEntry<AggregatedNumbers> packageCount = new PackagesEntry(_GUI.T.DownloadOverview_DownloadOverview_packages());
+        DataEntry<AggregatedNumbers> size = new BytesTotalEntry(_GUI.T.DownloadOverview_DownloadOverview_size());
+        DataEntry<AggregatedNumbers> bytesLoaded = new BytesLoadedEntry(_GUI.T.DownloadOverview_DownloadOverview_loaded());
+        DataEntry<AggregatedNumbers> runningDownloads = new DownloadsEntry(_GUI.T.DownloadOverview_DownloadOverview_running_downloads());
 
-        DataEntry<AggregatedNumbers> linkCount = new LinksCountEntry(_GUI._.DownloadOverview_DownloadOverview_links());
+        DataEntry<AggregatedNumbers> linkCount = new LinksCountEntry(_GUI.T.DownloadOverview_DownloadOverview_links());
 
-        DataEntry<AggregatedNumbers> speed = new SpeedEntry(_GUI._.DownloadOverview_DownloadOverview_speed());
-        DataEntry<AggregatedNumbers> eta = new ETAEntry(_GUI._.DownloadOverview_DownloadOverview_eta());
+        DataEntry<AggregatedNumbers> speed = new SpeedEntry(_GUI.T.DownloadOverview_DownloadOverview_speed());
+        DataEntry<AggregatedNumbers> eta = new ETAEntry(_GUI.T.DownloadOverview_DownloadOverview_eta());
 
-        DataEntry<AggregatedNumbers> connections = new ConnectionsEntry(_GUI._.DownloadOverview_DownloadOverview_connections());
+        DataEntry<AggregatedNumbers> connections = new ConnectionsEntry(_GUI.T.DownloadOverview_DownloadOverview_connections());
 
-        DataEntry<AggregatedNumbers> finishedDownloads = new FinishedEntry(_GUI._.DownloadOverview_DownloadOverview_finished_downloads());
-        DataEntry<AggregatedNumbers> skippedDownloads = new SkippedEntry(_GUI._.DownloadOverview_DownloadOverview_skipped_downloads());
-        DataEntry<AggregatedNumbers> failedDownloads = new FailedEntry(_GUI._.DownloadOverview_DownloadOverview_failed_downloads());
+        DataEntry<AggregatedNumbers> finishedDownloads = new FinishedEntry(_GUI.T.DownloadOverview_DownloadOverview_finished_downloads());
+        DataEntry<AggregatedNumbers> skippedDownloads = new SkippedEntry(_GUI.T.DownloadOverview_DownloadOverview_skipped_downloads());
+        DataEntry<AggregatedNumbers> failedDownloads = new FailedEntry(_GUI.T.DownloadOverview_DownloadOverview_failed_downloads());
 
         ArrayList<DataEntry<AggregatedNumbers>> entries = new ArrayList<DataEntry<AggregatedNumbers>>();
         entries.add(packageCount);

@@ -35,35 +35,35 @@ public class FiletypeFilter extends Filter implements Storable {
             cond.add(ImageExtensions.BMP.getDesc());
         }
         if (customs != null) {
-            cond.add(_GUI._.FiletypeFilter_toString_custom(customs));
+            cond.add(_GUI.T.FiletypeFilter_toString_custom(customs));
         }
         switch (getMatchType()) {
         case IS:
             for (int i = 0; i < cond.size(); i++) {
                 if (i > 0) {
                     if (i < cond.size() - 1) {
-                        sb.append(_GUI._.FilterRule_toString_comma3(cond.get(i)));
+                        sb.append(_GUI.T.FilterRule_toString_comma3(cond.get(i)));
                     } else {
-                        sb.append(" " + _GUI._.FilterRule_toString_or(cond.get(i)).trim());
+                        sb.append(" " + _GUI.T.FilterRule_toString_or(cond.get(i)).trim());
                     }
                 } else {
                     sb.append(cond.get(i));
                 }
             }
-            return _GUI._.FiletypeFilter_toString_(sb.toString());
+            return _GUI.T.FiletypeFilter_toString_(sb.toString());
         default:
             for (int i = 0; i < cond.size(); i++) {
                 if (i > 0) {
                     if (i < cond.size() - 1) {
-                        sb.append(_GUI._.FilterRule_toString_comma3(cond.get(i)));
+                        sb.append(_GUI.T.FilterRule_toString_comma3(cond.get(i)));
                     } else {
-                        sb.append(" " + _GUI._.FilterRule_toString_or(cond.get(i).trim()));
+                        sb.append(" " + _GUI.T.FilterRule_toString_or(cond.get(i).trim()));
                     }
                 } else {
                     sb.append(cond.get(i));
                 }
             }
-            return _GUI._.FiletypeFilter_toString_not(sb.toString());
+            return _GUI.T.FiletypeFilter_toString_not(sb.toString());
         }
     }
 

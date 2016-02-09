@@ -6,7 +6,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class PriorityMenuContainer extends MenuContainer {
     public PriorityMenuContainer() {
-        setName(_GUI._.PriorityAction_PriorityAction_());
+        setName(_GUI.T.PriorityAction_PriorityAction_());
         setIconKey(IconKey.ICON_PRIO_2);
 
     }

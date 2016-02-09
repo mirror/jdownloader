@@ -9,7 +9,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class MenuManagerMainToolbarAction extends AppAction {
     public MenuManagerMainToolbarAction() {
-        setName(_GUI._.MenuManagerMainToolbarAction_MenuManagerMainToolbarAction());
+        setName(_GUI.T.MenuManagerMainToolbarAction_MenuManagerMainToolbarAction());
         setIconKey(IconKey.ICON_TOPBAR);
     }
 

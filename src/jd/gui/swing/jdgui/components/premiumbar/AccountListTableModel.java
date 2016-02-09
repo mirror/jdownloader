@@ -119,7 +119,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
     @Override
     protected void initColumns() {
         if (owner != null && owner instanceof ServicePanel) {
-            this.addColumn(new ExtCheckColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_enabled()) {
+            this.addColumn(new ExtCheckColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_enabled()) {
 
                 private static final long serialVersionUID = 1515656228974789237L;
 
@@ -174,7 +174,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 }
             });
         }
-        this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_hoster()) {
+        this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_hoster()) {
 
             private static final long serialVersionUID = -3693931358975303164L;
 
@@ -241,7 +241,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
         });
 
-        this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_status()) {
+        this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_status()) {
 
             private static final long serialVersionUID = -3693931358975303164L;
             {
@@ -308,12 +308,12 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                             if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) {
                                 return value.getAccount().getErrorString();
                             }
-                            ret = _GUI._.PremiumAccountTableModel_getStringValue_temp_disabled();
+                            ret = _GUI.T.PremiumAccountTableModel_getStringValue_temp_disabled();
                         } else {
-                            ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_();
+                            ret = _GUI.T.PremiumAccountTableModel_getStringValue_account_ok_();
                         }
                     } else {
-                        ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
+                        ret = _GUI.T.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
                     }
                     return ret;
                 }
@@ -322,20 +322,20 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 }
                 switch (value.getAccount().getError()) {
                 case EXPIRED:
-                    return _GUI._.PremiumAccountTableModel_getStringValue_status_expired();
+                    return _GUI.T.PremiumAccountTableModel_getStringValue_status_expired();
                 case INVALID:
 
-                    return _GUI._.PremiumAccountTableModel_getStringValue_status_invalid();
+                    return _GUI.T.PremiumAccountTableModel_getStringValue_status_invalid();
                 case PLUGIN_ERROR:
-                    return _GUI._.PremiumAccountTableModel_getStringValue_status_plugin_error();
+                    return _GUI.T.PremiumAccountTableModel_getStringValue_status_plugin_error();
                 default:
-                    return _GUI._.PremiumAccountTableModel_getStringValue_status_unknown_error();
+                    return _GUI.T.PremiumAccountTableModel_getStringValue_status_unknown_error();
                 }
 
             }
 
         });
-        this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_user()) {
+        this.addColumn(new ExtTextColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_user()) {
 
             private static final long serialVersionUID = -8070328156326837828L;
             {
@@ -383,7 +383,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
         });
 
-        this.addColumn(new ExtDateColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
+        this.addColumn(new ExtDateColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
 
             {
@@ -428,7 +428,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 if (sd instanceof SimpleDateFormat) {
                     return ((SimpleDateFormat) sd).toPattern();
                 }
-                return _GUI._.PremiumAccountTableModel_getDateFormatString_();
+                return _GUI.T.PremiumAccountTableModel_getDateFormatString_();
             }
 
             @Override
@@ -445,7 +445,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
         });
 
-        this.addColumn(new ExtProgressColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_trafficleft()) {
+        this.addColumn(new ExtProgressColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_trafficleft()) {
             private static final long serialVersionUID = -8376056840172682617L;
 
             {
@@ -515,13 +515,13 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 if (!ac.getAccount().isValid()) {
                     return "";
                 } else if (ac.getAccount().isEnabled() && ac.getAccount().isTempDisabled() && ((timeout = ac.getAccount().getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
-                    return _GUI._.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
+                    return _GUI.T.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
                 } else if (ai == null) {
                     return "";
                 } else {
                     // COL_PROGRESS = COL_PROGRESS_NORMAL;
                     if (ai.isUnlimitedTraffic()) {
-                        return _GUI._.premiumaccounttablemodel_column_trafficleft_unlimited();
+                        return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
                     } else {
                         return Formatter.formatReadable(ai.getTrafficLeft()) + "/" + Formatter.formatReadable(ai.getTrafficMax());
 
@@ -562,7 +562,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
         });
         if (owner != null && owner instanceof ServicePanel) {
-            this.addColumn(details = new ExtComponentColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_info()) {
+            this.addColumn(details = new ExtComponentColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_info()) {
                 private JButton      button;
                 private MigPanel     panel;
                 private JButton      rbutton;
@@ -570,13 +570,13 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 private AccountEntry editing;
 
                 {
-                    button = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
+                    button = new JButton(_GUI.T.premiumaccounttablemodel_column_info_button());
 
                     panel = new RendererMigPanel("ins 2", "[]", "[16!]");
                     panel.add(button);
                     button.setOpaque(false);
 
-                    rbutton = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
+                    rbutton = new JButton(_GUI.T.premiumaccounttablemodel_column_info_button());
 
                     rbutton.addActionListener(new ActionListener() {
 

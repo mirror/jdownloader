@@ -36,7 +36,7 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
             if (requestor instanceof ETAColumn) {
                 return null;
             }
-            return _GUI._.CheckStatusAction_getMessage_checking();
+            return _GUI.T.CheckStatusAction_getMessage_checking();
         }
 
         @Override
@@ -51,7 +51,7 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
     public CheckStatusAction() {
         super();
         setIconKey(IconKey.ICON_OK);
-        setName(_GUI._.gui_table_contextmenu_check());
+        setName(_GUI.T.gui_table_contextmenu_check());
 
     }
 

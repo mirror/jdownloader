@@ -35,8 +35,8 @@ public class SettingsAction extends CustomizableAppAction {
 
     public SettingsAction() {
         setIconKey(IconKey.ICON_SETTINGS);
-        setTooltipText(_GUI._.action_settings_menu_tooltip());
-        setName(_GUI._.action_settings_menu());
+        setTooltipText(_GUI.T.action_settings_menu_tooltip());
+        setName(_GUI.T.action_settings_menu());
         setAccelerator(KeyEvent.VK_P);
 
     }

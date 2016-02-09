@@ -114,10 +114,10 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
 
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
-                addDescription(_GUI._.MyJDownloaderService_createPanel_description_2());
+                addDescription(_GUI.T.MyJDownloaderService_createPanel_description_2());
                 SettingsButton openMyJDownloader = new SettingsButton(new AppAction() {
                     {
-                        setName(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
+                        setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
 
                     }
 
@@ -136,7 +136,7 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
             }
 
             public String getDescription() {
-                return _GUI._.MyJDownloaderService_getDescription_tt_();
+                return _GUI.T.MyJDownloaderService_getDescription_tt_();
             }
 
             @Override
@@ -178,12 +178,12 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
 
     @Override
     public String getName() {
-        return _GUI._.CaptchaMyJDSolver_gettypeName();
+        return _GUI.T.CaptchaMyJDSolver_gettypeName();
     }
 
     @Override
     public String getType() {
-        return _GUI._.CaptchaMyJDSolver_getName();
+        return _GUI.T.CaptchaMyJDSolver_getName();
     }
 
     @Override

@@ -105,7 +105,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 captcha = client.upload(challenge.getImageFile());
             }
             if (null != captcha) {
-                job.setStatus(new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
+                job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " uploaded: " + captcha.id);
                 long startTime = System.currentTimeMillis();
                 // Poll for the uploaded CAPTCHA status.

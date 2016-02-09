@@ -140,7 +140,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
         final JProgressBar ph = new JProgressBar();
 
-        ph.setString(_GUI._.DownloadsTable_DownloadsTable_init_plugins());
+        ph.setString(_GUI.T.DownloadsTable_DownloadsTable_init_plugins());
 
         LinkCollector.CRAWLERLIST_LOADED.executeWhenReached(new Runnable() {
 
@@ -150,7 +150,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
                     @Override
                     protected void runInEDT() {
-                        ph.setString(_GUI._.LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links());
+                        ph.setString(_GUI.T.LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links());
 
                     }
 
@@ -269,7 +269,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     @Override
     protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
         if (dupeManagerEnabled && obj != null && obj instanceof CrawledLink && DownloadController.getInstance().hasDownloadLinkByID(((CrawledLink) obj).getLinkID())) {
-            JDGui.help(_GUI._.LinkGrabberTable_onSingleClick_dupe_title(), _GUI._.LinkGrabberTable_onSingleClick_dupe_msg(), new AbstractIcon(IconKey.ICON_COPY, 32));
+            JDGui.help(_GUI.T.LinkGrabberTable_onSingleClick_dupe_title(), _GUI.T.LinkGrabberTable_onSingleClick_dupe_msg(), new AbstractIcon(IconKey.ICON_COPY, 32));
         }
         return super.onSingleClick(e, obj);
     }
@@ -339,7 +339,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         }
                     }
                 }
-                LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all(), evt.isControlDown(), false, false, false, false);
+                LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected_all(), evt.isControlDown(), false, false, false, false);
                 return null;
             }
         });

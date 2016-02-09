@@ -114,7 +114,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Auto
             }
         });
         timer.setRepeats(true);
-        setToolTipText(_GUI._.AutoConfirmButton_AutoConfirmButton_tooltip_());
+        setToolTipText(_GUI.T.AutoConfirmButton_AutoConfirmButton_tooltip_());
         addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

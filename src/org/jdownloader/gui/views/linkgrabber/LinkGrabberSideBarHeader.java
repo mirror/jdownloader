@@ -27,7 +27,7 @@ public class LinkGrabberSideBarHeader extends MigPanel {
         tableHeader = new JTableHeader();
         // setBackground(Color.RED);
         // setOpaque(true);
-        JLabel lbl = new JLabel(_GUI._.LinkGrabberSideBarHeader_LinkGrabberSideBarHeader());
+        JLabel lbl = new JLabel(_GUI.T.LinkGrabberSideBarHeader_LinkGrabberSideBarHeader());
 
         add(lbl, "height 17!,gapleft 10");
         add(Box.createHorizontalGlue());

@@ -39,7 +39,7 @@ public class NewRuleAction extends AbstractAddAction {
         for (AccountUsageRule aur : HosterRuleController.getInstance().list()) {
             list.remove(DomainInfo.getInstance(aur.getHoster()));
         }
-        ChooseHosterDialog d = new ChooseHosterDialog(_GUI._.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
+        ChooseHosterDialog d = new ChooseHosterDialog(_GUI.T.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
         try {
             Dialog.getInstance().showDialog(d);
             final DomainInfo di = d.getSelectedItem();
@@ -87,7 +87,7 @@ public class NewRuleAction extends AbstractAddAction {
 
     @Override
     public String getTooltipText() {
-        return _GUI._.NewRuleAction_getTooltipText_tt_();
+        return _GUI.T.NewRuleAction_getTooltipText_tt_();
     }
 
 }

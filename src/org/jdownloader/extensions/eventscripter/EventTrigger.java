@@ -422,7 +422,7 @@ public enum EventTrigger implements LabelInterface {
 
             SettingsButton toolbarManager = new SettingsButton(new AppAction() {
                 {
-                    setName(_GUI._.gui_config_menumanager_toolbar());
+                    setName(_GUI.T.gui_config_menumanager_toolbar());
 
                 }
 
@@ -477,7 +477,7 @@ public enum EventTrigger implements LabelInterface {
 
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
-                    setName(_GUI._.gui_config_menumanager_mainmenu());
+                    setName(_GUI.T.gui_config_menumanager_mainmenu());
 
                 }
 
@@ -526,7 +526,7 @@ public enum EventTrigger implements LabelInterface {
             ret.add(new JLabel(T.T.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
-                    setName(_GUI._.gui_config_menumanager_downloadlist());
+                    setName(_GUI.T.gui_config_menumanager_downloadlist());
 
                 }
 
@@ -577,7 +577,7 @@ public enum EventTrigger implements LabelInterface {
             ret.add(new JLabel(T.T.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
-                    setName(_GUI._.gui_config_menumanager_linkgrabber());
+                    setName(_GUI.T.gui_config_menumanager_linkgrabber());
 
                 }
 
@@ -628,7 +628,7 @@ public enum EventTrigger implements LabelInterface {
             ret.add(new JLabel(T.T.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
-                    setName(_GUI._.gui_config_menumanager_downloadBottom());
+                    setName(_GUI.T.gui_config_menumanager_downloadBottom());
 
                 }
 
@@ -678,7 +678,7 @@ public enum EventTrigger implements LabelInterface {
             ret.add(new JLabel(T.T.LINKGRABBER_BOTTOM_BAR_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
-                    setName(_GUI._.gui_config_menumanager_linkgrabberBottom());
+                    setName(_GUI.T.gui_config_menumanager_linkgrabberBottom());
 
                 }
 
@@ -729,7 +729,7 @@ public enum EventTrigger implements LabelInterface {
             ret.add(new JLabel(T.T.TRAY_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
-                    setName(_GUI._.gui_config_menumanager_traymenu());
+                    setName(_GUI.T.gui_config_menumanager_traymenu());
 
                 }
 

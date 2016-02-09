@@ -14,7 +14,7 @@ public class BooleanFilter extends Filter implements Storable {
     }
 
     public String toString() {
-        return _GUI._.BooleanFilter_toString_();
+        return _GUI.T.BooleanFilter_toString_();
     }
 
 }

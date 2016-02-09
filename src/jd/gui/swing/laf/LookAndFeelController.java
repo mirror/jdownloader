@@ -116,7 +116,7 @@ public class LookAndFeelController implements LAFManagerInterface {
         if (UpdateController.getInstance().isExtensionInstalled("synthetica-themes")) {
             return;
         }
-        if (UIOManager.I().showConfirmDialog(0, _GUI._.LookAndFeelController_handleThemesInstallation_title_(), _GUI._.LookAndFeelController_handleThemesInstallation_message_(CFG_GUI.CFG.getLookAndFeelTheme().name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
+        if (UIOManager.I().showConfirmDialog(0, _GUI.T.LookAndFeelController_handleThemesInstallation_title_(), _GUI.T.LookAndFeelController_handleThemesInstallation_message_(CFG_GUI.CFG.getLookAndFeelTheme().name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
 
             new Thread("Install Extension") {
                 public void run() {
@@ -304,11 +304,11 @@ public class LookAndFeelController implements LAFManagerInterface {
                         if (newValue >= 0 && newValue != WindowsWindowManager.readForegroundLockTimeout()) {
 
                             WindowsWindowManager.writeForegroundLockTimeout(newValue);
-                            Dialog.getInstance().showMessageDialog(_GUI._.LookAndFeelController_onConfigValueModified_reboot_required());
+                            Dialog.getInstance().showMessageDialog(_GUI.T.LookAndFeelController_onConfigValueModified_reboot_required());
                         }
                     } catch (Exception e) {
                         logger.log(e);
-                        Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
+                        Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage(), e);
                     }
                 }
             });

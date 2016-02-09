@@ -35,11 +35,11 @@ public class RenameDialog extends AbstractDialog<Object> {
     private ExtCheckBox   cbRegex;
 
     public RenameDialog(final SelectionInfo selection) {
-        super(0, _GUI._.RenameDialog_RenameDialog(selection.getChildren().size()), new AbstractIcon(IconKey.ICON_EDIT, 32), _GUI._.lit_continue(), null);
+        super(0, _GUI.T.RenameDialog_RenameDialog(selection.getChildren().size()), new AbstractIcon(IconKey.ICON_EDIT, 32), _GUI.T.lit_continue(), null);
         this.selection = selection;
         setLeftActions(new AppAction() {
             {
-                setName(_GUI._.lit_preview());
+                setName(_GUI.T.lit_preview());
             }
 
             @Override
@@ -66,7 +66,7 @@ public class RenameDialog extends AbstractDialog<Object> {
                     TestWaitDialog d = new TestWaitDialog(regex, pattern, rep, list);
                     UIOManager.I().show(null, d);
                 } catch (Throwable e) {
-                    Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
+                    Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage(), e);
                 }
             }
 
@@ -138,7 +138,7 @@ public class RenameDialog extends AbstractDialog<Object> {
 
                 }
             } catch (Exception e) {
-                Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
+                Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage(), e);
             }
         }
     }
@@ -183,11 +183,11 @@ public class RenameDialog extends AbstractDialog<Object> {
         txtReplace.setText(allReplace);
         cbRegex.setSelected(regex);
         MigPanel p = new MigPanel("ins 0,wrap 2", "[right][grow,fill]", "[][]");
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.RenameDialog_layoutDialogContent_search())));
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.RenameDialog_layoutDialogContent_search())));
         p.add(txtSearch);
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.RenameDialog_layoutDialogContent_replace())));
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.RenameDialog_layoutDialogContent_replace())));
         p.add(txtReplace);
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.RenameDialog_layoutDialogContent_regex())));
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.RenameDialog_layoutDialogContent_regex())));
         p.add(cbRegex);
 
         return p;

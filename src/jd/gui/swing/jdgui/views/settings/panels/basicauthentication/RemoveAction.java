@@ -23,7 +23,7 @@ public class RemoveAction extends AppAction {
     public RemoveAction(AuthTable table) {
         this.table = table;
         this.ignoreSelection = true;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
 
     }
@@ -31,7 +31,7 @@ public class RemoveAction extends AppAction {
     public RemoveAction(AuthTable authTable, java.util.List<AuthenticationInfo> selection, boolean force) {
         this.table = authTable;
         this.selection = selection;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
 
     }

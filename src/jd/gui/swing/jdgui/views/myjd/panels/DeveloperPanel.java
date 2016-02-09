@@ -19,25 +19,25 @@ public class DeveloperPanel extends AbstractConfigPanel {
 
     public DeveloperPanel() {
         this.addHeader(getTitle(), getIcon());
-        this.addDescription(_GUI._.RemoteControlPanel_description());
+        this.addDescription(_GUI.T.RemoteControlPanel_description());
 
         this.addHeader("Webinterface @ my.jdownloader.org", new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
-        this.addDescription(_GUI._.RemoteControlPanel_Webinterface());
-        addButton("http://my.jdownloader.org?referer=JDownloader", "robot_info", "<html>" + _GUI._.RemoteControlPanel_website_open().replace("\r\n", "<br>") + "</html>");
+        this.addDescription(_GUI.T.RemoteControlPanel_Webinterface());
+        addButton("http://my.jdownloader.org?referer=JDownloader", "robot_info", "<html>" + _GUI.T.RemoteControlPanel_website_open().replace("\r\n", "<br>") + "</html>");
 
         this.addHeader("Mobile Apps", new AbstractIcon(IconKey.ICON_MOBILE, 32));
-        this.addDescription(_GUI._.RemoteControlPanel_mobile_desc());
+        this.addDescription(_GUI.T.RemoteControlPanel_mobile_desc());
 
-        addButton("https://play.google.com/store/apps/details?id=org.appwork.myjdandroid", "android", "<html>" + _GUI._.RemoteControlPanel_android_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://play.google.com/store/apps/details?id=org.appwork.myjdandroid", "android", "<html>" + _GUI.T.RemoteControlPanel_android_open().replace("\r\n", "<br>") + "</html>");
 
-        addButton("https://itunes.apple.com/app/jdanywhere/id683222457", "ios", "<html>" + _GUI._.RemoteControlPanel_ios_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://itunes.apple.com/app/jdanywhere/id683222457", "ios", "<html>" + _GUI.T.RemoteControlPanel_ios_open().replace("\r\n", "<br>") + "</html>");
 
-        addButton("http://www.pixelvalley.de/?page_id=1649", "windows", "<html>" + _GUI._.RemoteControlPanel_file_recon_open().replace("\r\n", "<br>") + "</html>");
+        addButton("http://www.pixelvalley.de/?page_id=1649", "windows", "<html>" + _GUI.T.RemoteControlPanel_file_recon_open().replace("\r\n", "<br>") + "</html>");
         this.addHeader("Browser Extensions", new AbstractIcon("url", 32));
-        this.addDescription(_GUI._.RemoteControlPanel_browser_extension_desc());
+        this.addDescription(_GUI.T.RemoteControlPanel_browser_extension_desc());
 
-        addButton("https://chrome.google.com/webstore/detail/my-jdownloader/fbcohnmimjicjdomonkcbcpbpnhggkip", "chrome", "<html>" + _GUI._.RemoteControlPanel_chrome_open().replace("\r\n", "<br>") + "</html>");
-        addButton("https://addons.mozilla.org/de/firefox/addon/official-my-jdownloader-add/", "firefox", "<html>" + _GUI._.RemoteControlPanel_firefox_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://chrome.google.com/webstore/detail/my-jdownloader/fbcohnmimjicjdomonkcbcpbpnhggkip", "chrome", "<html>" + _GUI.T.RemoteControlPanel_chrome_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://addons.mozilla.org/de/firefox/addon/official-my-jdownloader-add/", "firefox", "<html>" + _GUI.T.RemoteControlPanel_firefox_open().replace("\r\n", "<br>") + "</html>");
 
     }
 
@@ -65,7 +65,7 @@ public class DeveloperPanel extends AbstractConfigPanel {
 
     @Override
     public String getTitle() {
-        return _GUI._.RemoteControlPanel_title();
+        return _GUI.T.RemoteControlPanel_title();
     }
 
     @Override

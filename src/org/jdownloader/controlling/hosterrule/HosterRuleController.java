@@ -319,7 +319,7 @@ public class HosterRuleController implements AccountControllerListener {
             if (onlyRealAccounts != null) {
                 onlyRealAccounts.getChildren().addAll(refList);
             } else {
-                hr.getAccounts().add(0, new AccountGroup(refList, _GUI._.HosterRuleController_validateRule_single_hoster_account()));
+                hr.getAccounts().add(0, new AccountGroup(refList, _GUI.T.HosterRuleController_validateRule_single_hoster_account()));
             }
 
         }
@@ -335,13 +335,13 @@ public class HosterRuleController implements AccountControllerListener {
                 if (index < 0) {
                     index = hr.getAccounts().size();
                 }
-                hr.getAccounts().add(index, new AccountGroup(refList, _GUI._.HosterRuleController_validateRule_multi_hoster_account()));
+                hr.getAccounts().add(index, new AccountGroup(refList, _GUI.T.HosterRuleController_validateRule_multi_hoster_account()));
             }
         }
         if (free == null) {
             ArrayList<AccountReference> refList = new ArrayList<AccountReference>();
             refList.add(new FreeAccountReference(host));
-            hr.getAccounts().add(new AccountGroup(refList, _GUI._.HosterRuleController_validateRule_free()));
+            hr.getAccounts().add(new AccountGroup(refList, _GUI.T.HosterRuleController_validateRule_free()));
         }
     }
 

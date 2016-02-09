@@ -30,7 +30,7 @@ public class ChooseHosterDialog extends SearchComboBoxDialog<DomainInfo> {
 
     public ChooseHosterDialog(final String string, DomainInfo[] domainInfos) {
 
-        super(UserIO.NO_ICON, _GUI._.NewRuleAction_actionPerformed_choose_hoster_(), string, domainInfos, null, null, _AWU.T.lit_continue(), null);
+        super(UserIO.NO_ICON, _GUI.T.NewRuleAction_actionPerformed_choose_hoster_(), string, domainInfos, null, null, _AWU.T.lit_continue(), null);
 
     }
 

@@ -44,7 +44,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         super(true, true);
         setIconKey(IconKey.ICON_COPY);
 
-        setName(_GUI._.CopyGenericContextAction());
+        setName(_GUI.T.CopyGenericContextAction());
         setAccelerator(KeyEvent.VK_C);
     }
 
@@ -69,7 +69,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
 
     public void setPatternPackages(String copyPattern) {
         this.patternPackages = copyPattern;
-        setTooltipText(_GUI._.CopyGenericContextAction_tt(getPatternPackages() + " - " + getPatternLinks()));
+        setTooltipText(_GUI.T.CopyGenericContextAction_tt(getPatternPackages() + " - " + getPatternLinks()));
     }
 
     private String patternLinks;
@@ -81,7 +81,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
 
     public void setPatternLinks(String patternLinks) {
         this.patternLinks = patternLinks;
-        setTooltipText(_GUI._.CopyGenericContextAction_tt(getPatternPackages() + " - " + getPatternLinks()));
+        setTooltipText(_GUI.T.CopyGenericContextAction_tt(getPatternPackages() + " - " + getPatternLinks()));
     }
 
     private boolean smartSelection;

@@ -41,20 +41,20 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
     @Override
     protected String createTooltip() {
         if (getKeyHandler().isEnabled()) {
-            return _GUI._.Premium_enabled_button_tooltip_selected();
+            return _GUI.T.Premium_enabled_button_tooltip_selected();
         } else {
-            return _GUI._.Premium_enabled_button_tooltip_not_selected();
+            return _GUI.T.Premium_enabled_button_tooltip_not_selected();
         }
     }
 
     @Override
     protected String getNameWhenDisabled() {
-        return _GUI._.GlobalPremiumSwitchToggleAction_getNameWhenDisabled_();
+        return _GUI.T.GlobalPremiumSwitchToggleAction_getNameWhenDisabled_();
     }
 
     @Override
     protected String getNameWhenEnabled() {
-        return _GUI._.GlobalPremiumSwitchToggleAction_getNameWhenEnabled_();
+        return _GUI.T.GlobalPremiumSwitchToggleAction_getNameWhenEnabled_();
     }
 
     @Override
@@ -66,9 +66,9 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
             protected void runInEDT() {
                 final boolean useAvailableAccounts = getKeyHandler().isEnabled();
                 if (useAvailableAccounts) {
-                    setTooltipText(_GUI._.Premium_enabled_button_tooltip_selected());
+                    setTooltipText(_GUI.T.Premium_enabled_button_tooltip_selected());
                 } else {
-                    setTooltipText(_GUI._.Premium_enabled_button_tooltip_not_selected());
+                    setTooltipText(_GUI.T.Premium_enabled_button_tooltip_not_selected());
                 }
                 if (!useAvailableAccounts && CFG_GUI.PREMIUM_DISABLED_WARNING_FLASH_ENABLED.isEnabled()) {
                     JDGui.getInstance().getFlashController().register(GlobalPremiumSwitchToggleAction.this);

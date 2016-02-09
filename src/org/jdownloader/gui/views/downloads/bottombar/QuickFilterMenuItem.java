@@ -79,7 +79,7 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
 
         private FilterCombo() {
             super(new View[] { View.ALL, View.RUNNING, View.FAILED, View.EXISTS, View.OFFLINE, View.SKIPPED, View.SUCCESSFUL, View.TODO });
-            this.setToolTipText(_GUI._.PseudoCombo_PseudoCombo_tt_());
+            this.setToolTipText(_GUI.T.PseudoCombo_PseudoCombo_tt_());
             this.table = (DownloadsTable) DownloadsTableModel.getInstance().getTable();
             View view = (View) CFG_GUI.DOWNLOAD_VIEW.getValue();
             if (view == null || !JsonConfig.create(GraphicalUserInterfaceSettings.class).isSaveDownloadViewCrossSessionEnabled()) {
@@ -313,7 +313,7 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
 
     public QuickFilterMenuItem() {
         super();
-        setName(_GUI._.QuickFilterMenuItem_QuickFilterMenuItem());
+        setName(_GUI.T.QuickFilterMenuItem_QuickFilterMenuItem());
         setIconKey(IconKey.ICON_FILTER);
         setVisible(true);
         //

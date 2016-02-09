@@ -132,7 +132,7 @@ public class DLCFactory extends D {
      * @throws IOException
      */
     protected void encryptAndWriteXML(String xml, final String preSetFilename) throws DialogClosedException, DialogCanceledException, IOException {
-        ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.CreateDLCAction_actionPerformed_title_(), null, null) {
+        ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.CreateDLCAction_actionPerformed_title_(), null, null) {
 
             @Override
             public JComponent layoutDialogContent() {
@@ -164,7 +164,7 @@ public class DLCFactory extends D {
         Dialog.I().showDialog(d);
         File file = d.getSelectedFile();
         if (file == null) {
-            new MessageDialogImpl(0, _GUI._.DLCFactory_createDLCByCrawledLinks_nofile_title(), _GUI._.DLCFactory_createDLCByCrawledLinks_nofile_msg(), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null).show();
+            new MessageDialogImpl(0, _GUI.T.DLCFactory_createDLCByCrawledLinks_nofile_title(), _GUI.T.DLCFactory_createDLCByCrawledLinks_nofile_msg(), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null).show();
             return;
         }
         String fileName = CrossSystem.alleviatePathParts(file.getName());
@@ -190,12 +190,12 @@ public class DLCFactory extends D {
             final String cipher = encryptDLC(xml);
             if (cipher != null) {
                 if (file.exists()) {
-                    new ConfirmDialog(0, _GUI._.lit_file_exists(), _GUI._.lit_file_already_exists_overwrite_question(file.getAbsolutePath())).show().throwCloseExceptions();
+                    new ConfirmDialog(0, _GUI.T.lit_file_exists(), _GUI.T.lit_file_already_exists_overwrite_question(file.getAbsolutePath())).show().throwCloseExceptions();
 
                     FileCreationManager.getInstance().delete(file, null);
                 }
                 IO.writeStringToFile(file, cipher);
-                if (new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DLCFactory_writeDLC_success_ok(), _GUI._.DLCFactory_createDLC_created_(file.getAbsolutePath()), NewTheme.I().getIcon(IconKey.ICON_DLC, 32), _GUI._.DLCFactory_writeDLC_showpath(), _GUI._.lit_close()) {
+                if (new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DLCFactory_writeDLC_success_ok(), _GUI.T.DLCFactory_createDLC_created_(file.getAbsolutePath()), NewTheme.I().getIcon(IconKey.ICON_DLC, 32), _GUI.T.DLCFactory_writeDLC_showpath(), _GUI.T.lit_close()) {
                     public String getDontShowAgainKey() {
                         return "createDLC";
                     };

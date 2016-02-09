@@ -86,7 +86,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
 
     protected String getDontShowAgainLabelText() {
 
-        return _GUI._.IfFileExistsDialog_getDontShowAgainLabelText_();
+        return _GUI.T.IfFileExistsDialog_getDontShowAgainLabelText_();
     }
 
     @Override
@@ -102,36 +102,36 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
 
         txt.setText(_JDT._.jd_controlling_SingleDownloadController_askexists3());
         p.add(txt);
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filename())), "split 2,sg 1");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filename())), "split 2,sg 1");
         p.add(new JLabel(new File(path).getName()));
 
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sg 1");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sg 1");
         p.add(new JLabel(SizeFormatter.formatBytes(downloadLink.getView().getBytesTotalEstimated())));
 
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize_existing())), "split 2,sg 1");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize_existing())), "split 2,sg 1");
         p.add(new JLabel(SizeFormatter.formatBytes(localFile.length())));
 
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sg 1");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sg 1");
         p.add(new JLabel(packagename));
 
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_hoster())), "split 2,sg 1");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_hoster())), "split 2,sg 1");
         p.add(new JLabel(downloadLink.getDomainInfo().getTld()));
 
-        skip = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_skip_());
+        skip = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_skip_());
         skip.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 result = IfFileExistsAction.SKIP_FILE;
             }
         });
-        overwrite = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_overwrite_());
+        overwrite = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_overwrite_());
         overwrite.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 result = IfFileExistsAction.OVERWRITE_FILE;
             }
         });
-        rename = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_rename_());
+        rename = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_rename_());
         rename.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

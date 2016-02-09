@@ -21,7 +21,7 @@ public class ClearFilteredLinksAction extends CustomizableAppAction {
     private static final long serialVersionUID = -6341297356888158708L;
 
     public ClearFilteredLinksAction() {
-        setName(_GUI._.ClearFilteredLinksAction());
+        setName(_GUI.T.ClearFilteredLinksAction());
         setIconKey(IconKey.ICON_FILTER);
         setEnabled(LinkCollector.getInstance().getfilteredStuffSize() > 0);
     }
@@ -45,7 +45,7 @@ public class ClearFilteredLinksAction extends CustomizableAppAction {
             return;
         }
         try {
-            Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.ClearFilteredLinksAction_msg(size), null, _GUI._.literally_yes(), _GUI._.literall_no());
+            Dialog.getInstance().showConfirmDialog(0, _GUI.T.literally_are_you_sure(), _GUI.T.ClearFilteredLinksAction_msg(size), null, _GUI.T.literally_yes(), _GUI.T.literall_no());
             LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override

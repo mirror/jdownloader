@@ -108,13 +108,13 @@ public class ExtractionListenerList implements ExtractionListener {
                 textField.setPreferredSize(textField.getPreferredSize());
             }
             try {
-                p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_archivename())), "split 2,sizegroup left,alignx left");
+                p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_archivename())), "split 2,sizegroup left,alignx left");
                 p.add(leftLabel(controller.getArchive().getName()));
 
-                p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_filename())), "split 2,sizegroup left,alignx left");
+                p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_filename())), "split 2,sizegroup left,alignx left");
                 p.add(leftLabel(controller.getArchive().getArchiveFiles().get(0).getName()));
 
-                p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sizegroup left,alignx left");
+                p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sizegroup left,alignx left");
                 long archiveSize = 0;
                 for (ArchiveFile af : controller.getArchive().getArchiveFiles()) {
                     archiveSize += Math.max(0, af.getFileSize());
@@ -125,7 +125,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
                         final FilePackage parentNode = ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks().get(0).getParentNode();
                         if (!FilePackage.isDefaultFilePackage(parentNode)) {
-                            p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
+                            p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
                             p.add(leftLabel(parentNode.getName()));
                             break;
                         }
@@ -137,7 +137,7 @@ public class ExtractionListenerList implements ExtractionListener {
             input = getSmallInputComponent();
             // this.input.setBorder(BorderFactory.createEtchedBorder());
             input.setText(defaultMessage);
-            p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
+            p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
             p.add((JComponent) input, "w 450,pushx,growx");
             getDialog().addWindowFocusListener(new WindowFocusListener() {
 

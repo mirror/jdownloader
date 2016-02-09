@@ -15,7 +15,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 public class MoveToTopAction extends AbstractMoveAction {
 
     public MoveToTopAction() {
-        setName(_GUI._.MoveToTopAction_MoveToTopAction());
+        setName(_GUI.T.MoveToTopAction_MoveToTopAction());
         setIconKey(IconKey.ICON_GO_TOP);
 
         setAccelerator(PackageControllerTable.KEY_STROKE_ALT_HOME);

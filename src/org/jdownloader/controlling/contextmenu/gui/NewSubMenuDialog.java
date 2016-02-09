@@ -35,7 +35,7 @@ public class NewSubMenuDialog extends AbstractDialog<Object> {
     protected String     iconUrl = "help";
 
     public NewSubMenuDialog() {
-        super(Dialog.STYLE_HIDE_ICON, _GUI._.NewSubMenuDialog_NewSubMenuDialog_title(), null, null, null);
+        super(Dialog.STYLE_HIDE_ICON, _GUI.T.NewSubMenuDialog_NewSubMenuDialog_title(), null, null, null);
 
     }
 
@@ -48,7 +48,7 @@ public class NewSubMenuDialog extends AbstractDialog<Object> {
     public JComponent layoutDialogContent() {
         MigPanel p = new MigPanel("ins 0", "[][grow,fill]", "[24!,fill]");
         txt = new ExtTextField();
-        txt.setHelpText(_GUI._.NewSubMenuDialog_layoutDialogContent_name_());
+        txt.setHelpText(_GUI.T.NewSubMenuDialog_layoutDialogContent_name_());
         iconField = new ExtButton(new AppAction() {
             {
                 setSmallIcon(NewTheme.I().getIcon(iconUrl, 20));

@@ -733,7 +733,7 @@ public class SecondLevelLaunch {
                 StatsManager.I().track("UnsatisfiedLinkError/JNA");
                 // probably the path contains unsupported special chars
                 LOG.info("The Library Path probably contains special chars: " + Application.getResource("tmp/jna").getAbsolutePath());
-                ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI._.lit_error_occured(), _GUI._.special_char_lib_loading_problem(Application.getHome(), "Java Native Interface"), e, null, _GUI._.lit_close()) {
+                ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI.T.lit_error_occured(), _GUI.T.special_char_lib_loading_problem(Application.getHome(), "Java Native Interface"), e, null, _GUI.T.lit_close()) {
                     @Override
                     public ModalityType getModalityType() {
                         return ModalityType.MODELESS;

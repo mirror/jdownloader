@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 public class SettingsMenuContainer extends MenuContainer {
-    private final static String NAME     = _GUI._.ContextMenuFactory_createPopup_properties_package();
+    private final static String NAME     = _GUI.T.ContextMenuFactory_createPopup_properties_package();
 
     private final static Image  SETTINGS = NewTheme.I().getImage("settings", 14);
     private final static Icon   OPEN_PACKAGE;

@@ -65,7 +65,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     private boolean           hideSinglePackage = true;
 
     public FileColumn() {
-        super(_GUI._.filecolumn_title());
+        super(_GUI.T.filecolumn_title());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
         normalBorder = BorderFactory.createEmptyBorder(0, 0, 0, 0);
         iconPackageOpen = NewTheme.I().getIcon(IconKey.ICON_TREE_PACKAGE_OPEN, 32);
@@ -274,8 +274,8 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             }
             ((CrawledLink) object).setName(value);
             if (isMultiArchive) {
-                String title = _GUI._.FileColumn_setStringValue_title_();
-                String msg = _GUI._.FileColumn_setStringValue_msg_();
+                String title = _GUI.T.FileColumn_setStringValue_title_();
+                String msg = _GUI.T.FileColumn_setStringValue_msg_();
                 final Icon icon = NewTheme.I().getIcon(IconKey.ICON_WARNING, 32);
                 JDGui.help(title, msg, icon);
             }
@@ -293,8 +293,8 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             }
             DownloadWatchDog.getInstance().renameLink(((DownloadLink) object), value);
             if (isMultiArchive) {
-                String title = _GUI._.FileColumn_setStringValue_title_();
-                String msg = _GUI._.FileColumn_setStringValue_msg_();
+                String title = _GUI.T.FileColumn_setStringValue_title_();
+                String msg = _GUI.T.FileColumn_setStringValue_msg_();
                 final Icon icon = NewTheme.I().getIcon(IconKey.ICON_WARNING, 32);
                 JDGui.help(title, msg, icon);
             }

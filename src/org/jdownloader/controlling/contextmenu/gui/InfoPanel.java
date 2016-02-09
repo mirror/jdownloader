@@ -118,7 +118,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         add(label);
 
         add(new JSeparator(), "spanx");
-        add(SwingUtils.toBold(new JLabel(_GUI._.InfoPanel_InfoPanel_properties_())), "spanx");
+        add(SwingUtils.toBold(new JLabel(_GUI.T.InfoPanel_InfoPanel_properties_())), "spanx");
         // MenuItemProperty.HIDE_IF_DISABLED;
         // MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED;
         // MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING;
@@ -141,10 +141,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             }
 
         };
-        name.setHelpText(_GUI._.InfoPanel_InfoPanel_customname_help());
+        name.setHelpText(_GUI.T.InfoPanel_InfoPanel_customname_help());
         iconChange = new ExtButton(new AppAction() {
             {
-                setName(_GUI._.InfoPanel_changeicon());
+                setName(_GUI.T.InfoPanel_changeicon());
             }
 
             @Override
@@ -201,7 +201,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             }
         });
         // icon=new JLabel(9)
-        add(namelabel = label(_GUI._.InfoPanel_InfoPanel_itemname()));
+        add(namelabel = label(_GUI.T.InfoPanel_InfoPanel_itemname()));
         add(name, "newline");
         add(nameReset = new JButton(new AppAction() {
             {
@@ -269,7 +269,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
         }), "width 22!,height 22!");
         shortcut = new ExtTextField();
-        shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp2());
+        shortcut.setHelpText(_GUI.T.InfoPanel_InfoPanel_shortcuthelp2());
         shortcut.setEditable(false);
         shortcut.addKeyListener(new KeyListener() {
 
@@ -294,7 +294,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
         });
         if (managerFrame.getManager().isAcceleratorsEnabled()) {
-            add(shortcutLabel = label(_GUI._.InfoPanel_InfoPanel_shortcuts()), "hidemode 3");
+            add(shortcutLabel = label(_GUI.T.InfoPanel_InfoPanel_shortcuts()), "hidemode 3");
             add(shortcut, "newline,hidemode 3");
             add(shortCutReset = new JButton(new AppAction() {
                 {
@@ -317,7 +317,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             }), "width 22!,height 22!,hidemode 3");
         }
 
-        add(label(_GUI._.InfoPanel_InfoPanel_hidden_2()));
+        add(label(_GUI.T.InfoPanel_InfoPanel_hidden_2()));
         add(visibleBox, "spanx");
 
         add(new JSeparator(), "spanx");
@@ -391,8 +391,8 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 } else {
                     resetIconKey = ret.getIconKey();
                 }
-                iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetIconKey));
-                nameReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetName));
+                iconKeyReset.setToolTipText(_GUI.T.ManagerFrame_layoutPanel_resettodefault_parametered(resetIconKey));
+                nameReset.setToolTipText(_GUI.T.ManagerFrame_layoutPanel_resettodefault_parametered(resetName));
 
                 if (shortCutReset != null) {
                     if (StringUtils.equals(value.getShortcut(), ret.getValue(Action.ACCELERATOR_KEY) + "")) {
@@ -400,7 +400,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     } else {
                         resetShortcut = ret.getValue(Action.ACCELERATOR_KEY) + "";
                     }
-                    shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetShortcut));
+                    shortCutReset.setToolTipText(_GUI.T.ManagerFrame_layoutPanel_resettodefault_parametered(resetShortcut));
                 }
 
             } catch (Throwable e) {
@@ -544,17 +544,17 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
         if (mid instanceof MenuContainer) {
 
-            type = _GUI._.InfoPanel_update_submenu();
+            type = _GUI.T.InfoPanel_update_submenu();
 
             // label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(, ));
 
         } else if (mid instanceof SeparatorData) {
 
-            name = _GUI._.Renderer_getTreeCellRendererComponent_separator();
+            name = _GUI.T.Renderer_getTreeCellRendererComponent_separator();
 
         } else {
             if (mid instanceof MenuLink) {
-                type = _GUI._.InfoPanel_update_link();
+                type = _GUI.T.InfoPanel_update_link();
 
             } else {
                 if (mid._isValidated()) {
@@ -564,7 +564,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                         if (StringUtils.isEmpty(name)) {
                             name = action.getName();
                         }
-                        type = _GUI._.InfoPanel_update_action();
+                        type = _GUI.T.InfoPanel_update_action();
                         if (icon == null) {
                             icon = action.getSmallIcon();
                         }
@@ -599,7 +599,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
         }
         if (StringUtils.isNotEmpty(type)) {
-            label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(name, type));
+            label.setText(_GUI.T.InfoPanel_updateInfo_header_actionlabel(name, type));
         } else {
             label.setText(name);
         }

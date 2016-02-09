@@ -50,7 +50,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
     private JLabel                             filtered;
 
     public AddLinksProgress(LinkCollectingJob crawljob) {
-        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_AddLinksProgress_(), null, _GUI._.literally_hide(), _GUI._.literally_abort());
+        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.AddLinksProgress_AddLinksProgress_(), null, _GUI.T.literally_hide(), _GUI.T.literally_abort());
         setLocator(new RememberRelativeDialogLocator("AddLinksProgress", JDGui.getInstance().getMainFrame()));
         this.job = crawljob;
     }
@@ -86,16 +86,16 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         p.add(header = new JLabel(), "spanx");
         SwingUtils.toBold(header);
         String stz = getSearchInText();
-        header.setText(_GUI._.AddLinksProgress_layoutDialogContent_header_(stz.substring(0, Math.min(45, stz.length()))));
-        p.add(label(_GUI._.AddLinksProgress_layoutDialogContent_duration()));
+        header.setText(_GUI.T.AddLinksProgress_layoutDialogContent_header_(stz.substring(0, Math.min(45, stz.length()))));
+        p.add(label(_GUI.T.AddLinksProgress_layoutDialogContent_duration()));
 
         p.add(duration = new JLabel(), "width 50:n:n,growx");
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
-        p.add(label(_GUI._.AddLinksProgress_found()));
+        p.add(label(_GUI.T.AddLinksProgress_found()));
         p.add(old = new JLabel());
         JLabel lbl;
         p.add(lbl = new JLabel(new AbstractIcon(IconKey.ICON_FILTER, 18)));
-        lbl.setToolTipText(_GUI._.AddLinksProgress_filter());
+        lbl.setToolTipText(_GUI.T.AddLinksProgress_filter());
         p.add(filtered = new JLabel(), "alignx right,sg 1");
 
         startTime = System.currentTimeMillis();
@@ -152,7 +152,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                     IconedProcessIndicator iconComp = JDGui.getInstance().getStatusBar().getLinkGrabberIndicator();
                     Point loc = iconComp.getLocationOnScreen();
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
+                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.AddLinksProgress_setReturnmask_title_(), _GUI.T.AddLinksProgress_setReturnmask_msg_(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
                     }
 
                 }

@@ -6,11 +6,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public enum Priority {
-    HIGHEST(3, _GUI._.gui_treetable_tooltip_priority3()),
-    HIGHER(2, _GUI._.gui_treetable_tooltip_priority2()),
-    HIGH(1, _GUI._.gui_treetable_tooltip_priority1()),
-    DEFAULT(0, _GUI._.gui_treetable_tooltip_priority0()),
-    LOWER(-1, _GUI._.gui_treetable_tooltip_priority_1());
+    HIGHEST(3, _GUI.T.gui_treetable_tooltip_priority3()),
+    HIGHER(2, _GUI.T.gui_treetable_tooltip_priority2()),
+    HIGH(1, _GUI.T.gui_treetable_tooltip_priority1()),
+    DEFAULT(0, _GUI.T.gui_treetable_tooltip_priority0()),
+    LOWER(-1, _GUI.T.gui_treetable_tooltip_priority_1());
 
     private int id;
 

@@ -27,7 +27,7 @@ public enum FileType {
 
         @Override
         public String getLabel() {
-            return _GUI._.ConditionDialog_getLabel_customtype_();
+            return _GUI.T.ConditionDialog_getLabel_customtype_();
         }
     };
     ;

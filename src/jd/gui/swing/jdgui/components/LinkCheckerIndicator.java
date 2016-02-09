@@ -28,13 +28,13 @@ public class LinkCheckerIndicator extends IconedProcessIndicator implements Link
         super(new AbstractIcon(IconKey.ICON_SEARCH, 16));
         this.linkChecker = linkChecker;
         this.statusBar = statusBar;
-        setTitle(_GUI._.StatusBarImpl_initGUI_linkchecker());
-        setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
+        setTitle(_GUI.T.StatusBarImpl_initGUI_linkchecker());
+        setDescription(_GUI.T.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
         LinkChecker.getEventSender().addListener(this, true);
         setEnabled(true);
         if (linkChecker.isRunning()) {
             setIndeterminate(true);
-            setDescription(_GUI._.StatusBarImpl_initGUI_linkchecker_left());
+            setDescription(_GUI.T.StatusBarImpl_initGUI_linkchecker_left());
             statusBar.addProcessIndicator(this);
         }
     }
@@ -68,7 +68,7 @@ public class LinkCheckerIndicator extends IconedProcessIndicator implements Link
 
                 {
                     this.setIconKey(IconKey.ICON_CANCEL);
-                    this.setName(_GUI._.StatusBarImpl_initGUI_abort_linkchecker());
+                    this.setName(_GUI.T.StatusBarImpl_initGUI_abort_linkchecker());
                     this.setEnabled(linkChecker.isRunning());
                 }
 

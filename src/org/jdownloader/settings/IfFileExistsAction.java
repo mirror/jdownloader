@@ -8,7 +8,7 @@ public enum IfFileExistsAction implements LabelInterface {
 
         @Override
         public String getLabel() {
-            return _GUI._.overwrite();
+            return _GUI.T.overwrite();
         }
 
     },
@@ -16,7 +16,7 @@ public enum IfFileExistsAction implements LabelInterface {
 
         @Override
         public String getLabel() {
-            return _GUI._.skip_file();
+            return _GUI.T.skip_file();
         }
 
     },
@@ -24,7 +24,7 @@ public enum IfFileExistsAction implements LabelInterface {
 
         @Override
         public String getLabel() {
-            return _GUI._.auto_rename();
+            return _GUI.T.auto_rename();
         }
 
     },
@@ -32,7 +32,7 @@ public enum IfFileExistsAction implements LabelInterface {
 
         @Override
         public String getLabel() {
-            return _GUI._.ask();
+            return _GUI.T.ask();
         }
 
     }

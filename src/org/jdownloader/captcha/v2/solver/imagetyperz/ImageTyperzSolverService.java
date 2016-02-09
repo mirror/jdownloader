@@ -50,7 +50,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
 
     @Override
     public String getType() {
-        return _GUI._.CaptchaSolver_Type_paid_online();
+        return _GUI.T.CaptchaSolver_Type_paid_online();
     }
 
     @Override
@@ -72,11 +72,11 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
 
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_IMAGE_TYPERZ, 32));
-                addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_paid_service());
+                addDescription(_GUI.T.AntiCaptchaConfigPanel_onShow_description_paid_service());
 
                 add(new SettingsButton(new AppAction() {
                     {
-                        setName(_GUI._.lit_open_website());
+                        setName(_GUI.T.lit_open_website());
 
                     }
 
@@ -89,14 +89,14 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
                 username = new TextInput(CFG_IMAGE_TYPERZ.USER_NAME);
                 password = new PasswordInput(CFG_IMAGE_TYPERZ.PASSWORD);
 
-                this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
+                this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
-                this.addDescriptionPlain(_GUI._.captchasolver_configpanel_my_account_description(ImageTyperzSolverService.this.getName()));
-                addPair(_GUI._.captchasolver_configpanel_enabled(ImageTyperzSolverService.this.getName()), null, new Checkbox(CFG_IMAGE_TYPERZ.ENABLED, username, password));
-                addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, username);
-                addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, password);
+                this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(ImageTyperzSolverService.this.getName()));
+                addPair(_GUI.T.captchasolver_configpanel_enabled(ImageTyperzSolverService.this.getName()), null, new Checkbox(CFG_IMAGE_TYPERZ.ENABLED, username, password));
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_password(), null, password);
 
-                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_IMAGE_TYPERZ.FEED_BACK_SENDING_ENABLED));
+                addPair(_GUI.T.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_IMAGE_TYPERZ.FEED_BACK_SENDING_ENABLED));
 
                 addBlackWhiteList(CFG_IMAGE_TYPERZ.CFG);
 
@@ -132,7 +132,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
 
     @Override
     public String getName() {
-        return _GUI._.ImageTyperzSolver_gettypeName_();
+        return _GUI.T.ImageTyperzSolver_gettypeName_();
     }
 
     @Override

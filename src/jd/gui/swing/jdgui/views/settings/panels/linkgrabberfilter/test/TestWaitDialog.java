@@ -59,7 +59,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
     private PackagizerController        packagizer;
 
     public TestWaitDialog(String string, String title, LinkFilterController controller) {
-        super(UIOManager.BUTTONS_HIDE_OK, title, null, null, _GUI._.literally_close());
+        super(UIOManager.BUTTONS_HIDE_OK, title, null, null, _GUI.T.literally_close());
         this.url = string;
         linkFilterController = controller;
         delayer = new DelayedRunnable(200, 1000) {
@@ -77,7 +77,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
     }
 
     public TestWaitDialog(String string, LinkFilterController controller) {
-        this(string, _GUI._.TestWaitDialog_TestWaitDialog_title_(), controller);
+        this(string, _GUI.T.TestWaitDialog_TestWaitDialog_title_(), controller);
     }
 
     @Override
@@ -155,9 +155,9 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
             protected void runInEDT() {
                 if (lbl != null) {
                     if (found.size() == 0) {
-                        lbl.setText(_GUI._.TestWaitDialog_runInEDTnothing_found());
+                        lbl.setText(_GUI.T.TestWaitDialog_runInEDTnothing_found());
                     } else {
-                        lbl.setText(_GUI._.TestWaitDialog_runInEDT_(filtered, found.size(), ((filtered * 10000) / found.size()) / 100d));
+                        lbl.setText(_GUI.T.TestWaitDialog_runInEDT_(filtered, found.size(), ((filtered * 10000) / found.size()) / 100d));
                     }
                 }
                 // synchronized (found) {
@@ -192,10 +192,10 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
         p.add(progress, "height 40!,width 40!,spany 2");
-        p.add(label(_GUI._.TestWaitDialog_layoutDialogContent_testlink_()), "");
+        p.add(label(_GUI.T.TestWaitDialog_layoutDialogContent_testlink_()), "");
         p.add(new JLabel(url), "");
         if (linkFilterController != null) {
-            p.add(label(_GUI._.TestWaitDialog_layoutDialogContent_filtered()));
+            p.add(label(_GUI.T.TestWaitDialog_layoutDialogContent_filtered()));
             lbl = new JLabel();
             p.add(lbl);
         } else {
@@ -229,7 +229,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
                         @Override
                         protected void runInEDT() {
                             progress.setIndeterminate(false);
-                            setTitle(_GUI._.TestWaitDialog_TestWaitDialog_title_finished());
+                            setTitle(_GUI.T.TestWaitDialog_TestWaitDialog_title_finished());
                         }
                     };
                 }

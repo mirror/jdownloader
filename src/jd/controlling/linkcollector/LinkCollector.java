@@ -947,7 +947,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
         lpermanentofflinePackage = new CrawledPackage();
         lpermanentofflinePackage.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
-        lpermanentofflinePackage.setName(_GUI._.Permanently_Offline_Package());
+        lpermanentofflinePackage.setName(_GUI.T.Permanently_Offline_Package());
         lpermanentofflinePackage.setType(TYPE.POFFLINE);
         permanentofflinePackage = lpermanentofflinePackage;
         return lpermanentofflinePackage;
@@ -2428,7 +2428,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
                         if (!autoExtensionLearning) {
                             try {
-                                final ConfirmDialog dialog = new ConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                                final ConfirmDialog dialog = new ConfirmDialog(0, _GUI.T.AddLinksAction_actionPerformed_deep_title(), _GUI.T.AddLinksAction_actionPerformed_deep_msg(), null, _GUI.T.literally_yes(), _GUI.T.literall_no());
                                 dialog.show().throwCloseExceptions();
                             } catch (DialogNoAnswerException e) {
                                 e.printStackTrace();

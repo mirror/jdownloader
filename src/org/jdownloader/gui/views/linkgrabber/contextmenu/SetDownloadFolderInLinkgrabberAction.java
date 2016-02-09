@@ -50,7 +50,7 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
         } catch (BadContextException e) {
             // happens if we open the contextmenu in the linkgrabber sidebar.
         }
-        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(cp.getName()));
+        return DownloadFolderChooserDialog.open(path, true, _GUI.T.OpenDownloadFolderAction_actionPerformed_object_(cp.getName()));
     }
 
     @Override

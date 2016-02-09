@@ -51,9 +51,9 @@ public abstract class DataEntry<T> {
         total = new JLabel("-1");
         filtered = new JLabel("-1");
         selected = new JLabel("-1");
-        total.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip1());
-        filtered.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip2());
-        selected.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip3());
+        total.setToolTipText(_GUI.T.DownloadOverview_DownloadOverview_tooltip1());
+        filtered.setToolTipText(_GUI.T.DownloadOverview_DownloadOverview_tooltip2());
+        selected.setToolTipText(_GUI.T.DownloadOverview_DownloadOverview_tooltip3());
         updateVisibility(false);
     }
 

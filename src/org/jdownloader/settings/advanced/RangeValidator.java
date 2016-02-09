@@ -24,7 +24,7 @@ public class RangeValidator extends Validator {
     }
 
     public String toString() {
-        return _GUI._.RangeValidator_toString_object_(min, max);
+        return _GUI.T.RangeValidator_toString_object_(min, max);
     }
 
     public long getMax() {

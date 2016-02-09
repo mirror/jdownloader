@@ -64,7 +64,7 @@ public class CaptchaModeChangeAction extends AbstractToolBarAction implements Ge
 
     @Override
     protected String createTooltip() {
-        return _GUI._.CaptchaMode_createTooltip_();
+        return _GUI.T.CaptchaMode_createTooltip_();
     }
 
 }

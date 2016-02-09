@@ -148,7 +148,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
                             setSelectedObject(editing);
-                            final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T.T.script(getRouterName(editing.getRouterName())), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
+                            final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T.T.script(getRouterName(editing.getRouterName())), new AbstractIcon("reconnect", 32), _GUI.T.lit_close(), null, editing, null, editing.getRouterName()) {
                                 @Override
                                 public String getMessage() {
                                     return T.T.edit_script();
@@ -175,7 +175,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
 
                     private String getRouterName(String routerName) {
                         if (StringUtils.isEmpty(routerName)) {
-                            return _GUI._.unknown_router_name();
+                            return _GUI.T.unknown_router_name();
                         }
                         return routerName;
                     }

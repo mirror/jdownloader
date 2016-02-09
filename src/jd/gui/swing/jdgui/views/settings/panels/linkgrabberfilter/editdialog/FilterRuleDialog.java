@@ -33,7 +33,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     public FilterRuleDialog(LinkgrabberFilterRule filterRule) {
         super();
         this.rule = filterRule;
-        setTitle(_GUI._.FilterRuleDialog_FilterRuleDialog_title_());
+        setTitle(_GUI.T.FilterRuleDialog_FilterRuleDialog_title_());
         setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName()));
         setDimensor(new RememberLastDialogDimension(getClass().getSimpleName()));
     }
@@ -47,7 +47,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
             rule.setEnabled(true);
             lfc.add(rule);
 
-            java.util.List<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI._.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {
+            java.util.List<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI.T.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {
 
                 @Override
                 protected ExtTableModel<CrawledLink> createTableModel() {
@@ -146,7 +146,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     }
 
     protected String getIfText() {
-        return _GUI._.FilterRuleDialog_getIfText_();
+        return _GUI.T.FilterRuleDialog_getIfText_();
     }
 
     @Override
@@ -160,7 +160,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         sp.setBorder(null);
         if (rule.isStaticRule()) {
             okButton.setEnabled(false);
-            okButton.setText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_cannot_modify_());
+            okButton.setText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_cannot_modify_());
             disable(ret);
         }
         return sp;

@@ -187,7 +187,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
             @Override
             protected Void run() throws RuntimeException {
-                DownloadTabActionUtils.deleteLinksRequest(selectionInfo, _GUI._.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_ONLY, evt.isControlDown());
+                DownloadTabActionUtils.deleteLinksRequest(selectionInfo, _GUI.T.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_ONLY, evt.isControlDown());
                 return null;
             }
         });
@@ -230,7 +230,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 }
                 if (getModel().getSortColumn() != null) {
                     if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
-                        HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), new AbstractIcon(IconKey.ICON_SORT, 32));
+                        HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI.T.DownloadsTable_actionPerformed_sortwarner_text(), new AbstractIcon(IconKey.ICON_SORT, 32));
                     }
                 }
 

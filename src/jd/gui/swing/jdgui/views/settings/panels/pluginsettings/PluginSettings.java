@@ -18,7 +18,7 @@ public class PluginSettings extends AbstractConfigPanel {
     private PluginSettingsPanel psp;
 
     public String getTitle() {
-        return _GUI._.PluginSettings_getTitle();
+        return _GUI.T.PluginSettings_getTitle();
     }
 
     public PluginSettings() {

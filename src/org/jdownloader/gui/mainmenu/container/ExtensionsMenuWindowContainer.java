@@ -6,7 +6,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class ExtensionsMenuWindowContainer extends MenuContainer {
     public ExtensionsMenuWindowContainer() {
-        setName(_GUI._.AddonsMenu_updateMenu_windows_());
+        setName(_GUI.T.AddonsMenu_updateMenu_windows_());
         setIconKey(IconKey.ICON_EXTENSION);
 
     }

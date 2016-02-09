@@ -64,8 +64,8 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
         }
     }
 
-    private final static String NAME_UNSKIP = _GUI._.ForceDownloadAction_UnskipDownloadAction();
-    private final static String NAME_SKIP   = _GUI._.ForceDownloadAction_SkipDownloadAction();
+    private final static String NAME_UNSKIP = _GUI.T.ForceDownloadAction_UnskipDownloadAction();
+    private final static String NAME_SKIP   = _GUI.T.ForceDownloadAction_SkipDownloadAction();
     private final static Icon   TRUE_TRUE   = getCheckBoxedIcon("skipped", true, true);
     private final static Icon   FALSE_TRUE  = getCheckBoxedIcon("skipped", false, true);
 
@@ -116,7 +116,7 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
                     }
                     if (count > 0 && DownloadWatchDog.getInstance().getNonResumableBytes(lSelection) > 0) {
                         if (JDGui.bugme(WarnLevel.SEVERE)) {
-                            if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes(selection)), count), new AbstractIcon(IconKey.ICON_SKIPPED, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                            if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes(selection)), count), new AbstractIcon(IconKey.ICON_SKIPPED, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                 return null;
                             }
 

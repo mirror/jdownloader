@@ -217,7 +217,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         this.save();
         if (changes == PropertyType.NEEDS_RESTART) {
             if (!ShutdownController.getInstance().isShutDownRequested()) {
-                int answer = UserIO.getInstance().requestConfirmDialog(0, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
+                int answer = UserIO.getInstance().requestConfirmDialog(0, _GUI.T.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI.T.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, _GUI.T.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
                 if (UserIO.isOK(answer)) {
                     RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                 }

@@ -36,7 +36,7 @@ import org.jdownloader.images.NewTheme;
 public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
 
     public HostColumn() {
-        super(_GUI._.gui_column_host2());
+        super(_GUI.T.gui_column_host2());
 
     }
 
@@ -130,7 +130,7 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
             } else {
                 icon = NewTheme.I().getIcon("proxy_rotate", 16);
             }
-            panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), icon, JLabel.LEADING));
+            panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), icon, JLabel.LEADING));
             SwingUtils.setOpaque(lbl, false);
             lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
             final JLabel finalLbl = lbl;
@@ -163,7 +163,7 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
 
                                 @Override
                                 protected void runInEDT() {
-                                    finalLbl.setText(_GUI._.ConnectionColumn_getStringValue_connection(proxyString + " (" + ip.getIP() + ")"));
+                                    finalLbl.setText(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (" + ip.getIP() + ")"));
                                 }
                             };
                         } catch (IPCheckException e1) {

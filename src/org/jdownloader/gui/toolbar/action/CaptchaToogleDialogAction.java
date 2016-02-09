@@ -17,19 +17,19 @@ public class CaptchaToogleDialogAction extends AbstractToolbarToggleAction {
     @Override
     protected String createTooltip() {
         DialogSolverService service = DialogSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenDisabled() {
         DialogSolverService service = DialogSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenEnabled() {
         DialogSolverService service = DialogSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
     }
 
 }

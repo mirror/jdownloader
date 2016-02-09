@@ -99,7 +99,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     public BrowserCaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, AbstractBrowserChallenge captchaChallenge) {
 
-        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), null, null, null);
+        super(flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), null, null, null);
 
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
@@ -193,7 +193,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
             mi = new JMenuItem(new AppAction() {
                 {
-                    setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_disable_all_downloads_from(getHost()));
+                    setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_disable_all_downloads_from(getHost()));
                     try {
                         setSmallIcon(getDomainInfo().getIcon(16));
                     } catch (final Throwable e) {
@@ -214,7 +214,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
             mi = new JMenuItem(new AppAction() {
                 {
-                    setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_disable_package(getPackageName()));
+                    setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_disable_package(getPackageName()));
                     setSmallIcon(new BadgeIcon(IconKey.ICON_PACKAGE_OPEN, IconKey.ICON_SKIPPED, 16));
                 }
 
@@ -232,7 +232,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             mi = new JMenuItem(new AppAction() {
 
                 {
-                    setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download());
+                    setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download());
                     setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_CLEAR, 16));
                 }
 
@@ -249,7 +249,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
             mi = new JMenuItem(new AppAction() {
                 {
-                    setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads());
+                    setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads());
                     setSmallIcon(new AbstractIcon(IconKey.ICON_STOP, 16));
                 }
 
@@ -268,7 +268,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
             mi = new JMenuItem(new AppAction() {
                 {
-                    setName(_GUI._.AbstractCaptchaDialog_createPopup_cancel_linkgrabbing());
+                    setName(_GUI.T.AbstractCaptchaDialog_createPopup_cancel_linkgrabbing());
                     setSmallIcon(new AbstractIcon(IconKey.ICON_STOP, 16));
                 }
 
@@ -285,7 +285,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
             mi = new JMenuItem(new AppAction() {
                 {
-                    setName(_GUI._.AbstractCaptchaDialog_createPopup_cancel_stop_showing_crawlercaptchs());
+                    setName(_GUI.T.AbstractCaptchaDialog_createPopup_cancel_stop_showing_crawlercaptchs());
                     setSmallIcon(new AbstractIcon(IconKey.ICON_FIND, 16));
                 }
 
@@ -428,13 +428,13 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             private static final long serialVersionUID = -3551320196255605774L;
 
             {
-                setName(_GUI._.CaptchaDialog_getDefaultButtonPanel_premium());
+                setName(_GUI.T.CaptchaDialog_getDefaultButtonPanel_premium());
             }
 
             public void actionPerformed(ActionEvent e) {
                 cancel();
                 StatsManager.I().track("click/captchadialog/hate/" + hosterInfo.getTld());
-                PremiumInfoDialog d = new PremiumInfoDialog(hosterInfo, _GUI._.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "CaptchaDialog");
+                PremiumInfoDialog d = new PremiumInfoDialog(hosterInfo, _GUI.T.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "CaptchaDialog");
                 try {
                     Dialog.getInstance().showDialog(d);
                 } catch (DialogClosedException e1) {
@@ -575,9 +575,9 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             final String headerText;
             if (getFilename() != null) {
                 if (getFilesize() > 0) {
-                    headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header(getFilename(), SizeFormatter.formatBytes(getFilesize()), hosterInfo.getTld()));
+                    headerText = (_GUI.T.CaptchaDialog_layoutDialogContent_header(getFilename(), SizeFormatter.formatBytes(getFilesize()), hosterInfo.getTld()));
                 } else {
-                    headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header2(getFilename(), hosterInfo.getTld()));
+                    headerText = (_GUI.T.CaptchaDialog_layoutDialogContent_header2(getFilename(), hosterInfo.getTld()));
                 }
             } else {
                 headerText = null;
@@ -645,9 +645,9 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // headerPanel.setOpaque(false);
             final String headerText;
             if (getCrawlerStatus() == null) {
-                headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));
+                headerText = (_GUI.T.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));
             } else {
-                headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header_crawler2(getCrawlerStatus(), hosterInfo.getTld()));
+                headerText = (_GUI.T.CaptchaDialog_layoutDialogContent_header_crawler2(getCrawlerStatus(), hosterInfo.getTld()));
 
             }
             // headerPanel.setOpaque(false);
@@ -734,9 +734,9 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         // JLabel lbl = new JLabel("<html>" + _GUI._.BrowserCaptchaDialog_layoutDialogContent_explain_() + "</html>");
         //
         // iconPanel.add(lbl, "spanx,pushx,growx");
-        iconPanel.addDescriptionPlain(_GUI._.BrowserCaptchaDialog_layoutDialogContent_explain_());
-        iconPanel.addPair(_GUI._.BrowserCaptchaDialog_layoutDialogContent_autoclick(), null, new Checkbox(CFG_BROWSER_CAPTCHA_SOLVER.AUTO_CLICK_ENABLED));
-        iconPanel.addPair(_GUI._.BrowserCaptchaDialog_layoutDialogContent_autoopen(), null, new Checkbox(CFG_BROWSER_CAPTCHA_SOLVER.AUTO_OPEN_BROWSER_ENABLED));
+        iconPanel.addDescriptionPlain(_GUI.T.BrowserCaptchaDialog_layoutDialogContent_explain_());
+        iconPanel.addPair(_GUI.T.BrowserCaptchaDialog_layoutDialogContent_autoclick(), null, new Checkbox(CFG_BROWSER_CAPTCHA_SOLVER.AUTO_CLICK_ENABLED));
+        iconPanel.addPair(_GUI.T.BrowserCaptchaDialog_layoutDialogContent_autoopen(), null, new Checkbox(CFG_BROWSER_CAPTCHA_SOLVER.AUTO_OPEN_BROWSER_ENABLED));
 
         SwingUtils.setOpaque(iconPanel, false);
 
@@ -801,7 +801,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     @Override
     public String getOKButtonText() {
 
-        return _GUI._.BrowserCaptchaDialog_getOKButtonText_open_browser();
+        return _GUI.T.BrowserCaptchaDialog_getOKButtonText_open_browser();
     }
 
     private Component key(String str) {

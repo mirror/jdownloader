@@ -198,19 +198,19 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
                 String accountType = null;
                 switch (history.getAccountType()) {
                 case MULTI:
-                    accountType = _GUI._.CandidateAccountColumn_account_multi(account.getType().getLabel());
+                    accountType = _GUI.T.CandidateAccountColumn_account_multi(account.getType().getLabel());
                     break;
                 case NONE:
                     break;
                 case ORIGINAL:
-                    accountType = _GUI._.CandidateAccountColumn_account_original(account.getType().getLabel());
+                    accountType = _GUI.T.CandidateAccountColumn_account_original(account.getType().getLabel());
                     break;
                 }
 
                 if (!StringUtils.isEmpty(accountType)) {
-                    str = _GUI._.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHoster(), accountType);
+                    str = _GUI.T.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHoster(), accountType);
                 } else {
-                    str = _GUI._.CandidateAccountColumn_getStringValue_account(GUIUtils.getAccountName(account.getUser()), account.getHoster());
+                    str = _GUI.T.CandidateAccountColumn_getStringValue_account(GUIUtils.getAccountName(account.getUser()), account.getHoster());
                 }
             } else {
                 if (icon == null) {
@@ -246,7 +246,7 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
     public static final class DateColumn extends ExtDateColumn<HistoryEntry> implements MaxWidthProvider {
         @Override
         protected String getDateFormatString() {
-            return _GUI._.CandidateTooltipTableModel_getDateFormatString_timeformat();
+            return _GUI.T.CandidateTooltipTableModel_getDateFormatString_timeformat();
         }
 
         private int maxWidth;
@@ -321,17 +321,17 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
     @Override
     protected void initColumns() {
         ExtDateColumn<HistoryEntry> sorton;
-        addColumn(sorton = new DateColumn(_GUI._.CandidateTooltipTableModel_time()));
+        addColumn(sorton = new DateColumn(_GUI.T.CandidateTooltipTableModel_time()));
 
-        this.addColumn(new AccountColumn(_GUI._.CandidateTooltipTableModel_account())
-
-                );
-
-        this.addColumn(new GatewayColumn(_GUI._.CandidateTooltipTableModel_gateway())
+        this.addColumn(new AccountColumn(_GUI.T.CandidateTooltipTableModel_account())
 
                 );
 
-        this.addColumn(new ResultColumn(_GUI._.CandidateTooltipTableModel_result())
+        this.addColumn(new GatewayColumn(_GUI.T.CandidateTooltipTableModel_gateway())
+
+                );
+
+        this.addColumn(new ResultColumn(_GUI.T.CandidateTooltipTableModel_result())
 
                 );
 

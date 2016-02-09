@@ -15,7 +15,7 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 public class DurationColumn extends ExtTextColumn<AbstractNode> {
 
     public DurationColumn() {
-        super(_GUI._.DurationColumn_DurationColumn_object_());
+        super(_GUI.T.DurationColumn_DurationColumn_object_());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
     }
 

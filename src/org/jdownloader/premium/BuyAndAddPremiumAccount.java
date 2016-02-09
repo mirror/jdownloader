@@ -42,7 +42,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
     private final PluginClassLoaderChild cl;
 
     public BuyAndAddPremiumAccount(DomainInfo info, String id) {
-        super(0, _GUI._.BuyAndAddPremiumAccount_BuyAndAddPremiumAccount_title_(), null, null, null);
+        super(0, _GUI.T.BuyAndAddPremiumAccount_BuyAndAddPremiumAccount_title_(), null, null, null);
         this.info = info;
         this.id = id;
         cl = PluginClassLoader.getInstance().getChild();
@@ -111,10 +111,10 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
             ret.add(ico);
         }
 
-        ret.add(header(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_get()), "gapleft 15,pushx,growx");
+        ret.add(header(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_get()), "gapleft 15,pushx,growx");
         ExtButton bt = new ExtButton(new OpenURLAction(info, id == null ? "BuyAndAddDialog" : id));
         ret.add(bt, "gapleft 27");
-        ret.add(header(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_enter()), "gapleft 15,pushx,growx");
+        ret.add(header(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_enter()), "gapleft 15,pushx,growx");
         PluginForHost plg;
         try {
             plg = HostPluginController.getInstance().get(info.getTld()).newInstance(cl);

@@ -135,7 +135,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     protected void _init() {
         txtTestUrl = new ExtTextField();
-        txtTestUrl.setHelpText(_GUI._.PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help());
+        txtTestUrl.setHelpText(_GUI.T.PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help());
 
         super._init();
     }
@@ -146,7 +146,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         ret.add(new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_MEDIA_PLAYBACK_START);
-                setTooltipText(_GUI._.LinkgrabberFilter_LinkgrabberFilter_test_());
+                setTooltipText(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_test_());
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -390,7 +390,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public ConditionDialog() {
-        super(0, _GUI._.FilterRuleDialog_FilterRuleDialog_(""), null, _GUI._.literally_save(), null);
+        super(0, _GUI.T.FilterRuleDialog_FilterRuleDialog_(""), null, _GUI.T.literally_save(), null);
 
     }
 
@@ -426,7 +426,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbRegSource = createToggle();
 
         panel = new MigPanel("ins 5,wrap 6", "[][][fill][][][grow,fill]", "[]");
-        panel.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_name()), "spanx,growx,pushx");
+        panel.add(createHeader(_GUI.T.FilterRuleDialog_layoutDialogContent_name()), "spanx,growx,pushx");
 
         txtName = new ExtTextField() {
 
@@ -437,16 +437,16 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void onChanged() {
-                getDialog().setTitle(_GUI._.FilterRuleDialog_FilterRuleDialog_(txtName.getText()));
+                getDialog().setTitle(_GUI.T.FilterRuleDialog_FilterRuleDialog_(txtName.getText()));
             }
 
         };
-        txtName.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_name());
+        txtName.setHelpText(_GUI.T.FilterRuleDialog_layoutDialogContent_ht_name());
 
         btnIcon = new JButton(new AppAction() {
             {
                 setSmallIcon(new AbstractIcon(IconKey.ICON_HELP, 16));
-                setTooltipText(_GUI._.ConditionDialog_layoutDialogContent_object_());
+                setTooltipText(_GUI.T.ConditionDialog_layoutDialogContent_object_());
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -506,7 +506,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         addConditionGui(panel);
 
         // dupe
-        cobFlags = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_is_true(), _GUI._.ConditionDialog_layoutDialogContent_online_isnottrue() });
+        cobFlags = new JComboBox(new String[] { _GUI.T.ConditionDialog_layoutDialogContent_is_true(), _GUI.T.ConditionDialog_layoutDialogContent_online_isnottrue() });
 
         cobFlagsOptions = new PseudoMultiCombo<VariousCrawledLinkFlags>(VariousCrawledLinkFlags.values()) {
             protected String getLabel(VariousCrawledLinkFlags sc) {
@@ -524,7 +524,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
 
         panel.add(cbFlags);
-        panel.add(lblFlags = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_variousflags()));
+        panel.add(lblFlags = new JLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_variousflags()));
         panel.add(cobFlags);
         panel.add(cobFlagsOptions, "spanx,pushx,growx");
         MouseAdapter ml = new MouseAdapter() {
@@ -541,13 +541,13 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobFlags.addMouseListener(ml);
         cobFlagsOptions.addMouseListener(ml);
 
-        cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
+        cobFilename = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_contains(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals(), _GUI.T.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtFilename = new ExtTextField() {
 
             @Override
             public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
-                menu.add(new TestAction(getFilenameFilter(), _GUI._.ConditionDialog_getPopupMenu_filename_()));
+                menu.add(new TestAction(getFilenameFilter(), _GUI.T.ConditionDialog_getPopupMenu_filename_()));
                 menu.add(new JSeparator());
                 menu.add(cutAction);
                 menu.add(copyAction);
@@ -558,9 +558,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
 
         };
-        txtFilename.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_filename());
+        txtFilename.setHelpText(_GUI.T.FilterRuleDialog_layoutDialogContent_ht_filename());
 
-        JLabel lblFilename = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_filename());
+        JLabel lblFilename = getLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_filename());
         cbFilename = new ExtCheckBox(cobFilename, txtFilename, cbRegFilename) {
 
             @Override
@@ -593,13 +593,13 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(cbRegFilename, "height 22!,width 22!");
         // package
         cbRegPackage = createToggle();
-        cobPackage = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
+        cobPackage = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_contains(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals(), _GUI.T.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtPackage = new ExtTextField() {
 
             @Override
             public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
-                menu.add(new TestAction(getPackagenameFilter(), _GUI._.ConditionDialog_getPopupMenu_Package_()));
+                menu.add(new TestAction(getPackagenameFilter(), _GUI.T.ConditionDialog_getPopupMenu_Package_()));
                 menu.add(new JSeparator());
                 menu.add(cutAction);
                 menu.add(copyAction);
@@ -610,9 +610,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
 
         };
-        txtPackage.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_Package());
+        txtPackage.setHelpText(_GUI.T.FilterRuleDialog_layoutDialogContent_ht_Package());
 
-        JLabel lblPackage = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_Package());
+        JLabel lblPackage = getLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_Package());
         cbPackage = new ExtCheckBox(cobPackage, txtPackage, cbRegPackage) {
 
             @Override
@@ -629,7 +629,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
                 if (cbPackage.isSelected()) {
                     cbPackage.removeChangeListener(this);
-                    JDGui.help(_GUI._.ConditionDialog_help_packagecondition_title(), _GUI._.ConditionDialog_help_packagecondition_msg(), NewTheme.I().getIcon(IconKey.ICON_PACKAGE_OPEN, 32));
+                    JDGui.help(_GUI.T.ConditionDialog_help_packagecondition_title(), _GUI.T.ConditionDialog_help_packagecondition_msg(), NewTheme.I().getIcon(IconKey.ICON_PACKAGE_OPEN, 32));
                 }
             }
         });
@@ -653,9 +653,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         //
 
         size = createSizeFilter();
-        cobSize = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_is_between(), _GUI._.FilterRuleDialog_layoutDialogContent_is_not_between() });
+        cobSize = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_is_between(), _GUI.T.FilterRuleDialog_layoutDialogContent_is_not_between() });
 
-        JLabel lblSize = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_size());
+        JLabel lblSize = getLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_size());
         cbSize = new ExtCheckBox(size, cobSize) {
 
             @Override
@@ -685,9 +685,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         java.util.List<JComponent> comp = new ArrayList<JComponent>();
 
-        JLabel lblType = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_type());
+        JLabel lblType = getLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_type());
 
-        cobType = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_is_type(), _GUI._.FilterRuleDialog_layoutDialogContent_is_not_type() });
+        cobType = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_is_type(), _GUI.T.FilterRuleDialog_layoutDialogContent_is_not_type() });
         cbType = new ExtCheckBox() {
 
             @Override
@@ -747,7 +747,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             @Override
             public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
-                menu.add(new TestAction(getFiletypeFilter(), _GUI._.ConditionDialog_getPopupMenu_filename_()));
+                menu.add(new TestAction(getFiletypeFilter(), _GUI.T.ConditionDialog_getPopupMenu_filename_()));
                 menu.add(new JSeparator());
                 menu.add(cutAction);
                 menu.add(copyAction);
@@ -758,7 +758,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
 
         };
-        txtCustumMime.setHelpText(_GUI._.FilterRuleDialog_createTypeFilter_mime_custom_help());
+        txtCustumMime.setHelpText(_GUI.T.FilterRuleDialog_createTypeFilter_mime_custom_help());
         txtCustumMime.addFocusListener(new FocusListener() {
 
             public void focusLost(FocusEvent e) {
@@ -802,13 +802,13 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         }
         cbType.setDependencies(comp.toArray(new JComponent[] {}));
         // hoster
-        cobHoster = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
+        cobHoster = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_contains(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals(), _GUI.T.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtHoster = new ExtTextField() {
 
             @Override
             public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
-                menu.add(new TestAction(getHosterFilter(), _GUI._.ConditionDialog_getPopupMenu_hosterurl_()));
+                menu.add(new TestAction(getHosterFilter(), _GUI.T.ConditionDialog_getPopupMenu_hosterurl_()));
                 menu.add(new JSeparator());
                 menu.add(cutAction);
                 menu.add(copyAction);
@@ -819,7 +819,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
 
         };
-        txtHoster.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_hoster_help());
+        txtHoster.setHelpText(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_hoster_help());
 
         cbHoster = new ExtCheckBox(cobHoster, txtHoster, cbRegHoster);
         ml = new MouseAdapter() {
@@ -835,19 +835,19 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtHoster.addMouseListener(ml);
         cbRegHoster.addMouseListener(ml);
         panel.add(cbHoster);
-        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_dlurl()));
+        panel.add(new JLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_dlurl()));
         panel.add(cobHoster);
         panel.add(txtHoster, "spanx,pushx,growx,split 2");
         panel.add(cbRegHoster, "width 22!,height 22!");
         // crawler
 
-        cobSource = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
+        cobSource = new JComboBox(new String[] { _GUI.T.FilterRuleDialog_layoutDialogContent_contains(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals(), _GUI.T.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI.T.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtSource = new ExtTextField() {
 
             @Override
             public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
-                menu.add(new TestAction(getSourceFilter(), _GUI._.ConditionDialog_getPopupMenu_sourceurl_()));
+                menu.add(new TestAction(getSourceFilter(), _GUI.T.ConditionDialog_getPopupMenu_sourceurl_()));
                 menu.add(new JSeparator());
                 menu.add(cutAction);
                 menu.add(copyAction);
@@ -859,7 +859,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         };
 
-        txtSource.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source_help());
+        txtSource.setHelpText(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_source_help());
 
         cbSource = new ExtCheckBox(cobSource, txtSource, cbRegSource);
         ml = new MouseAdapter() {
@@ -877,13 +877,13 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobSource.addMouseListener(ml);
         cbRegSource.addMouseListener(ml);
         panel.add(cbSource);
-        panel.add(lblSource = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_sourceurl()));
+        panel.add(lblSource = new JLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_sourceurl()));
         panel.add(cobSource);
         panel.add(txtSource, "spanx,pushx,growx,split 2");
         panel.add(cbRegSource, "width 22!,height 22!");
         // crawlersource
 
-        cobCrawlerSource = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_is_(), _GUI._.ConditionDialog_layoutDialogContent_online_isnot() });
+        cobCrawlerSource = new JComboBox(new String[] { _GUI.T.ConditionDialog_layoutDialogContent_online_is_(), _GUI.T.ConditionDialog_layoutDialogContent_online_isnot() });
 
         cobCrawlerSourceOptions = new PseudoMultiCombo<LinkOrigin>(LinkOrigin.values()) {
             protected String getLabel(LinkOrigin sc) {
@@ -901,7 +901,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
 
         panel.add(cbCrawlerSource);
-        panel.add(lblCrawlerSource = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_crawlersource()));
+        panel.add(lblCrawlerSource = new JLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_crawlersource()));
         panel.add(cobCrawlerSource);
         panel.add(cobCrawlerSourceOptions, "spanx,pushx,growx");
 
@@ -921,8 +921,8 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         // offline
 
-        cobOnline = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_is_(), _GUI._.ConditionDialog_layoutDialogContent_online_isnot() });
-        cobOnlineOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_uncheckable_(), _GUI._.ConditionDialog_layoutDialogContent_online_(), _GUI._.ConditionDialog_layoutDialogContent_offline_() });
+        cobOnline = new JComboBox(new String[] { _GUI.T.ConditionDialog_layoutDialogContent_online_is_(), _GUI.T.ConditionDialog_layoutDialogContent_online_isnot() });
+        cobOnlineOptions = new JComboBox(new String[] { _GUI.T.ConditionDialog_layoutDialogContent_uncheckable_(), _GUI.T.ConditionDialog_layoutDialogContent_online_(), _GUI.T.ConditionDialog_layoutDialogContent_offline_() });
         cbOnline = new ExtCheckBox(cobOnline, cobOnlineOptions) {
 
             @Override
@@ -935,7 +935,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
 
         panel.add(cbOnline);
-        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_online()));
+        panel.add(new JLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_online()));
         panel.add(cobOnline);
         panel.add(cobOnlineOptions, "spanx,pushx,growx");
         ml = new MouseAdapter() {
@@ -953,12 +953,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobOnlineOptions.addMouseListener(ml);
 
         // plugin
-        cobPlugin = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_has_(), _GUI._.ConditionDialog_layoutDialogContent_online_hasnot_() });
-        cobPluginOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_premium(), _GUI._.ConditionDialog_layoutDialogContent_account(), _GUI._.ConditionDialog_layoutDialogContent_captcha(), _GUI._.ConditionDialog_layoutDialogContent_directhttp() });
+        cobPlugin = new JComboBox(new String[] { _GUI.T.ConditionDialog_layoutDialogContent_online_has_(), _GUI.T.ConditionDialog_layoutDialogContent_online_hasnot_() });
+        cobPluginOptions = new JComboBox(new String[] { _GUI.T.ConditionDialog_layoutDialogContent_premium(), _GUI.T.ConditionDialog_layoutDialogContent_account(), _GUI.T.ConditionDialog_layoutDialogContent_captcha(), _GUI.T.ConditionDialog_layoutDialogContent_directhttp() });
         cbPlugin = new ExtCheckBox(cobPlugin, cobPluginOptions);
 
         panel.add(cbPlugin);
-        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_plugin()));
+        panel.add(new JLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_plugin()));
         panel.add(cobPlugin);
         panel.add(cobPluginOptions, "spanx,pushx,growx");
         ml = new MouseAdapter() {
@@ -984,7 +984,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     protected JToggleButton createToggle() {
         JToggleButton ret = new JToggleButton(new AppAction() {
             {
-                setTooltipText(_GUI._.ConditionDialog_layoutDialogContent_regex_tooltip_());
+                setTooltipText(_GUI.T.ConditionDialog_layoutDialogContent_regex_tooltip_());
 
             }
 
@@ -1067,7 +1067,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
         }
         if (!ok) {
-            Dialog.getInstance().showErrorDialog(_GUI._.ConditionDialog_validate_object_());
+            Dialog.getInstance().showErrorDialog(_GUI.T.ConditionDialog_validate_object_());
             return false;
         }
         return true;
@@ -1095,7 +1095,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                         cobOnline.setSelectedIndex(0);
                         cobOnlineOptions.setSelectedIndex(1);
                         if (JDGui.bugme(WarnLevel.NORMAL)) {
-                            Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_warning(), _GUI._.ConditionDialog_updateOnline_linkcheck_required());
+                            Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.literally_warning(), _GUI.T.ConditionDialog_updateOnline_linkcheck_required());
                         }
                         return;
                     }
@@ -1111,7 +1111,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     protected String getIfText() {
-        return _GUI._.FilterRuleDialog_layoutDialogContent_if();
+        return _GUI.T.FilterRuleDialog_layoutDialogContent_if();
     }
 
     protected MigPanel createHeader(String string) {

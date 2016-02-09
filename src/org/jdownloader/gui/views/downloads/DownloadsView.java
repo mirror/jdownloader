@@ -25,12 +25,12 @@ public class DownloadsView extends View {
 
     @Override
     public String getTitle() {
-        return _GUI._.jd_gui_swing_jdgui_views_downloadview_tab_title();
+        return _GUI.T.jd_gui_swing_jdgui_views_downloadview_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return _GUI._.jd_gui_swing_jdgui_views_downloadview_tab_tooltip();
+        return _GUI.T.jd_gui_swing_jdgui_views_downloadview_tab_tooltip();
     }
 
     @Override

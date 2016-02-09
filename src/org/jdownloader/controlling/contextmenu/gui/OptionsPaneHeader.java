@@ -7,7 +7,7 @@ import org.jdownloader.images.AbstractIcon;
 public class OptionsPaneHeader extends Header {
 
     public OptionsPaneHeader() {
-        super(_GUI._.ManagerFrame_layoutPanel_info(), new AbstractIcon(IconKey.ICON_EDIT, 16));
+        super(_GUI.T.ManagerFrame_layoutPanel_info(), new AbstractIcon(IconKey.ICON_EDIT, 16));
     }
 
 }

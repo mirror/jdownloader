@@ -594,7 +594,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         if (maxHeap > 0 && maxHeap < (100 * 1024 * 1024)) {
                             new Thread("AskForRestart") {
                                 public void run() {
-                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _GUI._.MEMORY_RESTART_TITLE(), _GUI._.MEMORY_RESTART_MSG(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI._.lit_restart(), null) {
+                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _GUI.T.MEMORY_RESTART_TITLE(), _GUI.T.MEMORY_RESTART_MSG(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart(), null) {
                                         @Override
                                         public ModalityType getModalityType() {
                                             return ModalityType.MODELESS;
@@ -606,7 +606,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                                             ret.add(new ExtButton(new AppAction() {
                                                 {
-                                                    setName(_GUI._.memory_chat());
+                                                    setName(_GUI.T.memory_chat());
                                                 }
 
                                                 @Override
@@ -1821,7 +1821,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     protected void showStatsDialog() {
 
-        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), new AbstractIcon(IconKey.ICON_BUG, 32), _GUI._.JDGui_showStatsDialog_yes_(), _GUI._.JDGui_showStatsDialog_no_());
+        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.JDGui_showStatsDialog_title_(), _GUI.T.JDGui_showStatsDialog_message_(), new AbstractIcon(IconKey.ICON_BUG, 32), _GUI.T.JDGui_showStatsDialog_yes_(), _GUI.T.JDGui_showStatsDialog_no_());
         d.setDoNotShowAgainSelected(true);
         try {
             Dialog.getInstance().showDialog(d);
@@ -1875,7 +1875,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
         if (UpdateController.getInstance().hasPendingUpdates()) {
 
-            pattern = pattern.replaceAll(TITLE_PATTERN_UPDATE, "$1" + _GUI._.JDGui_updateTitle_updates_available2() + "$2");
+            pattern = pattern.replaceAll(TITLE_PATTERN_UPDATE, "$1" + _GUI.T.JDGui_updateTitle_updates_available2() + "$2");
 
         } else {
 

@@ -70,15 +70,15 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         // , _GUI._.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
         MigPanel east = new MigPanel("ins 0 0 0 0,wrap 2", "[fill][grow,fill]", "[]");
         east.setOpaque(false);
-        east.add(timeoutLbl = new JLabel(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(timeoutms, 0), solver.getService().getName())), "hidemode 3,spanx");
+        east.add(timeoutLbl = new JLabel(_GUI.T.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(timeoutms, 0), solver.getService().getName())), "hidemode 3,spanx");
         timeoutLbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
         SwingUtils.toBold(timeoutLbl);
 
-        east.add(durationLbl = createHeaderLabel((_GUI._.ReconnectDialog_layoutDialogContent_duration())), "hidemode 3");
+        east.add(durationLbl = createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_duration())), "hidemode 3");
         east.add(duration = new JLabel(""), "hidemode 3");
-        east.add(creditsLabel = createHeaderLabel((_GUI._.CESBubbleContent_CESBubbleContent_credits())), "hidemode 3");
+        east.add(creditsLabel = createHeaderLabel((_GUI.T.CESBubbleContent_CESBubbleContent_credits())), "hidemode 3");
         east.add(credits = new JLabel(""), "hidemode 3");
-        east.add(statusLbl = createHeaderLabel((_GUI._.CESBubbleContent_CESBubbleContent_status())), "hidemode 3");
+        east.add(statusLbl = createHeaderLabel((_GUI.T.CESBubbleContent_CESBubbleContent_status())), "hidemode 3");
 
         east.add(status = new JLabel(""), "hidemode 3");
         add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,aligny top");
@@ -134,7 +134,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         });
         add(button = new ExtButton(new AppAction() {
             {
-                setName(_GUI._.lit_cancel());
+                setName(_GUI.T.lit_cancel());
             }
 
             @Override
@@ -190,7 +190,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
 
     public void updateTimer(final long rest) {
         update();
-        timeoutLbl.setText(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(rest, 0), solver.getService().getName()));
+        timeoutLbl.setText(_GUI.T.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(rest, 0), solver.getService().getName()));
         button.setVisible(true);
         timeoutLbl.setVisible(rest > 0);
         durationLbl.setVisible(rest <= 0);

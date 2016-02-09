@@ -238,7 +238,7 @@ public class QuickFilterTypeTable extends FilterTable {
 
                             @Override
                             public String getDesc() {
-                                return _GUI._.settings_linkgrabber_filter_others();
+                                return _GUI.T.settings_linkgrabber_filter_others();
                             }
 
                             @Override

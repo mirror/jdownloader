@@ -55,7 +55,7 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
     @Override
     protected void initColumns() {
 
-        addColumn(new ExtTextColumn<SolverService>(_GUI._.SolverOrderTableModel_initColumns_service()) {
+        addColumn(new ExtTextColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_service()) {
 
             @Override
             public boolean isSortable(final SolverService obj) {
@@ -83,7 +83,7 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
             }
         });
 
-        addColumn(new ExtTextColumn<SolverService>(_GUI._.SolverOrderTableModel_initColumns_type_()) {
+        addColumn(new ExtTextColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_type_()) {
 
             @Override
             public boolean isSortable(final SolverService obj) {
@@ -106,7 +106,7 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
             }
         });
 
-        addColumn(timingColumn = new ExtSpinnerColumn<SolverService>(_GUI._.SolverOrderTableModel_initColumns_startafter()) {
+        addColumn(timingColumn = new ExtSpinnerColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_startafter()) {
             @Override
             public boolean isHidable() {
                 return false;
@@ -160,10 +160,10 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
                         if (next == null) {
 
                         } else {
-                            sb.append(_GUI._.TimingTableModel_initColumns_waitloop_print(entry.getName(), TimeFormatter.formatMilliSeconds(entry.getWaitForByID(next.getID()), 0), next.getName())).append("\r\n");
+                            sb.append(_GUI.T.TimingTableModel_initColumns_waitloop_print(entry.getName(), TimeFormatter.formatMilliSeconds(entry.getWaitForByID(next.getID()), 0), next.getName())).append("\r\n");
                         }
                     }
-                    Dialog.getInstance().showErrorDialog(0, _GUI._.TimingTableModel_initColumns_waitloop_title(), _GUI._.TimingTableModel_initColumns_waitloop_warning(sb.toString()));
+                    Dialog.getInstance().showErrorDialog(0, _GUI.T.TimingTableModel_initColumns_waitloop_title(), _GUI.T.TimingTableModel_initColumns_waitloop_warning(sb.toString()));
                     mySolver.setWaitFor(object.getID(), 0);
                 }
                 refreshSort();
@@ -190,7 +190,7 @@ public class TimingTableModel extends ExtTableModel<SolverService> {
     public AbstractAction getResetAction() {
         return new AppAction() {
             {
-                setName(_GUI._.lit_reset());
+                setName(_GUI.T.lit_reset());
                 setIconKey(IconKey.ICON_RESET);
             }
 

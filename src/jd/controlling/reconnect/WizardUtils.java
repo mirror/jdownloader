@@ -27,10 +27,10 @@ public class WizardUtils {
         try {
             if (RouterUtils.isWindowsModemConnection()) {
                 final boolean[] modemChoose = new boolean[] { false };
-                final ConfirmDialog d = new ConfirmDialog(0, _GUI._.literally_warning(), _GUI._.AutoSetupAction_actionPerformed_modem(), new AbstractIcon(IconKey.ICON_MODEM, 32), _GUI._.AutoSetupAction_actionPerformed_dont_know(), _GUI._.AutoSetupAction_actionPerformed_router());
+                final ConfirmDialog d = new ConfirmDialog(0, _GUI.T.literally_warning(), _GUI.T.AutoSetupAction_actionPerformed_modem(), new AbstractIcon(IconKey.ICON_MODEM, 32), _GUI.T.AutoSetupAction_actionPerformed_dont_know(), _GUI.T.AutoSetupAction_actionPerformed_router());
                 d.setLeftActions(new AbstractAction() {
                     {
-                        putValue(NAME, _GUI._.AutoSetupAction_actionPerformed_choose_modem());
+                        putValue(NAME, _GUI.T.AutoSetupAction_actionPerformed_choose_modem());
                     }
 
                     public void actionPerformed(ActionEvent e) {
@@ -42,7 +42,7 @@ public class WizardUtils {
                     Dialog.getInstance().showDialog(d);
 
                     if (modemChoose[0]) {
-                        Dialog.getInstance().showErrorDialog(_GUI._.AutoSetupAction_actionPerformed_noautoformodem());
+                        Dialog.getInstance().showErrorDialog(_GUI.T.AutoSetupAction_actionPerformed_noautoformodem());
                         CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/reconnect/modem");
                         return true;
                     }
@@ -71,7 +71,7 @@ public class WizardUtils {
                 // ouch. if gateway is not routerIp, we might be in a VPN
                 try {
                     ConfirmDialog cd;
-                    UIOManager.I().show(ConfirmDialogInterface.class, cd = new ConfirmDialog(0, _GUI._.ReconnectPluginController_autoFind_gatewaywarning_t(), _GUI._.ReconnectPluginController_autoFind_gatewaywarning(), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.literally_continue(), null));
+                    UIOManager.I().show(ConfirmDialogInterface.class, cd = new ConfirmDialog(0, _GUI.T.ReconnectPluginController_autoFind_gatewaywarning_t(), _GUI.T.ReconnectPluginController_autoFind_gatewaywarning(), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI.T.literally_continue(), null));
                     cd.throwCloseExceptions();
                 } catch (DialogNoAnswerException e) {
                     return true;

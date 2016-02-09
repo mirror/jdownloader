@@ -27,7 +27,7 @@ public class RemoveAction extends AppAction {
     public RemoveAction(PackagizerFilterTable table) {
         this.table = table;
         this.ignoreSelection = true;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
 
     }
@@ -35,7 +35,7 @@ public class RemoveAction extends AppAction {
     public RemoveAction(PackagizerFilterTable table, java.util.List<PackagizerRule> selected, boolean force) {
         this.table = table;
         this.selected = selected;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
 
     }
@@ -43,7 +43,7 @@ public class RemoveAction extends AppAction {
     protected boolean rly(String msg) {
 
         try {
-            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literall_are_you_sure(), msg, null, null, null);
+            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.literall_are_you_sure(), msg, null, null, null);
             return true;
         } catch (DialogClosedException e) {
             e.printStackTrace();

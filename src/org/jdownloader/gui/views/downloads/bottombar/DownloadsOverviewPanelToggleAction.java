@@ -7,7 +7,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsOverviewPanelToggleAction extends ToggleAppAction {
     public DownloadsOverviewPanelToggleAction() {
-        super(CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE, _GUI._.DownloadsOverviewPanelToggleAction_DownloadsOverviewPanelToggleAction(), _GUI._.DownloadsOverviewPanelToggleAction_DownloadsOverviewPanelToggleAction());
+        super(CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE, _GUI.T.DownloadsOverviewPanelToggleAction_DownloadsOverviewPanelToggleAction(), _GUI.T.DownloadsOverviewPanelToggleAction_DownloadsOverviewPanelToggleAction());
         setIconKey(IconKey.ICON_BOTTOMBAR);
 
     }

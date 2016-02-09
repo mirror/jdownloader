@@ -40,7 +40,7 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
 
     @Override
     public String getType() {
-        return _GUI._.CaptchaAPISolver_getName();
+        return _GUI.T.CaptchaAPISolver_getName();
     }
 
     @Override
@@ -58,10 +58,10 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
 
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
-                addDescription(_GUI._.CaptchaAPIManualRemoteSolverService_getConfigPanel_description());
+                addDescription(_GUI.T.CaptchaAPIManualRemoteSolverService_getConfigPanel_description());
                 SettingsButton openMyJDownloader = new SettingsButton(new AppAction() {
                     {
-                        setName(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
+                        setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
 
                     }
 
@@ -113,7 +113,7 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
 
     @Override
     public String getName() {
-        return _GUI._.CaptchaAPISolver_gettypeName();
+        return _GUI.T.CaptchaAPISolver_gettypeName();
     }
 
     public static final String ID = "myjdremote";

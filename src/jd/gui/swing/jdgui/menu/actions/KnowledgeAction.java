@@ -30,8 +30,8 @@ public class KnowledgeAction extends CustomizableAppAction {
     public KnowledgeAction() {
 
         setIconKey(IconKey.ICON_HELP);
-        setName(_GUI._.action_help());
-        setTooltipText(_GUI._.action_help_tooltip());
+        setName(_GUI.T.action_help());
+        setTooltipText(_GUI.T.action_help_tooltip());
 
     }
 

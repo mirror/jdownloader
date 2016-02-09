@@ -51,11 +51,11 @@ public class LinkgrabberPropertiesHeader extends AbstractPanelHeader implements 
                     if (objectbyRow instanceof CrawledPackage) {
                         final CrawledPackage pkg = (CrawledPackage) objectbyRow;
                         setIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16));
-                        str = (_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
+                        str = (_GUI.T.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
                     } else if (objectbyRow instanceof CrawledLink) {
                         final CrawledLink link = (CrawledLink) objectbyRow;
                         setIcon(link.getLinkInfo().getIcon());
-                        str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
+                        str = (_GUI.T.LinkgrabberPropertiesHeader_update_link(link.getName()));
                     }
                     setText(str);
                 }

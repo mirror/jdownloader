@@ -32,7 +32,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
 
     public SetDownloadFolderAction() {
         super();
-        setName(_GUI._.SetDownloadFolderAction_SetDownloadFolderAction_());
+        setName(_GUI.T.SetDownloadFolderAction_SetDownloadFolderAction_());
         setIconKey(IconKey.ICON_SAVE);
     }
 
@@ -154,7 +154,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     abstract protected Queue getQueue();
 
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
-        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getFirstPackage().getName()));
+        return DownloadFolderChooserDialog.open(path, true, _GUI.T.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getFirstPackage().getName()));
     }
 
     abstract protected void move(PackageType pkg, List<ChildrenType> selectedLinksByPackage);

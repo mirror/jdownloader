@@ -89,7 +89,7 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
             public void mousePressed(MouseEvent e) {
                 setShown();
                 if (doFlash()) {
-                    ConfirmDialog d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.donation_news_title(), _GUI._.donation_news(), new AbstractIcon("robot_info", -1), _GUI._.lit_continue(), null);
+                    ConfirmDialog d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.donation_news_title(), _GUI.T.donation_news(), new AbstractIcon("robot_info", -1), _GUI.T.lit_continue(), null);
                     UIOManager.I().show(ConfirmDialogInterface.class, d);
                 }
                 CFG_GUI.CFG.setDonationNotifyID(ELV_CC);

@@ -120,7 +120,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
         final ExtTextField shortcut = new ExtTextField();
-        shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp2());
+        shortcut.setHelpText(_GUI.T.InfoPanel_InfoPanel_shortcuthelp2());
         shortcut.setEditable(false);
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         try {
@@ -156,7 +156,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
 
         });
 
-        p.add(new JLabel(_GUI._.InfoPanel_InfoPanel_shortcuts()));
+        p.add(new JLabel(_GUI.T.InfoPanel_InfoPanel_shortcuts()));
         p.add(shortcut, "newline");
         JButton shortCutReset;
         p.add(shortCutReset = new JButton(new AppAction() {
@@ -315,7 +315,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
 
     @Override
     public String getName() {
-        return _GUI._.AutoConfirmMenuLink_getName();
+        return _GUI.T.AutoConfirmMenuLink_getName();
     }
 
     // public Priority getPiority() {

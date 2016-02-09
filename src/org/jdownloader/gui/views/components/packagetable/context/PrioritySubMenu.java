@@ -8,7 +8,7 @@ import org.jdownloader.gui.translate._GUI;
 public class PrioritySubMenu extends JMenu {
 
     public PrioritySubMenu() {
-        super(_GUI._.PriorityAction_PriorityAction_());
+        super(_GUI.T.PriorityAction_PriorityAction_());
         setIcon(Priority.HIGHER.loadIcon(18));
 
         //setIconKey(IconKey.ICON_priority");

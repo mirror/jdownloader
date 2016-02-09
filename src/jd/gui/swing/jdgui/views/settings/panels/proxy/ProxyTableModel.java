@@ -77,7 +77,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
     @Override
     protected void initColumns() {
-        this.addColumn(new ExtCheckColumn<AbstractProxySelectorImpl>(_GUI._.gui_column_use(), this) {
+        this.addColumn(new ExtCheckColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_use(), this) {
 
             private static final long serialVersionUID = -4667150369226691276L;
 
@@ -94,7 +94,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                         // defaultProxy
                         setHorizontalAlignment(CENTER);
                         setText(null);
-                        setToolTipText(_GUI._.gui_column_use());
+                        setToolTipText(_GUI.T.gui_column_use());
                         return this;
                     }
                 };
@@ -133,7 +133,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
         });
         addColumn(new OrderColumn());
         DefaultComboBoxModel<AbstractProxySelectorImpl.Type> model = new DefaultComboBoxModel<AbstractProxySelectorImpl.Type>(new AbstractProxySelectorImpl.Type[] { AbstractProxySelectorImpl.Type.HTTP, AbstractProxySelectorImpl.Type.SOCKS5, AbstractProxySelectorImpl.Type.SOCKS4 });
-        this.addColumn(new ExtComboColumn<AbstractProxySelectorImpl, AbstractProxySelectorImpl.Type>(_GUI._.gui_column_proxytype(), model) {
+        this.addColumn(new ExtComboColumn<AbstractProxySelectorImpl, AbstractProxySelectorImpl.Type>(_GUI.T.gui_column_proxytype(), model) {
 
             @Override
             public boolean isEditable(AbstractProxySelectorImpl obj) {
@@ -173,17 +173,17 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             protected String getTooltipText(AbstractProxySelectorImpl obj) {
                 switch (obj.getType()) {
                 case NONE:
-                    return _GUI._.gui_column_proxytype_no_proxy_tt();
+                    return _GUI.T.gui_column_proxytype_no_proxy_tt();
                 case DIRECT:
-                    return _GUI._.gui_column_proxytype_direct_tt();
+                    return _GUI.T.gui_column_proxytype_direct_tt();
                 case HTTP:
-                    return _GUI._.gui_column_proxytype_http_tt();
+                    return _GUI.T.gui_column_proxytype_http_tt();
                 case SOCKS5:
-                    return _GUI._.gui_column_proxytype_socks5_tt();
+                    return _GUI.T.gui_column_proxytype_socks5_tt();
                 case SOCKS4:
-                    return _GUI._.gui_column_proxytype_socks4_tt();
+                    return _GUI.T.gui_column_proxytype_socks4_tt();
                 case PAC:
-                    return _GUI._.gui_column_proxytype_pac_tt();
+                    return _GUI.T.gui_column_proxytype_pac_tt();
                 default:
                     throw new RuntimeException("Unknown Proxy Type");
                 }
@@ -193,17 +193,17 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             protected String modelItemToString(AbstractProxySelectorImpl.Type selectedItem) {
                 switch (selectedItem) {
                 case DIRECT:
-                    return _GUI._.gui_column_proxytype_direct();
+                    return _GUI.T.gui_column_proxytype_direct();
                 case HTTP:
-                    return _GUI._.gui_column_proxytype_http();
+                    return _GUI.T.gui_column_proxytype_http();
                 case NONE:
-                    return _GUI._.gui_column_proxytype_no_proxy();
+                    return _GUI.T.gui_column_proxytype_no_proxy();
                 case SOCKS4:
-                    return _GUI._.gui_column_proxytype_socks4();
+                    return _GUI.T.gui_column_proxytype_socks4();
                 case SOCKS5:
-                    return _GUI._.gui_column_proxytype_socks5();
+                    return _GUI.T.gui_column_proxytype_socks5();
                 case PAC:
-                    return _GUI._.gui_column_proxytype_pac();
+                    return _GUI.T.gui_column_proxytype_pac();
                 }
                 return null;
 
@@ -237,7 +237,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
         });
 
         this.addColumn(new HostColumn());
-        this.addColumn(new ExtTextColumn<AbstractProxySelectorImpl>(_GUI._.gui_column_user(), this) {
+        this.addColumn(new ExtTextColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_user(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 
@@ -282,7 +282,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
 
         });
-        this.addColumn(new ExtPasswordEditorColumn<AbstractProxySelectorImpl>(_GUI._.gui_column_pass(), this) {
+        this.addColumn(new ExtPasswordEditorColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_pass(), this) {
 
             private static final long serialVersionUID = -7209180150340921804L;
 
@@ -331,7 +331,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
 
         });
-        this.addColumn(new ExtSpinnerColumn<AbstractProxySelectorImpl>(_GUI._.gui_column_port()) {
+        this.addColumn(new ExtSpinnerColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_port()) {
 
             /**
              *
@@ -392,7 +392,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
         });
 
-        this.addColumn(new ExtCheckColumn<AbstractProxySelectorImpl>(_GUI._.gui_column_nativeauth(), this) {
+        this.addColumn(new ExtCheckColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_nativeauth(), this) {
 
             private static final long serialVersionUID = -4667150369226691276L;
 
@@ -437,7 +437,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
         });
 
-        this.addColumn(new ExtComponentColumn<AbstractProxySelectorImpl>(_GUI._.lit_filter()) {
+        this.addColumn(new ExtComponentColumn<AbstractProxySelectorImpl>(_GUI.T.lit_filter()) {
             private JButton                   editorBtn;
             private JButton                   rendererBtn;
             private AbstractProxySelectorImpl editing;
@@ -528,9 +528,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     entries = value.getFilter().size();
                 }
                 if ((value.getFilter() == null || value.getFilter().getType() == FilterList.Type.BLACKLIST)) {
-                    editorBtn.setText(_GUI._.proxytable_edit_btn_blacklist(entries));
+                    editorBtn.setText(_GUI.T.proxytable_edit_btn_blacklist(entries));
                 } else {
-                    editorBtn.setText(_GUI._.proxytable_edit_btn_whitelist(entries));
+                    editorBtn.setText(_GUI.T.proxytable_edit_btn_whitelist(entries));
                 }
             }
 
@@ -541,9 +541,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     entries = value.getFilter().size();
                 }
                 if ((value.getFilter() == null || value.getFilter().getType() == FilterList.Type.BLACKLIST)) {
-                    rendererBtn.setText(_GUI._.proxytable_edit_btn_blacklist(entries));
+                    rendererBtn.setText(_GUI.T.proxytable_edit_btn_blacklist(entries));
                 } else {
-                    rendererBtn.setText(_GUI._.proxytable_edit_btn_whitelist(entries));
+                    rendererBtn.setText(_GUI.T.proxytable_edit_btn_whitelist(entries));
                 }
             }
 
@@ -557,7 +557,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
         });
 
-        this.addColumn(new ExtComponentColumn<AbstractProxySelectorImpl>(_GUI._.lit_problems()) {
+        this.addColumn(new ExtComponentColumn<AbstractProxySelectorImpl>(_GUI.T.lit_problems()) {
             private JButton                   editorBtn;
             private JButton                   rendererBtn;
             private AbstractProxySelectorImpl editing;
@@ -652,10 +652,10 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                 final List<ConnectionBan> bl = value.getBanList();
                 if (bl == null || bl.size() == 0) {
                     rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 16));
-                    rendererBtn.setText(_GUI._.proxytablemodel_problems(0));
+                    rendererBtn.setText(_GUI.T.proxytablemodel_problems(0));
                 } else {
                     rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 16));
-                    rendererBtn.setText(_GUI._.proxytablemodel_problems(bl.size()));
+                    rendererBtn.setText(_GUI.T.proxytablemodel_problems(bl.size()));
                 }
             }
 
@@ -665,10 +665,10 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                 final List<ConnectionBan> bl = value.getBanList();
                 if (bl == null || bl.size() == 0) {
                     editorBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 16));
-                    editorBtn.setText(_GUI._.proxytablemodel_problems(0));
+                    editorBtn.setText(_GUI.T.proxytablemodel_problems(0));
                 } else {
                     editorBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 16));
-                    editorBtn.setText(_GUI._.proxytablemodel_problems(bl.size()));
+                    editorBtn.setText(_GUI.T.proxytablemodel_problems(bl.size()));
                 }
 
             }
@@ -694,7 +694,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                 }
                 String txt = sb.toString();
                 if (txt == null || txt.length() == 0) {
-                    txt = _GUI._.proxyDetailsDialog_ban_noban();
+                    txt = _GUI.T.proxyDetailsDialog_ban_noban();
                 }
                 this.tooltip.setTipText(txt);
                 return this.tooltip;

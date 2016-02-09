@@ -50,7 +50,7 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
         txt.setWrapStyleWord(true);
         txt.setFocusable(false);
         // txt.setEnabled(false);
-        txt.setText(_GUI._.HosterOrderPanel_HosterOrderPanel_description_());
+        txt.setText(_GUI.T.HosterOrderPanel_HosterOrderPanel_description_());
 
         HosterRuleController.getInstance().getEventSender().addListener(this, true);
 

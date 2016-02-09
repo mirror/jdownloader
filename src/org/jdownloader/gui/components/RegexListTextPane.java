@@ -293,12 +293,12 @@ public class RegexListTextPane extends TextPane implements ToolTipHandler {
     }
 
     public ExtTooltip createFailTooltip(String p) {
-        IconLabelToolTip ret = new IconLabelToolTip(_GUI._.RegexListTextPane_createExtTooltip_bad(p), new AbstractIcon(IconKey.ICON_WARNING, 24));
+        IconLabelToolTip ret = new IconLabelToolTip(_GUI.T.RegexListTextPane_createExtTooltip_bad(p), new AbstractIcon(IconKey.ICON_WARNING, 24));
         return ret;
     }
 
     public ExtTooltip createOkTooltip(String p) {
-        IconLabelToolTip ret = new IconLabelToolTip(_GUI._.RegexListTextPane_createExtTooltip_ok(p), new AbstractIcon(IconKey.ICON_OK, 24));
+        IconLabelToolTip ret = new IconLabelToolTip(_GUI.T.RegexListTextPane_createExtTooltip_ok(p), new AbstractIcon(IconKey.ICON_OK, 24));
         return ret;
     }
 

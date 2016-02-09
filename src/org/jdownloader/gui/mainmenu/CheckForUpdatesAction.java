@@ -11,7 +11,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 public class CheckForUpdatesAction extends CustomizableAppAction {
     public CheckForUpdatesAction() {
         setIconKey(IconKey.ICON_UPDATE);
-        setName(_GUI._.CheckForUpdatesAction_CheckForUpdatesAction());
+        setName(_GUI.T.CheckForUpdatesAction_CheckForUpdatesAction());
     }
 
     @Override

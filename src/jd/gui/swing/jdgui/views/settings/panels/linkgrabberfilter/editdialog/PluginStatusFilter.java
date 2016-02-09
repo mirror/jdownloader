@@ -30,24 +30,24 @@ public class PluginStatusFilter extends Filter implements Storable {
         case IS:
             switch (getPluginStatus()) {
             case PREMIUM:
-                return _GUI._.FilterRule_toString_premium();
+                return _GUI.T.FilterRule_toString_premium();
             case ACCOUNT:
-                return _GUI._.FilterRule_toString_account();
+                return _GUI.T.FilterRule_toString_account();
             case AUTOCAPTCHA:
-                return _GUI._.FilterRule_toString_autocaptcha();
+                return _GUI.T.FilterRule_toString_autocaptcha();
             case NO_DIRECT_HTTP:
-                return _GUI._.FilterRule_toString_directhttp_not();
+                return _GUI.T.FilterRule_toString_directhttp_not();
             }
         case ISNOT:
             switch (getPluginStatus()) {
             case PREMIUM:
-                return _GUI._.FilterRule_toString_premium_not();
+                return _GUI.T.FilterRule_toString_premium_not();
             case ACCOUNT:
-                return _GUI._.FilterRule_toString_account_not();
+                return _GUI.T.FilterRule_toString_account_not();
             case AUTOCAPTCHA:
-                return _GUI._.FilterRule_toString_autocaptcha_not();
+                return _GUI.T.FilterRule_toString_autocaptcha_not();
             case NO_DIRECT_HTTP:
-                return _GUI._.FilterRule_toString_directhttp();
+                return _GUI.T.FilterRule_toString_directhttp();
 
             }
         }

@@ -38,7 +38,7 @@ public class ExtractorToolTip extends PanelToolTip {
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
         empty = new JLabel(T.T.tooltip_empty());
         empty.setForeground(color);
-        JLabel label = new JLabel(_GUI._.ExtractorToolTip_ExtractorToolTip_title(), NewTheme.I().getIcon(IconKey.ICON_EXTRACT, 20), JLabel.LEFT);
+        JLabel label = new JLabel(_GUI.T.ExtractorToolTip_ExtractorToolTip_title(), NewTheme.I().getIcon(IconKey.ICON_EXTRACT, 20), JLabel.LEFT);
         SwingUtils.toBold(label);
         label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
         panel.add(label, "");

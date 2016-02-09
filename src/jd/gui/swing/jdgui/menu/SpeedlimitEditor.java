@@ -47,7 +47,7 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
 
         setOpaque(false);
 
-        lbl = getLbl(_GUI._.SpeedlimitEditor_SpeedlimitEditor_(), new AbstractIcon(IconKey.ICON_SPEED, 18));
+        lbl = getLbl(_GUI.T.SpeedlimitEditor_SpeedlimitEditor_(), new AbstractIcon(IconKey.ICON_SPEED, 18));
         spinner = new SizeSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT) {
             /**
              *
@@ -81,9 +81,9 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
 
             protected String longToText(long longValue) {
                 if (longValue <= 0) {
-                    return _GUI._.SpeedlimitEditor_format(_AWU.T.literally_kibibyte("0"));
+                    return _GUI.T.SpeedlimitEditor_format(_AWU.T.literally_kibibyte("0"));
                 } else {
-                    return _GUI._.SpeedlimitEditor_format(SizeFormatter.formatBytes(longValue));
+                    return _GUI.T.SpeedlimitEditor_format(SizeFormatter.formatBytes(longValue));
                 }
             }
         };

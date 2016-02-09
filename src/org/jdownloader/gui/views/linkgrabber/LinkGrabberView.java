@@ -36,12 +36,12 @@ public class LinkGrabberView extends View {
 
     @Override
     public String getTitle() {
-        return _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title();
+        return _GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title();
     }
 
     @Override
     public String getTooltip() {
-        return _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip();
+        return _GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip();
     }
 
     @Override

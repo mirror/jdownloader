@@ -19,7 +19,7 @@ public class OpenURLAction extends AppAction {
     private final DomainInfo    info;
     private final String        id;
 
-    private final static String NAME             = _GUI._.OpenURLAction_OpenURLAction_();
+    private final static String NAME             = _GUI.T.OpenURLAction_OpenURLAction_();
 
     public OpenURLAction(DomainInfo info, String id) {
         super();

@@ -54,7 +54,7 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
 
     @Override
     public String getName() {
-        return _GUI._.BottomBarMenuManager_getName();
+        return _GUI.T.BottomBarMenuManager_getName();
     }
 
     public MenuContainerRoot createDefaultStructure() {
@@ -100,7 +100,7 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
         mr.add(AddLinksAction.class);
         AddLinksContainer addLinks = new AddLinksContainer();
 
-        addLinks.add(setName(new ActionData(AddLinksAction.class), _GUI._.AddOptionsAction_actionPerformed_addlinks()));
+        addLinks.add(setName(new ActionData(AddLinksAction.class), _GUI.T.AddOptionsAction_actionPerformed_addlinks()));
         addLinks.add(AddContainerAction.class);
 
         addLinks.add((setAccelerator(new MenuItemData(new ActionData(PasteLinksAction.class).putSetup(PasteLinksAction.DEEP_DECRYPT_ENABLED, false)), KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()))));

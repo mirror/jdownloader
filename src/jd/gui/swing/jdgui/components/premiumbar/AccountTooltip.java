@@ -94,7 +94,7 @@ public class AccountTooltip extends PanelToolTip {
         JScrollPane sp;
         String txt = accountCollection.getDomainInfo().getTld();
         if (accountCollection.isMulti()) {
-            txt = _GUI._.AccountTooltip_AccountTooltip_multi(accountCollection.getDomainInfo().getTld());
+            txt = _GUI.T.AccountTooltip_AccountTooltip_multi(accountCollection.getDomainInfo().getTld());
         }
         JLabel label = new JLabel(txt, accountCollection.getDomainInfo().getFavIcon(), JLabel.LEFT);
         SwingUtils.toBold(label);
@@ -106,7 +106,7 @@ public class AccountTooltip extends PanelToolTip {
         if (accountCollection.isMulti()) {
             panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill]"));
 
-            label = new JLabel(_GUI._.AccountTooltip_AccountTooltip_supported_hosters());
+            label = new JLabel(_GUI.T.AccountTooltip_AccountTooltip_supported_hosters());
             SwingUtils.toBold(label);
             label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
             panel.add(label);

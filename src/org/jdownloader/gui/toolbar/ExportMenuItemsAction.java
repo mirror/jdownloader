@@ -26,19 +26,19 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberT
 
 public class ExportMenuItemsAction extends CustomizableAppAction {
     public ExportMenuItemsAction() {
-        setName(_GUI._.ExportMenuItemsAction_ExportMenuItemsAction());
+        setName(_GUI.T.ExportMenuItemsAction_ExportMenuItemsAction());
         setIconKey(IconKey.ICON_EXPORT);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.ExportAllMenusAdvancedAction_actionPerformed(), null, null);
+        ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.ExportAllMenusAdvancedAction_actionPerformed(), null, null);
         d.setFileFilter(new FileFilter() {
 
             @Override
             public String getDescription() {
 
-                return _GUI._.lit_directory();
+                return _GUI.T.lit_directory();
             }
 
             @Override
@@ -79,9 +79,9 @@ public class ExportMenuItemsAction extends CustomizableAppAction {
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         } catch (UnsupportedEncodingException e1) {
-            Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
         } catch (IOException e1) {
-            Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
         }
     }
 

@@ -149,7 +149,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
     @Override
     public String getType() {
-        return _GUI._.Captcha9kwSolver_getName_();
+        return _GUI.T.Captcha9kwSolver_getName_();
     }
 
     @Override
@@ -283,7 +283,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
     @Override
     public String getName() {
-        return _GUI._.Captcha9kwSolver_gettypeName_();
+        return _GUI.T.Captcha9kwSolver_gettypeName_();
     }
 
     @Override

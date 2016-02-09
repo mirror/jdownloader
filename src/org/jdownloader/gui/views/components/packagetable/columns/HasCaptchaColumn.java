@@ -34,7 +34,7 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
     private final Icon        iconYes;
 
     public HasCaptchaColumn() {
-        super(_GUI._.HasCaptchaColumn_HasCaptchaColumn_());
+        super(_GUI.T.HasCaptchaColumn_HasCaptchaColumn_());
         iconYes = new CheckBoxIcon(true, true);
         iconNo = new CheckBoxIcon(false, true);
     }
@@ -53,7 +53,7 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
                 // defaultProxy
                 setHorizontalAlignment(CENTER);
                 setText(null);
-                setToolTipText(_GUI._.HasCaptchaColumn_HasCaptchaColumn_());
+                setToolTipText(_GUI.T.HasCaptchaColumn_HasCaptchaColumn_());
                 return this;
             }
         };
@@ -172,18 +172,18 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             DownloadLink dlink = ((DownloadLink) value);
             if (hasCaptcha(dlink)) {
-                return _GUI._.HasCaptchaColumn_getTooltipText_yes();
+                return _GUI.T.HasCaptchaColumn_getTooltipText_yes();
             } else {
-                return _GUI._.HasCaptchaColumn_getTooltipText_no();
+                return _GUI.T.HasCaptchaColumn_getTooltipText_no();
             }
 
         } else if (value instanceof CrawledLink) {
             DownloadLink dlink = ((CrawledLink) value).getDownloadLink();
 
             if (hasCaptcha(dlink)) {
-                return _GUI._.HasCaptchaColumn_getTooltipText_yes();
+                return _GUI.T.HasCaptchaColumn_getTooltipText_yes();
             } else {
-                return _GUI._.HasCaptchaColumn_getTooltipText_no();
+                return _GUI.T.HasCaptchaColumn_getTooltipText_no();
             }
         }
         return null;

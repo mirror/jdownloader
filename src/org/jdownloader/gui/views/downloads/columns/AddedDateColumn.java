@@ -23,7 +23,7 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
      */
     private static final long serialVersionUID = -8841119846403017974L;
 
-    private final String      bad              = _GUI._.added_date_column_invalid();
+    private final String      bad              = _GUI.T.added_date_column_invalid();
 
     public JPopupMenu createHeaderPopup() {
 
@@ -32,7 +32,7 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
     }
 
     public AddedDateColumn() {
-        super(_GUI._.added_date_column_title());
+        super(_GUI.T.added_date_column_title());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
 
     }
@@ -69,7 +69,7 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
         if (StringUtils.isNotEmpty(custom)) { return custom; }
         DateFormat sd = SimpleDateFormat.getDateTimeInstance();
         if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
-        return _GUI._.added_date_column_dateformat();
+        return _GUI.T.added_date_column_dateformat();
     }
 
     @Override

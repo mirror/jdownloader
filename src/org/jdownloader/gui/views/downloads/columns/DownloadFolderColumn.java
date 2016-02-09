@@ -33,7 +33,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public DownloadFolderColumn() {
-        super(_GUI._.LinkGrabberTableModel_initColumns_folder());
+        super(_GUI.T.LinkGrabberTableModel_initColumns_folder());
         setClickcount(0);
 
         editorField.setBorder(new JTextField().getBorder());

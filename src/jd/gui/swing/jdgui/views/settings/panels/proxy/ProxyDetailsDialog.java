@@ -29,7 +29,7 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
     private ExtTextArea                     input;
 
     public ProxyDetailsDialog(AbstractProxySelectorImpl factory) {
-        super(0, _GUI._.proxyDetailsDialog_filter_title(factory.toString()), null, _GUI._.lit_save(), _GUI._.lit_close());
+        super(0, _GUI.T.proxyDetailsDialog_filter_title(factory.toString()), null, _GUI.T.lit_save(), _GUI.T.lit_close());
         this.factory = factory;
 
     }
@@ -60,8 +60,8 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
     public JComponent layoutDialogContent() {
 
         JPanel content = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[]5[][][grow,fill][][]"));
-        content.add(header(_GUI._.proxyDetailsDialog_white_blacklist()), "gapleft 5,pushx,growx");
-        content.add(new JLabel("<html>" + _GUI._.proxyDetailsDialog_white_blacklist_explain() + "</html>"), "gapleft 24,wmin 10");
+        content.add(header(_GUI.T.proxyDetailsDialog_white_blacklist()), "gapleft 5,pushx,growx");
+        content.add(new JLabel("<html>" + _GUI.T.proxyDetailsDialog_white_blacklist_explain() + "</html>"), "gapleft 24,wmin 10");
 
         combo = new JComboBox<FilterList.Type>(FilterList.Type.values());
         final ListCellRenderer org = combo.getRenderer();
@@ -74,9 +74,9 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
                 }
                 switch (value) {
                 case BLACKLIST:
-                    return org.getListCellRendererComponent(list, _GUI._.proxyDetailsDialog_combo_blacklist(), index, isSelected, cellHasFocus);
+                    return org.getListCellRendererComponent(list, _GUI.T.proxyDetailsDialog_combo_blacklist(), index, isSelected, cellHasFocus);
                 case WHITELIST:
-                    return org.getListCellRendererComponent(list, _GUI._.proxyDetailsDialog_combo_whitelist(), index, isSelected, cellHasFocus);
+                    return org.getListCellRendererComponent(list, _GUI.T.proxyDetailsDialog_combo_whitelist(), index, isSelected, cellHasFocus);
                 }
                 return org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }

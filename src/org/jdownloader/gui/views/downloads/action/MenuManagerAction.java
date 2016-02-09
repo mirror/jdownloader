@@ -11,7 +11,7 @@ public class MenuManagerAction extends CustomizableTableContextAppAction {
 
     public MenuManagerAction() {
         super(true, true);
-        setName(_GUI._.MenuManagerAction_MenuManagerAction());
+        setName(_GUI.T.MenuManagerAction_MenuManagerAction());
         setIconKey(IconKey.ICON_MENU);
     }
 

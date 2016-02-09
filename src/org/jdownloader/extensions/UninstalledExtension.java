@@ -65,14 +65,14 @@ public class UninstalledExtension {
                 addDescription(UninstalledExtension.this.getDescription());
                 progressbar = new JProgressBar();
                 progressbar.setIndeterminate(true);
-                progressbar.setString(_GUI._.UninstalledExtension_getPanel_install_in_progress());
+                progressbar.setString(_GUI.T.UninstalledExtension_getPanel_install_in_progress());
                 progressbar.setVisible(false);
                 progressbar.setMaximum(100);
                 progressbar.setStringPainted(true);
                 install = new ExtButton(new AppAction() {
                     {
                         // UpdateController.getInstance().s
-                        setName(_GUI._.UninstalledExtension_getPanel_());
+                        setName(_GUI.T.UninstalledExtension_getPanel_());
                         setIconKey(IconKey.ICON_DOWNLOAD);
                     }
 
@@ -131,7 +131,7 @@ public class UninstalledExtension {
                                                 if (pending) {
                                                     progressbar.setValue(100);
                                                     progressbar.setMaximum(100);
-                                                    progressbar.setString(_GUI._.UninstalledExtension_waiting_for_restart());
+                                                    progressbar.setString(_GUI.T.UninstalledExtension_waiting_for_restart());
                                                 } else {
                                                     progressbar.setVisible(false);
                                                     install.setVisible(true);
@@ -190,7 +190,7 @@ public class UninstalledExtension {
 
     // @Override
     public String getDescription() {
-        return _GUI._.UninstalledExtension_getDescription_object_(description);
+        return _GUI.T.UninstalledExtension_getDescription_object_(description);
     }
 
 }

@@ -9,11 +9,11 @@ import org.jdownloader.gui.translate._GUI;
 public class AccountGroup {
 
     public static enum Rules {
-        RANDOM(_GUI._.Rules_random()),
+        RANDOM(_GUI.T.Rules_random()),
         // BALANCED IS NOT ACTIVE IN release version yet. when finished, please edit
         // jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog.GroupRuleColumn.getRules()
-        BALANCED("TODO JIAZ: " + _GUI._.Rules_balanced()),
-        ORDER(_GUI._.Rules_order());
+        BALANCED("TODO JIAZ: " + _GUI.T.Rules_balanced()),
+        ORDER(_GUI.T.Rules_order());
         private String translation;
 
         private Rules(String translation) {

@@ -66,7 +66,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public ETAColumn() {
-        super(_GUI._.ETAColumn_ETAColumn());
+        super(_GUI.T.ETAColumn_ETAColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
         this.wait = NewTheme.I().getIcon(IconKey.ICON_WAIT, 16);
         this.ipwait = NewTheme.I().getIcon(IconKey.ICON_AUTO_RECONNECT, 16);
@@ -166,7 +166,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
         ret.add(new JCheckBoxMenuItem(new AppAction() {
             {
-                setName(_GUI._.literall_premium_alert());
+                setName(_GUI.T.literall_premium_alert());
                 setSmallIcon(wait);
                 setSelected(JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertETAColumnEnabled());
             }

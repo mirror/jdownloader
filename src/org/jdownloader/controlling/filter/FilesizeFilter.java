@@ -21,16 +21,16 @@ public class FilesizeFilter extends Filter implements Storable {
         switch (getMatchType()) {
         case BETWEEN:
             if (from == to) {
-                return _GUI._.FilesizeFilter_toString_same(SizeFormatter.formatBytes(from));
+                return _GUI.T.FilesizeFilter_toString_same(SizeFormatter.formatBytes(from));
             } else {
-                return _GUI._.FilesizeFilter_toString_(SizeFormatter.formatBytes(from), SizeFormatter.formatBytes(to));
+                return _GUI.T.FilesizeFilter_toString_(SizeFormatter.formatBytes(from), SizeFormatter.formatBytes(to));
             }
 
         default:
             if (from == to) {
-                return _GUI._.FilesizeFilter_toString_same_not(SizeFormatter.formatBytes(from));
+                return _GUI.T.FilesizeFilter_toString_same_not(SizeFormatter.formatBytes(from));
             } else {
-                return _GUI._.FilesizeFilter_toString_not(SizeFormatter.formatBytes(from), SizeFormatter.formatBytes(to));
+                return _GUI.T.FilesizeFilter_toString_not(SizeFormatter.formatBytes(from), SizeFormatter.formatBytes(to));
             }
         }
 

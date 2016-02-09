@@ -24,7 +24,7 @@ public class CaptchaBubbleSupport extends AbstractBubbleSupport implements Chall
     private ArrayList<Element> elements;
     
     public CaptchaBubbleSupport() {
-        super(_GUI._.plugins_optional_JDLightTray_ballon_captcha2(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_CAPTCHA_IN_BACKGROUND_ENABLED);
+        super(_GUI.T.plugins_optional_JDLightTray_ballon_captcha2(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_CAPTCHA_IN_BACKGROUND_ENABLED);
         ChallengeResponseController.getInstance().getEventSender().addListener(this, true);
     }
     

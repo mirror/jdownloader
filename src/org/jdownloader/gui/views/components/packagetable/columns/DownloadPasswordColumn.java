@@ -20,7 +20,7 @@ public class DownloadPasswordColumn extends ExtTextColumn<AbstractNode> {
     private static final long serialVersionUID = 1L;
 
     public DownloadPasswordColumn() {
-        super(_GUI._.DownloadPasswordColumn_DownloadPasswordColumn_object_());
+        super(_GUI.T.DownloadPasswordColumn_DownloadPasswordColumn_object_());
 
     }
 

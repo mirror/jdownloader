@@ -38,7 +38,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
     protected void onShow() {
         super.onShow();
         AdvancedConfigManager.getInstance().getEventSender().addListener(this);
-        JDGui.help(_GUI._.AdvancedSettings_onShow_title_(), _GUI._.AdvancedSettings_onShow_msg_(), new AbstractIcon(IconKey.ICON_WARNING, 32));
+        JDGui.help(_GUI.T.AdvancedSettings_onShow_title_(), _GUI.T.AdvancedSettings_onShow_msg_(), new AbstractIcon(IconKey.ICON_WARNING, 32));
 
     }
 
@@ -60,7 +60,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
     private DelayedRunnable   delayedRefresh;
 
     public String getTitle() {
-        return _GUI._.gui_settings_advanced_title();
+        return _GUI.T.gui_settings_advanced_title();
     }
 
     public AdvancedSettings() {
@@ -94,7 +94,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
             public void onHelpNotifyHidden(JComponent c) {
             }
-        }, filterHelp = _GUI._.AdvancedSettings_AdvancedSettings_filter_());
+        }, filterHelp = _GUI.T.AdvancedSettings_AdvancedSettings_filter_());
 
         // filterText.setOpaque(false);
         // filterText.putClientProperty("Synthetica.opaque", Boolean.FALSE);

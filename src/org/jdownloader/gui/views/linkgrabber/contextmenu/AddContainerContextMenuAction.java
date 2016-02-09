@@ -16,8 +16,8 @@ public class AddContainerContextMenuAction extends CustomizableTableContextAppAc
     public AddContainerContextMenuAction() {
         super(true, false);
 
-        setName(_GUI._.action_addcontainer());
-        setTooltipText(_GUI._.action_addcontainer_tooltip());
+        setName(_GUI.T.action_addcontainer());
+        setTooltipText(_GUI.T.action_addcontainer_tooltip());
         setIconKey(IconKey.ICON_LOAD);
         setAccelerator(KeyEvent.VK_L);
 

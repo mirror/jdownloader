@@ -80,10 +80,10 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 public class DownloadLink extends Property implements Serializable, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
 
     public static enum AvailableStatus {
-        UNCHECKED(_GUI._.linkgrabber_onlinestatus_unchecked()),
-        FALSE(_GUI._.linkgrabber_onlinestatus_offline()),
-        UNCHECKABLE(_GUI._.linkgrabber_onlinestatus_uncheckable()),
-        TRUE(_GUI._.linkgrabber_onlinestatus_online());
+        UNCHECKED(_GUI.T.linkgrabber_onlinestatus_unchecked()),
+        FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
+        UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
+        TRUE(_GUI.T.linkgrabber_onlinestatus_online());
 
         private final String exp;
 

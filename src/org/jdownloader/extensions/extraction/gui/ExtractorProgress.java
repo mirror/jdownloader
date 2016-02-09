@@ -44,7 +44,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
         super(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16));
         setEnabled(false);
 
-        setTitle(_GUI._.StatusBarImpl_initGUI_extract());
+        setTitle(_GUI.T.StatusBarImpl_initGUI_extract());
         this.extension = extractionExtension;
         // IconedProcessIndicator comp = new IconedProcessIndicator(32);
         // comp.valuePainter = valuePainter;

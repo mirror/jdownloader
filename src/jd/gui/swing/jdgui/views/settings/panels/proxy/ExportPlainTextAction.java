@@ -11,7 +11,7 @@ public class ExportPlainTextAction extends AppAction {
     private ProxyTable table;
 
     public ExportPlainTextAction(ProxyTable table) {
-        setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
+        setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey(IconKey.ICON_EXPORT);
         this.table = table;
     }

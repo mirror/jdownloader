@@ -32,9 +32,9 @@ public class AboutAction extends CustomizableAppAction {
 
     public AboutAction() {
         super();
-        setName(_GUI._.action_aboutaction());
+        setName(_GUI.T.action_aboutaction());
         setIconKey(IconKey.ICON_ABOUT);
-        setTooltipText(_GUI._.action_aboutaction_tooltip());
+        setTooltipText(_GUI.T.action_aboutaction_tooltip());
 
     }
 

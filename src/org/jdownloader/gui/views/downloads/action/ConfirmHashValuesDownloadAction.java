@@ -31,7 +31,7 @@ public class ConfirmHashValuesDownloadAction extends CustomizableTableContextApp
     public ConfirmHashValuesDownloadAction() {
         super(true, true);
         setIconKey(IconKey.ICON_HASHSUM);
-        setName(_GUI._.ConfirmHashValuesAction());
+        setName(_GUI.T.ConfirmHashValuesAction());
         addContextSetup(includedSelection = new IncludedSelectionSetup(DownloadsTable.getInstance(), this, this));
     }
 

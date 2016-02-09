@@ -26,7 +26,7 @@ public class PauseDownloadsAction extends AbstractToolBarAction implements Downl
         setIconKey(IconKey.ICON_MEDIA_PLAYBACK_PAUSE);
         setSelected(false);
         setEnabled(false);
-        setTooltipText(_GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024));
+        setTooltipText(_GUI.T.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024));
 
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
 
@@ -58,7 +58,7 @@ public class PauseDownloadsAction extends AbstractToolBarAction implements Downl
 
     @Override
     public String createTooltip() {
-        return _GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024);
+        return _GUI.T.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024);
     }
 
     @Override
@@ -159,7 +159,7 @@ public class PauseDownloadsAction extends AbstractToolBarAction implements Downl
             @Override
             protected void runInEDT() {
 
-                setTooltipText(_GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024));
+                setTooltipText(_GUI.T.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024));
 
             }
         };

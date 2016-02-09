@@ -18,7 +18,7 @@ public class SpeedLimitAction extends AppAction {
 
     public SpeedLimitAction(AbstractNode contextObject, java.util.List<AbstractNode> inteliSelect) {
 
-        setName(_GUI._.ContextMenuFactory_createPopup_speed());
+        setName(_GUI.T.ContextMenuFactory_createPopup_speed());
         setIconKey(IconKey.ICON_SPEED);
         this.context = contextObject;
         this.inteliSelect = inteliSelect;

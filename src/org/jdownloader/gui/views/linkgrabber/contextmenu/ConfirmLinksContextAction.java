@@ -292,7 +292,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                         break;
                                     }
                                 }
-                                ComboBoxDialog guiDialog = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), options, def, new AbstractIcon(IconKey.ICON_STOP, 32), _GUI._.lit_continue(), null, null) {
+                                ComboBoxDialog guiDialog = new ComboBoxDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI.T.ConfirmAction_run_incomplete_archive_msg(), options, def, new AbstractIcon(IconKey.ICON_STOP, 32), _GUI.T.lit_continue(), null, null) {
 
                                     public String getDontShowAgainKey() {
                                         return null;
@@ -310,7 +310,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                         DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[][][]", "0[]0");
                                         ret.add(new JButton(new AppAction() {
                                             {
-                                                setName(_GUI._.ConfirmAction_run_incomplete_archive_details());
+                                                setName(_GUI.T.ConfirmAction_run_incomplete_archive_details());
                                             }
 
                                             @Override
@@ -330,7 +330,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
                                     @Override
                                     protected String getDontShowAgainLabelText() {
-                                        return _GUI._.ConfirmLinksContextAction_getDontShowAgainLabelText_object_();
+                                        return _GUI.T.ConfirmLinksContextAction_getDontShowAgainLabelText_object_();
                                     }
 
                                     protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
@@ -340,7 +340,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                             @Override
                                             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                                                 if (value == null) {
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
                                                 }
                                                 switch (((ConfirmIncompleteArchiveAction) value)) {
 
@@ -425,7 +425,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                             offline.add(cl);
                             if (handleOfflineLoc == OnOfflineLinksAction.ASK) {
                                 final OnOfflineLinksAction[] options = new OnOfflineLinksAction[] { OnOfflineLinksAction.INCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE_AND_REMOVE };
-                                final ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_offline_ask_title(), _GUI._.ConfirmLinksContextAction_run_offline_ask_question(), options, 1, null, null, null, null) {
+                                final ComboBoxDialog combo = new ComboBoxDialog(0, _GUI.T.ConfirmLinksContextAction_run_offline_ask_title(), _GUI.T.ConfirmLinksContextAction_run_offline_ask_question(), options, 1, null, null, null, null) {
                                     protected javax.swing.JComboBox getComboBox(Object[] options2) {
                                         OnOfflineLinksAction s = CFG_LINKGRABBER.CFG.getHandleOfflineOnConfirmLatestSelection();
                                         JComboBox ret = super.getComboBox(options2);
@@ -443,18 +443,18 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                             @Override
                                             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                                                 if (value == null) {
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
                                                 }
                                                 switch (((OnOfflineLinksAction) value)) {
 
                                                 case EXCLUDE_OFFLINE:
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE(), index, isSelected, cellHasFocus);
 
                                                 case EXCLUDE_OFFLINE_AND_REMOVE:
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE_AND_REMOVE(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE_AND_REMOVE(), index, isSelected, cellHasFocus);
 
                                                 case INCLUDE_OFFLINE:
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE(), index, isSelected, cellHasFocus);
 
                                                 }
                                                 JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, ((OnOfflineLinksAction) value).getLabel(), index, isSelected, cellHasFocus);
@@ -505,7 +505,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                             dupes.add(cl);
                             if (handleDupesLoc == OnDupesLinksAction.ASK) {
                                 final OnDupesLinksAction[] options = new OnDupesLinksAction[] { OnDupesLinksAction.INCLUDE, OnDupesLinksAction.EXCLUDE, OnDupesLinksAction.EXCLUDE_AND_REMOVE };
-                                final ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_dupes_ask_title(), _GUI._.ConfirmLinksContextAction_run_dupes_ask_question(), options, 0, null, null, null, null) {
+                                final ComboBoxDialog combo = new ComboBoxDialog(0, _GUI.T.ConfirmLinksContextAction_run_dupes_ask_title(), _GUI.T.ConfirmLinksContextAction_run_dupes_ask_question(), options, 0, null, null, null, null) {
                                     protected javax.swing.JComboBox getComboBox(Object[] options2) {
                                         OnDupesLinksAction s = CFG_LINKGRABBER.CFG.getHandleDupesOnConfirmLatestSelection();
                                         JComboBox ret = super.getComboBox(options2);
@@ -523,18 +523,18 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                             @Override
                                             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                                                 if (value == null) {
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
                                                 }
                                                 switch (((OnDupesLinksAction) value)) {
 
                                                 case EXCLUDE:
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_DUPES(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_DUPES(), index, isSelected, cellHasFocus);
 
                                                 case EXCLUDE_AND_REMOVE:
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_DUPES_AND_REMOVE(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_DUPES_AND_REMOVE(), index, isSelected, cellHasFocus);
 
                                                 case INCLUDE:
-                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_DUPES(), index, isSelected, cellHasFocus);
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_DUPES(), index, isSelected, cellHasFocus);
 
                                                 }
                                                 JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, ((OnDupesLinksAction) value).getLabel(), index, isSelected, cellHasFocus);
@@ -842,42 +842,42 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
      * @return
      */
     protected String getTextForForcedAll() {
-        return _GUI._.ConfirmAllContextmenuAction_context_add_and_force();
+        return _GUI.T.ConfirmAllContextmenuAction_context_add_and_force();
     }
 
     /**
      * @return
      */
     protected String getTextForForcedSelectionOnly() {
-        return _GUI._.ConfirmAction_ConfirmAction_context_add_and_force();
+        return _GUI.T.ConfirmAction_ConfirmAction_context_add_and_force();
     }
 
     /**
      * @return
      */
     protected String getTextForNoAutoStartAll() {
-        return _GUI._.ConfirmAllContextmenuAction_context_add();
+        return _GUI.T.ConfirmAllContextmenuAction_context_add();
     }
 
     /**
      * @return
      */
     protected String getTextForNoAutoStartSelectionOnly() {
-        return _GUI._.ConfirmAction_ConfirmAction_context_add();
+        return _GUI.T.ConfirmAction_ConfirmAction_context_add();
     }
 
     /**
      * @return
      */
     protected String getTextForAutoStartAll() {
-        return _GUI._.ConfirmAllContextmenuAction_context_add_and_start();
+        return _GUI.T.ConfirmAllContextmenuAction_context_add_and_start();
     }
 
     /**
      * @return
      */
     protected String getTextForAutoStartSelectionOnly() {
-        return _GUI._.ConfirmAction_ConfirmAction_context_add_and_start();
+        return _GUI.T.ConfirmAction_ConfirmAction_context_add_and_start();
     }
 
 }

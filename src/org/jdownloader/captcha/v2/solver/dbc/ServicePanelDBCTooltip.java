@@ -74,7 +74,7 @@ public class ServicePanelDBCTooltip extends PanelToolTip {
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                             panel.add(header, "gapbottom 5,spanx");
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_error2(""), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_error2(""), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
                             panel.add(lbl(account.getError()), "gapleft 22");
                         } else {
                             panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
@@ -84,17 +84,17 @@ public class ServicePanelDBCTooltip extends PanelToolTip {
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                             panel.add(header, "spanx,gapbottom 5,pushx,growx");
 
-                            panel.add(lbl(_GUI._.lit_accountid(), NewTheme.I().getIcon(IconKey.ICON_PREMIUM, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.lit_accountid(), NewTheme.I().getIcon(IconKey.ICON_PREMIUM, 18), JLabel.LEFT));
                             panel.add(lbl(account.getId() + ""));
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_credits_(), NewTheme.I().getIcon(IconKey.ICON_MONEY, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_credits_(), NewTheme.I().getIcon(IconKey.ICON_MONEY, 18), JLabel.LEFT));
                             panel.add(lbl(account.getBalance() + " USD Cent"));
 
-                            panel.add(lbl(_GUI._.lit_rate(), NewTheme.I().getIcon(IconKey.ICON_PLAY, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.lit_rate(), NewTheme.I().getIcon(IconKey.ICON_PLAY, 18), JLabel.LEFT));
                             panel.add(lbl(account.getRate() + " USD Cent/Captcha"));
-                            panel.add(lbl(_GUI._.ServicePanelDBCTooltip_captcha_free(), NewTheme.I().getIcon(IconKey.ICON_OCR, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanelDBCTooltip_captcha_free(), NewTheme.I().getIcon(IconKey.ICON_OCR, 18), JLabel.LEFT));
                             panel.add(lbl((int) (account.getBalance() / account.getRate())));
                             if (account.isBanned()) {
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_banned(), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
+                                panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_banned(), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
 
                             }
 

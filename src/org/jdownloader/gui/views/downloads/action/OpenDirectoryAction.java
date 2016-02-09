@@ -19,7 +19,7 @@ public class OpenDirectoryAction extends CustomizableTableContextAppAction<FileP
     private volatile File       directory        = null;
     private volatile File       file             = null;
 
-    private final static String NAME             = _GUI._.gui_table_contextmenu_downloaddir();
+    private final static String NAME             = _GUI.T.gui_table_contextmenu_downloaddir();
 
     public OpenDirectoryAction() {
         super();

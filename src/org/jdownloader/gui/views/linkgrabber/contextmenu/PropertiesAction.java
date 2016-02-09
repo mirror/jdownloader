@@ -14,7 +14,7 @@ public class PropertiesAction extends CustomizableTableContextAppAction<CrawledP
 
     public PropertiesAction() {
 
-        setName(_GUI._.PropertiesAction_PropertiesAction());
+        setName(_GUI.T.PropertiesAction_PropertiesAction());
         setIconKey(IconKey.ICON_BOTTOMBAR);
 
     }

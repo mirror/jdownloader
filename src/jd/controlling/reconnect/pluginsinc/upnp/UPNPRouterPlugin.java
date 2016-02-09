@@ -94,10 +94,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
                     processCallBack.setStatusString(this, T.T.try_reconnect(device.getModelname()));
                     logger.info("Try " + device);
                     if (processCallBack.isMethodConfirmEnabled()) {
-                        ConfirmDialog d = new ConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.runDetectionWizard_confirm_title(), _GUI._.UPNPRouterPlugin_runDetectionWizard_confirm_msg(device.getServiceType(), device.getControlURL()), new AbstractIcon("upnp", 32), _GUI._.lit_continue(), _GUI._.lit_skip()) {
+                        ConfirmDialog d = new ConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.runDetectionWizard_confirm_title(), _GUI.T.UPNPRouterPlugin_runDetectionWizard_confirm_msg(device.getServiceType(), device.getControlURL()), new AbstractIcon("upnp", 32), _GUI.T.lit_continue(), _GUI.T.lit_skip()) {
                             @Override
                             protected String getDontShowAgainLabelText() {
-                                return _GUI._.UPNPRouterPlugin_accept_all();
+                                return _GUI.T.UPNPRouterPlugin_accept_all();
                             }
 
                             @Override
@@ -122,7 +122,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
                         if (i < devices.size() - 1) {
 
                             if (ret.size() == 1) {
-                                Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), new AbstractIcon(IconKey.ICON_OK, 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
+                                Dialog.getInstance().showConfirmDialog(0, _GUI.T.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI.T.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), new AbstractIcon(IconKey.ICON_OK, 32), _GUI.T.LiveHeaderDetectionWizard_testList_ok(), _GUI.T.LiveHeaderDetectionWizard_testList_use());
                             }
 
                         }

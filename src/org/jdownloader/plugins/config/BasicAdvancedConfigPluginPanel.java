@@ -42,7 +42,7 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
 
         @Override
         protected void initColumns() {
-            addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI._.AdvancedTableModel_initColumns_key_()) {
+            addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI.T.AdvancedTableModel_initColumns_key_()) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -113,7 +113,7 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
                 }
 
             });
-            addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI._.AdvancedTableModel_initColumns_desc_()) {
+            addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI.T.AdvancedTableModel_initColumns_desc_()) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -196,7 +196,7 @@ public class BasicAdvancedConfigPluginPanel extends PluginConfigPanelNG {
                     return false;
                 }
             });
-            addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI._.AdvancedTableModel_initColumns_type_()) {
+            addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI.T.AdvancedTableModel_initColumns_type_()) {
                 private static final long serialVersionUID = 1L;
 
                 public boolean isDefaultVisible() {

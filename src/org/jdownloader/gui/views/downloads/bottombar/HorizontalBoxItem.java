@@ -24,7 +24,7 @@ import org.jdownloader.gui.translate._GUI;
 public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLayoutInterface {
     public HorizontalBoxItem() {
         super();
-        setName(_GUI._.HorizontalBoxItem_HorizontalBoxItem());
+        setName(_GUI.T.HorizontalBoxItem_HorizontalBoxItem());
         setVisible(false);
         setIconKey(IconKey.ICON_RIGHT);
     }
@@ -42,7 +42,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         final ActionData actionData = ad;
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
-        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_min()));
+        p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_min()));
         int width = getMinWidth();
 
         final ExtSpinner minSpin = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
@@ -56,7 +56,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         p.add(minSpin);
         //
 
-        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_pref()));
+        p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_pref()));
         width = getPrefWidth();
 
         final ExtSpinner prefSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
@@ -69,7 +69,7 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         });
         p.add(prefSpin);
         //
-        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_max()));
+        p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_max()));
         width = getMaxWidth();
 
         final ExtSpinner maxSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));

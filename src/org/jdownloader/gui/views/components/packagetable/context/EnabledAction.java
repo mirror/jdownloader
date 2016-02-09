@@ -43,14 +43,14 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
         ENABLE() {
             @Override
             public String getLabel() {
-                return _GUI._.EnabledAction_EnabledAction_enable();
+                return _GUI.T.EnabledAction_EnabledAction_enable();
             }
         },
 
         DISABLE() {
             @Override
             public String getLabel() {
-                return _GUI._.EnabledAction_EnabledAction_disable();
+                return _GUI.T.EnabledAction_EnabledAction_disable();
             }
         },
 
@@ -93,28 +93,28 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
             switch (state = getState(selectionInfo)) {
             case MIXED_DISABLE:
                 setSmallIcon(state.icon);
-                setName(_GUI._.EnabledAction_EnabledAction_disable());
+                setName(_GUI.T.EnabledAction_EnabledAction_disable());
                 // setEnabled(true);
                 break;
             case MIXED_ENABLE:
                 setSmallIcon(state.icon);
-                setName(_GUI._.EnabledAction_EnabledAction_enable());
+                setName(_GUI.T.EnabledAction_EnabledAction_enable());
                 // setEnabled(true);
                 break;
             case ALL_DISABLED:
                 setSmallIcon(state.icon);
-                setName(_GUI._.EnabledAction_EnabledAction_enable());
+                setName(_GUI.T.EnabledAction_EnabledAction_enable());
                 // setEnabled(!EnableActionMode.DISABLE.equals(mode));
                 break;
             case ALL_ENABLED:
                 setSmallIcon(state.icon);
-                setName(_GUI._.EnabledAction_EnabledAction_disable());
+                setName(_GUI.T.EnabledAction_EnabledAction_disable());
                 // setEnabled(!EnableActionMode.ENABLE.equals(mode));
                 break;
             }
         } else {
             setSmallIcon(State.MIXED_ENABLE.icon);
-            setName(_GUI._.EnabledAction_EnabledAction_empty());
+            setName(_GUI.T.EnabledAction_EnabledAction_empty());
             // setEnabled(true);
         }
     }
@@ -139,7 +139,7 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
     public EnabledAction() {
         super();
         setSmallIcon(getCheckBoxedIcon("select", true, true));
-        setName(_GUI._.EnabledAction_EnabledAction_disable());
+        setName(_GUI.T.EnabledAction_EnabledAction_disable());
         GUIEventSender.getInstance().addListener(this, true);
         metaCtrl = KeyObserver.getInstance().isMetaDown(true) || KeyObserver.getInstance().isControlDown(true);
     }
@@ -223,14 +223,14 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
 
                                 if (bytesToDelete > 0) {
                                     if (JDGui.bugme(WarnLevel.SEVERE)) {
-                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                             return;
                                         }
 
                                     }
                                 } else {
                                     if (JDGui.bugme(WarnLevel.LOW)) {
-                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                             return;
                                         }
 

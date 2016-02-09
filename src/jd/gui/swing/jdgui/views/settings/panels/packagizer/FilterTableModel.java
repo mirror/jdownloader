@@ -36,7 +36,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_enabled()) {
+        this.addColumn(new ExtCheckColumn<PackagizerRule>(_GUI.T.settings_linkgrabber_filter_columns_enabled()) {
 
             private static final long serialVersionUID = -4667150369226691276L;
 
@@ -95,7 +95,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
         });
         addColumn(prio = new OrderColumn());
 
-        addColumn(new ExtTextColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
+        addColumn(new ExtTextColumn<PackagizerRule>(_GUI.T.settings_linkgrabber_filter_columns_name()) {
 
             /**
              *
@@ -124,16 +124,16 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
             @Override
             public String getStringValue(PackagizerRule value) {
                 if (!value.isValid()) {
-                    return _GUI._.FilterTableModel_getStringValue_name_invalid(value.getName());
+                    return _GUI.T.FilterTableModel_getStringValue_name_invalid(value.getName());
                 }
                 if (value.isStaticRule()) {
-                    return _GUI._.FilterTableModel_initColumns_static_(value.getName());
+                    return _GUI.T.FilterTableModel_initColumns_static_(value.getName());
                 }
                 return value.getName();
             }
         });
 
-        addColumn(new ExtTextColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_cond()) {
+        addColumn(new ExtTextColumn<PackagizerRule>(_GUI.T.settings_linkgrabber_filter_columns_cond()) {
 
             /**
              *
@@ -168,7 +168,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements P
             public String getStringValue(PackagizerRule value) {
                 if (!value.isValid()) {
 
-                    return _GUI._.FilterTableModel_initColumns_invalid_condition_();
+                    return _GUI.T.FilterTableModel_initColumns_invalid_condition_();
                 }
                 return value.toString();
             }

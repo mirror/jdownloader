@@ -8,9 +8,9 @@ import org.jdownloader.images.NewTheme;
 
 public class SolverStatus {
 
-    public static final SolverStatus UPLOADING = new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
-    public static final SolverStatus SOLVING   = new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20));
-    public static final SolverStatus UNSOLVED  = new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_failed(), NewTheme.I().getIcon(IconKey.ICON_BAD, 20));
+    public static final SolverStatus UPLOADING = new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
+    public static final SolverStatus SOLVING   = new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20));
+    public static final SolverStatus UNSOLVED  = new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_failed(), NewTheme.I().getIcon(IconKey.ICON_BAD, 20));
 
     private String                   label;
 

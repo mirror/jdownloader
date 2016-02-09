@@ -8,7 +8,7 @@ import org.jdownloader.gui.translate._GUI;
 public class SeparatorData extends MenuItemData {
 
     public SeparatorData() {
-        setName(_GUI._.SeparatorData_SeparatorData());
+        setName(_GUI.T.SeparatorData_SeparatorData());
     }
 
     @Override

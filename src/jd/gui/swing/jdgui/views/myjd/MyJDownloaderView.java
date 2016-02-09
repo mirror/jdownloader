@@ -61,12 +61,12 @@ public class MyJDownloaderView extends ClosableView {
 
     @Override
     public String getTitle() {
-        return _GUI._.MyJDownloaderView_title();
+        return _GUI.T.MyJDownloaderView_title();
     }
 
     @Override
     public String getTooltip() {
-        return _GUI._.MyJDownloaderView_tooltip();
+        return _GUI.T.MyJDownloaderView_tooltip();
     }
 
     @Override

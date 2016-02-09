@@ -127,7 +127,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     public AddLinksDialog() {
-        super(UIOManager.BUTTONS_HIDE_OK, _GUI._.AddLinksDialog_AddLinksDialog_(), null, _GUI._.AddLinksDialog_AddLinksDialog_confirm(), null);
+        super(UIOManager.BUTTONS_HIDE_OK, _GUI.T.AddLinksDialog_AddLinksDialog_(), null, _GUI.T.AddLinksDialog_AddLinksDialog_confirm(), null);
         config = JsonConfig.create(LinkgrabberSettings.class);
         delayedValidate = new DelayedRunnable(500l, 10000l) {
 
@@ -165,7 +165,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     @Override
     protected MigPanel createBottomPanel() {
         MigPanel ret = new MigPanel("ins 0", "[][][][]20[grow,fill][]", "[]");
-        JLabel lbl = new JLabel(_GUI._.AddLinksDialog_getDefaultButtonPanel_overwrite_packagizer());
+        JLabel lbl = new JLabel(_GUI.T.AddLinksDialog_getDefaultButtonPanel_overwrite_packagizer());
         overwritePackagizer = new JCheckBox();
         overwritePackagizer.setSelected(CFG_LINKGRABBER.CFG.isAddLinksDialogOverwritesPackagizerRulesEnabled());
         ret.add(new JLabel(new AbstractIcon(IconKey.ICON_UPLOAD, 22)), "gapleft 5");
@@ -340,8 +340,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             @Override
             public JPopupMenu getPopupMenu(ExtTextField txt, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
-                menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
-                menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
+                menu.add(new VariableAction(txt, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
+                menu.add(new VariableAction(txt, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
                 return menu;
             }
 
@@ -358,7 +358,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             }
 
             protected String getHelpText() {
-                return _GUI._.AddLinksDialog_layoutDialogContent_help_destination();
+                return _GUI.T.AddLinksDialog_layoutDialogContent_help_destination();
             }
         };
 
@@ -383,11 +383,11 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         packagename.setList(PackageHistoryManager.getInstance().list());
         packagename.setUnkownTextInputAllowed(true);
-        packagename.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_packagename_help());
+        packagename.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_packagename_help());
         packagename.setSelectedItem(null);
 
         comment = new ExtTextField();
-        comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
+        comment.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_comment_help());
         comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
         destination.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPaths(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
@@ -418,12 +418,12 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         });
         // input.setLineWrap(true);
         input.setWrapStyleWord(true);
-        input.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_input_help());
+        input.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_input_help());
         sp = new JScrollPane(input);
         sp.setViewportBorder(BorderFactory.createEmptyBorder(2, 6, 1, 6));
 
         password = new ExtTextField();
-        password.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_password());
+        password.setHelpText(_GUI.T.AddLinksDialog_createExtracOptionsPanel_password());
         password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
         priority = new JComboBox(Priority.values());
@@ -438,7 +438,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         });
         priority.setSelectedItem(Priority.DEFAULT);
         downloadPassword = new ExtTextField();
-        downloadPassword.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_downloadpassword());
+        downloadPassword.setHelpText(_GUI.T.AddLinksDialog_createExtracOptionsPanel_downloadpassword());
         downloadPassword.setBorder(BorderFactory.createCompoundBorder(downloadPassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
         extractToggle = new ExtCheckBox();
@@ -446,35 +446,35 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         extractToggle.setSelected(config.isAutoExtractionEnabled());
         // extractToggle.setBorderPainted(false);
 
-        extractToggle.setToolTipText(_GUI._.AddLinksDialog_layoutDialogContent_autoextract_tooltip());
+        extractToggle.setToolTipText(_GUI.T.AddLinksDialog_layoutDialogContent_autoextract_tooltip());
         int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
         MigPanel p = new MigPanel("ins 0 0 3 0,wrap 3", "[][grow,fill][]", "[fill,grow][grow," + height + "!][grow," + height + "!][grow," + height + "!][grow," + height + "!]");
 
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_LINKGRABBER, 32)), "aligny top,height 32!,width 32!");
 
         p.add(sp, "height 30:100:n,spanx");
-        p.add(createIconLabel("save", _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!,height " + height + "!");
+        p.add(createIconLabel("save", _GUI.T.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!,height " + height + "!");
 
         p.add(destination.getDestination(), "height " + height + "!");
         p.add(destination.getButton(), "sg right,height " + height + "!");
 
-        p.add(createIconLabel("package_open", _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
+        p.add(createIconLabel("package_open", _GUI.T.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
         p.add(packagename, "spanx,height " + height + "!");
-        p.add(createIconLabel("document", _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
+        p.add(createIconLabel("document", _GUI.T.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
         p.add(comment, "spanx,height " + height + "!");
 
-        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_COMPRESS, 24)).add(new AbstractIcon("lock", 18), 6, 6), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
+        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_COMPRESS, 24)).add(new AbstractIcon("lock", 18), 6, 6), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
 
         p.add(password, "pushx,growx,height " + height + "!");
         MigPanel subpanel = new MigPanel("ins 0", "[grow,fill][]", "[" + height + "!,grow]");
 
         p.add(subpanel, "sg right");
         JLabel lbl;
-        subpanel.add(lbl = new JLabel(_GUI._.AddLinksDialog_layoutDialogContent_autoextract_lbl()));
+        subpanel.add(lbl = new JLabel(_GUI.T.AddLinksDialog_layoutDialogContent_autoextract_lbl()));
         lbl.setHorizontalAlignment(SwingConstants.RIGHT);
         subpanel.add(extractToggle, "aligny center");
 
-        p.add(createIconLabel(new BadgeIcon("password", "download", 24), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
+        p.add(createIconLabel(new BadgeIcon("password", "download", 24), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
 
         p.add(downloadPassword);
         p.add(priority, "sg right");
@@ -509,7 +509,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 new EDTRunner() {
                                     @Override
                                     protected void runInEDT() {
-                                        input.setText(_GUI._.AddLinksDialog_ParsingClipboard());
+                                        input.setText(_GUI.T.AddLinksDialog_ParsingClipboard());
                                     };
                                 };
                                 parse(newText);
@@ -627,8 +627,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 confirmOptions.setEnabled(true);
                 okButton.setToolTipText("");
                 if (links.length == 0) {
-                    okButton.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
-                    input.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
+                    okButton.setToolTipText(_GUI.T.AddLinksDialog_validateForm_input_missing());
+                    input.setToolTipText(_GUI.T.AddLinksDialog_validateForm_input_missing());
                     okButton.setEnabled(false);
                     confirmOptions.setEnabled(false);
                 } else {
@@ -637,10 +637,10 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 if (!validateFolder(destination.getFile().getAbsolutePath())) {
                     final String toolTip = okButton.getToolTipText();
                     if (toolTip == null || toolTip.length() == 0) {
-                        okButton.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
+                        okButton.setToolTipText(_GUI.T.AddLinksDialog_validateForm_folder_invalid_missing());
                     }
                     okButton.setEnabled(false);
-                    destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
+                    destination.setToolTipText(_GUI.T.AddLinksDialog_validateForm_folder_invalid_missing());
                     confirmOptions.setEnabled(false);
                     destination.setForeground((LAFOptions.getInstance().getColorForErrorForeground()));
                 } else {
@@ -680,7 +680,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     protected void runInEDT() {
                         if (input.isShowing()) {
                             if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                                HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
+                                HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.AddLinksDialog_AddLinksDialog_(), _GUI.T.AddLinksDialog_layoutDialogContent_description(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
                             }
                         }
                     }

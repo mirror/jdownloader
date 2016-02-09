@@ -18,7 +18,7 @@ public class CreateDLCAction extends CustomizableTableContextAppAction<FilePacka
 
     private static final long   serialVersionUID = 7244681674979415222L;
 
-    private final static String NAME             = _GUI._.gui_table_contextmenu_dlc();
+    private final static String NAME             = _GUI.T.gui_table_contextmenu_dlc();
 
     public CreateDLCAction() {
         super();

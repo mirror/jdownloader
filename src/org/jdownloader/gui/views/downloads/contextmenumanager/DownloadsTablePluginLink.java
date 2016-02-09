@@ -20,7 +20,7 @@ public class DownloadsTablePluginLink extends MenuItemData implements MenuLink {
 
     @Override
     public String getName() {
-        return _GUI._.DownloadsTablePluginLink_getName_object_();
+        return _GUI.T.DownloadsTablePluginLink_getName_object_();
     }
 
     @Override

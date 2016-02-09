@@ -38,9 +38,9 @@ public class LogAction extends AbstractLogAction {
 
     public LogAction() {
         super();
-        setName(_GUI._.LogAction());
+        setName(_GUI.T.LogAction());
         setSmallIcon(new AbstractIcon(IconKey.ICON_LOG, 22));
-        setTooltipText(_GUI._.LogAction_tooltip());
+        setTooltipText(_GUI.T.LogAction_tooltip());
         id = null;
     }
 
@@ -51,7 +51,7 @@ public class LogAction extends AbstractLogAction {
         super.createPackage(selection);
         if (id != null) {
             String name = format(selection.get(0).getCreated()) + " <--> " + format(selection.get(selection.size() - 1).getLastModified());
-            Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), name + " jdlog://" + id + "/");
+            Dialog.getInstance().showInputDialog(0, _GUI.T.LogAction_actionPerformed_givelogid_(), name + " jdlog://" + id + "/");
         }
     }
 

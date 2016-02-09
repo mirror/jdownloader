@@ -5,7 +5,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class LinkGrabberMoreSubMenu extends MenuContainer {
     public LinkGrabberMoreSubMenu() {
-        super(_GUI._.ContextMenuFactory_createPopup_other(), "batch");
+        super(_GUI.T.ContextMenuFactory_createPopup_other(), "batch");
 
     }
 }

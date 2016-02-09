@@ -15,7 +15,7 @@ public class DeleteGroupAction extends AppAction {
     private HosterPriorityTableModel model;
 
     public DeleteGroupAction(HosterPriorityTableModel model) {
-        setName(_GUI._.DeleteGroupAction_DeleteGroupAction());
+        setName(_GUI.T.DeleteGroupAction_DeleteGroupAction());
         setIconKey(IconKey.ICON_DELETE);
         this.model = model;
     }

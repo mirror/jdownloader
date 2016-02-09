@@ -30,25 +30,25 @@ public class OnlineStatusFilter extends Filter implements Storable {
         case IS:
             switch (getOnlineStatus()) {
             case OFFLINE:
-                return _GUI._.FilterRule_toString_offline();
+                return _GUI.T.FilterRule_toString_offline();
 
             case ONLINE:
-                return _GUI._.FilterRule_toString_online();
+                return _GUI.T.FilterRule_toString_online();
 
             case UNCHECKABLE:
-                return _GUI._.FilterRule_toString_uncheckable();
+                return _GUI.T.FilterRule_toString_uncheckable();
 
             }
         case ISNOT:
             switch (getOnlineStatus()) {
             case OFFLINE:
-                return _GUI._.FilterRule_toString_offline_not();
+                return _GUI.T.FilterRule_toString_offline_not();
 
             case ONLINE:
-                return _GUI._.FilterRule_toString_online_not();
+                return _GUI.T.FilterRule_toString_online_not();
 
             case UNCHECKABLE:
-                return _GUI._.FilterRule_toString_uncheckable_not();
+                return _GUI.T.FilterRule_toString_uncheckable_not();
 
             }
         }

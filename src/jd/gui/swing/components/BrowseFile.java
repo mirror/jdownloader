@@ -130,7 +130,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
 
-        btnBrowse = new JButton(_GUI._.gui_btn_select());
+        btnBrowse = new JButton(_GUI.T.gui_btn_select());
         btnBrowse.addActionListener(this);
 
         add(txtInput, "grow");

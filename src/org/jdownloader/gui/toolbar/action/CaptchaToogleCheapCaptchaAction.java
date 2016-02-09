@@ -19,21 +19,21 @@ public class CaptchaToogleCheapCaptchaAction extends AbstractToolbarToggleAction
     protected String createTooltip() {
         CheapCaptchaSolverService service = CheapCaptchaSolver.getInstance().getService();
         ;
-        return _GUI._.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenDisabled() {
         CheapCaptchaSolverService service = CheapCaptchaSolver.getInstance().getService();
         ;
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenEnabled() {
         CheapCaptchaSolverService service = CheapCaptchaSolver.getInstance().getService();
         ;
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
     }
 
 }

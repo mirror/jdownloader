@@ -38,7 +38,7 @@ public class FFMpegInstallProgress extends PluginProgress {
         if (requestor instanceof ETAColumn) {
             return "";
         }
-        return _GUI._.FFMpegInstallProgress_getMessage();
+        return _GUI.T.FFMpegInstallProgress_getMessage();
     }
 
 }

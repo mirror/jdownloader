@@ -75,7 +75,7 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
                     return;
                 }
                 try {
-                    Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_are_you_sure(), org.jdownloader.extensions.eventscripter.T.T.sure_delete_entries(entries.size()), new AbstractIcon(IconKey.ICON_QUESTION, 32), null, null);
+                    Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), org.jdownloader.extensions.eventscripter.T.T.sure_delete_entries(entries.size()), new AbstractIcon(IconKey.ICON_QUESTION, 32), null, null);
                     getExtension().removeScriptEntries(entries);
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();

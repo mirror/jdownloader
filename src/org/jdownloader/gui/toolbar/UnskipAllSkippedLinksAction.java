@@ -16,7 +16,7 @@ public class UnskipAllSkippedLinksAction extends CustomizableAppAction implement
 
     public UnskipAllSkippedLinksAction() {
         addContextSetup(this);
-        setName(_GUI._.UnskipAllSkippedLinksAction());
+        setName(_GUI.T.UnskipAllSkippedLinksAction());
         setIconKey(IconKey.ICON_SKIPPED);
     }
 
@@ -37,7 +37,7 @@ public class UnskipAllSkippedLinksAction extends CustomizableAppAction implement
             DownloadWatchDog.getInstance().unSkipAllSkipped();
 
         } catch (Throwable e1) {
-            Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
         } finally {
 
         }

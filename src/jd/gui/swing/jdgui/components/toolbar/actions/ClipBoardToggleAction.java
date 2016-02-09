@@ -99,17 +99,17 @@ public class ClipBoardToggleAction extends AbstractToolbarToggleAction implement
 
     @Override
     protected String createTooltip() {
-        return _GUI._.action_clipboard_observer_tooltip();
+        return _GUI.T.action_clipboard_observer_tooltip();
     }
 
     @Override
     protected String getNameWhenDisabled() {
-        return _GUI._.ClipBoardToggleAction_getNameWhenDisabled_();
+        return _GUI.T.ClipBoardToggleAction_getNameWhenDisabled_();
     }
 
     @Override
     protected String getNameWhenEnabled() {
-        return _GUI._.ClipBoardToggleAction_getNameWhenEnabled_();
+        return _GUI.T.ClipBoardToggleAction_getNameWhenEnabled_();
     }
 
 }

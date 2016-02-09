@@ -31,7 +31,7 @@ public class RefreshAction extends AbstractAction {
 
     public RefreshAction(List<AccountEntry> selectedObjects) {
         selection = selectedObjects;
-        this.putValue(NAME, _GUI._.settings_accountmanager_refresh());
+        this.putValue(NAME, _GUI.T.settings_accountmanager_refresh());
         this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_REFRESH, 16));
     }
 

@@ -44,7 +44,7 @@ public class ReconnectBubble extends AbstractNotifyWindow<ReconnectBubbleContent
     private Timer  updateTimer;
     
     public ReconnectBubble() {
-        super(_GUI._.balloon_reconnect(), new ReconnectBubbleContent());
+        super(_GUI.T.balloon_reconnect(), new ReconnectBubbleContent());
         // , _GUI._.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
         Reconnecter.getInstance().getEventSender().addListener(this, true);
         updateTimer = new Timer(1000, new ActionListener() {

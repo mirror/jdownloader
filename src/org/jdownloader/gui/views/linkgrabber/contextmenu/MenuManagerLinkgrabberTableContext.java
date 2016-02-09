@@ -108,7 +108,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(new SeparatorData());
         /* remove menu */
 
-        mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
+        mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI.T.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
 
         mr.add(createCleanupMenu());
         mr.add(new SeparatorData());
@@ -204,7 +204,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
 
     @Override
     public String getName() {
-        return _GUI._.LinkgrabberContextMenuManager_getName();
+        return _GUI.T.LinkgrabberContextMenuManager_getName();
     }
 
     @Override

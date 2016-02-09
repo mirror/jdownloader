@@ -14,13 +14,13 @@ public class RegexFilter extends Filter implements Storable {
     public String toString() {
         switch (getMatchType()) {
         case CONTAINS:
-            return _GUI._.RegexFilter_toString_contains(regex);
+            return _GUI.T.RegexFilter_toString_contains(regex);
         case CONTAINS_NOT:
-            return _GUI._.RegexFilter_toString_contains_not(regex);
+            return _GUI.T.RegexFilter_toString_contains_not(regex);
         case EQUALS:
-            return _GUI._.RegexFilter_toString_matches(regex);
+            return _GUI.T.RegexFilter_toString_matches(regex);
         default:
-            return _GUI._.RegexFilter_toString_matches_not(regex);
+            return _GUI.T.RegexFilter_toString_matches_not(regex);
         }
 
     }

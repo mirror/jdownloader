@@ -33,7 +33,7 @@ public class JacSolverService extends AbstractSolverService implements SolverSer
 
     @Override
     public String getType() {
-        return _GUI._.JACSolver_getName_();
+        return _GUI.T.JACSolver_getName_();
     }
 
     @Override
@@ -87,7 +87,7 @@ public class JacSolverService extends AbstractSolverService implements SolverSer
 
     @Override
     public String getName() {
-        return _GUI._.JACSolver_gettypeName_();
+        return _GUI.T.JACSolver_gettypeName_();
     }
 
     @Override

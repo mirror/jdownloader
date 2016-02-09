@@ -96,10 +96,10 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         // return ret;
         // }
         // });
-        tab.addTab(_GUI._.LinkgrabberFilter_initComponents_filter__title(), createTab(_GUI._.LinkgrabberFilter_initComponents_filter_(), filterTable));
-        tab.addTab(_GUI._.LinkgrabberFilter_initComponents_exceptions_title(), createTab(_GUI._.LinkgrabberFilter_initComponents_exceptions_(), exceptionsTable));
-        tab.setTabComponentAt(0, createHeader(_GUI._.LinkgrabberFilter_initComponents_filter_(), _GUI._.LinkgrabberFilter_initComponents_filter__title(), new AbstractIcon(IconKey.ICON_FALSE, 16)));
-        tab.setTabComponentAt(1, createHeader(_GUI._.LinkgrabberFilter_initComponents_exceptions_(), _GUI._.LinkgrabberFilter_initComponents_exceptions_title(), new AbstractIcon(IconKey.ICON_TRUE, 16)));
+        tab.addTab(_GUI.T.LinkgrabberFilter_initComponents_filter__title(), createTab(_GUI.T.LinkgrabberFilter_initComponents_filter_(), filterTable));
+        tab.addTab(_GUI.T.LinkgrabberFilter_initComponents_exceptions_title(), createTab(_GUI.T.LinkgrabberFilter_initComponents_exceptions_(), exceptionsTable));
+        tab.setTabComponentAt(0, createHeader(_GUI.T.LinkgrabberFilter_initComponents_filter_(), _GUI.T.LinkgrabberFilter_initComponents_filter__title(), new AbstractIcon(IconKey.ICON_FALSE, 16)));
+        tab.setTabComponentAt(1, createHeader(_GUI.T.LinkgrabberFilter_initComponents_exceptions_(), _GUI.T.LinkgrabberFilter_initComponents_exceptions_title(), new AbstractIcon(IconKey.ICON_TRUE, 16)));
         tab.addChangeListener(new ChangeListener() {
 
             @Override
@@ -119,11 +119,11 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                 txtTest.selectAll();
             }
         });
-        txtTest.setHelpText(_GUI._.LinkgrabberFilter_LinkgrabberFilter_test_help_());
+        txtTest.setHelpText(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_test_help_());
         btTest = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_MEDIA_PLAYBACK_START);
-                setTooltipText(_GUI._.LinkgrabberFilter_LinkgrabberFilter_test_());
+                setTooltipText(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_test_());
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -157,7 +157,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                 }
 
                 if (!en) {
-                    btRemove.setToolTipText(_GUI._.PackagizerFilter_valueChanged_disable_static());
+                    btRemove.setToolTipText(_GUI.T.PackagizerFilter_valueChanged_disable_static());
                     action.setEnabled(false);
                     return;
                 } else {
@@ -180,7 +180,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                 }
 
                 if (!en) {
-                    btRemove.setToolTipText(_GUI._.PackagizerFilter_valueChanged_disable_static());
+                    btRemove.setToolTipText(_GUI.T.PackagizerFilter_valueChanged_disable_static());
                     action.setEnabled(false);
                     return;
                 } else {

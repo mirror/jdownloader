@@ -27,7 +27,7 @@ public class ResetAction extends CustomizableTableContextAppAction<FilePackage, 
 
     private static final long   serialVersionUID = -5583373118359478729L;
 
-    private final static String NAME             = _GUI._.gui_table_contextmenu_reset();
+    private final static String NAME             = _GUI.T.gui_table_contextmenu_reset();
 
     public ResetAction() {
         setIconKey(IconKey.ICON_UNDO);
@@ -46,12 +46,12 @@ public class ResetAction extends CustomizableTableContextAppAction<FilePackage, 
                 final DownloadLinkAggregator agg = new DownloadLinkAggregator();
                 agg.setLocalFileUsageEnabled(true);
                 agg.update(selection);
-                final String question = _GUI._.gui_downloadlist_reset2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), agg.getLocalFileCount());
+                final String question = _GUI.T.gui_downloadlist_reset2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), agg.getLocalFileCount());
                 new EDTHelper<Void>() {
 
                     @Override
                     public Void edtRun() {
-                        ConfirmDialog confirmDialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_userio_defaulttitle_confirm(), question, UserIO.getDefaultIcon(question), null, null) {
+                        ConfirmDialog confirmDialog = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.jd_gui_userio_defaulttitle_confirm(), question, UserIO.getDefaultIcon(question), null, null) {
                             @Override
                             public String getDontShowAgainKey() {
                                 return "org.jdownloader.gui.views.downloads.action.ResetAction";

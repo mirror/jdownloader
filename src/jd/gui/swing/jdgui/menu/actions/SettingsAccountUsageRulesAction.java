@@ -34,8 +34,8 @@ public class SettingsAccountUsageRulesAction extends CustomizableAppAction {
 
     public SettingsAccountUsageRulesAction() {
         setIconKey(IconKey.ICON_PREMIUM);
-        setTooltipText(_GUI._.action_SettingsAccountUsageRulesAction_menu_tooltip());
-        setName(_GUI._.action_SettingsAccountUsageRulesAction_menu());
+        setTooltipText(_GUI.T.action_SettingsAccountUsageRulesAction_menu_tooltip());
+        setName(_GUI.T.action_SettingsAccountUsageRulesAction_menu());
 
     }
 

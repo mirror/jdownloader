@@ -228,7 +228,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                             si = (SelectionInfo<FilePackage, DownloadLink>) lselection;
                         }
                         if (si.getChildren().size() > 0) {
-                            DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPass.isBypassDialog());
+                            DownloadTabActionUtils.deleteLinksRequest(si, _GUI.T.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPass.isBypassDialog());
                             return null;
                         }
                     }
@@ -237,7 +237,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                         @Override
                         public Void edtRun() {
                             Toolkit.getDefaultToolkit().beep();
-                            Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
+                            Dialog.getInstance().showErrorDialog(_GUI.T.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
                             return null;
                         }
                     }.start(true);
@@ -318,15 +318,15 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
         if (isDeleteAll()) {
             if (isOnlySelectedItems()) {
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
             } else {
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_all());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_all());
             }
         } else {
             if (isOnlySelectedItems()) {
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected());
             } else {
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object());
             }
             boolean first = true;
 
@@ -334,7 +334,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                 if (!first) {
                     sb.append(" & ");
                 }
-                sb.append(_GUI._.lit_disabled());
+                sb.append(_GUI.T.lit_disabled());
                 first = false;
             }
             if (isDeleteFailed()) {
@@ -342,21 +342,21 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                     sb.append(" & ");
                 }
                 first = false;
-                sb.append(_GUI._.lit_failed());
+                sb.append(_GUI.T.lit_failed());
             }
             if (isDeleteFinished()) {
                 if (!first) {
                     sb.append(" & ");
                 }
                 first = false;
-                sb.append(_GUI._.lit_finished());
+                sb.append(_GUI.T.lit_finished());
             }
             if (isDeleteOffline()) {
                 if (!first) {
                     sb.append(" & ");
                 }
                 first = false;
-                sb.append(_GUI._.lit_offline());
+                sb.append(_GUI.T.lit_offline());
             }
         }
         return sb.toString();

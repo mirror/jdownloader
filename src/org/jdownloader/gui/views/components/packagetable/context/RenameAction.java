@@ -30,8 +30,8 @@ public class RenameAction extends CustomizableTableContextAppAction implements A
     public RenameAction() {
 
         super();
-        setName(_GUI._.RenameAction_RenameAction());
-        setTooltipText(_GUI._.RenameAction_RenameAction_tt());
+        setName(_GUI.T.RenameAction_RenameAction());
+        setTooltipText(_GUI.T.RenameAction_RenameAction_tt());
         setIconKey(IconKey.ICON_EDIT);
         setAccelerator(KeyStroke.getKeyStroke("F2"));
 

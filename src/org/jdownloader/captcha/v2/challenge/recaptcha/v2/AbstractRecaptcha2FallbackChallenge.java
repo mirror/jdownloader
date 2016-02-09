@@ -145,10 +145,10 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
         ArrayList<String> lines = new ArrayList<String>();
         String[] ex = getExplain().replaceAll("<.*?>", "").split(Pattern.quote(key));
         if (getChooseAtLeast() > 0) {
-            lines.add(_GUI._.RECAPTCHA_2_Dialog_help(getChooseAtLeast()));
+            lines.add(_GUI.T.RECAPTCHA_2_Dialog_help(getChooseAtLeast()));
         }
         if (getType() != null && getType().startsWith("TileSelection")) {
-            lines.add(_GUI._.RECAPTCHA_2_Dialog_help_tile());
+            lines.add(_GUI.T.RECAPTCHA_2_Dialog_help_tile());
         }
         lines.add("Example answer: 2,5,6");
         FontMetrics fmBold = img.getGraphics().getFontMetrics(font.deriveFont(Font.BOLD));

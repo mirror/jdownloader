@@ -23,7 +23,7 @@ public class ForceDownloadAction extends CustomizableTableContextAppAction<FileP
 
     private static final long   serialVersionUID = 7107840091963427544L;
 
-    private final static String NAME             = _GUI._.ForceDownloadAction_ForceDownloadAction();
+    private final static String NAME             = _GUI.T.ForceDownloadAction_ForceDownloadAction();
     private final static Icon   ICON             = getICON();
 
     private final static Icon getICON() {
@@ -48,7 +48,7 @@ public class ForceDownloadAction extends CustomizableTableContextAppAction<FileP
             return;
         }
         final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
-        JDGui.help(_GUI._.ForceDownloadAction_actionPerformed_help_title_(), _GUI._.ForceDownloadAction_actionPerformed_help_msg_(), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_INFO, -1));
+        JDGui.help(_GUI.T.ForceDownloadAction_actionPerformed_help_title_(), _GUI.T.ForceDownloadAction_actionPerformed_help_msg_(), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_INFO, -1));
         DownloadWatchDog.getInstance().resume(selection.getChildren());
         DownloadWatchDog.getInstance().forceDownload(selection.getChildren());
 

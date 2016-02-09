@@ -45,7 +45,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
         this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_PREMIUM, 32));
         this.addDescriptionPlain(_JDT._.gui_settings_premium_description());
 
-        addPair(_GUI._.AccountManagerSettings_AccountManagerSettings_disable_global(), null, new Checkbox(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS));
+        addPair(_GUI.T.AccountManagerSettings_AccountManagerSettings_disable_global(), null, new Checkbox(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS));
         add(acm = new AccountManager(this));
         acm.setEnabled(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
         CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {

@@ -61,7 +61,7 @@ public class BrowserSolverService extends AbstractSolverService {
                     final AtomicReference<BufferedImage> badOrg = new AtomicReference<BufferedImage>();
                     if (StringUtils.isNotEmpty(sid) && StringUtils.isNotEmpty(hsid)) {
 
-                        ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI._.Recaptcha_cookie_help_title(), _GUI._.Recaptcha_cookie_help_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), null, _GUI._.lit_close()) {
+                        ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI.T.Recaptcha_cookie_help_title(), _GUI.T.Recaptcha_cookie_help_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), null, _GUI.T.lit_close()) {
 
                             @Override
                             protected JComponent getIconComponent() {
@@ -120,7 +120,7 @@ public class BrowserSolverService extends AbstractSolverService {
                             return;
                         }
                     } else {
-                        UIOManager.I().showMessageDialog(_GUI._.Recaptcha_cookie_help_msg_both_cookies());
+                        UIOManager.I().showMessageDialog(_GUI.T.Recaptcha_cookie_help_msg_both_cookies());
                     }
                 }
 
@@ -144,7 +144,7 @@ public class BrowserSolverService extends AbstractSolverService {
 
     @Override
     public String getType() {
-        return _GUI._.BrowserSolverService_getName();
+        return _GUI.T.BrowserSolverService_getName();
     }
 
     @Override
@@ -154,7 +154,7 @@ public class BrowserSolverService extends AbstractSolverService {
 
     @Override
     public String getName() {
-        return _GUI._.BrowserSolverService_gettypeName();
+        return _GUI.T.BrowserSolverService_gettypeName();
     }
 
     @Override

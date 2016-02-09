@@ -84,7 +84,7 @@ public abstract class AbstractPanelHeader extends MigPanel {
             {
                 //
 
-                setTooltipText(_GUI._.AbstractPanelHeader_AbstractPanelHeader_settings_tt());
+                setTooltipText(_GUI.T.AbstractPanelHeader_AbstractPanelHeader_settings_tt());
             }
 
             @Override

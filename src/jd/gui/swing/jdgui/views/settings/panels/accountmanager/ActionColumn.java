@@ -25,7 +25,7 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     // private PremiumzoneAction premzone;
 
     public ActionColumn() {
-        super(_GUI._.premiumaccounttablemodel_column_actions());
+        super(_GUI.T.premiumaccounttablemodel_column_actions());
         renderer = new RendererMigPanel("ins 2", "[]", "[]");
         editor = new RendererMigPanel("ins 2", "[]", "[]");
         renew = new RenewAction();

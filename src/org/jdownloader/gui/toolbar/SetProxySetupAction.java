@@ -20,7 +20,7 @@ public class SetProxySetupAction extends CustomizableAppAction implements Action
 
     public SetProxySetupAction() {
         addContextSetup(this);
-        setName(_GUI._.SetProxySetupAction_SetProxySetupAction_());
+        setName(_GUI.T.SetProxySetupAction_SetProxySetupAction_());
         setIconKey(IconKey.ICON_PROXY);
     }
 
@@ -66,7 +66,7 @@ public class SetProxySetupAction extends CustomizableAppAction implements Action
             ProxyController.getInstance().importFrom(new File(getPath()));
 
         } catch (IOException e1) {
-            Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
         } finally {
             updateIcon(getPath());
         }

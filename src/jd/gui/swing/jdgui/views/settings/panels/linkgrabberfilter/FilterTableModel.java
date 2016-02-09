@@ -33,7 +33,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_enabled()) {
+        this.addColumn(new ExtCheckColumn<LinkgrabberFilterRule>(_GUI.T.settings_linkgrabber_filter_columns_enabled()) {
 
             private static final long serialVersionUID = -4667150369226691276L;
 
@@ -90,7 +90,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
             }
         });
 
-        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
+        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI.T.settings_linkgrabber_filter_columns_name()) {
 
             @Override
             public boolean isEnabled(LinkgrabberFilterRule value) {
@@ -117,7 +117,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
             }
         });
 
-        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_condition()) {
+        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI.T.settings_linkgrabber_filter_columns_condition()) {
             {
                 // rendererField.setHorizontalAlignment(JLabel.RIGHT);
             }
@@ -152,7 +152,7 @@ public class FilterTableModel extends ExtTableModel<LinkgrabberFilterRule> imple
 
             @Override
             public String getStringValue(LinkgrabberFilterRule value) {
-                return _GUI._.settings_linkgrabber_filter_columns_if(value.toString());
+                return _GUI.T.settings_linkgrabber_filter_columns_if(value.toString());
             }
         });
 

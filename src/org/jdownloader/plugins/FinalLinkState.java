@@ -10,8 +10,8 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
 
 public enum FinalLinkState {
-    FINISHED(_GUI._.TaskColumn_getStringValue_finished_(), IconKey.ICON_TRUE),
-    FINISHED_MIRROR(_GUI._.TaskColumn_getStringValue_finished_mirror(), IconKey.ICON_TRUE_ORANGE),
+    FINISHED(_GUI.T.TaskColumn_getStringValue_finished_(), IconKey.ICON_TRUE),
+    FINISHED_MIRROR(_GUI.T.TaskColumn_getStringValue_finished_mirror(), IconKey.ICON_TRUE_ORANGE),
     FINISHED_MD5(_JDT._.system_download_doCRC2_success("MD5"), IconKey.ICON_OK),
     FINISHED_SHA1(_JDT._.system_download_doCRC2_success("SHA1"), IconKey.ICON_OK),
     FINISHED_SHA256(_JDT._.system_download_doCRC2_success("SHA256"), IconKey.ICON_OK),

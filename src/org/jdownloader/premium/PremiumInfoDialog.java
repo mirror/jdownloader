@@ -32,13 +32,13 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
     private String     id;
 
     public PremiumInfoDialog(DomainInfo hosterInfo, String title, String id) {
-        super(0, title, null, _GUI._.PremiumInfoDialog_layoutDialogContent_interested(), _GUI._.literall_no_thanks());
+        super(0, title, null, _GUI.T.PremiumInfoDialog_layoutDialogContent_interested(), _GUI.T.literall_no_thanks());
         info = hosterInfo;
         this.id = id;
     }
 
     public PremiumInfoDialog(DomainInfo hosterInfo) {
-        this(hosterInfo, _GUI._.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "PremiumInfoDialog");
+        this(hosterInfo, _GUI.T.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "PremiumInfoDialog");
     }
 
     @Override
@@ -129,7 +129,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         // lbl.setBorder(BorderFactory.createMatteBorder(2, 0, 0, 0, new
         // Color(LAFOptions.getInstance().getPanelHeaderLineColor())));
 
-        JLabel lbl = new JLabel(_GUI._.PremiumInfoDialog_layoutDialogContent_advantages_header());
+        JLabel lbl = new JLabel(_GUI.T.PremiumInfoDialog_layoutDialogContent_advantages_header());
         ret.add(SwingUtils.toBold(lbl), "spanx,pushx,growx");
         ret.add(createAdvantages(), "spanx,gapleft " + (h - 24) + ", gaptop 10");
         // ret.add(new JSeparator(), "spanx,pushx,growx,gaptop 5");
@@ -142,7 +142,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
     }
 
     protected String getDescription(DomainInfo info2) {
-        return _GUI._.PremiumInfoDialog_layoutDialogContent_explain(info.getTld());
+        return _GUI.T.PremiumInfoDialog_layoutDialogContent_explain(info.getTld());
     }
 
     private Component createAdvantages() {
@@ -157,22 +157,22 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         // advantages.add((lbl));
         // }
         advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_SPEED, 24)));
-        advantages.add(new JLabel(_GUI._.PremiumFeature_speed_()));
+        advantages.add(new JLabel(_GUI.T.PremiumFeature_speed_()));
 
         advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_BATCH, 24)));
-        advantages.add(new JLabel(_GUI._.PremiumFeature_bandwidth_()));
+        advantages.add(new JLabel(_GUI.T.PremiumFeature_bandwidth_()));
 
         advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_PARALELL, 24)));
-        advantages.add(new JLabel(_GUI._.PremiumFeature_parallel_()));
+        advantages.add(new JLabel(_GUI.T.PremiumFeature_parallel_()));
 
         advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_RESUME, 24)));
-        advantages.add(new JLabel(_GUI._.PremiumFeature_resume_()));
+        advantages.add(new JLabel(_GUI.T.PremiumFeature_resume_()));
 
         advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_CHUNKS, 24)));
-        advantages.add(new JLabel(_GUI._.PremiumFeature_chunkload_()));
+        advantages.add(new JLabel(_GUI.T.PremiumFeature_chunkload_()));
 
         advantages.add(new JLabel(new AbstractIcon(IconKey.ICON_WAIT, 24)));
-        advantages.add(new JLabel(_GUI._.PremiumFeature_noWaittime_()));
+        advantages.add(new JLabel(_GUI.T.PremiumFeature_noWaittime_()));
 
         return advantages;
     }

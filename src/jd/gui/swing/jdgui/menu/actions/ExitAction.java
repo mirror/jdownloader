@@ -60,8 +60,8 @@ public class ExitAction extends CustomizableAppAction {
 
         });
         setIconKey(IconKey.ICON_EXIT);
-        setName(_GUI._.action_exit());
-        setTooltipText(_GUI._.action_exit_tooltip());
+        setName(_GUI.T.action_exit());
+        setTooltipText(_GUI.T.action_exit_tooltip());
         setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
 
     }

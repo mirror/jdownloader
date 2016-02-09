@@ -22,7 +22,7 @@ public class EditAction extends AbstractAction {
 
     public EditAction(final List<AccountEntry> selectedObjects) {
         selection = selectedObjects;
-        this.putValue(NAME, _GUI._.literally_edit());
+        this.putValue(NAME, _GUI.T.literally_edit());
         this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_EDIT, 16));
     }
 

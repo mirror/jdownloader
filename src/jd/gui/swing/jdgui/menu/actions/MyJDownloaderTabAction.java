@@ -34,8 +34,8 @@ public class MyJDownloaderTabAction extends CustomizableAppAction {
 
     public MyJDownloaderTabAction() {
         setIconKey(IconKey.ICON_LOGO_MYJDOWNLOADER);
-        setTooltipText(_GUI._.action_myjdownloader_menu_tooltip());
-        setName(_GUI._.action_myjdownloader_menu());
+        setTooltipText(_GUI.T.action_myjdownloader_menu_tooltip());
+        setName(_GUI.T.action_myjdownloader_menu());
         setAccelerator(KeyEvent.VK_M);
 
     }

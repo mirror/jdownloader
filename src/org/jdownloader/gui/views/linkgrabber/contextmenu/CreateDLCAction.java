@@ -18,7 +18,7 @@ public class CreateDLCAction extends CustomizableTableContextAppAction<CrawledPa
 
     public CreateDLCAction() {
 
-        setName(_GUI._.gui_table_contextmenu_dlc());
+        setName(_GUI.T.gui_table_contextmenu_dlc());
         setIconKey(IconKey.ICON_LOGO_DLC);
 
     }

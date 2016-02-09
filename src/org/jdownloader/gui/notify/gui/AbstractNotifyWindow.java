@@ -461,7 +461,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         SwingUtils.setOpaque(headerLbl, false);
         ExtButton settings = new ExtButton() {
             {
-                setToolTipText(_GUI._.Notify_createHeader_settings_tt());
+                setToolTipText(_GUI.T.Notify_createHeader_settings_tt());
                 setRolloverEffectEnabled(true);
                 addActionListener(new ActionListener() {
 
@@ -496,7 +496,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         ret.add(settings, "width 16!,height 16!");
         ExtButton closeButton = new ExtButton() {
             {
-                setToolTipText(_GUI._.Notify_createHeader_close_tt());
+                setToolTipText(_GUI.T.Notify_createHeader_close_tt());
                 setRolloverEffectEnabled(true);
                 addActionListener(new ActionListener() {
 
@@ -566,14 +566,14 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             popup.add(new JSeparator());
             popup.add(new AppAction() {
                 {
-                    setName(_GUI._.bubble_hide_permanent());
+                    setName(_GUI.T.bubble_hide_permanent());
                     setIconKey(IconKey.ICON_FALSE);
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     try {
-                        Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.bubble_disable_rly_msg(support.getLabel()), NewTheme.I().getIcon(IconKey.ICON_QUESTION, 32), null, null);
+                        Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.bubble_disable_rly_msg(support.getLabel()), NewTheme.I().getIcon(IconKey.ICON_QUESTION, 32), null, null);
                         support.getKeyHandler().setValue(false);
                         hideBubble(getTimeout());
                     } catch (DialogClosedException e1) {
@@ -587,7 +587,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             popup.add(new JSeparator());
             popup.add(new AppAction() {
                 {
-                    setName(_GUI._.bubblepopup_open_settings());
+                    setName(_GUI.T.bubblepopup_open_settings());
                     setIconKey(IconKey.ICON_SETTINGS);
                 }
 

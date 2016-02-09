@@ -34,7 +34,7 @@ public class DialogSolverService extends AbstractSolverService {
 
     @Override
     public String getType() {
-        return _GUI._.DialogBasicCaptchaSolver_getName();
+        return _GUI.T.DialogBasicCaptchaSolver_getName();
     }
 
     @Override
@@ -44,7 +44,7 @@ public class DialogSolverService extends AbstractSolverService {
 
     @Override
     public String getName() {
-        return _GUI._.DialogBasicCaptchaSolver_gettypeName();
+        return _GUI.T.DialogBasicCaptchaSolver_gettypeName();
     }
 
     @Override

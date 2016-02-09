@@ -360,32 +360,32 @@ public abstract class PluginForHost extends Plugin {
                 case BLOCK_ALL_CAPTCHAS:
                     CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
                 case BLOCK_HOSTER:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(getDownloadLink().getHost()));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
                 case BLOCK_PACKAGE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(getDownloadLink().getParentNode()));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
                 case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
                 case TIMEOUT:
                     if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
                         CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
                         if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                            HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
+                            HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                         }
                     }
                 case REFRESH:
@@ -1671,7 +1671,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void extendLinkgrabberContextMenu(JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
         if (allPvs.size() == 1) {
-            final JMenu setVariants = new JMenu(_GUI._.PluginForHost_extendLinkgrabberContextMenu_generic_convert());
+            final JMenu setVariants = new JMenu(_GUI.T.PluginForHost_extendLinkgrabberContextMenu_generic_convert());
             setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
             setVariants.setEnabled(false);
 
@@ -2072,7 +2072,7 @@ public abstract class PluginForHost extends Plugin {
                             public String getLabelString() {
                                 return null;
                             }
-                        }, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.PluginForHost_copyMove_progressdialog_title(), null, new AbstractIcon(IconKey.ICON_SAVETO, 32), null, _JDT._.lit_hide()) {
+                        }, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.PluginForHost_copyMove_progressdialog_title(), null, new AbstractIcon(IconKey.ICON_SAVETO, 32), null, _JDT._.lit_hide()) {
                             @Override
                             public String getDontShowAgainKey() {
                                 return COPY_MOVE_FILE;
@@ -2093,7 +2093,7 @@ public abstract class PluginForHost extends Plugin {
 
                                     String packagename = downloadLink.getParentNode().getName();
 
-                                    p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "split 2,sizegroup left,alignx left");
+                                    p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_hoster())), "split 2,sizegroup left,alignx left");
                                     DomainInfo di = downloadLink.getDomainInfo();
                                     JLabel ret = new JLabel(di.getTld());
                                     ret.setHorizontalAlignment(SwingConstants.LEFT);
@@ -2101,26 +2101,26 @@ public abstract class PluginForHost extends Plugin {
                                     p.add(ret);
 
                                     if (downloadLink.getParentNode() != FilePackage.getDefaultFilePackage()) {
-                                        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
+                                        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(packagename));
                                     }
-                                    p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filesize())), "split 2,sizegroup left,alignx left");
+                                    p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filesize())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(SizeFormatter.formatBytes(old.length())));
 
                                     if (newFile.getName().equals(old.getName())) {
-                                        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "split 2,sizegroup left,alignx left");
+                                        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filename())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(newFile.getName()));
                                     } else {
-                                        p.add(SwingUtils.toBold(new JLabel(_GUI._.PLUGINFORHOST_MOVECOPY_DIALOG_OLDFILENAME())), "split 2,sizegroup left,alignx left");
+                                        p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_OLDFILENAME())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(old.getName()));
-                                        p.add(SwingUtils.toBold(new JLabel(_GUI._.PLUGINFORHOST_MOVECOPY_DIALOG_NEWFILENAME())), "split 2,sizegroup left,alignx left");
+                                        p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_NEWFILENAME())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(newFile.getName()));
                                     }
 
-                                    p.add(SwingUtils.toBold(new JLabel(_GUI._.PLUGINFORHOST_MOVECOPY_DIALOG_OLD())), "split 2,sizegroup left,alignx left");
+                                    p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_OLD())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(old.getParent()));
 
-                                    p.add(SwingUtils.toBold(new JLabel(_GUI._.PLUGINFORHOST_MOVECOPY_DIALOG_NEW())), "split 2,sizegroup left,alignx left");
+                                    p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_NEW())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(newFile.getParent()));
                                 }
                             }

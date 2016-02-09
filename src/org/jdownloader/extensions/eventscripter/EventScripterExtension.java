@@ -454,7 +454,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             // cx.compileString(source, sourceName, lineno, securityDomain)
             Script fcn = cx.compileString(script, "", 1, null);
 
-            Dialog.getInstance().showMessageDialog(_GUI._.lit_successfull());
+            Dialog.getInstance().showMessageDialog(_GUI.T.lit_successfull());
         } catch (Throwable e1) {
             Dialog.getInstance().showExceptionDialog(T.T.syntax_error(), e1.getMessage(), e1);
         } finally {

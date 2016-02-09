@@ -21,7 +21,7 @@ public class HorizontalScrollbarAction extends AppAction implements GenericConfi
     public HorizontalScrollbarAction(ExtTable downloadsTable, BooleanKeyHandler horizontalScrollbarsInDownloadTableEnabled) {
         table = downloadsTable;
         keyHandler = horizontalScrollbarsInDownloadTableEnabled;
-        setName(_GUI._.HorizontalScrollbarAction_columnControlMenu_scrollbar_());
+        setName(_GUI.T.HorizontalScrollbarAction_columnControlMenu_scrollbar_());
         setSelected(keyHandler.isEnabled());
         keyHandler.getEventSender().addListener(this, true);
         // setup(keyHandler, table);

@@ -42,7 +42,7 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
     }
 
     public UploadSessionLogDialog(String errorID, DownloadLink downloadLink) {
-        super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_title2(), new AbstractIcon(IconKey.ICON_BOTTY_STOP, -1), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_yes(), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_no());
+        super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_object_title2(), new AbstractIcon(IconKey.ICON_BOTTY_STOP, -1), _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_yes(), _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_no());
         setTimeout(10 * 60 * 1000);
         this.downloadLink = downloadLink;
         this.errorID = errorID;
@@ -57,7 +57,7 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
 
     @Override
     protected String getDontShowAgainLabelText() {
-        return _GUI._.UploadSessionLogDialog_getDontShowAgainLabelText_always();
+        return _GUI.T.UploadSessionLogDialog_getDontShowAgainLabelText_always();
     }
 
     @Override
@@ -75,18 +75,18 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
         final JPanel p = new MigPanel("ins 0,wrap 1", "[]", "[][]");
 
         String packagename = downloadLink.getParentNode().getName();
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filename())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(downloadLink.getView().getDisplayName()));
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(packagename));
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_hoster())), "split 2,sizegroup left,alignx left");
         DomainInfo di = downloadLink.getDomainInfo();
         JLabel ret = new JLabel(di.getTld());
         ret.setHorizontalAlignment(SwingConstants.LEFT);
         ret.setIcon(di.getFavIcon());
         p.add(ret);
 
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.UploadSessionLogDialog_layoutDialogContent_errorid())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.UploadSessionLogDialog_layoutDialogContent_errorid())), "split 2,sizegroup left,alignx left");
         JTextField txt;
         p.add(txt = new JTextField(errorID));
         txt.setBorder(null);
@@ -96,7 +96,7 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
 
         JLabel lbl;
         desiredWidh = getDialog().getRawPreferredSize().width;
-        p.add(lbl = new JLabel("<html>" + _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_msg2() + "<b><u>" + _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_more() + "</b></u>" + "</html>"), "pushx, growx,gapbottom 5");
+        p.add(lbl = new JLabel("<html>" + _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_object_msg2() + "<b><u>" + _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_object_more() + "</b></u>" + "</html>"), "pushx, growx,gapbottom 5");
         lbl.addMouseListener(new MouseListener() {
 
             @Override

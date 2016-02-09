@@ -20,7 +20,7 @@ public class RunCheckSumAction extends CustomizableTableContextAppAction<FilePac
     public RunCheckSumAction() {
         super();
         setIconKey(org.jdownloader.gui.IconKey.ICON_HASHSUM);
-        setName(_GUI._.gui_table_contextmenu_runchecksum());
+        setName(_GUI.T.gui_table_contextmenu_runchecksum());
     }
 
     public void actionPerformed(ActionEvent e) {

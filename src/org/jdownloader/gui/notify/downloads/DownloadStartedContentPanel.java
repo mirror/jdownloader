@@ -40,17 +40,17 @@ public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
         Account account = downloadController.getAccount();
 
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_FILENAME_VISIBLE.isEnabled()) {
-            filename = addPair(filename, _GUI._.lit_filename() + ":", downloadLink.getLinkInfo().getIcon());
+            filename = addPair(filename, _GUI.T.lit_filename() + ":", downloadLink.getLinkInfo().getIcon());
             filename.setText(new File(downloadLink.getFileOutput()).getName());
         }
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_HOSTER_VISIBLE.isEnabled() && (account == null || account.isMulti())) {
-            hoster = addPair(hoster, _GUI._.lit_hoster() + ":", downloadLink.getDomainInfo().getFavIcon());
+            hoster = addPair(hoster, _GUI.T.lit_hoster() + ":", downloadLink.getDomainInfo().getFavIcon());
             hoster.setText(downloadLink.getDomainInfo().getTld());
         }
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_ACCOUNT_VISIBLE.isEnabled()) {
 
             if (account != null) {
-                this.account = addPair(this.account, _GUI._.lit_account() + ":", DomainInfo.getInstance(account.getHoster()).getFavIcon());
+                this.account = addPair(this.account, _GUI.T.lit_account() + ":", DomainInfo.getInstance(account.getHoster()).getFavIcon());
                 this.account.setText(account.getUser() + (CFG_GUI.SHOW_FULL_HOSTNAME.isEnabled() ? "@" + account.getHoster() : ""));
             }
         }
@@ -58,12 +58,12 @@ public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_PROXY_VISIBLE.isEnabled()) {
             if (proxy != null && !(proxy instanceof NoProxySelector)) {
 
-                this.proxy = addPair(this.proxy, _GUI._.lit_proxy() + ":", new AbstractIcon(IconKey.ICON_PROXY, 18));
+                this.proxy = addPair(this.proxy, _GUI.T.lit_proxy() + ":", new AbstractIcon(IconKey.ICON_PROXY, 18));
                 this.proxy.setText(proxy.toString());
             }
         }
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_SAVE_TO_VISIBLE.isEnabled()) {
-            this.saveTo = addPair(saveTo, _GUI._.lit_save_to() + ":", new AbstractIcon(IconKey.ICON_FOLDER, 18));
+            this.saveTo = addPair(saveTo, _GUI.T.lit_save_to() + ":", new AbstractIcon(IconKey.ICON_FOLDER, 18));
 
             saveTo.setText(new File(downloadLink.getFileOutput()).getParent());
         }

@@ -82,7 +82,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     }
 
     public ConnectionColumn() {
-        super(_GUI._.ConnectionColumn_ConnectionColumn(), null);
+        super(_GUI.T.ConnectionColumn_ConnectionColumn(), null);
         panel = new RendererMigPanel("ins 0 0 0 0", "[]", "[grow,fill]");
         labels = new RenderLabel[DEFAULT_ICON_COUNT + 1];
 
@@ -305,7 +305,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             }
             {
                 if (dlWatchdog.isLinkForced(link)) {
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
@@ -318,7 +318,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
                 /* is the Link resumeable */
                 if (link.isResumeable()) {
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
@@ -341,7 +341,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     } else {
                         proxyString = proxy.toString();
                     }
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                     final HTTPProxy finalProxy = proxy;
@@ -377,7 +377,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
                                         @Override
                                         protected void runInEDT() {
-                                            finalLbl.setText(_GUI._.ConnectionColumn_getStringValue_connection(proxyString + " (" + ip.getIP() + ")"));
+                                            finalLbl.setText(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (" + ip.getIP() + ")"));
                                         }
                                     };
                                 } catch (IPCheckException e1) {
@@ -391,17 +391,17 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     /* account in use? */
                     final PluginForHost plugin = sdc.getAccount().getPlugin();
                     final Icon icon = DomainInfo.getInstance(plugin.getHost(link, sdc.getAccount())).getFavIcon();
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
             }
             if (dli != null) {
-                panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), url, JLabel.LEADING));
+                panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_from(dli.getDownloadable().getHost()), url, JLabel.LEADING));
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
 
-                panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_chunks(dli.getManagedConnetionHandler().size()), connections, JLabel.LEADING));
+                panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_chunks(dli.getManagedConnetionHandler().size()), connections, JLabel.LEADING));
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
             }

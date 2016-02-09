@@ -59,7 +59,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
                 }
 
                 if (!en) {
-                    btRemove.setToolTipText(_GUI._.PackagizerFilter_valueChanged_disable_static());
+                    btRemove.setToolTipText(_GUI.T.PackagizerFilter_valueChanged_disable_static());
                     action.setEnabled(false);
                     return;
                 } else {

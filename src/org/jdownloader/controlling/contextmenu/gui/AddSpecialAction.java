@@ -38,15 +38,15 @@ public class AddSpecialAction extends AppAction {
     public AddSpecialAction(MenuManagerDialog managerFrame) {
         this.manager = managerFrame.getManager();
         this.managerFrame = managerFrame;
-        setName(_GUI._.ManagerFrame_layoutPanel_add());
-        setTooltipText(_GUI._.ManagerFrame_layoutPanel_add());
+        setName(_GUI.T.ManagerFrame_layoutPanel_add());
+        setTooltipText(_GUI.T.ManagerFrame_layoutPanel_add());
         setIconKey(IconKey.ICON_ADD);
     }
 
     public String getName(Object value) {
         try {
             if (value == null) {
-                return _GUI._.AddActionAction_getListCellRendererComponent_no_action_();
+                return _GUI.T.AddActionAction_getListCellRendererComponent_no_action_();
             }
             if (value instanceof ActionData) {
                 AppAction mi;
@@ -62,13 +62,13 @@ public class AddSpecialAction extends AppAction {
                 return name;
 
             } else if (value instanceof MenuLink) {
-                return _GUI._.AddSubMenuAction_component(((MenuLink) value).getName());
+                return _GUI.T.AddSubMenuAction_component(((MenuLink) value).getName());
 
             } else if (value instanceof SeparatorData) {
-                return _GUI._.AddSpecialAction_actionPerformed_separator();
+                return _GUI.T.AddSpecialAction_actionPerformed_separator();
             } else if (value instanceof MenuContainer) {
 
-                return _GUI._.AddSubMenuAction_getListCellRendererComponent_container(((MenuContainer) value).getName());
+                return _GUI.T.AddSubMenuAction_getListCellRendererComponent_container(((MenuContainer) value).getName());
 
             }
 
@@ -97,7 +97,7 @@ public class AddSpecialAction extends AppAction {
             }
         });
 
-        ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.AddSpecialAction_actionPerformed_title(), _GUI._.AddSpecialAction_actionPerformed_msg(), actions.toArray(new Object[] {}), 0, null, _GUI._.lit_add(), null, null) {
+        ComboBoxDialog d = new ComboBoxDialog(0, _GUI.T.AddSpecialAction_actionPerformed_title(), _GUI.T.AddSpecialAction_actionPerformed_msg(), actions.toArray(new Object[] {}), 0, null, _GUI.T.lit_add(), null, null) {
             @Override
             protected JComboBox getComboBox(Object[] options2) {
                 // return super.getComboBox(options2);

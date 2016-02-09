@@ -20,7 +20,7 @@ public class ReconnectBubbleSupport extends AbstractBubbleSupport implements Rec
     private ArrayList<Element> elements;
     
     public ReconnectBubbleSupport() {
-        super(_GUI._.plugins_optional_JDLightTray_ballon_reconnectstart3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED);
+        super(_GUI.T.plugins_optional_JDLightTray_ballon_reconnectstart3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED);
         elements = new ArrayList<Element>();
         ReconnectBubbleContent.fill(elements);
         Reconnecter.getInstance().getEventSender().addListener(this, true);

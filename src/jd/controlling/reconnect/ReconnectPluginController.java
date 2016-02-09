@@ -61,7 +61,7 @@ public class ReconnectPluginController {
 
     public static void main(String[] args) {
         try {
-            Dialog.getInstance().showConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(1, "ff", "ggf"), new AbstractIcon(IconKey.ICON_OK, 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization());
+            Dialog.getInstance().showConfirmDialog(0, _GUI.T.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI.T.AutoDetectAction_actionPerformed_dooptimization_msg(1, "ff", "ggf"), new AbstractIcon(IconKey.ICON_OK, 32), _GUI.T.AutoDetectAction_run_optimization(), _GUI.T.AutoDetectAction_skip_optimization());
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
@@ -118,11 +118,11 @@ public class ReconnectPluginController {
             }
             try {
 
-                Dialog.getInstance().showConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), new AbstractIcon(IconKey.ICON_OK, 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization());
+                Dialog.getInstance().showConfirmDialog(0, _GUI.T.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI.T.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), new AbstractIcon(IconKey.ICON_OK, 32), _GUI.T.AutoDetectAction_run_optimization(), _GUI.T.AutoDetectAction_skip_optimization());
                 feedback.setProgress(this, 0);
                 for (int ii = 0; ii < scripts.size(); ii++) {
                     ReconnectResult found = scripts.get(ii);
-                    feedback.setStatusString(this, _GUI._.AutoDetectAction_run_optimize(found.getInvoker().getName()));
+                    feedback.setStatusString(this, _GUI.T.AutoDetectAction_run_optimize(found.getInvoker().getName()));
                     final int step = ii;
                     found.optimize(new ProcessCallBackAdapter() {
 
@@ -131,7 +131,7 @@ public class ReconnectPluginController {
                         }
 
                         public void setStatusString(Object caller, String string) {
-                            feedback.setStatusString(caller, _GUI._.AutoDetectAction_run_optimize(string));
+                            feedback.setStatusString(caller, _GUI.T.AutoDetectAction_run_optimize(string));
                         }
 
                     });

@@ -21,7 +21,7 @@ public class UninstalledExtensionHeader extends JPanel {
         super(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][]"));
         add(Box.createGlue(), "spanx,height 15!");
         add(new JLabel(new AbstractIcon(IconKey.ICON_EXTENSIONMANAGER, 32)));
-        add(new JLabel(_GUI._.uninstalledextensionManager_title()));
+        add(new JLabel(_GUI.T.uninstalledextensionManager_title()));
         setOpaque(false);
 
         this.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0), BorderFactory.createMatteBorder(1, 0, 2, 0, getBackground().darker())));

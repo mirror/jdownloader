@@ -30,7 +30,7 @@ public class YoutubeSubtitleNamer implements YoutubeFilenameModifier {
     public String run(String formattedFilename, DownloadLink link) {
         String code = link.getStringProperty("YT_SUBTITLE_CODE", "");
         Locale locale = TranslationFactory.stringToLocale(code);
-        formattedFilename = formattedFilename.replaceAll("\\*quality\\*", _GUI._.YoutubeDash_getName_subtitles_filename(locale.getDisplayName()));
+        formattedFilename = formattedFilename.replaceAll("\\*quality\\*", _GUI.T.YoutubeDash_getName_subtitles_filename(locale.getDisplayName()));
         return formattedFilename;
     }
 }

@@ -60,7 +60,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<SolverService>(_GUI._.premiumaccounttablemodel_column_enabled()) {
+        this.addColumn(new ExtCheckColumn<SolverService>(_GUI.T.premiumaccounttablemodel_column_enabled()) {
 
             private final JComponent empty = new RendererMigPanel("ins 0", "[]", "[]");
 
@@ -123,7 +123,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
             }
         });
-        addColumn(new ExtTextColumn<SolverService>(_GUI._.SolverOrderTableModel_initColumns_service()) {
+        addColumn(new ExtTextColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_service()) {
 
             @Override
             public boolean isSortable(final SolverService obj) {
@@ -151,7 +151,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             }
         });
 
-        addColumn(new ExtTextColumn<SolverService>(_GUI._.SolverOrderTableModel_initColumns_type_()) {
+        addColumn(new ExtTextColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_type_()) {
 
             @Override
             public boolean isSortable(final SolverService obj) {
@@ -223,7 +223,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
         // return (value.getWaittime() / 1000) + " seconds";
         // }
         // });
-        this.addColumn(new ExtComponentColumn<SolverService>(_GUI._.SolverOrderTableModel_initColumns_timeout()) {
+        this.addColumn(new ExtComponentColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_timeout()) {
             private JButton            editorBtn;
             private JButton            rendererBtn;
             private SolverService      editing;
@@ -269,7 +269,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                         setIcon(new AbstractIcon(IconKey.ICON_WAIT, 14));
                         setHorizontalAlignment(CENTER);
-                        setText(_GUI._.SolverOrderTableModel_initColumns_timeout());
+                        setText(_GUI.T.SolverOrderTableModel_initColumns_timeout());
                         return this;
                     }
 
@@ -331,7 +331,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             public void configureRendererComponent(SolverService value, boolean isSelected, boolean hasFocus, int row, int column) {
 
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
-                rendererBtn.setText(_GUI._.lit_edit());
+                rendererBtn.setText(_GUI.T.lit_edit());
                 // }
             }
 
@@ -339,7 +339,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
                 // editorBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
-                editorBtn.setText(_GUI._.lit_edit());
+                editorBtn.setText(_GUI.T.lit_edit());
 
             }
 
@@ -352,7 +352,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             }
 
         });
-        this.addColumn(new ExtComponentColumn<SolverService>(_GUI._.lit_settings()) {
+        this.addColumn(new ExtComponentColumn<SolverService>(_GUI.T.lit_settings()) {
             private JButton            editorBtn;
             private JButton            rendererBtn;
             private SolverService      editing;
@@ -438,7 +438,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             public void configureRendererComponent(SolverService value, boolean isSelected, boolean hasFocus, int row, int column) {
 
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 16));
-                rendererBtn.setText(_GUI._.lit_edit());
+                rendererBtn.setText(_GUI.T.lit_edit());
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
             }
 
@@ -449,7 +449,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             @Override
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
-                editorBtn.setText(_GUI._.lit_edit());
+                editorBtn.setText(_GUI.T.lit_edit());
                 // editorBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
             }
 
@@ -462,7 +462,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                         setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 14));
                         setHorizontalAlignment(CENTER);
-                        setText(_GUI._.lit_settings());
+                        setText(_GUI.T.lit_settings());
                         return this;
                     }
 

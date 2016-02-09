@@ -22,7 +22,7 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
     private String   task;
 
     public FFMpegInstallTypeChooserDialog(String task) {
-        super(0, _GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title(), null, _GUI._.ffmpeg_install_now(), null);
+        super(0, _GUI.T.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title(), null, _GUI.T.ffmpeg_install_now(), null);
         this.task = task;
     }
 
@@ -65,15 +65,15 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
         p = new MigPanel("ins 10 10 10 0, wrap 2", "[][grow,fill]", "[]");
 
         JLabel lbl;
-        p.add(header(_GUI._.FFMpegInstallTypeChooserDialog_layoutDialogContent_problem()), "spanx");
+        p.add(header(_GUI.T.FFMpegInstallTypeChooserDialog_layoutDialogContent_problem()), "spanx");
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_LOGO_FFMPEG, 32)), "gapleft 10,gapright 10");
         // p.add(textField, "spanx");
-        p.add(new JLabel(_GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd_2(task)), "spanx");
+        p.add(new JLabel(_GUI.T.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd_2(task)), "spanx");
 
-        p.add(header(_GUI._.FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser()), "spanx");
+        p.add(header(_GUI.T.FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser()), "spanx");
 
         // p.add(textField, "gapleft 10,spanx");
-        p.add(new JLabel(_GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve2()), "gapleft 10,spanx");
+        p.add(new JLabel(_GUI.T.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve2()), "gapleft 10,spanx");
 
         return p;
     }
@@ -90,7 +90,7 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
 
     @Override
     public String getMessage() {
-        return _GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve2();
+        return _GUI.T.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve2();
     }
 
 }

@@ -22,7 +22,7 @@ public class LinkgrabberOverViewHeader extends AbstractPanelHeader {
     private LinkgrabberOverview overview;
 
     public LinkgrabberOverViewHeader(LinkgrabberOverview loverView) {
-        super(_GUI._.LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_(), NewTheme.I().getIcon(IconKey.ICON_DOWNLOAD, 16));
+        super(_GUI.T.LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_(), NewTheme.I().getIcon(IconKey.ICON_DOWNLOAD, 16));
         this.overview = loverView;
 
     }
@@ -33,12 +33,12 @@ public class LinkgrabberOverViewHeader extends AbstractPanelHeader {
     @Override
     protected void onSettings(ExtButton options) {
         JPopupMenu pu = new JPopupMenu();
-        CheckboxMenuItem total = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_total_(), CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE);
-        CheckboxMenuItem filtered = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_visible_only_(), CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE);
-        CheckboxMenuItem selected = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_selected_(), CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE);
-        pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_disabled(), CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS));
+        CheckboxMenuItem total = new CheckboxMenuItem(_GUI.T.OverViewHeader_actionPerformed_total_(), CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE);
+        CheckboxMenuItem filtered = new CheckboxMenuItem(_GUI.T.OverViewHeader_actionPerformed_visible_only_(), CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE);
+        CheckboxMenuItem selected = new CheckboxMenuItem(_GUI.T.OverViewHeader_actionPerformed_selected_(), CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE);
+        pu.add(new CheckboxMenuItem(_GUI.T.OverViewHeader_disabled(), CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS));
 
-        pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_smart_(), CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE, total, filtered, selected));
+        pu.add(new CheckboxMenuItem(_GUI.T.OverViewHeader_actionPerformed_smart_(), CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE, total, filtered, selected));
 
         pu.add(new JSeparator(JSeparator.HORIZONTAL));
         pu.add(total);

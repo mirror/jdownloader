@@ -34,9 +34,9 @@ public class LinkGrabberSidebar extends MigPanel {
         super("ins 0,wrap 1", "[grow,fill]", "[]");
         LAFOptions.getInstance().applyPanelBackground(this);
         // header
-        hosterFilter = new Header(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
+        hosterFilter = new Header(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED, _GUI.T.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
         exceptions = new CustomFilterHeader();
-        filetypeFilter = new Header(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter());
+        filetypeFilter = new Header(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED, _GUI.T.LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter());
 
         //
         exceptionsFilterTable = new QuickFilterExceptionsTable(exceptions, table);

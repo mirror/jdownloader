@@ -136,7 +136,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
             setdebug(job, "API Key is not correct! (Text)");
             if (counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime5.get()) > 30) {
                 counterdialogtime5.set((System.currentTimeMillis() / 1000));
-                jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_errortext_wrongapikey1() + "\n" + _GUI._.NinekwService_createPanel_errortext_wrongapikey2() + "\n");
+                jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_wrongapikey1() + "\n" + _GUI.T.NinekwService_createPanel_errortext_wrongapikey2() + "\n");
                 Thread.sleep(30000);
             }
             return;
@@ -246,7 +246,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                     setdebug(job, "Too many bad feedbacks like 30% captchas with NotOK. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
                     if (counterdialogtime1.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime1.get()) > config.getDefaultTimeoutNotification()) {
                         counterdialogtime1.set((System.currentTimeMillis() / 1000));
-                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_badfeedback_errortext() + "\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badfeedback_errortext() + "\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
                     }
                     return;
                 }
@@ -260,7 +260,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                     setdebug(job, "Too many captchas without feedbacks like OK or NotOK. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
                     if (counterdialogtime2.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime2.get()) > config.getDefaultTimeoutNotification()) {
                         counterdialogtime2.set((System.currentTimeMillis() / 1000));
-                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_badnofeedback_errortext() + "\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badnofeedback_errortext() + "\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
                     }
                     // return;
                 }
@@ -275,7 +275,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                         setdebug(job, "Your max. timeout for 9kw.eu is really low. - " + "Timeout: " + (config.getDefaultTimeout() / 1000) + "s");
                         if (counterdialogtime3.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime3.get()) > config.getDefaultTimeoutNotification()) {
                             counterdialogtime3.set((System.currentTimeMillis() / 1000));
-                            jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_badtimeout_errortext() + "\n");
+                            jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badtimeout_errortext() + "\n");
                         }
                         return;
                     }
@@ -283,7 +283,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                     setdebug(job, "Othertimeout as second max. timeout from the black-/whitelist is higher than your default timeout. - " + "Timeout: " + (config.getDefaultTimeout() / 1000) + "s" + " - OtherTimeout: " + (config.getCaptchaOther9kwTimeout() / 1000) + "s");
                     if (counterdialogtime3.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime3.get()) > config.getDefaultTimeoutNotification()) {
                         counterdialogtime3.set((System.currentTimeMillis() / 1000));
-                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_badtimeout_errortext2() + "\n");
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badtimeout_errortext2() + "\n");
                     }
                     return;
                 }
@@ -297,7 +297,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                     setdebug(job, "You have many send errors or interrupted captchas. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
                     if (counterdialogtime4.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime4.get()) > config.getDefaultTimeoutNotification()) {
                         counterdialogtime4.set((System.currentTimeMillis() / 1000));
-                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_baderrorsanduploads_errortext() + "\n");
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_baderrorsanduploads_errortext() + "\n");
                     }
                 }
             }
@@ -410,13 +410,13 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
                 if (ret.contains("0011 Guthaben ist nicht ausreichend") && config.getlowcredits()) {
                     if (counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime5.get()) > 30) {
                         counterdialogtime5.set((System.currentTimeMillis() / 1000));
-                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_errortext_nocredits() + "\n" + ret);
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocredits() + "\n" + ret);
                     }
                     Thread.sleep(30000);
                 } else if (ret.contains("0008 Kein Captcha gefunden")) {
                     if (counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - counterdialogtime5.get()) > 30) {
                         counterdialogtime5.set((System.currentTimeMillis() / 1000));
-                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_errortext_nocaptcha() + "\n" + ret);
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocaptcha() + "\n" + ret);
                     }
                     Thread.sleep(5000);
                 } else if (ret.contains("0015 Captcha zu schnell eingereicht")) {

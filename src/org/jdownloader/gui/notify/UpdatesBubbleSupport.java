@@ -21,7 +21,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 public class UpdatesBubbleSupport extends AbstractBubbleSupport implements UpdaterListener {
 
     public UpdatesBubbleSupport() {
-        super(_GUI._.plugins_optional_JDLightTray_ballon_updates2(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED);
+        super(_GUI.T.plugins_optional_JDLightTray_ballon_updates2(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED);
         UpdateController.getInstance().getEventSender().addListener(this, true);
     }
 
@@ -36,7 +36,7 @@ public class UpdatesBubbleSupport extends AbstractBubbleSupport implements Updat
 
                     @Override
                     public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                        BasicNotify no = new BasicNotify(_GUI._.balloon_updates(), _GUI._.balloon_updates_msg(), new AbstractIcon(IconKey.ICON_UPDATE, 32));
+                        BasicNotify no = new BasicNotify(_GUI.T.balloon_updates(), _GUI.T.balloon_updates_msg(), new AbstractIcon(IconKey.ICON_UPDATE, 32));
                         no.setActionListener(new ActionListener() {
 
                             public void actionPerformed(ActionEvent e) {

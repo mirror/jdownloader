@@ -47,7 +47,7 @@ public class AutoDetectUpnpAction extends BasicAction {
     public void actionPerformed(ActionEvent e) {
         LogSource logger = LogController.getInstance().getLogger("UPNPReconnect");
 
-        final ConfirmDialog confirm = new ConfirmDialog(0, _GUI._.AutoSetupAction_actionPerformed_warn_title(), _GUI._.AutoSetupAction_actionPerformed_warn_message(), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.AutoSetupAction_actionPerformed_warn_message_continue(), null) {
+        final ConfirmDialog confirm = new ConfirmDialog(0, _GUI.T.AutoSetupAction_actionPerformed_warn_title(), _GUI.T.AutoSetupAction_actionPerformed_warn_message(), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI.T.AutoSetupAction_actionPerformed_warn_message_continue(), null) {
             @Override
             protected int getPreferredWidth() {
                 return 750;
@@ -70,10 +70,10 @@ public class AutoDetectUpnpAction extends BasicAction {
         try {
             if (RouterUtils.isWindowsModemConnection()) {
                 modemChoose = false;
-                final ConfirmDialog d = new ConfirmDialog(0, _GUI._.literally_warning(), _GUI._.AutoSetupAction_actionPerformed_modem(), new AbstractIcon("modem", 32), _GUI._.AutoSetupAction_actionPerformed_dont_know(), _GUI._.AutoSetupAction_actionPerformed_router());
+                final ConfirmDialog d = new ConfirmDialog(0, _GUI.T.literally_warning(), _GUI.T.AutoSetupAction_actionPerformed_modem(), new AbstractIcon("modem", 32), _GUI.T.AutoSetupAction_actionPerformed_dont_know(), _GUI.T.AutoSetupAction_actionPerformed_router());
                 d.setLeftActions(new AbstractAction() {
                     {
-                        putValue(NAME, _GUI._.AutoSetupAction_actionPerformed_choose_modem());
+                        putValue(NAME, _GUI.T.AutoSetupAction_actionPerformed_choose_modem());
                     }
 
                     public void actionPerformed(ActionEvent e) {
@@ -85,7 +85,7 @@ public class AutoDetectUpnpAction extends BasicAction {
                     Dialog.getInstance().showDialog(d);
 
                     if (modemChoose) {
-                        Dialog.getInstance().showErrorDialog(_GUI._.AutoSetupAction_actionPerformed_noautoformodem());
+                        Dialog.getInstance().showErrorDialog(_GUI.T.AutoSetupAction_actionPerformed_noautoformodem());
                         CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/wiki/reconnect/modem");
                         return;
                     }
@@ -144,12 +144,12 @@ public class AutoDetectUpnpAction extends BasicAction {
                         }
                         try {
 
-                            UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(0, _GUI._.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI._.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), new AbstractIcon("ok", 32), _GUI._.AutoDetectAction_run_optimization(), _GUI._.AutoDetectAction_skip_optimization())).throwCloseExceptions();
+                            UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(0, _GUI.T.AutoDetectAction_actionPerformed_dooptimization_title(), _GUI.T.AutoDetectAction_actionPerformed_dooptimization_msg(scripts.size(), TimeFormatter.formatMilliSeconds(optiduration, 0), TimeFormatter.formatMilliSeconds(bestTime, 0)), new AbstractIcon("ok", 32), _GUI.T.AutoDetectAction_run_optimization(), _GUI.T.AutoDetectAction_skip_optimization())).throwCloseExceptions();
 
                             setBarProgress(0);
                             for (int ii = 0; ii < scripts.size(); ii++) {
                                 ReconnectResult found = scripts.get(ii);
-                                setBarText(_GUI._.AutoDetectAction_run_optimize(found.getInvoker().getName()));
+                                setBarText(_GUI.T.AutoDetectAction_run_optimize(found.getInvoker().getName()));
                                 final int step = ii;
                                 found.optimize(new ProcessCallBackAdapter() {
 
@@ -158,7 +158,7 @@ public class AutoDetectUpnpAction extends BasicAction {
                                     }
 
                                     public void setStatusString(Object caller, String string) {
-                                        setBarText(_GUI._.AutoDetectAction_run_optimize(string));
+                                        setBarText(_GUI.T.AutoDetectAction_run_optimize(string));
                                     }
 
                                 });

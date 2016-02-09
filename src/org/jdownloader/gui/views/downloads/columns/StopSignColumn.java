@@ -51,7 +51,7 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
     private static final long serialVersionUID = 1L;
 
     public StopSignColumn() {
-        super(_GUI._.StopSignColumn_StopSignColumn());
+        super(_GUI.T.StopSignColumn_StopSignColumn());
         icon = NewTheme.I().getIcon(IconKey.ICON_STOPSIGN, 16);
     }
 
@@ -76,7 +76,7 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
     @Override
     protected String getTooltipText(AbstractNode obj) {
         if (DownloadWatchDog.getInstance().getSession().isStopMark(obj)) {
-            return _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark();
+            return _GUI.T.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark();
         }
         return null;
     }

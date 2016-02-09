@@ -34,7 +34,7 @@ public class ProxyInput extends MigPanel implements SettingsComponent, GenericCo
         eventSender = new StateUpdateEventSender<ProxyInput>();
 
     }
-    private final String[]                     types            = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI._.jd_gui_swing_dialog_ProxyDialog_direct() };
+    private final String[]                     types            = new String[] { _GUI.T.jd_gui_swing_dialog_ProxyDialog_http(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_direct() };
 
     private JComboBox                          cmbType;
 
@@ -62,10 +62,10 @@ public class ProxyInput extends MigPanel implements SettingsComponent, GenericCo
         super("ins 0, wrap 4", "[][grow 10,fill][][grow 3,fill]", "[]");
         this.keyHandler = handler;
         setOpaque(false);
-        add(proxy = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_type()));
+        add(proxy = new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
         add(cmbType = new JComboBox(types), "spanx");
         cmbType.addActionListener(this);
-        add(lblHost = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport()));
+        add(lblHost = new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_hostport()));
         add(txtHost = new ExtTextField() {
             @Override
             public void onChanged() {
@@ -103,10 +103,10 @@ public class ProxyInput extends MigPanel implements SettingsComponent, GenericCo
         add(txtPort = new JTextField(), "shrinkx");
         txtPort.setText("8080");
 
-        add(lblUser = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_username()));
+        add(lblUser = new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_username()));
         add(txtUser = new JTextField(), "spanx");
 
-        add(lblPass = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_password()));
+        add(lblPass = new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_password()));
         add(txtPass = new JTextField(), "spanx");
         txtPass.addActionListener(this);
         txtPass.addFocusListener(this);

@@ -53,7 +53,7 @@ public class SpeedMeterPanel extends Graph {
 
         speedLimiter = new Limiter(LAFOptions.getInstance().getColorForSpeedmeterLimiterTop(), LAFOptions.getInstance().getColorForSpeedmeterLimiterBottom()) {
             public String getString() {
-                return _GUI._.SpeedMeterPanel_getString_limited(SizeFormatter.formatBytes(speedLimiter.getValue()));
+                return _GUI.T.SpeedMeterPanel_getString_limited(SizeFormatter.formatBytes(speedLimiter.getValue()));
 
             };
         };
@@ -99,7 +99,7 @@ public class SpeedMeterPanel extends Graph {
 
     protected String createTooltipText() {
         if (config.isDownloadSpeedLimitEnabled() && config.getDownloadSpeedLimit() > 0) {
-            return getAverageSpeedString() + "  " + getSpeedString() + "\r\n" + _GUI._.SpeedMeterPanel_createTooltipText_(SizeFormatter.formatBytes(config.getDownloadSpeedLimit()));
+            return getAverageSpeedString() + "  " + getSpeedString() + "\r\n" + _GUI.T.SpeedMeterPanel_createTooltipText_(SizeFormatter.formatBytes(config.getDownloadSpeedLimit()));
         } else {
             return getAverageSpeedString() + "  " + getSpeedString();
         }

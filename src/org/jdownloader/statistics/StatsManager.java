@@ -517,7 +517,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                             }
                             config.setAskedToContributeAdvancedSetup(true);
-                            ConfirmDialog d = new ConfirmDialog(0, _GUI._.StatsManager_StatsManager_advanced_survey_title(), _GUI._.StatsManager_StatsManager_advanced_survey_msg(), null, _GUI._.StatsManager_StatsManager_advanced_survey_send(), _GUI._.lit_no()) {
+                            ConfirmDialog d = new ConfirmDialog(0, _GUI.T.StatsManager_StatsManager_advanced_survey_title(), _GUI.T.StatsManager_StatsManager_advanced_survey_msg(), null, _GUI.T.StatsManager_StatsManager_advanced_survey_send(), _GUI.T.lit_no()) {
                                 @Override
                                 public ModalityType getModalityType() {
                                     return ModalityType.MODELESS;
@@ -525,12 +525,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             };
                             d.setLeftActions(new AppAction() {
                                 {
-                                    setName(_GUI._.StatsManager_StatsManager_advanced_survey_show());
+                                    setName(_GUI.T.StatsManager_StatsManager_advanced_survey_show());
                                 }
 
                                 @Override
                                 public void actionPerformed(ActionEvent e) {
-                                    final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.StatsManager_StatsManager_advanced_survey_title_list(), sb.toString(), null, _GUI._.lit_close(), null) {
+                                    final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.StatsManager_StatsManager_advanced_survey_title_list(), sb.toString(), null, _GUI.T.lit_close(), null) {
                                         @Override
                                         protected int getPreferredHeight() {
                                             return 750;
@@ -708,7 +708,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
             sendLogDetails(new LogDetails(id, action.getData()));
             if (!silent) {
-                UIOManager.I().showMessageDialog(_GUI._.StatsManager_createAndUploadLog_thanks_(action.getData()));
+                UIOManager.I().showMessageDialog(_GUI.T.StatsManager_createAndUploadLog_thanks_(action.getData()));
             }
 
         } catch (Exception e) {
@@ -1197,7 +1197,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                                                         public String getLabelString() {
                                                                                             return null;
                                                                                         }
-                                                                                    }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
+                                                                                    }, 0, _GUI.T.StatsManager_run_upload_error_title(), _GUI.T.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
                                                                                         public java.awt.Dialog.ModalityType getModalityType() {
                                                                                             return ModalityType.MODELESS;
                                                                                         };
@@ -1242,7 +1242,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                                         public String getLabelString() {
                                                                             return null;
                                                                         }
-                                                                    }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
+                                                                    }, 0, _GUI.T.StatsManager_run_upload_error_title(), _GUI.T.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
                                                                         public java.awt.Dialog.ModalityType getModalityType() {
                                                                             return ModalityType.MODELESS;
                                                                         };
@@ -1307,7 +1307,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         new Thread("Log Requestor") {
             @Override
             public void run() {
-                InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, new InputDialog(Dialog.STYLE_LARGE, _GUI._.StatsManager_run_requestMessage_title(), _GUI._.StatsManager_run_requestMessage_message(), null, null, _GUI._.lit_send(), null));
+                InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, new InputDialog(Dialog.STYLE_LARGE, _GUI.T.StatsManager_run_requestMessage_title(), _GUI.T.StatsManager_run_requestMessage_message(), null, null, _GUI.T.lit_send(), null));
                 if (d.getCloseReason() == CloseReason.OK) {
                     try {
                         sendMessage(d.getText(), action);
@@ -1398,7 +1398,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setCounter(errorCounter.incrementAndGet());
             sendFeedback(dl);
 
-            UIOManager.I().showMessageDialog(_GUI._.VoteFinderWindow_runInEDT_thankyou_2());
+            UIOManager.I().showMessageDialog(_GUI.T.VoteFinderWindow_runInEDT_thankyou_2());
         }
 
     }

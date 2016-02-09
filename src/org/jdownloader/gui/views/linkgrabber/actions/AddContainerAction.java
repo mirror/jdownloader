@@ -29,7 +29,7 @@ public class AddContainerAction extends CustomizableAppAction {
     public AddContainerAction() {
 
         setSmallIcon(new BadgeIcon("logo/dlc", "add", 32, 24, 2, 6));
-        setName(_GUI._.AddContainerAction());
+        setName(_GUI.T.AddContainerAction());
         setAccelerator(KeyEvent.VK_O);
     }
 
@@ -45,9 +45,9 @@ public class AddContainerAction extends CustomizableAppAction {
         try {
             final String exts = ContainerPluginController.getInstance().getContainerExtensions(null);
 
-            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.AddContainerAction_actionPerformed_(), null, null);
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.AddContainerAction_actionPerformed_(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
-            d.setFileFilter(new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(exts), exts, true));
+            d.setFileFilter(new JDFileFilter(_GUI.T.AddContainerAction_actionPerformed_extensions(exts), exts, true));
             d.setType(FileChooserType.OPEN_DIALOG);
             d.setMultiSelection(true);
             Dialog.I().showDialog(d);
