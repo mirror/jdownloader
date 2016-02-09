@@ -546,7 +546,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
             type = _GUI.T.InfoPanel_update_submenu();
 
-            // label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(, ));
+            // label.setText(_GUI.T.InfoPanel_updateInfo_header_actionlabel(, ));
 
         } else if (mid instanceof SeparatorData) {
 

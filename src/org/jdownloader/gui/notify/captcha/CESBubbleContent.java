@@ -67,7 +67,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         startTime = System.currentTimeMillis();
         // super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
         setLayout(new MigLayout("ins 3 3 0 3,wrap 2", "[fill][grow,fill]", "[]"));
-        // , _GUI._.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
+        // , _GUI.T.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
         MigPanel east = new MigPanel("ins 0 0 0 0,wrap 2", "[fill][grow,fill]", "[]");
         east.setOpaque(false);
         east.add(timeoutLbl = new JLabel(_GUI.T.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(timeoutms, 0), solver.getService().getName())), "hidemode 3,spanx");

@@ -91,13 +91,13 @@ public class CaptchaSolutionsTooltip extends PanelToolTip {
                             panel.add(lbl("Tokens", NewTheme.I().getIcon(IconKey.ICON_MONEY, 18), JLabel.LEFT));
                             panel.add(lbl(account.getTokens()));
 
-                            // panel.add(lbl(_GUI._.lit_rate(), NewTheme.I().getIcon(IconKey.ICON_PLAY, 18), JLabel.LEFT));
+                            // panel.add(lbl(_GUI.T.lit_rate(), NewTheme.I().getIcon(IconKey.ICON_PLAY, 18), JLabel.LEFT));
                             // panel.add(lbl(account.getRate() + " USD Cent/Captcha"));
-                            // panel.add(lbl(_GUI._.ServicePanelDBCTooltip_captcha_free(), NewTheme.I().getIcon(IconKey.ICON_OCR, 18),
+                            // panel.add(lbl(_GUI.T.ServicePanelDBCTooltip_captcha_free(), NewTheme.I().getIcon(IconKey.ICON_OCR, 18),
                             // JLabel.LEFT));
                             // panel.add(lbl((int) (account.getBalance() / account.getRate())));
                             // if (account.isBanned()) {
-                            // panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_banned(), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18),
+                            // panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_banned(), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18),
                             // JLabel.LEFT));
                             //
                             // }

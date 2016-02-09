@@ -152,7 +152,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     @Override
     public JComponent layoutDialogContent() {
         MigPanel ret = (MigPanel) super.layoutDialogContent();
-        // ret.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_then()),
+        // ret.add(createHeader(_GUI.T.FilterRuleDialog_layoutDialogContent_then()),
         // "gaptop 10, spanx,growx,pushx");
 
         updateGUI();

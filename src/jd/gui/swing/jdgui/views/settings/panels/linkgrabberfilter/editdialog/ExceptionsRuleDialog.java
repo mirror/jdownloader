@@ -145,7 +145,7 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
     @Override
     public JComponent layoutDialogContent() {
         MigPanel ret = (MigPanel) super.layoutDialogContent();
-        // ret.add(createHeader(_GUI._.ExceptionsRuleDialog_layoutDialogContent_then()),
+        // ret.add(createHeader(_GUI.T.ExceptionsRuleDialog_layoutDialogContent_then()),
         // "gaptop 10, spanx,growx,pushx");
 
         updateGUI();

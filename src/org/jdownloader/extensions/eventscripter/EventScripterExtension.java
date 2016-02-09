@@ -118,7 +118,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     public EventScripterExtension() throws StartException {
-        setTitle(T.T.title());
+        setTitle(T.title());
     }
 
     @Override
@@ -223,7 +223,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public String getDescription() {
-        return _.description();
+        return T.description();
     }
 
     @Override
@@ -456,7 +456,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
             Dialog.getInstance().showMessageDialog(_GUI.T.lit_successfull());
         } catch (Throwable e1) {
-            Dialog.getInstance().showExceptionDialog(T.T.syntax_error(), e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(T.syntax_error(), e1.getMessage(), e1);
         } finally {
             Context.exit();
         }

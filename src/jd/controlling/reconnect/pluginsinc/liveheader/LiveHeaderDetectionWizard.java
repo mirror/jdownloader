@@ -448,7 +448,7 @@ public class LiveHeaderDetectionWizard {
         // JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange(Math.max(fastestScript.getTestDuration()
         // * 4, 30));
         // processCallBack.setProgress(99);
-        // processCallBack.showMessage(T._.autodetection_success(TimeFormatter.formatMilliSeconds(fastestScript.getTestDuration(),
+        // processCallBack.showMessage(T.T.autodetection_success(TimeFormatter.formatMilliSeconds(fastestScript.getTestDuration(),
         // 0)));
         // return fastestTime;
         // }
@@ -784,7 +784,7 @@ public class LiveHeaderDetectionWizard {
         while (true) {
             System.out.println("UserConfirm");
             DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
-            // dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
+            // dcd.setLoginsText(T.T.LiveHeaderDetectionWizard_userConfirm_loginstext());
             DataCompareDialog impl = UIOManager.I().show(null, dcd);
             dcd.throwCloseExceptions();
             username = impl.getUsername();
@@ -914,7 +914,7 @@ public class LiveHeaderDetectionWizard {
             // if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() < 3 && false) {
             // // we have to validate the script first
             //
-            // processCallBack.setStatusString(this, _GUI._.LiveHeaderDetectionWizard_sendRouter_havetovalidate());
+            // processCallBack.setStatusString(this, _GUI.T.LiveHeaderDetectionWizard_sendRouter_havetovalidate());
             // ReconnectResult res = getPlugin().getReconnectInvoker().validate();
             // if (!res.isSuccess()) {
             // throw new ReconnectException("Reconnect Failed");
@@ -1177,7 +1177,7 @@ public class LiveHeaderDetectionWizard {
         } catch (Exception e) {
             throw new ScriptValidationExeption(e);
             // UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL,
-            // T._.share_invalid_title(), T._.share_invalid_msg(), e, _GUI._.lit_close(), null));
+            // T.T.share_invalid_title(), T.T.share_invalid_msg(), e, _GUI.T.lit_close(), null));
             // return;
         }
     }

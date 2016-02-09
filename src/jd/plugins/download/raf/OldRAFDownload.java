@@ -401,7 +401,7 @@ public class OldRAFDownload extends DownloadInterface {
             if (caughtPluginException != null) {
                 throw caughtPluginException;
             }
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_incomplete());
         }
         if (fileSize >= 0) {
             if (totalLinkBytesLoaded >= fileSize || isExternalStop == false && caughtPluginException == null) {
@@ -415,7 +415,7 @@ public class OldRAFDownload extends DownloadInterface {
             if (caughtPluginException != null) {
                 throw caughtPluginException;
             }
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_incomplete());
         }
         if (externalDownloadStop()) {
             return false;
@@ -591,9 +591,9 @@ public class OldRAFDownload extends DownloadInterface {
                 if (result != null) {
                     logger.info(result.getHashInfo().getType() + "-Check: " + (result.match() ? "ok" : "failed"));
                     if (result.match()) {
-                        downloadable.setLinkStatusText(_JDT._.system_download_doCRC2_success(result.getHashInfo().getType()));
+                        downloadable.setLinkStatusText(_JDT.T.system_download_doCRC2_success(result.getHashInfo().getType()));
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(result.getHashInfo().getType()));
+                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(result.getHashInfo().getType()));
                     }
                 }
                 return handleErrors();
@@ -606,7 +606,7 @@ public class OldRAFDownload extends DownloadInterface {
             throw e;
         } catch (Exception e) {
             if (e instanceof FileNotFoundException) {
-                this.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_localio(e.getMessage()), LinkStatus.VALUE_LOCAL_IO_ERROR));
+                this.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.download_error_message_localio(e.getMessage()), LinkStatus.VALUE_LOCAL_IO_ERROR));
             } else {
                 LogSource.exception(logger, e);
             }
@@ -868,7 +868,7 @@ public class OldRAFDownload extends DownloadInterface {
             downloadable.setVerifiedFileSize(outputPartFile.length());
         } else {
             if (hashResult.getHashInfo().isTrustworthy()) {
-                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
             }
         }
         boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
@@ -889,7 +889,7 @@ public class OldRAFDownload extends DownloadInterface {
                 LogSource.exception(logger, e);
             }
         } else {
-            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
         }
 
         return result;

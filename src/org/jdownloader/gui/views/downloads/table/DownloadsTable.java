@@ -159,14 +159,14 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     // Image back = (((AbstractPackageNode<?, ?>) obj).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) :
     // NewTheme.I().getImage("tree_package_closed", 32));
     //
-    // m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new
+    // m.add(SwingUtils.toBold(new JLabel(_GUI.T.ContextMenuFactory_createPopup_properties(obj.getName()), new
     // ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)), SwingConstants.LEFT)));
     // m.add(new JSeparator());
     // } else if (obj instanceof DownloadLink) {
     //
     // Image back = (((DownloadLink) obj).getIcon().getImage());
     //
-    // m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new
+    // m.add(SwingUtils.toBold(new JLabel(_GUI.T.ContextMenuFactory_createPopup_properties(obj.getName()), new
     // ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)), SwingConstants.LEFT)));
     // m.add(new JSeparator());
     // }

@@ -45,7 +45,7 @@ public class ReconnectBubble extends AbstractNotifyWindow<ReconnectBubbleContent
     
     public ReconnectBubble() {
         super(_GUI.T.balloon_reconnect(), new ReconnectBubbleContent());
-        // , _GUI._.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
+        // , _GUI.T.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
         Reconnecter.getInstance().getEventSender().addListener(this, true);
         updateTimer = new Timer(1000, new ActionListener() {
             
@@ -71,31 +71,31 @@ public class ReconnectBubble extends AbstractNotifyWindow<ReconnectBubbleContent
     // LinkOrigin src = jlc.getJob().getOrigin();
     //
     // if (src == null) {
-    // setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
+    // setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
     // } else if (src == LinkOrigin.ADD_LINKS_DIALOG) {
-    // setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
+    // setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
     // } else if (src == LinkOrigin.CLIPBOARD) {
     // String txt = jlc.getJob().getText();
     // if (StringUtils.isNotEmpty(txt)) {
     // try {
     // URL url = new URL(txt);
-    // setHeaderText(_GUI._.LinkCrawlerBubble_update_header_from_Clipboard_url(url.getHost()));
+    // setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard_url(url.getHost()));
     // } catch (MalformedURLException e) {
-    // setHeaderText(_GUI._.LinkCrawlerBubble_update_header_from_Clipboard());
+    // setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
     // }
     // } else {
-    // setHeaderText(_GUI._.LinkCrawlerBubble_update_header_from_Clipboard());
+    // setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
     // }
     //
     // } else {
-    // setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
+    // setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
     // }
     // if (jlc.isRunning()) {
     //
-    // panel.setText(_GUI._.LinkCrawlerBubble_update_running_linkcrawler(jlc.getCrawledLinksFoundCounter(),
+    // panel.setText(_GUI.T.LinkCrawlerBubble_update_running_linkcrawler(jlc.getCrawledLinksFoundCounter(),
     // TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0)));
     // } else {
-    // panel.setText(_GUI._.LinkCrawlerBubble_update_stopped_linkcrawler(jlc.getCrawledLinksFoundCounter(),
+    // panel.setText(_GUI.T.LinkCrawlerBubble_update_stopped_linkcrawler(jlc.getCrawledLinksFoundCounter(),
     // TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0)));
     // }
     //

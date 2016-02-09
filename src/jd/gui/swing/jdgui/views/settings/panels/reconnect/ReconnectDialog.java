@@ -276,7 +276,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         // ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.GRAY);
         // ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.RED);
         // progress.setValue(0);
-        // Dialog.getInstance().showMessageDialog(_GUI._.reconnect_test_offline());
+        // Dialog.getInstance().showMessageDialog(_GUI.T.reconnect_test_offline());
         // new EDTRunner() {
         //
         // @Override

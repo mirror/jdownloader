@@ -116,7 +116,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         // Name. The translation Extension itself does not need translation. All
         // translators should be able to read english
 
-        setTitle(_.Translator());
+        setTitle(T.Translator());
         eventSender = new TranslatorExtensionEventSender();
         if (!Application.isHeadless()) {
             // unload extensions on exit
@@ -303,7 +303,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     @Override
     public String getDescription() {
-        return _.description();
+        return T.description();
     }
 
     /**

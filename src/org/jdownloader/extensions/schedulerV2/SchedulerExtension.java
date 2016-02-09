@@ -100,7 +100,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     }
 
     public SchedulerExtension() throws StartException {
-        setTitle(_.title());
+        setTitle(T.title());
     }
 
     public List<ScheduleEntry> getScheduleEntries() {
@@ -217,7 +217,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     public String getDescription() {
-        return _.description();
+        return T.description();
     }
 
     @Override

@@ -135,7 +135,7 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
                 passWord = new PasswordInput(CFG_CAPTCHABROTHERHOOD.PASS);
 
                 this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
-                // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
+                // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI.T.captchabrotherhoodService_createPanel_logins_());
 
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_enabled(), null, new Checkbox(CFG_CAPTCHABROTHERHOOD.ENABLED, userName, passWord));

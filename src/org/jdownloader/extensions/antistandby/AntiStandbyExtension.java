@@ -52,7 +52,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     public AntiStandbyExtension() throws StartException {
         super();
-        setTitle(_.jd_plugins_optional_antistandby_jdantistandby());
+        setTitle(T.jd_plugins_optional_antistandby_jdantistandby());
 
     }
 
@@ -131,7 +131,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     public String getDescription() {
-        return _.jd_plugins_optional_antistandby_jdantistandby_description();
+        return T.jd_plugins_optional_antistandby_jdantistandby_description();
     }
 
     @Override

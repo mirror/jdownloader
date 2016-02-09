@@ -174,7 +174,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             }
         });
 
-        // addColumn(new ExtSpinnerColumn<SolverService>(_GUI._.SolverOrderTableModel_initColumns_startafter()) {
+        // addColumn(new ExtSpinnerColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_startafter()) {
         // @Override
         // public boolean isHidable() {
         // return false;
@@ -192,7 +192,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
         //
         // @Override
         // protected String getTooltipText(SolverService obj) {
-        // return _GUI._.SolverOrderTableModel_getTooltipText_object_(obj.getServiceName(),
+        // return _GUI.T.SolverOrderTableModel_getTooltipText_object_(obj.getServiceName(),
         // TimeFormatter.formatMilliSeconds(obj.getWaittime(), 0));
         // }
         //

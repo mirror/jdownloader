@@ -142,7 +142,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         try {
             map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_trademark()), "spanx,alignx center");
-            // stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_beta()), "spanx,alignx center");
+            // stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_beta()), "spanx,alignx center");
             // contentpane.add(btn, "aligny center, spany 3");
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_builddate()));
             stats.add(disable(map.get("buildDate")));

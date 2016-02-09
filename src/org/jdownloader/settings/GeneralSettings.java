@@ -497,19 +497,19 @@ public interface GeneralSettings extends ConfigInterface {
 
         SKIP_FILE() {
             public String getLabel() {
-                return _GUI._.OnSkipDueToAlreadyExistsAction_skip_file();
+                return _GUI.T.OnSkipDueToAlreadyExistsAction_skip_file();
             }
 
         },
         SET_FILE_TO_SUCCESSFUL {
             public String getLabel() {
-                return _GUI._.OnSkipDueToAlreadyExistsAction_mark_successful();
+                return _GUI.T.OnSkipDueToAlreadyExistsAction_mark_successful();
             }
         },
 
         SET_FILE_TO_SUCCESSFUL_MIRROR {
             public String getLabel() {
-                return _GUI._.OnSkipDueToAlreadyExistsAction_mark_successful_mirror();
+                return _GUI.T.OnSkipDueToAlreadyExistsAction_mark_successful_mirror();
             }
         }
 

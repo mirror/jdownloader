@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -15,8 +17,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UsenetConfigInterface;
 import jd.plugins.components.UsenetServer;
-
-import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "usenetbucket.com" }, urls = { "" }, flags = { 0 })
 public class UsenetBucketCom extends UseNet {

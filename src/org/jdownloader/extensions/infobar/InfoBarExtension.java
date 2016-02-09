@@ -1,11 +1,5 @@
 package org.jdownloader.extensions.infobar;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
-import jd.config.SubConfiguration;
-import jd.plugins.AddonPanel;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -17,7 +11,6 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infobar.translate.InfobarTranslation;
-import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
@@ -25,6 +18,12 @@ import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
+
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
+import jd.config.SubConfiguration;
+import jd.plugins.AddonPanel;
 
 public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> implements MenuExtenderHandler {
 
@@ -54,7 +53,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     }
 
     public InfoBarExtension() throws StartException {
-        setTitle(T.T.jd_plugins_optional_infobar_jdinfobar());
+        setTitle(T.jd_plugins_optional_infobar_jdinfobar());
         subConfig = SubConfiguration.getConfig("infobarextension");
     }
 
@@ -169,7 +168,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         if (Application.getJavaVersion() >= Application.JAVA16) {
-            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_OPACITY, T.T.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
+            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_OPACITY, T.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -182,7 +181,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             config.addEntry(ce);
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DROPLOCATION, T.T.jd_plugins_optional_infobar_dropLocation2()) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DROPLOCATION, T.jd_plugins_optional_infobar_dropLocation2()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -194,7 +193,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
                 super.valueChanged(newValue);
             }
         }.setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DOCKING, T.T.jd_plugins_optional_infobar_docking()) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DOCKING, T.jd_plugins_optional_infobar_docking()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -210,7 +209,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     public String getDescription() {
-        return T.T.jd_plugins_optional_infobar_jdinfobar_description();
+        return T.jd_plugins_optional_infobar_jdinfobar_description();
     }
 
     @Override

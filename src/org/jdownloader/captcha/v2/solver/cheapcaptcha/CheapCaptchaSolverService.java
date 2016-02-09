@@ -89,7 +89,7 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
                 password = new PasswordInput(CFG_CHEAP_CAPTCHA.PASSWORD);
 
                 this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), new AbstractIcon(IconKey.ICON_LOGINS, 32));
-                // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
+                // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(CheapCaptchaSolverService.this.getName()));
                 addPair(_GUI.T.captchasolver_configpanel_enabled(CheapCaptchaSolverService.this.getName()), null, new Checkbox(CFG_CHEAP_CAPTCHA.ENABLED, username, password));
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);

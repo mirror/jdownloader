@@ -30,7 +30,7 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
 
     public MyJDownloaderAccount() {
         this.addHeader(getTitle(), getIcon());
-        // this.addDescription(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description());
+        // this.addDescription(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description());
 
         TextInput deviceName = new TextInput(CFG_MYJD.DEVICE_NAME);
         TextInput email = new TextInput(CFG_MYJD.EMAIL);

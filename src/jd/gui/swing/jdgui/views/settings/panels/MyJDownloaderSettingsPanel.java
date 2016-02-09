@@ -185,7 +185,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         this.addDescription(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description());
         add(openMyJDownloader, "gapleft 37,spanx,pushx,growx");
         this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
-        // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
+        // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
         this.addDescriptionPlain(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_logins());
         addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_email_(), null, email);
         addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_password_(), null, passWord);

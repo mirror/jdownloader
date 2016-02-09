@@ -230,7 +230,7 @@ public class RAFChunk extends Thread {
              */
             flushLevel = Math.max((maxbuffersize / 100 * 80), 1);
         } catch (Throwable e) {
-            dl.error(new PluginException(LinkStatus.ERROR_FATAL, _JDT._.download_error_message_outofmemory()));
+            dl.error(new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.download_error_message_outofmemory()));
             return;
         }
         /* +1 because of startByte also gets loaded (startbyte till endbyte) */
@@ -347,43 +347,43 @@ public class RAFChunk extends Thread {
             }
             if (endPosition >= 0 && getCurrentBytesPosition() < endPosition) {
                 logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition + " read:" + bytesRead + " written:" + bytesWritten);
-                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete()));
+                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_incomplete()));
             }
         } catch (FileNotFoundException e) {
             LogSource.exception(logger, e);
             if (remoteIO) {
                 dl.error(new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null));
             } else {
-                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_iopermissions(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.download_error_message_iopermissions(), LinkStatus.VALUE_LOCAL_IO_ERROR));
             }
         } catch (SecurityException e) {
             LogSource.exception(logger, e);
             logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-            dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_iopermissions(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+            dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.download_error_message_iopermissions(), LinkStatus.VALUE_LOCAL_IO_ERROR));
         } catch (UnknownHostException e) {
             LogSource.exception(logger, e);
-            dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_unavailable(), 10 * 60000l));
+            dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_unavailable(), 10 * 60000l));
         } catch (IOException e) {
             LogSource.exception(logger, e);
             if (e.getMessage() != null && e.getMessage().contains("reset")) {
                 logger.info("Connection reset: network problems!");
-                dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset(), 1000l * 60 * 5));
+                dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_networkreset(), 1000l * 60 * 5));
             } else if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                 LogSource.exception(logger, e);
                 logger.severe("Read timeout: network problems! (too many connections?, firewall/antivirus?)");
-                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
+                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
             } else if (e instanceof SocketException) {
                 logger.info("Socket Exception: network problems!");
-                dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset(), 1000l * 60 * 5));
+                dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_networkreset(), 1000l * 60 * 5));
             } else {
                 LogSource.exception(logger, e);
                 if (e.getMessage() != null && e.getMessage().contains("503")) {
-                    dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_unavailable(), 10 * 60000l));
+                    dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_unavailable(), 10 * 60000l));
                 } else if (remoteIO) {
-                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
+                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
                 } else {
                     logger.severe("error occurred while writing to file. " + e.getMessage());
-                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_iopermissions(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.download_error_message_iopermissions(), LinkStatus.VALUE_LOCAL_IO_ERROR));
                 }
             }
         } catch (Throwable e) {
@@ -498,7 +498,7 @@ public class RAFChunk extends Thread {
                         logger.finer("Is no error. Last chunk is just already finished");
                         return;
                     }
-                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_connectioncopyerror()));
+                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_connectioncopyerror()));
                     logger.severe("ERROR Chunk (connection copy failed) " + getID());
                     return;
                 }
@@ -514,12 +514,12 @@ public class RAFChunk extends Thread {
                     return;
                 }
                 if (connection == null) {
-                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_connectioncopyerror()));
+                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_connectioncopyerror()));
                     logger.severe("ERROR Chunk (connection copy failed) " + getID());
                     return;
                 }
                 if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
-                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_rangeheaders()));
+                    dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_rangeheaders()));
                     logger.severe("ERROR Chunk (no range header response)" + getID() + "\r\n" + connection.toString());
                     // logger.finest(connection.toString());
                     return;
@@ -547,7 +547,7 @@ public class RAFChunk extends Thread {
                          */
                     } else {
                         logger.severe("ERROR Chunk (range header parse error)" + getID() + "\r\n" + connection.toString());
-                        dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range")));
+                        dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range")));
                         return;
                     }
                 } else {

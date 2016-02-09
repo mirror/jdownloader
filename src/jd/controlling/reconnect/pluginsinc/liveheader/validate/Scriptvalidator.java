@@ -538,8 +538,8 @@ public class Scriptvalidator {
 
     protected void replaceUsernameParameter(String key, String value) throws RetryWithReplacedScript, Exception {
         System.out.println(key + "=" + value);
-        // if (!UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_check_sensitive_data_before_share(key + "=" + value), new
-        // AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+        // if (!UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_check_sensitive_data_before_share(key + "=" + value), new
+        // AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
 
         if (defaultUsernames.contains(value.toLowerCase(Locale.ENGLISH))) {
             replacedDefaultUsernames.add(value);

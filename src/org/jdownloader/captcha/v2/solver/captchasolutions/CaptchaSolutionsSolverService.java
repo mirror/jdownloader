@@ -93,13 +93,13 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
                 password = new PasswordInput(CFG_CAPTCHA_SOLUTIONS.PASSWORD);
 
                 this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
-                // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
+                // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(CaptchaSolutionsSolverService.this.getName()));
                 addPair(_GUI.T.captchasolver_configpanel_enabled(CaptchaSolutionsSolverService.this.getName()), null, new Checkbox(CFG_CAPTCHA_SOLUTIONS.ENABLED, username, password));
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_password(), null, password);
 
-                // addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_feedback(), null, new
+                // addPair(_GUI.T.DeatchbyCaptcha_Service_createPanel_feedback(), null, new
                 // Checkbox(CFG_CAPTCHA_SOLUTIONS.FEED_BACK_SENDING_ENABLED));
 
                 addBlackWhiteList(CFG_CAPTCHA_SOLUTIONS.CFG);

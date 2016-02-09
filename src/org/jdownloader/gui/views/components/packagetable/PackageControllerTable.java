@@ -515,7 +515,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             private static final long serialVersionUID = 1L;
 
             {
-                // setName(_GUI._.BottomBar_BottomBar_totop());
+                // setName(_GUI.T.BottomBar_BottomBar_totop());
                 this.setTooltipText(_GUI.T.BottomBar_BottomBar_totop_tooltip());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_GO_TOP, 20));
             }
@@ -558,7 +558,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             private static final long serialVersionUID = 1L;
 
             {
-                // setName(_GUI._.BottomBar_BottomBar_moveup());
+                // setName(_GUI.T.BottomBar_BottomBar_moveup());
                 this.setTooltipText(_GUI.T.BottomBar_BottomBar_moveup_tooltip());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_GO_UP, 20));
             }
@@ -628,7 +628,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             private static final long serialVersionUID = 1L;
 
             {
-                // setName(_GUI._.BottomBar_BottomBar_movedown());
+                // setName(_GUI.T.BottomBar_BottomBar_movedown());
                 this.setTooltipText(_GUI.T.BottomBar_BottomBar_movedown_tooltip());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_GO_DOWN, 20));
             }
@@ -693,7 +693,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             private static final long serialVersionUID = 1L;
 
             {
-                // setName(_GUI._.BottomBar_BottomBar_tobottom());
+                // setName(_GUI.T.BottomBar_BottomBar_tobottom());
                 this.setTooltipText(_GUI.T.BottomBar_BottomBar_tobottom_tooltip());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_GO_BOTTOM, 20));
             }
