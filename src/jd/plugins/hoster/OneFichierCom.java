@@ -242,10 +242,7 @@ public class OneFichierCom extends PluginForHost {
         String dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, this.getDownloadlinkNEW(downloadLink));
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
-        if (dl.getConnection().getResponseCode() == 410) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        handleDownloadErrorsGeneral();
         if (dl.getConnection().getContentType().contains("html")) {
             /*
              * could not resume, fetch new link, either saved link was free and chunks are not supported or somehow a premium link failed -
@@ -333,10 +330,7 @@ public class OneFichierCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
-        if (dl.getConnection().getResponseCode() == 410) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        handleDownloadErrorsGeneral();
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -689,10 +683,7 @@ public class OneFichierCom extends PluginForHost {
                 throw e;
             }
 
-            if (dl.getConnection().getResponseCode() == 410) {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            handleDownloadErrorsGeneral();
             if (dl.getConnection().getContentType().contains("html")) {
                 if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
                     dl.getConnection().disconnect();
@@ -709,6 +700,13 @@ public class OneFichierCom extends PluginForHost {
             link.setProperty(PROPERTY_PREMLINK, dllink);
             dl.startDownload();
             return;
+        }
+    }
+
+    private void handleDownloadErrorsGeneral() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 410) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
