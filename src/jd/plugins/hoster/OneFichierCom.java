@@ -329,6 +329,10 @@ public class OneFichierCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
+        if (dl.getConnection().getResponseCode() == 410) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -681,6 +685,10 @@ public class OneFichierCom extends PluginForHost {
                 throw e;
             }
 
+            if (dl.getConnection().getResponseCode() == 410) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
                     dl.getConnection().disconnect();
@@ -749,7 +757,7 @@ public class OneFichierCom extends PluginForHost {
 
     /**
      * Makes sure that we're allowed to download a link. This function will also find out of a link is password protected.
-     * 
+     *
      * @throws IOException
      */
     private void checkDownloadable() throws PluginException, IOException {

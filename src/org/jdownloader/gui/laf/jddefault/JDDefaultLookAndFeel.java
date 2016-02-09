@@ -1,5 +1,7 @@
 package org.jdownloader.gui.laf.jddefault;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.swing.Icon;
 import javax.swing.JComponent;
 
@@ -24,8 +26,24 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
         return "SyntheticaJDVisionLookAndFeel";
     }
 
+    private final AtomicBoolean newThemeAvailable = new AtomicBoolean(false);
+
     public Icon getDisabledIcon(JComponent component, Icon icon) {
-        return NewTheme.I().getDisabledIcon(icon);
+        if (!newThemeAvailable.get()) {
+            try {
+                final Class<?> newTheme = getClass().getClassLoader().loadClass("org.jdownloader.images.NewTheme");
+                if (newTheme != null) {
+                    newThemeAvailable.set(true);
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        if (newThemeAvailable.get()) {
+            return NewTheme.I().getDisabledIcon(component, icon);
+        } else {
+            return super.getDisabledIcon(component, icon);
+        }
     }
 
     // return the LAF name - readable for humans
