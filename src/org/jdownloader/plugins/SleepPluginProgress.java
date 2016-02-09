@@ -36,7 +36,7 @@ public class SleepPluginProgress extends PluginProgress {
     @Override
     public void setCurrent(long current) {
         if (current > 0) {
-            pluginMessage = _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(current / 1000));
+            pluginMessage = _JDT.T.gui_download_waittime_status2(Formatter.formatSeconds(current / 1000));
         } else {
             pluginMessage = message;
         }

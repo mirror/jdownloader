@@ -8,6 +8,6 @@ public class _JDT {
         return TranslationFactory.getDesiredLanguage();
     }
 
-    public static final JdownloaderTranslation _ = TranslationFactory.create(JdownloaderTranslation.class);
+    public static final JdownloaderTranslation T = TranslationFactory.create(JdownloaderTranslation.class);
 
 }

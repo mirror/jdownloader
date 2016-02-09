@@ -41,7 +41,7 @@ public class PluginUtils {
             if (message.length() >= 120) {
                 message = message.substring(0, 117) + "...";
             }
-            message = _JDT._.jd_plugins_PluginUtils_askPassword(message);
+            message = _JDT.T.jd_plugins_PluginUtils_askPassword(message);
         }
         final String password = askPassword(message, link.getDecrypterPassword());
         return password;

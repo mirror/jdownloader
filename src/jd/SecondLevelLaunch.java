@@ -304,7 +304,7 @@ public class SecondLevelLaunch {
                     /* TODO: remove me after we've upgraded mac installer */
                     return;
                 }
-                Dialog.getInstance().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT._.gui_javacheck_newerjavaavailable_title(Application.getJavaVersion()), _JDT._.gui_javacheck_newerjavaavailable_msg(), new AbstractIcon(IconKey.ICON_WARNING, 32), null, null);
+                Dialog.getInstance().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.gui_javacheck_newerjavaavailable_title(Application.getJavaVersion()), _JDT.T.gui_javacheck_newerjavaavailable_msg(), new AbstractIcon(IconKey.ICON_WARNING, 32), null, null);
                 CrossSystem.openURLOrShowMessage("http://jdownloader.org/download/index?updatejava=1");
             } catch (DialogNoAnswerException e) {
             }
@@ -991,7 +991,7 @@ public class SecondLevelLaunch {
                                                             }
                                                             final GeneralSettings generalSettings = JsonConfig.create(GeneralSettings.class);
                                                             if (generalSettings.getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
-                                                                final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), new AbstractIcon(IconKey.ICON_START, 32), _JDT._.Mainstart_now(), null);
+                                                                final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT.T.Main_run_autostart_(), _JDT.T.Main_run_autostart_msg(), new AbstractIcon(IconKey.ICON_START, 32), _JDT.T.Mainstart_now(), null);
                                                                 d.setTimeout(generalSettings.getAutoStartCountdownSeconds() * 1000);
                                                                 try {
                                                                     final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, d);

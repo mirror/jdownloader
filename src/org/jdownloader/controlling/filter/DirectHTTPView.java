@@ -16,7 +16,7 @@ public class DirectHTTPView extends LinkgrabberFilterRule {
 
     public LinkgrabberFilterRule init() {
         setPluginStatusFilter(new PluginStatusFilter(PluginStatusMatchtype.ISNOT, true, PluginStatus.NO_DIRECT_HTTP));
-        setName(_JDT._.LinkFilterSettings_DefaultFilterList_directhttp());
+        setName(_JDT.T.LinkFilterSettings_DefaultFilterList_directhttp());
         setIconKey(IconKey.ICON_DOWNLOAD);
         setAccept(true);
         setEnabled(false);

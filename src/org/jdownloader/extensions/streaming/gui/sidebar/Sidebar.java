@@ -117,7 +117,7 @@ public class Sidebar extends JList implements MouseMotionListener, MouseListener
                         if (x > 3 && x < 18 && y > 3 && y < 18) {
 
                             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                            setToolTipText(_JDT._.settings_sidebar_tooltip_enable_extension());
+                            setToolTipText(_JDT.T.settings_sidebar_tooltip_enable_extension());
                         } else {
                             setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                             if (getModel().getElementAt(index) instanceof CheckBoxedEntry) {

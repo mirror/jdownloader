@@ -870,7 +870,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         crawledPackageID = archive.getArchiveID();
                                     }
                                     if (crawledPackageName == null) {
-                                        crawledPackageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(archive.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
+                                        crawledPackageName = _JDT.T.LinkCollector_archiv(LinknameCleaner.cleanFileName(archive.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
                                     }
                                 }
                             }
@@ -884,7 +884,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 newPackageName = LinknameCleaner.cleanFileName(newPackageName, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                             }
                             if (StringUtils.isEmpty(newPackageName)) {
-                                newPackageName = _JDT._.LinkCollector_addCrawledLink_offlinepackage();
+                                newPackageName = _JDT.T.LinkCollector_addCrawledLink_offlinepackage();
                             }
                         }
                         final CrawledPackage pkg = getCrawledPackage(crawledPackageMapID, link);
@@ -960,7 +960,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
         lvariousPackage = new CrawledPackage();
         lvariousPackage.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
-        lvariousPackage.setName(_JDT._.LinkCollector_addCrawledLink_variouspackage());
+        lvariousPackage.setName(_JDT.T.LinkCollector_addCrawledLink_variouspackage());
         lvariousPackage.setType(TYPE.VARIOUS);
         variousPackage = lvariousPackage;
         return lvariousPackage;
@@ -973,7 +973,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
         lofflinePackage = new CrawledPackage();
         lofflinePackage.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
-        lofflinePackage.setName(_JDT._.LinkCollector_addCrawledLink_offlinepackage());
+        lofflinePackage.setName(_JDT.T.LinkCollector_addCrawledLink_offlinepackage());
         lofflinePackage.setType(TYPE.OFFLINE);
         offlinePackage = lofflinePackage;
         return lofflinePackage;
@@ -2237,7 +2237,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                 if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
-                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32), _JDT._.literally_yes(), null)) {
+                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT.T.LinkCollector_onShutdownRequest_(), _JDT.T.LinkCollector_onShutdownRequest_msg(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32), _JDT.T.literally_yes(), null)) {
                         } else {
                             throw new ShutdownVetoException("LinkCollector is still running", this);
 

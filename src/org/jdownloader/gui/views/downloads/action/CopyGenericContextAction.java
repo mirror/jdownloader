@@ -49,15 +49,15 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     }
 
     public static String getTranslationForPatternPackages() {
-        return _JDT._.CopyGenericContextAction_getTranslationForPatternPackages_v2();
+        return _JDT.T.CopyGenericContextAction_getTranslationForPatternPackages_v2();
     }
 
     public static String getTranslationForPatternLinks() {
-        return _JDT._.CopyGenericContextAction_getTranslationForPatternLinks_v2();
+        return _JDT.T.CopyGenericContextAction_getTranslationForPatternLinks_v2();
     }
 
     public static String getTranslationForSmartSelection() {
-        return _JDT._.CopyGenericContextAction_getTranslationForSmartSelection();
+        return _JDT.T.CopyGenericContextAction_getTranslationForSmartSelection();
     }
 
     private String patternPackages;

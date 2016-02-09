@@ -33,7 +33,7 @@ public class ExportAction extends AppAction {
     public ExportAction(LinkgrabberFilter linkgrabberFilter) {
         setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey(IconKey.ICON_EXPORT);
-        setTooltipText(_JDT._.ExportAction_ExportAction_tt());
+        setTooltipText(_JDT.T.ExportAction_ExportAction_tt());
         this.linkgrabberFilter = linkgrabberFilter;
 
     }
@@ -45,7 +45,7 @@ public class ExportAction extends AppAction {
     public ExportAction(java.util.List<LinkgrabberFilterRule> selection) {
         setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey(IconKey.ICON_EXPORT);
-        setTooltipText(_JDT._.ExportAction_ExportAction_tt());
+        setTooltipText(_JDT.T.ExportAction_ExportAction_tt());
         rules = selection;
     }
 

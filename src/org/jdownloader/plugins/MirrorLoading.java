@@ -19,7 +19,7 @@ public class MirrorLoading implements ConditionalSkipReason, DownloadLinkConditi
     public MirrorLoading(DownloadLink dependency) {
         this.dependency = dependency;
         icon = new AbstractIcon(IconKey.ICON_DOWNLOAD, 16);
-        mirror = _JDT._.system_download_errors_linkisBlocked(dependency.getHost());
+        mirror = _JDT.T.system_download_errors_linkisBlocked(dependency.getHost());
     }
 
     @Override

@@ -679,7 +679,7 @@ public class ExtensionController implements MenuExtenderHandler {
                 if (object instanceof LazyExtension) {
                     if (object._getExtension().getGUI() != null && object._getExtension().isGuiOptional()) {
                         if (JDGui.bugme(WarnLevel.NORMAL)) {
-                            ConfirmDialogInterface io = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName())).show();
+                            ConfirmDialogInterface io = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, object.getName(), _JDT.T.gui_settings_extensions_show_now(object.getName())).show();
                             if (io.getCloseReason() == CloseReason.OK) {
                                 // activate panel
                                 object._getExtension().getGUI().setActive(true);
@@ -701,7 +701,7 @@ public class ExtensionController implements MenuExtenderHandler {
                     }
                 }
             } catch (StartException e1) {
-                Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                Dialog.getInstance().showExceptionDialog(_JDT.T.dialog_title_exception(), e1.getMessage(), e1);
             } catch (StopException e1) {
                 e1.printStackTrace();
             }
@@ -712,7 +712,7 @@ public class ExtensionController implements MenuExtenderHandler {
             } catch (StartException e1) {
                 e1.printStackTrace();
             } catch (StopException e1) {
-                Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
+                Dialog.getInstance().showExceptionDialog(_JDT.T.dialog_title_exception(), e1.getMessage(), e1);
             }
         }
     }

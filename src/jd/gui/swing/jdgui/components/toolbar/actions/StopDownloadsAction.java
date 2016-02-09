@@ -66,7 +66,7 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
 
     public static String getHideIfDownloadsAreStoppedTranslation() {
 
-        return _JDT._.PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation();
+        return _JDT.T.PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation();
     }
 
     @Customizer(link = "#getHideIfDownloadsAreStoppedTranslation")

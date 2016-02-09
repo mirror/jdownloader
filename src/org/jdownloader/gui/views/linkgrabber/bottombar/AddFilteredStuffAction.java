@@ -39,7 +39,7 @@ public class AddFilteredStuffAction extends CustomizableAppAction implements Act
     }
 
     public static String getTranslationForOnlyVisibleIfThereIsFilteredStuff() {
-        return _JDT._.AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff();
+        return _JDT.T.AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff();
     }
 
     @Customizer(link = "#getTranslationForOnlyVisibleIfThereIsFilteredStuff")

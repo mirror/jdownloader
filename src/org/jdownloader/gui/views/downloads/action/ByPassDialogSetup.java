@@ -11,11 +11,11 @@ public class ByPassDialogSetup implements ActionContext {
     private Modifier byPassDialogToggleModifier = null;
 
     public static String getTranslationForByPassDialogToggleModifier() {
-        return _JDT._.ByPassDialogSetup_getTranslationForByPassDialogToggleModifier();
+        return _JDT.T.ByPassDialogSetup_getTranslationForByPassDialogToggleModifier();
     }
 
     public static String getTranslationForBypassDialog() {
-        return _JDT._.ByPassDialogSetup_getTranslationForBypassDialog();
+        return _JDT.T.ByPassDialogSetup_getTranslationForBypassDialog();
     }
 
     @Customizer(link = "#getTranslationForByPassDialogToggleModifier")

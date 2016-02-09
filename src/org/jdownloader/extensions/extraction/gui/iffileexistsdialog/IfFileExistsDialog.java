@@ -69,7 +69,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private String       newNameString;
 
     public IfFileExistsDialog(File extractTo, Item item, Archive archive) {
-        super(0, _JDT._.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
+        super(0, _JDT.T.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
         //
         logger = LogController.getInstance().getLogger(IfFileExistsDialog.class.getName());
         this.archive = archive;

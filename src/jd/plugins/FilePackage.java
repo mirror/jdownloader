@@ -182,7 +182,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             }
 
         };
-        FP.setName(_JDT._.controller_packages_defaultname());
+        FP.setName(_JDT.T.controller_packages_defaultname());
         FP.downloadLinkList = new ArrayList<DownloadLink>() {
 
             /**
@@ -544,7 +544,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public void setName(String name) {
         final String lName = getName();
         if (StringUtils.isEmpty(name)) {
-            name = _JDT._.controller_packages_defaultname();
+            name = _JDT.T.controller_packages_defaultname();
         }
         if (lName != null && lName.equals(name)) {
             return;

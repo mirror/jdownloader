@@ -1050,7 +1050,7 @@ public class ProxyController implements ProxySelectorInterface {
                                 }
                             }
                         }
-                        boolean ret = this.askForProxyAuth(selectedProxy, 0, false, url, _JDT._.ProxyController_updateProxy_proxy_auth_required_msg(url.getHost()), _JDT._.ProxyController_updateProxy_proxy_auth_required_title());
+                        boolean ret = this.askForProxyAuth(selectedProxy, 0, false, url, _JDT.T.ProxyController_updateProxy_proxy_auth_required_msg(url.getHost()), _JDT.T.ProxyController_updateProxy_proxy_auth_required_title());
                         if (ret && proxy != null && proxy.equalsWithSettings(selectedProxy)) {
                             ret = false;
                         }

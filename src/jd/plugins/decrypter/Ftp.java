@@ -78,7 +78,7 @@ public class Ftp extends PluginForDecrypt {
                     return decryptIt(cLink, progress);
                 } else if (e.getMessage().contains("was unable to log in with the supplied") || e.getMessage().contains("530 Login or Password incorrect")) {
                     final DownloadLink dummyLink = new DownloadLink(null, null, url.getHost(), cLink.getCryptedUrl(), true);
-                    final Login login = requestLogins(org.jdownloader.translate._JDT._.DirectHTTP_getBasicAuth_message(), dummyLink);
+                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), dummyLink);
                     if (login != null) {
                         final String host = url.getHost();
                         int port = url.getPort();

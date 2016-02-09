@@ -33,7 +33,7 @@ public class PluginSettings extends AbstractConfigPanel {
     @Override
     protected void onShow() {
         this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_PLUGIN, 32));
-        this.addDescriptionPlain(_JDT._.gui_settings_plugins_description(HostPluginController.getInstance().list().size()));
+        this.addDescriptionPlain(_JDT.T.gui_settings_plugins_description(HostPluginController.getInstance().list().size()));
 
         add(getPanel());
 

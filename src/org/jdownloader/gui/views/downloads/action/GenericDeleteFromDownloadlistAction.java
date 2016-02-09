@@ -73,7 +73,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     protected WeakReference<SelectionInfo<FilePackage, DownloadLink>> selection                 = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(null);
 
     public static String getTranslationForDeleteFilesToggleModifier() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFilesToggleModifier();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFilesToggleModifier();
     }
 
     @Customizer(link = "#getTranslationForDeleteFilesToggleModifier")
@@ -93,7 +93,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     }
 
     public static String getTranslationForDeleteMode() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteMode();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForDeleteMode();
     }
 
     @Customizer(link = "#getTranslationForDeleteMode")
@@ -388,7 +388,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     }
 
     public static String getTranslationForDeleteAll() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteAll();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForDeleteAll();
     }
 
     @Customizer(link = "#getTranslationForDeleteAll")
@@ -397,7 +397,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     }
 
     public static String getTranslationForDeleteDisabled() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteDisabled();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForDeleteDisabled();
     }
 
     @Customizer(link = "#getTranslationForDeleteDisabled")
@@ -406,7 +406,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     }
 
     public static String getTranslationForDeleteFailed() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFailed();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFailed();
     }
 
     @Customizer(link = "#getTranslationForDeleteFailed")
@@ -415,11 +415,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     }
 
     public static String getTranslationForDeleteFinishedPackage() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinishedPackage();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinishedPackage();
     }
 
     public static String getTranslationForDeleteFinished() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinished();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinished();
     }
 
     @Customizer(link = "#getTranslationForDeleteFinishedPackage")
@@ -438,7 +438,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     }
 
     public static String getTranslationForDeleteOffline() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteOffline();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForDeleteOffline();
     }
 
     @Customizer(link = "#getTranslationForDeleteOffline")
@@ -452,7 +452,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     }
 
     public static String getTranslationForIgnoreFiltered() {
-        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForIgnoreFiltered();
+        return _JDT.T.GenericDeleteFromDownloadlistAction_getTranslationForIgnoreFiltered();
     }
 
     @Customizer(link = "#getTranslationForIgnoreFiltered")

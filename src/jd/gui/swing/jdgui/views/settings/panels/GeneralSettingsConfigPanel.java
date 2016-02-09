@@ -106,7 +106,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
         downloadFolder = new FolderChooser();
         this.addHeader(_GUI.T.gui_config_general_downloaddirectory(), new AbstractIcon(IconKey.ICON_DOWNLOADPATH, 32));
-        this.addDescription(_JDT._.gui_settings_downloadpath_description());
+        this.addDescription(_JDT.T.gui_settings_downloadpath_description());
         this.add(downloadFolder);
 
         /* Download management */
@@ -120,8 +120,8 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
         remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
         ifFileExists = new ComboBox<IfFileExistsAction>(IfFileExistsAction.values(), fileExists);
 
-        this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), new AbstractIcon(IconKey.ICON_DOWNLOADMANAGMENT, 32));
-        this.addDescription(_JDT._.gui_settings_downloadcontroll_description());
+        this.addHeader(_JDT.T.gui_settings_downloadcontroll_title(), new AbstractIcon(IconKey.ICON_DOWNLOADMANAGMENT, 32));
+        this.addDescription(_JDT.T.gui_settings_downloadcontroll_description());
         this.addPair(_GUI.T.gui_config_download_simultan_downloads(), null, maxSim);
         this.addPair(_GUI.T.gui_config_download_simultan_downloads_per_host2(), org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED, maxSimPerHost);
         this.addPair(_GUI.T.gui_config_download_max_chunks(), null, maxchunks);
@@ -147,7 +147,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
         autoCRC = new Checkbox();
         this.addHeader(_GUI.T.gui_config_download_write(), new AbstractIcon(IconKey.ICON_HASHSUM, 32));
-        this.addDescription(_JDT._.gui_settings_filewriting_description());
+        this.addDescription(_JDT.T.gui_settings_filewriting_description());
         this.addPair(_GUI.T.gui_config_download_crc(), null, autoCRC);
 
         restartFailedCRC = new Checkbox();
@@ -161,7 +161,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
     }
 
     public String getTitle() {
-        return _JDT._.gui_settings_general_title();
+        return _JDT.T.gui_settings_general_title();
     }
 
     public String getIconKey() {

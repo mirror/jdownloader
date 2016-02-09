@@ -21,10 +21,10 @@ import jd.plugins.FilePackageView;
 public class WaitingSkipReason implements ConditionalSkipReason, TimeOutCondition, ValidatableConditionalSkipReason {
 
     public static enum CAUSE {
-        IP_BLOCKED(_JDT._.downloadlink_status_error_download_limit()),
-        FILE_TEMP_UNAVAILABLE(_JDT._.downloadlink_status_error_temp_unavailable()),
-        CONNECTION_TEMP_UNAVAILABLE(_JDT._.download_error_message_networkreset()),
-        HOST_TEMP_UNAVAILABLE(_JDT._.downloadlink_status_error_hoster_temp_unavailable()),
+        IP_BLOCKED(_JDT.T.downloadlink_status_error_download_limit()),
+        FILE_TEMP_UNAVAILABLE(_JDT.T.downloadlink_status_error_temp_unavailable()),
+        CONNECTION_TEMP_UNAVAILABLE(_JDT.T.download_error_message_networkreset()),
+        HOST_TEMP_UNAVAILABLE(_JDT.T.downloadlink_status_error_hoster_temp_unavailable()),
         RETRY_IN(null);
 
         private final String exp;
@@ -82,9 +82,9 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
             if (cause == CAUSE.RETRY_IN) {
                 long left = getTimeOutLeft();
                 if (left > 0) {
-                    return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(left / 1000));
+                    return _JDT.T.gui_download_waittime_status2(Formatter.formatSeconds(left / 1000));
                 } else {
-                    return _JDT._.gui_download_waittime_status2("");
+                    return _JDT.T.gui_download_waittime_status2("");
                 }
             }
             return cause.getExplanation();

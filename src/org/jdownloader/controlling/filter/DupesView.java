@@ -16,7 +16,7 @@ public class DupesView extends LinkgrabberFilterRule {
 
     public LinkgrabberFilterRule init() {
         setConditionFilter(new ConditionFilter(Matchtype.IS_TRUE, true, new VariousCrawledLinkFlags[] { VariousCrawledLinkFlags.DOWNLOAD_LIST_DUPE }));
-        setName(_JDT._.LinkFilterSettings_DefaultFilterList_dupes());
+        setName(_JDT.T.LinkFilterSettings_DefaultFilterList_dupes());
         setIconKey(IconKey.ICON_COPY);
         setEnabled(true);
         setAccept(true);

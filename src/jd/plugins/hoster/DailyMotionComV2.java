@@ -80,7 +80,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
                 if (var.getConvertTo() != null) {
                     downloadLink.setInternalTmpFilenameAppend(".tmp");
                 }
-                checkFFmpeg(downloadLink, _JDT._.plugin_for_host_reason_for_ffmpeg_demux());
+                checkFFmpeg(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
                 super.downloadDirect(downloadLink);
 
                 final FFMpegProgress set = new FFMpegProgress();
@@ -166,7 +166,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
                         final DailyMotionVariant var = downloadLink.getVariant(DailyMotionVariant.class);
                         if (var != null && var.getConvertTo() != null) {
                             if (downloadLink.getProperty("FFP_BITRATE") == null) {
-                                checkFFProbe(downloadLink, _JDT._.plugin_for_host_reason_for_ffmpeg_demux());
+                                checkFFProbe(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
                                 StreamInfo streamInfo = new FFprobe().getStreamInfo(dllink);
                                 downloadLink.setProperty("FFP_BITRATE", streamInfo.getFormat().getBit_rate());
                                 downloadLink.setProperty("FFP_DURATION", streamInfo.getFormat().getDuration());

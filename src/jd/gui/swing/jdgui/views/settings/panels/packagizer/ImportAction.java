@@ -37,7 +37,7 @@ public class ImportAction extends AppAction {
         setIconKey(IconKey.ICON_IMPORT);
         setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_import());
         this.table = table;
-        setTooltipText(_JDT._.ImportAction_tt());
+        setTooltipText(_JDT.T.ImportAction_tt());
     }
 
     public void actionPerformed(ActionEvent e) {

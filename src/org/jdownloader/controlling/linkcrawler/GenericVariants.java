@@ -26,7 +26,7 @@ public enum GenericVariants implements LinkVariant {
 
         @Override
         public String _getName() {
-            return _JDT._.GenericVariants_ORIGINAL();
+            return _JDT.T.GenericVariants_ORIGINAL();
         }
 
         public void runPostDownload(PluginForHost pluginForHost, DownloadLink downloadLink, Account account) throws Exception {
@@ -41,12 +41,12 @@ public enum GenericVariants implements LinkVariant {
     DEMUX_MP3("mp3", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
         public String _getName() {
-            return _JDT._.GenericVariants_FLV_TO_MP3_();
+            return _JDT.T.GenericVariants_FLV_TO_MP3_();
         }
 
         @Override
         public void runPreDownload(PluginForHost pluginForHost, DownloadLink downloadLink, Account account) throws SkipReasonException, InterruptedException {
-            pluginForHost.checkFFmpeg(downloadLink, _JDT._.plugin_for_host_reason_for_ffmpeg_demux());
+            pluginForHost.checkFFmpeg(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
             downloadLink.setInternalTmpFilenameAppend("." + name() + ".tmp");
         }
 
@@ -58,12 +58,12 @@ public enum GenericVariants implements LinkVariant {
     DEMUX_AAC("acc", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
         public String _getName() {
-            return _JDT._.GenericVariants_DEMUX_AAC();
+            return _JDT.T.GenericVariants_DEMUX_AAC();
         }
 
         @Override
         public void runPreDownload(PluginForHost pluginForHost, DownloadLink downloadLink, Account account) throws SkipReasonException, InterruptedException {
-            pluginForHost.checkFFmpeg(downloadLink, _JDT._.plugin_for_host_reason_for_ffmpeg_demux());
+            pluginForHost.checkFFmpeg(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
             downloadLink.setInternalTmpFilenameAppend("." + name() + ".tmp");
         }
 
@@ -74,12 +74,12 @@ public enum GenericVariants implements LinkVariant {
     DEMUX_M4A("m4a", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
         public String _getName() {
-            return _JDT._.GenericVariants_DEMUX_M4A();
+            return _JDT.T.GenericVariants_DEMUX_M4A();
         }
 
         @Override
         public void runPreDownload(PluginForHost pluginForHost, DownloadLink downloadLink, Account account) throws SkipReasonException, InterruptedException {
-            pluginForHost.checkFFmpeg(downloadLink, _JDT._.plugin_for_host_reason_for_ffmpeg_demux());
+            pluginForHost.checkFFmpeg(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
             downloadLink.setInternalTmpFilenameAppend("." + name() + ".tmp");
         }
 
@@ -90,12 +90,12 @@ public enum GenericVariants implements LinkVariant {
     DEMUX_GENERIC_AUDIO("audio", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
         public String _getName() {
-            return _JDT._.GenericVariants_DEMUX_GENERIC_AUDIO();
+            return _JDT.T.GenericVariants_DEMUX_GENERIC_AUDIO();
         }
 
         @Override
         public void runPreDownload(PluginForHost pluginForHost, DownloadLink downloadLink, Account account) throws Exception {
-            pluginForHost.checkFFmpeg(downloadLink, _JDT._.plugin_for_host_reason_for_ffmpeg_demux());
+            pluginForHost.checkFFmpeg(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
             downloadLink.setInternalTmpFilenameAppend("." + name() + ".tmp");
         }
 
@@ -203,7 +203,7 @@ public enum GenericVariants implements LinkVariant {
             File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
             boolean res = ffmpeg(downloadLink, file, set, ffmpeg, finalFile);
             if (!res) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT._.PluginForHost_handle_ffmpeg_conversion_failed());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT.T.PluginForHost_handle_ffmpeg_conversion_failed());
             }
 
             file.delete();

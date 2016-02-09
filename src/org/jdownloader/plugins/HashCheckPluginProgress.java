@@ -24,9 +24,9 @@ public class HashCheckPluginProgress extends PluginProgress {
         setIcon(new AbstractIcon(IconKey.ICON_HASHSUM, 16));
         this.type = type;
         if (type != null) {
-            message = _JDT._.system_download_doCRC2(type.name());
+            message = _JDT.T.system_download_doCRC2(type.name());
         } else {
-            message = _JDT._.system_download_doCRC2_waiting();
+            message = _JDT.T.system_download_doCRC2_waiting();
         }
     }
 

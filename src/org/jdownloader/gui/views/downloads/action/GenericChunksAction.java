@@ -51,7 +51,7 @@ public class GenericChunksAction extends CustomizableSelectionAppAction implemen
     }
 
     public static String getTranslationChunks() {
-        return _JDT._.GenericChunksAction_getTranslationChunks();
+        return _JDT.T.GenericChunksAction_getTranslationChunks();
     }
 
     @Customizer(link = "#getTranslationChunks")

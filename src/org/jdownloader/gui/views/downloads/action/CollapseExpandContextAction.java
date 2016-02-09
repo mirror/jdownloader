@@ -50,7 +50,7 @@ public class CollapseExpandContextAction extends CustomizableTableContextAppActi
     }
 
     public static String getTranslationForSelectionOnly() {
-        return _JDT._.CollapseExpandContextAction_getTranslationForSelectionOnly();
+        return _JDT.T.CollapseExpandContextAction_getTranslationForSelectionOnly();
     }
 
     @Customizer(link = "#getTranslationForSelectionOnly")

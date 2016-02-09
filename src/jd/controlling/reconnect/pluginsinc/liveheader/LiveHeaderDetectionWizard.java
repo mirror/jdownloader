@@ -463,7 +463,7 @@ public class LiveHeaderDetectionWizard {
             processCallBack.setStatusString(getPlugin(), T.T.LiveHeaderDetectionWizard_runOnlineScan_collect());
 
             if (!RecollController.getInstance().isAlive()) {
-                UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), new AbstractIcon(IconKey.ICON_ERROR, 32), null, _JDT._.lit_hide());
+                UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), new AbstractIcon(IconKey.ICON_ERROR, 32), null, _JDT.T.lit_hide());
 
                 throw new InterruptedException("RecollServ not available");
             }

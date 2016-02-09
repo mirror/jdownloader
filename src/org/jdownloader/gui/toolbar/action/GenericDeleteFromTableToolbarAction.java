@@ -110,39 +110,39 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     private Modifier deleteFilesToggleModifier = null;
 
     public static String getTranslationForDeleteFilesToggleModifier() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFilesToggleModifier();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFilesToggleModifier();
     }
 
     public static String getTranslationForDeleteMode() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteMode();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForDeleteMode();
     }
 
     public static String getTranslationForDeleteAll() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteAll();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForDeleteAll();
     }
 
     public static String getTranslationForDeleteDisabled() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteDisabled();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForDeleteDisabled();
     }
 
     public static String getTranslationForDeleteFailed() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFailed();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFailed();
     }
 
     public static String getTranslationForDeleteFinished() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFinished();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFinished();
     }
 
     public static String getTranslationForDeleteOffline() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteOffline();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForDeleteOffline();
     }
 
     public static String getTranslationForIgnoreFiltered() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForIgnoreFiltered();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForIgnoreFiltered();
     }
 
     public static String getTranslationForOnlySelectedItems() {
-        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForOnlySelectedItems();
+        return _JDT.T.GenericDeleteFromTableToolbarAction_getTranslationForOnlySelectedItems();
     }
 
     @Customizer(link = "#getTranslationForDeleteFilesToggleModifier")

@@ -107,7 +107,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
                                     if (oldPath.equals(newPath)) {
                                         continue;
                                     }
-                                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), packageView.getChildren().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT.T.SetDownloadFolderAction_msg(entry.getName(), packageView.getChildren().size()), null, _JDT.T.SetDownloadFolderAction_yes(), _JDT.T.SetDownloadFolderAction_no());
 
                                     getQueue().add(new QueueAction<Object, RuntimeException>() {
 

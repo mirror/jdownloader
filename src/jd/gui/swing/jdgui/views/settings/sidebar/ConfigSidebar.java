@@ -174,7 +174,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                         if (x > 3 && x < 18 && y > 3 && y < 18) {
 
                             list.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                            list.setToolTipText(_JDT._.settings_sidebar_tooltip_enable_extension());
+                            list.setToolTipText(_JDT.T.settings_sidebar_tooltip_enable_extension());
                         } else {
                             list.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                             if (list.getModel().getElementAt(index) instanceof CheckBoxedEntry) {

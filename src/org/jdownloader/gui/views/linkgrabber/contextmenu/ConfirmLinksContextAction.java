@@ -76,14 +76,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         INCLUDE_OFFLINE {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_INCLUDE_OFFLINE();
+                return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_INCLUDE_OFFLINE();
             }
         },
 
         EXCLUDE_OFFLINE {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE();
+                return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE();
 
             }
         },
@@ -91,7 +91,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         EXCLUDE_OFFLINE_AND_REMOVE {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE_AND_REMOVE();
+                return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE_AND_REMOVE();
 
             }
         },
@@ -99,14 +99,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         ASK {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_ASK();
+                return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_ASK();
 
             }
         },
         GLOBAL {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL(CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction().getLabel());
+                return _JDT.T.ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL(CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction().getLabel());
 
             }
         };
@@ -118,14 +118,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         INCLUDE {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleDupesLinksOptions_INCLUDE();
+                return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_INCLUDE();
             }
         },
 
         EXCLUDE {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleDupesLinksOptions_EXCLUDE();
+                return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_EXCLUDE();
 
             }
         },
@@ -133,7 +133,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         EXCLUDE_AND_REMOVE {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleDupesLinksOptions_EXCLUDE_AND_REMOVE();
+                return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_EXCLUDE_AND_REMOVE();
 
             }
         },
@@ -141,14 +141,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         ASK {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleDupesLinksOptions_ASK();
+                return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_ASK();
 
             }
         },
         GLOBAL {
             @Override
             public String getLabel() {
-                return _JDT._.ConfirmLinksContextAction_HandleDupesLinksOptions_GLOBAL(CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction().getLabel());
+                return _JDT.T.ConfirmLinksContextAction_HandleDupesLinksOptions_GLOBAL(CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction().getLabel());
 
             }
         };
@@ -160,7 +160,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         AUTO {
             @Override
             public String getLabel() {
-                return _JDT._.AutoStartOptions_AUTO();
+                return _JDT.T.AutoStartOptions_AUTO();
 
             }
         },
@@ -168,7 +168,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         DISABLED {
             @Override
             public String getLabel() {
-                return _JDT._.AutoStartOptions_DISABLED();
+                return _JDT.T.AutoStartOptions_DISABLED();
 
             }
         },
@@ -176,7 +176,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         ENABLED {
             @Override
             public String getLabel() {
-                return _JDT._.AutoStartOptions_ENABLED();
+                return _JDT.T.AutoStartOptions_ENABLED();
 
             }
         };
@@ -186,7 +186,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private boolean ctrlToggle = true;
 
     public static String getTranslationForCtrlToggle() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForCtrlToggle();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForCtrlToggle();
     }
 
     @Customizer(link = "#getTranslationForCtrlToggle")
@@ -201,7 +201,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private boolean forceDownloads = false;
 
     public static String getTranslationForForceDownloads() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForForceDownloads();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForForceDownloads();
     }
 
     @Customizer(link = "#getTranslationForForceDownloads")
@@ -216,7 +216,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private boolean assignPriorityEnabled = false;
 
     public static String getTranslationForAssignPriorityEnabled() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForAssignPriorityEnabled();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForAssignPriorityEnabled();
     }
 
     @Customizer(link = "#getTranslationForAssignPriorityEnabled")
@@ -231,7 +231,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private Priority piority = Priority.DEFAULT;
 
     public static String getTranslationForPiority() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForPiority();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForPiority();
     }
 
     @Customizer(link = "#getTranslationForPiority")
@@ -638,7 +638,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private OnOfflineLinksAction handleOffline = OnOfflineLinksAction.GLOBAL;
 
     public static String getTranslationForHandleOffline() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForHandleOffline();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForHandleOffline();
     }
 
     @Customizer(link = "#getTranslationForHandleOffline")
@@ -660,7 +660,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private OnDupesLinksAction handleDupes = OnDupesLinksAction.GLOBAL;
 
     public static String getTranslationForHandleDupes() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForHandleDupes();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForHandleDupes();
     }
 
     @Customizer(link = "#getTranslationForHandleDupes")
@@ -728,7 +728,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     public static String getTranslationForClearListAfterConfirm() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForClearListAfterConfirm();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForClearListAfterConfirm();
     }
 
     @Customizer(link = "#getTranslationForClearListAfterConfirm")
@@ -768,7 +768,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     public static String getTranslationForAutoStart() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForAutoStart();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForAutoStart();
     }
 
     @Customizer(link = "#getTranslationForAutoStart")
@@ -788,7 +788,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private boolean selectionOnly = true;
 
     public static String getTranslationForSelectionOnly() {
-        return _JDT._.ConfirmLinksContextAction_getTranslationForSelectionOnly();
+        return _JDT.T.ConfirmLinksContextAction_getTranslationForSelectionOnly();
     }
 
     @Customizer(link = "#getTranslationForSelectionOnly")

@@ -14,7 +14,7 @@ import org.jdownloader.translate._JDT;
 public class IPConnectionState {
     public String toString() {
         if (isOffline()) {
-            return _JDT._.literally_offline();
+            return _JDT.T.literally_offline();
         } else {
             return ip.toString();
         }

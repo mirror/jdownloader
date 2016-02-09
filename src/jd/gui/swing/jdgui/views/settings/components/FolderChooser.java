@@ -116,7 +116,7 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
     public File doFileChooser() {
         File ret;
         try {
-            ret = DownloadFolderChooserDialog.open(new File(txt.getText()), true, _JDT._.gui_setting_folderchooser_title());
+            ret = DownloadFolderChooserDialog.open(new File(txt.getText()), true, _JDT.T.gui_setting_folderchooser_title());
             return ret;
         } catch (DialogClosedException e) {
             e.printStackTrace();

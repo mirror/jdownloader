@@ -22,7 +22,7 @@ public class DownloadPluginProgress extends PluginProgress {
 
     private final DownloadInterface downloadInterface;
 
-    private final String            unknownFileSize = _JDT._.gui_download_filesize_unknown() + " \u221E";
+    private final String            unknownFileSize = _JDT.T.gui_download_filesize_unknown() + " \u221E";
     protected final long            startTimeStamp;
     private final String            normal;
 
@@ -35,7 +35,7 @@ public class DownloadPluginProgress extends PluginProgress {
         this.downloadInterface = downloadInterface;
         setIcon(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16));
         startTimeStamp = downloadInterface.getStartTimeStamp();
-        normal = _JDT._.download_connection_normal();
+        normal = _JDT.T.download_connection_normal();
     }
 
     @Override

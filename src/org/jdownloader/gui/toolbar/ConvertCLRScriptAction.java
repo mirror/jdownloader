@@ -15,7 +15,7 @@ import org.jdownloader.translate._JDT;
 public class ConvertCLRScriptAction extends CustomizableAppAction {
 
     public ConvertCLRScriptAction() {
-        setName(_JDT._.convert_CLR_Reconnect_to_jdownloader());
+        setName(_JDT.T.convert_CLR_Reconnect_to_jdownloader());
         setIconKey(IconKey.ICON_RUN);
     }
 

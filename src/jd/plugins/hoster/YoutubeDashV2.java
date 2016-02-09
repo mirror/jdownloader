@@ -284,25 +284,25 @@ public class YoutubeDashV2 extends PluginForHost {
             ASK {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_IfUrlisAVideoAndPlaylistAction_ASK();
+                    return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_ASK();
                 }
             },
             VIDEO_ONLY {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
+                    return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
                 }
             },
             PLAYLIST_ONLY {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_IfUrlisAVideoAndPlaylistAction_PLAYLIST_ONLY();
+                    return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_PLAYLIST_ONLY();
                 }
             },
             NOTHING {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING();
+                    return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING();
                 }
             },
             ;
@@ -313,19 +313,19 @@ public class YoutubeDashV2 extends PluginForHost {
             ASK {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_IfUrlisAPlaylistAction_ASK();
+                    return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_ASK();
                 }
             },
             PROCESS {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_IfUrlisAPlaylistAction_PROCESS();
+                    return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_PROCESS();
                 }
             },
             NOTHING {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_IfUrlisAPlaylistAction_NOTHING();
+                    return _JDT.T.YoutubeDash_IfUrlisAPlaylistAction_NOTHING();
                 }
             };
         }
@@ -362,19 +362,19 @@ public class YoutubeDashV2 extends PluginForHost {
             BY_MEDIA_TYPE {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_GroupLogic_BY_MEDIA_TYPE();
+                    return _JDT.T.YoutubeDash_GroupLogic_BY_MEDIA_TYPE();
                 }
             },
             BY_FILE_TYPE {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_GroupLogic_BY_FILE_TYPE();
+                    return _JDT.T.YoutubeDash_GroupLogic_BY_FILE_TYPE();
                 }
             },
             NO_GROUP {
                 @Override
                 public String getLabel() {
-                    return _JDT._.YoutubeDash_GroupLogic_NO_GROUP();
+                    return _JDT.T.YoutubeDash_GroupLogic_NO_GROUP();
                 }
             }
         }
@@ -779,7 +779,7 @@ public class YoutubeDashV2 extends PluginForHost {
                             throw e;
                         }
 
-                        if (e.getErrorMessage().contains(_JDT._.CountryIPBlockException_createCandidateResult())) {
+                        if (e.getErrorMessage().contains(_JDT.T.CountryIPBlockException_createCandidateResult())) {
                             throw e;
                         }
                     }
@@ -960,7 +960,7 @@ public class YoutubeDashV2 extends PluginForHost {
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
              * 15.12.2014
              */"This video is not available.")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
         }

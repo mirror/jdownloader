@@ -187,19 +187,19 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             }
         } catch (SocketTimeoutException e) {
             LogSource.exception(logger, e);
-            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
             simpleFTP.sendLine("ABOR");
             simpleFTP.readLine();
             return;
         } catch (SocketException e) {
             LogSource.exception(logger, e);
-            error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset(), 1000l * 60 * 5));
+            error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_networkreset(), 1000l * 60 * 5));
             simpleFTP.sendLine("ABOR");
             simpleFTP.readLine();
             return;
         } catch (ConnectException e) {
             LogSource.exception(logger, e);
-            error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset(), 1000l * 60 * 5));
+            error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_networkreset(), 1000l * 60 * 5));
             simpleFTP.sendLine("ABOR");
             simpleFTP.readLine();
             return;
@@ -275,7 +275,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
 
                 } else {
                     if (hashResult.getHashInfo().isTrustworthy()) {
-                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
+                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
                     }
                 }
                 finalizeDownload(outputPartFile, outputCompleteFile);
@@ -283,7 +283,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 return true;
             }
             if (externalDownloadStop() == false) {
-                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_incomplete());
             }
             return false;
         } finally {
@@ -311,7 +311,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 LogSource.exception(logger, ignore);
             }
         } else {
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
         }
     }
 
@@ -384,7 +384,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             if (caughtPluginException != null) {
                 throw caughtPluginException;
             }
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_incomplete());
         }
         if (caughtPluginException == null) {
             downloadable.setLinkStatus(LinkStatus.FINISHED);

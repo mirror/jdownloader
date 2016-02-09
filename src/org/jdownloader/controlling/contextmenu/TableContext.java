@@ -10,11 +10,11 @@ public class TableContext implements ActionContext {
     private boolean            itemVisibleForEmptySelection     = false;
 
     public static String getTranslationItemVisibleForSelections() {
-        return _JDT._.TableContext_getTranslationItemVisibleForSelections_();
+        return _JDT.T.TableContext_getTranslationItemVisibleForSelections_();
     }
 
     public static String getTranslationItemVisibleForEmptySelection() {
-        return _JDT._.TableContext_getTranslationItemVisibleForEmptySelection();
+        return _JDT.T.TableContext_getTranslationItemVisibleForEmptySelection();
     }
 
     @Customizer(link = "#getTranslationItemVisibleForSelections")

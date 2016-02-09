@@ -58,7 +58,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         add(this.lblDuration);
 
         add(this.lblTime);
-        JLabel lbl = new JLabel(_JDT._.gui_config_reconnect_showcase_currentip());
+        JLabel lbl = new JLabel(_JDT.T.gui_config_reconnect_showcase_currentip());
         lbl.setEnabled(false);
         add(lbl);
         add(this.lblCurrentIP, "growx,pushx");
@@ -74,11 +74,11 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     }
 
     private void initComponents() {
-        this.btnTest = new JButton(_JDT._.gui_config_reconnect_showcase_reconnect2());
+        this.btnTest = new JButton(_JDT.T.gui_config_reconnect_showcase_reconnect2());
         this.btnTest.setIcon(new AbstractIcon(IconKey.ICON_PLAY, 20));
         this.btnTest.addActionListener(this);
 
-        this.lblDuration = new JLabel(_JDT._.gui_config_reconnect_showcase_time());
+        this.lblDuration = new JLabel(_JDT.T.gui_config_reconnect_showcase_time());
         this.lblDuration.setEnabled(false);
         this.lblTime = new JLabel("---");
         this.lblCurrentIP = new JLabel("---");
@@ -87,10 +87,10 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         this.lblSuccessIcon.setEnabled(false);
         this.lblSuccessIcon.setHorizontalTextPosition(SwingConstants.LEFT);
 
-        this.lblStatusMessage = new JLabel(_JDT._.gui_config_reconnect_showcase_message_none());
+        this.lblStatusMessage = new JLabel(_JDT.T.gui_config_reconnect_showcase_message_none());
         this.lblStatusMessage.setEnabled(false);
 
-        this.lblBeforeIpLabel = new JLabel(_JDT._.gui_config_reconnect_showcase_lastip());
+        this.lblBeforeIpLabel = new JLabel(_JDT.T.gui_config_reconnect_showcase_lastip());
         this.lblBeforeIpLabel.setEnabled(false);
 
         this.lblBeforeIP = new JLabel("---");
@@ -120,7 +120,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
         btnTest.setEnabled(false);
         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Start Reconnect");
-        this.lblStatusMessage.setText(_JDT._.gui_warning_reconnect_running());
+        this.lblStatusMessage.setText(_JDT.T.gui_warning_reconnect_running());
         this.lblStatusMessage.setEnabled(true);
         this.lblBeforeIP.setText(IPController.getInstance().getIP().toString());
 
@@ -166,9 +166,9 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                             @Override
                             protected void runInEDT() {
                                 if (config.isIPCheckGloballyDisabled()) {
-                                    lblStatusMessage.setText(_JDT._.gui_warning_reconnectunknown());
+                                    lblStatusMessage.setText(_JDT.T.gui_warning_reconnectunknown());
                                 } else {
-                                    lblStatusMessage.setText(_JDT._.gui_warning_reconnectSuccess());
+                                    lblStatusMessage.setText(_JDT.T.gui_warning_reconnectSuccess());
                                 }
                                 lblSuccessIcon.setIcon(new AbstractIcon(IconKey.ICON_TRUE, 32));
                                 lblSuccessIcon.setEnabled(true);
@@ -186,7 +186,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
                             @Override
                             protected void runInEDT() {
-                                lblStatusMessage.setText(_JDT._.gui_warning_reconnectFailed());
+                                lblStatusMessage.setText(_JDT.T.gui_warning_reconnectFailed());
                                 lblSuccessIcon.setIcon(new AbstractIcon(IconKey.ICON_FALSE, 32));
                                 lblSuccessIcon.setEnabled(true);
                                 if (config.isIPCheckGloballyDisabled()) {

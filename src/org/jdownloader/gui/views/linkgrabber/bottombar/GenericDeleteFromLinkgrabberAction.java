@@ -73,7 +73,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForCancelLinkcrawlerJobs() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForCancelLinkcrawlerJobs();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForCancelLinkcrawlerJobs();
     }
 
     @Customizer(link = "#getTranslationForCancelLinkcrawlerJobs")
@@ -87,7 +87,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForDeleteDupesEnabled() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDupesEnabled();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDupesEnabled();
     }
 
     @Customizer(link = "#getTranslationForDeleteDupesEnabled")
@@ -101,7 +101,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForResetTableSorter() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForResetTableSorter();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForResetTableSorter();
     }
 
     @Customizer(link = "#getTranslationForResetTableSorter")
@@ -115,7 +115,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForClearSearchFilter() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForClearSearchFilter();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForClearSearchFilter();
     }
 
     @Customizer(link = "#getTranslationForClearSearchFilter")
@@ -129,7 +129,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForClearFilteredLinks() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForClearFilteredLinks();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForClearFilteredLinks();
     }
 
     @Customizer(link = "#getTranslationForClearFilteredLinks")
@@ -362,7 +362,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForDeleteAll() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteAll();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteAll();
     }
 
     @Customizer(link = "#getTranslationForDeleteAll")
@@ -371,7 +371,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForDeleteDisabled() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDisabled();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDisabled();
     }
 
     @Customizer(link = "#getTranslationForDeleteDisabled")
@@ -380,7 +380,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForDeleteOffline() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteOffline();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteOffline();
     }
 
     @Customizer(link = "#getTranslationForDeleteOffline")
@@ -394,7 +394,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public static String getTranslationForIgnoreFiltered() {
-        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForIgnoreFiltered();
+        return _JDT.T.GenericDeleteFromLinkgrabberAction_getTranslationForIgnoreFiltered();
     }
 
     @Customizer(link = "#getTranslationForIgnoreFiltered")

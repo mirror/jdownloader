@@ -158,9 +158,9 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
         passVerify.addMouseListener(this);
 
         addMessageComponent(contentpane);
-        contentpane.add(addSettingName(_JDT._.newpassworddialog_password()));
+        contentpane.add(addSettingName(_JDT.T.newpassworddialog_password()));
         contentpane.add(password, "sizegroup g1");
-        contentpane.add(addSettingName(_JDT._.newpassworddialog_password_verify()));
+        contentpane.add(addSettingName(_JDT.T.newpassworddialog_password_verify()));
         contentpane.add(passVerify, "sizegroup g1");
         caretUpdate(null);
         return contentpane;

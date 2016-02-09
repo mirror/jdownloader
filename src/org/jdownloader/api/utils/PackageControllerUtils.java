@@ -323,7 +323,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         if (!StringUtils.isEmpty(oldPackageName)) {
             nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", oldPackageName);
         } else {
-            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", _JDT._.LinkCollector_addCrawledLink_variouspackage());
+            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", _JDT.T.LinkCollector_addCrawledLink_variouspackage());
         }
         nameFactory = nameFactory.replaceAll("\\{HOSTNAME\\}", host);
         return nameFactory;

@@ -36,7 +36,7 @@ public class ReconnectConfigPanel extends AbstractConfigPanel {
     // private ReconnectTester tester;
 
     public String getTitle() {
-        return _JDT._.gui_settings_reconnect_title();
+        return _JDT.T.gui_settings_reconnect_title();
     }
 
     public ReconnectConfigPanel() {
@@ -49,7 +49,7 @@ public class ReconnectConfigPanel extends AbstractConfigPanel {
         addPair(_GUI.T.ReconnectSettings_ReconnectSettings_prefer_reconnect_desc(), null, new Checkbox(CFG_RECONNECT.DOWNLOAD_CONTROLLER_PREFERS_RECONNECT_ENABLED));
         addPair(_GUI.T.ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed(), null, new Checkbox(CFG_RECONNECT.RECONNECT_ALLOWED_TO_INTERRUPT_RESUMABLE_DOWNLOADS));
 
-        this.addHeader(_JDT._.gui_settings_reconnect_title_method(), new AbstractIcon(IconKey.ICON_RECONNECT, 32));
+        this.addHeader(_JDT.T.gui_settings_reconnect_title_method(), new AbstractIcon(IconKey.ICON_RECONNECT, 32));
 
         add(new ReconnectManager());
 

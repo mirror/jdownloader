@@ -30,7 +30,7 @@ public final class CaptchaStepProgress extends PluginProgress {
         if (requestor != null) {
             if (requestor instanceof ETAColumn) { return null; }
         }
-        return _JDT._.gui_downloadview_statustext_jac();
+        return _JDT.T.gui_downloadview_statustext_jac();
     }
 
     @Override

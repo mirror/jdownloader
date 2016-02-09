@@ -381,7 +381,7 @@ public abstract class Plugin implements ActionListener {
      */
     protected Login requestLogins(String message, DownloadLink link) throws PluginException {
         if (message == null) {
-            message = _JDT._.Plugin_requestLogins_message();
+            message = _JDT.T.Plugin_requestLogins_message();
         }
         final UserIOProgress prg = new UserIOProgress(message);
         prg.setProgressSource(this);
@@ -392,15 +392,15 @@ public abstract class Plugin implements ActionListener {
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getPassword();
                 if (StringUtils.isEmpty(password)) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
+                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
                 }
                 String username = handle.getUsername();
                 if (StringUtils.isEmpty(username)) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongusername());
+                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongusername());
                 }
                 return new Login(username, password);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
+                throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
             }
         } finally {
             link.removePluginProgress(prg);
@@ -431,11 +431,11 @@ public abstract class Plugin implements ActionListener {
                 String password = handle.getText();
 
                 if (StringUtils.isEmpty(password)) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
+                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
                 }
                 return password;
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
+                throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
             }
 
         } finally {

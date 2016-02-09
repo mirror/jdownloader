@@ -227,7 +227,7 @@ public class DirectHTTP extends antiDDoSForHost {
         try {
             // jd2
 
-            org.jdownloader.auth.Login logins = requestLogins(org.jdownloader.translate._JDT._.DirectHTTP_getBasicAuth_message(), link);
+            org.jdownloader.auth.Login logins = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), link);
             return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
         } catch (PluginException e) {
             throw e;

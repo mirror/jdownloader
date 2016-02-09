@@ -88,7 +88,7 @@ public class JdLog extends PluginForHost {
     private String[] getBasicAuth(final DownloadLink link) throws PluginException {
         org.jdownloader.auth.Login logins = org.jdownloader.auth.AuthenticationController.getInstance().getBestLogin(dllink);
         if (logins == null) {
-            logins = requestLogins(org.jdownloader.translate._JDT._.DirectHTTP_getBasicAuth_message(), link);
+            logins = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), link);
             isNewLogin = true;
         }
         return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };

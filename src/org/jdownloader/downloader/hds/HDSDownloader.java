@@ -479,7 +479,7 @@ public class HDSDownloader extends DownloadInterface {
         boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
         if (!renameOkay) {
 
-            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
         }
 
     }

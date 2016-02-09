@@ -38,7 +38,7 @@ public class PasswordUtils {
         // "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)",
         // "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
 
-        String passwordPattern = org.jdownloader.translate._JDT._.pattern_password();
+        String passwordPattern = org.jdownloader.translate._JDT.T.pattern_password();
         Pattern pattern = Pattern.compile("(" + passwordPattern + ")[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(data);
         while (matcher.find()) {

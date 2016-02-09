@@ -25,7 +25,7 @@ public class PasteContextLinksAction extends CustomizableTableContextAppAction {
     private boolean            deepDecryptEnabled   = false;
 
     public static String getTranslationForDeepDecryptEnabled() {
-        return _JDT._.PasteContextLinksAction_getTranslationForDeepDecryptEnabled();
+        return _JDT.T.PasteContextLinksAction_getTranslationForDeepDecryptEnabled();
     }
 
     @Customizer(link = "#getTranslationForDeepDecryptEnabled")

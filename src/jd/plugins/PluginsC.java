@@ -174,7 +174,7 @@ public abstract class PluginsC {
             } else if (cls.size() > 0 && askFileDeletion()) {
                 switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
                 case ASK_FOR_DELETE:
-                    final ConfirmDialog d = new ConfirmDialog(0, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), new AbstractIcon(IconKey.ICON_HELP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
+                    final ConfirmDialog d = new ConfirmDialog(0, _JDT.T.AddContainerAction_delete_container_title(), _JDT.T.AddContainerAction_delete_container_msg(file.toString()), new AbstractIcon(IconKey.ICON_HELP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
                         @Override
                         public String getDontShowAgainKey() {
                             return null;

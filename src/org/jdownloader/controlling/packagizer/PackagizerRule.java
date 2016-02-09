@@ -16,7 +16,7 @@ public class PackagizerRule extends FilterRule implements Storable {
 
         ret.setCreated(System.currentTimeMillis());
         ret.setIconKey(getIconKey());
-        ret.setName(_JDT._.LinkgrabberFilterRule_duplicate(getName()));
+        ret.setName(_JDT.T.LinkgrabberFilterRule_duplicate(getName()));
 
         ret.setMatchAlwaysFilter(getMatchAlwaysFilter());
 

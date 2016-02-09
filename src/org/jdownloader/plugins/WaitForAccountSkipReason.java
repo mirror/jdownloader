@@ -49,9 +49,9 @@ public class WaitForAccountSkipReason implements ConditionalSkipReason, Ignorabl
     public String getMessage(Object requestor, AbstractNode node) {
         long left = getTimeOutLeft();
         if (left > 0) {
-            return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(left / 1000));
+            return _JDT.T.gui_download_waittime_status2(Formatter.formatSeconds(left / 1000));
         } else {
-            return _JDT._.gui_download_waittime_status2("");
+            return _JDT.T.gui_download_waittime_status2("");
         }
     }
 

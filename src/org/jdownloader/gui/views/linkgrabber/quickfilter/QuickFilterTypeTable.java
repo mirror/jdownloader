@@ -113,7 +113,7 @@ public class QuickFilterTypeTable extends FilterTable {
                         final ArrayList<ExtensionFilter> knownExtensionFilters = new ArrayList<ExtensionFilter>();
                         ExtensionFilter filter = null;
                         allFilters.add(filter = new ExtensionFilter(HashExtensions.MD5) {
-                            final private String description = _JDT._.hashfilter_description();
+                            final private String description = _JDT.T.hashfilter_description();
 
                             protected String getID() {
                                 return "Type_Hash";
@@ -132,7 +132,7 @@ public class QuickFilterTypeTable extends FilterTable {
                         });
                         knownExtensionFilters.add(filter);
                         allFilters.add(filter = new ExtensionFilter(AudioExtensions.AA) {
-                            final private String description = _JDT._.audiofilter_description();
+                            final private String description = _JDT.T.audiofilter_description();
 
                             protected String getID() {
                                 return "Type_Audio";
@@ -151,7 +151,7 @@ public class QuickFilterTypeTable extends FilterTable {
                         });
                         knownExtensionFilters.add(filter);
                         allFilters.add(filter = new ExtensionFilter(VideoExtensions.ASF) {
-                            final private String description = _JDT._.video_description();
+                            final private String description = _JDT.T.video_description();
 
                             protected String getID() {
                                 return "Type_Video";
@@ -170,7 +170,7 @@ public class QuickFilterTypeTable extends FilterTable {
                         });
                         knownExtensionFilters.add(filter);
                         allFilters.add(filter = new ExtensionFilter(ImageExtensions.BMP) {
-                            final private String description = _JDT._.image_description();
+                            final private String description = _JDT.T.image_description();
 
                             protected String getID() {
                                 return "Type_Image";
@@ -188,7 +188,7 @@ public class QuickFilterTypeTable extends FilterTable {
                         });
                         knownExtensionFilters.add(filter);
                         allFilters.add(filter = new ExtensionFilter(ArchiveExtensions.ACE) {
-                            final private String description = _JDT._.archive_description();
+                            final private String description = _JDT.T.archive_description();
 
                             protected String getID() {
                                 return "Type_Archive";
@@ -247,7 +247,7 @@ public class QuickFilterTypeTable extends FilterTable {
                             }
                         };
                         allFilters.add(filter = new ExtensionFilter(other) {
-                            final private String description = _JDT._.other_files_description();
+                            final private String description = _JDT.T.other_files_description();
 
                             protected String getID() {
                                 return "Type_Others";

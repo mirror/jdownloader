@@ -8,7 +8,7 @@ public class OptionalContainer extends MenuContainer {
 
     public OptionalContainer(/* STorable */) {
 
-        setName(_JDT._.OptionalContainer_OptionalContainer());
+        setName(_JDT.T.OptionalContainer_OptionalContainer());
         setIconKey(IconKey.ICON_MENU);
 
     }

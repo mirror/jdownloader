@@ -47,7 +47,7 @@ public class DummyRouterPlugin extends RouterPlugin {
         text.setBackground(null);
         text.setOpaque(false);
         text.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        text.setText(_JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2());
+        text.setText(_JDT.T.jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2());
         p.add(text);
         return p;
     }
@@ -59,7 +59,7 @@ public class DummyRouterPlugin extends RouterPlugin {
 
     @Override
     public String getName() {
-        return _JDT._.jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();
+        return _JDT.T.jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();
     }
 
     @Override

@@ -59,7 +59,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
      */
     public StartDownloadsAction() {
 
-        setName(_JDT._.StartDownloadsAction_createTooltip_());
+        setName(_JDT.T.StartDownloadsAction_createTooltip_());
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
         CFG_GUI.START_BUTTON_ACTION_IN_LINKGRABBER_CONTEXT.getEventSender().addListener(this, true);
@@ -122,9 +122,9 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     @Override
     public String createTooltip() {
         if (badge != null) {
-            return _JDT._.StartDownloadsAction_forced_createTooltip_();
+            return _JDT.T.StartDownloadsAction_forced_createTooltip_();
         }
-        return _JDT._.StartDownloadsAction_createTooltip_();
+        return _JDT.T.StartDownloadsAction_createTooltip_();
     }
 
     private boolean            hideIfDownloadsAreRunning     = false;
@@ -132,7 +132,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     public static final String HIDE_IF_DOWNLOADS_ARE_RUNNING = "HideIfDownloadsAreRunning";
 
     public static String getHideIfDownloadsAreRunningTranslation() {
-        return _JDT._.StartDownloadsAction_getHideIfDownloadsAreRunningTranslation_();
+        return _JDT.T.StartDownloadsAction_getHideIfDownloadsAreRunningTranslation_();
     }
 
     @Customizer(link = "#getHideIfDownloadsAreRunningTranslation")
@@ -191,10 +191,10 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                     firePropertyChange(Action.LARGE_ICON_KEY, new Object(), new Object());
                 }
                 if (badge != null) {
-                    setTooltipText(_JDT._.StartDownloadsAction_forced_createTooltip_());
+                    setTooltipText(_JDT.T.StartDownloadsAction_forced_createTooltip_());
 
                 } else {
-                    setTooltipText(_JDT._.StartDownloadsAction_createTooltip_());
+                    setTooltipText(_JDT.T.StartDownloadsAction_createTooltip_());
                 }
 
                 View view = JDGui.getInstance().getMainTabbedPane().getSelectedView();

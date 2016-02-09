@@ -69,7 +69,7 @@ public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPa
     private boolean forceMode = false;
 
     public static String getTranslationForForceMode() {
-        return _JDT._.PriorityAction_getTranslationForForceMode();
+        return _JDT.T.PriorityAction_getTranslationForForceMode();
     }
 
     @Customizer(link = "#getTranslationForForceMode")
