@@ -25,6 +25,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.UpdateController;
 
 import jd.SecondLevelLaunch;
+import jd.gui.swing.laf.LookAndFeelController;
 
 public class LAFOptions {
 
@@ -64,11 +65,12 @@ public class LAFOptions {
         String name = (i >= 0 ? laf.substring(i + 1) : laf);
         String path = "cfg/laf/" + name;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
-
-        try {
-            extension = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
-        } catch (Throwable e) {
-            LoggerFactory.getDefaultLogger().log(e);
+        if (!LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL.equals(laf)) {
+            try {
+                extension = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
+            } catch (Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
         }
         if (extension == null) {
             extension = new DefaultLookAndFeelExtension();

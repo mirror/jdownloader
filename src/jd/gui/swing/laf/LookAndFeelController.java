@@ -56,7 +56,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
-    private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = JDDefaultLookAndFeel.class.getName();
+    public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = JDDefaultLookAndFeel.class.getName();
     public static final String                 JD_PLAIN                                                      = PlainLookAndFeel.class.getName();
     private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
 
