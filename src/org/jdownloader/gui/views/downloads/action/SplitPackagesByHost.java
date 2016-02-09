@@ -44,7 +44,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
     }
 
     public static String getTranslationForMergePackages() {
-        return _JDT._.SplitPackagesByHost_getTranslationForMergePackages();
+        return _JDT.T.SplitPackagesByHost_getTranslationForMergePackages();
     }
 
     @Customizer(link = "#getTranslationForMergePackages")
@@ -57,7 +57,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
     }
 
     public static String getTranslationForAskForNewDownloadFolderAndPackageName() {
-        return _JDT._.SplitPackagesByHost_getTranslationForAskForNewDownloadFolderAndPackageName();
+        return _JDT.T.SplitPackagesByHost_getTranslationForAskForNewDownloadFolderAndPackageName();
     }
 
     @Customizer(link = "#getTranslationForAskForNewDownloadFolderAndPackageName")
@@ -74,7 +74,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
     private LocationInList location                              = LocationInList.AFTER_SELECTION;
 
     public static String getTranslationForLocation() {
-        return _JDT._.SplitPackagesByHost_getTranslationForLocation();
+        return _JDT.T.SplitPackagesByHost_getTranslationForLocation();
     }
 
     @Customizer(link = "#getTranslationForLocation")
@@ -217,7 +217,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
         if (!StringUtils.isEmpty(oldPackageName)) {
             nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", oldPackageName);
         } else {
-            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", _JDT._.LinkCollector_addCrawledLink_variouspackage());
+            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", _JDT.T.LinkCollector_addCrawledLink_variouspackage());
         }
         nameFactory = nameFactory.replaceAll("\\{HOSTNAME\\}", host);
         return nameFactory;

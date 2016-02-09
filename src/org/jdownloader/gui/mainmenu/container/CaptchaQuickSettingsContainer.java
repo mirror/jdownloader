@@ -12,7 +12,7 @@ public class CaptchaQuickSettingsContainer extends MenuContainer {
 
     public CaptchaQuickSettingsContainer(/* STorable */) {
 
-        setName(_JDT._.CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer());
+        setName(_JDT.T.CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer());
         setIconKey(IconKey.ICON_OCR);
 
     }

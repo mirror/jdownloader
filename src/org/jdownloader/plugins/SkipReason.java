@@ -9,17 +9,17 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public enum SkipReason {
-    CONNECTION_UNAVAILABLE(_JDT._.DownloadLink_setSkipped_statusmessage_noconnectionavailable(), IconKey.ICON_ERROR),
-    TOO_MANY_RETRIES(_JDT._.DownloadLink_setSkipped_statusmessage_toomanyretries(), IconKey.ICON_ERROR),
-    CAPTCHA(_JDT._.DownloadLink_setSkipped_statusmessage_captcha(), IconKey.ICON_OCR),
-    MANUAL(_JDT._.DownloadLink_setSkipped_statusmessage()),
-    DISK_FULL(_JDT._.DownloadLink_setSkipped_statusmessage_disk_full(), IconKey.ICON_SAVE),
-    NO_ACCOUNT(_JDT._.DownloadLink_setSkipped_statusmessage_account(), IconKey.ICON_PREMIUM),
-    INVALID_DESTINATION(_JDT._.DownloadLink_setSkipped_statusmessage_invalid_path(), IconKey.ICON_SAVETO),
-    FILE_EXISTS(_JDT._.DownloadLink_setSkipped_statusmessage_file_exists(), IconKey.ICON_COPY),
-    UPDATE_RESTART_REQUIRED(_JDT._.DownloadLink_setSkipped_statusmessage_update_restart(), IconKey.ICON_RESTART),
-    FFMPEG_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffmpeg(), IconKey.ICON_LOGO_FFMPEG),
-    FFPROBE_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffprobe(), IconKey.ICON_LOGO_FFMPEG);
+    CONNECTION_UNAVAILABLE(_JDT.T.DownloadLink_setSkipped_statusmessage_noconnectionavailable(), IconKey.ICON_ERROR),
+    TOO_MANY_RETRIES(_JDT.T.DownloadLink_setSkipped_statusmessage_toomanyretries(), IconKey.ICON_ERROR),
+    CAPTCHA(_JDT.T.DownloadLink_setSkipped_statusmessage_captcha(), IconKey.ICON_OCR),
+    MANUAL(_JDT.T.DownloadLink_setSkipped_statusmessage()),
+    DISK_FULL(_JDT.T.DownloadLink_setSkipped_statusmessage_disk_full(), IconKey.ICON_SAVE),
+    NO_ACCOUNT(_JDT.T.DownloadLink_setSkipped_statusmessage_account(), IconKey.ICON_PREMIUM),
+    INVALID_DESTINATION(_JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path(), IconKey.ICON_SAVETO),
+    FILE_EXISTS(_JDT.T.DownloadLink_setSkipped_statusmessage_file_exists(), IconKey.ICON_COPY),
+    UPDATE_RESTART_REQUIRED(_JDT.T.DownloadLink_setSkipped_statusmessage_update_restart(), IconKey.ICON_RESTART),
+    FFMPEG_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_ffmpeg(), IconKey.ICON_LOGO_FFMPEG),
+    FFPROBE_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_ffprobe(), IconKey.ICON_LOGO_FFMPEG);
     private final String exp;
     private final String iconKey;
 

@@ -21,7 +21,7 @@ public class WaitForTrackerSlotPluginProcess extends PluginProgress {
 
         setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
         this.message = message;
-        pluginMessage = _JDT._.WaitForTrackerSlotPluginProcess(message, Formatter.formatSeconds(total / 1000));
+        pluginMessage = _JDT.T.WaitForTrackerSlotPluginProcess(message, Formatter.formatSeconds(total / 1000));
     }
 
     @Override
@@ -37,7 +37,7 @@ public class WaitForTrackerSlotPluginProcess extends PluginProgress {
     @Override
     public void setCurrent(long current) {
         if (current > 0) {
-            pluginMessage = _JDT._.WaitForTrackerSlotPluginProcess(message, Formatter.formatSeconds(current / 1000));
+            pluginMessage = _JDT.T.WaitForTrackerSlotPluginProcess(message, Formatter.formatSeconds(current / 1000));
         }
         super.setCurrent(current);
     }

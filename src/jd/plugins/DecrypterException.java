@@ -22,12 +22,12 @@ public class DecrypterException extends Exception {
 
     private static final long serialVersionUID = -413359039728789194L;
 
-    public static String      CAPTCHA          = _JDT._.decrypter_wrongcaptcha();
-    public static String      PASSWORD         = _JDT._.decrypter_wrongpassword();
-    public static String      ACCOUNT          = _JDT._.decrypter_invalidaccount();
+    public static String      CAPTCHA          = _JDT.T.decrypter_wrongcaptcha();
+    public static String      PASSWORD         = _JDT.T.decrypter_wrongpassword();
+    public static String      ACCOUNT          = _JDT.T.decrypter_invalidaccount();
 
     public DecrypterException() {
-        super(_JDT._.decrypter_unknownerror());
+        super(_JDT.T.decrypter_unknownerror());
     }
 
     public DecrypterException(String errorMessage) {

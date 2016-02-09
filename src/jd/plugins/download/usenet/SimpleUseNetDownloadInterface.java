@@ -263,7 +263,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
 
                 } else {
                     if (hashResult.getHashInfo().isTrustworthy()) {
-                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
+                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
                     }
                 }
                 finalizeDownload(outputPartFile, outputCompleteFile);
@@ -271,7 +271,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 return true;
             }
             if (externalDownloadStop() == false) {
-                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_incomplete());
             }
             return false;
         } finally {
@@ -302,7 +302,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 LogSource.exception(logger, ignore);
             }
         } else {
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
         }
     }
 

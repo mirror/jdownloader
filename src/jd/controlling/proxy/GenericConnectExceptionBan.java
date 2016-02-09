@@ -18,10 +18,10 @@ public class GenericConnectExceptionBan extends AuthExceptionGenericBan {
     public String toString() {
         final URI uri = getURI();
         if (uri != null) {
-            return _JDT._.ConnectExceptionInPluginBan(uri.getHost().concat(":").concat(Integer.toString(getPort(uri))));
+            return _JDT.T.ConnectExceptionInPluginBan(uri.getHost().concat(":").concat(Integer.toString(getPort(uri))));
         }
         final HTTPProxy proxy = getProxy();
-        return _JDT._.ConnectExceptionInPluginBan(proxy == null ? "" : proxy.toString());
+        return _JDT.T.ConnectExceptionInPluginBan(proxy == null ? "" : proxy.toString());
     }
 
     @Override

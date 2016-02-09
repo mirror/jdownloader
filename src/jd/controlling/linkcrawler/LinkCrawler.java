@@ -716,7 +716,7 @@ public class LinkCrawler {
                 final boolean ask = basicAuth == null;
                 boolean remember = false;
                 if (ask) {
-                    final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), _JDT._.Plugin_requestLogins_message(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
+                    final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), _JDT.T.Plugin_requestLogins_message(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
                     loginDialog.setTimeout(60 * 1000);
                     final LoginDialogInterface handle = UIOManager.I().show(LoginDialogInterface.class, loginDialog);
                     final String userNameAndPassword;

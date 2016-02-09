@@ -394,7 +394,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                             LogController.CL().info("Account " + whoAmI + " traffic limit reached!");
                             String errorMsg = pe.getErrorMessage();
                             if (StringUtils.isEmpty(errorMsg)) {
-                                errorMsg = _JDT._.AccountController_updateAccountInfo_status_traffic_reached();
+                                errorMsg = _JDT.T.AccountController_updateAccountInfo_status_traffic_reached();
                             }
                             /* needed because some plugins set invalid on pluginException */
                             account.setError(AccountError.TEMP_DISABLED, errorMsg);
@@ -402,7 +402,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                         } else if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                             String errorMsg = pe.getErrorMessage();
                             if (StringUtils.isEmpty(errorMsg)) {
-                                errorMsg = _JDT._.AccountController_updateAccountInfo_status_logins_wrong();
+                                errorMsg = _JDT.T.AccountController_updateAccountInfo_status_logins_wrong();
                             }
                             account.setError(AccountError.INVALID, errorMsg);
                             logger.clear();
@@ -414,7 +414,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                         logger.log(e);
                         String errorMsg = pe.getErrorMessage();
                         if (StringUtils.isEmpty(errorMsg)) {
-                            errorMsg = _JDT._.AccountController_updateAccountInfo_status_plugin_defect();
+                            errorMsg = _JDT.T.AccountController_updateAccountInfo_status_plugin_defect();
                         }
                         if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) {
                             account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
@@ -428,7 +428,7 @@ public class AccountController implements AccountControllerListener, AccountProp
 
                     String errorMsg = null;
 
-                    errorMsg = _JDT._.AccountController_updateAccountInfo_no_gateway();
+                    errorMsg = _JDT.T.AccountController_updateAccountInfo_no_gateway();
 
                     if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) {
                         account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
@@ -475,7 +475,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 } else if (!StringUtils.isEmpty(e.getMessage())) {
                     errorMsg = e.getMessage();
                 } else {
-                    errorMsg = _JDT._.AccountController_updateAccountInfo_status_uncheckable();
+                    errorMsg = _JDT.T.AccountController_updateAccountInfo_status_uncheckable();
                 }
                 if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) {
                     account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);

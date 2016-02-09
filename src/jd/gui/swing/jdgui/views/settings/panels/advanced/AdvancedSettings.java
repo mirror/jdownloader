@@ -66,7 +66,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
     public AdvancedSettings() {
         super();
         this.addHeader(getTitle(), NewTheme.I().getIcon(IconKey.ICON_ADVANCEDCONFIG, 32));
-        this.addDescription(_JDT._.gui_settings_advanced_description());
+        this.addDescription(_JDT.T.gui_settings_advanced_description());
 
         filterText = new JTextField() {
 

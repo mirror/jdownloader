@@ -25,7 +25,7 @@ public class ToggleAppAction extends CustomizableAppAction implements ComponentP
     private boolean           hidePopupOnClick = false;
 
     public static String getTranslationForHidePopupOnClick() {
-        return _JDT._.ToggleAppAction_getTranslationForHidePopupOnClick();
+        return _JDT.T.ToggleAppAction_getTranslationForHidePopupOnClick();
     }
 
     @Customizer(link = "#getTranslationForHidePopupOnClick")

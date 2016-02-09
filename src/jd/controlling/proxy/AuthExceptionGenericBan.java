@@ -30,7 +30,7 @@ public class AuthExceptionGenericBan extends AbstractBan {
     @Override
     public String toString() {
         final HTTPProxy proxy = getProxy();
-        return _JDT._.AuthExceptionGenericBan_toString(proxy == null ? "" : proxy.toString());
+        return _JDT.T.AuthExceptionGenericBan_toString(proxy == null ? "" : proxy.toString());
     }
 
     @Override

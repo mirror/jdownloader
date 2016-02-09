@@ -25,7 +25,7 @@ public class PasteLinksAction extends CustomizableAppAction implements ActionCon
     private boolean            deepDecryptEnabled   = false;
 
     public static String getTranslationForDeepDecryptEnabled() {
-        return _JDT._.PasteLinksAction_getTranslationForDeepDecryptEnabled();
+        return _JDT.T.PasteLinksAction_getTranslationForDeepDecryptEnabled();
     }
 
     @Customizer(link = "#getTranslationForDeepDecryptEnabled")

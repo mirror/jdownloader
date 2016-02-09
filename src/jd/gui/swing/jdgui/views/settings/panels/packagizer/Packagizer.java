@@ -45,7 +45,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
     public Packagizer() {
         super();
         add(new Header(getTitle(), new AbstractIcon(IconKey.ICON_PACKAGIZER, 32), org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED), "spanx,growx,pushx");
-        this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_packagizer_description());
+        this.addDescriptionPlain(_JDT.T.gui_settings_linkgrabber_packagizer_description());
         packagizer = new PackagizerFilter();
         add(packagizer);
     }
@@ -86,7 +86,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
     }
 
     public String getDescription() {
-        return _JDT._.gui_settings_linkgrabber_packagizer_description();
+        return _JDT.T.gui_settings_linkgrabber_packagizer_description();
     }
 
     public void _setEnabled(boolean b) throws StartException, StopException {

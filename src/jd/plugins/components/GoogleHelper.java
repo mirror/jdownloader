@@ -250,13 +250,13 @@ public class GoogleHelper {
                 Form[] forms = br.getForms();
                 String error = br.getRegex("<span color=\"red\">(.*?)</span>").getMatch(0);
                 if (StringUtils.isNotEmpty(error)) {
-                    UIOManager.I().showErrorMessage(_JDT._.google_error(error));
+                    UIOManager.I().showErrorMessage(_JDT.T.google_error(error));
                 }
                 if (br.containsHTML("Please change your password")) {
                     Form changePassword = br.getFormbyAction("https://accounts.google.com/ChangePassword");
                     if (changePassword != null) {
                         CrossSystem.openURLOrShowMessage("http://www.google.com/support/accounts/bin/answer.py?answer=46526");
-                        NewPasswordDialog d = new NewPasswordDialog(UIOManager.LOGIC_COUNTDOWN, _JDT._.google_password_change_title(), _JDT._.google_password_change_message(account.getUser()), null, _GUI.T.lit_continue(), null);
+                        NewPasswordDialog d = new NewPasswordDialog(UIOManager.LOGIC_COUNTDOWN, _JDT.T.google_password_change_title(), _JDT.T.google_password_change_message(account.getUser()), null, _GUI.T.lit_continue(), null);
                         d.setTimeout(5 * 60 * 1000);
                         NewPasswordDialogInterface handler = UIOManager.I().show(NewPasswordDialogInterface.class, d);
                         try {
@@ -285,7 +285,7 @@ public class GoogleHelper {
                         CrossSystem.openURLOrShowMessage(br.getURL());
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else {
-                        InputDialog d = new InputDialog(0, _JDT._.google_email_verification_title(), _JDT._.google_email_verification_message(example.trim()), null, null, _GUI.T.lit_continue(), null) {
+                        InputDialog d = new InputDialog(0, _JDT.T.google_email_verification_title(), _JDT.T.google_email_verification_message(example.trim()), null, null, _GUI.T.lit_continue(), null) {
                             @Override
                             protected int getPreferredWidth() {
                                 return 400;
@@ -311,7 +311,7 @@ public class GoogleHelper {
                     // google wants you to accept the new privacy policy
                     CrossSystem.openURLOrShowMessage("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
 
-                    if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT._.google_helper_privacy_update_title(), _JDT._.google_helper_privacy_update_message(account.getUser()), null, _GUI.T.lit_continue(), null)) {
+                    if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message(account.getUser()), null, _GUI.T.lit_continue(), null)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
 
@@ -321,7 +321,7 @@ public class GoogleHelper {
                         if (br.containsHTML("privacyreminder")) {
                             CrossSystem.openURLOrShowMessage("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
 
-                            if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT._.google_helper_privacy_update_title(), _JDT._.google_helper_privacy_update_message_retry(account.getUser()), null, _GUI.T.lit_continue(), null)) {
+                            if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message_retry(account.getUser()), null, _GUI.T.lit_continue(), null)) {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                             }
                         } else {
@@ -426,7 +426,7 @@ public class GoogleHelper {
         String number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
         if (number != null) {
             StatsManager.I().track("google/twofactor/1");
-            InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
+            InputDialog d = new InputDialog(0, _JDT.T.Google_helper_2factor_sms_dialog_title(), _JDT.T.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
             InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
             handler.throwCloseExceptions();
             InputField smsUserPin = form.getInputFieldByName("smsUserPin");
@@ -441,7 +441,7 @@ public class GoogleHelper {
             // new version implemented on 31th july 2015
             StatsManager.I().track("google/twofactor/2");
             number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
-            InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
+            InputDialog d = new InputDialog(0, _JDT.T.Google_helper_2factor_sms_dialog_title(), _JDT.T.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
             InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
             handler.throwCloseExceptions();
             InputField smsUserPin = form.getInputFieldByName("smsUserPin");
@@ -470,7 +470,7 @@ public class GoogleHelper {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
         }
         final String number = getPhonenumberCensored();
-        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
+        InputDialog d = new InputDialog(0, _JDT.T.Google_helper_2factor_sms_dialog_title(), _JDT.T.Google_helper_2factor_sms_dialog_msg(number), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
             @Override
             protected void initFocus(JComponent focus) {
                 // super.initFocus(focus);
@@ -546,7 +546,7 @@ public class GoogleHelper {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
         }
         final String number = getPhonenumberCensored();
-        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
+        InputDialog d = new InputDialog(0, _JDT.T.Google_helper_2factor_sms_dialog_title(), _JDT.T.Google_helper_2factor_sms_dialog_msg(number), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null) {
             @Override
             protected void initFocus(JComponent focus) {
                 // super.initFocus(focus);

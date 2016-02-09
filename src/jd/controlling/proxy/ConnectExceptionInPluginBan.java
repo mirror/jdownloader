@@ -17,7 +17,7 @@ public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
     @Override
     public String toString() {
         final HTTPProxy proxy = getProxy();
-        return _JDT._.ConnectExceptionInPluginBan_plugin(proxy == null ? "" : proxy.toString(), getHost());
+        return _JDT.T.ConnectExceptionInPluginBan_plugin(proxy == null ? "" : proxy.toString(), getHost());
     }
 
     @Override

@@ -24,7 +24,7 @@ import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 public class ProxyConfig extends AbstractConfigPanel implements DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>> {
 
     public String getTitle() {
-        return _JDT._.gui_settings_proxy_title();
+        return _JDT.T.gui_settings_proxy_title();
     }
 
     private static final long serialVersionUID = -521958649780869375L;
@@ -50,8 +50,8 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         super();
 
         this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_PROXY_ROTATE, 32));
-        this.addDescriptionPlain(_JDT._.gui_settings_proxy_description());
-        this.addDescriptionPlain(_JDT._.gui_settings_proxy_description_new());
+        this.addDescriptionPlain(_JDT.T.gui_settings_proxy_description());
+        this.addDescriptionPlain(_JDT.T.gui_settings_proxy_description_new());
         table = new ProxyTable();
 
         JScrollPane sp = new JScrollPane(table);

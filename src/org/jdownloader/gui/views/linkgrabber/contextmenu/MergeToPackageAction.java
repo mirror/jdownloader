@@ -40,7 +40,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
     private boolean expandNewPackage = false;
 
     public static String getTranslationForExpandNewPackage() {
-        return _JDT._.MergeToPackageAction_getTranslationForExpandNewPackage();
+        return _JDT.T.MergeToPackageAction_getTranslationForExpandNewPackage();
     }
 
     @Customizer(link = "#getTranslationForExpandNewPackage")
@@ -55,7 +55,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
     private boolean lastPathDefault = false;
 
     public static String getTranslationForLastPathDefault() {
-        return _JDT._.MergeToPackageAction_getTranslationForLastPathDefault();
+        return _JDT.T.MergeToPackageAction_getTranslationForLastPathDefault();
     }
 
     @Customizer(link = "#getTranslationForLastPathDefault")
@@ -70,7 +70,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
     private LocationInList location = LocationInList.END_OF_LIST;
 
     public static String getTranslationForLocation() {
-        return _JDT._.MergeToPackageAction_getTranslationForLocation();
+        return _JDT.T.MergeToPackageAction_getTranslationForLocation();
     }
 
     @Customizer(link = "#getTranslationForLocation")

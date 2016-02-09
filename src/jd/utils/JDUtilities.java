@@ -147,7 +147,7 @@ public class JDUtilities {
 
         if (waitingupdates > 0) {
             ret.append(new char[] { ' ', '(' });
-            ret.append(_JDT._.gui_mainframe_title_updatemessage2(waitingupdates));
+            ret.append(_JDT.T.gui_mainframe_title_updatemessage2(waitingupdates));
             ret.append(')');
         }
 

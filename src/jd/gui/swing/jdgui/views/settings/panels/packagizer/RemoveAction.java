@@ -57,7 +57,7 @@ public class RemoveAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
         if (JDGui.bugme(WarnLevel.NORMAL)) {
-            if (!rly(_JDT._.RemoveAction_actionPerformed_rly_msg())) return;
+            if (!rly(_JDT.T.RemoveAction_actionPerformed_rly_msg())) return;
         }
         final List<PackagizerRule> remove;
         if (selected != null) {

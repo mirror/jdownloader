@@ -17,7 +17,7 @@ public class DuplicateAction extends AppAction {
     private PackagizerFilterTable filterTable;
 
     public DuplicateAction(PackagizerRule contextObject, PackagizerFilterTable filterTable) {
-        setName(_JDT._.DuplicateAction_DuplicateAction_());
+        setName(_JDT.T.DuplicateAction_DuplicateAction_());
         setIconKey(IconKey.ICON_COPY);
         this.contextObject = contextObject;
         this.filterTable = filterTable;

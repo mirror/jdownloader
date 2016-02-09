@@ -38,7 +38,7 @@ public class ExitAction extends CustomizableAppAction {
     private static final long  serialVersionUID = -1428029294638573437L;
 
     public static String getHideOnMacTranslation() {
-        return _JDT._.ExitAction_getHideOnMacTranslation();
+        return _JDT.T.ExitAction_getHideOnMacTranslation();
     }
 
     public ExitAction() {

@@ -64,11 +64,11 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
     private int maxAutoBackupFiles = -1;
 
     public static String getTranslationForMaxAutoBackupFiles() {
-        return _JDT._.BackupRestoreAction_getTranslationForMaxAutoBackupFiles();
+        return _JDT.T.BackupRestoreAction_getTranslationForMaxAutoBackupFiles();
     }
 
     public static String getTranslationForMaxCFGBackupFolders() {
-        return _JDT._.BackupRestoreAction_getTranslationForMaxCFGBackupFolders();
+        return _JDT.T.BackupRestoreAction_getTranslationForMaxCFGBackupFolders();
     }
 
     @Customizer(link = "#getTranslationForMaxAutoBackupFiles")

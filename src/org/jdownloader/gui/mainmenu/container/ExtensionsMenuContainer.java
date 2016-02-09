@@ -8,7 +8,7 @@ public class ExtensionsMenuContainer extends MenuContainer {
 
     public ExtensionsMenuContainer(/* STorable */) {
 
-        setName(_JDT._.gui_menu_extensions());
+        setName(_JDT.T.gui_menu_extensions());
         setIconKey(IconKey.ICON_EXTENSION);
 
     }

@@ -31,7 +31,7 @@ public class PluginRelatedConnectionBan extends AbstractBan {
     @Override
     public String toString() {
         final HTTPProxy proxy = getProxy();
-        return _JDT._.AuthExceptionGenericBan_toString_plugin(proxy == null ? "" : proxy.toString(), getHost());
+        return _JDT.T.AuthExceptionGenericBan_toString_plugin(proxy == null ? "" : proxy.toString(), getHost());
     }
 
     @Override

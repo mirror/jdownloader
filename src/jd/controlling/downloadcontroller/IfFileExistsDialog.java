@@ -53,7 +53,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private final DownloadLink downloadLink;
 
     public IfFileExistsDialog(DownloadLink downloadLink) {
-        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, _JDT._.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
+        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, _JDT.T.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
         //
         this.packagename = downloadLink.getFilePackage().getName();
         this.packageID = downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated();
@@ -100,7 +100,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
             localFile = new File(downloadLink.getFileOutput() + ".part");
         }
 
-        txt.setText(_JDT._.jd_controlling_SingleDownloadController_askexists3());
+        txt.setText(_JDT.T.jd_controlling_SingleDownloadController_askexists3());
         p.add(txt);
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filename())), "split 2,sg 1");
         p.add(new JLabel(new File(path).getName()));

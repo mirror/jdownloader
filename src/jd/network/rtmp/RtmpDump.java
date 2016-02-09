@@ -248,17 +248,17 @@ public class RtmpDump extends RTMPDownload {
         File fixedFile = flvfix.getoutputFile();
         if (!fixedFile.exists()) {
             logger.severe("File " + fixedFile.getAbsolutePath() + " not found!");
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.downloadlink_status_error_file_not_found(), LinkStatus.VALUE_LOCAL_IO_ERROR);
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.downloadlink_status_error_file_not_found(), LinkStatus.VALUE_LOCAL_IO_ERROR);
         }
         if (!FileCreationManager.getInstance().delete(tmpFile, null)) {
             logger.severe("Could not delete part file " + tmpFile);
             FileCreationManager.getInstance().delete(fixedFile, null);
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotdelete(), LinkStatus.VALUE_LOCAL_IO_ERROR);
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotdelete(), LinkStatus.VALUE_LOCAL_IO_ERROR);
         }
         if (!fixedFile.renameTo(tmpFile)) {
             logger.severe("Could not rename file " + fixedFile.getName() + " to " + tmpFile.getName());
             FileCreationManager.getInstance().delete(fixedFile, null);
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
         }
         return true;
     }
@@ -503,7 +503,7 @@ public class RtmpDump extends RTMPDownload {
                     logger.finest("rtmpdump: no errors -> rename");
                     if (!tmpFile.renameTo(new File(downloadable.getFileOutput()))) {
                         logger.severe("Could not rename file " + tmpFile + " to " + downloadable.getFileOutput());
-                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
+                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
                     }
                     downloadable.setLinkStatus(LinkStatus.FINISHED);
                     return true;

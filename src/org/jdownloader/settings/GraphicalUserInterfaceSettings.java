@@ -1163,19 +1163,19 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         CURRENT_PATH {
             @Override
             public String getLabel() {
-                return _JDT._.DownloadFolderChooserDialogDefaultPath_CURRENT_PATH();
+                return _JDT.T.DownloadFolderChooserDialogDefaultPath_CURRENT_PATH();
             }
         },
         GLOBAL_DOWNLOAD_DIRECTORY {
             @Override
             public String getLabel() {
-                return _JDT._.DownloadFolderChooserDialogDefaultPath_GLOBAL_DOWNLOAD_DIRECTORY(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue());
+                return _JDT.T.DownloadFolderChooserDialogDefaultPath_GLOBAL_DOWNLOAD_DIRECTORY(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue());
             }
         },
         LAST_USED_PATH {
             @Override
             public String getLabel() {
-                return _JDT._.DownloadFolderChooserDialogDefaultPath_LAST_USED_PATH();
+                return _JDT.T.DownloadFolderChooserDialogDefaultPath_LAST_USED_PATH();
             }
         }
     }
@@ -1190,25 +1190,25 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         AUTO_HIDDEN {
             @Override
             public String getLabel() {
-                return _JDT._.DonateButtonState_AUTO_HIDDEN();
+                return _JDT.T.DonateButtonState_AUTO_HIDDEN();
             }
         },
         AUTO_VISIBLE {
             @Override
             public String getLabel() {
-                return _JDT._.DonateButtonState_AUTO_VISIBLE();
+                return _JDT.T.DonateButtonState_AUTO_VISIBLE();
             }
         },
         CUSTOM_VISIBLE {
             @Override
             public String getLabel() {
-                return _JDT._.DonateButtonState_CUSTOM_VISIBLE();
+                return _JDT.T.DonateButtonState_CUSTOM_VISIBLE();
             }
         },
         CUSTOM_HIDDEN {
             @Override
             public String getLabel() {
-                return _JDT._.DonateButtonState_CUSTOM_HIDDEN();
+                return _JDT.T.DonateButtonState_CUSTOM_HIDDEN();
             }
         };
     }

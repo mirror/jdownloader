@@ -40,7 +40,7 @@ public class RenameAction extends CustomizableTableContextAppAction implements A
     private boolean simpleMode = false;
 
     public static String getTranslationForSimpleMode() {
-        return _JDT._.RenameAction_getTranslationForSimpleMode();
+        return _JDT.T.RenameAction_getTranslationForSimpleMode();
     }
 
     @Customizer(link = "#getTranslationForSimpleMode")

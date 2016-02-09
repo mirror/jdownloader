@@ -692,7 +692,7 @@ public abstract class PluginForHost extends Plugin {
         if (props == null || props.size() == 0) {
             return null;
         }
-        KeyValueInfoGenerator ret = new KeyValueInfoGenerator(_JDT._.pluginforhost_infogenerator_title(account.getUser(), account.getHoster()));
+        KeyValueInfoGenerator ret = new KeyValueInfoGenerator(_JDT.T.pluginforhost_infogenerator_title(account.getUser(), account.getHoster()));
         for (Entry<String, Object> es : props.entrySet()) {
             String key = es.getKey();
             Object value = es.getValue();
@@ -945,7 +945,7 @@ public abstract class PluginForHost extends Plugin {
             @Override
             public void updateValues(long current, long total) {
                 if (current > 0) {
-                    pluginMessage = _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(current / 1000));
+                    pluginMessage = _JDT.T.gui_download_waittime_status2(Formatter.formatSeconds(current / 1000));
                 } else {
                     pluginMessage = null;
                 }
@@ -2058,7 +2058,7 @@ public abstract class PluginForHost extends Plugin {
 
                             @Override
                             public String getString() {
-                                return _JDT._.lit_please_wait();
+                                return _JDT.T.lit_please_wait();
                             }
 
                             @Override
@@ -2072,7 +2072,7 @@ public abstract class PluginForHost extends Plugin {
                             public String getLabelString() {
                                 return null;
                             }
-                        }, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.PluginForHost_copyMove_progressdialog_title(), null, new AbstractIcon(IconKey.ICON_SAVETO, 32), null, _JDT._.lit_hide()) {
+                        }, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.PluginForHost_copyMove_progressdialog_title(), null, new AbstractIcon(IconKey.ICON_SAVETO, 32), null, _JDT.T.lit_hide()) {
                             @Override
                             public String getDontShowAgainKey() {
                                 return COPY_MOVE_FILE;

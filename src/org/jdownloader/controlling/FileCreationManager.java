@@ -25,21 +25,21 @@ public class FileCreationManager {
 
             @Override
             public String getLabel() {
-                return _JDT._.DeleteOption_no_delete();
+                return _JDT.T.DeleteOption_no_delete();
             }
         },
 
         RECYCLE {
             @Override
             public String getLabel() {
-                return _JDT._.DeleteOption_recycle();
+                return _JDT.T.DeleteOption_recycle();
             }
         },
 
         NULL {
             @Override
             public String getLabel() {
-                return _JDT._.DeleteOption_final_delete();
+                return _JDT.T.DeleteOption_final_delete();
             }
         };
     }

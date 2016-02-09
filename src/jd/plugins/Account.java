@@ -519,19 +519,19 @@ public class Account extends Property {
         FREE {
             @Override
             public String getLabel() {
-                return _JDT._.AccountType_free();
+                return _JDT.T.AccountType_free();
             }
         },
         PREMIUM {
             @Override
             public String getLabel() {
-                return _JDT._.AccountType_premium();
+                return _JDT.T.AccountType_premium();
             }
         },
         UNKNOWN {
             @Override
             public String getLabel() {
-                return _JDT._.AccountType_unknown();
+                return _JDT.T.AccountType_unknown();
             }
         }
     }

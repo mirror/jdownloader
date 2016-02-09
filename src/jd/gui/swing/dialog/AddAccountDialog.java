@@ -120,7 +120,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             switch (error) {
             case PLUGIN_ERROR:
                 if (StringUtils.isEmpty(errorMessage)) {
-                    errorMessage = _JDT._.AccountController_updateAccountInfo_status_plugin_defect();
+                    errorMessage = _JDT.T.AccountController_updateAccountInfo_status_plugin_defect();
                 }
                 Dialog.getInstance().showMessageDialog(_GUI.T.accountdialog_check_invalid(errorMessage));
                 return false;

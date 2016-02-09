@@ -118,7 +118,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         } else if (object instanceof CrawledLink) {
             final CrawledPackage p = ((CrawledLink) object).getParentNode();
             try {
-                Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(p.getName()), _JDT._.SetDownloadFolderAction_msg(p.getName(), 1), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.SetDownloadFolderAction_actionPerformed_(p.getName()), _JDT.T.SetDownloadFolderAction_msg(p.getName(), 1), null, _JDT.T.SetDownloadFolderAction_yes(), _JDT.T.SetDownloadFolderAction_no());
                 LinkCollector.getInstance().getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
                     @Override
                     protected Object run() {

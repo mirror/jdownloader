@@ -58,7 +58,7 @@ public class RemoveAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         if (JDGui.bugme(WarnLevel.NORMAL)) {
-            if (!rly(_JDT._.RemoveAction_actionPerformed_rly_msg())) return;
+            if (!rly(_JDT.T.RemoveAction_actionPerformed_rly_msg())) return;
         }
         if (!isEnabled()) return;
         final List<LinkgrabberFilterRule> remove;

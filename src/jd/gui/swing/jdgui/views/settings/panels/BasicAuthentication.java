@@ -34,13 +34,13 @@ public class BasicAuthentication extends AbstractConfigPanel {
     private static final long serialVersionUID = -7963763730328793139L;
 
     public String getTitle() {
-        return _JDT._.gui_settings_basicauth_title();
+        return _JDT.T.gui_settings_basicauth_title();
     }
 
     public BasicAuthentication() {
         super();
         this.addHeader(getTitle(), new AbstractIcon(IconKey.ICON_BASICAUTH, 32));
-        this.addDescriptionPlain(_JDT._.gui_settings_basicauth_description());
+        this.addDescriptionPlain(_JDT.T.gui_settings_basicauth_description());
         add(BasicAuthenticationPanel.getInstance());
     }
 

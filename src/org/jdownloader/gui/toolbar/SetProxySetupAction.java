@@ -27,7 +27,7 @@ public class SetProxySetupAction extends CustomizableAppAction implements Action
     private String path = null;
 
     public static String getTranslationForPath() {
-        return _JDT._.SetProxySetupAction_getTranslationForPath();
+        return _JDT.T.SetProxySetupAction_getTranslationForPath();
     }
 
     @Customizer(link = "#getTranslationForPath")

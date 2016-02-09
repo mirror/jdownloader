@@ -8,28 +8,28 @@ public enum LocationInList implements LabelInterface {
     END_OF_LIST {
         @Override
         public String getLabel() {
-            return _JDT._.LocationInList_getLabel_END_OF_LIST();
+            return _JDT.T.LocationInList_getLabel_END_OF_LIST();
         }
     },
 
     TOP_OF_LIST {
         @Override
         public String getLabel() {
-            return _JDT._.LocationInList_getLabel_TOP_OF_LIST();
+            return _JDT.T.LocationInList_getLabel_TOP_OF_LIST();
         }
     },
 
     AFTER_SELECTION {
         @Override
         public String getLabel() {
-            return _JDT._.LocationInList_getLabel_AFTER_SELECTION();
+            return _JDT.T.LocationInList_getLabel_AFTER_SELECTION();
         }
     },
 
     BEFORE_SELECTION {
         @Override
         public String getLabel() {
-            return _JDT._.LocationInList_getLabel_BEFORE_SELECTION();
+            return _JDT.T.LocationInList_getLabel_BEFORE_SELECTION();
         }
     };
 

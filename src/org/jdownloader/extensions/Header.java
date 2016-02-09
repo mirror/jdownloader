@@ -67,7 +67,7 @@ public class Header extends JPanel {
 
         add(label);
         add(new JSeparator());
-        add(new JLabel(_JDT._.configheader_enabled()));
+        add(new JLabel(_JDT.T.configheader_enabled()));
         enabled = new ExtCheckBox(listener, label, iconLabel);
         enabled.setHorizontalTextPosition(SwingConstants.LEFT);
 

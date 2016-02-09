@@ -102,7 +102,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                 ConsoleDialog cd = new ConsoleDialog("MyJDownloader Setup");
                 cd.start();
                 try {
-                    cd.printLines(_JDT._.MyJDownloaderController_onError_badlogins());
+                    cd.printLines(_JDT.T.MyJDownloaderController_onError_badlogins());
                     try {
                         while (true) {
                             cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
@@ -227,7 +227,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                     cd.start();
                     try {
 
-                        cd.printLines(_JDT._.MyJDownloaderController_onError_account_unconfirmed());
+                        cd.printLines(_JDT.T.MyJDownloaderController_onError_account_unconfirmed());
 
                         cd.waitToContinue();
                         ShutdownController.getInstance().requestShutdown();
@@ -239,7 +239,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                 }
             }
 
-            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_account_unconfirmed());
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT.T.MyJDownloaderController_onError_account_unconfirmed());
             break;
         case OUTDATED:
             stop();
@@ -251,7 +251,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                     cd.start();
                     try {
 
-                        cd.printLines(_JDT._.MyJDownloaderController_onError_outdated());
+                        cd.printLines(_JDT.T.MyJDownloaderController_onError_outdated());
 
                         cd.waitToContinue();
                         ShutdownController.getInstance().requestShutdown();
@@ -262,7 +262,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
                 }
             }
-            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_outdated());
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT.T.MyJDownloaderController_onError_outdated());
             break;
         case BAD_LOGINS:
             stop();
@@ -273,7 +273,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                     cd.start();
                     try {
 
-                        cd.printLines(_JDT._.MyJDownloaderController_onError_badlogins());
+                        cd.printLines(_JDT.T.MyJDownloaderController_onError_badlogins());
 
                         try {
                             while (true) {
@@ -306,7 +306,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
                 }
             }
-            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT.T.MyJDownloaderController_onError_badlogins());
             break;
         case EMAIL_INVALID:
             stop();
@@ -317,7 +317,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                     cd.start();
                     try {
 
-                        cd.printLines(_JDT._.MyJDownloaderController_onError_badlogins());
+                        cd.printLines(_JDT.T.MyJDownloaderController_onError_badlogins());
 
                         try {
                             while (true) {
@@ -350,7 +350,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
                 }
             }
-            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT.T.MyJDownloaderController_onError_badlogins());
             break;
         case IO:
             break;
@@ -366,7 +366,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                     cd.start();
                     try {
 
-                        cd.printLines(_JDT._.MyJDownloaderController_onError_unknown(error.toString()));
+                        cd.printLines(_JDT.T.MyJDownloaderController_onError_unknown(error.toString()));
 
                         cd.waitToContinue();
                         ShutdownController.getInstance().requestShutdown();
@@ -377,7 +377,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
                 }
             }
-            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_unknown(error.toString()));
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT.T.MyJDownloaderController_onError_unknown(error.toString()));
         }
 
     }

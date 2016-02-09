@@ -37,7 +37,7 @@ public class AutoSetupAction extends BasicAction {
     private static final long serialVersionUID = -1089268040145686928L;
 
     public AutoSetupAction() {
-        putValue(NAME, _JDT._.reconnectmanager_wizard());
+        putValue(NAME, _JDT.T.reconnectmanager_wizard());
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_WIZARD, 20));
 
         this.setTooltipFactory(new BasicTooltipFactory(getName(), _GUI.T.AutoSetupAction_tt(), new AbstractIcon(IconKey.ICON_WIZARD, 32)));

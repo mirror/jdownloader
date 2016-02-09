@@ -58,7 +58,7 @@ public class IncludedSelectionSetup implements ActionContext {
     }
 
     public static String getTranslationForIncludeSelectedLinks() {
-        return _JDT._.IncludedSelectionSetup_getTranslationForIncludeSelectedLinks();
+        return _JDT.T.IncludedSelectionSetup_getTranslationForIncludeSelectedLinks();
     }
 
     @Customizer(link = "#getTranslationForIncludeSelectedLinks")
@@ -71,7 +71,7 @@ public class IncludedSelectionSetup implements ActionContext {
     }
 
     public static String getTranslationForIncludeUnselectedLinks() {
-        return _JDT._.IncludedSelectionSetup_getTranslationForIncludeUnselectedLinks();
+        return _JDT.T.IncludedSelectionSetup_getTranslationForIncludeUnselectedLinks();
     }
 
     @Customizer(link = "#getTranslationForIncludeUnselectedLinks")

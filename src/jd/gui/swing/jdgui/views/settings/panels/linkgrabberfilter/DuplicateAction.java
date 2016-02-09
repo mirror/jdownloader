@@ -13,7 +13,7 @@ public class DuplicateAction extends AppAction {
     private AbstractFilterTable   filterTable;
 
     public DuplicateAction(LinkgrabberFilterRule contextObject, AbstractFilterTable filterTable) {
-        setName(_JDT._.DuplicateAction_DuplicateAction_());
+        setName(_JDT.T.DuplicateAction_DuplicateAction_());
         setIconKey(IconKey.ICON_COPY);
         this.contextObject = contextObject;
         this.filterTable = filterTable;

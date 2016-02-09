@@ -32,7 +32,7 @@ public class ExportAction extends AppAction {
     public ExportAction() {
         setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey(IconKey.ICON_EXPORT);
-        setTooltipText(_JDT._.ExportAction_ExportAction_tt());
+        setTooltipText(_JDT.T.ExportAction_ExportAction_tt());
 
     }
 

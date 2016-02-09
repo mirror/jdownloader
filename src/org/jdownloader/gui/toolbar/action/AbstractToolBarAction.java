@@ -51,15 +51,15 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction implem
     private boolean            visibleInDownloadTab        = true;
 
     public static String getTranslationForVisibleInDownloadTab() {
-        return _JDT._.ToolbarContext_getTranslationForVisibleInDownloadTab();
+        return _JDT.T.ToolbarContext_getTranslationForVisibleInDownloadTab();
     }
 
     public static String getTranslationForVisibleInLinkgrabberTab() {
-        return _JDT._.ToolbarContext_getTranslationForVisibleInLinkgrabberTab();
+        return _JDT.T.ToolbarContext_getTranslationForVisibleInLinkgrabberTab();
     }
 
     public static String getTranslationForVisibleInAllTabs() {
-        return _JDT._.ToolbarContext_getTranslationForVisibleInAllTabs();
+        return _JDT.T.ToolbarContext_getTranslationForVisibleInAllTabs();
     }
 
     @Customizer(link = "#getTranslationForVisibleInDownloadTab")
