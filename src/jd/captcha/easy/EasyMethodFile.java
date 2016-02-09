@@ -107,7 +107,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
         final File folder2 = this.getCaptchaFolder();
         if (showLoadDialog) {
             if (!folder2.exists() || folder2.list().length < 1) {
-                final int res = UserIO.getInstance().requestConfirmDialog(0, T._.easycaptcha_loadcaptchas_title(), T._.easycaptcha_needCaptchas(), null, T._.easycaptcha_openCaptchaFolder(), T._.easycaptcha_loadcaptchas());
+                final int res = UserIO.getInstance().requestConfirmDialog(0, T.T.easycaptcha_loadcaptchas_title(), T.T.easycaptcha_needCaptchas(), null, T.T.easycaptcha_openCaptchaFolder(), T.T.easycaptcha_loadcaptchas());
                 if (JDFlags.hasSomeFlags(res, UserIO.RETURN_OK)) {
                     FileCreationManager.getInstance().mkdir(folder2);
                     this.openCaptchaFolder();

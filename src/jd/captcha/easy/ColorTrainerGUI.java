@@ -199,18 +199,18 @@ public class ColorTrainerGUI {
             public Object edtRun() {
                 images = new JPanel();
 
-                images.setBorder(new TitledBorder(T._.easycaptcha_images()));
+                images.setBorder(new TitledBorder(T.T.easycaptcha_images()));
 
                 images.setLayout(new BoxLayout(images, BoxLayout.Y_AXIS));
 
-                images.add(new JLabel(T._.easycaptcha_orginal()), getGBC(0, 1, 1, 1));
+                images.add(new JLabel(T.T.easycaptcha_orginal()), getGBC(0, 1, 1, 1));
                 ImageComponent ic0 = new ImageComponent(colorTrainer.getScaledOriginalCaptchaImage());
 
                 images.add(ic0, getGBC(0, 1, 1, 1));
 
                 images.add(Box.createRigidArea(new Dimension(0, 10)));
 
-                images.add(new JLabel(T._.easycaptcha_labeled()), getGBC(0, 1, 1, 1));
+                images.add(new JLabel(T.T.easycaptcha_labeled()), getGBC(0, 1, 1, 1));
 
                 createIc();
 
@@ -261,7 +261,7 @@ public class ColorTrainerGUI {
         setStatus(1, 1);
         box.add(icColorImage);
         box.add(colorState);
-        box.setBorder(new TitledBorder(T._.easycaptcha_color()));
+        box.setBorder(new TitledBorder(T.T.easycaptcha_color()));
         return box;
     }
 
@@ -283,7 +283,7 @@ public class ColorTrainerGUI {
 
         final JCheckBox ground = new EDTHelper<JCheckBox>() {
             public JCheckBox edtRun() {
-                return new JCheckBox(colorTrainer.foreground ? T._.easycaptcha_foreground() : T._.easycaptcha_background(), colorTrainer.foreground);
+                return new JCheckBox(colorTrainer.foreground ? T.T.easycaptcha_foreground() : T.T.easycaptcha_background(), colorTrainer.foreground);
             }
         }.getReturnValue();
         ground.addActionListener(new ActionListener() {
@@ -292,7 +292,7 @@ public class ColorTrainerGUI {
                 colorTrainer.foreground = !colorTrainer.foreground;
                 new EDTHelper<Object>() {
                     public Object edtRun() {
-                        ground.setText(colorTrainer.foreground ? T._.easycaptcha_foreground() : T._.easycaptcha_background());
+                        ground.setText(colorTrainer.foreground ? T.T.easycaptcha_foreground() : T.T.easycaptcha_background());
                         return null;
                     }
                 }.waitForEDT();
@@ -302,7 +302,7 @@ public class ColorTrainerGUI {
         box.add(ground);
         final JCheckBox addb = new EDTHelper<JCheckBox>() {
             public JCheckBox edtRun() {
-                return new JCheckBox(colorTrainer.add ? T._.easycaptcha_add() : T._.easycaptcha_remove(), colorTrainer.add);
+                return new JCheckBox(colorTrainer.add ? T.T.easycaptcha_add() : T.T.easycaptcha_remove(), colorTrainer.add);
 
             }
         }.getReturnValue();
@@ -312,7 +312,7 @@ public class ColorTrainerGUI {
                 colorTrainer.add = !colorTrainer.add;
                 new EDTHelper<Object>() {
                     public Object edtRun() {
-                        addb.setText(colorTrainer.add ? T._.easycaptcha_add() : T._.easycaptcha_remove());
+                        addb.setText(colorTrainer.add ? T.T.easycaptcha_add() : T.T.easycaptcha_remove());
                         return null;
                     }
                 }.waitForEDT();
@@ -345,10 +345,10 @@ public class ColorTrainerGUI {
                 final JSpinner tolleranceSP = new JSpinner(new SpinnerNumberModel(colorTrainer.threshold, 0, 360, 1));
                 tolleranceSP.setToolTipText("Threshold");
                 tolleranceSP.addChangeListener(cl);
-                p.add(new JLabel(T._.easycaptcha_threshold()));
+                p.add(new JLabel(T.T.easycaptcha_threshold()));
                 p.add(tolleranceSP);
                 box.add(p);
-                box.setBorder(new TitledBorder(T._.easycaptcha_settings()));
+                box.setBorder(new TitledBorder(T.T.easycaptcha_settings()));
 
                 return null;
             }
@@ -367,7 +367,7 @@ public class ColorTrainerGUI {
                 frame.setLayout(new BorderLayout());
                 frame.add(new JScrollPane(panel), BorderLayout.CENTER);
 
-                frame.setTitle(T._.easycaptcha_colorcrainer_title());
+                frame.setTitle(T.T.easycaptcha_colorcrainer_title());
                 addImages();
                 panel.add(images);
                 JPanel pen = new JPanel();
@@ -378,7 +378,7 @@ public class ColorTrainerGUI {
                 panel.add(pen, gb);
                 gb = Utilities.getGBC(0, 4, 1, 1);
 
-                back = new JButton(T._.easycaptcha_back());
+                back = new JButton(T.T.easycaptcha_back());
                 back.setEnabled(false);
                 back.addActionListener(new ActionListener() {
 
@@ -391,7 +391,7 @@ public class ColorTrainerGUI {
                 Component glue = Box.createGlue();
                 glue.setSize(10, 1);
                 box.add(glue);
-                JButton btf = new JButton(T._.easycaptcha_finished());
+                JButton btf = new JButton(T.T.easycaptcha_finished());
                 btf.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
@@ -402,7 +402,7 @@ public class ColorTrainerGUI {
                 gb.anchor = GridBagConstraints.WEST;
                 panel.add(box, gb);
 
-                JButton bt = new JButton(T._.gui_btn_ok());
+                JButton bt = new JButton(T.T.gui_btn_ok());
                 bt.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
@@ -486,7 +486,7 @@ public class ColorTrainerGUI {
         }
         if (new EDTHelper<Boolean>() {
             public Boolean edtRun() {
-                return JOptionPane.showConfirmDialog(null, T._.gui_btn_save(), T._.gui_btn_save(), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+                return JOptionPane.showConfirmDialog(null, T.T.gui_btn_save(), T.T.gui_btn_save(), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
             }
         }.getReturnValue()) {
             ColorTrainer.saveColors(colorPoints, file);

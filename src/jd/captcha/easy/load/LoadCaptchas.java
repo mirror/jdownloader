@@ -141,7 +141,7 @@ public class LoadCaptchas {
             if (selectedImage != null)
                 selectedImage.load(host);
             else {
-                dialog.setTitle(T._.easycaptcha_loadcaptchas_clickoncaptcha());
+                dialog.setTitle(T.T.easycaptcha_loadcaptchas_clickoncaptcha());
                 images = getAllImages(br);
                 loadImages();
                 dialog.addWindowListener(new WindowListener() {
@@ -336,7 +336,7 @@ public class LoadCaptchas {
         final JPanel p = new EDTHelper<JPanel>() {
             public JPanel edtRun() {
                 JPanel ret = new JPanel(new GridLayout(6, 2));
-                ret.add(new JLabel(T._.easycaptcha_loadcaptchas_link() + ":"));
+                ret.add(new JLabel(T.T.easycaptcha_loadcaptchas_link() + ":"));
                 return ret;
 
             }
@@ -352,7 +352,7 @@ public class LoadCaptchas {
         p.add(tfl);
         JSpinner sm = new EDTHelper<JSpinner>() {
             public JSpinner edtRun() {
-                p.add(new JLabel(T._.easycaptcha_loadcaptchas_howmuch() + ":"));
+                p.add(new JLabel(T.T.easycaptcha_loadcaptchas_howmuch() + ":"));
                 if (loadImage != null) tfl.setText(loadImage.baseUrl);
                 return new JSpinner(new SpinnerNumberModel(100, 1, 4000, 1));
             }
@@ -360,7 +360,7 @@ public class LoadCaptchas {
         p.add(sm);
         JCheckBox followLinks = new EDTHelper<JCheckBox>() {
             public JCheckBox edtRun() {
-                p.add(new JLabel(T._.easycaptcha_loadcaptchas_followlinks() + ":"));
+                p.add(new JLabel(T.T.easycaptcha_loadcaptchas_followlinks() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(false);
                 p.add(checkBox);
@@ -369,7 +369,7 @@ public class LoadCaptchas {
         }.getReturnValue();
         JCheckBox threadedCheck = new EDTHelper<JCheckBox>() {
             public JCheckBox edtRun() {
-                p.add(new JLabel(T._.easycaptcha_loadcaptchas_threaded() + ":"));
+                p.add(new JLabel(T.T.easycaptcha_loadcaptchas_threaded() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(false);
                 p.add(checkBox);
@@ -378,7 +378,7 @@ public class LoadCaptchas {
         }.getReturnValue();
         JCheckBox loadDirect = new EDTHelper<JCheckBox>() {
             public JCheckBox edtRun() {
-                p.add(new JLabel(T._.easycaptcha_loadcaptchas_loaddirect() + ":"));
+                p.add(new JLabel(T.T.easycaptcha_loadcaptchas_loaddirect() + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(true);
                 p.add(checkBox);
@@ -387,7 +387,7 @@ public class LoadCaptchas {
         }.getReturnValue();
         JButton ok = new EDTHelper<JButton>() {
             public JButton edtRun() {
-                return new JButton(T._.gui_btn_ok());
+                return new JButton(T.T.gui_btn_ok());
             }
         }.getReturnValue();
         ok.addActionListener(new ActionListener() {
@@ -424,7 +424,7 @@ public class LoadCaptchas {
         };
         JButton cancel = new EDTHelper<JButton>() {
             public JButton edtRun() {
-                return new JButton(T._.gui_btn_cancel());
+                return new JButton(T.T.gui_btn_cancel());
             }
         }.getReturnValue();
         cancel.addActionListener(new ActionListener() {

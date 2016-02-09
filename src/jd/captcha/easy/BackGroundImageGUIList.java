@@ -73,8 +73,8 @@ public class BackGroundImageGUIList implements ActionListener {
                 final ImageComponent ic = new ImageComponent(bgio.getImage(manager.methode));
                 tmpPanel.add(ic, BorderLayout.WEST);
 
-                final JButton edit = new JButton(T._.jd_plugins_optional_schedule_maingui_edit());
-                final JButton del = new JButton(T._.gui_component_textarea_context_delete());
+                final JButton edit = new JButton(T.T.jd_plugins_optional_schedule_maingui_edit());
+                final JButton del = new JButton(T.T.gui_component_textarea_context_delete());
 
                 edit.addActionListener(new ActionListener() {
 
@@ -142,7 +142,7 @@ public class BackGroundImageGUIList implements ActionListener {
                 panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
                 mainDialog.setLayout(new BorderLayout());
                 mainDialog.add(new JScrollPane(panel), BorderLayout.CENTER);
-                mainDialog.setTitle(T._.easycaptcha_backgroundimagetrainer_title());
+                mainDialog.setTitle(T.T.easycaptcha_backgroundimagetrainer_title());
                 return null;
             }
         }.waitForEDT();
@@ -150,8 +150,8 @@ public class BackGroundImageGUIList implements ActionListener {
         showImages();
         new EDTHelper<Object>() {
             public Object edtRun() {
-                btAdd = new JButton(T._.gui_menu_add());
-                btExit = new JButton(T._.easycaptcha_backgroundimagetrainer_saveandexit());
+                btAdd = new JButton(T.T.gui_menu_add());
+                btExit = new JButton(T.T.easycaptcha_backgroundimagetrainer_saveandexit());
                 Box box = new Box(BoxLayout.X_AXIS);
                 box.add(btAdd);
                 box.add(btExit);
