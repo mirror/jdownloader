@@ -67,10 +67,10 @@ public class ActionHelper {
     }
 
     public static enum TIME_OPTIONS {
-        ONLYONCE(T._.time_option_only_once()),
-        HOURLY(T._.time_option_hourly()),
-        SPECIFICDAYS(T._.time_option_specificDays()),
-        CHOOSEINTERVAL(T._.time_option_choose_interval());
+        ONLYONCE(T.T.time_option_only_once()),
+        HOURLY(T.T.time_option_hourly()),
+        SPECIFICDAYS(T.T.time_option_specificDays()),
+        CHOOSEINTERVAL(T.T.time_option_choose_interval());
 
         private final String readableName;
 
@@ -84,13 +84,13 @@ public class ActionHelper {
     }
 
     public static enum WEEKDAY {
-        MONDAY(T._.weekday_short_monday()),
-        TUESDAY(T._.weekday_short_tuesday()),
-        WEDNESDAY(T._.weekday_short_wednesday()),
-        THURSDAY(T._.weekday_short_thursday()),
-        FRIDAY(T._.weekday_short_friday()),
-        SATURDAY(T._.weekday_short_saturday()),
-        SUNDAY(T._.weekday_short_sunday());
+        MONDAY(T.T.weekday_short_monday()),
+        TUESDAY(T.T.weekday_short_tuesday()),
+        WEDNESDAY(T.T.weekday_short_wednesday()),
+        THURSDAY(T.T.weekday_short_thursday()),
+        FRIDAY(T.T.weekday_short_friday()),
+        SATURDAY(T.T.weekday_short_saturday()),
+        SUNDAY(T.T.weekday_short_sunday());
 
         private final String readableName;
 

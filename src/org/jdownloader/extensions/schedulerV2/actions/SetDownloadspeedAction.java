@@ -17,7 +17,7 @@ public class SetDownloadspeedAction extends AbstractScheduleAction<SetDownloadsp
 
     @Override
     public String getReadableName() {
-        return T._.action_setDownloadspeed();
+        return T.T.action_setDownloadspeed();
     }
 
     @Override
@@ -29,7 +29,7 @@ public class SetDownloadspeedAction extends AbstractScheduleAction<SetDownloadsp
     @Override
     protected void createPanel() {
 
-        panel.put(new JLabel(T._.addScheduleEntryDialog_speed() + ":"), "gapleft 10,");
+        panel.put(new JLabel(T.T.addScheduleEntryDialog_speed() + ":"), "gapleft 10,");
 
         final SpeedSpinner downloadspeedSpinner = new SpeedSpinner(0l, 100 * 1024 * 1024 * 1024l, 1l);
         downloadspeedSpinner.setValue(getConfig().getDownloadspeed());

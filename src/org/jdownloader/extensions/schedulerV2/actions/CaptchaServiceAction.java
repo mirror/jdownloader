@@ -18,7 +18,7 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
 
     @Override
     public String getReadableName() {
-        return T._.action_setCaptchaService();
+        return T.T.action_setCaptchaService();
     }
 
     @Override
@@ -50,7 +50,7 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
     }
 
     public static enum CAPTCHA_SERVICE {
-        NONE(T._.action_captcha_none()),
+        NONE(T.T.action_captcha_none()),
         NINEKWEU("9kw.eu"),
         DEATHBYCAPTCHA("deathbycaptcha.eu"),
         CAPTCHABROTHERHOOD("captchabrotherhood.com");
@@ -68,7 +68,7 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
 
     @Override
     protected void createPanel() {
-        panel.put(new JLabel(T._.action_captcha_service() + ":"), "gapleft 10,");
+        panel.put(new JLabel(T.T.action_captcha_service() + ":"), "gapleft 10,");
 
         final ComboBox<CAPTCHA_SERVICE> cbService = new ComboBox<CAPTCHA_SERVICE>(CAPTCHA_SERVICE.values()) {
             @Override

@@ -13,7 +13,7 @@ public class StartDownloadAction extends AbstractScheduleAction<ScheduleActionEm
 
     @Override
     public String getReadableName() {
-        return T._.action_startDownload();
+        return T.T.action_startDownload();
     }
 
     @Override

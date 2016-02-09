@@ -19,13 +19,13 @@ public class CopyAction extends AppAction {
 
     public CopyAction(SchedulerTable table) {
         this.table = table;
-        setName(T._.lit_copy());
+        setName(T.T.lit_copy());
         setIconKey(IconKey.ICON_COPY);
     }
 
     public CopyAction(List<ScheduleEntry> selection2) {
         this.selection = selection2;
-        setName(T._.lit_copy());
+        setName(T.T.lit_copy());
         setIconKey(IconKey.ICON_COPY);
     }
 

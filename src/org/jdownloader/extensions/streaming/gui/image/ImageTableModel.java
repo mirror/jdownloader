@@ -30,7 +30,7 @@ public class ImageTableModel extends MediaTableModel<ImageMediaItem, ImageListCo
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<ImageMediaItem>(T._.gui_video_name()) {
+        addColumn(new ExtTextColumn<ImageMediaItem>(T.T.gui_video_name()) {
 
             public ExtTooltip createToolTip(final Point position, final ImageMediaItem obj) {
 
@@ -65,7 +65,7 @@ public class ImageTableModel extends MediaTableModel<ImageMediaItem, ImageListCo
             }
         });
 
-        addColumn(new ExtTextColumn<ImageMediaItem>(T._.gui_video_format()) {
+        addColumn(new ExtTextColumn<ImageMediaItem>(T.T.gui_video_format()) {
 
             @Override
             public String getStringValue(ImageMediaItem value) {
@@ -81,7 +81,7 @@ public class ImageTableModel extends MediaTableModel<ImageMediaItem, ImageListCo
             }
         });
 
-        addColumn(new ExtTextColumn<ImageMediaItem>(T._.gui_video_status()) {
+        addColumn(new ExtTextColumn<ImageMediaItem>(T.T.gui_video_status()) {
 
             @Override
             public String getStringValue(ImageMediaItem value) {

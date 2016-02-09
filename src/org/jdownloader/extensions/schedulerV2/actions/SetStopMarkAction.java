@@ -14,7 +14,7 @@ public class SetStopMarkAction extends AbstractScheduleAction<ScheduleActionEmpt
 
     @Override
     public String getReadableName() {
-        return T._.action_setSopMark();
+        return T.T.action_setSopMark();
     }
 
     @Override

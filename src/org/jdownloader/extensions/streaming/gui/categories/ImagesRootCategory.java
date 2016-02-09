@@ -13,7 +13,7 @@ public class ImagesRootCategory extends RootCategory {
     private ImageTable      table;
 
     public ImagesRootCategory(StreamingExtension plg) {
-        super(plg, T._.SettingsSidebarModel_images(), "image");
+        super(plg, T.T.SettingsSidebarModel_images(), "image");
         model = new ImageTableModel(plg, plg.getMediaArchiveController());
         table = new ImageTable(model);
     }

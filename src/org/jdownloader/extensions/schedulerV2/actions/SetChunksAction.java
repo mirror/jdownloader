@@ -17,12 +17,12 @@ public class SetChunksAction extends AbstractScheduleAction<SetChunksActionConfi
 
     @Override
     public String getReadableName() {
-        return T._.action_setChunks();
+        return T.T.action_setChunks();
     }
 
     @Override
     protected void createPanel() {
-        panel.put(new JLabel(T._.addScheduleEntryDialog_chunks() + ":"), "gapleft 10,");
+        panel.put(new JLabel(T.T.addScheduleEntryDialog_chunks() + ":"), "gapleft 10,");
         final SpinnerNumberModel model;
         JSpinner intParameterSpinner = new JSpinner(model = new SpinnerNumberModel(getConfig().getChunks(), 0, 25, 1));
         intParameterSpinner.addChangeListener(new ChangeListener() {

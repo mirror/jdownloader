@@ -92,11 +92,11 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         prgTotal = new JDProgressBar();
         prgTotal.setStringPainted(true);
 
-        lblHelp = new JLabel(T._.jd_plugins_optional_infobar_InfoDialog_help());
+        lblHelp = new JLabel(T.T.jd_plugins_optional_infobar_InfoDialog_help());
         lblHelp.setIcon(new AbstractIcon(IconKey.ICON_CLIPBOARD, 16));
         lblHelp.setHorizontalTextPosition(JLabel.LEADING);
         lblHelp.setHorizontalAlignment(JLabel.CENTER);
-        lblHelp.setToolTipText(T._.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());
+        lblHelp.setToolTipText(T.T.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());
 
         JPanel panel = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill,200]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
@@ -194,7 +194,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            JMenuItem mi = new JMenuItem(T._.jd_plugins_optional_infobar_InfoDialog_hideWindow());
+            JMenuItem mi = new JMenuItem(T.T.jd_plugins_optional_infobar_InfoDialog_hideWindow());
             mi.setIcon(new AbstractIcon(IconKey.ICON_CLOSE, -1));
             mi.addActionListener(this);
 

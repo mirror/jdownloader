@@ -74,10 +74,10 @@ public abstract class AbstractScheduleAction<T extends IScheduleActionConfig> {
      * panel.put(new JLabel("Caption"),"spanx,");
      */
     protected void createPanel() {
-        JLabel lblCaption = new JLabel(org.jdownloader.extensions.schedulerV2.translate.T._.addScheduleEntryDialog_no_parameter_caption() + ":");
+        JLabel lblCaption = new JLabel(org.jdownloader.extensions.schedulerV2.translate.T.T.addScheduleEntryDialog_no_parameter_caption() + ":");
         lblCaption.setEnabled(false);
         panel.put(lblCaption, "gapleft 10,");
-        JLabel lbl = new JLabel(org.jdownloader.extensions.schedulerV2.translate.T._.addScheduleEntryDialog_no_parameter());
+        JLabel lbl = new JLabel(org.jdownloader.extensions.schedulerV2.translate.T.T.addScheduleEntryDialog_no_parameter());
         lbl.setEnabled(false);
         panel.put(lbl, "");
     }

@@ -23,11 +23,11 @@ public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtens
     public void setSelected(final boolean selected) {
         super.setSelected(selected);
         if (selected) {
-            final String string = T._.shutdown_toggle_action_disable();
+            final String string = T.T.shutdown_toggle_action_disable();
             setName(string);
             setTooltipText(string);
         } else {
-            final String string = T._.shutdown_toggle_action_enable();
+            final String string = T.T.shutdown_toggle_action_enable();
             setName(string);
             setTooltipText(string);
         }

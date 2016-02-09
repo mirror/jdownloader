@@ -13,7 +13,7 @@ public class ReconnectAction extends AbstractScheduleAction<ScheduleActionEmptyC
 
     @Override
     public String getReadableName() {
-        return T._.action_Reconnect();
+        return T.T.action_Reconnect();
     }
 
     @Override
