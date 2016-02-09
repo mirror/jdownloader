@@ -16,7 +16,7 @@ public class SidebarHeader extends MigPanel {
 
         // setBackground(Color.RED);
         // setOpaque(true);
-        JLabel lbl = new JLabel(T._.categories());
+        JLabel lbl = new JLabel(T.T.categories());
 
         add(lbl, "height 18!");
         add(Box.createHorizontalGlue());

@@ -28,7 +28,7 @@ public class AddToLibraryAction extends AppAction {
         this.selection = selectionInfo;
         this.extension = streamingExtension;
 
-        setName(T._.AddToLibraryAction());
+        setName(T.T.AddToLibraryAction());
 
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("go-next", 20), NewTheme.I().getImage("video", 14), 0, 0, 6, 6)));
 

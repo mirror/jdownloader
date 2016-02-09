@@ -44,7 +44,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
 
     @Override
     protected void initColumns() {
-        this.addColumn(new ExtCheckColumn<ScheduleEntry>(T._.scheduleTable_column_enable()) {
+        this.addColumn(new ExtCheckColumn<ScheduleEntry>(T.T.scheduleTable_column_enable()) {
 
             private static final long serialVersionUID = 1515656228974789237L;
 
@@ -94,7 +94,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
             }
         });
 
-        this.addColumn(new ExtTextColumn<ScheduleEntry>(T._.scheduleTable_column_name()) {
+        this.addColumn(new ExtTextColumn<ScheduleEntry>(T.T.scheduleTable_column_name()) {
 
             @Override
             public String getStringValue(ScheduleEntry value) {
@@ -112,7 +112,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
             }
         });
 
-        this.addColumn(new ExtTextColumn<ScheduleEntry>(T._.scheduleTable_column_action()) {
+        this.addColumn(new ExtTextColumn<ScheduleEntry>(T.T.scheduleTable_column_action()) {
 
             @Override
             public String getStringValue(ScheduleEntry value) {
@@ -124,7 +124,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
             }
         });
 
-        this.addColumn(new ExtTextColumn<ScheduleEntry>(T._.scheduleTable_column_actionparameter()) {
+        this.addColumn(new ExtTextColumn<ScheduleEntry>(T.T.scheduleTable_column_actionparameter()) {
 
             @Override
             public String getStringValue(ScheduleEntry value) {
@@ -143,7 +143,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
             }
         });
 
-        this.addColumn(new ExtTextColumn<ScheduleEntry>(T._.scheduleTable_column_next_execution()) {
+        this.addColumn(new ExtTextColumn<ScheduleEntry>(T.T.scheduleTable_column_next_execution()) {
 
             @Override
             public String getStringValue(ScheduleEntry value) {
@@ -195,7 +195,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
             }
         });
 
-        this.addColumn(new ExtTextColumn<ScheduleEntry>(T._.scheduleTable_column_repeats()) {
+        this.addColumn(new ExtTextColumn<ScheduleEntry>(T.T.scheduleTable_column_repeats()) {
             Calendar c = Calendar.getInstance();
 
             @Override
@@ -205,19 +205,19 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                 case HOURLY: {
                     c.setTimeInMillis(value.getTimestamp() * 1000l);
                     String minute = String.valueOf(c.get(Calendar.MINUTE));
-                    return T._.timeformat_repeats_hourly(minute);
+                    return T.T.timeformat_repeats_hourly(minute);
                 }
                 case SPECIFICDAYS: {
                     if (value.getSelectedDays().size() == 0) {
                         // Never
-                        return T._.lit_never();
+                        return T.T.lit_never();
                     }
                     c.setTimeInMillis(value.getTimestamp() * 1000l);
                     String time = DateFormat.getTimeInstance(DateFormat.SHORT).format(c.getTime());
 
                     if (value.getSelectedDays().size() == 7) {
                         // Daily
-                        return T._.timeformat_repeats_daily(time);
+                        return T.T.timeformat_repeats_daily(time);
                     }
 
                     String days = "";
@@ -231,14 +231,14 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     if (value.getSelectedDays().size() == 1) {
                         // Weekly
                         c.setTimeInMillis(value.getTimestamp() * 1000l);
-                        return T._.timeformat_repeats_weekly(days, time);
+                        return T.T.timeformat_repeats_weekly(days, time);
                     }
-                    return T._.timeformat_repeats_specificDays(days, time);
+                    return T.T.timeformat_repeats_specificDays(days, time);
                 }
                 case CHOOSEINTERVAL: {
                     String hour = String.valueOf(value.getIntervalHour());
                     String minute = String.valueOf(value.getIntervalMinunte());
-                    return T._.timeformat_repeats_interval(hour, minute);
+                    return T.T.timeformat_repeats_interval(hour, minute);
                 }
                 default:
                     return timeType.getReadableName();

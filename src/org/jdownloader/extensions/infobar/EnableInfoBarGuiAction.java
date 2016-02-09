@@ -10,7 +10,7 @@ public class EnableInfoBarGuiAction extends AbstractExtensionGuiEnableAction<Inf
 
     public EnableInfoBarGuiAction() {
         super(CFG_INFOBAR.GUI_ENABLED);
-        setName(T._.EnableInfoBarGuiAction());
+        setName(T.T.EnableInfoBarGuiAction());
         setIconKey(IconKey.ICON_INFO);
 
     }

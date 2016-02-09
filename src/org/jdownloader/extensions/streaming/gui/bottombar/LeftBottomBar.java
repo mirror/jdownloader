@@ -31,7 +31,7 @@ public class LeftBottomBar extends MigPanel {
 
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
 
-        addLinks = new JButton(new AddLinksAction(T._.add_files_action()));
+        addLinks = new JButton(new AddLinksAction(T.T.add_files_action()));
 
         popup = new JButton(new AddOptionsAction(addLinks)) {
             /**

@@ -11,7 +11,7 @@ public class EnableReconnectAction extends AbstractScheduleAction<ScheduleAction
 
     @Override
     public String getReadableName() {
-        return T._.action_enableReconnect();
+        return T.T.action_enableReconnect();
     }
 
     @Override

@@ -126,7 +126,7 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
                     //
                     // }
                 } else {
-                    status = T._.prepare(dl.getView().getDisplayName());
+                    status = T.T.prepare(dl.getView().getDisplayName());
                     HashSet<ExtensionHandler> handlers = HANDLER.get(Files.getExtension(name));
                     if (handlers == null) {
                         LOGGER.warning("No Handler for " + name);

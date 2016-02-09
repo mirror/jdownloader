@@ -31,7 +31,7 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<AudioMediaItem>(T._.gui_video_name()) {
+        addColumn(new ExtTextColumn<AudioMediaItem>(T.T.gui_video_name()) {
 
             public ExtTooltip createToolTip(final Point position, final AudioMediaItem obj) {
 
@@ -65,7 +65,7 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
                 return value.getTitle();
             }
         });
-        addColumn(new ExtTextColumn<AudioMediaItem>(T._.gui_video_artist()) {
+        addColumn(new ExtTextColumn<AudioMediaItem>(T.T.gui_video_artist()) {
 
             @Override
             public String getStringValue(AudioMediaItem value) {
@@ -73,14 +73,14 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
             }
         });
 
-        addColumn(new ExtTextColumn<AudioMediaItem>(T._.gui_video_album()) {
+        addColumn(new ExtTextColumn<AudioMediaItem>(T.T.gui_video_album()) {
 
             @Override
             public String getStringValue(AudioMediaItem value) {
                 return value.getAlbum();
             }
         });
-        addColumn(new ExtTextColumn<AudioMediaItem>(T._.gui_video_duration()) {
+        addColumn(new ExtTextColumn<AudioMediaItem>(T.T.gui_video_duration()) {
 
             @Override
             public String getStringValue(AudioMediaItem value) {
@@ -89,14 +89,14 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
             }
         });
 
-        addColumn(new ExtTextColumn<AudioMediaItem>(T._.gui_video_size()) {
+        addColumn(new ExtTextColumn<AudioMediaItem>(T.T.gui_video_size()) {
 
             @Override
             public String getStringValue(AudioMediaItem value) {
                 return SizeFormatter.formatBytes(value.getSize());
             }
         });
-        addColumn(new ExtTextColumn<AudioMediaItem>(T._.gui_video_format()) {
+        addColumn(new ExtTextColumn<AudioMediaItem>(T.T.gui_video_format()) {
 
             @Override
             public String getStringValue(AudioMediaItem value) {
@@ -104,7 +104,7 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
             }
         });
 
-        addColumn(new ExtTextColumn<AudioMediaItem>(T._.gui_video_status()) {
+        addColumn(new ExtTextColumn<AudioMediaItem>(T.T.gui_video_status()) {
 
             @Override
             public String getStringValue(AudioMediaItem value) {

@@ -584,7 +584,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 if (isHibernateActivated()) {
                     return;
                 }
-                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.show_admin());
+                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T.T.show_admin());
                 String path = CrossSystem.is64BitOperatingSystem() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
                 try {
                     LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "on" }).toString());
@@ -596,7 +596,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 if (!isHibernateActivated()) {
                     return;
                 }
-                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.show_admin());
+                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T.T.show_admin());
                 path = CrossSystem.is64BitOperatingSystem() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
                 try {
                     LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "off" }).toString());

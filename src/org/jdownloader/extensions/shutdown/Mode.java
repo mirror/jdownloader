@@ -4,10 +4,10 @@ import org.jdownloader.extensions.shutdown.translate.T;
 
 public enum Mode {
 
-    SHUTDOWN(T._.gui_config_jdshutdown_shutdown()),
-    STANDBY(T._.gui_config_jdshutdown_standby()),
-    HIBERNATE(T._.gui_config_jdshutdown_hibernate()),
-    CLOSE(T._.gui_config_jdshutdown_close());
+    SHUTDOWN(T.T.gui_config_jdshutdown_shutdown()),
+    STANDBY(T.T.gui_config_jdshutdown_standby()),
+    HIBERNATE(T.T.gui_config_jdshutdown_hibernate()),
+    CLOSE(T.T.gui_config_jdshutdown_close());
     private final String translation;
 
     public String getTranslation() {

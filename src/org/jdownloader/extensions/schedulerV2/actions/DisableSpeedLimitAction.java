@@ -11,7 +11,7 @@ public class DisableSpeedLimitAction extends AbstractScheduleAction<ScheduleActi
 
     @Override
     public String getReadableName() {
-        return T._.action_disableSpeedLimit();
+        return T.T.action_disableSpeedLimit();
     }
 
     @Override

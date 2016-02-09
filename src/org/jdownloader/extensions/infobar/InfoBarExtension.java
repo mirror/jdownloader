@@ -54,7 +54,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     }
 
     public InfoBarExtension() throws StartException {
-        setTitle(T._.jd_plugins_optional_infobar_jdinfobar());
+        setTitle(T.T.jd_plugins_optional_infobar_jdinfobar());
         subConfig = SubConfiguration.getConfig("infobarextension");
     }
 
@@ -169,7 +169,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         if (Application.getJavaVersion() >= Application.JAVA16) {
-            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_OPACITY, T._.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
+            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_OPACITY, T.T.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -182,7 +182,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             config.addEntry(ce);
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DROPLOCATION, T._.jd_plugins_optional_infobar_dropLocation2()) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DROPLOCATION, T.T.jd_plugins_optional_infobar_dropLocation2()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -194,7 +194,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
                 super.valueChanged(newValue);
             }
         }.setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DOCKING, T._.jd_plugins_optional_infobar_docking()) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DOCKING, T.T.jd_plugins_optional_infobar_docking()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -210,7 +210,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     public String getDescription() {
-        return T._.jd_plugins_optional_infobar_jdinfobar_description();
+        return T.T.jd_plugins_optional_infobar_jdinfobar_description();
     }
 
     @Override

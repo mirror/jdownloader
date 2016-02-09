@@ -17,7 +17,7 @@ public class SetConnectionsAction extends AbstractScheduleAction<SetConnectionsA
 
     @Override
     public String getReadableName() {
-        return T._.action_setConnections();
+        return T.T.action_setConnections();
     }
 
     @Override
@@ -26,7 +26,7 @@ public class SetConnectionsAction extends AbstractScheduleAction<SetConnectionsA
     }
 
     protected void createPanel() {
-        panel.put(new JLabel(T._.addScheduleEntryDialog_downloads() + ":"), "gapleft 10,");
+        panel.put(new JLabel(T.T.addScheduleEntryDialog_downloads() + ":"), "gapleft 10,");
         final SpinnerNumberModel model;
         JSpinner intParameterSpinner = new JSpinner(model = new SpinnerNumberModel(0, 0, 25, 1));
         intParameterSpinner.addChangeListener(new ChangeListener() {

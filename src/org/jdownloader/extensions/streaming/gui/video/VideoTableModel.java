@@ -32,7 +32,7 @@ public class VideoTableModel extends MediaTableModel<VideoMediaItem, VideoListCo
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_name()) {
+        addColumn(new ExtTextColumn<VideoMediaItem>(T.T.gui_video_name()) {
 
             public ExtTooltip createToolTip(final Point position, final VideoMediaItem obj) {
 
@@ -67,7 +67,7 @@ public class VideoTableModel extends MediaTableModel<VideoMediaItem, VideoListCo
                 return value.getName();
             }
         });
-        addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_duration()) {
+        addColumn(new ExtTextColumn<VideoMediaItem>(T.T.gui_video_duration()) {
 
             @Override
             protected String getTooltipText(final VideoMediaItem obj) {
@@ -82,14 +82,14 @@ public class VideoTableModel extends MediaTableModel<VideoMediaItem, VideoListCo
             }
         });
 
-        addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_size()) {
+        addColumn(new ExtTextColumn<VideoMediaItem>(T.T.gui_video_size()) {
 
             @Override
             public String getStringValue(VideoMediaItem value) {
                 return SizeFormatter.formatBytes(value.getSize());
             }
         });
-        addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_format()) {
+        addColumn(new ExtTextColumn<VideoMediaItem>(T.T.gui_video_format()) {
 
             @Override
             public String getStringValue(VideoMediaItem value) {
@@ -97,7 +97,7 @@ public class VideoTableModel extends MediaTableModel<VideoMediaItem, VideoListCo
             }
         });
 
-        addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_status()) {
+        addColumn(new ExtTextColumn<VideoMediaItem>(T.T.gui_video_status()) {
 
             @Override
             public String getStringValue(VideoMediaItem value) {

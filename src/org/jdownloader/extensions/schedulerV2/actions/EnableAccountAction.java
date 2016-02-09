@@ -20,7 +20,7 @@ import org.jdownloader.extensions.schedulerV2.translate.T;
 public class EnableAccountAction extends AbstractScheduleAction<AccountActionConfig> {
 
     private final ComboBox<Account> cbAccounts = new ComboBox<Account>();
-    private final JLabel            noAccLabel = new JLabel(T._.addScheduleEntryDialog_noAccount());
+    private final JLabel            noAccLabel = new JLabel(T.T.addScheduleEntryDialog_noAccount());
     protected boolean               setBoolean = true;
     private AtomicBoolean           update     = new AtomicBoolean(false);
 
@@ -30,7 +30,7 @@ public class EnableAccountAction extends AbstractScheduleAction<AccountActionCon
 
     @Override
     public String getReadableName() {
-        return T._.action_enableAccount();
+        return T.T.action_enableAccount();
     }
 
     @Override
@@ -46,7 +46,7 @@ public class EnableAccountAction extends AbstractScheduleAction<AccountActionCon
 
     @Override
     protected void createPanel() {
-        panel.put(new JLabel(T._.addScheduleEntryDialog_account() + ":"), "gapleft 10,");
+        panel.put(new JLabel(T.T.addScheduleEntryDialog_account() + ":"), "gapleft 10,");
 
         panel.put(cbAccounts, "");
         panel.put(noAccLabel, "");

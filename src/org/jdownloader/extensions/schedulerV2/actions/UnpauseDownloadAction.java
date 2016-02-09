@@ -13,7 +13,7 @@ public class UnpauseDownloadAction extends AbstractScheduleAction<ScheduleAction
 
     @Override
     public String getReadableName() {
-        return T._.action_unpauseDownload();
+        return T.T.action_unpauseDownload();
     }
 
     @Override

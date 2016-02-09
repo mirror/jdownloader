@@ -27,7 +27,7 @@ public class DirectPlayToAction extends AppAction {
         this.link = link;
         device = d;
         extension = streamingExtension;
-        setName(T._.playto(device.getDisplayName()));
+        setName(T.T.playto(device.getDisplayName()));
         Image front = NewTheme.I().getImage("media-playback-start", 20, true);
         setSmallIcon(new ImageIcon(ImageProvider.merge(IconIO.toBufferedImage(streamingExtension.getIcon(20)), front, 0, 0, 5, 5)));
 

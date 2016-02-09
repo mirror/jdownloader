@@ -13,7 +13,7 @@ public class AudioRootCategory extends RootCategory {
     private AudioTable      table;
 
     public AudioRootCategory(StreamingExtension plg) {
-        super(plg, T._.SettingsSidebarModel_audio(), "audio");
+        super(plg, T.T.SettingsSidebarModel_audio(), "audio");
         model = new AudioTableModel(plg, plg.getMediaArchiveController());
         table = new AudioTable(model);
     }

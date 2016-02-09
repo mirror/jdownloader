@@ -49,7 +49,7 @@ public class MediaTable<MediaItemType extends MediaItem> extends BasicJDTable<Me
     @Override
     protected boolean onShortcutDelete(List<MediaItemType> selectedObjects, KeyEvent evt, boolean direct) {
         try {
-            Dialog.getInstance().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.mediatable_rly_remove_title(), T._.mediatable_rly_remove_msg(selectedObjects.size()));
+            Dialog.getInstance().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T.T.mediatable_rly_remove_title(), T.T.mediatable_rly_remove_msg(selectedObjects.size()));
             ((MediaTableModel<MediaItemType, MediaListController<MediaItemType>>) getModel()).getListController().remove(selectedObjects);
         } catch (DialogClosedException e) {
             e.printStackTrace();

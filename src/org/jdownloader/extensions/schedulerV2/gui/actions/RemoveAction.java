@@ -59,7 +59,7 @@ public class RemoveAction extends AppAction {
             }
             try {
                 if (!force) {
-                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, T._.entry_remove_action_title(finalSelection.size()), T._.entry_remove_action_msg(finalSelection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
+                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, T.T.entry_remove_action_title(finalSelection.size()), T.T.entry_remove_action_msg(finalSelection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
                 }
                 for (ScheduleEntry entry : finalSelection) {
                     table.getExtension().removeScheduleEntry(entry);

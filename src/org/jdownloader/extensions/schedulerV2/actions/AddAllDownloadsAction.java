@@ -18,7 +18,7 @@ public class AddAllDownloadsAction extends AbstractScheduleAction<ScheduleAction
 
     @Override
     public String getReadableName() {
-        return T._.action_addAllDownloads();
+        return T.T.action_addAllDownloads();
     }
 
     @Override
