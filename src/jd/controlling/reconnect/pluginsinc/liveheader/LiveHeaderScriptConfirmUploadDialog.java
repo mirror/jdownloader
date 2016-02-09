@@ -11,7 +11,7 @@ import org.jdownloader.images.AbstractIcon;
 public class LiveHeaderScriptConfirmUploadDialog extends LiveHeaderScriptConfirmDialog {
 
     public LiveHeaderScriptConfirmUploadDialog(RouterData test, String gatewayAdressHost, String name) {
-        super(Dialog.STYLE_HIDE_ICON, T._.script(test.getRouterName()), new AbstractIcon("reconnect", 32), _GUI._.lit_continue(), null, test, gatewayAdressHost, getRouterName(name));
+        super(Dialog.STYLE_HIDE_ICON, T.T.script(test.getRouterName()), new AbstractIcon("reconnect", 32), _GUI._.lit_continue(), null, test, gatewayAdressHost, getRouterName(name));
     }
 
     private static String getRouterName(String name) {
@@ -23,7 +23,7 @@ public class LiveHeaderScriptConfirmUploadDialog extends LiveHeaderScriptConfirm
 
     @Override
     public String getMessage() {
-        return T._.confirm_upload_script();
+        return T.T.confirm_upload_script();
     }
     //
     // public void addEditAction() {

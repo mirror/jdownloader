@@ -26,7 +26,7 @@ public class GetIPAction extends BasicAction {
 
     public GetIPAction(LiveHeaderReconnect liveHeaderReconnect) {
         plugin = liveHeaderReconnect;
-        putValue(NAME, T._.GetIPAction_GetIPAction_());
+        putValue(NAME, T.T.GetIPAction_GetIPAction_());
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_DEFAULTPROXY, 18));
 
     }
@@ -34,7 +34,7 @@ public class GetIPAction extends BasicAction {
     public TooltipFactory getTooltipFactory() {
 
         String ip = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterIP();
-        String txt = StringUtils.isEmpty(ip) ? T._.GetIPAction_GetIPAction_tt() : T._.GetIPAction_getTooltipText_tt_2(ip);
+        String txt = StringUtils.isEmpty(ip) ? T.T.GetIPAction_GetIPAction_tt() : T.T.GetIPAction_getTooltipText_tt_2(ip);
         return new BasicTooltipFactory(getName(), txt, new AbstractIcon(IconKey.ICON_DEFAULTPROXY, 32));
     }
 
@@ -52,17 +52,17 @@ public class GetIPAction extends BasicAction {
                 }
 
                 if (ia != null) {
-                    Dialog.getInstance().showMessageDialog(T._.gui_config_routeripfinder_ready(ia.getHostName()));
+                    Dialog.getInstance().showMessageDialog(T.T.gui_config_routeripfinder_ready(ia.getHostName()));
 
                 } else {
-                    Dialog.getInstance().showErrorDialog(T._.gui_config_routeripfinder_notfound());
+                    Dialog.getInstance().showErrorDialog(T.T.gui_config_routeripfinder_notfound());
 
                 }
                 progress = 100;
             }
 
             public String getString() {
-                return T._.GetIPAction_getString_progress();
+                return T.T.GetIPAction_getString_progress();
             }
 
             public int getProgress() {
@@ -75,7 +75,7 @@ public class GetIPAction extends BasicAction {
             }
         };
 
-        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T._.GetIPAction_actionPerformed_d_title(), T._.GetIPAction_actionPerformed_d_msg(), new AbstractIcon(IconKey.ICON_DEFAULTPROXY, 32), null, null);
+        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T.T.GetIPAction_actionPerformed_d_title(), T.T.GetIPAction_actionPerformed_d_msg(), new AbstractIcon(IconKey.ICON_DEFAULTPROXY, 32), null, null);
         try {
             UIOManager.I().show(ProgressInterface.class, d).throwCloseExceptions();
         } catch (DialogClosedException e1) {

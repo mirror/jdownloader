@@ -69,14 +69,14 @@ public class DataCompareDialog extends AbstractDialog<Object> {
     private String     loginDesc;
 
     public DataCompareDialog(String hostName, String firmware, String manufactor, String routerName, String username, String password) {
-        super(0, T._.DataCompareDialog_DataCompareDialog_(), null, _GUI._.literally_continue(), null);
+        super(0, T.T.DataCompareDialog_DataCompareDialog_(), null, _GUI._.literally_continue(), null);
         this.hostName = hostName;
         this.firmware = firmware;
         this.manufactor = manufactor;
         this.routerName = routerName;
         this.username = username;
         this.password = password;
-        loginDesc = T._.DataCompareDialog_layoutDialogContent_webinterface_desc();
+        loginDesc = T.T.DataCompareDialog_layoutDialogContent_webinterface_desc();
 
     }
 
@@ -90,7 +90,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
         MigPanel p = new MigPanel("ins 0,wrap 3", "[][grow,fill][]", "[grow,fill]");
         JButton btnWebinterface = new JButton(new AbstractAction() {
             {
-                putValue(NAME, T._.DataCompareDialog_open_webinterface());
+                putValue(NAME, T.T.DataCompareDialog_open_webinterface());
                 putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_URL, 18));
             }
 
@@ -99,21 +99,21 @@ public class DataCompareDialog extends AbstractDialog<Object> {
             }
         });
         ExtTextArea desc = new ExtTextArea();
-        desc.setText(T._.DataCompareDialog_layoutDialogContent__desc());
+        desc.setText(T.T.DataCompareDialog_layoutDialogContent__desc());
         desc.setLabelMode(true);
         p.add(desc, "spanx");
         if (!loginsOnly) {
-            p.add(header(NewTheme.I().getIcon(IconKey.ICON_MODEM, ICONSIZE), T._.DataCompareDialog_layoutDialogContent_router(), T._.DataCompareDialog_layoutDialogContent_router_desc()), "spanx");
-            txtName = addField(p, T._.DataCompareDialog_layoutDialogContent_name(), routerName, T._.DataCompareDialog_layoutDialogContent_name_help(), null);
-            txtManufactor = addField(p, T._.DataCompareDialog_layoutDialogContent_manufactorName(), manufactor, T._.DataCompareDialog_layoutDialogContent_manufactorName_help(), null);
-            txtFirmware = addField(p, T._.DataCompareDialog_layoutDialogContent_firmware(), firmware, T._.DataCompareDialog_layoutDialogContent_firmware_help(), null);
+            p.add(header(NewTheme.I().getIcon(IconKey.ICON_MODEM, ICONSIZE), T.T.DataCompareDialog_layoutDialogContent_router(), T.T.DataCompareDialog_layoutDialogContent_router_desc()), "spanx");
+            txtName = addField(p, T.T.DataCompareDialog_layoutDialogContent_name(), routerName, T.T.DataCompareDialog_layoutDialogContent_name_help(), null);
+            txtManufactor = addField(p, T.T.DataCompareDialog_layoutDialogContent_manufactorName(), manufactor, T.T.DataCompareDialog_layoutDialogContent_manufactorName_help(), null);
+            txtFirmware = addField(p, T.T.DataCompareDialog_layoutDialogContent_firmware(), firmware, T.T.DataCompareDialog_layoutDialogContent_firmware_help(), null);
         }
         if (!noLogins) {
-            p.add(header(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_BASICAUTH, ICONSIZE), T._.DataCompareDialog_layoutDialogContent_webinterface(), loginDesc), "spanx");
-            txtIP = addField(p, T._.DataCompareDialog_layoutDialogContent_ip(), hostName, T._.DataCompareDialog_layoutDialogContent_ip_help(), btnWebinterface);
+            p.add(header(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_BASICAUTH, ICONSIZE), T.T.DataCompareDialog_layoutDialogContent_webinterface(), loginDesc), "spanx");
+            txtIP = addField(p, T.T.DataCompareDialog_layoutDialogContent_ip(), hostName, T.T.DataCompareDialog_layoutDialogContent_ip_help(), btnWebinterface);
 
-            txtUser = addField(p, T._.DataCompareDialog_layoutDialogContent_user(), username, T._.DataCompareDialog_layoutDialogContent_user_help(), null);
-            txtPassword = addField(p, T._.DataCompareDialog_layoutDialogContent_password(), password, T._.DataCompareDialog_layoutDialogContent_password_help(), null);
+            txtUser = addField(p, T.T.DataCompareDialog_layoutDialogContent_user(), username, T.T.DataCompareDialog_layoutDialogContent_user_help(), null);
+            txtPassword = addField(p, T.T.DataCompareDialog_layoutDialogContent_password(), password, T.T.DataCompareDialog_layoutDialogContent_password_help(), null);
         }
         return p;
     }

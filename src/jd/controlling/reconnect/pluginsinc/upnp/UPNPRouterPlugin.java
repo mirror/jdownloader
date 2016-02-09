@@ -91,7 +91,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
                 ReconnectResult res;
                 try {
-                    processCallBack.setStatusString(this, T._.try_reconnect(device.getModelname()));
+                    processCallBack.setStatusString(this, T.T.try_reconnect(device.getModelname()));
                     logger.info("Try " + device);
                     if (processCallBack.isMethodConfirmEnabled()) {
                         ConfirmDialog d = new ConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.runDetectionWizard_confirm_title(), _GUI._.UPNPRouterPlugin_runDetectionWizard_confirm_msg(device.getServiceType(), device.getControlURL()), new AbstractIcon("upnp", 32), _GUI._.lit_continue(), _GUI._.lit_skip()) {
@@ -226,17 +226,17 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
             }
 
         };
-        serviceTypeTxt.setHelpText(T._.servicetype_help());
-        controlURLTxt.setHelpText(T._.controlURLTxt_help());
+        serviceTypeTxt.setHelpText(T.T.servicetype_help());
+        controlURLTxt.setHelpText(T.T.controlURLTxt_help());
 
         this.wanType = new JLabel();
         p.add(auto, "aligny top,gapright 15,sg buttons");
-        p.add(new JLabel(T._.literally_router()), "");
+        p.add(new JLabel(T.T.literally_router()), "");
         p.add(this.wanType, "spanx");
         p.add(find, "aligny top,gapright 15,newline,sg buttons");
-        p.add(new JLabel(T._.literally_service_type()), "");
+        p.add(new JLabel(T.T.literally_service_type()), "");
         p.add(this.serviceTypeTxt);
-        p.add(new JLabel(T._.literally_control_url()), "newline,skip");
+        p.add(new JLabel(T.T.literally_control_url()), "newline,skip");
         p.add(this.controlURLTxt);
 
         // p.add(Box.createGlue(), "pushy,growy");

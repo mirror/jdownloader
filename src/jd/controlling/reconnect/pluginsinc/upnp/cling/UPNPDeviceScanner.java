@@ -81,7 +81,7 @@ public class UPNPDeviceScanner {
                         if (action != null) {
                             UpnpRouterDevice d = new UpnpRouterDevice();
                             d.setModelname(device.getDisplayString());
-                            d.setWanservice(T._.interaction_UpnpReconnect_wanservice_ip());
+                            d.setWanservice(T.T.interaction_UpnpReconnect_wanservice_ip());
                             URL url = ((RemoteService) service).getDevice().normalizeURI(((RemoteService) service).getControlURI());
                             d.setControlURL(url + "");
                             d.setServiceType(((RemoteService) service).getServiceType() + "");
@@ -104,7 +104,7 @@ public class UPNPDeviceScanner {
                             if (action != null) {
                                 UpnpRouterDevice d = new UpnpRouterDevice();
                                 d.setModelname(device.getDisplayString());
-                                d.setWanservice(T._.interaction_UpnpReconnect_wanservice_ppp());
+                                d.setWanservice(T.T.interaction_UpnpReconnect_wanservice_ppp());
                                 URL url = ((RemoteService) service).getDevice().normalizeURI(((RemoteService) service).getControlURI());
                                 d.setServiceType(((RemoteService) service).getServiceType() + "");
                                 d.setControlURL(url + "");

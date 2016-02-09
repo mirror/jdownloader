@@ -78,9 +78,9 @@ public class Gui extends AbstractDialog<Object> {
                 this.imageProgress = new AbstractIcon(IconKey.ICON_RECORD, 32);
                 this.imageBad = new AbstractIcon(IconKey.ICON_FALSE, 32);
                 this.imageGood = new AbstractIcon(IconKey.ICON_TRUE, 32);
-                this.strProgress = T._.jd_router_reconnectrecorder_Gui_icon_progress();
-                this.strBad = T._.jd_router_reconnectrecorder_Gui_icon_bad();
-                this.strGood = T._.jd_router_reconnectrecorder_Gui_icon_good();
+                this.strProgress = T.T.jd_router_reconnectrecorder_Gui_icon_progress();
+                this.strBad = T.T.jd_router_reconnectrecorder_Gui_icon_bad();
+                this.strGood = T.T.jd_router_reconnectrecorder_Gui_icon_good();
                 this.setStatus(0);
             }
 
@@ -104,7 +104,7 @@ public class Gui extends AbstractDialog<Object> {
         private RRStatus          statusicon;
 
         public JDRRInfoPopup() {
-            super(UserIO.NO_ICON | UserIO.NO_OK_OPTION, T._.gui_config_jdrr_status_title(), null, null, T._.gui_btn_abort());
+            super(UserIO.NO_ICON | UserIO.NO_OK_OPTION, T.T.gui_config_jdrr_status_title(), null, null, T.T.gui_btn_abort());
 
         }
 
@@ -131,7 +131,7 @@ public class Gui extends AbstractDialog<Object> {
                     if (IPController.getInstance().validate()) {
                         Gui.this.save();
                     } else {
-                        UserIO.getInstance().requestMessageDialog(T._.gui_config_jdrr_reconnectfaild());
+                        UserIO.getInstance().requestMessageDialog(T.T.gui_config_jdrr_reconnectfaild());
                     }
 
                     JDRRInfoPopup.this.dispose();
@@ -171,7 +171,7 @@ public class Gui extends AbstractDialog<Object> {
             new Thread() {
                 public void run() {
                     JDRRInfoPopup.this.statusicon.setStatus(0);
-                    this.setName(T._.gui_config_jdrr_popup_title());
+                    this.setName(T.T.gui_config_jdrr_popup_title());
                     JDRRInfoPopup.this.reconnect_timer = 0;
                     while (ReconnectRecorder.running) {
                         try {
@@ -211,14 +211,14 @@ public class Gui extends AbstractDialog<Object> {
     private static long       RECONNECT_DURATION = 0;
 
     public Gui(final String ip) {
-        super(UserIO.NO_ICON, T._.gui_config_jdrr_title(), null, T._.gui_btn_start(), T._.gui_btn_cancel());
+        super(UserIO.NO_ICON, T.T.gui_config_jdrr_title(), null, T.T.gui_btn_start(), T.T.gui_btn_cancel());
         this.ip = ip;
 
     }
 
     @Override
     protected void addButtons(final JPanel buttonBar) {
-        final JButton help = new JButton(T._.gui_btn_help());
+        final JButton help = new JButton(T.T.gui_btn_help());
         help.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
@@ -239,21 +239,21 @@ public class Gui extends AbstractDialog<Object> {
     public JComponent layoutDialogContent() {
         this.routerip = new JTextField(this.ip);
 
-        this.rawmode = new JCheckBox(T._.gui_config_jdrr_rawmode());
+        this.rawmode = new JCheckBox(T.T.gui_config_jdrr_rawmode());
         this.rawmode.setSelected(false);
         this.rawmode.setHorizontalTextPosition(SwingConstants.LEADING);
 
         final StringBuilder sb = new StringBuilder();
         sb.append("<html>");
-        sb.append(T._.jd_nrouter_recorder_Gui_info1());
+        sb.append(T.T.jd_nrouter_recorder_Gui_info1());
         sb.append("<br>");
-        sb.append(T._.jd_nrouter_recorder_Gui_info2());
+        sb.append(T.T.jd_nrouter_recorder_Gui_info2());
         sb.append("<br>");
-        sb.append(T._.jd_nrouter_recorder_Gui_info3());
+        sb.append(T.T.jd_nrouter_recorder_Gui_info3());
         sb.append("</html>");
 
         final JPanel panel = new JPanel(new MigLayout("wrap 3, ins 5", "[][grow]10[]"));
-        panel.add(new JLabel(T._.gui_fengshuiconfig_routerip() + ":"));
+        panel.add(new JLabel(T.T.gui_fengshuiconfig_routerip() + ":"));
         panel.add(this.routerip, "growx");
         panel.add(this.rawmode);
         panel.add(new JLabel(sb.toString()), "spanx,growx");
@@ -261,7 +261,7 @@ public class Gui extends AbstractDialog<Object> {
     }
 
     private void save() {
-        final int ret = UserIO.getInstance().requestConfirmDialog(0, T._.gui_config_jdrr_success(), T._.gui_config_jdrr_savereconnect(), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), T._.gui_btn_yes(), T._.gui_btn_no());
+        final int ret = UserIO.getInstance().requestConfirmDialog(0, T.T.gui_config_jdrr_success(), T.T.gui_config_jdrr_savereconnect(), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), T.T.gui_btn_yes(), T.T.gui_btn_no());
         if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
 
             final StringBuilder b = new StringBuilder();

@@ -18,9 +18,9 @@ import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 public class RouterSendAction extends BasicAction {
 
     public RouterSendAction(LiveHeaderReconnect liveHeaderReconnect) {
-        super(T._.RouterSendAction_RouterSendAction_());
+        super(T.T.RouterSendAction_RouterSendAction_());
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_UPLOAD, 18));
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.RouterSendAction_RouterSendAction_tt(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T.T.RouterSendAction_RouterSendAction_tt(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)));
         setEnabled(true);
     }
 
@@ -65,7 +65,7 @@ public class RouterSendAction extends BasicAction {
             }
         };
         try {
-            Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg2(), new AbstractIcon(IconKey.ICON_UPLOAD, 32), null, null).setPreferredWidth(500));
+            Dialog.I().showDialog(new ProgressDialog(pg, 0, T.T.RouterSendAction_actionPerformed_title(), T.T.RouterSendAction_actionPerformed_msg2(), new AbstractIcon(IconKey.ICON_UPLOAD, 32), null, null).setPreferredWidth(500));
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

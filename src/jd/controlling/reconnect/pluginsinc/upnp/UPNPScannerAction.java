@@ -26,10 +26,10 @@ public class UPNPScannerAction extends BasicAction {
     private final UPNPRouterPlugin plugin;
 
     public UPNPScannerAction(UPNPRouterPlugin upnpRouterPlugin) {
-        super(T._.literally_choose_router());
+        super(T.T.literally_choose_router());
         this.plugin = upnpRouterPlugin;
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_LIST, 18));
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.UPNPScannerAction_UPNPScannerAction_tt(), new AbstractIcon(IconKey.ICON_LIST, 32)));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T.T.UPNPScannerAction_UPNPScannerAction_tt(), new AbstractIcon(IconKey.ICON_LIST, 32)));
 
     }
 
@@ -48,14 +48,14 @@ public class UPNPScannerAction extends BasicAction {
             public void run() throws Exception {
                 final java.util.List<UpnpRouterDevice> devices = new UPNPDeviceScanner().scan();
                 if (devices.size() == 0) {
-                    Dialog.getInstance().showErrorDialog(T._.UPNPRouterPlugin_run_error());
+                    Dialog.getInstance().showErrorDialog(T.T.UPNPRouterPlugin_run_error());
 
                     return;
                 }
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
-                int ret = Dialog.getInstance().showComboDialog(0, T._.UPNPRouterPlugin_run_wizard_title(), T._.UPNPRouterPlugin_run_mesg(), devices.toArray(new UpnpRouterDevice[] {}), 0, new AbstractIcon(IconKey.ICON_LOGO_UPNP, 32), null, null, new DefaultListCellRenderer() {
+                int ret = Dialog.getInstance().showComboDialog(0, T.T.UPNPRouterPlugin_run_wizard_title(), T.T.UPNPRouterPlugin_run_mesg(), devices.toArray(new UpnpRouterDevice[] {}), 0, new AbstractIcon(IconKey.ICON_LOGO_UPNP, 32), null, null, new DefaultListCellRenderer() {
 
                     private static final long serialVersionUID = 3607383089555373774L;
 

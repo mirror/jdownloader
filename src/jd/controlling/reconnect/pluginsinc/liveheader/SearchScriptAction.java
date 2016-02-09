@@ -25,10 +25,10 @@ public class SearchScriptAction extends BasicAction {
 
     public SearchScriptAction(LiveHeaderReconnect liveHeaderReconnect) {
         this.liveHeaderReconnect = liveHeaderReconnect;
-        putValue(NAME, T._.SearchScriptAction());
+        putValue(NAME, T.T.SearchScriptAction());
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_SEARCH, 18));
 
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.SearchScriptAction_tt(), new AbstractIcon("edit", 32)));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T.T.SearchScriptAction_tt(), new AbstractIcon("edit", 32)));
         setEnabled(true);
     }
 
@@ -94,7 +94,7 @@ public class SearchScriptAction extends BasicAction {
             }
         };
 
-        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T._.searching(), _GUI._.lit_please_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), null, null);
+        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T.T.searching(), _GUI._.lit_please_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), null, null);
         UIOManager.I().show(null, d);
 
     }

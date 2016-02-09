@@ -131,7 +131,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, T._.script(routerData.getRouterName()), T._.script_check_modify(), routerData.getScript(), new AbstractIcon("edit", 32), T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null) {
+                final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, T.T.script(routerData.getRouterName()), T.T.script_check_modify(), routerData.getScript(), new AbstractIcon("edit", 32), T.T.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null) {
 
                     @Override
                     public boolean isRemoteAPIEnabled() {
@@ -165,7 +165,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                 }
                                 if (StringUtils.isNotEmpty(settings.getPassword()) && !StringUtils.equals(settings.getPassword(), lPassword)) {
 
-                                    if (UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_confirm_password_change(authorization, lPassword), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                    if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_password_change(authorization, lPassword), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
                                         settings.setPassword(lPassword);
                                     } else {
                                         return;
@@ -173,7 +173,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                 }
 
                                 if (StringUtils.isNotEmpty(settings.getUserName()) && !StringUtils.equals(settings.getUserName(), lUsername)) {
-                                    if (UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_confirm_username_change(authorization, lUsername), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                    if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_username_change(authorization, lUsername), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
                                         settings.setUserName(lUsername);
                                     } else {
                                         return;
@@ -230,7 +230,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                             }
 
                             protected boolean confirm(String key, String value) {
-                                ConfirmDialog d = new ConfirmDialog(0, T._.please_check(), T._.please_check_sensitive_data_after_edit(key + "=" + value), new AbstractIcon(IconKey.ICON_QUESTION, 32), T._.yes_replace(), T._.no_keep());
+                                ConfirmDialog d = new ConfirmDialog(0, T.T.please_check(), T.T.please_check_sensitive_data_after_edit(key + "=" + value), new AbstractIcon(IconKey.ICON_QUESTION, 32), T.T.yes_replace(), T.T.no_keep());
                                 d.setPreferredWidth(500);
 
                                 try {
@@ -273,7 +273,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
 
         addMessage(p);
         p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_routername()));
-        p.add(new JLabel(StringUtils.isEmpty(name) ? T._.unknown() : name));
+        p.add(new JLabel(StringUtils.isEmpty(name) ? T.T.unknown() : name));
         if (StringUtils.isNotEmpty(routerData.getManufactor())) {
             p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_Manufactor()));
             p.add(new JLabel(routerData.getManufactor()));
@@ -332,7 +332,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
      * @return
      */
     public String getMessage() {
-        return T._.confirm_script();
+        return T.T.confirm_script();
     }
 
     /**
