@@ -7,14 +7,14 @@ import java.util.List;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
+import jd.gui.swing.jdgui.BasicJDTable;
+
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.uio.UIOManager;
 import org.jdownloader.iconsetter.IconResource;
 import org.jdownloader.iconsetter.IconSetMaker;
 import org.jdownloader.iconsetter.gui.icon8.Icon8Dialog;
-
-import jd.gui.swing.jdgui.BasicJDTable;
 
 public class SetTable extends BasicJDTable<IconResource> {
 
@@ -27,7 +27,7 @@ public class SetTable extends BasicJDTable<IconResource> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, IconResource contextObject, List<IconResource> selection, ExtColumn<IconResource> column, MouseEvent mouseEvent) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, IconResource contextObject, final List<IconResource> selection, ExtColumn<IconResource> column, MouseEvent mouseEvent) {
 
         popup.add(new JMenuItem(new BasicAction() {
             {

@@ -7,6 +7,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -27,8 +29,6 @@ import org.jdownloader.gui.views.linkgrabber.properties.PropertiesScrollPane;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import net.miginfocom.swing.MigLayout;
 
 public class LinkgrabberWidgetContainer extends WidgetContainer implements GenericConfigEventListener<Boolean> {
 
@@ -53,7 +53,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
     private PropertiesScrollPane     propertiesPanelScrollPane;
     private CustomizeableActionBar   leftBar;
 
-    public void setPropertiesPanelVisible(boolean propertiesPanelVisible) {
+    public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
         this.propertiesPanelVisible = propertiesPanelVisible;
         new EDTRunner() {
 
@@ -70,7 +70,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
 
     }
 
-    public LinkgrabberWidgetContainer(LinkGrabberTable table, CustomizeableActionBar leftBar, CustomizeableActionBar rightBar) {
+    public LinkgrabberWidgetContainer(final LinkGrabberTable table, CustomizeableActionBar leftBar, CustomizeableActionBar rightBar) {
         this.table = table;
         this.rightBar = rightBar;
         this.leftBar = leftBar;

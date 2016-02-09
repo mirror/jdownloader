@@ -6,6 +6,9 @@ import java.awt.Point;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -26,9 +29,6 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.packagecontroller.AbstractNode;
-import net.miginfocom.swing.MigLayout;
 
 public class DownloadsPabelWidgetContainer extends WidgetContainer implements GenericConfigEventListener<Boolean> {
     /**
@@ -63,7 +63,7 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
         };
     }
 
-    public void setPropertiesPanelVisible(boolean propertiesPanelVisible) {
+    public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
         this.propertiesPanelVisible = propertiesPanelVisible;
         new EDTRunner() {
 
@@ -198,9 +198,10 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
     }
 
     private CustomizeableActionBar bottomBar;
+
     // private DownloadPropertiesBasePanel propertiesContentPanel;
 
-    public DownloadsPabelWidgetContainer(DownloadsTable table, CustomizeableActionBar bottomBar) {
+    public DownloadsPabelWidgetContainer(final DownloadsTable table, CustomizeableActionBar bottomBar) {
         this.table = table;
         this.bottomBar = bottomBar;
 

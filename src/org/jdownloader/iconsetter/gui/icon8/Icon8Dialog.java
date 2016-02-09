@@ -28,6 +28,9 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.nutils.encoding.Base64;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
@@ -49,9 +52,6 @@ import com.kitfox.svg.SVGDiagram;
 import com.kitfox.svg.SVGElement;
 import com.kitfox.svg.SVGUniverse;
 import com.kitfox.svg.animation.AnimationElement;
-
-import jd.nutils.encoding.Base64;
-import jd.nutils.encoding.Encoding;
 
 public class Icon8Dialog extends AbstractDialog<Object> {
 
@@ -196,7 +196,7 @@ public class Icon8Dialog extends AbstractDialog<Object> {
 
             String xml = br.getPage(new URL("https://api.icons8.com/api/iconsets/search?term=" + Encoding.urlEncode(searchTags) + "&amount=100"));
             String[] icons = new Regex(xml, "(<icon .*?</icon>)").getColumn(0);
-            ArrayList<Icon8Resource> iconsList = new ArrayList<Icon8Resource>();
+            final ArrayList<Icon8Resource> iconsList = new ArrayList<Icon8Resource>();
             for (String icon : icons) {
                 String id = new Regex(icon, "id=\"(\\d+)").getMatch(0);
                 String name = new Regex(icon, "name=\"([^\"]+)").getMatch(0);
@@ -255,7 +255,7 @@ public class Icon8Dialog extends AbstractDialog<Object> {
         }
     }
 
-    public Icon getIcon(Icon8Resource value, int size) {
+    public Icon getIcon(final Icon8Resource value, final int size) {
 
         return new Icon() {
 
