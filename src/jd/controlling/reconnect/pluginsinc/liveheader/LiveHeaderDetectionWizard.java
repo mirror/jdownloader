@@ -243,7 +243,7 @@ public class LiveHeaderDetectionWizard {
         try {
             if (pre) {
 
-                UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.ipcheck());
+                UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T.T.ipcheck());
                 JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(false);
 
             }
@@ -261,7 +261,7 @@ public class LiveHeaderDetectionWizard {
 
             JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(pre);
             if (pre) {
-                UIOManager.I().showMessageDialog(T._.ipcheckreverted());
+                UIOManager.I().showMessageDialog(T.T.ipcheckreverted());
             }
         }
 
@@ -363,7 +363,7 @@ public class LiveHeaderDetectionWizard {
         for (int i = 0; i < tests.size(); i++) {
 
             RouterData test = tests.get(i);
-            processCallBack.setStatusString(getPlugin(), T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests((i + 1), tests.size(), test.getManufactor() + " - " + test.getRouterName()));
+            processCallBack.setStatusString(getPlugin(), T.T.jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests((i + 1), tests.size(), test.getManufactor() + " - " + test.getRouterName()));
             String sc = tests.get(i).getScript().toLowerCase(Locale.ENGLISH);
 
             if ((username.trim().length() < 2 && (sc.contains("%%%username%%%") || sc.contains("%%%user%%%"))) || (password.trim().length() < 2 && (sc.contains("%%%pass%%%") || sc.contains("%%%password%%%")))) {
@@ -460,10 +460,10 @@ public class LiveHeaderDetectionWizard {
             // wait until we are online
             processCallBack.setStatusString(this, _GUI._.LiveaheaderDetection_wait_for_online());
             IPController.getInstance().waitUntilWeAreOnline();
-            processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
+            processCallBack.setStatusString(getPlugin(), T.T.LiveHeaderDetectionWizard_runOnlineScan_collect());
 
             if (!RecollController.getInstance().isAlive()) {
-                UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), new AbstractIcon(IconKey.ICON_ERROR, 32), null, _JDT._.lit_hide());
+                UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_t(), T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm(), new AbstractIcon(IconKey.ICON_ERROR, 32), null, _JDT._.lit_hide());
 
                 throw new InterruptedException("RecollServ not available");
             }
@@ -475,7 +475,7 @@ public class LiveHeaderDetectionWizard {
 
                 if (!IP.isValidRouterIP(gatewayAdressIP)) {
 
-                    if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
+                    if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T.T.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
                         continue;
                     }
                 }
@@ -799,7 +799,7 @@ public class LiveHeaderDetectionWizard {
                 gatewayAdressHost = gatewayAdress.getHostName();
                 break;
             } catch (IOException e) {
-                new ConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI._.literally_edit(), null).show().throwCloseExceptions();
+                new ConfirmDialog(0, _GUI._.literall_error(), T.T.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI._.literally_edit(), null).show().throwCloseExceptions();
 
             }
         }
@@ -922,7 +922,7 @@ public class LiveHeaderDetectionWizard {
             //
             // }
 
-            processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
+            processCallBack.setStatusString(getPlugin(), T.T.LiveHeaderDetectionWizard_runOnlineScan_collect());
             collectInfo();
             specialCollectInfo();
             StatsManager.I().track("shareReconnectScript/collect1");
@@ -932,7 +932,7 @@ public class LiveHeaderDetectionWizard {
                         while (true) {
 
                             DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
-                            dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
+                            dcd.setLoginsText(T.T.LiveHeaderDetectionWizard_userConfirm_loginstext());
                             DataCompareDialog impl = UIOManager.I().show(null, dcd);
                             dcd.throwCloseExceptions();
                             username = impl.getUsername();
@@ -949,7 +949,7 @@ public class LiveHeaderDetectionWizard {
                                 break;
                             } catch (IOException e) {
 
-                                if (UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI._.literally_edit(), null)) {
+                                if (UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T.T.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI._.literally_edit(), null)) {
                                     continue;
                                 } else {
                                     return;
@@ -961,7 +961,7 @@ public class LiveHeaderDetectionWizard {
 
                         if (!IP.isValidRouterIP(gatewayAdressIP)) {
 
-                            if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
+                            if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T.T.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), new AbstractIcon(IconKey.ICON_WARNING, 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
                                 continue;
                             }
 
@@ -992,10 +992,10 @@ public class LiveHeaderDetectionWizard {
                     logger.log(e);
 
                     if (StringUtils.isNotEmpty(e.getMessage())) {
-                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T._.LiveHeaderDetectionWizard_share_reconnectFailed2(e.getMessage()), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T._.try_again(), null);
+                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T.T.LiveHeaderDetectionWizard_share_reconnectFailed2(e.getMessage()), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T.T.try_again(), null);
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                     } else {
-                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T._.LiveHeaderDetectionWizard_share_reconnectFailed(), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T._.try_again(), null);
+                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T.T.LiveHeaderDetectionWizard_share_reconnectFailed(), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T.T.try_again(), null);
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
 
                     }
@@ -1003,10 +1003,10 @@ public class LiveHeaderDetectionWizard {
                     logger.log(e);
 
                     if (StringUtils.isNotEmpty(e.getMessage())) {
-                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T._.LiveHeaderDetectionWizard_share_reconnectFailed2(e.getMessage()), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T._.try_again(), null);
+                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T.T.LiveHeaderDetectionWizard_share_reconnectFailed2(e.getMessage()), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T.T.try_again(), null);
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                     } else {
-                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T._.LiveHeaderDetectionWizard_share_reconnectFailed(), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T._.try_again(), null);
+                        ConfirmDialog d = new ConfirmDialog(0, _AWU.T.DIALOG_ERROR_TITLE(), T.T.LiveHeaderDetectionWizard_share_reconnectFailed(), new AbstractIcon(IconKey.ICON_WARNING_RED, 32), T.T.try_again(), null);
                         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
 
                     }
@@ -1029,7 +1029,7 @@ public class LiveHeaderDetectionWizard {
     }
 
     private void test(ProcessCallBackAdapter processCallBack, String script) throws ReconnectException, InterruptedException, DialogClosedException, DialogCanceledException {
-        ConfirmDialog d = new ConfirmDialog(0, T._.test_required(), T._.test_required_msg(), null, _GUI._.lit_continue(), null);
+        ConfirmDialog d = new ConfirmDialog(0, T.T.test_required(), T.T.test_required_msg(), null, _GUI._.lit_continue(), null);
         UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
 
         processCallBack.setStatusString(this, _GUI._.LiveHeaderDetectionWizard_sendRouter_havetovalidate());
@@ -1059,7 +1059,7 @@ public class LiveHeaderDetectionWizard {
             throw new ReconnectException("Reconnect Failed");
         }
 
-        ConfirmDialog confirm = new ConfirmDialog(0, T._.confirm_success_title(), T._.confirm_success_message(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), _GUI._.lit_no());
+        ConfirmDialog confirm = new ConfirmDialog(0, T.T.confirm_success_title(), T.T.confirm_success_message(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), _GUI._.lit_no());
         confirm.setPreferredWidth(500);
         UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
     }
@@ -1087,7 +1087,7 @@ public class LiveHeaderDetectionWizard {
                     }
                     if (StringUtils.isNotEmpty(password) && !StringUtils.equals(password, lPassword)) {
 
-                        if (UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_confirm_password_change(authorization, lPassword), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                        if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_password_change(authorization, lPassword), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
                             password = (lPassword);
                         } else {
                             throw new Exception("Password Mismatch " + LiveHeaderDetectionWizard.this.password + "!=" + lPassword);
@@ -1095,7 +1095,7 @@ public class LiveHeaderDetectionWizard {
                     }
 
                     if (StringUtils.isNotEmpty(username) && !StringUtils.equals(username, lUsername)) {
-                        if (UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_confirm_username_change(authorization, lUsername), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                        if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_username_change(authorization, lUsername), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
                             password = (lPassword);
                         } else {
                             throw new Exception("Username Mismatch " + LiveHeaderDetectionWizard.this.username + "!=" + lUsername);
@@ -1116,7 +1116,7 @@ public class LiveHeaderDetectionWizard {
                         super.replacePasswordParameter(key, value);
                     } else if (confirm(key, value)) {
                         if (StringUtils.isNotEmpty(LiveHeaderDetectionWizard.this.password) && !StringUtils.equals(LiveHeaderDetectionWizard.this.password, value)) {
-                            if (UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_confirm_password_change_parameter(value), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                            if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_password_change_parameter(value), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
                                 password = value;
                             } else {
                                 throw new Exception("Password Mismatch " + LiveHeaderDetectionWizard.this.password + "!=" + value);
@@ -1132,7 +1132,7 @@ public class LiveHeaderDetectionWizard {
                 }
 
                 protected boolean confirm(String key, String value) {
-                    ConfirmDialog d = new ConfirmDialog(0, T._.please_check(), T._.please_check_sensitive_data_before_share(key + "=" + value), new AbstractIcon(IconKey.ICON_QUESTION, 32), T._.yes_replace(), T._.no_keep());
+                    ConfirmDialog d = new ConfirmDialog(0, T.T.please_check(), T.T.please_check_sensitive_data_before_share(key + "=" + value), new AbstractIcon(IconKey.ICON_QUESTION, 32), T.T.yes_replace(), T.T.no_keep());
                     d.setPreferredWidth(500);
 
                     try {
@@ -1158,7 +1158,7 @@ public class LiveHeaderDetectionWizard {
                     } else if (confirm(key, value)) {
 
                         if (StringUtils.isNotEmpty(LiveHeaderDetectionWizard.this.username) && !StringUtils.equals(LiveHeaderDetectionWizard.this.username, value)) {
-                            if (UIOManager.I().showConfirmDialog(0, T._.please_check(), T._.please_confirm_username_change_parameter(value), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                            if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_username_change_parameter(value), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
                                 username = value;
                             } else {
                                 throw new Exception("Username Mismatch " + LiveHeaderDetectionWizard.this.username + "!=" + value);
@@ -1188,7 +1188,7 @@ public class LiveHeaderDetectionWizard {
         rd.setScript(script);
         AddRouterResponse resp = RecollController.getInstance().addRouter(rd);
         if (resp == null) {
-            UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm());
+            UIOManager.I().showMessageDialog(T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm());
             return;
         }
         rd.setScriptID(resp.getScriptID());
@@ -1197,9 +1197,9 @@ public class LiveHeaderDetectionWizard {
         JsonConfig.create(LiveHeaderReconnectSettings.class).setUserName(username);
         JsonConfig.create(LiveHeaderReconnectSettings.class).setPassword(password);
         if (!resp.isDupe()) {
-            UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_ok());
+            UIOManager.I().showMessageDialog(T.T.LiveHeaderDetectionWizard_uploadData_sent_ok());
         } else {
-            UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_failed());
+            UIOManager.I().showMessageDialog(T.T.LiveHeaderDetectionWizard_uploadData_sent_failed());
         }
 
     }

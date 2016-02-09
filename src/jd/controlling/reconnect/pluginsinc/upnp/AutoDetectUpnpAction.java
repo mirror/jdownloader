@@ -39,9 +39,9 @@ public class AutoDetectUpnpAction extends BasicAction {
     public AutoDetectUpnpAction(UPNPRouterPlugin upnpRouterPlugin) {
         super();
         plugin = upnpRouterPlugin;
-        putValue(NAME, T._.auto());
+        putValue(NAME, T.T.auto());
         putValue(SMALL_ICON, new AbstractIcon("wizard", 18));
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.AutoDetectUpnpAction_AutoDetectUpnpAction_(), new AbstractIcon("upnp", 32)));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T.T.AutoDetectUpnpAction_AutoDetectUpnpAction_(), new AbstractIcon("upnp", 32)));
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -178,7 +178,7 @@ public class AutoDetectUpnpAction extends BasicAction {
                     scripts.get(0).getInvoker().getPlugin().setSetup(scripts.get(0));
 
                 } else {
-                    UIOManager.I().showErrorMessage(T._.AutoDetectAction_run_failed2());
+                    UIOManager.I().showErrorMessage(T.T.AutoDetectAction_run_failed2());
 
                 }
 

@@ -22,7 +22,7 @@ public class EditScriptAction extends BasicAction implements GenericConfigEventL
 
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_EDIT, 18));
 
-        setTooltipFactory(new BasicTooltipFactory(getName(), T._.EditScriptAction_EditScriptAction_tt(), new AbstractIcon(IconKey.ICON_EDIT, 32)));
+        setTooltipFactory(new BasicTooltipFactory(getName(), T.T.EditScriptAction_EditScriptAction_tt(), new AbstractIcon(IconKey.ICON_EDIT, 32)));
         CFG_LIVEHEADER.SCRIPT.getEventSender().addListener(this, true);
         updateName();
     }
@@ -41,9 +41,9 @@ public class EditScriptAction extends BasicAction implements GenericConfigEventL
         // Document xml = JDUtilities.parseXmlString(script, false);
 
         if (StringUtils.isEmpty(script)) {
-            putValue(NAME, T._.EditScriptAction_EditScriptAction_add());
+            putValue(NAME, T.T.EditScriptAction_EditScriptAction_add());
         } else {
-            putValue(NAME, T._.EditScriptAction_EditScriptAction_());
+            putValue(NAME, T.T.EditScriptAction_EditScriptAction_());
         }
     }
 

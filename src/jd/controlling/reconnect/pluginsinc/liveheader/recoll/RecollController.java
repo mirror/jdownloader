@@ -182,7 +182,7 @@ public class RecollController {
             throw e;
         } catch (IOException e) {
             logger.log(e);
-            UIOManager.I().showErrorMessage(T._.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm());
+            UIOManager.I().showErrorMessage(T.T.LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm());
             return null;
         }
     }

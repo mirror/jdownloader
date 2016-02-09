@@ -198,13 +198,13 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
         this.txtParameter = new JTextPane();
         this.chbDummyBatch = new JCheckBox();
 
-        p.add(new JLabel(T._.interaction_externreconnect_command()), "sg left");
+        p.add(new JLabel(T.T.interaction_externreconnect_command()), "sg left");
         p.add(this.browse);
         this.browse.addActionListener(this);
-        p.add(new JLabel(T._.interaction_externreconnect_parameter()), "newline,spanx,sg left");
+        p.add(new JLabel(T.T.interaction_externreconnect_parameter()), "newline,spanx,sg left");
         p.add(new JScrollPane(this.txtParameter), "spanx,newline,pushx,growx");
         if (CrossSystem.isWindows()) {
-            p.add(new JLabel(T._.interaction_externreconnect_dummybat()), "newline,sg left");
+            p.add(new JLabel(T.T.interaction_externreconnect_dummybat()), "newline,sg left");
             p.add(this.chbDummyBatch);
         }
         this.chbDummyBatch.addActionListener(this);
@@ -228,7 +228,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
     @Override
     public String getName() {
-        return T._.jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName();
+        return T.T.jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName();
     }
 
     /**

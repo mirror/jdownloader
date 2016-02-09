@@ -58,7 +58,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
     private JList                          list;
 
     public ImportRouterDialog(final java.util.List<String[]> scripts) {
-        super(UserIO.NO_COUNTDOWN, T._.gui_config_liveheader_dialog_importrouter(), new AbstractIcon(IconKey.ICON_SEARCH, 32), null, null);
+        super(UserIO.NO_COUNTDOWN, T.T.gui_config_liveheader_dialog_importrouter(), new AbstractIcon(IconKey.ICON_SEARCH, 32), null, null);
 
         this.scripts = scripts;
         Collections.sort(this.scripts, new Comparator<String[]>() {
@@ -98,7 +98,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
 
         final JPanel panel = new JPanel(new MigLayout("ins 10,wrap 3", "[grow 30,fill]5[grow 0,fill]10[grow,fill,300!]", "[fill]5[]5[fill,grow]"));
         final DefaultListModel defaultListModel = new DefaultListModel();
-        final String text = T._.gui_config_reconnect_selectrouter();
+        final String text = T.T.gui_config_reconnect_selectrouter();
         final JTextField searchField = new JTextField();
 
         this.list = new JList(defaultListModel);
@@ -179,7 +179,7 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
             }
 
         });
-        final JLabel example = new JLabel(T._.gui_config_reconnect_selectrouter_example());
+        final JLabel example = new JLabel(T.T.gui_config_reconnect_selectrouter_example());
 
         for (final String element : d) {
             defaultListModel.addElement(element);

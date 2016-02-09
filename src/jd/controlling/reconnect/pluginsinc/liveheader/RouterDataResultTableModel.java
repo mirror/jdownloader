@@ -37,7 +37,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<RouterData>(T._.routername()) {
+        addColumn(new ExtTextColumn<RouterData>(T.T.routername()) {
 
             @Override
             public String getStringValue(RouterData value) {
@@ -45,7 +45,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
             }
         });
 
-        addColumn(new ExtTextColumn<RouterData>(T._.isp()) {
+        addColumn(new ExtTextColumn<RouterData>(T.T.isp()) {
 
             @Override
             public String getStringValue(RouterData value) {
@@ -53,7 +53,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
             }
         });
 
-        addColumn(new ExtTextColumn<RouterData>(T._.manufactor()) {
+        addColumn(new ExtTextColumn<RouterData>(T.T.manufactor()) {
             @Override
             public int getDefaultWidth() {
                 return 80;
@@ -65,7 +65,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
             }
         });
 
-        addColumn(sorton = new ExtSpinnerColumn<RouterData>(T._.success_rate()) {
+        addColumn(sorton = new ExtSpinnerColumn<RouterData>(T.T.success_rate()) {
             {
 
             }
@@ -105,7 +105,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
             }
 
         });
-        addColumn(new ExtTextColumn<RouterData>(T._.avg_time()) {
+        addColumn(new ExtTextColumn<RouterData>(T.T.avg_time()) {
             {
 
             }
@@ -131,7 +131,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
             }
         });
 
-        this.addColumn(new ExtComponentColumn<RouterData>(T._.details()) {
+        this.addColumn(new ExtComponentColumn<RouterData>(T.T.details()) {
             private JButton            editorBtn;
             private JButton            rendererBtn;
             private RouterData         editing;
@@ -148,10 +148,10 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
                             setSelectedObject(editing);
-                            final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.script(getRouterName(editing.getRouterName())), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
+                            final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T.T.script(getRouterName(editing.getRouterName())), new AbstractIcon("reconnect", 32), _GUI._.lit_close(), null, editing, null, editing.getRouterName()) {
                                 @Override
                                 public String getMessage() {
-                                    return T._.edit_script();
+                                    return T.T.edit_script();
                                 }
 
                                 @Override
@@ -240,7 +240,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
             public void configureRendererComponent(RouterData value, boolean isSelected, boolean hasFocus, int row, int column) {
 
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
-                rendererBtn.setText(T._.details());
+                rendererBtn.setText(T.T.details());
                 // }
             }
 
@@ -248,7 +248,7 @@ public class RouterDataResultTableModel extends ExtTableModel<RouterData> {
             public void configureEditorComponent(RouterData value, boolean isSelected, int row, int column) {
                 editing = value;
                 // editorBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
-                editorBtn.setText(T._.details());
+                editorBtn.setText(T.T.details());
 
             }
 

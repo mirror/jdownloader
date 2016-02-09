@@ -119,7 +119,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
     private final String controlURL;
 
     public String getName() {
-        return T._.UPNPReconnectInvoker_getName_();
+        return T.T.UPNPReconnectInvoker_getName_();
     }
 
     @Override
@@ -127,7 +127,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         try {
             logger.info("RUN");
             if (StringUtils.isEmpty(serviceType)) {
-                throw new ReconnectException(T._.malformedservicetype());
+                throw new ReconnectException(T.T.malformedservicetype());
             }
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException();
@@ -162,7 +162,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
                 throw throwable;
             }
         } catch (MalformedURLException e) {
-            throw new ReconnectException(T._.malformedurl());
+            throw new ReconnectException(T.T.malformedurl());
         } catch (InterruptedException e) {
             throw e;
         } catch (final Throwable e) {

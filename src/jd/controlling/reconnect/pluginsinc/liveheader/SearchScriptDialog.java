@@ -45,7 +45,7 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
     protected RouterData          selected;
 
     public SearchScriptDialog(RouterData rd) {
-        super(0, T._.SearchScriptDialog(), null, T._.search(), null);
+        super(0, T.T.SearchScriptDialog(), null, T.T.search(), null);
         this.routerData = rd;
 
     }
@@ -95,7 +95,7 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == this.okButton && StringUtils.equals(T._.search(), okButton.getText())) {
+        if (e.getSource() == this.okButton && StringUtils.equals(T.T.search(), okButton.getText())) {
             doSearch();
             return;
         }
@@ -115,7 +115,7 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
 
                     updateList(list);
                 } catch (BadQueryException e) {
-                    UIOManager.I().showErrorMessage(T._.BadQueryException());
+                    UIOManager.I().showErrorMessage(T.T.BadQueryException());
                 } catch (Throwable e) {
                     UIOManager.I().showException(e.getMessage(), e);
 
@@ -138,7 +138,7 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
             }
         };
 
-        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T._.searching(), _GUI._.lit_please_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), null, null);
+        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_OK, T.T.searching(), _GUI._.lit_please_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), null, null);
         UIOManager.I().show(null, d);
     }
 
@@ -153,14 +153,14 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
                     scrollPane.setVisible(false);
                     seperator.setVisible(true);
                     status.setVisible(true);
-                    status.setText(T._.nothing_found());
+                    status.setText(T.T.nothing_found());
                 } else {
                     searchButton.setVisible(true);
 
                     scrollPane.setVisible(true);
                     seperator.setVisible(true);
                     status.setVisible(true);
-                    status.setText(T._.found(list.size()));
+                    status.setText(T.T.found(list.size()));
                     table.update(list);
                 }
                 pack();
@@ -172,16 +172,16 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
         MigPanel p = new MigPanel("ins 0,wrap 2", "[align right][grow,fill]", "[]");
-        p.add(getLabel(T._.routername()));
+        p.add(getLabel(T.T.routername()));
         p.add(routerName = new ExtTextField());
-        p.add(getLabel(T._.manufactor()));
+        p.add(getLabel(T.T.manufactor()));
         p.add(manufactor = new ExtTextField());
-        p.add(getLabel(T._.isp()));
+        p.add(getLabel(T.T.isp()));
         p.add(isp = new ExtTextField());
-        routerName.setHelpText(T._.routerName_help());
+        routerName.setHelpText(T.T.routerName_help());
 
-        manufactor.setHelpText(T._.manufactor_help());
-        isp.setHelpText(T._.isp_help());
+        manufactor.setHelpText(T.T.manufactor_help());
+        isp.setHelpText(T.T.isp_help());
         if (routerData != null) {
             routerName.setText(routerData.getRouterName());
             manufactor.setText(routerData.getManufactor());
@@ -190,7 +190,7 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
 
         p.add(searchButton = new ExtButton(new AppAction() {
             {
-                setName(T._.search());
+                setName(T.T.search());
             }
 
             @Override
@@ -208,9 +208,9 @@ public class SearchScriptDialog extends AbstractDialog<Object> {
                 List<RouterData> objects = getModel().getSelectedObjects();
                 selected = objects == null || objects.size() == 0 ? null : objects.get(0);
                 if (selected == null) {
-                    okButton.setText(T._.search());
+                    okButton.setText(T.T.search());
                 } else {
-                    okButton.setText(T._.use());
+                    okButton.setText(T.T.use());
 
                 }
             }
