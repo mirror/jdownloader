@@ -7,14 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
-import org.appwork.utils.net.usenet.SimpleUseNet;
-import org.appwork.utils.net.usenet.UnrecognizedCommandException;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.proxy.ProxyController;
 import jd.http.BrowserSettingsThread;
@@ -35,6 +27,14 @@ import jd.plugins.components.UsenetFile;
 import jd.plugins.components.UsenetFileSegment;
 import jd.plugins.components.UsenetServer;
 import jd.plugins.download.usenet.SimpleUseNetDownloadInterface;
+
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
+import org.appwork.utils.net.usenet.SimpleUseNet;
+import org.appwork.utils.net.usenet.UnrecognizedCommandException;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class UseNet extends PluginForHost {
@@ -68,7 +68,11 @@ public class UseNet extends PluginForHost {
 
     @Override
     public Class<? extends UsenetConfigInterface> getConfigInterface() {
-        return UsenetConfigInterface.class;
+        if (!"usenet".equals(getHost())) {
+            return UsenetConfigInterface.class;
+        } else {
+            return null;
+        }
     }
 
     protected String getUsername(final Account account) {

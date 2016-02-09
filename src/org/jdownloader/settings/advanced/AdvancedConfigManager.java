@@ -133,15 +133,13 @@ public class AdvancedConfigManager {
 
     @SuppressWarnings("unchecked")
     public java.util.List<AdvancedConfigEntry> listPluginsInterfaces() {
-        ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
+        final ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
         final PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
-
-        for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
-            String ifName = hplg.getConfigInterface();
+        for (final LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
+            final String ifName = hplg.getConfigInterface();
             if (StringUtils.isNotEmpty(ifName)) {
-                ConfigInterface cf;
                 try {
-                    cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
+                    final ConfigInterface cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
                     HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
                     for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
                         if (map.containsKey(m)) {
@@ -158,20 +156,18 @@ public class AdvancedConfigManager {
                             }
                         }
                     }
-                } catch (ClassNotFoundException e) {
+                } catch (Throwable e) {
                     e.printStackTrace();
                 }
                 System.out.println(ifName);
             }
         }
-
-        for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
-            String ifName = cplg.getConfigInterface();
+        for (final LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
+            final String ifName = cplg.getConfigInterface();
             if (StringUtils.isNotEmpty(ifName)) {
                 System.out.println(ifName);
             }
         }
-
         return ret;
     }
 
