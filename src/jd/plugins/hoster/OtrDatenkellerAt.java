@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "https?://(www\\.)?otr\\.datenkeller\\.(at|net)/\\?(file|getFile)=.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "otr.datenkeller.at" }, urls = { "https?://(?:www\\.)?otr\\.datenkeller\\.(?:at|net)/\\?(?:file|getFile)=.+" }, flags = { 2 })
 public class OtrDatenkellerAt extends PluginForHost {
 
     public static String agent             = RandomUserAgent.generate();
@@ -95,7 +95,7 @@ public class OtrDatenkellerAt extends PluginForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test 100 links at once */
+                    /* we test up to 100 links at once */
                     if (index == urls.length || links.size() > 100) {
                         break;
                     }
@@ -154,7 +154,7 @@ public class OtrDatenkellerAt extends PluginForHost {
         requestFileInformation(downloadLink);
         /* Use random UA again here because we do not use the same API as in linkcheck for free downloads */
         br.setFollowRedirects(true);
-        br.clearCookies("http://otr.datenkeller.net/");
+        br.clearCookies(this.getHost());
         br.getHeaders().put("User-Agent", agent);
         final String dlPage = getDlpage(downloadLink);
         String dllink = checkDirectLink(downloadLink, "free_finallink");
@@ -371,12 +371,8 @@ public class OtrDatenkellerAt extends PluginForHost {
         account.setValid(true);
         final String expires = getJson(br.toString(), "expires");
         ai.setValidUntil(Long.parseLong(expires) * 1000);
-        try {
-            account.setType(AccountType.PREMIUM);
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.PREMIUM);
+        account.setConcurrentUsePossible(true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Premium user");
         return ai;

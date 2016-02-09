@@ -108,7 +108,7 @@ public class BaixarPremiumNetContaComboComBr extends PluginForHost {
             handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             jd.plugins.hoster.BaixarPremiumNet.handleDlErrors(this.br, this.currAcc);
