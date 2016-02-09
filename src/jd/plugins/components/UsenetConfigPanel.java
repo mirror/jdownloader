@@ -185,7 +185,7 @@ public class UsenetConfigPanel<T extends UsenetConfigInterface> extends PluginCo
 
     @Override
     public void reset() {
-        // this.cf.setUsenetServer(availableServers[0]);
+        cmbServer.setSelectedItem(null);
     }
 
     @Override
