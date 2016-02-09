@@ -261,7 +261,11 @@ public class VKontakteRu extends PluginForDecrypt {
             if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_MODULE) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_SEARCH) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
                 CRYPTEDLINK_FUNCTIONAL = MAINPAGE + "/" + new Regex(CRYPTEDLINK_ORIGINAL, "(video(\\-)?\\d+_\\d+)").getMatch(0);
             }
+        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM)) {
+            loginrequired = false;
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM)) {
+            loginrequired = false;
+        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS)) {
             loginrequired = false;
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE)) {
             loginrequired = false;

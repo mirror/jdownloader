@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -58,13 +57,9 @@ public class BitCasaCom extends PluginForHost {
         String filesize = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        br.getPage(link.getDownloadURL());
         /* 302 = happens when accessing old outdated linktypes. */
-        if (br.containsHTML("class=\"errorPage\"") || br.getHttpConnection().getResponseCode() == 301 || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("class=\"errorPage\"") || br.getHttpConnection().getResponseCode() == 301 || br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("404\\.html\\'")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!br.getURL().matches(TYPE_NORMAL) && !br.getURL().matches(TYPE_SHORT)) {

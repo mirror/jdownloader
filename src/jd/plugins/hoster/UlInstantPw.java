@@ -11,7 +11,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 28942 $", interfaceVersion = 3, names = { "ul-instant.pw" }, urls = { "http://(?:\\w+\\.)?ul-instant\\.pw/download/[a-f0-9]{32}/[a-f0-9]{32}/\\d+/[\\w\\-]+/[\\w\\-]+/[\\%\\w\\.\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 28942 $", interfaceVersion = 3, names = { "ul-instant.pw" }, urls = { "https?://ul\\-instant\\.pw/dl/[A-F0-9\\-]+" }, flags = { 0 })
 public class UlInstantPw extends PluginForHost {
 
     public UlInstantPw(PluginWrapper wrapper) {
@@ -23,10 +23,11 @@ public class UlInstantPw extends PluginForHost {
         return "http://ul-instant.pw/";
     }
 
-    private boolean                    resumeSupported = false;
-    private int                        maxChunks       = 1;
-    private final static AtomicInteger maxDownloads    = new AtomicInteger(1);
+    private boolean                    resumeSupported = true;
+    private int                        maxChunks       = 0;
+    private final static AtomicInteger maxDownloads    = new AtomicInteger(10);
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         URLConnectionAdapter connection = null;
@@ -56,16 +57,18 @@ public class UlInstantPw extends PluginForHost {
                 if (headerMaxDownloads != null && headerMaxDownloads.matches("\\d+")) {
                     maxDownloads.set(Integer.parseInt(headerMaxDownloads));
                 }
+            } else if (connection.getResponseCode() == 503) {
+                /* Usually with http response 'file is in queue...' and "Retry-After"-HeaderField */
+                return AvailableStatus.UNCHECKABLE;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            return AvailableStatus.TRUE;
         } finally {
             if (connection != null) {
-                br.followConnection();
                 connection.disconnect();
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -73,9 +76,14 @@ public class UlInstantPw extends PluginForHost {
         return maxDownloads.get();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+        final String headerRetryAfter = br.getHttpConnection().getHeaderField("Retry-After");
+        if (headerRetryAfter != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 wait and retry", Integer.parseInt(headerRetryAfter) * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, link.getDownloadURL(), resumeSupported, maxChunks);
         if (!dl.getConnection().isOK() || !dl.getConnection().isContentDisposition()) {
             br.followConnection();
