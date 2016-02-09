@@ -104,7 +104,7 @@ public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, Downloa
 
     @Override
     public String getName() {
-        return _TRAY._.TrayMenuManager_getName();
+        return _TRAY.T.TrayMenuManager_getName();
     }
 
     @Override

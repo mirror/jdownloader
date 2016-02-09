@@ -8,7 +8,7 @@ public class TrayReconnectAction extends ReconnectAction {
 
     public TrayReconnectAction() {
         super();
-        setName(_TRAY._.popup_reconnect());
+        setName(_TRAY.T.popup_reconnect());
     }
 
 }

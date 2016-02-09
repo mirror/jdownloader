@@ -149,7 +149,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public String getDescription() {
-        return _TRAY._.jd_plugins_optional_jdtrayicon_jdlighttray_description();
+        return _TRAY.T.jd_plugins_optional_jdtrayicon_jdlighttray_description();
     }
 
     @Override
@@ -187,7 +187,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     public TrayExtension() {
-        setTitle(_TRAY._.jd_plugins_optional_jdtrayicon_jdlighttray());
+        setTitle(_TRAY.T.jd_plugins_optional_jdtrayicon_jdlighttray());
     }
 
     public static int readEnableBalloonTips() throws UnsupportedEncodingException, IOException {

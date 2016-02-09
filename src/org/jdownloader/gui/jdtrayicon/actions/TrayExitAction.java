@@ -11,7 +11,7 @@ public class TrayExitAction extends ExitAction {
     private static final long serialVersionUID = 1L;
 
     {
-        setName(_TRAY._.popup_exit());
+        setName(_TRAY.T.popup_exit());
 
     }
 }
