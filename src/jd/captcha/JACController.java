@@ -43,9 +43,9 @@ public class JACController {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new MigLayout("wrap 2"));
         if (isTrain) {
-            frame.setTitle(T._.train_chooser_title());
+            frame.setTitle(T.T.train_chooser_title());
         } else {
-            frame.setTitle(T._.showcaptcha_chooser_title());
+            frame.setTitle(T.T.showcaptcha_chooser_title());
         }
         frame.setAlwaysOnTop(true);
         frame.setLocation(20, 20);
@@ -64,15 +64,15 @@ public class JACController {
 
         String chooserText = "";
         if (isTrain) {
-            chooserText = T._.train_choose_folder();
+            chooserText = T.T.train_choose_folder();
         } else {
-            chooserText = T._.showcaptcha_choose_file();
+            chooserText = T.T.showcaptcha_choose_file();
         }
-        frame.add(new JLabel(T._.train_method()));
+        frame.add(new JLabel(T.T.train_method()));
         frame.add(methods, "growx, spanx");
         frame.add(new JLabel(chooserText));
         frame.add(chooser, "growx, spanx");
-        final JButton btnOK = new JButton(T._.gui_btn_ok());
+        final JButton btnOK = new JButton(T.T.gui_btn_ok());
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(final ActionEvent e) {
