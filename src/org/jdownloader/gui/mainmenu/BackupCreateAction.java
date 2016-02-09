@@ -50,8 +50,8 @@ public class BackupCreateAction extends CustomizableAppAction {
     public BackupCreateAction() {
 
         setIconKey(IconKey.ICON_SAVE);
-        setName(_GUI._.BackupCreateAction_BackupCreateAction());
-        setTooltipText(_GUI._.BackupCreateAction_BackupCreateAction_tt());
+        setName(_GUI.T.BackupCreateAction_BackupCreateAction());
+        setTooltipText(_GUI.T.BackupCreateAction_BackupCreateAction_tt());
 
     }
 
@@ -61,7 +61,7 @@ public class BackupCreateAction extends CustomizableAppAction {
             @Override
             public void run() {
 
-                ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.BackupCreateAction_actionPerformed_filechooser_title(), _GUI._.lit_save(), null);
+                ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.BackupCreateAction_actionPerformed_filechooser_title(), _GUI.T.lit_save(), null);
                 d.setFileFilter(new FileFilter() {
 
                     @Override
@@ -81,7 +81,7 @@ public class BackupCreateAction extends CustomizableAppAction {
 
                 try {
 
-                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_restart(), _GUI._.BackupCreateAction_run_restart_ask(), null, _GUI._.lit_continue(), null);
+                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_restart(), _GUI.T.BackupCreateAction_run_restart_ask(), null, _GUI.T.lit_continue(), null);
                     Dialog.getInstance().showDialog(d);
 
                     File file = d.getSelectedFile();
@@ -92,7 +92,7 @@ public class BackupCreateAction extends CustomizableAppAction {
                         return;
                     }
                     if (file.exists()) {
-                        Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_overwrite(), _GUI._.file_exists_want_to_overwrite_question(file.getName()));
+                        Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_overwrite(), _GUI.T.file_exists_want_to_overwrite_question(file.getName()));
                         file.delete();
                     }
 
@@ -144,7 +144,7 @@ public class BackupCreateAction extends CustomizableAppAction {
                                 create(backupFile, progress);
                             } catch (Throwable e) {
                                 LogController.GL.log(e);
-                                Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
+                                Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage(), e);
                             } finally {
                                 synchronized (running) {
                                     running.set(false);

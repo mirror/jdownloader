@@ -50,7 +50,7 @@ public class EditAccountDialog extends AbstractDialog<Integer> {
     private JPanel           content;
 
     public EditAccountDialog(Account acc) {
-        super(0, _GUI._.jd_gui_swing_components_AccountDialog_edit_title(), DomainInfo.getInstance(acc.getHoster()).getFavIcon(), _GUI._.lit_save(), null);
+        super(0, _GUI.T.jd_gui_swing_components_AccountDialog_edit_title(), DomainInfo.getInstance(acc.getHoster()).getFavIcon(), _GUI.T.lit_save(), null);
         this.acc = acc;
     }
 

@@ -12,7 +12,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class PropertiesAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
-    private final static String NAME = _GUI._.PropertiesAction_PropertiesAction();
+    private final static String NAME = _GUI.T.PropertiesAction_PropertiesAction();
 
     public PropertiesAction() {
         super();

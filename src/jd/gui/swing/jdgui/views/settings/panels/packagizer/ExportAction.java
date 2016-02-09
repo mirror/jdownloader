@@ -30,7 +30,7 @@ public class ExportAction extends AppAction {
     private java.util.List<PackagizerRule> rules;
 
     public ExportAction() {
-        setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
+        setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey(IconKey.ICON_EXPORT);
         setTooltipText(_JDT._.ExportAction_ExportAction_tt());
 
@@ -52,7 +52,7 @@ public class ExportAction extends AppAction {
 
             ext = ImportAction.EXT;
 
-            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.LinkgrabberFilter_export_dialog_title(), null, null);
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.LinkgrabberFilter_export_dialog_title(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
             d.setFileFilter(new FileFilter() {
 

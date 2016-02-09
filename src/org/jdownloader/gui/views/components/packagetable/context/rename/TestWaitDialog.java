@@ -25,7 +25,7 @@ public class TestWaitDialog extends AbstractDialog<Object> {
     private ArrayList<org.jdownloader.gui.views.components.packagetable.context.rename.Result> list;
 
     public TestWaitDialog(boolean regex, Pattern pattern, String rep, ArrayList<Result> list) {
-        super(UIOManager.BUTTONS_HIDE_OK, _GUI._.lit_preview(), null, null, _GUI._.literally_close());
+        super(UIOManager.BUTTONS_HIDE_OK, _GUI.T.lit_preview(), null, null, _GUI.T.literally_close());
         this.list = list;
     }
 

@@ -16,7 +16,7 @@ public class MoveToNewFolderToolbarAction extends AbstractToolBarAction {
     private MergeToPackageAction setupDelegate;
 
     public MoveToNewFolderToolbarAction() {
-        setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
+        setName(_GUI.T.MergeToPackageAction_MergeToPackageAction_());
         setIconKey(IconKey.ICON_PACKAGE_NEW);
         setupDelegate = new MergeToPackageAction();
         addContextSetup(setupDelegate);

@@ -34,7 +34,7 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
     private ExtPasswordField   password;
 
     public AskForUserAndPasswordDialog(String message, DownloadLink link) {
-        super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_HIDE_ICON, _GUI._.AskForUserAndPasswordDialog_AskForUserAndPasswordDialog_title_(), message, null, null, _GUI._.lit_continue(), null);
+        super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_HIDE_ICON, _GUI.T.AskForUserAndPasswordDialog_AskForUserAndPasswordDialog_title_(), message, null, null, _GUI.T.lit_continue(), null);
         this.downloadLink = link;
         setTimeout(10 * 60 * 1000);
     }
@@ -74,14 +74,14 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
 
         }
 
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filename())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(downloadLink.getView().getDisplayName()));
         final String packagename = getPackageName();
         if (StringUtils.isNotEmpty(packagename)) {
-            p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
+            p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
             p.add(leftLabel(packagename));
         }
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_hoster())), "split 2,sizegroup left,alignx left");
         final DomainInfo di = downloadLink.getDomainInfo();
         JLabel ret = new JLabel(di.getTld());
         ret.setHorizontalAlignment(SwingConstants.LEFT);
@@ -91,13 +91,13 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
         input = getSmallInputComponent();
         // this.input.setBorder(BorderFactory.createEtchedBorder());
         input.setText(defaultMessage);
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_username())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_username())), "split 2,sizegroup left,alignx left");
         p.add((JComponent) input, "w 450,pushx,growx");
 
         password = new ExtPasswordField();
         password.addKeyListener(this);
         password.addMouseListener(this);
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_password())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_password())), "split 2,sizegroup left,alignx left");
         p.add(password, "w 450,pushx,growx");
         if (StringUtils.isNotEmpty(packagename)) {
             getDialog().addWindowFocusListener(new WindowFocusListener() {

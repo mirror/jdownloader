@@ -313,7 +313,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
     protected String getToolTip(List<Type> list) {
         if (list.size() == 0) {
-            return _GUI._.PseudoMultiCombo_nothing();
+            return _GUI.T.PseudoMultiCombo_nothing();
         }
         StringBuilder sb = new StringBuilder();
         for (Type t : list) {
@@ -331,7 +331,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
     protected String getLabel(List<Type> list) {
         if (list.size() == 0) {
-            return _GUI._.PseudoMultiCombo_nothing();
+            return _GUI.T.PseudoMultiCombo_nothing();
         }
         StringBuilder sb = new StringBuilder();
         for (Type t : list) {

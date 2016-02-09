@@ -154,57 +154,57 @@ public abstract class FilterRule extends AbstractJsonData implements Storable {
             }
             if (getFilenameFilter().isEnabled()) {
                 if (link != null && link.getName() != null) {
-                    cond.add(_GUI._.FilterRule_toString_name2(link.getName(), filenameFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_name2(link.getName(), filenameFilter.toString()));
                 } else {
-                    cond.add(_GUI._.FilterRule_toString_name(filenameFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_name(filenameFilter.toString()));
                 }
 
             }
             if (getPackagenameFilter().isEnabled()) {
                 if (link != null && link.getParentNode() != null && link.getParentNode().getName() != null) {
-                    cond.add(_GUI._.FilterRule_toString_package2(link.getParentNode().getName(), packagenameFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_package2(link.getParentNode().getName(), packagenameFilter.toString()));
                 } else {
-                    cond.add(_GUI._.FilterRule_toString_packagename(packagenameFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_packagename(packagenameFilter.toString()));
                 }
 
             }
             if (getFilesizeFilter().isEnabled()) {
                 if (link != null && link.getSize() > 0) {
-                    cond.add(_GUI._.FilterRule_toString_size2(SizeFormatter.formatBytes(link.getSize()), filesizeFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_size2(SizeFormatter.formatBytes(link.getSize()), filesizeFilter.toString()));
                 } else {
-                    cond.add(_GUI._.FilterRule_toString_size(filesizeFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_size(filesizeFilter.toString()));
                 }
 
             }
             if (getFiletypeFilter().isEnabled()) {
                 if (link != null && link.getName() != null && Files.getExtension(link.getName()) != null) {
                     String ext = Files.getExtension(link.getName());
-                    cond.add(_GUI._.FilterRule_toString_type2(ext, filetypeFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_type2(ext, filetypeFilter.toString()));
                 } else {
-                    cond.add(_GUI._.FilterRule_toString_type(filetypeFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_type(filetypeFilter.toString()));
                 }
 
             }
             if (getHosterURLFilter().isEnabled()) {
                 if (link != null) {
-                    cond.add(_GUI._.FilterRule_toString_hoster2(link.getURL(), hosterURLFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_hoster2(link.getURL(), hosterURLFilter.toString()));
                 } else {
-                    cond.add(_GUI._.FilterRule_toString_hoster(hosterURLFilter.toString()));
+                    cond.add(_GUI.T.FilterRule_toString_hoster(hosterURLFilter.toString()));
                 }
 
             }
             if (getSourceURLFilter().isEnabled()) {
 
-                cond.add(_GUI._.FilterRule_toString_source(sourceURLFilter.toString()));
+                cond.add(_GUI.T.FilterRule_toString_source(sourceURLFilter.toString()));
 
             }
         }
         for (int i = 0; i < cond.size(); i++) {
             if (i > 0) {
                 if (i < cond.size() - 1) {
-                    sb.append(_GUI._.FilterRule_toString_comma3(cond.get(i)));
+                    sb.append(_GUI.T.FilterRule_toString_comma3(cond.get(i)));
                 } else {
-                    sb.append(" " + _GUI._.FilterRule_toString_and2(cond.get(i)).trim());
+                    sb.append(" " + _GUI.T.FilterRule_toString_and2(cond.get(i)).trim());
                 }
 
             } else {

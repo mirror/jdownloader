@@ -34,7 +34,7 @@ public class ParalellDownloadsEditorLink extends MenuItemData implements MenuLin
         final ActionData actionData = ad;
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
-        p.add(new JLabel(_GUI._.MenuEditors_editorwidth()));
+        p.add(new JLabel(_GUI.T.MenuEditors_editorwidth()));
         int width = getPreferedEditorWidth();
 
         final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
@@ -62,7 +62,7 @@ public class ParalellDownloadsEditorLink extends MenuItemData implements MenuLin
     public ParalellDownloadsEditorLink() {
         super();
 
-        setName(_GUI._.ParalellDownloadsEditor_ParalellDownloadsEditor_());
+        setName(_GUI.T.ParalellDownloadsEditor_ParalellDownloadsEditor_());
         setIconKey(IconKey.ICON_PARALELL);
         //
     }

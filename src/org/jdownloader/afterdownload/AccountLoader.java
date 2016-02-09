@@ -33,7 +33,7 @@ public class AccountLoader implements FileCreationListener {
         if (fileList != null) {
             for (File f : fileList) {
                 if (f != null && f.getName().equalsIgnoreCase("org.jdownloader.settings.AccountSettings.accounts.ejs")) {
-                    ConfirmDialog d = new ConfirmDialog(0, _GUI._.AccountLoader_onNewFile_title(), _GUI._.AccountLoader_onNewFile_msg(f.getAbsolutePath()), new AbstractIcon(IconKey.ICON_PREMIUM, 32), _GUI._.lit_import(), null) {
+                    ConfirmDialog d = new ConfirmDialog(0, _GUI.T.AccountLoader_onNewFile_title(), _GUI.T.AccountLoader_onNewFile_msg(f.getAbsolutePath()), new AbstractIcon(IconKey.ICON_PREMIUM, 32), _GUI.T.lit_import(), null) {
                         @Override
                         public ModalityType getModalityType() {
                             return ModalityType.MODELESS;
@@ -46,10 +46,10 @@ public class AccountLoader implements FileCreationListener {
                         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
                         List<Account> accounts = AccountController.getInstance().importAccounts(f);
                         if (accounts.size() > 0) {
-                            Dialog.getInstance().showMessageDialog(_GUI._.AccountLoader_onNewFile_accounts_imported(accounts.size()));
+                            Dialog.getInstance().showMessageDialog(_GUI.T.AccountLoader_onNewFile_accounts_imported(accounts.size()));
 
                         } else {
-                            Dialog.getInstance().showMessageDialog(_GUI._.AccountLoader_onNewFile_noaccounts());
+                            Dialog.getInstance().showMessageDialog(_GUI.T.AccountLoader_onNewFile_noaccounts());
                         }
                     }
                 }

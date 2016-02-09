@@ -16,7 +16,7 @@ public class CESBubble extends AbstractNotifyWindow<CESBubbleContent> {
     private Timer updateTimer;
 
     public CESBubble(CESChallengeSolver<?> solver, CESSolverJob<?> cesSolverJob, int timeoutms) {
-        super(_GUI._.CESBubble_CESBubble2(solver.getService().getName(), solver.getService().getType()), new CESBubbleContent(solver, cesSolverJob, timeoutms));
+        super(_GUI.T.CESBubble_CESBubble2(solver.getService().getName(), solver.getService().getType()), new CESBubbleContent(solver, cesSolverJob, timeoutms));
         getContentComponent().setBubble(this);
         updateTimer = new Timer(1000, new ActionListener() {
 

@@ -21,7 +21,7 @@ public class AggregatedCrawlerNumbers {
     }
 
     private String format(long totalBytes2) {
-        if (totalBytes2 < 0) { return _GUI._.lit_unknown(); }
+        if (totalBytes2 < 0) { return _GUI.T.lit_unknown(); }
         return SizeFormatter.formatBytes(totalBytes2);
     }
 

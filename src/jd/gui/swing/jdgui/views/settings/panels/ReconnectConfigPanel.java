@@ -41,13 +41,13 @@ public class ReconnectConfigPanel extends AbstractConfigPanel {
 
     public ReconnectConfigPanel() {
         super();
-        this.addHeader(_GUI._.ReconnectSettings_ReconnectSettings_settings_(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
-        this.addDescription(_GUI._.ReconnectSettings_ReconnectSettings_settings_desc2());
+        this.addHeader(_GUI.T.ReconnectSettings_ReconnectSettings_settings_(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
+        this.addDescription(_GUI.T.ReconnectSettings_ReconnectSettings_settings_desc2());
 
-        addPair(_GUI._.ReconnectSettings_ReconnectSettings_enabled_(), null, new Checkbox(CFG_RECONNECT.AUTO_RECONNECT_ENABLED));
+        addPair(_GUI.T.ReconnectSettings_ReconnectSettings_enabled_(), null, new Checkbox(CFG_RECONNECT.AUTO_RECONNECT_ENABLED));
 
-        addPair(_GUI._.ReconnectSettings_ReconnectSettings_prefer_reconnect_desc(), null, new Checkbox(CFG_RECONNECT.DOWNLOAD_CONTROLLER_PREFERS_RECONNECT_ENABLED));
-        addPair(_GUI._.ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed(), null, new Checkbox(CFG_RECONNECT.RECONNECT_ALLOWED_TO_INTERRUPT_RESUMABLE_DOWNLOADS));
+        addPair(_GUI.T.ReconnectSettings_ReconnectSettings_prefer_reconnect_desc(), null, new Checkbox(CFG_RECONNECT.DOWNLOAD_CONTROLLER_PREFERS_RECONNECT_ENABLED));
+        addPair(_GUI.T.ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed(), null, new Checkbox(CFG_RECONNECT.RECONNECT_ALLOWED_TO_INTERRUPT_RESUMABLE_DOWNLOADS));
 
         this.addHeader(_JDT._.gui_settings_reconnect_title_method(), new AbstractIcon(IconKey.ICON_RECONNECT, 32));
 

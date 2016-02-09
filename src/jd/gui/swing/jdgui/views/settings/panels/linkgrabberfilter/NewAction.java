@@ -32,14 +32,14 @@ public class NewAction extends AbstractAddAction {
 
     public NewAction(LinkgrabberFilter linkgrabberFilter) {
         this.linkgrabberFilter = linkgrabberFilter;
-        this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_add());
+        this.putValue(NAME, _GUI.T.settings_linkgrabber_filter_action_add());
         this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_ADD, 20));
 
     }
 
     public NewAction(AbstractFilterTable table) {
         this.table = table;
-        this.putValue(NAME, _GUI._.settings_linkgrabber_filter_action_add());
+        this.putValue(NAME, _GUI.T.settings_linkgrabber_filter_action_add());
         this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_ADD, 16));
     }
 

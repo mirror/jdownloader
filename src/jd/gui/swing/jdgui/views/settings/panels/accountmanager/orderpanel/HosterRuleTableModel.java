@@ -65,7 +65,7 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<AccountUsageRule>(_GUI._.premiumaccounttablemodel_column_enabled()) {
+        this.addColumn(new ExtCheckColumn<AccountUsageRule>(_GUI.T.premiumaccounttablemodel_column_enabled()) {
 
             private final JComponent empty = new RendererMigPanel("ins 0", "[]", "[]");
 
@@ -129,7 +129,7 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
             }
         });
 
-        this.addColumn(new ExtTextColumn<AccountUsageRule>(_GUI._.HosterRuleTableModel_initColumns_hoster_()) {
+        this.addColumn(new ExtTextColumn<AccountUsageRule>(_GUI.T.HosterRuleTableModel_initColumns_hoster_()) {
 
             private static final long serialVersionUID = -8070328156326837828L;
 
@@ -182,7 +182,7 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
             }
         });
 
-        this.addColumn(new ExtComponentColumn<AccountUsageRule>(_GUI._.HosterRuleTableModel_initColumns_edit_()) {
+        this.addColumn(new ExtComponentColumn<AccountUsageRule>(_GUI.T.HosterRuleTableModel_initColumns_edit_()) {
             private JButton          button;
             private MigPanel         panel;
             private JButton          rbutton;
@@ -190,13 +190,13 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
             private AccountUsageRule editing;
 
             {
-                button = new JButton(_GUI._.HosterRuleTableModel_initColumns_edit_());
+                button = new JButton(_GUI.T.HosterRuleTableModel_initColumns_edit_());
 
                 panel = new RendererMigPanel("ins 2", "[]", "[16!]");
                 panel.add(button);
                 button.setOpaque(false);
 
-                rbutton = new JButton(_GUI._.HosterRuleTableModel_initColumns_edit_());
+                rbutton = new JButton(_GUI.T.HosterRuleTableModel_initColumns_edit_());
 
                 rbutton.addActionListener(new ActionListener() {
 

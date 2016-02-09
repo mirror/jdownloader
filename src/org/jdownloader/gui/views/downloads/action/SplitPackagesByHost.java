@@ -35,7 +35,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
 
     private boolean             mergePackages    = false;
 
-    private final static String NAME             = _GUI._.SplitPackagesByHost_SplitPackagesByHost_object_();
+    private final static String NAME             = _GUI.T.SplitPackagesByHost_SplitPackagesByHost_object_();
 
     public SplitPackagesByHost() {
         super();

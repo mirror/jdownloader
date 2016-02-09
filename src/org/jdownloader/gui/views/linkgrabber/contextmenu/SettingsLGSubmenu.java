@@ -7,7 +7,7 @@ public class SettingsLGSubmenu extends SettingsMenuContainer {
 
     public SettingsLGSubmenu() {
         super();
-        setName(_GUI._.ContextMenuFactory_createPopup_properties_package());
+        setName(_GUI.T.ContextMenuFactory_createPopup_properties_package());
 
     }
 

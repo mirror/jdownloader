@@ -85,7 +85,7 @@ public class AddFilteredStuffAction extends CustomizableAppAction implements Act
 
                     @Override
                     protected void runInEDT() {
-                        setText(_GUI._.RestoreFilteredLinksAction_(size));
+                        setText(_GUI.T.RestoreFilteredLinksAction_(size));
                         setVisible(true);
                     }
                 };
@@ -94,7 +94,7 @@ public class AddFilteredStuffAction extends CustomizableAppAction implements Act
 
                     @Override
                     protected void runInEDT() {
-                        setText(_GUI._.RestoreFilteredLinksAction_(0));
+                        setText(_GUI.T.RestoreFilteredLinksAction_(0));
                         setVisible(!isOnlyVisibleIfThereIsFilteredStuff());
                     }
                 };

@@ -44,7 +44,7 @@ public class CaptchaDialog extends AbstractImageCaptchaDialog implements ActionL
     }
 
     public CaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
+        super(flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
 
     }
 

@@ -11,7 +11,7 @@ public class LGMenuManagerAction extends CustomizableTableContextAppAction {
 
     public LGMenuManagerAction() {
         super(true, true);
-        setName(_GUI._.MenuManagerAction_MenuManagerAction());
+        setName(_GUI.T.MenuManagerAction_MenuManagerAction());
         setIconKey(IconKey.ICON_MENU);
         addContextSetup(new TableContext(true, true));
 

@@ -419,7 +419,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
             new Thread("DEAL_1") {
                 public void run() {
                     try {
-                        Dialog.getInstance().showConfirmDialog(0, _GUI._.Sponsor_run_hide_title(), _GUI._.Sponsor_run_hide_msg(), null, _GUI._.lit_yes(), null);
+                        Dialog.getInstance().showConfirmDialog(0, _GUI.T.Sponsor_run_hide_title(), _GUI.T.Sponsor_run_hide_msg(), null, _GUI.T.lit_yes(), null);
                         UploadedController.track("TabbedHideClick/YES");
                         CFG_GUI.ULBANNER_ENABLED.setValue(false);
                     } catch (DialogNoAnswerException e) {
@@ -522,7 +522,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
                             }
                         }
                         if (notify) {
-                            notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(hoster), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), hoster));
+                            notify(account, _GUI.T.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(hoster), _GUI.T.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), hoster));
                         }
                     }
                 } else if (accountEvent.isPremiumDowngraded() && !AccountController.getInstance().hasAccount(hoster, true, true, true, false)) {
@@ -540,7 +540,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
                         }
                     }
                     if (notify) {
-                        notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
+                        notify(account, _GUI.T.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI.T.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
                     }
                 }
 
@@ -562,7 +562,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
             }
             final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
             final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
-            final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), _GUI._.lit_close()) {
+            final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI.T.lit_continue(), _GUI.T.lit_close()) {
                 @Override
                 public ModalityType getModalityType() {
                     return ModalityType.MODELESS;

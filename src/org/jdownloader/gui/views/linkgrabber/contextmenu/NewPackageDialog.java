@@ -26,7 +26,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     private String              preSet = null;
 
     public NewPackageDialog(SelectionInfo<?, ?> selection) {
-        super(0, _GUI._.NewPackageDialog_NewPackageDialog_(), null, null, null);
+        super(0, _GUI.T.NewPackageDialog_NewPackageDialog_(), null, null, null);
         this.selection = selection;
     }
 
@@ -40,7 +40,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     }
 
     private String getNewName() {
-        String defValue = _GUI._.MergeToPackageAction_actionPerformed_newpackage_();
+        String defValue = _GUI.T.MergeToPackageAction_actionPerformed_newpackage_();
         try {
             defValue = selection.getFirstPackage().getName();
         } catch (Throwable e2) {
@@ -59,13 +59,13 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     public JComponent layoutDialogContent() {
         MigPanel p = new MigPanel("ins 0,wrap 2", "[][grow,fill]", "[]");
 
-        p.add(new JLabel(_GUI._.NewPackageDialog_layoutDialogContent_newname_()));
+        p.add(new JLabel(_GUI.T.NewPackageDialog_layoutDialogContent_newname_()));
         tf = new ExtTextField();
 
         tf.setText(getNewName());
         p.add(tf);
 
-        p.add(new JLabel(_GUI._.NewPackageDialog_layoutDialogContent_saveto()));
+        p.add(new JLabel(_GUI.T.NewPackageDialog_layoutDialogContent_saveto()));
         fc = new FolderChooser();
 
         File path = null;

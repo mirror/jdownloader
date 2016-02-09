@@ -48,11 +48,11 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
     }
 
     public SizeColumn() {
-        super(_GUI._.SizeColumn_SizeColumn(), null);
+        super(_GUI.T.SizeColumn_SizeColumn(), null);
         this.sizeRenderer = new RenderLabel();
         this.sizeRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         this.countRenderer = new RenderLabel();
-        this.zeroString = _GUI._.SizeColumn_getSizeString_zero();
+        this.zeroString = _GUI.T.SizeColumn_getSizeString_zero();
         this.countRenderer.setHorizontalAlignment(SwingConstants.LEFT);
         fileCountVisible = JsonConfig.create(GraphicalUserInterfaceSettings.class).isFileCountInSizeColumnVisible();
         this.renderer = new RendererMigPanel("ins 0,debug", "[]0[grow,fill]", "[grow,fill]");
@@ -179,7 +179,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
     protected String getTooltipText(final AbstractNode value) {
         final long sizeValue = this.getBytes(value);
         if (sizeValue < 0) {
-            return _GUI._.SizeColumn_getSizeString_zero_tt();
+            return _GUI.T.SizeColumn_getSizeString_zero_tt();
         } else {
             return this.getSizeString(sizeValue);
         }

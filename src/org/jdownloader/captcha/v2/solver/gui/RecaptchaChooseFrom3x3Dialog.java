@@ -63,7 +63,7 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
     // }
 
     public RecaptchaChooseFrom3x3Dialog(int flag, DialogType type, DomainInfo domainInfo, AbstractRecaptcha2FallbackChallenge challenge) {
-        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, null, (Image[]) null);
+        super(flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, null, (Image[]) null);
 
         this.challenge = challenge;
         BufferedImage img;
@@ -87,10 +87,10 @@ public class RecaptchaChooseFrom3x3Dialog extends AbstractImageCaptchaDialog {
         Icon explainIcon = challenge.getExplainIcon(challenge.getExplain());
         String ex = challenge.getExplain().replaceAll("<.*?>", "").replace(key, "<b>" + key + "</b>");
         if (challenge.getChooseAtLeast() > 0) {
-            ex += "<br>" + _GUI._.RECAPTCHA_2_Dialog_help(challenge.getChooseAtLeast());
+            ex += "<br>" + _GUI.T.RECAPTCHA_2_Dialog_help(challenge.getChooseAtLeast());
         }
         if (challenge.getType() != null && challenge.getType().startsWith("TileSelection")) {
-            ex += "<br>" + _GUI._.RECAPTCHA_2_Dialog_help_tile();
+            ex += "<br>" + _GUI.T.RECAPTCHA_2_Dialog_help_tile();
         }
         if (explainIcon != null) {
             field.add(SwingUtils.setOpaque(new JLabel("<html>" + ex + "</html>", explainIcon, JLabel.LEFT), false), "gapleft 5,gaptop 5");

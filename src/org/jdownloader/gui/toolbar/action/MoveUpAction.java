@@ -15,7 +15,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 public class MoveUpAction extends AbstractMoveAction {
 
     public MoveUpAction() {
-        setName(_GUI._.MoveUpAction_MoveUpAction());
+        setName(_GUI.T.MoveUpAction_MoveUpAction());
         setIconKey(IconKey.ICON_GO_UP);
 
         setAccelerator(PackageControllerTable.KEY_STROKE_ALT_UP);

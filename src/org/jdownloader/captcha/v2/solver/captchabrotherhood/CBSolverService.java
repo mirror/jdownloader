@@ -99,7 +99,7 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
 
     @Override
     public String getType() {
-        return _GUI._.CBSolver_getName_();
+        return _GUI.T.CBSolver_getName_();
     }
 
     @Override
@@ -116,11 +116,11 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
 
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_CBH, 32));
-                addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
+                addDescription(_GUI.T.AntiCaptchaConfigPanel_onShow_description_ces());
 
                 add(new SettingsButton(new AppAction() {
                     {
-                        setName(_GUI._.lit_open_website());
+                        setName(_GUI.T.lit_open_website());
 
                     }
 
@@ -134,13 +134,13 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
                 userName = new TextInput(CFG_CAPTCHABROTHERHOOD.USER);
                 passWord = new PasswordInput(CFG_CAPTCHABROTHERHOOD.PASS);
 
-                this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
+                this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
-                this.addDescriptionPlain(_GUI._.captchabrotherhoodService_createPanel_logins_());
+                this.addDescriptionPlain(_GUI.T.captchabrotherhoodService_createPanel_logins_());
 
-                addPair(_GUI._.captchabrotherhoodService_createPanel_enabled(), null, new Checkbox(CFG_CAPTCHABROTHERHOOD.ENABLED, userName, passWord));
-                addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, userName);
-                addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, passWord);
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_enabled(), null, new Checkbox(CFG_CAPTCHABROTHERHOOD.ENABLED, userName, passWord));
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, userName);
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_password(), null, passWord);
                 addBlackWhiteList(CFG_CAPTCHABROTHERHOOD.CFG);
 
             }
@@ -175,7 +175,7 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
 
     @Override
     public String getName() {
-        return _GUI._.CBSolver_gettypeName_();
+        return _GUI.T.CBSolver_gettypeName_();
     }
 
     @Override

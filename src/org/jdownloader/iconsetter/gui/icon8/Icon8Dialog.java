@@ -150,7 +150,7 @@ public class Icon8Dialog extends AbstractDialog<Object> {
         color.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                Color newColor = JColorChooser.showDialog(color, _GUI._.AdvancedValueColumn_onSingleClick_colorchooser_title_(), color.getBackground());
+                Color newColor = JColorChooser.showDialog(color, _GUI.T.AdvancedValueColumn_onSingleClick_colorchooser_title_(), color.getBackground());
                 if (newColor != null && !newColor.equals(color.getBackground())) {
                     color.setBackground(newColor);
                     JsonConfig.create(IconSetterConfig.class).setColor(newColor.getRGB());

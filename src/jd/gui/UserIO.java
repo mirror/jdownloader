@@ -243,7 +243,7 @@ public class UserIO {
     public static Icon getDefaultIcon(final String text) {
         if (text.contains("?")) {
             return getIcon(UserIO.ICON_QUESTION);
-        } else if (text.matches(_GUI._.userio_errorregex())) {
+        } else if (text.matches(_GUI.T.userio_errorregex())) {
             return getIcon(UserIO.ICON_ERROR);
         } else if (text.contains("!")) {
             return getIcon(UserIO.ICON_WARNING);
@@ -303,7 +303,7 @@ public class UserIO {
     }
 
     public int requestConfirmDialog(final int flag, final String question) {
-        return this.requestConfirmDialog(flag, _GUI._.jd_gui_userio_defaulttitle_confirm(), question, getDefaultIcon(question), null, null);
+        return this.requestConfirmDialog(flag, _GUI.T.jd_gui_userio_defaulttitle_confirm(), question, getDefaultIcon(question), null, null);
     }
 
     public int requestConfirmDialog(final int flag, final String title, final String question) {
@@ -434,7 +434,7 @@ public class UserIO {
      * @return
      */
     public String requestInputDialog(final int flag, final String question, final String defaultvalue) {
-        return this.requestInputDialog(flag, _GUI._.jd_gui_userio_defaulttitle_input(), question, defaultvalue, this.getDefaultIcon(question), null, null);
+        return this.requestInputDialog(flag, _GUI.T.jd_gui_userio_defaulttitle_input(), question, defaultvalue, this.getDefaultIcon(question), null, null);
     }
 
     public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final Icon icon, final String okOption, final String cancelOption) {
@@ -463,7 +463,7 @@ public class UserIO {
     }
 
     public void requestMessageDialog(final int flag, final String message) {
-        this.requestMessageDialog(flag, _GUI._.gui_dialogs_message_title(), message);
+        this.requestMessageDialog(flag, _GUI.T.gui_dialogs_message_title(), message);
     }
 
     public void requestMessageDialog(final int flag, final String title, final String message) {
@@ -471,7 +471,7 @@ public class UserIO {
     }
 
     public void requestMessageDialog(final String message) {
-        this.requestMessageDialog(0, _GUI._.gui_dialogs_message_title(), message);
+        this.requestMessageDialog(0, _GUI.T.gui_dialogs_message_title(), message);
     }
 
     public void requestMessageDialog(final String title, final String message) {

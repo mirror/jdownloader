@@ -42,7 +42,7 @@ public class ReconnectAction extends AbstractToolBarAction {
                     e.printStackTrace();
                 }
 
-                ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.gui_reconnect_confirm(), new AbstractIcon(IconKey.ICON_RECONNECT, 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
+                ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.lit_are_you_sure(), _GUI.T.gui_reconnect_confirm(), new AbstractIcon(IconKey.ICON_RECONNECT, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
 
                     @Override
                     public ModalityType getModalityType() {
@@ -80,7 +80,7 @@ public class ReconnectAction extends AbstractToolBarAction {
 
     @Override
     protected String createTooltip() {
-        return _GUI._.action_reconnect_invoke_tooltip();
+        return _GUI.T.action_reconnect_invoke_tooltip();
     }
 
 }

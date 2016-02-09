@@ -33,8 +33,8 @@ public class RestartAction extends CustomizableAppAction {
 
     public RestartAction() {
         //
-        setTooltipText(_GUI._.action_restart_tooltip());
-        setName(_GUI._.action_restart());
+        setTooltipText(_GUI.T.action_restart_tooltip());
+        setName(_GUI.T.action_restart());
         setIconKey(IconKey.ICON_RESTART);
         setAccelerator(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_MASK);
     }

@@ -43,7 +43,7 @@ public class ClickCaptchaDialog extends AbstractImageCaptchaDialog {
     }
 
     public ClickCaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
+        super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
 
     }
 

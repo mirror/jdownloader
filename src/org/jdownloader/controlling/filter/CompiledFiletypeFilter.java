@@ -76,7 +76,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getDesc() {
-            return _GUI._.FilterRuleDialog_createTypeFilter_mime_checksums();
+            return _GUI.T.FilterRuleDialog_createTypeFilter_mime_checksums();
         }
 
         public String getIconID() {
@@ -145,7 +145,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getDesc() {
-            return _GUI._.FilterRuleDialog_createTypeFilter_mime_audio();
+            return _GUI.T.FilterRuleDialog_createTypeFilter_mime_audio();
         }
 
         public String getIconID() {
@@ -216,7 +216,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getDesc() {
-            return _GUI._.FilterRuleDialog_createTypeFilter_mime_video();
+            return _GUI.T.FilterRuleDialog_createTypeFilter_mime_video();
         }
 
         public Pattern compiledAllPattern() {
@@ -294,7 +294,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getDesc() {
-            return _GUI._.FilterRuleDialog_createTypeFilter_mime_archives();
+            return _GUI.T.FilterRuleDialog_createTypeFilter_mime_archives();
         }
 
         public Pattern compiledAllPattern() {
@@ -347,7 +347,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getDesc() {
-            return _GUI._.FilterRuleDialog_createTypeFilter_mime_images();
+            return _GUI.T.FilterRuleDialog_createTypeFilter_mime_images();
         }
 
         public Pattern compiledAllPattern() {

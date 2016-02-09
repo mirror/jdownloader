@@ -15,7 +15,7 @@ public class AddLinksMenuAction extends CustomizableAppAction {
     private static final long serialVersionUID = 1L;
 
     public AddLinksMenuAction() {
-        setName(_GUI._.AddOptionsAction_actionPerformed_addlinks());
+        setName(_GUI.T.AddOptionsAction_actionPerformed_addlinks());
         setIconKey(IconKey.ICON_ADD);
 
     }

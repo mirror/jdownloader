@@ -17,7 +17,7 @@ public class OpenFileAction extends CustomizableTableContextAppAction<FilePackag
     private static final long   serialVersionUID = 1901008532686173167L;
 
     private File                file             = null;
-    private final static String NAME             = _GUI._.gui_table_contextmenu_openfile();
+    private final static String NAME             = _GUI.T.gui_table_contextmenu_openfile();
 
     public OpenFileAction() {
         super();

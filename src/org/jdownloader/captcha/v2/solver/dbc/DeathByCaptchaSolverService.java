@@ -48,7 +48,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
 
     @Override
     public String getType() {
-        return _GUI._.CaptchaSolver_Type_paid_online();
+        return _GUI.T.CaptchaSolver_Type_paid_online();
     }
 
     @Override
@@ -70,11 +70,11 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
 
             {
                 addHeader(getTitle(), NewTheme.I().getIcon(ID, 32));
-                addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_paid_service());
+                addDescription(_GUI.T.AntiCaptchaConfigPanel_onShow_description_paid_service());
 
                 add(new SettingsButton(new AppAction() {
                     {
-                        setName(_GUI._.lit_open_website());
+                        setName(_GUI.T.lit_open_website());
 
                     }
 
@@ -87,14 +87,14 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
                 username = new TextInput(CFG_DBC.USER_NAME);
                 password = new PasswordInput(CFG_DBC.PASSWORD);
 
-                this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
+                this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
-                this.addDescriptionPlain(_GUI._.captchasolver_configpanel_my_account_description(DeathByCaptchaSolverService.this.getName()));
-                addPair(_GUI._.captchasolver_configpanel_enabled(DeathByCaptchaSolverService.this.getName()), null, new Checkbox(CFG_DBC.ENABLED, username, password));
-                addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, username);
-                addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, password);
+                this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(DeathByCaptchaSolverService.this.getName()));
+                addPair(_GUI.T.captchasolver_configpanel_enabled(DeathByCaptchaSolverService.this.getName()), null, new Checkbox(CFG_DBC.ENABLED, username, password));
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_password(), null, password);
 
-                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_DBC.FEED_BACK_SENDING_ENABLED));
+                addPair(_GUI.T.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_DBC.FEED_BACK_SENDING_ENABLED));
 
                 addBlackWhiteList(config);
 
@@ -130,7 +130,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
 
     @Override
     public String getName() {
-        return _GUI._.DeathByCaptchaSolver_gettypeName_();
+        return _GUI.T.DeathByCaptchaSolver_gettypeName_();
     }
 
     @Override

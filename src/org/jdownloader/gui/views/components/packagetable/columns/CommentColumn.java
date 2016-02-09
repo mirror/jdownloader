@@ -21,7 +21,7 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
     private static final long serialVersionUID = 3276217379318150024L;
 
     public CommentColumn() {
-        super(_GUI._.CommentColumn_CommentColumn_());
+        super(_GUI.T.CommentColumn_CommentColumn_());
     }
 
     public JPopupMenu createHeaderPopup() {

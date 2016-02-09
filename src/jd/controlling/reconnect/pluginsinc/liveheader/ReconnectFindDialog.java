@@ -45,15 +45,15 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     }
 
     public void onIPOffline() {
-        setSubStatusState(_GUI._.ReconnectDialog_onIPOffline_(), new AbstractIcon(IconKey.ICON_NETWORK_ERROR, 16));
-        setNewIP(_GUI._.literally_offline());
+        setSubStatusState(_GUI.T.ReconnectDialog_onIPOffline_(), new AbstractIcon(IconKey.ICON_NETWORK_ERROR, 16));
+        setNewIP(_GUI.T.literally_offline());
     }
 
     public void onIPValidated(IPConnectionState parameter, IPConnectionState parameter2) {
     }
 
     public void onIPOnline(IPConnectionState parameter) {
-        setSubStatusState(_GUI._.ReconnectDialog_onIPOnline_(), new AbstractIcon(IconKey.ICON_NETWORK_IDLE, 16));
+        setSubStatusState(_GUI.T.ReconnectDialog_onIPOnline_(), new AbstractIcon(IconKey.ICON_NETWORK_IDLE, 16));
     }
 
     public void onIPStateChanged(IPConnectionState parameter, IPConnectionState parameter2) {
@@ -73,7 +73,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
 
     public ReconnectFindDialog() {
 
-        super(Dialog.STYLE_HIDE_ICON, _GUI._.AutoDetectAction_actionPerformed_d_title(), null, _GUI._.ReconnectFindDialog_ReconnectFindDialog_ok(), null);
+        super(Dialog.STYLE_HIDE_ICON, _GUI.T.AutoDetectAction_actionPerformed_d_title(), null, _GUI.T.ReconnectFindDialog_ReconnectFindDialog_ok(), null);
 
     }
 
@@ -108,7 +108,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         ExtTextArea txt = new ExtTextArea();
         txt.setLabelMode(true);
         p.add(txt);
-        txt.setText(_GUI._.AutoDetectAction_actionPerformed_d_msg());
+        txt.setText(_GUI.T.AutoDetectAction_actionPerformed_d_msg());
         bar = new JProgressBar();
         bar.setStringPainted(true);
         bar.setMaximum(100);
@@ -130,13 +130,13 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         SwingUtils.toBold(header);
         state.setHorizontalAlignment(SwingConstants.RIGHT);
         circle.setIndeterminate(true);
-        sp.add(label(_GUI._.ReconnectDialog_layoutDialogContent_duration()));
+        sp.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_duration()));
 
         sp.add(duration = new JLabel());
 
         state.setHorizontalAlignment(SwingConstants.RIGHT);
         sp.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
-        sp.add(label(_GUI._.ReconnectDialog_layoutDialogContent_currentip()));
+        sp.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_currentip()));
         sp.add(newIP = new JLabel(), "width 100!");
         newIP.setHorizontalAlignment(SwingConstants.RIGHT);
 
@@ -148,10 +148,10 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
                     IPController.getInstance().invalidate();
                     IPController.getInstance().validate();
                     if (IPController.getInstance().getIpState().isOffline()) {
-                        setSubStatusState(_GUI._.ReconnectDialog_onIPOffline_(), new AbstractIcon(IconKey.ICON_NETWORK_ERROR, 16));
-                        setNewIP(_GUI._.literally_offline());
+                        setSubStatusState(_GUI.T.ReconnectDialog_onIPOffline_(), new AbstractIcon(IconKey.ICON_NETWORK_ERROR, 16));
+                        setNewIP(_GUI.T.literally_offline());
                     } else {
-                        setSubStatusState(_GUI._.ReconnectDialog_onIPOnline_(), new AbstractIcon(IconKey.ICON_NETWORK_IDLE, 16));
+                        setSubStatusState(_GUI.T.ReconnectDialog_onIPOnline_(), new AbstractIcon(IconKey.ICON_NETWORK_IDLE, 16));
                         setNewIP(IPController.getInstance().getIpState().getExternalIp().toString());
                     }
 
@@ -190,7 +190,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         okButton.setEnabled(false);
         okButton.repaint();
         cancelButton.requestFocus();
-        okButton.setToolTipText(_GUI._.ReconnectFindDialog_packed_no_found_script_tooltip());
+        okButton.setToolTipText(_GUI.T.ReconnectFindDialog_packed_no_found_script_tooltip());
     }
 
     @Override
@@ -218,7 +218,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
             protected void runInEDT() {
                 okButton.setEnabled(true);
                 okButton.setIcon(new AbstractIcon(IconKey.ICON_OK, 18));
-                okButton.setToolTipText(_GUI._.ReconnectFindDialog_packed_interrupt_tooltip());
+                okButton.setToolTipText(_GUI.T.ReconnectFindDialog_packed_interrupt_tooltip());
             }
 
         };

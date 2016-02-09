@@ -16,7 +16,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class DownloadStartedNotify extends AbstractNotifyWindow<DownloadStartedContentPanel> {
     
     public DownloadStartedNotify(StartDownloadsBubbleSupport startDownloadsBubbleSupport, SingleDownloadController downloadController) {
-        super(startDownloadsBubbleSupport, _GUI._.DownloadStartNotify_DownloadStartNotify(), new DownloadStartedContentPanel(downloadController));
+        super(startDownloadsBubbleSupport, _GUI.T.DownloadStartNotify_DownloadStartNotify(), new DownloadStartedContentPanel(downloadController));
         
     }
     

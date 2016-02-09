@@ -23,7 +23,7 @@ public class URLEditorAction<PackageType extends AbstractPackageNode<ChildrenTyp
     public URLEditorAction() {
         super();
 
-        setName(_GUI._.ContextMenuFactory_createPopup_url());
+        setName(_GUI.T.ContextMenuFactory_createPopup_url());
         setSmallIcon(new AbstractIcon(IconKey.ICON_URL, 20));
 
     }
@@ -32,7 +32,7 @@ public class URLEditorAction<PackageType extends AbstractPackageNode<ChildrenTyp
     public void actionPerformed(ActionEvent e) {
         try {
             final LinkURLEditor comp = new LinkURLEditor(getSelection());
-            Dialog.getInstance().showDialog(new AbstractDialog<Object>(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, _GUI._.ContextMenuFactory_createPopup_url(), null, _GUI._.literally_save(), null) {
+            Dialog.getInstance().showDialog(new AbstractDialog<Object>(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, _GUI.T.ContextMenuFactory_createPopup_url(), null, _GUI.T.literally_save(), null) {
 
                 @Override
                 protected Object createReturnValue() {

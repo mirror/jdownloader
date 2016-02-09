@@ -89,12 +89,12 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
                 name = sc._getExtendedName();
             }
             if (i == 0) {
-                return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_best() + ")";
+                return _GUI.T.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI.T.YoutubeDashConfigPanel_getLabel_best() + ")";
             } else if (i == getValues().size() - 1) {
 
-                return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_worst() + ")";
+                return _GUI.T.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI.T.YoutubeDashConfigPanel_getLabel_worst() + ")";
             }
-            return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name);
+            return _GUI.T.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name);
         }
 
         @Override
@@ -131,9 +131,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         protected String getType(boolean plural) {
             if (plural) {
-                return _GUI._.YoutubeDashConfigPanel_getType_videos();
+                return _GUI.T.YoutubeDashConfigPanel_getType_videos();
             } else {
-                return _GUI._.YoutubeDashConfigPanel_getType_video();
+                return _GUI.T.YoutubeDashConfigPanel_getType_video();
             }
         }
 
@@ -144,8 +144,8 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         addStartDescription(description);
 
-        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist(), null, null, new ComboBox<IfUrlisAVideoAndPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsVideoAndPlaylistUrlAction", KeyHandler.class), IfUrlisAVideoAndPlaylistAction.values(), null));
-        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_equals_playlist(), null, null, new ComboBox<IfUrlisAPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsPlaylistUrlAction", KeyHandler.class), IfUrlisAPlaylistAction.values(), null));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist(), null, null, new ComboBox<IfUrlisAVideoAndPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsVideoAndPlaylistUrlAction", KeyHandler.class), IfUrlisAVideoAndPlaylistAction.values(), null));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_equals_playlist(), null, null, new ComboBox<IfUrlisAPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsPlaylistUrlAction", KeyHandler.class), IfUrlisAPlaylistAction.values(), null));
 
         // ComboBox<GroupLogic> box = new ComboBox<GroupLogic>(cf._getStorageHandler().getKeyHandler("GroupLogic", KeyHandler.class),
         // GroupLogic.values(), null) {
@@ -157,8 +157,8 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         // };
         //
         // addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, box);
-        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc());
-        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
+        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc());
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
 
         HashSet<String> dupe = new HashSet<String>();
         ArrayList<YoutubeVariant> videoFLV = new ArrayList<YoutubeVariant>();
@@ -251,36 +251,36 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         // Collections.sort(audio, comp);
         // Collections.sort(image, comp);
         // Collections.sort(videoWEBM,comp );
-        addHeader(_GUI._.YoutubeDashConfigPanel_allowedtypoes(), NewTheme.I().getIcon(IconKey.ICON_MEDIAPLAYER, 18));
-        videoMp4 = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBox(this, videoMP4));
-        videoWebm = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_webm(), null, null, new MultiVariantBox(this, videoWEBM));
-        videoFlv = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_flv(), null, null, new MultiVariantBox(this, videoFLV));
-        videoGp3 = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_gp3(), null, null, new MultiVariantBox(this, videoGP3));
-        this.video3D = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_3D(), null, null, new MultiVariantBox(this, video3D));
+        addHeader(_GUI.T.YoutubeDashConfigPanel_allowedtypoes(), NewTheme.I().getIcon(IconKey.ICON_MEDIAPLAYER, 18));
+        videoMp4 = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBox(this, videoMP4));
+        videoWebm = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_webm(), null, null, new MultiVariantBox(this, videoWEBM));
+        videoFlv = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_flv(), null, null, new MultiVariantBox(this, videoFLV));
+        videoGp3 = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_gp3(), null, null, new MultiVariantBox(this, videoGP3));
+        this.video3D = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_3D(), null, null, new MultiVariantBox(this, video3D));
         MultiVariantBox box = new MultiVariantBox(this, audio) {
             protected String getType(boolean plural) {
                 if (plural) {
-                    return _GUI._.YoutubeDashConfigPanel_getType_audios();
+                    return _GUI.T.YoutubeDashConfigPanel_getType_audios();
                 } else {
-                    return _GUI._.YoutubeDashConfigPanel_getType_audio();
+                    return _GUI.T.YoutubeDashConfigPanel_getType_audio();
                 }
             }
         };
-        audioPair = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, box);
+        audioPair = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, box);
         box = new MultiVariantBox(this, image) {
             protected String getType(boolean plural) {
                 if (plural) {
-                    return _GUI._.YoutubeDashConfigPanel_getType_images();
+                    return _GUI.T.YoutubeDashConfigPanel_getType_images();
                 } else {
-                    return _GUI._.YoutubeDashConfigPanel_getType_image();
+                    return _GUI.T.YoutubeDashConfigPanel_getType_image();
                 }
             }
         };
-        videoPair = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, box);
-        subtitles = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_subtitles(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("SubtitlesEnabled", BooleanKeyHandler.class), null));
+        videoPair = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, box);
+        subtitles = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_subtitles(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("SubtitlesEnabled", BooleanKeyHandler.class), null));
 
-        addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
-        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags());
+        addHeader(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
+        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags());
         for (jd.plugins.components.YoutubeReplacer r : YoutubeHelper.REPLACER) {
 
             StringBuilder sb = new StringBuilder();
@@ -303,14 +303,14 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         }
         {
-            addDescriptionPlain(_GUI._.YoutubeHelper_getDescription_upperlowercasereplacetags_header());
+            addDescriptionPlain(_GUI.T.YoutubeHelper_getDescription_upperlowercasereplacetags_header());
 
-            JLabel txt = new JLabel("<html>" + _GUI._.YoutubeHelper_getDescription_upperlowercase().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
+            JLabel txt = new JLabel("<html>" + _GUI.T.YoutubeHelper_getDescription_upperlowercase().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
             SwingUtils.setOpaque(txt, false);
             txt.setEnabled(false);
             add(txt, "gaptop 0,growx,pushx,spanx,gapleft 10,gapbottom 0,gaptop 0,aligny top");
 
-            txt = new JLabel("<html>" + _GUI._.YoutubeHelper_getDescription_replacetags().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
+            txt = new JLabel("<html>" + _GUI.T.YoutubeHelper_getDescription_replacetags().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
             SwingUtils.setOpaque(txt, false);
             txt.setEnabled(false);
             add(txt, "gaptop 0,growx,pushx,spanx,gapleft 10,gapbottom 0,gaptop 0,aligny top");
@@ -323,36 +323,36 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             // [SU] Space to Underscore
 
         }
-        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("FilenamePattern", StringKeyHandler.class)));
-        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePattern", StringKeyHandler.class)));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("FilenamePattern", StringKeyHandler.class)));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePattern", StringKeyHandler.class)));
 
-        addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_proxy_header(), NewTheme.I().getIcon(IconKey.ICON_PROXY, 18));
-        Pair<Checkbox> checkbox = addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_userproxy(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("ProxyEnabled", BooleanKeyHandler.class), null));
+        addHeader(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_proxy_header(), NewTheme.I().getIcon(IconKey.ICON_PROXY, 18));
+        Pair<Checkbox> checkbox = addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_userproxy(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("ProxyEnabled", BooleanKeyHandler.class), null));
 
         Pair<ProxyInput> proxy = addPair("", null, null, new ProxyInput(cf._getStorageHandler().getKeyHandler("Proxy", KeyHandler.class)));
         checkbox.getComponent().setDependencies(proxy.getComponent());
-        addHeader(_GUI._.YoutubeDashConfigPanel_links(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
+        addHeader(_GUI.T.YoutubeDashConfigPanel_links(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
 
         BooleanKeyHandler videoKeyhandler;
-        bestVideo = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_video(), null, null, new Checkbox(videoKeyhandler = cf._getStorageHandler().getKeyHandler("CreateBestVideoVariantLinkEnabled", BooleanKeyHandler.class), null));
-        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explain());
-        bestLimit = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_limitation(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("BestVideoVariant1080pLimitEnabled", BooleanKeyHandler.class), null));
+        bestVideo = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_video(), null, null, new Checkbox(videoKeyhandler = cf._getStorageHandler().getKeyHandler("CreateBestVideoVariantLinkEnabled", BooleanKeyHandler.class), null));
+        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explain());
+        bestLimit = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_limitation(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("BestVideoVariant1080pLimitEnabled", BooleanKeyHandler.class), null));
         bestVideo.getComponent().setDependencies(bestLimit.getComponent());
         add(new JSeparator(), "pushx,growx,spanx");
-        bestImage = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_image(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestImageVariantLinkEnabled", BooleanKeyHandler.class), null));
+        bestImage = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_image(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestImageVariantLinkEnabled", BooleanKeyHandler.class), null));
 
-        bestAudio = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_audio(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestAudioVariantLinkEnabled", BooleanKeyHandler.class), null));
-        best3D = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_3d(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBest3DVariantLinkEnabled", BooleanKeyHandler.class), null));
-        bestSubtitle = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_subtitle(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestSubtitleVariantLinkEnabled", BooleanKeyHandler.class), null));
+        bestAudio = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_audio(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestAudioVariantLinkEnabled", BooleanKeyHandler.class), null));
+        best3D = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_3d(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBest3DVariantLinkEnabled", BooleanKeyHandler.class), null));
+        bestSubtitle = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_best_subtitle(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestSubtitleVariantLinkEnabled", BooleanKeyHandler.class), null));
 
-        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc());
-        extraVideoMp4 = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBox(this, videoMP4));
-        extraVideoWebm = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_webm(), null, null, new MultiVariantBox(this, videoWEBM));
-        extraVideoFlv = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_flv(), null, null, new MultiVariantBox(this, videoFLV));
-        extraVideoGp3 = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_gp3(), null, null, new MultiVariantBox(this, videoGP3));
-        extraVideo3D = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_3D(), null, null, new MultiVariantBox(this, video3D));
-        extraAudio = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, new MultiVariantBox(this, audio));
-        extraVideo = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, new MultiVariantBox(this, image));
+        addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc());
+        extraVideoMp4 = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBox(this, videoMP4));
+        extraVideoWebm = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_webm(), null, null, new MultiVariantBox(this, videoWEBM));
+        extraVideoFlv = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_flv(), null, null, new MultiVariantBox(this, videoFLV));
+        extraVideoGp3 = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_gp3(), null, null, new MultiVariantBox(this, videoGP3));
+        extraVideo3D = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_3D(), null, null, new MultiVariantBox(this, video3D));
+        extraAudio = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, new MultiVariantBox(this, audio));
+        extraVideo = addPair(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, new MultiVariantBox(this, image));
 
         updateBest();
     }

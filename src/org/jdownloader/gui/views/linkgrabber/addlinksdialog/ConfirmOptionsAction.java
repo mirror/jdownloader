@@ -36,7 +36,7 @@ public class ConfirmOptionsAction extends AbstractAction {
 
         popup.add(new JMenuItem(new AbstractAction() {
             {
-                putValue(NAME, _GUI._.ConfirmOptionsAction_actionPerformed_deep());
+                putValue(NAME, _GUI.T.ConfirmOptionsAction_actionPerformed_deep());
             }
 
             public void actionPerformed(ActionEvent e) {
@@ -51,7 +51,7 @@ public class ConfirmOptionsAction extends AbstractAction {
 
         popup.add(new JMenuItem(new AbstractAction() {
             {
-                putValue(NAME, _GUI._.ConfirmOptionsAction_actionPerformed_normale());
+                putValue(NAME, _GUI.T.ConfirmOptionsAction_actionPerformed_normale());
             }
 
             public void actionPerformed(ActionEvent e) {

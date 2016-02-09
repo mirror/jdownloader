@@ -19,21 +19,21 @@ public class CaptchaToogleDBCAction extends AbstractToolbarToggleAction {
     protected String createTooltip() {
         DeathByCaptchaSolverService service = DeathByCaptchaSolver.getInstance().getService();
         ;
-        return _GUI._.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenDisabled() {
         DeathByCaptchaSolverService service = DeathByCaptchaSolver.getInstance().getService();
         ;
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenEnabled() {
         DeathByCaptchaSolverService service = DeathByCaptchaSolver.getInstance().getService();
         ;
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
     }
 
 }

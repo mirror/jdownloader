@@ -193,7 +193,7 @@ public class UpdateController implements UpdateCallbackInterface {
                             return;
                         }
                         lazyGetIcon().setIndeterminate(true);
-                        lazyGetIcon().setTitle(_GUI._.JDUpdater_JDUpdater_object_icon());
+                        lazyGetIcon().setTitle(_GUI.T.JDUpdater_JDUpdater_object_icon());
                         lazyGetIcon().setDescription(null);
                         JDGui.getInstance().getStatusBar().addProcessIndicator(icon);
 
@@ -222,7 +222,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 UpdateProgress icon = new UpdateProgress();
                 ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setBackground(Color.LIGHT_GRAY);
                 ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setForeground(Color.GREEN);
-                icon.setTitle(_GUI._.JDUpdater_JDUpdater_object_icon());
+                icon.setTitle(_GUI.T.JDUpdater_JDUpdater_object_icon());
                 icon.setEnabled(true);
                 icon.addMouseListener(new MouseListener() {
 

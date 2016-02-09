@@ -23,12 +23,12 @@ public class AddLinksAction extends CustomizableAppAction {
     public AddLinksAction(String string) {
         setName(string);
         setIconKey(IconKey.ICON_ADD);
-        setTooltipText(_GUI._.AddLinksAction_AddLinksAction_tt());
+        setTooltipText(_GUI.T.AddLinksAction_AddLinksAction_tt());
         setAccelerator(KeyEvent.VK_L, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
     }
 
     public AddLinksAction() {
-        this(_GUI._.AddLinksToLinkgrabberAction());
+        this(_GUI.T.AddLinksToLinkgrabberAction());
 
     }
 

@@ -16,7 +16,7 @@ import org.jdownloader.gui.translate._GUI;
 public class LeftRightDividerItem extends MenuItemData implements MenuLink {
     public LeftRightDividerItem() {
         super();
-        setName(_GUI._.LeftRightDividerItem_LeftRightDividerItem());
+        setName(_GUI.T.LeftRightDividerItem_LeftRightDividerItem());
         setVisible(true);
         setIconKey(IconKey.ICON_RIGHT);
     }

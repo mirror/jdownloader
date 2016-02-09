@@ -83,8 +83,8 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     private final ColumnHelper columnHelper     = new ColumnHelper();
 
-    private final String       finishedText     = _GUI._.TaskColumn_getStringValue_finished_();
-    private final String       runningText      = _GUI._.TaskColumn_getStringValue_running_();
+    private final String       finishedText     = _GUI.T.TaskColumn_getStringValue_finished_();
+    private final String       runningText      = _GUI.T.TaskColumn_getStringValue_running_();
 
     private final String       startingString;
 
@@ -107,13 +107,13 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public TaskColumn() {
-        super(_GUI._.StatusColumn_StatusColumn2());
+        super(_GUI.T.StatusColumn_StatusColumn2());
         this.trueIcon = NewTheme.I().getIcon(IconKey.ICON_TRUE, 16);
         this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
         startingIcon = NewTheme.I().getIcon(IconKey.ICON_RUN, 16);
         trueIconExtracted = NewTheme.I().getIcon(IconKey.ICON_EXTRACTION_TRUE, 32);
         trueIconExtractedFailed = NewTheme.I().getIcon(IconKey.ICON_EXTRACTION_TRUE_FAILED, 32);
-        startingString = _GUI._.TaskColumn_fillColumnHelper_starting();
+        startingString = _GUI.T.TaskColumn_fillColumnHelper_starting();
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 
             @Override
@@ -185,9 +185,9 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                                 new Thread() {
                                     public void run() {
                                         PremiumInfoDialog dialog;
-                                        UIOManager.I().show(null, dialog = new PremiumInfoDialog(((DownloadLink) value).getDomainInfo(), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
+                                        UIOManager.I().show(null, dialog = new PremiumInfoDialog(((DownloadLink) value).getDomainInfo(), _GUI.T.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
                                             protected String getDescription(DomainInfo info2) {
-                                                return _GUI._.TaskColumn_getDescription_object_(info2.getTld());
+                                                return _GUI.T.TaskColumn_getDescription_object_(info2.getTld());
                                             }
 
                                             @Override

@@ -56,8 +56,8 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
     public BackupRestoreAction() {
         super();
         setIconKey(IconKey.ICON_LOAD);
-        setName(_GUI._.BackupRestoreAction_BackupRestoreAction());
-        setTooltipText(_GUI._.BackupRestoreAction_BackupRestoreAction_tt());
+        setName(_GUI.T.BackupRestoreAction_BackupRestoreAction());
+        setTooltipText(_GUI.T.BackupRestoreAction_BackupRestoreAction_tt());
 
     }
 
@@ -170,7 +170,7 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
             @Override
             public void run() {
                 cleanupCFGBackFolders(3);
-                ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.BackupCreateAction_actionPerformed_filechooser_title(), _GUI._.lit_open(), null);
+                ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.BackupCreateAction_actionPerformed_filechooser_title(), _GUI.T.lit_open(), null);
                 d.setFileFilter(new FileFilter() {
 
                     @Override
@@ -196,7 +196,7 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                         auto = Application.getResource("autobackup/backup_" + i + ".jd2backup");
                     }
                     final File fauto = auto;
-                    Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_restart(), _GUI._.BackupRestoreAction_run_restart_ask(auto.getAbsolutePath()), null, _GUI._.lit_continue(), null);
+                    Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_restart(), _GUI.T.BackupRestoreAction_run_restart_ask(auto.getAbsolutePath()), null, _GUI.T.lit_continue(), null);
                     Dialog.getInstance().showDialog(d);
 
                     final File file = d.getSelectedFile();
@@ -284,7 +284,7 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
 
                             } catch (Exception e) {
                                 e.printStackTrace();
-                                Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage() + "\r\nPlease try to close JDownloader, and extract the file\r\n" + file.getAbsolutePath() + "\r\nto " + Application.getResource("cfg").getParent() + "\r\nusing an application like WinZip, 7Zip or Winrar.\r\nIf this does not work, feel free to contact our support.", e);
+                                Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage() + "\r\nPlease try to close JDownloader, and extract the file\r\n" + file.getAbsolutePath() + "\r\nto " + Application.getResource("cfg").getParent() + "\r\nusing an application like WinZip, 7Zip or Winrar.\r\nIf this does not work, feel free to contact our support.", e);
                             } finally {
                                 try {
                                     zip.close();

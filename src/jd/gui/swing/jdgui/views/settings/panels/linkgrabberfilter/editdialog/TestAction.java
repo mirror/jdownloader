@@ -28,7 +28,7 @@ public class TestAction extends AppAction {
 
     public TestAction(RegexFilter sourceFilter, String name) {
         super();
-        setName(_GUI._.TestAction_TestAction_object_(name));
+        setName(_GUI.T.TestAction_TestAction_object_(name));
         setSmallIcon(new AbstractIcon(IconKey.ICON_TEST, 18));
         this.name = name;
         this.sourceFilter = sourceFilter;
@@ -37,7 +37,7 @@ public class TestAction extends AppAction {
 
     public TestAction(FiletypeFilter filetypeFilter, String name) {
         super();
-        setName(_GUI._.TestAction_TestAction_object_(name));
+        setName(_GUI.T.TestAction_TestAction_object_(name));
         setSmallIcon(new AbstractIcon(IconKey.ICON_TEST, 18));
         this.name = name;
 
@@ -51,59 +51,59 @@ public class TestAction extends AppAction {
         try {
             this.filter = new CompiledRegexFilter(sourceFilter);
             if (filetypefilter == null) {
-                String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(filter.getPattern().pattern(), name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), new AbstractIcon(IconKey.ICON_TEST, 32), null, null);
+                String input = Dialog.getInstance().showInputDialog(0, _GUI.T.TestAction_actionPerformed_test_title_(name), _GUI.T.TestAction_actionPerformed_msg_(filter.getPattern().pattern(), name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), new AbstractIcon(IconKey.ICON_TEST, 32), null, null);
                 JSonStorage.getPlainStorage("packagizertesturls").put(name, input);
                 String[] matches;
                 switch (filter.getMatchType()) {
                 case CONTAINS:
 
                     if (!filter.getPattern().matcher(input).find()) {
-                        Dialog.getInstance().showErrorDialog(_GUI._.TestAction_actionPerformed_nomatch_contain(input, filter.getPattern().pattern()));
+                        Dialog.getInstance().showErrorDialog(_GUI.T.TestAction_actionPerformed_nomatch_contain(input, filter.getPattern().pattern()));
                     } else {
                         matches = new Regex(input, filter.getPattern()).getRow(0);
                         StringBuilder sb = new StringBuilder();
                         int i = 1;
                         for (String m : matches) {
-                            sb.append("\r\n" + _GUI._.TestAction_actionPerformed_match_(i, m));
+                            sb.append("\r\n" + _GUI.T.TestAction_actionPerformed_match_(i, m));
                             i++;
                         }
-                        Dialog.getInstance().showMessageDialog(_GUI._.TestAction_actionPerformed_object_(input, filter.getPattern().pattern(), sb.toString()));
+                        Dialog.getInstance().showMessageDialog(_GUI.T.TestAction_actionPerformed_object_(input, filter.getPattern().pattern(), sb.toString()));
                     }
                     return;
                 case EQUALS:
                     if (!filter.getPattern().matcher(input).matches()) {
-                        Dialog.getInstance().showErrorDialog(_GUI._.TestAction_actionPerformed_nomatch_(input, filter.getPattern().pattern()));
+                        Dialog.getInstance().showErrorDialog(_GUI.T.TestAction_actionPerformed_nomatch_(input, filter.getPattern().pattern()));
                     } else {
                         matches = new Regex(input, filter.getPattern()).getRow(0);
 
                         StringBuilder sb = new StringBuilder();
                         int i = 1;
                         for (String m : matches) {
-                            sb.append("\r\n" + _GUI._.TestAction_actionPerformed_match_(i, m));
+                            sb.append("\r\n" + _GUI.T.TestAction_actionPerformed_match_(i, m));
                             i++;
                         }
-                        Dialog.getInstance().showMessageDialog(_GUI._.TestAction_actionPerformed_object_matches(input, filter.getPattern().pattern(), sb.toString()));
+                        Dialog.getInstance().showMessageDialog(_GUI.T.TestAction_actionPerformed_object_matches(input, filter.getPattern().pattern(), sb.toString()));
 
                     }
                     return;
                 case CONTAINS_NOT:
                     if (!filter.getPattern().matcher(input).find()) {
-                        Dialog.getInstance().showMessageDialog(_GUI._.TestAction_actionPerformed_nomatch_contain(input, filter.getPattern().pattern()));
+                        Dialog.getInstance().showMessageDialog(_GUI.T.TestAction_actionPerformed_nomatch_contain(input, filter.getPattern().pattern()));
                     } else {
-                        Dialog.getInstance().showErrorDialog(_GUI._.TestAction_actionPerformed_contains_(input, filter.getPattern().pattern()));
+                        Dialog.getInstance().showErrorDialog(_GUI.T.TestAction_actionPerformed_contains_(input, filter.getPattern().pattern()));
                     }
                     return;
                 case EQUALS_NOT:
                     if (!filter.getPattern().matcher(input).matches()) {
-                        Dialog.getInstance().showMessageDialog(_GUI._.TestAction_actionPerformed_nomatch_(input, filter.getPattern().pattern()));
+                        Dialog.getInstance().showMessageDialog(_GUI.T.TestAction_actionPerformed_nomatch_(input, filter.getPattern().pattern()));
                     } else {
-                        Dialog.getInstance().showErrorDialog(_GUI._.TestAction_actionPerformed_equals_(input, filter.getPattern().pattern()));
+                        Dialog.getInstance().showErrorDialog(_GUI.T.TestAction_actionPerformed_equals_(input, filter.getPattern().pattern()));
                     }
                     return;
                 }
             } else {
 
-                String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(desc, name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), new AbstractIcon(IconKey.ICON_TEST, 32), null, null);
+                String input = Dialog.getInstance().showInputDialog(0, _GUI.T.TestAction_actionPerformed_test_title_(name), _GUI.T.TestAction_actionPerformed_msg_(desc, name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), new AbstractIcon(IconKey.ICON_TEST, 32), null, null);
                 JSonStorage.getPlainStorage("packagizertesturls").put(name, input);
                 String extension = Files.getExtension(input);
                 switch (filetypefilter.getMatchType()) {
@@ -112,20 +112,20 @@ public class TestAction extends AppAction {
                         try {
                             if (o.matcher(extension).matches()) {
 
-                                Dialog.getInstance().showMessageDialog(_GUI._.TestAction_actionPerformed_match_ext_(input, o.pattern()));
+                                Dialog.getInstance().showMessageDialog(_GUI.T.TestAction_actionPerformed_match_ext_(input, o.pattern()));
                                 return;
                             }
                         } catch (Throwable e1) {
                             e1.printStackTrace();
                         }
                     }
-                    Dialog.getInstance().showErrorDialog(_GUI._.TestAction_actionPerformed_nomatch_ext_(input));
+                    Dialog.getInstance().showErrorDialog(_GUI.T.TestAction_actionPerformed_nomatch_ext_(input));
                     return;
                 case IS_NOT:
                     for (Pattern o : this.filetypefilter.getList()) {
                         try {
                             if (o.matcher(extension).matches()) {
-                                Dialog.getInstance().showErrorDialog(_GUI._.TestAction_actionPerformed_match_ext_(input, o.pattern()));
+                                Dialog.getInstance().showErrorDialog(_GUI.T.TestAction_actionPerformed_match_ext_(input, o.pattern()));
                                 return;
                             }
                         } catch (Throwable e1) {
@@ -133,7 +133,7 @@ public class TestAction extends AppAction {
                         }
                     }
 
-                    Dialog.getInstance().showMessageDialog(_GUI._.TestAction_actionPerformed_nomatch_ext_(input));
+                    Dialog.getInstance().showMessageDialog(_GUI.T.TestAction_actionPerformed_nomatch_ext_(input));
                     return;
 
                 }
@@ -144,7 +144,7 @@ public class TestAction extends AppAction {
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         } catch (Exception e1) {
-            Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
         }
     }
 }

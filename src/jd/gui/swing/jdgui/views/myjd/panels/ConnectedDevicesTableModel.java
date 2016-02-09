@@ -81,28 +81,28 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
     @Override
     protected void initColumns() {
 
-        addColumn(new ExtTextColumn<ConnectedDevice>(_GUI._.ConnectedDevicesTableModel_frontend()) {
+        addColumn(new ExtTextColumn<ConnectedDevice>(_GUI.T.ConnectedDevicesTableModel_frontend()) {
 
             @Override
             public String getStringValue(ConnectedDevice value) {
                 return value.getFrontendName();
             }
         });
-        addColumn(new ExtTextColumn<ConnectedDevice>(_GUI._.ConnectedDevicesTableModel_device()) {
+        addColumn(new ExtTextColumn<ConnectedDevice>(_GUI.T.ConnectedDevicesTableModel_device()) {
 
             @Override
             public String getStringValue(ConnectedDevice value) {
                 return value.getDeviceName();
             }
         });
-        addColumn(new ExtTextColumn<ConnectedDevice>(_GUI._.ConnectedDevicesTableModel_connection()) {
+        addColumn(new ExtTextColumn<ConnectedDevice>(_GUI.T.ConnectedDevicesTableModel_connection()) {
 
             @Override
             public String getStringValue(ConnectedDevice value) {
                 return value.getConnectionString();
             }
         });
-        this.addColumn(new ExtComponentColumn<ConnectedDevice>(_GUI._.ConnectedDevicesTableModel_kill()) {
+        this.addColumn(new ExtComponentColumn<ConnectedDevice>(_GUI.T.ConnectedDevicesTableModel_kill()) {
             private JButton            editorBtn;
             private JButton            rendererBtn;
             private ConnectedDevice    device;
@@ -119,7 +119,7 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (device != null) {
-                            if (UIOManager.I().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.myjd_kill_connections_are_you_sure(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), null)) {
+                            if (UIOManager.I().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.myjd_kill_connections_are_you_sure(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.lit_yes(), null)) {
                                 editable = false;
                                 stopCellEditing();
                                 editorBtn.setEnabled(false);
@@ -191,13 +191,13 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
 
             @Override
             public void configureRendererComponent(ConnectedDevice value, boolean isSelected, boolean hasFocus, int row, int column) {
-                rendererBtn.setText(_GUI._.lit_disconnect());
+                rendererBtn.setText(_GUI.T.lit_disconnect());
             }
 
             @Override
             public void configureEditorComponent(ConnectedDevice value, boolean isSelected, int row, int column) {
                 device = value;
-                editorBtn.setText(_GUI._.lit_disconnect());
+                editorBtn.setText(_GUI.T.lit_disconnect());
             }
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
@@ -209,7 +209,7 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                         setIcon(new AbstractIcon(IconKey.ICON_CANCEL, 14));
                         setHorizontalAlignment(CENTER);
-                        setText(_GUI._.ConnectedDevicesTableModel_kill());
+                        setText(_GUI.T.ConnectedDevicesTableModel_kill());
                         return this;
                     }
 

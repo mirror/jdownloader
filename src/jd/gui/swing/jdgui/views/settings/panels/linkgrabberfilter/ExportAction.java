@@ -31,7 +31,7 @@ public class ExportAction extends AppAction {
     private LinkgrabberFilter                     linkgrabberFilter;
 
     public ExportAction(LinkgrabberFilter linkgrabberFilter) {
-        setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
+        setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey(IconKey.ICON_EXPORT);
         setTooltipText(_JDT._.ExportAction_ExportAction_tt());
         this.linkgrabberFilter = linkgrabberFilter;
@@ -43,7 +43,7 @@ public class ExportAction extends AppAction {
     }
 
     public ExportAction(java.util.List<LinkgrabberFilterRule> selection) {
-        setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
+        setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey(IconKey.ICON_EXPORT);
         setTooltipText(_JDT._.ExportAction_ExportAction_tt());
         rules = selection;
@@ -65,7 +65,7 @@ public class ExportAction extends AppAction {
             }
             final String ext = exportList.get(0).isAccept() ? ImportAction.VIEW : ImportAction.EXT;
 
-            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.LinkgrabberFilter_export_dialog_title(), null, null);
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.LinkgrabberFilter_export_dialog_title(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
             d.setFileFilter(new FileFilter() {
 

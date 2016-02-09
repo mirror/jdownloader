@@ -29,16 +29,16 @@ public abstract class AbstractCaptchaSolverConfigPanel extends AbstractConfigPan
     }
 
     protected void addBlackWhiteList(final ChallengeSolverConfig cfg) {
-        addHeader(_GUI._.captcha_settings_black_whitelist_header(), new AbstractIcon(IconKey.ICON_LIST, 32));
-        addDescription(_GUI._.captcha_settings_black_whitelist_description());
+        addHeader(_GUI.T.captcha_settings_black_whitelist_header(), new AbstractIcon(IconKey.ICON_LIST, 32));
+        addDescription(_GUI.T.captcha_settings_black_whitelist_description());
         BooleanKeyHandler keyHandler = cfg._getStorageHandler().getKeyHandler("BlackWhiteListingEnabled", BooleanKeyHandler.class);
         Pair<Checkbox> condition = null;
         if (keyHandler != null) {
-            condition = addPair(_GUI._.captcha_settings_blacklist_enabled(), null, new jd.gui.swing.jdgui.views.settings.components.Checkbox(keyHandler));
+            condition = addPair(_GUI.T.captcha_settings_blacklist_enabled(), null, new jd.gui.swing.jdgui.views.settings.components.Checkbox(keyHandler));
 
         }
-        blacklist = addPair(_GUI._.captcha_settings_blacklist(), null, new CaptchaRegexListTextPane());
-        whitlist = addPair(_GUI._.captcha_settings_whitelist(), null, new CaptchaRegexListTextPane());
+        blacklist = addPair(_GUI.T.captcha_settings_blacklist(), null, new CaptchaRegexListTextPane());
+        whitlist = addPair(_GUI.T.captcha_settings_whitelist(), null, new CaptchaRegexListTextPane());
         if (condition != null) {
             blacklist.setConditionPair(condition);
             whitlist.setConditionPair(condition);

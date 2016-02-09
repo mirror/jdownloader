@@ -19,13 +19,13 @@ public class ReconnectTestAction extends BasicAction {
     private static final long serialVersionUID = 2580441275315364611L;
 
     {
-        putValue(NAME, _GUI._.ReconnectTestAction());
+        putValue(NAME, _GUI.T.ReconnectTestAction());
         putValue(SMALL_ICON, new AbstractIcon(IconKey.ICON_TEST, 20));
 
     }
 
     public TooltipFactory getTooltipFactory() {
-        return new BasicTooltipFactory(getName(), _GUI._.ReconnectTestAction_tt_2(), new AbstractIcon(IconKey.ICON_TEST, 32));
+        return new BasicTooltipFactory(getName(), _GUI.T.ReconnectTestAction_tt_2(), new AbstractIcon(IconKey.ICON_TEST, 32));
     }
 
     public void actionPerformed(ActionEvent e) {

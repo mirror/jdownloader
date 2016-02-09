@@ -8,7 +8,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class LinkgrabberOverviewPanelToggleAction extends ToggleAppAction {
 
     public LinkgrabberOverviewPanelToggleAction() {
-        super(CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE, _GUI._.LinkgrabberOverviewPanelToggleAction_LinkgrabberOverviewPanelToggleAction(), null);
+        super(CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE, _GUI.T.LinkgrabberOverviewPanelToggleAction_LinkgrabberOverviewPanelToggleAction(), null);
         setIconKey(IconKey.ICON_BOTTOMBAR);
 
     }

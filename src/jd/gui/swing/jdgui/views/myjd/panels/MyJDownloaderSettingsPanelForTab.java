@@ -14,7 +14,7 @@ public class MyJDownloaderSettingsPanelForTab extends MyJDownloaderSettingsPanel
 
     @Override
     public String getTitle() {
-        return _GUI._.MyJDownloaderSettingsPanelForTab_title();
+        return _GUI.T.MyJDownloaderSettingsPanelForTab_title();
     }
 
     @Override

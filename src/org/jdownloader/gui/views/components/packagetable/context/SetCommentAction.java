@@ -25,7 +25,7 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
 
     public SetCommentAction() {
         super();
-        setName(_GUI._.SetCommentAction_SetCommentAction_object_());
+        setName(_GUI.T.SetCommentAction_SetCommentAction_object_());
         setIconKey(IconKey.ICON_LIST);
     }
 
@@ -49,7 +49,7 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
         }
 
         try {
-            final String comment = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, _GUI._.SetCommentAction_actionPerformed_dialog_title_(), "", def, null, null, null);
+            final String comment = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, _GUI.T.SetCommentAction_actionPerformed_dialog_title_(), "", def, null, null, null);
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override

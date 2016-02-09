@@ -49,10 +49,10 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
         if (getSelection() != null) {
 
             setIconKey(IconKey.ICON_SORT);
-            setName(_GUI._.SortAction_SortAction_object_(column.getName()));
+            setName(_GUI.T.SortAction_SortAction_object_(column.getName()));
         } else {
             setIconKey(IconKey.ICON_SORT);
-            setName(_GUI._.SortAction_SortAction_object_empty());
+            setName(_GUI.T.SortAction_SortAction_object_empty());
         }
 
     }
@@ -65,7 +65,7 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
     public SortAction() {
         super(true, true);
         setIconKey(IconKey.ICON_SORT);
-        setName(_GUI._.SortAction_SortAction_object_empty());
+        setName(_GUI.T.SortAction_SortAction_object_empty());
 
     }
 

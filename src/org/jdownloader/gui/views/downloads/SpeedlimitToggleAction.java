@@ -11,7 +11,7 @@ public class SpeedlimitToggleAction extends AppAction {
 
     public SpeedlimitToggleAction() {
         super();
-        setName(_GUI._.SpeedlimitToggleAction_SpeedlimitToggleAction());
+        setName(_GUI.T.SpeedlimitToggleAction_SpeedlimitToggleAction());
         setIconKey(IconKey.ICON_SPEED);
         setSelected(CFG_GUI.SPEED_METER_VISIBLE.isEnabled());
 

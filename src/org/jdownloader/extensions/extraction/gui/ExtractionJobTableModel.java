@@ -91,7 +91,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             }
         });
 
-        addColumn(new ExtTextColumn<ExtractionController>(_GUI._.lit_status()) {
+        addColumn(new ExtTextColumn<ExtractionController>(_GUI.T.lit_status()) {
             /**
              *
              */
@@ -164,7 +164,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             }
         });
         ExtCircleProgressColumn<ExtractionController> sorter;
-        addColumn(sorter = new ExtCircleProgressColumn<ExtractionController>(_GUI._.lit_progress()) {
+        addColumn(sorter = new ExtCircleProgressColumn<ExtractionController>(_GUI.T.lit_progress()) {
             /**
              *
              */

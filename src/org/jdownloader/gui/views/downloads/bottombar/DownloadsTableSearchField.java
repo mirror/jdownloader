@@ -341,7 +341,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                         return true;
                     }
                     if (link.getDownloadLinkController() != null) {
-                        String txt = _GUI._.TaskColumn_fillColumnHelper_starting();
+                        String txt = _GUI.T.TaskColumn_fillColumnHelper_starting();
                         for (Pattern filterPattern : pattern) {
                             if (filterPattern.matcher(txt).find()) {
                                 return false;

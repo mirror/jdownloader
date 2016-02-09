@@ -12,7 +12,7 @@ public class AddGenericItem extends AppAction {
     private MenuItemData item;
 
     public AddGenericItem(MenuManagerDialog managerFrame, MenuItemData separatorData) {
-        setName(_GUI._.AddGenericItem_AddGenericItem_(separatorData.getName()));
+        setName(_GUI.T.AddGenericItem_AddGenericItem_(separatorData.getName()));
         this.managerFrame = managerFrame;
         this.item = separatorData;
     }

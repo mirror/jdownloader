@@ -128,7 +128,7 @@ public class HistoryEntry {
         this.session = new WeakReference<DownloadSession>(DownloadWatchDog.getInstance().getSession());
         this.link = candidate.getLink();
         createTime = System.currentTimeMillis();
-        resultStatus = _GUI._.CandidateTooltipTableModel_initColumns_running_();
+        resultStatus = _GUI.T.CandidateTooltipTableModel_initColumns_running_();
         resultIconKey = IconKey.ICON_PLAY;
     }
 
@@ -183,7 +183,7 @@ public class HistoryEntry {
         if (account == null) {
 
             history.accountIconKey = IconKey.ICON_DOWNLOAD;
-            history.accountStatus = _GUI._.CandidateAccountColumn_getStringValue_free_();
+            history.accountStatus = _GUI.T.CandidateAccountColumn_getStringValue_free_();
             return;
         }
         if (account.isChecking()) {
@@ -201,9 +201,9 @@ public class HistoryEntry {
                         history.accountStatus = account.getErrorString();
                         return;
                     }
-                    ret = _GUI._.PremiumAccountTableModel_getStringValue_temp_disabled();
+                    ret = _GUI.T.PremiumAccountTableModel_getStringValue_temp_disabled();
                 } else {
-                    ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_();
+                    ret = _GUI.T.PremiumAccountTableModel_getStringValue_account_ok_();
                 }
             } else {
                 if (account.isTempDisabled()) {
@@ -213,9 +213,9 @@ public class HistoryEntry {
                         history.accountStatus = account.getErrorString();
                         return;
                     }
-                    ret = _GUI._.PremiumAccountTableModel_getStringValue_temp_disabled2(ret);
+                    ret = _GUI.T.PremiumAccountTableModel_getStringValue_temp_disabled2(ret);
                 } else {
-                    ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
+                    ret = _GUI.T.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
                 }
 
             }
@@ -229,23 +229,23 @@ public class HistoryEntry {
         switch (account.getError()) {
         case EXPIRED:
             history.accountIconKey = "expired";
-            history.accountStatus = _GUI._.PremiumAccountTableModel_getStringValue_status_expired();
+            history.accountStatus = _GUI.T.PremiumAccountTableModel_getStringValue_status_expired();
             break;
         case INVALID:
             history.accountIconKey = IconKey.ICON_ERROR;
-            history.accountStatus = _GUI._.PremiumAccountTableModel_getStringValue_status_invalid();
+            history.accountStatus = _GUI.T.PremiumAccountTableModel_getStringValue_status_invalid();
             break;
         case PLUGIN_ERROR:
             history.accountIconKey = IconKey.ICON_ERROR;
-            history.accountStatus = _GUI._.PremiumAccountTableModel_getStringValue_status_plugin_error();
+            history.accountStatus = _GUI.T.PremiumAccountTableModel_getStringValue_status_plugin_error();
             break;
         case TEMP_DISABLED:
             history.accountIconKey = IconKey.ICON_WAIT;
-            history.accountStatus = _GUI._.PremiumAccountTableModel_getStringValue_status_unknown_error();
+            history.accountStatus = _GUI.T.PremiumAccountTableModel_getStringValue_status_unknown_error();
             break;
         default:
             history.accountIconKey = IconKey.ICON_ERROR;
-            history.accountStatus = _GUI._.PremiumAccountTableModel_getStringValue_status_unknown_error();
+            history.accountStatus = _GUI.T.PremiumAccountTableModel_getStringValue_status_unknown_error();
             break;
         }
     }
@@ -261,7 +261,7 @@ public class HistoryEntry {
             if (result == null || result.getResult() == null) {
                 history.resultIconKey = IconKey.ICON_PLAY;
 
-                history.resultStatus = _GUI._.CandidateTooltipTableModel_initColumns_running_();
+                history.resultStatus = _GUI.T.CandidateTooltipTableModel_initColumns_running_();
 
             } else {
                 WaitingSkipReason sr;
@@ -323,7 +323,7 @@ public class HistoryEntry {
                     break;
                 case STOPPED:
 
-                    history.resultStatus = _GUI._.CandidateTooltipTableModel_configureRendererComponent_stopped_();
+                    history.resultStatus = _GUI.T.CandidateTooltipTableModel_configureRendererComponent_stopped_();
                     history.resultIconKey = IconKey.ICON_CANCEL;
                     break;
                 case ACCOUNT_ERROR:
@@ -350,11 +350,11 @@ public class HistoryEntry {
                     history.resultIconKey = IconKey.ICON_FALSE;
                     break;
                 case ACCOUNT_UNAVAILABLE:
-                    history.resultStatus = _GUI._.CandidateTooltipTableModel_configureRendererComponent_account_unavailable();
+                    history.resultStatus = _GUI.T.CandidateTooltipTableModel_configureRendererComponent_account_unavailable();
                     history.resultIconKey = IconKey.ICON_FALSE;
                     break;
                 case ACCOUNT_REQUIRED:
-                    history.resultStatus = _GUI._.CandidateTooltipTableModel_configureRendererComponent_account_required();
+                    history.resultStatus = _GUI.T.CandidateTooltipTableModel_configureRendererComponent_account_required();
                     history.resultIconKey = IconKey.ICON_FALSE;
                     break;
                 case CAPTCHA:

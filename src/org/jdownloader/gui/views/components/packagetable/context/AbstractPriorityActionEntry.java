@@ -60,7 +60,7 @@ public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPa
 
     private void updateStateAndLabelAndIcon() {
         if (isForceMode() && !metaCtrl || metaCtrl) {
-            setName(priority._() + " " + _GUI._.system_download_triggerfileexists_overwrite());
+            setName(priority._() + " " + _GUI.T.system_download_triggerfileexists_overwrite());
         } else {
             setName(priority._());
         }

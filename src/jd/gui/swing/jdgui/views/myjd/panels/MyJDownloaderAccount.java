@@ -36,9 +36,9 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
         TextInput email = new TextInput(CFG_MYJD.EMAIL);
         deviceName.setEditable(false);
         email.setEditable(false);
-        addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_email_(), null, email);
+        addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_email_(), null, email);
 
-        addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_devicename_(), null, deviceName);
+        addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_devicename_(), null, deviceName);
 
         error = new JTextArea();
         SwingUtils.setOpaque(error, false);
@@ -69,7 +69,7 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
         add(p, "spanx,pushx,growx");
         add(Box.createHorizontalGlue(), "gapleft 37");
         add(error, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
-        this.addHeader(_GUI._.MyJDownloaderAccount_connected_devices(), new AbstractIcon(IconKey.ICON_DESKTOP, 32));
+        this.addHeader(_GUI.T.MyJDownloaderAccount_connected_devices(), new AbstractIcon(IconKey.ICON_DESKTOP, 32));
         // ConnectedDevicesTableContainer container = new ConnectedDevicesTableContainer();
         // add(container);
         add(new JScrollPane(table = new ConnectedDevicesTable()));
@@ -78,7 +78,7 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
 
     @Override
     public String getTitle() {
-        return _GUI._.MyJDownloaderAccount_title();
+        return _GUI.T.MyJDownloaderAccount_title();
     }
 
     @Override
@@ -144,22 +144,22 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
                     break;
                 case ACCOUNT_UNCONFIRMED:
                     error.setVisible(true);
-                    error.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_());
+                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_());
                     break;
                 case BAD_LOGINS:
                 case EMAIL_INVALID:
                     error.setVisible(true);
-                    error.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_account_badlogins());
+                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_badlogins());
                     break;
                 case IO:
                 case SERVER_DOWN:
                 case NO_INTERNET_CONNECTION:
                     error.setVisible(true);
-                    error.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
+                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
                     break;
                 default:
                     error.setVisible(true);
-                    error.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_account_unknown(latestError.toString()));
+                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_unknown(latestError.toString()));
                 }
             }
         };
@@ -187,21 +187,21 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
                         case SERVER_DOWN:
                         case NO_INTERNET_CONNECTION:
                             status.setForeground(Color.YELLOW.darker());
-                            status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                            status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
                             break;
                         default:
                             status.setForeground(Color.GREEN.darker());
-                            status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                            status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
                             break;
                         }
                         break;
                     case CONNECTED:
                         status.setForeground(Color.GREEN);
-                        status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                        status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
                         break;
                     }
                 } else {
-                    status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_disconnected_());
+                    status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_());
                     status.setForeground(Color.RED);
 
                 }

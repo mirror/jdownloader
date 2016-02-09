@@ -79,7 +79,7 @@ public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
         }
         ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
         try {
-            Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.ProxyTable_copy_export_title_(), null, sb.toString(), NewTheme.getInstance().getIcon("proxy", 32), null, null);
+            Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.ProxyTable_copy_export_title_(), null, sb.toString(), NewTheme.getInstance().getIcon("proxy", 32), null, null);
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

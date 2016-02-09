@@ -44,7 +44,7 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
     private IncludedSelectionSetup includedSelection;
 
     public RemoveIncompleteArchives() {
-        setName(_GUI._.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
+        setName(_GUI.T.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
         setSmallIcon(new ExtractIconVariant("error", 18));
         addContextSetup(byPassDialog = new ByPassDialogSetup());
         initIncludeSelectionSupport();
@@ -113,7 +113,7 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
                             if (!da.isComplete()) {
                                 try {
                                     if (JDGui.bugme(WarnLevel.LOW) && !byPassDialog.isBypassDialog()) {
-                                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.RemoveIncompleteArchives_run_(da.getName()), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.literally_are_you_sure(), _GUI.T.RemoveIncompleteArchives_run_(da.getName()), null, _GUI.T.literally_yes(), _GUI.T.literall_no());
                                     }
                                     final List<CrawledLink> links = new ArrayList<CrawledLink>();
                                     for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {

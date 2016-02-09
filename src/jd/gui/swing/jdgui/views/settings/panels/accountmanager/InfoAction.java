@@ -19,7 +19,7 @@ public class InfoAction extends TableBarAction {
 
     public InfoAction() {
 
-        this.putValue(NAME, _GUI._.settings_accountmanager_info());
+        this.putValue(NAME, _GUI.T.settings_accountmanager_info());
         this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_INFO, ActionColumn.SIZE));
     }
 

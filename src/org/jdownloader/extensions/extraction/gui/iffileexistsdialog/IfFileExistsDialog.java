@@ -136,28 +136,28 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
 
         txt.setText(T.T.file_exists_message());
         p.add(txt, "spanx");
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filename())), "sg 1");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filename())), "sg 1");
         p.add(new JLabel(new File(path).getName()));
         if (item != null) {
-            p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "sg 1");
+            p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize2())), "sg 1");
             if (item.getSize() >= 0) {
                 p.add(new JLabel(SizeFormatter.formatBytes(item.getSize())));
             } else {
-                p.add(new JLabel(_GUI._.OriginFilter_toString_nothing()));
+                p.add(new JLabel(_GUI.T.OriginFilter_toString_nothing()));
             }
         }
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize_existing())), "sg 1");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize_existing())), "sg 1");
         p.add(new JLabel(SizeFormatter.formatBytes(localFile.length())));
 
         if (packagename != null) {
-            p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "sg 1");
+            p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "sg 1");
             p.add(new JLabel(packagename));
         }
 
         p.add(SwingUtils.toBold(new JLabel(T.T.IfFileExistsDialog_layoutDialogContent_archive())), "sg 1");
         p.add(new JLabel(archive.getName()));
 
-        skip = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_skip_());
+        skip = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_skip_());
         skip.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -165,7 +165,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
                 newName.setEnabled(false);
             }
         });
-        overwrite = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_overwrite_());
+        overwrite = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_overwrite_());
         overwrite.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -173,7 +173,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
                 newName.setEnabled(false);
             }
         });
-        rename = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_rename_());
+        rename = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_rename_());
         rename.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

@@ -122,7 +122,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         resetButton = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_RESET);
-                setTooltipText(_GUI._.PluginSettingsPanel_PluginSettingsPanel_reset());
+                setTooltipText(_GUI.T.PluginSettingsPanel_PluginSettingsPanel_reset());
             }
 
             @Override
@@ -131,7 +131,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     Plugin proto = null;
                     try {
                         if (currentItem != null) {
-                            Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.PluginSettingsPanel_are_you_sure(currentItem.getDisplayName()));
+                            Dialog.getInstance().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.PluginSettingsPanel_are_you_sure(currentItem.getDisplayName()));
                             proto = currentItem.getPrototype(null);
                             PluginConfigPanelNG ccp = proto.createConfigPanel();
                             if (ccp != null) {
@@ -146,7 +146,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                             configPanel = null;
 
                             show(currentItem);
-                            Dialog.getInstance().showMessageDialog(_GUI._.PluginSettingsPanel_actionPerformed_reset_done(currentItem.getDisplayName()));
+                            Dialog.getInstance().showMessageDialog(_GUI.T.PluginSettingsPanel_actionPerformed_reset_done(currentItem.getDisplayName()));
                         }
                     } catch (UpdateRequiredClassNotFoundException e1) {
                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
@@ -177,7 +177,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             loader.setIndeterminate(true);
 
             loaderPanel.add(loader, "width 256!,height 256!,alignx center");
-            loaderPanel.add(new JLabel(_GUI._.PluginSettingsPanel_PluginSettingsPanel_waittext_()), "alignx center");
+            loaderPanel.add(new JLabel(_GUI.T.PluginSettingsPanel_PluginSettingsPanel_waittext_()), "alignx center");
 
             add(loaderPanel, "spanx,pushx,growx,spany,growy,pushy");
         }
@@ -196,7 +196,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     @Override
                     protected void runInEDT() {
                         removeAll();
-                        add(SwingUtils.toBold(new JLabel(_GUI._.PluginSettingsPanel_runInEDT_choose_())), "split 3,shrinkx");
+                        add(SwingUtils.toBold(new JLabel(_GUI.T.PluginSettingsPanel_runInEDT_choose_())), "split 3,shrinkx");
                         add(searchCombobox, "pushx,growx,height 24!");
                         add(resetButton, "width 22!,height 24!");
                         add(header, "growx,pushx,gaptop 10");
@@ -334,10 +334,10 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         if (selectedItem != null) {
 
                             if (selectedItem instanceof LazyHostPlugin) {
-                                header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
+                                header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
                                 header.setIcon(DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon());
                             } else {
-                                header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
+                                header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
                                 header.setIcon(decryterIcon);
                             }
                             header.setVisible(true);

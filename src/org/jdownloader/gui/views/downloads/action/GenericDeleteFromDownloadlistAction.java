@@ -232,7 +232,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                             si = finalSelection;
                         }
                         if (si.getChildren().size() > 0) {
-                            DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPassDialog.isBypassDialog());
+                            DownloadTabActionUtils.deleteLinksRequest(si, _GUI.T.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPassDialog.isBypassDialog());
                             return null;
                         }
                     }
@@ -241,7 +241,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                         @Override
                         public Void edtRun() {
                             Toolkit.getDefaultToolkit().beep();
-                            Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
+                            Dialog.getInstance().showErrorDialog(_GUI.T.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
                             return null;
                         }
 
@@ -286,14 +286,14 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         if (isDeleteAll()) {
             switch (includedSelection.getSelectionType()) {
             case SELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all().trim());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected_all().trim());
                 break;
 
             case UNSELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected().trim());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected().trim());
                 break;
             default:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_all().trim());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_all().trim());
 
             }
 
@@ -301,14 +301,14 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
             switch (includedSelection.getSelectionType()) {
             case SELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected().trim());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected().trim());
                 break;
 
             case UNSELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_unselected().trim());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_keep_unselected().trim());
                 break;
             default:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object().trim());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object().trim());
 
             }
 
@@ -320,7 +320,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                     sb.append("&");
                 }
                 appendMissingSpace(sb);
-                sb.append(_GUI._.lit_disabled().trim());
+                sb.append(_GUI.T.lit_disabled().trim());
                 first = false;
             }
             if (isDeleteFailed()) {
@@ -330,7 +330,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 }
                 first = false;
                 appendMissingSpace(sb);
-                sb.append(_GUI._.lit_failed().trim());
+                sb.append(_GUI.T.lit_failed().trim());
             }
             if (isDeleteFinished()) {
                 if (!first) {
@@ -339,7 +339,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 }
                 first = false;
                 appendMissingSpace(sb);
-                sb.append(_GUI._.lit_finished().trim());
+                sb.append(_GUI.T.lit_finished().trim());
             }
 
             if (isDeleteFinishedPackage()) {
@@ -349,7 +349,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 }
                 first = false;
                 appendMissingSpace(sb);
-                sb.append(_GUI._.lit_finished_package().trim());
+                sb.append(_GUI.T.lit_finished_package().trim());
             }
             if (isDeleteOffline()) {
                 if (!first) {
@@ -358,18 +358,18 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 }
                 first = false;
                 appendMissingSpace(sb);
-                sb.append(_GUI._.lit_offline().trim());
+                sb.append(_GUI.T.lit_offline().trim());
             }
 
         }
         switch (getDeleteMode()) {
         case REMOVE_LINKS_AND_DELETE_FILES:
             appendMissingSpace(sb);
-            sb.append(_GUI._.deleteaction_and_delete_files().trim());
+            sb.append(_GUI.T.deleteaction_and_delete_files().trim());
             break;
         case REMOVE_LINKS_AND_RECYCLE_FILES:
             appendMissingSpace(sb);
-            sb.append(_GUI._.deleteaction_and_recycle_files().trim());
+            sb.append(_GUI.T.deleteaction_and_recycle_files().trim());
             break;
         case REMOVE_LINKS_ONLY:
             break;

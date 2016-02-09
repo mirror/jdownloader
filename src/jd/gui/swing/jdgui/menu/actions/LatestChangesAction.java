@@ -28,9 +28,9 @@ public class LatestChangesAction extends CustomizableAppAction {
     private static final long serialVersionUID = 2705114922279833817L;
 
     public LatestChangesAction() {
-        setTooltipText(_GUI._.action_changelog_tooltip());
+        setTooltipText(_GUI.T.action_changelog_tooltip());
         setIconKey(IconKey.ICON_CHANGELOG);
-        setName(_GUI._.action_changelog());
+        setName(_GUI.T.action_changelog());
     }
 
     @Override

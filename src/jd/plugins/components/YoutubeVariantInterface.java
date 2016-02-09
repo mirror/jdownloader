@@ -31,37 +31,37 @@ public interface YoutubeVariantInterface extends LinkVariant {
 
             @Override
             public String getLabel() {
-                return _GUI._.YoutubeVariantInterface_getLabel_audio();
+                return _GUI.T.YoutubeVariantInterface_getLabel_audio();
             }
         },
         VIDEO {
             @Override
             public String getLabel() {
-                return _GUI._.YoutubeVariantInterface_getLabel_video();
+                return _GUI.T.YoutubeVariantInterface_getLabel_video();
             }
         },
         VIDEO_3D {
             @Override
             public String getLabel() {
-                return _GUI._.YoutubeVariantInterface_getLabel_video3d();
+                return _GUI.T.YoutubeVariantInterface_getLabel_video3d();
             }
         },
         IMAGE {
             @Override
             public String getLabel() {
-                return _GUI._.YoutubeVariantInterface_getLabel_image();
+                return _GUI.T.YoutubeVariantInterface_getLabel_image();
             }
         },
         SUBTITLES {
             @Override
             public String getLabel() {
-                return _GUI._.YoutubeVariantInterface_getLabel_subtitles();
+                return _GUI.T.YoutubeVariantInterface_getLabel_subtitles();
             }
         },
         DESCRIPTION {
             @Override
             public String getLabel() {
-                return _GUI._.YoutubeVariantInterface_getLabel_description();
+                return _GUI.T.YoutubeVariantInterface_getLabel_description();
             }
         };
     }

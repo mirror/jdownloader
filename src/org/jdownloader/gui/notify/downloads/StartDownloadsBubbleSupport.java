@@ -28,14 +28,14 @@ public class StartDownloadsBubbleSupport extends AbstractBubbleSupport implement
     private ArrayList<Element> elements;
 
     public StartDownloadsBubbleSupport() {
-        super(_GUI._.plugins_optional_JDLightTray_ballon_startstopdownloads2(), CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED);
+        super(_GUI.T.plugins_optional_JDLightTray_ballon_startstopdownloads2(), CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED);
         elements = new ArrayList<Element>();
-        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_FILENAME_VISIBLE, _GUI._.lit_filename(), IconKey.ICON_FILE));
-        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_HOSTER_VISIBLE, _GUI._.lit_hoster(), IconKey.ICON_DOWNLOAD));
-        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_ACCOUNT_VISIBLE, _GUI._.lit_account(), IconKey.ICON_PREMIUM));
-        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_PROXY_VISIBLE, _GUI._.lit_proxy(), IconKey.ICON_PROXY));
-        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_SAVE_TO_VISIBLE, _GUI._.lit_save_to(), IconKey.ICON_FOLDER));
-        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_STATUS_VISIBLE, _GUI._.lit_status(), IconKey.ICON_MEDIA_PLAYBACK_START));
+        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_FILENAME_VISIBLE, _GUI.T.lit_filename(), IconKey.ICON_FILE));
+        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_HOSTER_VISIBLE, _GUI.T.lit_hoster(), IconKey.ICON_DOWNLOAD));
+        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_ACCOUNT_VISIBLE, _GUI.T.lit_account(), IconKey.ICON_PREMIUM));
+        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_PROXY_VISIBLE, _GUI.T.lit_proxy(), IconKey.ICON_PROXY));
+        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_SAVE_TO_VISIBLE, _GUI.T.lit_save_to(), IconKey.ICON_FOLDER));
+        elements.add(new Element(CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_STATUS_VISIBLE, _GUI.T.lit_status(), IconKey.ICON_MEDIA_PLAYBACK_START));
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
     }
 

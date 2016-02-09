@@ -70,7 +70,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
     private int labelHeight;
 
     public AboutDialog() {
-        super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK | Dialog.STYLE_HIDE_ICON, _GUI._.jd_gui_swing_components_AboutDialog_title(), null, null, null);
+        super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK | Dialog.STYLE_HIDE_ICON, _GUI.T.jd_gui_swing_components_AboutDialog_title(), null, null, null);
     }
 
     @Override
@@ -93,12 +93,12 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
         JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
         try {
-            JButton btn = Factory.createButton(_GUI._.jd_gui_swing_components_AboutDialog_license(), new AbstractIcon(IconKey.ICON_PREMIUM, 16), new ActionListener() {
+            JButton btn = Factory.createButton(_GUI.T.jd_gui_swing_components_AboutDialog_license(), new AbstractIcon(IconKey.ICON_PREMIUM, 16), new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
                     String license = JDIO.readFileToString(JDUtilities.getResourceFile("licenses/jdownloader.license"));
                     try {
-                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
 
                             @Override
                             protected boolean isResizable() {
@@ -120,9 +120,9 @@ public class AboutDialog extends AbstractDialog<Integer> {
             btn.setBorder(null);
 
             links.add(btn);
-            links.add(new JLink(_GUI._.jd_gui_swing_components_AboutDialog_homepage(), new AbstractIcon(IconKey.ICON_URL, 16), new URL("http://www.jdownloader.org/home?lng=en")));
-            links.add(new JLink(_GUI._.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("http://board.jdownloader.org")));
-            links.add(new JLink(_GUI._.jd_gui_swing_components_AboutDialog_contributers(), new AbstractIcon(IconKey.ICON_CONTRIBUTER, 16), new URL("http://jdownloader.org/knowledge/wiki/contributers")));
+            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_homepage(), new AbstractIcon(IconKey.ICON_URL, 16), new URL("http://www.jdownloader.org/home?lng=en")));
+            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("http://board.jdownloader.org")));
+            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_contributers(), new AbstractIcon(IconKey.ICON_CONTRIBUTER, 16), new URL("http://jdownloader.org/knowledge/wiki/contributers")));
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
@@ -141,30 +141,30 @@ public class AboutDialog extends AbstractDialog<Integer> {
         HashMap<String, Object> map = null;
         try {
             map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_trademark()), "spanx,alignx center");
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_trademark()), "spanx,alignx center");
             // stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_beta()), "spanx,alignx center");
             // contentpane.add(btn, "aligny center, spany 3");
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_builddate()));
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_builddate()));
             stats.add(disable(map.get("buildDate")));
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
             stats.add(disable("#" + map.get("JDownloaderRevision")));
 
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_launcher()), "gapleft 10");
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_launcher()), "gapleft 10");
             stats.add(disable("#" + map.get("JDownloaderUpdaterRevision")));
 
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_appworkutilities()), "gapleft 10");
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_appworkutilities()), "gapleft 10");
 
             stats.add(disable("#" + map.get("AppWorkUtilsRevision")));
 
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_browser()), "gapleft 10");
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_browser()), "gapleft 10");
 
             stats.add(disable("#" + map.get("JDBrowserRevision")));
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_updater()), "gapleft 10");
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_updater()), "gapleft 10");
 
             stats.add(disable("#" + map.get("UpdateClientV2Revision")));
 
-            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_installdir()), "gapleft 10");
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_installdir()), "gapleft 10");
 
             ExtButton bt;
             stats.add(bt = disable(Application.getResource(".")));
@@ -180,18 +180,18 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
         }
 
-        contentpane.add(lbl = new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_mopdules()), "gaptop 10, spanx");
+        contentpane.add(lbl = new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_mopdules()), "gaptop 10, spanx");
 
         stats = new MigPanel("ins 0 10 0 0,wrap 2", "[][grow,align right]", "[]");
 
         contentpane.add(stats, "pushx,growx,spanx");
 
-        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_core()), "");
+        stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "");
         stats.add(disable("Copyright \u00A9 2009-2016 AppWork GmbH"));
-        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_plugins()), "");
+        stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_plugins()), "");
         stats.add(disable("Copyright \u00A9 2009-2016 JDownloader Community"));
 
-        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_translations()), "");
+        stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
         stats.add(disable("Copyright \u00A9 2009-2016 JDownloader Community"));
         try {
             stats.add(new JLabel("Java:"), "");
@@ -249,11 +249,11 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(new JLabel("Extraction:"), "");
         stats.add(disable("7ZipJBindings (http://sevenzipjbind.sourceforge.net/)"));
 
-        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_laf()), "");
+        stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_laf()), "");
         stats.add(disable("Synthetica (http://www.jyloo.com/synthetica/)"));
-        stats.add(disable(_GUI._.jd_gui_swing_components_AboutDialog_synthetica2("(#289416475)")), "skip");
+        stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2("(#289416475)")), "skip");
 
-        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_icons()), "");
+        stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_icons()), "");
         stats.add(disable("See /themes/* folder for Icon Licenses"), "");
         stats.add(disable("Icons8 (https://icons8.com/)"), "skip");
         stats.add(disable("Tango Icons (http://tango.freedesktop.org/)"), "skip");
@@ -286,7 +286,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
                     @Override
                     public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                        return new BasicNotify(_GUI._.lit_clipboard(), _GUI._.AboutDialog_actionPerformed_clipboard_(getName()), new AbstractIcon(IconKey.ICON_CLIPBOARD, 20));
+                        return new BasicNotify(_GUI.T.lit_clipboard(), _GUI.T.AboutDialog_actionPerformed_clipboard_(getName()), new AbstractIcon(IconKey.ICON_CLIPBOARD, 20));
                     }
                 });
 

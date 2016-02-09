@@ -779,21 +779,21 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         REMOVE_LINKS_ONLY() {
             @Override
             public String getLabel() {
-                return org.jdownloader.gui.translate._GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2();
+                return org.jdownloader.gui.translate._GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2();
             }
         },
 
         REMOVE_LINKS_AND_RECYCLE_FILES() {
             @Override
             public String getLabel() {
-                return org.jdownloader.gui.translate._GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2();
+                return org.jdownloader.gui.translate._GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2();
             }
         },
 
         REMOVE_LINKS_AND_DELETE_FILES() {
             @Override
             public String getLabel() {
-                return org.jdownloader.gui.translate._GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2();
+                return org.jdownloader.gui.translate._GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2();
             }
         };
 
@@ -967,7 +967,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
             @Override
             public String getLabel() {
-                return _GUI._.GraphicalUserInterfaceSettings_getLabel_ask_();
+                return _GUI.T.GraphicalUserInterfaceSettings_getLabel_ask_();
             }
 
         },
@@ -975,21 +975,21 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
             @Override
             public String getLabel() {
-                return _GUI._.GraphicalUserInterfaceSettings_getLabel_do_not_move();
+                return _GUI.T.GraphicalUserInterfaceSettings_getLabel_do_not_move();
             }
 
         },
         MOVE_TO_DOWNLOADLIST() {
             @Override
             public String getLabel() {
-                return _GUI._.GraphicalUserInterfaceSettings_getLabel_move_anyway();
+                return _GUI.T.GraphicalUserInterfaceSettings_getLabel_move_anyway();
             }
 
         },
         DELETE() {
             @Override
             public String getLabel() {
-                return _GUI._.GraphicalUserInterfaceSettings_getLabel_delete();
+                return _GUI.T.GraphicalUserInterfaceSettings_getLabel_delete();
             }
 
         }
@@ -1143,12 +1143,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         NORTH() {
             @Override
             public String getLabel() {
-                return _GUI._.setOverviewPositions_north();
+                return _GUI.T.setOverviewPositions_north();
             }
         },
         SOUTH() {
             public String getLabel() {
-                return _GUI._.setOverviewPositions_south();
+                return _GUI.T.setOverviewPositions_south();
             }
         }
     }

@@ -23,14 +23,14 @@ public class RemoveAction extends AppAction {
 
     public RemoveAction(SchedulerTable table) {
         this.table = table;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
     }
 
     public RemoveAction(List<ScheduleEntry> selection2, boolean force) {
         this.force = force;
         this.selection = selection2;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
     }
 

@@ -7,37 +7,37 @@ public enum PayProvider implements LabelInterface {
     MOBILEPAY() {
         @Override
         public String getLabel() {
-            return _GUI._.DonationDialog_popup_mobile();
+            return _GUI.T.DonationDialog_popup_mobile();
         }
     },
     CALL2PAY() {
         @Override
         public String getLabel() {
-            return _GUI._.DonationDialog_popup_call2pay();
+            return _GUI.T.DonationDialog_popup_call2pay();
         }
     },
     DIRECT_DEBIT() {
         @Override
         public String getLabel() {
-            return _GUI._.DonationDialog_popup_directdebit();
+            return _GUI.T.DonationDialog_popup_directdebit();
         }
     },
     SOFORT_UEBERWEISUNG() {
         @Override
         public String getLabel() {
-            return _GUI._.DonationDialog_popup_sofort_ueberweisung();
+            return _GUI.T.DonationDialog_popup_sofort_ueberweisung();
         }
     },
     WIRED() {
         @Override
         public String getLabel() {
-            return _GUI._.DonationDialog_popup_wired();
+            return _GUI.T.DonationDialog_popup_wired();
         }
     },
     AMAZONPAY() {
         @Override
         public String getLabel() {
-            return _GUI._.DonationDialog_popup_amazon();
+            return _GUI.T.DonationDialog_popup_amazon();
         }
     };
 

@@ -38,7 +38,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_enabled()) {
+        this.addColumn(new ExtCheckColumn<AuthenticationInfo>(_GUI.T.authtablemodel_column_enabled()) {
             private static final long serialVersionUID = 1L;
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
@@ -86,7 +86,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
                 object.setEnabled(value);
             }
         });
-        this.addColumn(new ExtComboColumn<AuthenticationInfo, AuthenticationInfo.Type>(_GUI._.authtablemodel_column_type(), null) {
+        this.addColumn(new ExtComboColumn<AuthenticationInfo, AuthenticationInfo.Type>(_GUI.T.authtablemodel_column_type(), null) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -100,9 +100,9 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
             protected String modelItemToString(Type selectedItem) {
                 switch (selectedItem) {
                 case FTP:
-                    return _GUI._.authtablemodel_column_type_ftp();
+                    return _GUI.T.authtablemodel_column_type_ftp();
                 case HTTP:
-                    return _GUI._.authtablemodel_column_type_http();
+                    return _GUI.T.authtablemodel_column_type_http();
 
                 }
                 return null;
@@ -144,7 +144,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
             }
 
         });
-        this.addColumn(new ExtTextColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_host()) {
+        this.addColumn(new ExtTextColumn<AuthenticationInfo>(_GUI.T.authtablemodel_column_host()) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -175,7 +175,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
             }
 
         });
-        this.addColumn(new ExtTextColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_username()) {
+        this.addColumn(new ExtTextColumn<AuthenticationInfo>(_GUI.T.authtablemodel_column_username()) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -210,7 +210,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
 
         });
 
-        this.addColumn(new ExtPasswordEditorColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_password()) {
+        this.addColumn(new ExtPasswordEditorColumn<AuthenticationInfo>(_GUI.T.authtablemodel_column_password()) {
             private static final long serialVersionUID = 1L;
 
             @Override

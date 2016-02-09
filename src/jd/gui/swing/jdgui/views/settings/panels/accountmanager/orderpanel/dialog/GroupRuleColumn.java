@@ -17,7 +17,7 @@ public class GroupRuleColumn extends ExtComboColumn<AccountInterface, Rules> {
     private final JComponent empty = new RendererMigPanel("ins 0", "[]", "[]");
 
     public GroupRuleColumn() {
-        super(_GUI._.GroupRuleColumn_GroupRuleColumn_distrubutionrule_(), new DefaultComboBoxModel<Rules>(getRules()));
+        super(_GUI.T.GroupRuleColumn_GroupRuleColumn_distrubutionrule_(), new DefaultComboBoxModel<Rules>(getRules()));
     }
 
     private static Rules[] getRules() {

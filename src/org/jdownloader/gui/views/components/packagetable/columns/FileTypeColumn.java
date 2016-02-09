@@ -22,7 +22,7 @@ public class FileTypeColumn extends ExtTextColumn<AbstractNode> {
     private static final long serialVersionUID = 1L;
 
     public FileTypeColumn() {
-        super(_GUI._.FileTypeColumn_FileTypeColumn_());
+        super(_GUI.T.FileTypeColumn_FileTypeColumn_());
     }
 
     public JPopupMenu createHeaderPopup() {

@@ -31,7 +31,7 @@ public class SpeedLimitator extends AbstractDialog<Object> {
     private java.util.List<AbstractNode> inteliSelect;
 
     public SpeedLimitator(final AbstractNode contextObject, java.util.List<AbstractNode> inteliSelect) {
-        super(0, _GUI._.SpeedLimitator_SpeedLimitator_object_(), null, null, null);
+        super(0, _GUI.T.SpeedLimitator_SpeedLimitator_object_(), null, null, null);
         this.contextObject = contextObject;
         this.inteliSelect = inteliSelect;
     }
@@ -71,7 +71,7 @@ public class SpeedLimitator extends AbstractDialog<Object> {
         MigPanel ret = new MigPanel("ins 2,wrap 2", "[][grow,fill]", "[]");
         ret.setOpaque(false);
 
-        JLabel lbl = getLbl(_GUI._.CustomSpeedLimitator_SpeedlimitEditor__lbl(), new AbstractIcon(IconKey.ICON_SPEED, 18));
+        JLabel lbl = getLbl(_GUI.T.CustomSpeedLimitator_SpeedlimitEditor__lbl(), new AbstractIcon(IconKey.ICON_SPEED, 18));
         ret.add(SwingUtils.toBold(lbl), "spanx");
 
         spinner = new SizeSpinner(1, Long.MAX_VALUE, 1024) {
@@ -82,7 +82,7 @@ public class SpeedLimitator extends AbstractDialog<Object> {
 
             protected String longToText(long longValue) {
 
-                return _GUI._.SpeedlimitEditor_format(SizeFormatter.formatBytes(longValue));
+                return _GUI.T.SpeedlimitEditor_format(SizeFormatter.formatBytes(longValue));
             }
         };
 

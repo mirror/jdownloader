@@ -85,7 +85,7 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     }
 
     public PriorityColumn() {
-        super(_GUI._.PriorityColumn_PriorityColumn(), new DefaultComboBoxModel<Priority>(Priority.values()));
+        super(_GUI.T.PriorityColumn_PriorityColumn(), new DefaultComboBoxModel<Priority>(Priority.values()));
         imgPriorityS = NewTheme.I().getIcon(IconKey.ICON_PRIO__1, 16);
         imgPriority0 = NewTheme.I().getIcon(IconKey.ICON_PRIO_0, 16);
         imgPriority1 = NewTheme.I().getIcon(IconKey.ICON_PRIO_1, 16);
@@ -97,10 +97,10 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         imgPriority0_3 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority3, 12, 12), 4, 2);
 
         rendererField.setHorizontalTextPosition(SwingConstants.RIGHT);
-        strPriorityS = _GUI._.gui_treetable_tooltip_priority_1();
-        strPriority1 = _GUI._.gui_treetable_tooltip_priority1();
-        strPriority2 = _GUI._.gui_treetable_tooltip_priority2();
-        strPriority3 = _GUI._.gui_treetable_tooltip_priority3();
+        strPriorityS = _GUI.T.gui_treetable_tooltip_priority_1();
+        strPriority1 = _GUI.T.gui_treetable_tooltip_priority1();
+        strPriority2 = _GUI.T.gui_treetable_tooltip_priority2();
+        strPriority3 = _GUI.T.gui_treetable_tooltip_priority3();
 
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             /**

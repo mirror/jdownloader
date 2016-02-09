@@ -7,7 +7,7 @@ import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;
 
 public enum MediaArchiveSearchCategory implements SearchCatInterface {
-    FILENAME(_GUI._.searchcategory_filename(), "text", _GUI._.searchcategory_filename_help());
+    FILENAME(_GUI.T.searchcategory_filename(), "text", _GUI.T.searchcategory_filename_help());
 
     private String label;
     private String iconKey;

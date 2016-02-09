@@ -51,7 +51,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
 
     @Override
     public String getName() {
-        return _GUI._.gui_config_menumanager_linkgrabberBottom();
+        return _GUI.T.gui_config_menumanager_linkgrabberBottom();
     }
 
     public static void main(String[] args) {
@@ -90,8 +90,8 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         mr.add(new ConfirmButtonMenuItem());
 
         //
-        MenuContainer all = new MenuContainer(_GUI._.ConfirmOptionsAction_actionPerformed_all(), IconKey.ICON_CONFIRMALL);
-        MenuContainer selected = new MenuContainer(_GUI._.ConfirmOptionsAction_actionPerformed_selected(), IconKey.ICON_CONFIRMSELECTEDLINKS);
+        MenuContainer all = new MenuContainer(_GUI.T.ConfirmOptionsAction_actionPerformed_all(), IconKey.ICON_CONFIRMALL);
+        MenuContainer selected = new MenuContainer(_GUI.T.ConfirmOptionsAction_actionPerformed_selected(), IconKey.ICON_CONFIRMSELECTEDLINKS);
 
         all.add(new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.DISABLED.toString()).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
         all.add(new ActionData(ConfirmSelectionBarActionSub.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.ENABLED.toString()).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));

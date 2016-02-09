@@ -93,7 +93,7 @@ public class UrlOrderTableModel extends ExtTableModel<UrlDisplayEntry> implement
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<UrlDisplayEntry>(_GUI._.premiumaccounttablemodel_column_enabled()) {
+        this.addColumn(new ExtCheckColumn<UrlDisplayEntry>(_GUI.T.premiumaccounttablemodel_column_enabled()) {
 
             private final JComponent empty = new RendererMigPanel("ins 0", "[]", "[]");
 
@@ -158,7 +158,7 @@ public class UrlOrderTableModel extends ExtTableModel<UrlDisplayEntry> implement
             }
         });
 
-        addColumn(new ExtTextAreaColumn<UrlDisplayEntry>(_GUI._.UrlOrderTableModel_type()) {
+        addColumn(new ExtTextAreaColumn<UrlDisplayEntry>(_GUI.T.UrlOrderTableModel_type()) {
             @Override
             public boolean isHidable() {
                 return false;
@@ -200,7 +200,7 @@ public class UrlOrderTableModel extends ExtTableModel<UrlDisplayEntry> implement
             }
         });
 
-        addColumn(new ExtTextAreaColumn<UrlDisplayEntry>(_GUI._.UrlOrderTableModel_type_desc()) {
+        addColumn(new ExtTextAreaColumn<UrlDisplayEntry>(_GUI.T.UrlOrderTableModel_type_desc()) {
             @Override
             public boolean isHidable() {
                 return false;

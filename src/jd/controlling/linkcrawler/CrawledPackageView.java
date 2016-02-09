@@ -70,7 +70,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                 }
                 writeTmpToFields(tmp);
                 updateAvailability(size, tmp.newOffline, tmp.newOnline);
-                availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, size);
+                availabilityColumnString = _GUI.T.AvailabilityColumn_getStringValue_object_(tmp.newOnline, size);
             }
         }
         return this;
@@ -116,7 +116,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                 this.items = items.size();
             }
             updateAvailability(this.items, tmp.newOffline, tmp.newOnline);
-            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, this.items);
+            availabilityColumnString = _GUI.T.AvailabilityColumn_getStringValue_object_(tmp.newOnline, this.items);
         }
         return this;
     }

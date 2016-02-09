@@ -23,15 +23,15 @@ public class CollapseExpandContextAction extends CustomizableTableContextAppActi
         super(true, true);
         setIconKey(IconKey.ICON_LIST);
 
-        setTooltipText(_GUI._.CollapseExpandAllAction_CollapseExpandAllAction());
+        setTooltipText(_GUI.T.CollapseExpandAllAction_CollapseExpandAllAction());
         updateLabelAndIcon();
     }
 
     private void updateLabelAndIcon() {
         if (isSelectionOnly()) {
-            setName(_GUI._.CollapseExpandAllAction_CollapseExpandAllAction_selectiononly());
+            setName(_GUI.T.CollapseExpandAllAction_CollapseExpandAllAction_selectiononly());
         } else {
-            setName(_GUI._.CollapseExpandAllAction_CollapseExpandAllAction_());
+            setName(_GUI.T.CollapseExpandAllAction_CollapseExpandAllAction_());
         }
     }
 

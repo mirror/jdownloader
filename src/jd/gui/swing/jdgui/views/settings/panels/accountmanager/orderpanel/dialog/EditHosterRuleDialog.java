@@ -36,7 +36,7 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
     private HosterPriorityTable      table;
 
     public EditHosterRuleDialog(AccountUsageRule editing) {
-        super(0, _GUI._.EditHosterRuleDialog_EditHosterRuleDialog_title_(editing.getHoster()), null, _AWU.T.lit_save(), null);
+        super(0, _GUI.T.EditHosterRuleDialog_EditHosterRuleDialog_title_(editing.getHoster()), null, _AWU.T.lit_save(), null);
         this.rule = editing;
     }
 
@@ -69,7 +69,7 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
         txt.setWrapStyleWord(true);
         txt.setFocusable(false);
         // txt.setEnabled(false);
-        txt.setText(_GUI._.EditHosterRuleDialog_layoutDialogContent_description_(rule.getHoster()));
+        txt.setText(_GUI.T.EditHosterRuleDialog_layoutDialogContent_description_(rule.getHoster()));
 
         ret.add(txt, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
 

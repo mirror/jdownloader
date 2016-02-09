@@ -33,7 +33,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_matches_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.PackagizerSingleTestTableModel_initColumns_matches_()) {
 
             /**
              *
@@ -65,7 +65,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
 
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_link_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_link_()) {
             /**
              *
              */
@@ -90,7 +90,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 return value.getURL();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filename_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_filename_()) {
             /**
              *
              */
@@ -111,7 +111,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 return value.getName();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_online_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_online_()) {
             /**
              *
              */
@@ -122,11 +122,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
                 switch (value.getLinkState()) {
                 case OFFLINE:
-                    return _GUI._.ConditionDialog_layoutDialogContent_offline_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_offline_();
                 case ONLINE:
-                    return _GUI._.ConditionDialog_layoutDialogContent_online_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_online_();
                 case TEMP_UNKNOWN:
-                    return _GUI._.ConditionDialog_layoutDialogContent_uncheckable_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_uncheckable_();
 
                 }
                 return null;
@@ -164,7 +164,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
 
-        addColumn(new ExtFileSizeColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_size_()) {
+        addColumn(new ExtFileSizeColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_size_()) {
             /**
              *
              */
@@ -184,7 +184,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 return o2.getSize();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filetype_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_filetype_()) {
             /**
              *
              */
@@ -209,7 +209,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 return Files.getExtension(value.getName());
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_hoster()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_hoster()) {
             /**
              *
              */
@@ -248,7 +248,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
 
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_source()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_source()) {
             /**
              *
              */
@@ -289,7 +289,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
 
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_downloadfolder_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.PackagizerSingleTestTableModel_initColumns_downloadfolder_()) {
 
             /**
              *
@@ -314,7 +314,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
 
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_packagename_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.PackagizerSingleTestTableModel_initColumns_packagename_()) {
             /**
              *
              */
@@ -332,7 +332,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 return value.getDesiredPackageInfo().getName();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_filename_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.PackagizerSingleTestTableModel_initColumns_filename_()) {
             /**
              *
              */
@@ -348,7 +348,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 // return rule.getFilenameFilter().getRegex()
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_comment()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_comment()) {
             /**
              *
              */

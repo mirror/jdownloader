@@ -25,20 +25,20 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filtered_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_filtered_()) {
             @Override
             protected String getTooltipText(final CrawledLink value) {
 
                 try {
                     if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) {
 
-                        return _GUI._.ResultTableModel_getTooltipText_dropped_();
+                        return _GUI.T.ResultTableModel_getTooltipText_dropped_();
 
                     }
                 } catch (Exception e) {
 
                 }
-                return _GUI._.ResultTableModel_getTooltipText_accept_();
+                return _GUI.T.ResultTableModel_getTooltipText_accept_();
             }
 
             public int getDefaultWidth() {
@@ -69,16 +69,16 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
             public String getStringValue(CrawledLink value) {
                 try {
                     if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) {
-                        return _GUI._.ResultTableModel_getStringValue_filtered_();
+                        return _GUI.T.ResultTableModel_getStringValue_filtered_();
                     }
                 } catch (Exception e) {
 
                 }
-                return _GUI._.ResultTableModel_getStringValue_accepted_();
+                return _GUI.T.ResultTableModel_getStringValue_accepted_();
             }
         });
 
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_link_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_link_()) {
             {
                 editorField.setEditable(false);
             }
@@ -98,7 +98,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return value.getURL();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filename_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_filename_()) {
             public int getDefaultWidth() {
                 return 150;
             }
@@ -114,18 +114,18 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return value.getName();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_online_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_online_()) {
             @Override
             protected String getTooltipText(final CrawledLink value) {
 
                 switch (value.getLinkState()) {
                 case OFFLINE:
-                    return _GUI._.ConditionDialog_layoutDialogContent_offline_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_offline_();
                 case ONLINE:
-                    return _GUI._.ConditionDialog_layoutDialogContent_online_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_online_();
                 case UNKNOWN:
                 case TEMP_UNKNOWN:
-                    return _GUI._.ConditionDialog_layoutDialogContent_uncheckable_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_uncheckable_();
 
                 }
                 return null;
@@ -162,18 +162,18 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
             public String getStringValue(CrawledLink value) {
                 switch (value.getLinkState()) {
                 case OFFLINE:
-                    return _GUI._.ConditionDialog_layoutDialogContent_offline_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_offline_();
                 case ONLINE:
-                    return _GUI._.ConditionDialog_layoutDialogContent_online_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_online_();
                 case TEMP_UNKNOWN:
-                    return _GUI._.ConditionDialog_layoutDialogContent_uncheckable_();
+                    return _GUI.T.ConditionDialog_layoutDialogContent_uncheckable_();
 
                 }
                 return "";
             }
         });
 
-        addColumn(new ExtFileSizeColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_size_()) {
+        addColumn(new ExtFileSizeColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_size_()) {
             public int getDefaultWidth() {
                 return 80;
             }
@@ -188,7 +188,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return o2.getSize();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filetype_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_filetype_()) {
             public int getDefaultWidth() {
                 return 65;
             }
@@ -208,7 +208,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return Files.getExtension(value.getName());
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_hoster()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_hoster()) {
             public int getDefaultWidth() {
                 return 100;
             }
@@ -242,7 +242,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
             }
         });
 
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_source()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_source()) {
             {
                 editorField.setEditable(false);
             }
@@ -277,7 +277,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return sb.toString().trim();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_rule_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_rule_()) {
             {
                 editorField.setEditable(false);
             }
@@ -309,7 +309,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return value.getMatchingFilter().getName();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_ruledesc_()) {
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI.T.ResultTableModel_initColumns_ruledesc_()) {
             {
                 editorField.setEditable(false);
             }

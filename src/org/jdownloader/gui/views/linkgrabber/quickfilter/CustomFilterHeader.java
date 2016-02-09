@@ -58,7 +58,7 @@ public class CustomFilterHeader extends MigPanel implements HeaderInterface {
         config.setRolloverEffectEnabled(true);
         add(config, "height 16!,width 16!");
         // org.jdownloader.settings.statics.LINKFILTER.LG_QUICKFILTER_EXCEPTIONS_VISIBLE
-        lbl = SwingUtils.toBold(new JLabel(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter()));
+        lbl = SwingUtils.toBold(new JLabel(_GUI.T.LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter()));
         counter = SwingUtils.toBold(new JLabel(""));
         // lbl.setForeground(new
         // Color(LAFOptions.getInstance().getPanelHeaderLineColor()));

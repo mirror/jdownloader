@@ -27,7 +27,7 @@ public class DefaultEditAccountPanel extends MigPanel implements EditAccountPane
     }
 
     private String getUsername() {
-        if (_GUI._.jd_gui_swing_components_AccountDialog_help_username().equals(this.name.getText())) {
+        if (_GUI.T.jd_gui_swing_components_AccountDialog_help_username().equals(this.name.getText())) {
             return null;
         }
         return this.name.getText();
@@ -43,7 +43,7 @@ public class DefaultEditAccountPanel extends MigPanel implements EditAccountPane
     public DefaultEditAccountPanel() {
         super("ins 0, wrap 2", "[][grow,fill]", "");
 
-        add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_name()));
+        add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
         add(this.name = new ExtTextField() {
 
             @Override
@@ -55,9 +55,9 @@ public class DefaultEditAccountPanel extends MigPanel implements EditAccountPane
 
         });
 
-        name.setHelpText(_GUI._.jd_gui_swing_components_AccountDialog_help_username());
+        name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
 
-        add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_pass()));
+        add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass()));
         add(this.pass = new ExtPasswordField() {
 
             @Override
@@ -68,7 +68,7 @@ public class DefaultEditAccountPanel extends MigPanel implements EditAccountPane
             }
 
         }, "");
-        pass.setHelpText(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_pass());
+        pass.setHelpText(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_pass());
     }
 
     @Override

@@ -156,7 +156,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_group();
+                return _GUI.T.YoutubeHelper_getDescription_group();
             }
 
         });
@@ -169,14 +169,14 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_variantid();
+                return _GUI.T.YoutubeHelper_getDescription_variantid();
             }
 
         });
         REPLACER.add(new YoutubeReplacer("quality") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_quality();
+                return _GUI.T.YoutubeHelper_getDescription_quality();
             }
 
             @Override
@@ -196,7 +196,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("videoid", "id") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_id();
+                return _GUI.T.YoutubeHelper_getDescription_id();
             }
 
             @Override
@@ -208,7 +208,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("ext", "extension") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_extension();
+                return _GUI.T.YoutubeHelper_getDescription_extension();
             }
 
             @Override
@@ -227,7 +227,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_age();
+                return _GUI.T.YoutubeHelper_getDescription_age();
             }
 
         });
@@ -240,7 +240,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_user();
+                return _GUI.T.YoutubeHelper_getDescription_user();
             }
 
         });
@@ -253,7 +253,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_channel_id();
+                return _GUI.T.YoutubeHelper_getDescription_channel_id();
             }
 
         });
@@ -270,7 +270,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_googleplus_id();
+                return _GUI.T.YoutubeHelper_getDescription_googleplus_id();
             }
 
         });
@@ -293,7 +293,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_duration();
+                return _GUI.T.YoutubeHelper_getDescription_duration();
             }
 
         });
@@ -306,7 +306,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_channel();
+                return _GUI.T.YoutubeHelper_getDescription_channel();
             }
 
         });
@@ -320,14 +320,14 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_title();
+                return _GUI.T.YoutubeHelper_getDescription_title();
             }
 
         });
         REPLACER.add(new YoutubeReplacer("date") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_date();
+                return _GUI.T.YoutubeHelper_getDescription_date();
             }
 
             @Override
@@ -352,7 +352,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("date_time") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_date_accurate();
+                return _GUI.T.YoutubeHelper_getDescription_date_accurate();
             }
 
             public DataSource getDataSource() {
@@ -383,7 +383,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("date_update") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_date_accurate();
+                return _GUI.T.YoutubeHelper_getDescription_date_accurate();
             }
 
             public DataSource getDataSource() {
@@ -412,7 +412,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("videoCodec") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_videoCodec();
+                return _GUI.T.YoutubeHelper_getDescription_videoCodec();
             }
 
             public DataSource getDataSource() {
@@ -442,7 +442,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("resolution") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_resolution();
+                return _GUI.T.YoutubeHelper_getDescription_resolution();
             }
 
             public DataSource getDataSource() {
@@ -472,7 +472,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("bestResolution") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_resolution_best();
+                return _GUI.T.YoutubeHelper_getDescription_resolution_best();
             }
 
             public DataSource getDataSource() {
@@ -498,7 +498,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("audioCodec") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_audioCodec();
+                return _GUI.T.YoutubeHelper_getDescription_audioCodec();
             }
 
             public DataSource getDataSource() {
@@ -529,7 +529,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("audioQuality") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_audioQuality();
+                return _GUI.T.YoutubeHelper_getDescription_audioQuality();
             }
 
             public DataSource getDataSource() {
@@ -560,7 +560,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         REPLACER.add(new YoutubeReplacer("videonumber") {
             @Override
             public String getDescription() {
-                return _GUI._.YoutubeHelper_getDescription_videonumber();
+                return _GUI.T.YoutubeHelper_getDescription_videonumber();
             }
 
             @Override

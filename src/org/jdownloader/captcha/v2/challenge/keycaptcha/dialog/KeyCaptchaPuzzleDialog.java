@@ -37,7 +37,7 @@ public class KeyCaptchaPuzzleDialog extends AbstractCaptchaDialog<KeyCaptchaPuzz
     private KeyCaptchaImages          imageData;
 
     public KeyCaptchaPuzzleDialog(int flag, DialogType type, DomainInfo domain, KeyCaptchaPuzzleChallenge challenge) {
-        super(flag, _GUI._.KeyCaptchaDialog(domain.getTld()), type, domain, _GUI._.KeyCaptchaDialog_explain(domain.getTld()));
+        super(flag, _GUI.T.KeyCaptchaDialog(domain.getTld()), type, domain, _GUI.T.KeyCaptchaDialog_explain(domain.getTld()));
         // super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN, title, null, null, null);
 
         this.challenge = challenge;

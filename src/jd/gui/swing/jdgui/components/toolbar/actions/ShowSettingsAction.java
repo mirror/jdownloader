@@ -41,7 +41,7 @@ public class ShowSettingsAction extends AbstractToolBarAction {
 
     @Override
     public String createTooltip() {
-        return _GUI._.action_settings_menu_tooltip();
+        return _GUI.T.action_settings_menu_tooltip();
     }
 
 }

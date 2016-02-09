@@ -97,7 +97,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         final RouterData rd = editing;
         editing.setScript(settings.getScript());
         editing.setRouterIP(settings.getRouterIP());
-        final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON, T.T.script(getRouterName(editing.getRouterName())), new AbstractIcon("reconnect", 32), _GUI._.lit_save(), _GUI._.lit_close(), editing, null, editing.getRouterName()) {
+        final LiveHeaderScriptConfirmDialog d = new LiveHeaderScriptConfirmDialog(Dialog.STYLE_HIDE_ICON, T.T.script(getRouterName(editing.getRouterName())), new AbstractIcon("reconnect", 32), _GUI.T.lit_save(), _GUI.T.lit_close(), editing, null, editing.getRouterName()) {
             @Override
             public String getMessage() {
                 return T.T.edit_script();
@@ -136,7 +136,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
     private String getRouterName(String routerName) {
         if (StringUtils.isEmpty(routerName)) {
-            return _GUI._.unknown_router_name();
+            return _GUI.T.unknown_router_name();
         }
         return routerName;
     }

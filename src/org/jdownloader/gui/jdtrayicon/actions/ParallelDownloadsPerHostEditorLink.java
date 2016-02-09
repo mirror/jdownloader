@@ -26,7 +26,7 @@ public class ParallelDownloadsPerHostEditorLink extends MenuItemData implements 
 
     public ParallelDownloadsPerHostEditorLink() {
         super();
-        setName(_GUI._.ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_());
+        setName(_GUI.T.ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_());
         setIconKey(IconKey.ICON_BATCH);
         //
     }
@@ -44,7 +44,7 @@ public class ParallelDownloadsPerHostEditorLink extends MenuItemData implements 
         final ActionData actionData = ad;
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
-        p.add(new JLabel(_GUI._.MenuEditors_editorwidth()));
+        p.add(new JLabel(_GUI.T.MenuEditors_editorwidth()));
         int width = getPreferedEditorWidth();
 
         final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));

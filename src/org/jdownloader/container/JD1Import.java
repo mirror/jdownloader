@@ -83,7 +83,7 @@ public class JD1Import extends PluginsC {
                         for (final FilePackage p : packages) {
                             links += p.size();
                         }
-                        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI._.jd1_import_title(), _GUI._.jd1_import_message(packages.size(), links), new AbstractIcon(IconKey.ICON_QUESTION, 16), _GUI._.jd_gui_swing_jdgui_views_downloadview_tab_title(), _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title()) {
+                        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.jd1_import_title(), _GUI.T.jd1_import_message(packages.size(), links), new AbstractIcon(IconKey.ICON_QUESTION, 16), _GUI.T.jd_gui_swing_jdgui_views_downloadview_tab_title(), _GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title()) {
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;

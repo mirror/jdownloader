@@ -21,14 +21,14 @@ import jd.controlling.proxy.ProxyController;
 public class LoadProxyProfileAction extends AppAction {
 
     public LoadProxyProfileAction(ProxyTable table) {
-        setName(_GUI._.LoadProxyProfileAction_LoadProxyProfileAction_());
+        setName(_GUI.T.LoadProxyProfileAction_LoadProxyProfileAction_());
         setIconKey(IconKey.ICON_IMPORT);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
-            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.LoadProxyProfileAction_actionPerformed_(), null, null);
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.LoadProxyProfileAction_actionPerformed_(), null, null);
             d.setFileFilter(new FileFilter() {
 
                 @Override
@@ -60,7 +60,7 @@ public class LoadProxyProfileAction extends AppAction {
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         } catch (IOException e1) {
-            Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
         }
     }
 

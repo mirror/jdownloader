@@ -100,11 +100,11 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (fpView.isFinished()) {
 
             fps.setStatusIconKey(IconKey.ICON_TRUE);
-            fps.setStatus(_GUI._.TaskColumn_getStringValue_finished_());
+            fps.setStatus(_GUI.T.TaskColumn_getStringValue_finished_());
             return fps;
         } else if (fpView.getETA() != -1) {
 
-            fps.setStatus(_GUI._.TaskColumn_getStringValue_running_());
+            fps.setStatus(_GUI.T.TaskColumn_getStringValue_running_());
             return fps;
         }
         return fps;
@@ -365,7 +365,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (link.getDownloadLinkController() != null) {
 
             dls.setStatusIconKey(IconKey.ICON_RUN);
-            dls.setStatus(_GUI._.TaskColumn_fillColumnHelper_starting());
+            dls.setStatus(_GUI.T.TaskColumn_fillColumnHelper_starting());
             return dls;
         }
         return dls;

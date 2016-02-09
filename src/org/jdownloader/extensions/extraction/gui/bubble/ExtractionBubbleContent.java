@@ -82,9 +82,9 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
             case CLEANUP:
                 if (status != null) {
                     if (caller.isSuccessful()) {
-                        status.setText(_GUI._.lit_successfull());
+                        status.setText(_GUI.T.lit_successfull());
                     } else {
-                        status.setText(_GUI._.lit_failed());
+                        status.setText(_GUI.T.lit_failed());
                     }
                 }
 
@@ -93,7 +93,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
             case EXTRACTION_FAILED_CRC:
             case NOT_ENOUGH_SPACE:
                 if (status != null) {
-                    status.setText(_GUI._.lit_failed());
+                    status.setText(_GUI.T.lit_failed());
                 }
                 break;
 
@@ -131,7 +131,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
         }
 
         if (CFG_EXTRACTION.BUBBLE_CONTENT_DURATION_VISIBLE.isEnabled()) {
-            duration = addPair(duration, _GUI._.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT);
+            duration = addPair(duration, _GUI.T.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT);
         }
 
         if (CFG_EXTRACTION.BUBBLE_CONTENT_ARCHIVENAME_VISIBLE.isEnabled()) {
@@ -154,7 +154,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
     public static void fillElements(ArrayList<Element> elements) {
 
         elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_CIRCLE_PROGRESS_VISIBLE, T.T.bubblecontent_progress(), IconKey.ICON_RAR));
-        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_DURATION_VISIBLE, _GUI._.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT));
+        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_DURATION_VISIBLE, _GUI.T.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT));
         elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_ARCHIVENAME_VISIBLE, T.T.archive(), IconKey.ICON_EXTRACT));
         elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_EXTRACT_TO_FOLDER_VISIBLE, T.T.archive_folder(), IconKey.ICON_FOLDER));
         elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_CURRENT_FILE_VISIBLE, T.T.archive_file(), IconKey.ICON_FILE));

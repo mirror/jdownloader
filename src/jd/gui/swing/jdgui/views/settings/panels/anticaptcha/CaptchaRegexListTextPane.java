@@ -19,12 +19,12 @@ public class CaptchaRegexListTextPane extends RegexListTextPane {
     }
 
     public ExtTooltip createFailTooltip(String p) {
-        IconLabelToolTip ret = new IconLabelToolTip(_GUI._.CaptchaRegexListTextPane_createExtTooltip_bad(p), new AbstractIcon(IconKey.ICON_WARNING, 24));
+        IconLabelToolTip ret = new IconLabelToolTip(_GUI.T.CaptchaRegexListTextPane_createExtTooltip_bad(p), new AbstractIcon(IconKey.ICON_WARNING, 24));
         return ret;
     }
 
     public ExtTooltip createOkTooltip(String p) {
-        IconLabelToolTip ret = new IconLabelToolTip(_GUI._.CaptchaRegexListTextPane_createExtTooltip_ok(p), new AbstractIcon(IconKey.ICON_OK, 24));
+        IconLabelToolTip ret = new IconLabelToolTip(_GUI.T.CaptchaRegexListTextPane_createExtTooltip_ok(p), new AbstractIcon(IconKey.ICON_OK, 24));
         return ret;
     }
 

@@ -11,9 +11,9 @@ import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 public class LogSendAction extends CustomizableAppAction {
 
     public LogSendAction() {
-        setName(_GUI._.LogAction());
+        setName(_GUI.T.LogAction());
         setIconKey(IconKey.ICON_LOG);
-        setTooltipText(_GUI._.LogAction_tooltip());
+        setTooltipText(_GUI.T.LogAction_tooltip());
 
     }
 

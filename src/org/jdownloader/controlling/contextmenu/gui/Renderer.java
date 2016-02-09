@@ -84,18 +84,18 @@ public class Renderer implements TreeCellRenderer {
         }
         if (mid instanceof MenuContainer) {
 
-            type = _GUI._.InfoPanel_update_submenu();
+            type = _GUI.T.InfoPanel_update_submenu();
 
             font = bold;
             // label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(, ));
 
         } else if (mid instanceof SeparatorData) {
 
-            name = _GUI._.Renderer_getTreeCellRendererComponent_separator();
+            name = _GUI.T.Renderer_getTreeCellRendererComponent_separator();
 
         } else {
             if (mid instanceof MenuLink) {
-                type = _GUI._.InfoPanel_update_link();
+                type = _GUI.T.InfoPanel_update_link();
 
             } else {
                 if (mid._isValidated()) {
@@ -108,7 +108,7 @@ public class Renderer implements TreeCellRenderer {
                         if (StringUtils.isEmpty(name)) {
                             name = action.getName();
                         }
-                        type = _GUI._.InfoPanel_update_action();
+                        type = _GUI.T.InfoPanel_update_action();
                         if (icon == null) {
                             icon = action.getSmallIcon();
                         }
@@ -152,10 +152,10 @@ public class Renderer implements TreeCellRenderer {
         }
 
         if (StringUtils.isNotEmpty(type)) {
-            if (StringUtils.equals(_GUI._.InfoPanel_update_action(), type)) {
+            if (StringUtils.equals(_GUI.T.InfoPanel_update_action(), type)) {
                 renderer.setText(name);
             } else {
-                renderer.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(name, type));
+                renderer.setText(_GUI.T.InfoPanel_updateInfo_header_actionlabel(name, type));
             }
         } else {
             renderer.setText(name);

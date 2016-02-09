@@ -15,7 +15,7 @@ public class ResultTableModel extends ExtTableModel<Result> {
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<Result>(_GUI._.ResultTableModel_initColumns_oldname()) {
+        addColumn(new ExtTextColumn<Result>(_GUI.T.ResultTableModel_initColumns_oldname()) {
 
             @Override
             public String getStringValue(Result value) {
@@ -23,7 +23,7 @@ public class ResultTableModel extends ExtTableModel<Result> {
             }
         });
 
-        addColumn(new ExtTextColumn<Result>(_GUI._.ResultTableModel_initColumns_newname()) {
+        addColumn(new ExtTextColumn<Result>(_GUI.T.ResultTableModel_initColumns_newname()) {
 
             @Override
             public String getStringValue(Result value) {

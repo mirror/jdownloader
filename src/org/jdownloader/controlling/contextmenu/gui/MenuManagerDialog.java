@@ -57,7 +57,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     private LogSource                logger;
 
     public MenuManagerDialog(ContextMenuManager<?, ?> manager) {
-        super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
+        super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK, _GUI.T.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
 
         this.manager = manager;
         ext = manager.getFileExtension();
@@ -101,13 +101,13 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         ExtButton export = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_EXPORT);
-                setTooltipText(_GUI._.lit_export());
+                setTooltipText(_GUI.T.lit_export());
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.ManagerFrame_actionPerformed_export_title(), null, null);
+                ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.ManagerFrame_actionPerformed_export_title(), null, null);
                 d.setFileFilter(new FileFilter() {
 
                     @Override
@@ -141,9 +141,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                 } catch (DialogCanceledException e1) {
                     e1.printStackTrace();
                 } catch (UnsupportedEncodingException e1) {
-                    Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+                    Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
                 } catch (IOException e1) {
-                    Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+                    Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
                 }
             }
 
@@ -157,13 +157,13 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         ExtButton importButton = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_IMPORT);
-                setTooltipText(_GUI._.lit_import());
+                setTooltipText(_GUI.T.lit_import());
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.ManagerFrame_actionPerformed_import_title(), null, null);
+                    ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.ManagerFrame_actionPerformed_import_title(), null, null);
                     d.setFileFilter(new FileFilter() {
 
                         @Override
@@ -196,7 +196,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                 } catch (DialogCanceledException e1) {
                     e1.printStackTrace();
                 } catch (IOException e1) {
-                    Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+                    Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
                 }
             }
 
@@ -209,7 +209,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
         ExtButton reset = new ExtButton(new AppAction() {
             {
-                setTooltipText(_GUI._.ManagerFrame_layoutPanel_resettodefault());
+                setTooltipText(_GUI.T.ManagerFrame_layoutPanel_resettodefault());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_UNDO, 20));
 
             }
@@ -218,7 +218,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
             public void actionPerformed(ActionEvent e) {
                 try {
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
-                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.MenuManagerDialog_actionPerformed_title(), _GUI._.lit_are_you_sure());
+                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.MenuManagerDialog_actionPerformed_title(), _GUI.T.lit_are_you_sure());
                     }
                     MenuContainerRoot data = manager.setupDefaultStructure();
                     data.validateFull();
@@ -264,7 +264,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         DefaultButtonPanel bottom = new DefaultButtonPanel("ins 0", "[grow,fill][][]", "[]");
         ExtButton save = new ExtButton(new AppAction() {
             {
-                setName(_GUI._.lit_save());
+                setName(_GUI.T.lit_save());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_SAVE, 20));
             }
 
@@ -281,7 +281,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
         ExtButton cancel = new ExtButton(new AppAction() {
             {
-                setName(_GUI._.lit_cancel());
+                setName(_GUI.T.lit_cancel());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_CANCEL, 20));
             }
 
@@ -297,7 +297,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         ExtButton apply = new ExtButton(new AppAction() {
             {
                 setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_TRUE, 20));
-                setName(_GUI._.lit_apply());
+                setName(_GUI.T.lit_apply());
             }
 
             @Override

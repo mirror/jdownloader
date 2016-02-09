@@ -22,7 +22,7 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
     private static final long serialVersionUID = -8841119846403017974L;
 
     public FinishedDateColumn() {
-        super(_GUI._.FinishedDateColumn_FinishedDateColumn());
+        super(_GUI.T.FinishedDateColumn_FinishedDateColumn());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
     }
 
@@ -68,7 +68,7 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
         if (StringUtils.isNotEmpty(custom)) { return custom; }
         DateFormat sd = SimpleDateFormat.getDateTimeInstance();
         if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
-        return _GUI._.added_date_column_dateformat();
+        return _GUI.T.added_date_column_dateformat();
     }
 
     @Override

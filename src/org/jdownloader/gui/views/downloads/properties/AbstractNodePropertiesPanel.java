@@ -182,14 +182,14 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             }
 
             protected String getHelpText() {
-                return _GUI._.AddLinksDialog_layoutDialogContent_help_destination();
+                return _GUI.T.AddLinksDialog_layoutDialogContent_help_destination();
             }
 
             @Override
             public JPopupMenu getPopupMenu(ExtTextField txt, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
-                menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
-                menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
+                menu.add(new VariableAction(txt, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
+                menu.add(new VariableAction(txt, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
                 return menu;
             }
 
@@ -242,7 +242,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
         packagename.setBadColor(null);
         packagename.setUnkownTextInputAllowed(true);
-        packagename.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_packagename_help());
+        packagename.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_packagename_help());
         packagename.setSelectedItem(null);
         setListeners(packagename.getTextField());
         comment = new ExtTextField() {
@@ -253,7 +253,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             }
 
         };
-        comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
+        comment.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_comment_help());
         comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
         setListeners(comment);
         filename = createFileNameTextField();
@@ -280,7 +280,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             public void focusLost(FocusEvent e) {
             }
         });
-        downloadpassword.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_password_tt());
+        downloadpassword.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_password_tt());
         setListeners(downloadpassword);
 
         downloadpassword.setBorder(BorderFactory.createCompoundBorder(downloadpassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
@@ -352,7 +352,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             public void focusLost(FocusEvent e) {
             }
         });
-        checksum.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_checksum_tt());
+        checksum.setHelpText(_GUI.T.AddLinksDialog_layoutDialogContent_checksum_tt());
         setListeners(checksum);
 
         checksum.setBorder(BorderFactory.createCompoundBorder(checksum.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
@@ -386,7 +386,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             }
         });
         setListeners(password);
-        password.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_password());
+        password.setHelpText(_GUI.T.AddLinksDialog_createExtracOptionsPanel_password());
         password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
         priority = new PseudoCombo<Priority>(Priority.values()) {
@@ -470,16 +470,16 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 if (closed) {
                     switch (v) {
                     case FALSE:
-                        return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled_closed();
+                        return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled_closed();
 
                     case TRUE:
-                        return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled_closed();
+                        return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled_closed();
 
                     case UNSET:
                         if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
-                            return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true_closed();
+                            return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true_closed();
                         } else {
-                            return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false_closed();
+                            return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false_closed();
                         }
 
                     }
@@ -487,16 +487,16 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
                 } else {
                     switch (v) {
                     case FALSE:
-                        return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled();
+                        return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled();
 
                     case TRUE:
-                        return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled();
+                        return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled();
 
                     case UNSET:
                         if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
-                            return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true();
+                            return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true();
                         } else {
-                            return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false();
+                            return _GUI.T.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false();
                         }
 
                     }
@@ -564,46 +564,46 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
     }
 
     protected void addArchiveLine(int height, MigPanel p) {
-        p.add(createIconLabel(_GUI._.propertiespanel_archivepassword(), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI.T.propertiespanel_archivepassword(), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(password, "pushx,growx,height " + height + "!,growx,width 10:10:n");
         p.add(autoExtract, "sg right,height " + height + "!,aligny top");
 
     }
 
     protected void addChecksum(int height, MigPanel p) {
-        p.add(createIconLabel(_GUI._.propertiespanel_checksum(), _GUI._.AddLinksDialog_layoutDialogContent_checksum_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI.T.propertiespanel_checksum(), _GUI.T.AddLinksDialog_layoutDialogContent_checksum_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(checksum, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addCommentLine(int height, MigPanel p) {
-        p.add(createIconLabel(_GUI._.propertiespanel_comment(), _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "alignx right,aligny center,height " + height + "!");
+        p.add(createIconLabel(_GUI.T.propertiespanel_comment(), _GUI.T.AddLinksDialog_layoutDialogContent_comment_tt()), "alignx right,aligny center,height " + height + "!");
         p.add(comment, "height " + height + "!,growx,width 10:10:n");
         p.add(priority, "sg right,height " + height + "!,aligny top");
 
     }
 
     protected void addDownloadFrom(int height, MigPanel p) {
-        p.add(createIconLabel(_GUI._.propertiespanel_downloadfrom(), _GUI._.AddLinksDialog_layoutDialogContent_downloadfrom_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI.T.propertiespanel_downloadfrom(), _GUI.T.AddLinksDialog_layoutDialogContent_downloadfrom_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(downloadFrom, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addDownloadPassword(int height, MigPanel p) {
-        p.add(createIconLabel(_GUI._.propertiespanel_passwod(), _GUI._.AddLinksDialog_layoutDialogContent_password_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI.T.propertiespanel_passwod(), _GUI.T.AddLinksDialog_layoutDialogContent_password_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(downloadpassword, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addFilename(int height, MigPanel p) {
-        p.add(createIconLabel(_GUI._.propertiespanel_filename(), _GUI._.AddLinksDialog_layoutDialogContent_filename_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI.T.propertiespanel_filename(), _GUI.T.AddLinksDialog_layoutDialogContent_filename_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(filename, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addPackagename(int height, MigPanel p) {
-        p.add(createIconLabel(_GUI._.propertiespanel_packagename(), _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI.T.propertiespanel_packagename(), _GUI.T.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(packagename, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addSaveTo(int height, MigPanel p) {
-        p.add(createIconLabel(_GUI._.propertiespanel_downloadpath(), _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI.T.propertiespanel_downloadpath(), _GUI.T.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(destination.getDestination(), "height " + height + "!,growx,width 10:10:n");
         p.add(destination.getButton(), "sg right,height " + height + "! ");
     }

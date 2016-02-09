@@ -107,7 +107,7 @@ public class EndCaptchaSolver extends CESChallengeSolver<String> {
             }
             String checkUrl = "/poll/" + id;
             if (null != checkUrl) {
-                job.setStatus(new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
+                job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
                 while (true) {
                     if (br.containsHTML("UNSOLVED_YET:/poll/")) {
                         // do poll

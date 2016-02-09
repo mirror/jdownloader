@@ -21,7 +21,7 @@ public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
     private ExtColumn<?> column;
 
     public SortPackagesDownloadOrdnerOnColumn(ExtColumn<?> column) {
-        setName(_GUI._.SortPackagesDownloadOrdnerOnColumn(column.getName()));
+        setName(_GUI.T.SortPackagesDownloadOrdnerOnColumn(column.getName()));
         setIconKey(IconKey.ICON_EXTTABLE_SORT);
         this.column = column;
     }

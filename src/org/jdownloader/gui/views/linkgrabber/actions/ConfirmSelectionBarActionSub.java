@@ -29,42 +29,42 @@ public class ConfirmSelectionBarActionSub extends ConfirmLinksContextAction impl
      * @return
      */
     protected String getTextForForcedAll() {
-        return _GUI._.ConfirmSelectionBarAction_sub_button_add_and_force_all();
+        return _GUI.T.ConfirmSelectionBarAction_sub_button_add_and_force_all();
     }
 
     /**
      * @return
      */
     protected String getTextForForcedSelectionOnly() {
-        return _GUI._.ConfirmSelectionBarAction_sub_button_add_and_force_selection();
+        return _GUI.T.ConfirmSelectionBarAction_sub_button_add_and_force_selection();
     }
 
     /**
      * @return
      */
     protected String getTextForNoAutoStartAll() {
-        return _GUI._.ConfirmSelectionBarAction_sub_button_add_all();
+        return _GUI.T.ConfirmSelectionBarAction_sub_button_add_all();
     }
 
     /**
      * @return
      */
     protected String getTextForNoAutoStartSelectionOnly() {
-        return _GUI._.ConfirmSelectionBarAction_sub_button_add_selection();
+        return _GUI.T.ConfirmSelectionBarAction_sub_button_add_selection();
     }
 
     /**
      * @return
      */
     protected String getTextForAutoStartAll() {
-        return _GUI._.ConfirmSelectionBarAction_sub_button_add_and_start_all();
+        return _GUI.T.ConfirmSelectionBarAction_sub_button_add_and_start_all();
     }
 
     /**
      * @return
      */
     protected String getTextForAutoStartSelectionOnly() {
-        return _GUI._.ConfirmSelectionBarAction_sub_button_add_and_start_selection();
+        return _GUI.T.ConfirmSelectionBarAction_sub_button_add_and_start_selection();
     }
 
     public ConfirmSelectionBarActionSub() {

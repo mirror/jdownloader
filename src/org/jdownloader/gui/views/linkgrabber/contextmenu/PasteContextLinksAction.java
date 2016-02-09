@@ -55,11 +55,11 @@ public class PasteContextLinksAction extends CustomizableTableContextAppAction {
 
     private void update() {
         if (isDeepDecryptEnabled()) {
-            setName(_GUI._.PasteContextLinksAction_deep());
+            setName(_GUI.T.PasteContextLinksAction_deep());
 
             setIconKey(IconKey.ICON_CLIPBOARD);
         } else {
-            setName(_GUI._.PasteContextLinksAction());
+            setName(_GUI.T.PasteContextLinksAction());
 
             setIconKey(IconKey.ICON_CLIPBOARD);
         }

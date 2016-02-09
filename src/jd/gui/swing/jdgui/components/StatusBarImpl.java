@@ -108,7 +108,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         statusLabel.setEnabled(false);
         reconnectIndicator = new ReconnectProgress();
         // IconedProcessIndicator;
-        reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
+        reconnectIndicator.setTitle(_GUI.T.StatusBarImpl_initGUI_reconnect());
         reconnectIndicator.setIndeterminate(false);
         reconnectIndicator.setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
@@ -142,8 +142,8 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
         linkGrabberIndicator = new IconedProcessIndicator(new AbstractIcon(IconKey.ICON_LINKGRABBER, 16));
 
-        linkGrabberIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_linkgrabber());
-        linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
+        linkGrabberIndicator.setTitle(_GUI.T.StatusBarImpl_initGUI_linkgrabber());
+        linkGrabberIndicator.setDescription(_GUI.T.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
         linkGrabberIndicator.setIndeterminate(false);
         linkGrabberIndicator.setEnabled(false);
         linkGrabberIndicator.addMouseListener(new MouseListener() {
@@ -160,7 +160,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
                         {
                             this.setIconKey(IconKey.ICON_CANCEL);
-                            this.setName(_GUI._.StatusBarImpl_initGUI_abort_linkgrabber());
+                            this.setName(_GUI.T.StatusBarImpl_initGUI_abort_linkgrabber());
                             this.setEnabled(linkGrabberIndicator.isEnabled());
                         }
 
@@ -328,9 +328,9 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                     linkGrabberIndicator.setEnabled(enabled);
                     linkGrabberIndicator.setIndeterminate(enabled);
                     if (enabled) {
-                        linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc());
+                        linkGrabberIndicator.setDescription(_GUI.T.StatusBarImpl_initGUI_linkgrabber_desc());
                     } else {
-                        linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
+                        linkGrabberIndicator.setDescription(_GUI.T.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
                     }
                 }
             };
@@ -349,7 +349,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 }
                 IconedProcessIndicator ldownloadWatchdogIndicator = new IconedProcessIndicator(new AbstractIcon(IconKey.ICON_SKIPPED, 16));
 
-                ldownloadWatchdogIndicator.setTitle(_GUI._.StatusBarImpl_skippedLinksMarker_title());
+                ldownloadWatchdogIndicator.setTitle(_GUI.T.StatusBarImpl_skippedLinksMarker_title());
 
                 ldownloadWatchdogIndicator.setIndeterminate(false);
                 ldownloadWatchdogIndicator.setEnabled(true);
@@ -389,7 +389,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 @Override
                 protected void runInEDT() {
                     if (downloadWatchdogIndicator != null) {
-                        downloadWatchdogIndicator.setDescription(_GUI._.StatusBarImpl_skippedLinksMarker_desc(DownloadWatchDog.getInstance().getSession().getSkipCounter()));
+                        downloadWatchdogIndicator.setDescription(_GUI.T.StatusBarImpl_skippedLinksMarker_desc(DownloadWatchDog.getInstance().getSession().getSkipCounter()));
                     }
                 }
             };

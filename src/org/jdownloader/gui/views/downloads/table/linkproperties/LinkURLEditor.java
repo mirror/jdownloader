@@ -41,7 +41,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
 
         setOpaque(false);
         this.si = selectionInfo;
-        JLabel lbl = getLbl(_GUI._.LinkURLEditor(), new AbstractIcon(IconKey.ICON_URL, 18));
+        JLabel lbl = getLbl(_GUI.T.LinkURLEditor(), new AbstractIcon(IconKey.ICON_URL, 18));
         add(SwingUtils.toBold(lbl), "spanx");
         final ExtTableModel<AbstractNode> model = new ExtTableModel<AbstractNode>("linkurleditor") {
             {
@@ -111,7 +111,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
 
                 popup.add(new AppAction() {
                     {
-                        setName(_GUI._.LinkURLEditor_onContextMenu_copy_());
+                        setName(_GUI.T.LinkURLEditor_onContextMenu_copy_());
                         setSmallIcon(new AbstractIcon(IconKey.ICON_COPY, 20));
                     }
 

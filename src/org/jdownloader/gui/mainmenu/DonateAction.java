@@ -39,8 +39,8 @@ public class DonateAction extends CustomizableAppAction {
 
     public DonateAction() {
         setIconKey(IconKey.ICON_HEART);
-        setName(_GUI._.DonateAction());
-        setTooltipText(_GUI._.DonateAction_tt());
+        setName(_GUI.T.DonateAction());
+        setTooltipText(_GUI.T.DonateAction_tt());
     }
 
     @Override
@@ -61,7 +61,7 @@ public class DonateAction extends CustomizableAppAction {
 
             @Override
             public String getString() {
-                return _GUI._.DonationDialog_layoutDialogContent_please_wait();
+                return _GUI.T.DonationDialog_layoutDialogContent_please_wait();
             }
 
             @Override
@@ -135,7 +135,7 @@ public class DonateAction extends CustomizableAppAction {
                     if (Thread.currentThread().isInterrupted()) {
                         return;
                     }
-                    Dialog.getInstance().showErrorDialog(_GUI._.DonationDialog_layoutDialogContent_donation_disabled());
+                    Dialog.getInstance().showErrorDialog(_GUI.T.DonationDialog_layoutDialogContent_donation_disabled());
                     return;
                 }
                 if (Thread.currentThread().isInterrupted()) {
@@ -145,7 +145,7 @@ public class DonateAction extends CustomizableAppAction {
                 UIOManager.I().show(null, d);
 
             }
-        }, UIOManager.BUTTONS_HIDE_OK, _GUI._.DonationDialog_layoutDialogContent_please_wait_title(), _GUI._.DonationDialog_layoutDialogContent_please_wait_msg(), null, null, null);
+        }, UIOManager.BUTTONS_HIDE_OK, _GUI.T.DonationDialog_layoutDialogContent_please_wait_title(), _GUI.T.DonationDialog_layoutDialogContent_please_wait_msg(), null, null, null);
         d.setWaitForTermination(0);
         try {
             Dialog.getInstance().showDialog(d);

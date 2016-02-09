@@ -6,7 +6,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class AboutMenuContainer extends MenuContainer {
     public AboutMenuContainer() {
-        setName(_GUI._.gui_menu_about());
+        setName(_GUI.T.gui_menu_about());
         setIconKey(IconKey.ICON_HELP);
 
         // add(new AboutMenu());

@@ -16,7 +16,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class DownloadStoppedNotify extends AbstractNotifyWindow<DownloadStoppedContentPanel> {
     
     public DownloadStoppedNotify(StartDownloadsBubbleSupport startDownloadsBubbleSupport, SingleDownloadController downloadController) {
-        super(startDownloadsBubbleSupport, _GUI._.DownloadStoppedNotify(), new DownloadStoppedContentPanel(downloadController));
+        super(startDownloadsBubbleSupport, _GUI.T.DownloadStoppedNotify(), new DownloadStoppedContentPanel(downloadController));
     }
     
     @Override

@@ -201,7 +201,7 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
     private final class PackagesEntry extends DataEntry<AggregatedCrawlerNumbers> {
         private PackagesEntry() {
-            super(_GUI._.DownloadOverview_DownloadOverview_packages());
+            super(_GUI.T.DownloadOverview_DownloadOverview_packages());
         }
 
         @Override
@@ -360,13 +360,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
     protected List<DataEntry<AggregatedCrawlerNumbers>> createDataEntries() {
 
         DataEntry<AggregatedCrawlerNumbers> packageCount = new PackagesEntry();
-        DataEntry<AggregatedCrawlerNumbers> size = new BytesTotalEntry(_GUI._.DownloadOverview_DownloadOverview_size());
+        DataEntry<AggregatedCrawlerNumbers> size = new BytesTotalEntry(_GUI.T.DownloadOverview_DownloadOverview_size());
 
-        DataEntry<AggregatedCrawlerNumbers> linkCount = new LinksCountEntry(_GUI._.DownloadOverview_DownloadOverview_links());
-        DataEntry<AggregatedCrawlerNumbers> hosterCount = new HostCountEntry(_GUI._.DownloadOverview_DownloadOverview_hoster());
-        DataEntry<AggregatedCrawlerNumbers> onlineCount = new OnlineCountEntry(_GUI._.DownloadOverview_DownloadOverview_online());
-        DataEntry<AggregatedCrawlerNumbers> offlineCount = new OfflineCountEntry(_GUI._.DownloadOverview_DownloadOverview_offline());
-        DataEntry<AggregatedCrawlerNumbers> unknownCount = new UnknownCountEntry(_GUI._.DownloadOverview_DownloadOverview_unknown());
+        DataEntry<AggregatedCrawlerNumbers> linkCount = new LinksCountEntry(_GUI.T.DownloadOverview_DownloadOverview_links());
+        DataEntry<AggregatedCrawlerNumbers> hosterCount = new HostCountEntry(_GUI.T.DownloadOverview_DownloadOverview_hoster());
+        DataEntry<AggregatedCrawlerNumbers> onlineCount = new OnlineCountEntry(_GUI.T.DownloadOverview_DownloadOverview_online());
+        DataEntry<AggregatedCrawlerNumbers> offlineCount = new OfflineCountEntry(_GUI.T.DownloadOverview_DownloadOverview_offline());
+        DataEntry<AggregatedCrawlerNumbers> unknownCount = new UnknownCountEntry(_GUI.T.DownloadOverview_DownloadOverview_unknown());
 
         ArrayList<DataEntry<AggregatedCrawlerNumbers>> entries = new ArrayList<DataEntry<AggregatedCrawlerNumbers>>();
         entries.add(packageCount);

@@ -9,6 +9,7 @@ import jd.plugins.DownloadLink;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.UrlDisplayEntry;
@@ -140,10 +141,10 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
             return link.getBrowserUrl();
         }
         // http://board.jdownloader.org/showpost.php?p=305216&postcount=12
-        for (UrlDisplayType dt : DISPLAY_URL_TYPE) {
+        for (final UrlDisplayType dt : DISPLAY_URL_TYPE) {
             if (dt != null) {
                 final String ret = LinkTreeUtils.getUrlByType(dt, link);
-                if (ret != null) {
+                if (StringUtils.isNotEmpty(ret)) {
                     return ret;
                 }
             }

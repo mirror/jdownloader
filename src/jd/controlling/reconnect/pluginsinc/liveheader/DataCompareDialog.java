@@ -69,7 +69,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
     private String     loginDesc;
 
     public DataCompareDialog(String hostName, String firmware, String manufactor, String routerName, String username, String password) {
-        super(0, T.T.DataCompareDialog_DataCompareDialog_(), null, _GUI._.literally_continue(), null);
+        super(0, T.T.DataCompareDialog_DataCompareDialog_(), null, _GUI.T.literally_continue(), null);
         this.hostName = hostName;
         this.firmware = firmware;
         this.manufactor = manufactor;

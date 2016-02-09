@@ -32,7 +32,7 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
     public MyJDownloaderAction() {
         setIconKey(IconKey.ICON_LOGO_MYJDOWNLOADER);
         setEnabled(true);
-        setTooltipText(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_());
+        setTooltipText(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_());
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -41,7 +41,7 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
 
     @Override
     protected String createTooltip() {
-        return _GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_();
+        return _GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_();
     }
 
     public static final class NoAPIIconWarnIcon extends BadgeIcon {
@@ -128,17 +128,17 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
                     case IO:
                     case SERVER_DOWN:
                     case NO_INTERNET_CONNECTION:
-                        return _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections);
+                        return _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections);
                     default:
-                        return _GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections);
+                        return _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections);
                     }
                 case CONNECTED:
-                    return _GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections);
+                    return _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections);
                 default:
                     break;
                 }
             }
-            return _GUI._.MyJDownloaderSettingsPanel_runInEDT_disconnected_();
+            return _GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_();
 
         }
 

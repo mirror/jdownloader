@@ -32,7 +32,7 @@ public class NewAction extends AbstractAddAction {
 
     @Override
     public String getTooltipText() {
-        return _GUI._.action_add_premium_account_tooltip();
+        return _GUI.T.action_add_premium_account_tooltip();
     }
 
 }

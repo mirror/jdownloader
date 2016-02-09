@@ -407,7 +407,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                         if (table.getRowCount() == 0) {
 
                             if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                                HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI._.LinkGrabberPanel_setPropertiesPanelVisible_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
+                                HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI.T.LinkGrabberPanel_setPropertiesPanelVisible_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                             }
 
                         } else {
@@ -420,7 +420,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         }
 
         if (!newValue && keyHandler == org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE) {
-            JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(), _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(), new AbstractIcon(IconKey.ICON_WARNING_GREEN, 32));
+            JDGui.help(_GUI.T.LinkGrabberPanel_onConfigValueModified_title_(), _GUI.T.LinkGrabberPanel_onConfigValueModified_msg_(), new AbstractIcon(IconKey.ICON_WARNING_GREEN, 32));
         }
         fireRelayout();
     }

@@ -45,7 +45,7 @@ public class ProxyAutoAction extends AppAction {
 
     public ProxyAutoAction() {
         super();
-        setName(_GUI._.ProxyAutoAction_actionPerformed_d_title());
+        setName(_GUI.T.ProxyAutoAction_actionPerformed_d_title());
         setIconKey(IconKey.ICON_PLUGIN);
         setEnabled(JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled());
     }
@@ -135,7 +135,7 @@ public class ProxyAutoAction extends AppAction {
                     new EDTRunner() {
                         @Override
                         protected void runInEDT() {
-                            new MessageDialogImpl(0, _GUI._.ProxyAutoAction_run_added_proxies_(diff)).show();
+                            new MessageDialogImpl(0, _GUI.T.ProxyAutoAction_run_added_proxies_(diff)).show();
                         }
                     };
                 }

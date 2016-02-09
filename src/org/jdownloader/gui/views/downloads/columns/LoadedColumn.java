@@ -17,7 +17,7 @@ public class LoadedColumn extends ExtFileSizeColumn<AbstractNode> {
     private static final long serialVersionUID = 1L;
 
     public LoadedColumn() {
-        super(_GUI._.LoadedColumn_LoadedColumn(), null);
+        super(_GUI.T.LoadedColumn_LoadedColumn(), null);
     }
 
     public JPopupMenu createHeaderPopup() {

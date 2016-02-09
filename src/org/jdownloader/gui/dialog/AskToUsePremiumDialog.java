@@ -15,7 +15,7 @@ public class AskToUsePremiumDialog extends ConfirmDialog implements AskToUsePrem
     private final String domain;
 
     public AskToUsePremiumDialog(String domain, PluginForHost plugin) {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI._.PluginForHost_showFreeDialog_title(domain), _GUI._.PluginForHost_showFreeDialog_message(domain), new AbstractIcon(IconKey.ICON_PREMIUM, 32), _GUI._.lit_yes(), _GUI._.lit_no());
+        super(UIOManager.LOGIC_COUNTDOWN, _GUI.T.PluginForHost_showFreeDialog_title(domain), _GUI.T.PluginForHost_showFreeDialog_message(domain), new AbstractIcon(IconKey.ICON_PREMIUM, 32), _GUI.T.lit_yes(), _GUI.T.lit_no());
         setTimeout(5 * 60 * 1000);
         this.domain = domain;
     }

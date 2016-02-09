@@ -32,7 +32,7 @@ public class ChunksEditorLink extends MenuItemData implements MenuLink {
         final ActionData actionData = ad;
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
-        p.add(new JLabel(_GUI._.MenuEditors_editorwidth()));
+        p.add(new JLabel(_GUI.T.MenuEditors_editorwidth()));
         int width = getPreferedEditorWidth();
 
         final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
@@ -64,7 +64,7 @@ public class ChunksEditorLink extends MenuItemData implements MenuLink {
 
     public ChunksEditorLink() {
         super();
-        setName(_GUI._.ChunksEditor_ChunksEditor_());
+        setName(_GUI.T.ChunksEditor_ChunksEditor_());
         setIconKey(IconKey.ICON_CHUNKS);
         //
     }

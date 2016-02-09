@@ -14,7 +14,7 @@ import jd.gui.swing.jdgui.JDGui;
 public class LinkgrabberPropertiesToggleAction extends ToggleAppAction {
 
     public LinkgrabberPropertiesToggleAction() {
-        super(CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE, _GUI._.LinkgrabberPropertiesToggleAction_LinkgrabberPropertiesToggleAction(), _GUI._.LinkgrabberPropertiesToggleAction_LinkgrabberPropertiesToggleAction());
+        super(CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE, _GUI.T.LinkgrabberPropertiesToggleAction_LinkgrabberPropertiesToggleAction(), _GUI.T.LinkgrabberPropertiesToggleAction_LinkgrabberPropertiesToggleAction());
         setIconKey(IconKey.ICON_BOTTOMBAR);
 
     }
@@ -26,7 +26,7 @@ public class LinkgrabberPropertiesToggleAction extends ToggleAppAction {
         AbstractNode selectedObject = LinkGrabberTable.getInstance().getModel().getObjectbyRow(LinkGrabberTable.getInstance().getSelectionModel().getLeadSelectionIndex());
 
         if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && selectedObject == null) {
-            JDGui.help(_GUI._.help_enable_table_properties_title(), _GUI._.help_enable_table_properties_msg(), new AbstractIcon(IconKey.ICON_INFO, 32));
+            JDGui.help(_GUI.T.help_enable_table_properties_title(), _GUI.T.help_enable_table_properties_msg(), new AbstractIcon(IconKey.ICON_INFO, 32));
 
         }
     }

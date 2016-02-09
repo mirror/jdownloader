@@ -35,7 +35,7 @@ public class DownloadTabActionUtils {
             @Override
             public Void edtRun() {
                 if (agg.getTotalCount() == 0) {
-                    new IconDialog(0, _GUI._.lit_ups_something_is_wrong(), _GUI._.DownloadController_deleteLinksRequest_nolinks(), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_INFO, 256), null).show();
+                    new IconDialog(0, _GUI.T.lit_ups_something_is_wrong(), _GUI.T.DownloadController_deleteLinksRequest_nolinks(), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_INFO, 256), null).show();
                     return null;
                 }
                 WarnLevel level = WarnLevel.LOW;
@@ -69,7 +69,7 @@ public class DownloadTabActionUtils {
                     finalByPassDialog = byPassDialog;
                 }
                 if (!finalByPassDialog && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
-                    final ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI._.DeleteSelectionAction_actionPerformed_affected2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), DownloadController.getInstance().getChildrenCount() - agg.getTotalCount(), agg.getLocalFileCount()), agg.getBytesLoaded());
+                    final ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI.T.DeleteSelectionAction_actionPerformed_affected2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), DownloadController.getInstance().getChildrenCount() - agg.getTotalCount(), agg.getLocalFileCount()), agg.getBytesLoaded());
                     dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
                     dialog.setMode(mode);
                     dialog.show();

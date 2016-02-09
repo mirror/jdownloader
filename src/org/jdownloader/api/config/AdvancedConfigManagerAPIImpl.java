@@ -345,7 +345,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
         new Thread("Install Extension") {
             public void run() {
 
-                if (UIOManager.I().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.installExtension_remote_rly(toInstall))) {
+                if (UIOManager.I().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.installExtension_remote_rly(toInstall))) {
                     UpdaterListener listener = null;
                     try {
                         final AtomicLong last = new AtomicLong(System.currentTimeMillis());
@@ -360,7 +360,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                             @Override
                             public void onUpdaterStatusUpdate(final String label, Icon icon, final double p) {
                                 if (System.currentTimeMillis() - last.get() > 5000) {
-                                    UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.installExtension_remote_title(toInstall), _GUI._.installExtension_remote_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), _GUI._.lit_continue(), null);
+                                    UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.installExtension_remote_title(toInstall), _GUI.T.installExtension_remote_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), _GUI.T.lit_continue(), null);
                                     last.set(System.currentTimeMillis());
                                 }
                             }
@@ -380,12 +380,12 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                         final boolean pending = UpdateController.getInstance().hasPendingUpdates();
                         // System.out.println(1);
 
-                        if (UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI._.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI._.lit_restart_now(), _GUI._.lit_later())) {
+                        if (UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI.T.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later())) {
                             RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                         }
 
                     } catch (Exception e) {
-                        UIOManager.I().showException(_GUI._.lit_error_occured(), e);
+                        UIOManager.I().showException(_GUI.T.lit_error_occured(), e);
                     } finally {
                         UpdateController.getInstance().getEventSender().removeListener(listener);
                     }

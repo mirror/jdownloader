@@ -22,9 +22,9 @@ public class ConvertCLRScriptAction extends CustomizableAppAction {
     @Override
     public void actionPerformed(ActionEvent event) {
         try {
-            String clr = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI._.ConvertCLRAction_actionPerformed_title(), _GUI._.ConvertCLRAction_actionPerformed_msg(), null, null, _GUI._.lit_continue(), null);
+            String clr = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI.T.ConvertCLRAction_actionPerformed_title(), _GUI.T.ConvertCLRAction_actionPerformed_msg(), null, null, _GUI.T.lit_continue(), null);
             String[] lh = CLRConverter.createLiveHeader(clr);
-            Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI._.ConvertCLRAction_actionPerformed_finished_title(lh[0]), _GUI._.ConvertCLRAction_actionPerformed_finished_msg(), lh[1], null, _GUI._.lit_continue(), null);
+            Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI.T.ConvertCLRAction_actionPerformed_finished_title(lh[0]), _GUI.T.ConvertCLRAction_actionPerformed_finished_msg(), lh[1], null, _GUI.T.lit_continue(), null);
 
         } catch (DialogClosedException e) {
             e.printStackTrace();

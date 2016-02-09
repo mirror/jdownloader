@@ -14,7 +14,7 @@ public class ResumeAction extends CustomizableTableContextAppAction<FilePackage,
 
     private static final long   serialVersionUID = 8087143123808363305L;
 
-    private final static String NAME             = _GUI._.gui_table_contextmenu_resume();
+    private final static String NAME             = _GUI.T.gui_table_contextmenu_resume();
 
     public ResumeAction() {
         setIconKey(IconKey.ICON_RESUME);

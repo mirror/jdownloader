@@ -183,7 +183,7 @@ public class AccountController implements AccountControllerListener, AccountProp
 
                 if (JDGui.bugme(WarnLevel.SEVERE)) {
                     if (!newValue) {
-                        final ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.are_you_sure_disabled_premium(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_continue(), null);
+                        final ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.lit_are_you_sure(), _GUI.T.are_you_sure_disabled_premium(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.lit_continue(), null);
                         try {
                             UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
                             return;

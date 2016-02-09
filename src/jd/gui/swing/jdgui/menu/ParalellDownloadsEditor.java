@@ -30,7 +30,7 @@ public class ParalellDownloadsEditor extends MenuEditor {
     public ParalellDownloadsEditor(boolean b) {
         super(b);
         config = JsonConfig.create(GeneralSettings.class);
-        add(getLbl(_GUI._.ParalellDownloadsEditor_ParalellDownloadsEditor_(), new AbstractIcon(IconKey.ICON_PARALELL, 18)));
+        add(getLbl(_GUI.T.ParalellDownloadsEditor_ParalellDownloadsEditor_(), new AbstractIcon(IconKey.ICON_PARALELL, 18)));
         spinner = new ExtSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS));
         try {
             ((DefaultEditor) spinner.getEditor()).getTextField().addFocusListener(new FocusListener() {

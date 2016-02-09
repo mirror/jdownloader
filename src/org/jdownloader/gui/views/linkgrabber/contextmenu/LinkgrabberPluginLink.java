@@ -21,7 +21,7 @@ public class LinkgrabberPluginLink extends MenuItemData implements MenuLink {
 
     @Override
     public String getName() {
-        return _GUI._.LinkgrabberPluginLink_getName_object_();
+        return _GUI.T.LinkgrabberPluginLink_getName_object_();
     }
 
     @Override

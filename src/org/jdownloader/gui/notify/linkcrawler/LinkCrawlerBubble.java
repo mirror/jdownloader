@@ -41,7 +41,7 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
     private final WeakReference<LinkCollectorCrawler> crawler;
     
     public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, LinkCollectorCrawler crawler) {
-        super(linkCrawlerBubbleSupport, _GUI._.balloon_new_links(), new LinkCrawlerBubbleContent());
+        super(linkCrawlerBubbleSupport, _GUI.T.balloon_new_links(), new LinkCrawlerBubbleContent());
         this.crawler = new WeakReference<LinkCollectorCrawler>(crawler);
     }
     
@@ -63,24 +63,24 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
                 LinkOrigin src = jlc.getJob().getOrigin().getOrigin();
                 
                 if (src == null) {
-                    setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
+                    setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
                 } else if (src == LinkOrigin.ADD_LINKS_DIALOG) {
-                    setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
+                    setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
                 } else if (src == LinkOrigin.CLIPBOARD) {
                     String txt = jlc.getJob().getText();
                     if (StringUtils.isNotEmpty(txt)) {
                         try {
                             URL url = new URL(txt);
-                            setHeaderText(_GUI._.LinkCrawlerBubble_update_header_from_Clipboard_url(url.getHost()));
+                            setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard_url(url.getHost()));
                         } catch (MalformedURLException e) {
-                            setHeaderText(_GUI._.LinkCrawlerBubble_update_header_from_Clipboard());
+                            setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
                         }
                     } else {
-                        setHeaderText(_GUI._.LinkCrawlerBubble_update_header_from_Clipboard());
+                        setHeaderText(_GUI.T.LinkCrawlerBubble_update_header_from_Clipboard());
                     }
                     
                 } else {
-                    setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
+                    setHeaderText(_GUI.T.LinkCrawlerBubble_update_header());
                 }
                 getContentComponent().update(jlc);
                 

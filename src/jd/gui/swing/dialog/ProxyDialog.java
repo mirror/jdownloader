@@ -62,7 +62,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
     private DelayedRunnable delayer;
 
     public ProxyDialog() {
-        super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), new AbstractIcon(IconKey.ICON_PROXY_ROTATE, 32), null, null);
+        super(0, _GUI.T.jd_gui_swing_dialog_ProxyDialog_title(), new AbstractIcon(IconKey.ICON_PROXY_ROTATE, 32), null, null);
 
     }
 
@@ -104,15 +104,15 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
 
         String[] types = null;
         if (JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
-            types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI._.jd_gui_swing_dialog_ProxyDialog_direct(), _GUI._.jd_gui_swing_dialog_ProxyDialog_pac() };
+            types = new String[] { _GUI.T.jd_gui_swing_dialog_ProxyDialog_http(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_direct(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_pac() };
         } else {
-            types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI._.jd_gui_swing_dialog_ProxyDialog_direct() };
+            types = new String[] { _GUI.T.jd_gui_swing_dialog_ProxyDialog_http(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_direct() };
 
         }
         cmbType = new JComboBox(types);
         cmbType.addActionListener(this);
         //
-        lblHost = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
+        lblHost = new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_hostport());
         txtHost = new ExtTextField() {
             @Override
             public void onChanged() {
@@ -128,13 +128,13 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
         txtPort.setText("8080");
         txtPort.addCaretListener(this);
         //
-        lblUser = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_username());
+        lblUser = new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_username());
         txtUser = new JTextField();
         //
-        lblPass = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_password());
+        lblPass = new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_password());
         txtPass = new JTextField();
         //
-        lblNetIf = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_netif());
+        lblNetIf = new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_netif());
 
         cmbNetIf = new PseudoCombo<NetIfSelection>(new NetIfSelection[] { new NetIfSelection("-", "") }) {
             @Override
@@ -285,7 +285,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
         case 0:
             // http
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
-            panel.add(new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_type()));
+            panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
             panel.add(cmbType, "spanx");
 
             panel.add(lblHost);
@@ -300,7 +300,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             panel.add(lblPass);
             panel.add(txtPass, "spanx");
 
-            lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
+            lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_hostport());
             if (StringUtils.isEmpty(txtPort.getText())) {
                 txtPort.setText("8080");
             }
@@ -309,7 +309,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             // socks5
 
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
-            panel.add(new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_type()));
+            panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
             panel.add(cmbType, "spanx");
 
             panel.add(lblHost);
@@ -324,7 +324,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             panel.add(lblPass);
             panel.add(txtPass, "spanx");
 
-            lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
+            lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_hostport());
             if (StringUtils.isEmpty(txtPort.getText())) {
                 txtPort.setText("1080");
             }
@@ -332,7 +332,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
         case 2:
             // socks4
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
-            panel.add(new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_type()));
+            panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
             panel.add(cmbType, "spanx");
 
             panel.add(lblHost);
@@ -344,7 +344,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             panel.add(lblUser);
             panel.add(txtUser, "spanx");
 
-            lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
+            lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_hostport());
             if (StringUtils.isEmpty(txtPort.getText())) {
                 txtPort.setText("1080");
             }
@@ -352,7 +352,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
         case 3:
             // direct
             panel.setLayout(new MigLayout("ins 0, wrap 2", "[][grow,fill]", "[]"));
-            panel.add(new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_type()));
+            panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
             panel.add(cmbType, "spanx");
 
             panel.add(lblHost);
@@ -364,7 +364,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             panel.add(lblNetIf);
             panel.add(cmbNetIf);
 
-            lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_local());
+            lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_local());
             break;
 
         case 4:
@@ -373,7 +373,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 throw new WTFException("Not possible");
             }
             panel.setLayout(new MigLayout("ins 0, wrap 2", "[][grow,fill]", "[]"));
-            panel.add(new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_type()));
+            panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
             panel.add(cmbType, "spanx");
 
             panel.add(lblHost);
@@ -384,7 +384,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             panel.add(lblPass);
             panel.add(txtPass, "spanx");
 
-            lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_pac_url());
+            lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_pac_url());
 
             break;
         default:

@@ -30,7 +30,7 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
     private final Icon iconDownload = NewTheme.I().getIcon(IconKey.ICON_DOWNLOAD, 20);
 
     public CandidateAccountColumn() {
-        super(_GUI._.CandidateAccountColumn());
+        super(_GUI.T.CandidateAccountColumn());
     }
 
     @Override
@@ -94,19 +94,19 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                     String accountType = null;
                     switch (history.getAccountType()) {
                     case MULTI:
-                        accountType = _GUI._.CandidateAccountColumn_account_multi(account.getType().getLabel());
+                        accountType = _GUI.T.CandidateAccountColumn_account_multi(account.getType().getLabel());
                         break;
                     case NONE:
                         break;
                     case ORIGINAL:
-                        accountType = _GUI._.CandidateAccountColumn_account_original(account.getType().getLabel());
+                        accountType = _GUI.T.CandidateAccountColumn_account_original(account.getType().getLabel());
                         break;
                     }
 
                     if (!StringUtils.isEmpty(accountType)) {
-                        str = _GUI._.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHoster(), accountType);
+                        str = _GUI.T.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHoster(), accountType);
                     } else {
-                        str = _GUI._.CandidateAccountColumn_getStringValue_account(GUIUtils.getAccountName(account.getUser()), account.getHoster());
+                        str = _GUI.T.CandidateAccountColumn_getStringValue_account(GUIUtils.getAccountName(account.getUser()), account.getHoster());
                     }
                 } else {
                     if (icon == null) {

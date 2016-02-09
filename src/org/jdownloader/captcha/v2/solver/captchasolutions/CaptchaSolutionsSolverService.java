@@ -52,7 +52,7 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
 
     @Override
     public String getType() {
-        return _GUI._.CaptchaSolver_Type_paid_online();
+        return _GUI.T.CaptchaSolver_Type_paid_online();
     }
 
     @Override
@@ -74,11 +74,11 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
 
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_CAPTCHASOLUTIONS, 32));
-                addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_paid_service());
+                addDescription(_GUI.T.AntiCaptchaConfigPanel_onShow_description_paid_service());
 
                 add(new SettingsButton(new AppAction() {
                     {
-                        setName(_GUI._.lit_open_website());
+                        setName(_GUI.T.lit_open_website());
 
                     }
 
@@ -92,12 +92,12 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
                 username = new TextInput(CFG_CAPTCHA_SOLUTIONS.USER_NAME);
                 password = new PasswordInput(CFG_CAPTCHA_SOLUTIONS.PASSWORD);
 
-                this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
+                this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
-                this.addDescriptionPlain(_GUI._.captchasolver_configpanel_my_account_description(CaptchaSolutionsSolverService.this.getName()));
-                addPair(_GUI._.captchasolver_configpanel_enabled(CaptchaSolutionsSolverService.this.getName()), null, new Checkbox(CFG_CAPTCHA_SOLUTIONS.ENABLED, username, password));
-                addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, username);
-                addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, password);
+                this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(CaptchaSolutionsSolverService.this.getName()));
+                addPair(_GUI.T.captchasolver_configpanel_enabled(CaptchaSolutionsSolverService.this.getName()), null, new Checkbox(CFG_CAPTCHA_SOLUTIONS.ENABLED, username, password));
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_password(), null, password);
 
                 // addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_feedback(), null, new
                 // Checkbox(CFG_CAPTCHA_SOLUTIONS.FEED_BACK_SENDING_ENABLED));
@@ -136,7 +136,7 @@ public class CaptchaSolutionsSolverService extends AbstractSolverService impleme
 
     @Override
     public String getName() {
-        return _GUI._.CaptchaSolutionsSolver_gettypeName_();
+        return _GUI.T.CaptchaSolutionsSolver_gettypeName_();
     }
 
     @Override

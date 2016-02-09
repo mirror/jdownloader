@@ -130,7 +130,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
             cb = new ExtCheckBox(enabled, lbl, (JComponent) comp);
             SwingUtils.setOpaque(cb, false);
             add(cb, "width " + cb.getPreferredSize().width + "!, aligny " + (comp.isMultiline() ? "top" : "center"));
-            cb.setToolTipText(_GUI._.AbstractConfigPanel_addPair_enabled());
+            cb.setToolTipText(_GUI.T.AbstractConfigPanel_addPair_enabled());
         }
         if (comp.getConstraints() != null) {
             con += "," + comp.getConstraints();

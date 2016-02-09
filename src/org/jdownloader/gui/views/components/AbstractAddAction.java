@@ -8,7 +8,7 @@ public abstract class AbstractAddAction extends AppAction {
 
     public AbstractAddAction() {
         super();
-        setName(_GUI._.literally_add());
+        setName(_GUI.T.literally_add());
         setIconKey(IconKey.ICON_ADD);
     }
 

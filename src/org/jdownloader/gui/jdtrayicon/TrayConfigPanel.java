@@ -135,7 +135,7 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
         // and add the T component to col 3
         if (enabled != null) {
             cb = new ExtCheckBox(enabled, lbl, (JComponent) comp);
-            cb.setToolTipText(_GUI._.AbstractConfigPanel_addPair_enabled());
+            cb.setToolTipText(_GUI.T.AbstractConfigPanel_addPair_enabled());
             SwingUtils.setOpaque(cb, false);
             add(cb, "width " + cb.getPreferredSize().width + "!, aligny " + (comp.isMultiline() ? "top" : "center"));
             add((JComponent) comp, con);

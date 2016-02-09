@@ -68,7 +68,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public UrlColumn() {
-        super(_GUI._.LinkGrabberTableModel_initColumns_url());
+        super(_GUI.T.LinkGrabberTableModel_initColumns_url());
         this.setClickcount(2);
 
     }
@@ -122,7 +122,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public boolean onDoubleClick(MouseEvent e, final AbstractNode value) {
         final int row = getModel().getTable().rowAtPoint(new Point(e.getX(), e.getY()));
-        JDGui.help(_GUI._.UrlColumn_onDoubleClick_help_title(), _GUI._.UrlColumn_onDoubleClick_help_msg(), new AbstractIcon(IconKey.ICON_URL, 32));
+        JDGui.help(_GUI.T.UrlColumn_onDoubleClick_help_title(), _GUI.T.UrlColumn_onDoubleClick_help_msg(), new AbstractIcon(IconKey.ICON_URL, 32));
         final long timeSinceLastHide = System.currentTimeMillis() - lastHide;
         if (timeSinceLastHide < 250 && editing == value) {
             //
@@ -193,12 +193,12 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
             {
                 if (Application.isJared(null)) {
 
-                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + shorten(string)));
+                    setName(_GUI.T.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + shorten(string)));
                 } else if (dt == null) {
-                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy("PLUGIN_PATTERN: " + string));
+                    setName(_GUI.T.UrlColumn_onDoubleClick_object_copy("PLUGIN_PATTERN: " + string));
                 } else {
 
-                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + string));
+                    setName(_GUI.T.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + string));
                 }
 
                 setIconKey(IconKey.ICON_COPY);

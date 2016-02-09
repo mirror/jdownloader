@@ -32,7 +32,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
     private static final long serialVersionUID = -4468197802870765463L;
 
     public MergeToPackageAction() {
-        setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
+        setName(_GUI.T.MergeToPackageAction_MergeToPackageAction_());
         setIconKey(IconKey.ICON_PACKAGE_NEW);
 
     }

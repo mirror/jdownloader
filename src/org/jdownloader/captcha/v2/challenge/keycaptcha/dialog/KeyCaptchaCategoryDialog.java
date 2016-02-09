@@ -53,7 +53,7 @@ public class KeyCaptchaCategoryDialog extends AbstractCaptchaDialog<String> impl
     private int                         maxWidth;
 
     public KeyCaptchaCategoryDialog(int flag, DialogType type, DomainInfo domain, KeyCaptchaCategoryChallenge captchaChallenge) {
-        super(flag, _GUI._.KeyCaptchaCategoryDialog(domain.getTld()), type, domain, _GUI._.KeyCaptchaCategoryDialog_explain(domain.getTld()));
+        super(flag, _GUI.T.KeyCaptchaCategoryDialog(domain.getTld()), type, domain, _GUI.T.KeyCaptchaCategoryDialog_explain(domain.getTld()));
         // super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN, title, null, null, null);
 
         this.challenge = captchaChallenge;

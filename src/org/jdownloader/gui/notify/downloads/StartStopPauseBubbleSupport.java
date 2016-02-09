@@ -23,7 +23,7 @@ import org.jdownloader.images.NewTheme;
 public class StartStopPauseBubbleSupport extends AbstractBubbleSupport implements DownloadWatchdogListener {
     
     public StartStopPauseBubbleSupport() {
-        super(_GUI._.plugins_optional_JDLightTray_ballon_startpausestop2(), CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED);
+        super(_GUI.T.plugins_optional_JDLightTray_ballon_startpausestop2(), CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
     }
     
@@ -48,7 +48,7 @@ public class StartStopPauseBubbleSupport extends AbstractBubbleSupport implement
                 
                 @Override
                 public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                    return new BasicNotify(_GUI._.download_paused(), _GUI._.download_paused_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_PAUSE, 24));
+                    return new BasicNotify(_GUI.T.download_paused(), _GUI.T.download_paused_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_PAUSE, 24));
                 }
             });
             
@@ -62,7 +62,7 @@ public class StartStopPauseBubbleSupport extends AbstractBubbleSupport implement
                 
                 @Override
                 public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                    return new BasicNotify(_GUI._.download_start(), _GUI._.download_start_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24));
+                    return new BasicNotify(_GUI.T.download_start(), _GUI.T.download_start_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24));
                 }
             });
         }
@@ -75,7 +75,7 @@ public class StartStopPauseBubbleSupport extends AbstractBubbleSupport implement
                 
                 @Override
                 public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                    return new BasicNotify(_GUI._.download_stopped(), _GUI._.download_stopped_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_STOP, 24));
+                    return new BasicNotify(_GUI.T.download_stopped(), _GUI.T.download_stopped_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_STOP, 24));
                 }
             });
         }

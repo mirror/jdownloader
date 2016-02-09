@@ -266,27 +266,27 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             if (sb.length() > 0) {
                 sb.append(", ");
             }
-            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_clearFiltered());
+            sb.append(_GUI.T.GenericDeleteFromLinkgrabberAction_clearFiltered());
         }
 
         if (isCancelLinkcrawlerJobs()) {
             if (sb.length() > 0) {
                 sb.append(", ");
             }
-            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_cancelCrawler());
+            sb.append(_GUI.T.GenericDeleteFromLinkgrabberAction_cancelCrawler());
         }
         if (isClearSearchFilter()) {
             if (sb.length() > 0) {
                 sb.append(", ");
             }
-            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_clearSearch());
+            sb.append(_GUI.T.GenericDeleteFromLinkgrabberAction_clearSearch());
         }
 
         if (isResetTableSorter()) {
             if (sb.length() > 0) {
                 sb.append(", ");
             }
-            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_resetSorter());
+            sb.append(_GUI.T.GenericDeleteFromLinkgrabberAction_resetSorter());
         }
         if (sb.length() > 0) {
             sb.append(" & ");
@@ -294,13 +294,13 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         if (this.isDeleteAll()) {
             switch (includedSelection.getSelectionType()) {
             case ALL:
-                sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_createName_updateName_object_all());
+                sb.append(_GUI.T.GenericDeleteFromLinkgrabberAction_createName_updateName_object_all());
                 break;
             case SELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
                 break;
             case UNSELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_all());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_all());
                 break;
 
             case NONE:
@@ -311,13 +311,13 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
             switch (includedSelection.getSelectionType()) {
             case ALL:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object());
                 break;
             case SELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_selected());
                 break;
             case UNSELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_selected());
+                sb.append(_GUI.T.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_selected());
                 break;
 
             case NONE:
@@ -330,7 +330,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                     sb.append(" & ");
                 }
 
-                sb.append(_GUI._.lit_duplicates_links());
+                sb.append(_GUI.T.lit_duplicates_links());
                 first = false;
             }
 
@@ -339,7 +339,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                     sb.append(" & ");
                 }
 
-                sb.append(_GUI._.lit_disabled());
+                sb.append(_GUI.T.lit_disabled());
                 first = false;
             }
 
@@ -348,7 +348,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                     sb.append(" & ");
                 }
                 first = false;
-                sb.append(_GUI._.lit_offline());
+                sb.append(_GUI.T.lit_offline());
             }
         }
         return sb.toString();

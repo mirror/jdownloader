@@ -145,7 +145,7 @@ public class AdvancedConfigEntry {
 
                 if (keyHandler.getAnnotation(RequiresRestart.class) != null) {
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
-                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI._.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null, null) {
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI.T.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null, null) {
 
                             @Override
                             public String getDontShowAgainKey() {

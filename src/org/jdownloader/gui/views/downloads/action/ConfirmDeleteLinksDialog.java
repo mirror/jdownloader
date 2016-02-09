@@ -28,7 +28,7 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog {
     private DeleteFileOptions mode;
 
     public ConfirmDeleteLinksDialog(String msg, long bytes) {
-        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), msg, new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_DEL, -1), _GUI._.lit_delete(), _GUI._.lit_cancel());
+        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.literally_are_you_sure(), msg, new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_DEL, -1), _GUI.T.lit_delete(), _GUI.T.lit_cancel());
         this.bytes = bytes;
 
     }
@@ -67,10 +67,10 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog {
         ret.setOpaque(false);
         if (isRecycleSupported()) {
 
-            toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
+            toRecycleCb = new JComboBox(new String[] { _GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2(), _GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
 
         } else {
-            toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
+            toRecycleCb = new JComboBox(new String[] { _GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
 
         }
 

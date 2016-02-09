@@ -21,7 +21,7 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
     private static final long serialVersionUID = 1L;
 
     public ChecksumColumn() {
-        super(_GUI._.checksumcolumnmd5());
+        super(_GUI.T.checksumcolumnmd5());
 
     }
 

@@ -15,7 +15,7 @@ public class AddGroupAction extends AppAction {
     private HosterPriorityTableModel model;
 
     public AddGroupAction(HosterPriorityTableModel model) {
-        setName(_GUI._.AddGroupAction_AddGroupAction());
+        setName(_GUI.T.AddGroupAction_AddGroupAction());
         setIconKey(IconKey.ICON_ADD);
         this.model = model;
     }

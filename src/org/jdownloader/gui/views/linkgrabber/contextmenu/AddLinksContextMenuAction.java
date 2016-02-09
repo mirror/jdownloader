@@ -11,8 +11,8 @@ import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 public class AddLinksContextMenuAction extends CustomizableTableContextAppAction {
 
     private static final long   serialVersionUID = 1901008532686173167L;
-    private static final String NAME             = _GUI._.AddLinksToLinkgrabberAction();
-    private static final String TT               = _GUI._.AddLinksAction_AddLinksAction_tt();
+    private static final String NAME             = _GUI.T.AddLinksToLinkgrabberAction();
+    private static final String TT               = _GUI.T.AddLinksAction_AddLinksAction_tt();
 
     public AddLinksContextMenuAction() {
         super(true, false);

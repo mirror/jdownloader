@@ -39,7 +39,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
     private PackagizerFilter  packagizer;
 
     public String getTitle() {
-        return _GUI._.gui_config_linkgrabber_packagizer();
+        return _GUI.T.gui_config_linkgrabber_packagizer();
     }
 
     public Packagizer() {

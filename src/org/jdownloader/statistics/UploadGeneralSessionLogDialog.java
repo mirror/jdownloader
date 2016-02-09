@@ -25,7 +25,7 @@ public class UploadGeneralSessionLogDialog extends AbstractDialog<Object> implem
     private int desiredWidh = 0;
 
     public UploadGeneralSessionLogDialog() {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_title2(), new AbstractIcon(IconKey.ICON_BOTTY_STOP, -1), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_yes(), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_no());
+        super(UIOManager.LOGIC_COUNTDOWN, _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_object_title2(), new AbstractIcon(IconKey.ICON_BOTTY_STOP, -1), _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_yes(), _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_no());
         setTimeout(5 * 60 * 1000);
 
     }
@@ -51,7 +51,7 @@ public class UploadGeneralSessionLogDialog extends AbstractDialog<Object> implem
 
         JLabel lbl;
         desiredWidh = getDialog().getRawPreferredSize().width;
-        p.add(lbl = new JLabel("<html>" + _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_msg2() + "<b><u>" + _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_more() + "</b></u>" + "</html>"), "pushx, growx,gapbottom 5");
+        p.add(lbl = new JLabel("<html>" + _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_object_msg2() + "<b><u>" + _GUI.T.UploadSessionLogDialog_UploadSessionLogDialog_object_more() + "</b></u>" + "</html>"), "pushx, growx,gapbottom 5");
         lbl.addMouseListener(new MouseListener() {
 
             @Override

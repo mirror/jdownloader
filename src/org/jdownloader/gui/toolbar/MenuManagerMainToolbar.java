@@ -166,7 +166,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         opt.add(SettingsAction.class);
 
         SettingsMenuContainer ret = new SettingsMenuContainer();
-        ret.setName(_GUI._.quicksettings_SettingsMenuContainer());
+        ret.setName(_GUI.T.quicksettings_SettingsMenuContainer());
         opt.add(ret);
 
         ret.add(new ChunksEditorLink());
@@ -244,7 +244,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
 
     @Override
     public String getName() {
-        return _GUI._.MainToolbarManager_getName();
+        return _GUI.T.MainToolbarManager_getName();
     }
 
     @Override

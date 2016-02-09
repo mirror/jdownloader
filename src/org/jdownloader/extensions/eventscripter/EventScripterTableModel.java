@@ -81,7 +81,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<ScriptEntry>(_GUI._.lit_enabled()) {
+        this.addColumn(new ExtCheckColumn<ScriptEntry>(_GUI.T.lit_enabled()) {
 
             private static final long serialVersionUID = 1515656228974789237L;
 
@@ -133,7 +133,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             }
         });
 
-        this.addColumn(new ExtTextColumn<ScriptEntry>(_GUI._.lit_name()) {
+        this.addColumn(new ExtTextColumn<ScriptEntry>(_GUI.T.lit_name()) {
 
             @Override
             public String getStringValue(ScriptEntry value) {
@@ -295,7 +295,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             public void configureRendererComponent(ScriptEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
 
                 rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
-                rendererBtn.setText(_GUI._.lit_edit());
+                rendererBtn.setText(_GUI.T.lit_edit());
                 // }
             }
 
@@ -303,7 +303,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             public void configureEditorComponent(ScriptEntry value, boolean isSelected, int row, int column) {
                 editing = value;
                 editorBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
-                editorBtn.setText(_GUI._.lit_edit());
+                editorBtn.setText(_GUI.T.lit_edit());
 
             }
 

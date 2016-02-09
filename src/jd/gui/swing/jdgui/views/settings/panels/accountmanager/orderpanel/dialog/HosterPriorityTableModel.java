@@ -53,7 +53,7 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
         this.addColumn(new PackageColumn());
 
         addColumn(new GroupRuleColumn());
-        this.addColumn(new ExtTextColumn<AccountInterface>(_GUI._.premiumaccounttablemodel_column_user()) {
+        this.addColumn(new ExtTextColumn<AccountInterface>(_GUI.T.premiumaccounttablemodel_column_user()) {
 
             private static final long serialVersionUID = -8070328156326837828L;
 
@@ -93,7 +93,7 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
             }
         });
 
-        this.addColumn(new ExtDateColumn<AccountInterface>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
+        this.addColumn(new ExtDateColumn<AccountInterface>(_GUI.T.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
 
             @Override
@@ -127,7 +127,7 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
                 if (sd instanceof SimpleDateFormat) {
                     return ((SimpleDateFormat) sd).toPattern();
                 }
-                return _GUI._.PremiumAccountTableModel_getDateFormatString_();
+                return _GUI.T.PremiumAccountTableModel_getDateFormatString_();
             }
 
             @Override
@@ -140,7 +140,7 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
             }
         });
 
-        this.addColumn(new ExtProgressColumn<AccountInterface>(_GUI._.premiumaccounttablemodel_column_trafficleft()) {
+        this.addColumn(new ExtProgressColumn<AccountInterface>(_GUI.T.premiumaccounttablemodel_column_trafficleft()) {
             private static final long serialVersionUID = -8376056840172682617L;
             private final JComponent  empty            = new RendererMigPanel("ins 0", "[]", "[]");
 
@@ -198,13 +198,13 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
                     if (!aw.isValid()) {
                         return "";
                     } else if (aw.getAccount().isEnabled() && aw.isTempDisabled() && ((timeout = aw.getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
-                        return _GUI._.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
+                        return _GUI.T.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
                     } else if (ai == null) {
                         return "";
                     } else {
                         // COL_PROGRESS = COL_PROGRESS_NORMAL;
                         if (ai.isUnlimitedTraffic()) {
-                            return _GUI._.premiumaccounttablemodel_column_trafficleft_unlimited();
+                            return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
                         } else {
                             return Formatter.formatReadable(ai.getTrafficLeft()) + "/" + Formatter.formatReadable(ai.getTrafficMax());
 

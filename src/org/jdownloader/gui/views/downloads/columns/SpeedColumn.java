@@ -55,7 +55,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     private final Color         defaultColor;
 
     public SpeedColumn() {
-        super(_GUI._.SpeedColumn_SpeedColumn());
+        super(_GUI.T.SpeedColumn_SpeedColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
         warningEnabled.set(CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.isEnabled());
         CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -90,7 +90,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
         ret.add(new JCheckBoxMenuItem(new AppAction() {
             {
-                setName(_GUI._.literall_premium_alert());
+                setName(_GUI.T.literall_premium_alert());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_WARNING, 16));
                 setSelected(JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertSpeedColumnEnabled());
             }
@@ -169,7 +169,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     protected String getTooltipText(AbstractNode obj) {
         final String ret = super.getTooltipText(obj);
         if (speedLimiterEnabled.get()) {
-            final String limit = _GUI._.SpeedMeterPanel_getString_limited(SizeFormatter.formatBytes(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue()));
+            final String limit = _GUI.T.SpeedMeterPanel_getString_limited(SizeFormatter.formatBytes(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue()));
             return limit + "\r\n" + ret;
         }
         return ret;
@@ -178,9 +178,9 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     public boolean onSingleClick(final MouseEvent e, final AbstractNode obj) {
         if (isSpeedWarning(obj)) {
             try {
-                Dialog.getInstance().showDialog(new PremiumInfoDialog((((DownloadLink) obj).getDomainInfo()), _GUI._.SpeedColumn_onSingleClick_object_(((DownloadLink) obj).getHost()), "SpeedColumn") {
+                Dialog.getInstance().showDialog(new PremiumInfoDialog((((DownloadLink) obj).getDomainInfo()), _GUI.T.SpeedColumn_onSingleClick_object_(((DownloadLink) obj).getHost()), "SpeedColumn") {
                     protected String getDescription(DomainInfo info2) {
-                        return _GUI._.SpeedColumn_getDescription_object_(info2.getTld());
+                        return _GUI.T.SpeedColumn_getDescription_object_(info2.getTld());
                     }
                 });
             } catch (DialogClosedException e1) {

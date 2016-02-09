@@ -56,7 +56,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
     }
 
     public ReconnectDialog() {
-        super(UIOManager.BUTTONS_HIDE_OK, _GUI._.ReconnectDialog_ReconnectDialog_(), null, null, _GUI._.literally_close());
+        super(UIOManager.BUTTONS_HIDE_OK, _GUI.T.ReconnectDialog_ReconnectDialog_(), null, null, _GUI.T.literally_close());
     }
 
     @Override
@@ -94,16 +94,16 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         SwingUtils.toBold(header);
         state.setHorizontalAlignment(SwingConstants.RIGHT);
 
-        header.setText(_GUI._.ReconnectDialog_layoutDialogContent_header(ReconnectPluginController.getInstance().getActivePlugin().getName()));
-        p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_duration()));
+        header.setText(_GUI.T.ReconnectDialog_layoutDialogContent_header(ReconnectPluginController.getInstance().getActivePlugin().getName()));
+        p.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_duration()));
 
         p.add(duration = new JLabel(), "width 50!");
 
-        p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_old()));
+        p.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_old()));
         p.add(old = new JLabel(), "width 100!,alignx right");
         state.setHorizontalAlignment(SwingConstants.RIGHT);
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
-        p.add(label(_GUI._.ReconnectDialog_layoutDialogContent_currentip()));
+        p.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_currentip()));
         p.add(newIP = new JLabel(), "width 100!");
         newIP.setHorizontalAlignment(SwingConstants.RIGHT);
         newIP.setText("???");
@@ -130,7 +130,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
                             @Override
                             protected void runInEDT() {
-                                state.setText(_GUI._.ReconnectDialog_onIPValidated_());
+                                state.setText(_GUI.T.ReconnectDialog_onIPValidated_());
                             }
                         };
                     } else {
@@ -138,7 +138,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
                             @Override
                             protected void runInEDT() {
-                                state.setText(_GUI._.ReconnectDialog_failed());
+                                state.setText(_GUI.T.ReconnectDialog_failed());
                             }
                         };
                     }
@@ -218,7 +218,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
             @Override
             protected void runInEDT() {
-                state.setText(_GUI._.ReconnectDialog_onIPForbidden_(parameter.getExternalIp().toString()));
+                state.setText(_GUI.T.ReconnectDialog_onIPForbidden_(parameter.getExternalIp().toString()));
 
             }
         };
@@ -235,7 +235,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
             @Override
             protected void runInEDT() {
-                state.setText(_GUI._.ReconnectDialog_onIPOffline_());
+                state.setText(_GUI.T.ReconnectDialog_onIPOffline_());
 
             }
         };
@@ -246,7 +246,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
             @Override
             protected void runInEDT() {
-                state.setText(_GUI._.ReconnectDialog_onIPValidated_());
+                state.setText(_GUI.T.ReconnectDialog_onIPValidated_());
             }
         };
     }
@@ -256,7 +256,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
             @Override
             protected void runInEDT() {
-                state.setText(_GUI._.ReconnectDialog_onIPOnline_());
+                state.setText(_GUI.T.ReconnectDialog_onIPOnline_());
             }
         };
 
@@ -268,7 +268,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
     protected boolean startReconnectAndWait(LogSource logger) throws ReconnectException, InterruptedException {
         ReconnectInvoker plg = getInvoker();
         if (plg == null) {
-            throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
+            throw new ReconnectException(_GUI.T.ReconnectDialog_run_failed_not_setup_());
         }
         plg.setLogger(logger);
 
@@ -320,7 +320,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         if (!StringUtils.isEmpty(e.getMessage())) {
             Dialog.getInstance().showErrorDialog(e.getMessage());
         } else {
-            Dialog.getInstance().showErrorDialog(_GUI._.ReconnectDialog_layoutDialogContent_error());
+            Dialog.getInstance().showErrorDialog(_GUI.T.ReconnectDialog_layoutDialogContent_error());
         }
     }
 }

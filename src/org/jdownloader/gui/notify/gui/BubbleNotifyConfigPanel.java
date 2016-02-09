@@ -48,7 +48,7 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
     private DelayedRunnable           delayer;
 
     public String getTitle() {
-        return _GUI._.NotifierConfigPanel_getTitle();
+        return _GUI.T.NotifierConfigPanel_getTitle();
     }
 
     public BubbleNotifyConfigPanel() {
@@ -77,18 +77,18 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
 
     protected void layoutComponents() {
         this.addHeader(getTitle(), NewTheme.I().getIcon(IconKey.ICON_BUBBLE, 32));
-        this.addDescription(_GUI._.plugins_optional_JDLightTray_ballon_desc());
-        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate(), null, new ComboBox<BubbleNotifyEnabledState>(CFG_BUBBLE.SH.getKeyHandler("BubbleNotifyEnabledState", KeyHandler.class), new BubbleNotifyEnabledState[] { BubbleNotifyEnabledState.ALWAYS, BubbleNotifyEnabledState.JD_NOT_ACTIVE, BubbleNotifyEnabledState.TRAY_OR_TASKBAR, BubbleNotifyEnabledState.TASKBAR, BubbleNotifyEnabledState.TRAY, BubbleNotifyEnabledState.NEVER, }, new String[] { _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_taskbar(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_tray(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never(), }));
+        this.addDescription(_GUI.T.plugins_optional_JDLightTray_ballon_desc());
+        addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate(), null, new ComboBox<BubbleNotifyEnabledState>(CFG_BUBBLE.SH.getKeyHandler("BubbleNotifyEnabledState", KeyHandler.class), new BubbleNotifyEnabledState[] { BubbleNotifyEnabledState.ALWAYS, BubbleNotifyEnabledState.JD_NOT_ACTIVE, BubbleNotifyEnabledState.TRAY_OR_TASKBAR, BubbleNotifyEnabledState.TASKBAR, BubbleNotifyEnabledState.TRAY, BubbleNotifyEnabledState.NEVER, }, new String[] { _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_taskbar(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_tray(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never(), }));
 
         boxes = new ArrayList<Pair<Checkbox>>();
         for (AbstractBubbleSupport pt : BubbleNotify.getInstance().getTypes()) {
-            boxes.add(addPair(_GUI._.lit_or() + " " + pt.getLabel(), "skip 1,split 2,pushx,growx", null, new Checkbox(pt.getKeyHandler())));
+            boxes.add(addPair(_GUI.T.lit_or() + " " + pt.getLabel(), "skip 1,split 2,pushx,growx", null, new Checkbox(pt.getKeyHandler())));
         }
-        this.addHeader(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
+        this.addHeader(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
 
-        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_silent_(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE));
-        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout(), null, new Spinner(CFG_BUBBLE.DEFAULT_TIMEOUT));
-        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime(), null, new Spinner(CFG_BUBBLE.FADE_ANIMATION_DURATION));
+        addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_silent_(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE));
+        addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout(), null, new Spinner(CFG_BUBBLE.DEFAULT_TIMEOUT));
+        addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime(), null, new Spinner(CFG_BUBBLE.FADE_ANIMATION_DURATION));
     }
 
     public void updateTypes(List<AbstractBubbleSupport> types) {

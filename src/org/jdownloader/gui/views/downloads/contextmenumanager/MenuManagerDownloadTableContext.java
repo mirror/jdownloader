@@ -111,7 +111,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(createMoreMenu());
 
         mr.add(new SeparatorData());
-        mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
+        mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI.T.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
 
         mr.add(createDeleteMenu());
         mr.add(new SeparatorData());
@@ -204,7 +204,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
 
     @Override
     public String getName() {
-        return _GUI._.DownloadListContextMenuManager_getName();
+        return _GUI.T.DownloadListContextMenuManager_getName();
     }
 
     @Override

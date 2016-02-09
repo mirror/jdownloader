@@ -25,7 +25,7 @@ public class ExportPopupAction extends AppAction {
 
     public ExportPopupAction(JButton addLinks, ProxyTable table) {
         setSmallIcon(new AbstractIcon(IconKey.ICON_POPUPSMALL, -1));
-        setTooltipText(_GUI._.AddOptionsAction_AddOptionsAction_tt());
+        setTooltipText(_GUI.T.AddOptionsAction_AddOptionsAction_tt());
         positionComp = addLinks;
         this.table = table;
     }

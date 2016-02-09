@@ -27,7 +27,7 @@ public class SetDownloadPassword<PackageType extends AbstractPackageNode<Childre
 
     public SetDownloadPassword() {
         super();
-        setName(_GUI._.SetDownloadPassword_SetDownloadPassword_());
+        setName(_GUI.T.SetDownloadPassword_SetDownloadPassword_());
         setIconKey(IconKey.ICON_PASSWORD);
     }
 
@@ -44,7 +44,7 @@ public class SetDownloadPassword<PackageType extends AbstractPackageNode<Childre
             defaultPW = ((CrawledLink) node).getDownloadLink().getDownloadPassword();
         }
         try {
-            final String newPW = Dialog.getInstance().showInputDialog(0, _GUI._.SetDownloadPassword_SetDownloadPassword_(), _GUI._.jd_gui_userio_defaulttitle_input(), defaultPW, new AbstractIcon(IconKey.ICON_PASSWORD, 32), null, null);
+            final String newPW = Dialog.getInstance().showInputDialog(0, _GUI.T.SetDownloadPassword_SetDownloadPassword_(), _GUI.T.jd_gui_userio_defaulttitle_input(), defaultPW, new AbstractIcon(IconKey.ICON_PASSWORD, 32), null, null);
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override

@@ -106,7 +106,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         } catch (DialogNoAnswerException e) {
             throw e;
         } catch (Throwable e) {
-            Dialog.getInstance().showExceptionDialog(_GUI._.accountdialog_check_failed(), _GUI._.accountdialog_check_failed_msg(), e);
+            Dialog.getInstance().showExceptionDialog(_GUI.T.accountdialog_check_failed(), _GUI.T.accountdialog_check_failed_msg(), e);
         }
         AccountError error = ac.getError();
         String errorMessage = ac.getErrorString();
@@ -122,25 +122,25 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 if (StringUtils.isEmpty(errorMessage)) {
                     errorMessage = _JDT._.AccountController_updateAccountInfo_status_plugin_defect();
                 }
-                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(errorMessage));
+                Dialog.getInstance().showMessageDialog(_GUI.T.accountdialog_check_invalid(errorMessage));
                 return false;
             case EXPIRED:
-                Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(ac.getUser()), null, _GUI._.accountdialog_check_expired_renew(), null);
+                Dialog.getInstance().showConfirmDialog(0, _GUI.T.accountdialog_check_expired_title(), _GUI.T.accountdialog_check_expired(ac.getUser()), null, _GUI.T.accountdialog_check_expired_renew(), null);
                 AccountController.getInstance().addAccount(ac, false);
                 return true;
             case TEMP_DISABLED:
                 if (StringUtils.isEmpty(errorMessage)) {
-                    errorMessage = _GUI._.accountdialog_check_failed();
+                    errorMessage = _GUI.T.accountdialog_check_failed();
                 }
-                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_result(errorMessage));
+                Dialog.getInstance().showMessageDialog(_GUI.T.accountdialog_check_result(errorMessage));
                 AccountController.getInstance().addAccount(ac, false);
                 return true;
             default:
             case INVALID:
                 if (StringUtils.isEmpty(errorMessage)) {
-                    errorMessage = _GUI._.accountdialog_check_failed_msg();
+                    errorMessage = _GUI.T.accountdialog_check_failed_msg();
                 }
-                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(errorMessage));
+                Dialog.getInstance().showMessageDialog(_GUI.T.accountdialog_check_invalid(errorMessage));
                 return false;
             }
         } else {
@@ -150,9 +150,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 message = ai.getStatus();
             }
             if (StringUtils.isEmpty(message)) {
-                message = _GUI._.lit_yes();
+                message = _GUI.T.lit_yes();
             }
-            Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(message));
+            Dialog.getInstance().showMessageDialog(_GUI.T.accountdialog_check_valid(message));
             AccountController.getInstance().addAccount(ac, false);
             return true;
         }
@@ -182,7 +182,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             public String getLabelString() {
                 return null;
             }
-        }, 0, _GUI._.accountdialog_check(), _GUI._.accountdialog_check_msg(), DomainInfo.getInstance(ac.getHoster()).getFavIcon());
+        }, 0, _GUI.T.accountdialog_check(), _GUI.T.accountdialog_check_msg(), DomainInfo.getInstance(ac.getHoster()).getFavIcon());
         try {
 
             Dialog.getInstance().showDialog(pd);
@@ -210,7 +210,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     private final PluginClassLoaderChild   cl;
 
     private AddAccountDialog(final PluginForHost plugin, Account acc) {
-        super(UserIO.NO_ICON, _GUI._.jd_gui_swing_components_AccountDialog_title(), null, _GUI._.lit_save(), null);
+        super(UserIO.NO_ICON, _GUI.T.jd_gui_swing_components_AccountDialog_title(), null, _GUI.T.lit_save(), null);
         this.defaultAccount = acc;
         this.plugin = plugin;
         cl = PluginClassLoader.getInstance().getChild();
@@ -268,7 +268,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                     }
 
                 } catch (UpdateRequiredClassNotFoundException e1) {
-                    Dialog.getInstance().showErrorDialog(_GUI._.AddAccountDialog_actionPerformed_outdated(getSelectedItem().getHost()));
+                    Dialog.getInstance().showErrorDialog(_GUI.T.AddAccountDialog_actionPerformed_outdated(getSelectedItem().getHost()));
                 }
 
             }
@@ -283,8 +283,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         };
 
         final JButton link = new JButton(new AbstractIcon(IconKey.ICON_MONEY, 16));
-        link.setText(_GUI._.gui_menu_action_premium_buy_name());
-        link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
+        link.setText(_GUI.T.gui_menu_action_premium_buy_name());
+        link.setToolTipText(_GUI.T.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 final PluginForHost lPlugin = plugin;
@@ -296,10 +296,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         link.setFocusable(false);
 
         content = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
-        content.add(header(_GUI._.AddAccountDialog_layoutDialogContent_choosehoster_()), "gapleft 15,spanx,pushx,growx");
+        content.add(header(_GUI.T.AddAccountDialog_layoutDialogContent_choosehoster_()), "gapleft 15,spanx,pushx,growx");
         content.add(this.hoster, "gapleft 32,height 24!");
         content.add(link, "height 20!,gapleft 32");
-        content.add(header(_GUI._.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
+        content.add(header(_GUI.T.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
 
         LazyHostPlugin lazyp = null;
         if (this.plugin != null) {

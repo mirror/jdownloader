@@ -245,7 +245,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
                 @Override
                 public String getTitle() {
-                    return _GUI._.DonateAction();
+                    return _GUI.T.DonateAction();
                 }
 
                 @Override

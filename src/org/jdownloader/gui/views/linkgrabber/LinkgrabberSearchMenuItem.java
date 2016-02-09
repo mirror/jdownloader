@@ -36,7 +36,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
 
     public LinkgrabberSearchMenuItem() {
         super();
-        setName(_GUI._.FilterMenuItem_FilterMenuItem());
+        setName(_GUI.T.FilterMenuItem_FilterMenuItem());
         setIconKey(IconKey.ICON_SEARCH);
         setVisible(true);
         //
@@ -98,7 +98,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][100:n:n,fill]", "[]");
         SwingUtils.setOpaque(p, false);
         final ExtTextField shortcut = new ExtTextField();
-        shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp2());
+        shortcut.setHelpText(_GUI.T.InfoPanel_InfoPanel_shortcuthelp2());
         shortcut.setEditable(false);
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
         try {
@@ -133,7 +133,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
 
         });
 
-        p.add(new JLabel(_GUI._.InfoPanel_InfoPanel_shortcuts()));
+        p.add(new JLabel(_GUI.T.InfoPanel_InfoPanel_shortcuts()));
         p.add(shortcut, "split 2");
         JButton shortCutReset;
         p.add(shortCutReset = new JButton(new AppAction() {
@@ -158,7 +158,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
 
         }), "width 22!,height 22!");
 
-        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_min()), "newline");
+        p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_min()), "newline");
         int width = getMinWidth();
 
         final ExtSpinner minSpin = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
@@ -172,7 +172,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         p.add(minSpin);
         //
 
-        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_pref()));
+        p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_pref()));
         width = getPrefWidth();
 
         final ExtSpinner prefSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
@@ -185,7 +185,7 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
         });
         p.add(prefSpin);
         //
-        p.add(new JLabel(_GUI._.MenuEditors_boxwidth_max()));
+        p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_max()));
         width = getMaxWidth();
 
         final ExtSpinner maxSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));

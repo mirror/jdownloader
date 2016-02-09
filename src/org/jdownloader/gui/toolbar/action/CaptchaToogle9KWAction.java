@@ -18,19 +18,19 @@ public class CaptchaToogle9KWAction extends AbstractToolbarToggleAction {
     @Override
     protected String createTooltip() {
         SolverService service = NineKwSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenDisabled() {
         SolverService service = NineKwSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenEnabled() {
         SolverService service = NineKwSolverService.getInstance();
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
     }
 
 }

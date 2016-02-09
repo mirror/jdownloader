@@ -75,7 +75,7 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
 
     @Override
     public String createTooltip() {
-        return _GUI._.StopDownloadsAction_createTooltip();
+        return _GUI.T.StopDownloadsAction_createTooltip();
     }
 
     @Override

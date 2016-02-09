@@ -36,7 +36,7 @@ public class CollapseExpandAllAction extends SelectionBasedToolbarAction {
 
     @Override
     protected String createTooltip() {
-        return _GUI._.CollapseExpandAllAction_CollapseExpandAllAction();
+        return _GUI.T.CollapseExpandAllAction_CollapseExpandAllAction();
     }
 
     @Override

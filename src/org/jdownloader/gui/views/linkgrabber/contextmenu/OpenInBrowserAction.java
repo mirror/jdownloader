@@ -27,7 +27,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
     public OpenInBrowserAction() {
 
         setIconKey(IconKey.ICON_BROWSE);
-        setName(_GUI._.gui_table_contextmenu_browselink());
+        setName(_GUI.T.gui_table_contextmenu_browselink());
     }
 
     @Override
@@ -108,7 +108,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
                     public String getLabelString() {
                         return null;
                     }
-                }, 0, _GUI._.OpenInBrowserAction_actionPerformed_open_in_browser__multi(), _GUI._.OpenInBrowserAction_actionPerformed_open_in_browser__multi_msg(urls.size()), NewTheme.I().getIcon(IconKey.ICON_BROWSE, 32), null, null);
+                }, 0, _GUI.T.OpenInBrowserAction_actionPerformed_open_in_browser__multi(), _GUI.T.OpenInBrowserAction_actionPerformed_open_in_browser__multi_msg(urls.size()), NewTheme.I().getIcon(IconKey.ICON_BROWSE, 32), null, null);
 
                 try {
                     Dialog.getInstance().showDialog(pg);

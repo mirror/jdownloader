@@ -35,14 +35,14 @@ public class ImportAction extends AppAction {
 
     public ImportAction(PackagizerFilterTable table) {
         setIconKey(IconKey.ICON_IMPORT);
-        setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_import());
+        setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_import());
         this.table = table;
         setTooltipText(_JDT._.ImportAction_tt());
     }
 
     public void actionPerformed(ActionEvent e) {
         try {
-            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.LinkgrabberFilter_import_dialog_title(), null, null);
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.LinkgrabberFilter_import_dialog_title(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
             d.setFileFilter(new FileFilter() {
 
@@ -78,7 +78,7 @@ public class ImportAction extends AppAction {
                 }
 
                 if (contents == null || contents.size() == 0) {
-                    Dialog.getInstance().showErrorDialog(_GUI._.LinkgrabberFilter_LinkgrabberFilter_import_invalid(f.getName()));
+                    Dialog.getInstance().showErrorDialog(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_import_invalid(f.getName()));
                 } else {
 
                     all.addAll(contents);

@@ -24,14 +24,14 @@ public class RemoveAction extends AppAction {
 
     public RemoveAction(PremiumAccountTable table) {
         this.table = table;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
     }
 
     public RemoveAction(List<AccountEntry> selection2, boolean force) {
         this.force = force;
         this.selection = selection2;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
     }
 
@@ -53,7 +53,7 @@ public class RemoveAction extends AppAction {
                 sb.append(account.getAccount().getHoster() + "-Account (" + account.getAccount().getUser() + ")");
             }
             try {
-                if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(finalSelection.size()), _GUI._.account_remove_action_msg(finalSelection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
+                if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI.T.account_remove_action_title(finalSelection.size()), _GUI.T.account_remove_action_msg(finalSelection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override

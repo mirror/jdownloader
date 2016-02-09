@@ -34,7 +34,7 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
     private int               editingRow;
 
     public OrderColumn() {
-        super(_GUI._.settings_linkgrabber_filter_columns_exepriority());
+        super(_GUI.T.settings_linkgrabber_filter_columns_exepriority());
 
         this.editor = new MigPanel("ins 0", "[grow,fill][]0[]", "[grow,fill]");
         this.renderer = new MigPanel("ins 0", "[grow,fill][]0[]", "0[grow,fill]0");
@@ -154,7 +154,7 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
 
     @Override
     protected String getTooltipText(PackagizerRule obj) {
-        return _GUI._.FilterTableModel_getTooltipText_prio_();
+        return _GUI.T.FilterTableModel_getTooltipText_prio_();
     }
 
     @Override

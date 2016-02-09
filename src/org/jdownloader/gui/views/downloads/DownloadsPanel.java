@@ -165,7 +165,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
         final JProgressBar ph = new JProgressBar();
 
-        ph.setString(_GUI._.DownloadsTable_DownloadsTable_init_plugins());
+        ph.setString(_GUI.T.DownloadsTable_DownloadsTable_init_plugins());
 
         SecondLevelLaunch.HOST_PLUGINS_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -175,7 +175,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
                     @Override
                     protected void runInEDT() {
-                        ph.setString(_GUI._.DownloadsTable_DownloadsTable_object_wait_for_loading_links());
+                        ph.setString(_GUI.T.DownloadsTable_DownloadsTable_object_wait_for_loading_links());
 
                     }
 

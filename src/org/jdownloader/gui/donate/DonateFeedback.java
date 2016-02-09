@@ -22,7 +22,7 @@ public class DonateFeedback {
 
     public static void reportFailed(Throwable e, final String include, final boolean requireUserInput) {
         try {
-            final InputDialog d = new InputDialog(Dialog.STYLE_LARGE, _GUI._.DonateFeedback_reportFailed_title_(), _GUI._.DonateFeedback_reportFailed_title_message() + "\r\n" + _GUI._.DonateFeedback_reportFailed_title_message_email(), null, new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_send(), null);
+            final InputDialog d = new InputDialog(Dialog.STYLE_LARGE, _GUI.T.DonateFeedback_reportFailed_title_(), _GUI.T.DonateFeedback_reportFailed_title_message() + "\r\n" + _GUI.T.DonateFeedback_reportFailed_title_message_email(), null, new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.lit_send(), null);
             final InputDialogInterface response = UIOManager.I().show(InputDialogInterface.class, d);
             response.throwCloseExceptions();
             final StringBuilder txt = new StringBuilder();
@@ -75,7 +75,7 @@ public class DonateFeedback {
 
     public static void reportCanceled(final String include) {
         try {
-            final InputDialog d = new InputDialog(Dialog.STYLE_LARGE, _GUI._.DonateFeedback_reportCanceled_title_(), _GUI._.DonateFeedback_reportCanceled_title_message(), null, new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_send(), null);
+            final InputDialog d = new InputDialog(Dialog.STYLE_LARGE, _GUI.T.DonateFeedback_reportCanceled_title_(), _GUI.T.DonateFeedback_reportCanceled_title_message(), null, new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.lit_send(), null);
             final InputDialogInterface response = UIOManager.I().show(InputDialogInterface.class, d);
             response.throwCloseExceptions();
             final String txt = response.getText();

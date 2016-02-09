@@ -42,7 +42,7 @@ public class FFMpegProgress extends PluginProgress {
         if (requestor instanceof ProgressColumn) {
             return null;
         }
-        return _GUI._.FFMpegProgress_getMessage_merging();
+        return _GUI.T.FFMpegProgress_getMessage_merging();
     }
 
 }

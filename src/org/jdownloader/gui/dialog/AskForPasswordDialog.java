@@ -33,7 +33,7 @@ public class AskForPasswordDialog extends InputDialog implements AskDownloadPass
     private DownloadLink downloadLink;
 
     public AskForPasswordDialog(String message, DownloadLink link) {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI._.AskForPasswordDialog_AskForPasswordDialog_title_(), message, null, new AbstractIcon(IconKey.ICON_PASSWORD, 32), _GUI._.lit_continue(), null);
+        super(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), message, null, new AbstractIcon(IconKey.ICON_PASSWORD, 32), _GUI.T.lit_continue(), null);
         this.downloadLink = link;
         setTimeout(10 * 60 * 1000);
     }
@@ -74,13 +74,13 @@ public class AskForPasswordDialog extends InputDialog implements AskDownloadPass
         }
 
         String packagename = downloadLink.getParentNode().getName();
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filename())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(downloadLink.getView().getDisplayName()));
         if (downloadLink.getParentNode() != FilePackage.getDefaultFilePackage()) {
-            p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
+            p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
             p.add(leftLabel(packagename));
         }
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_hoster())), "split 2,sizegroup left,alignx left");
         DomainInfo di = downloadLink.getDomainInfo();
         JLabel ret = new JLabel(di.getTld());
         ret.setHorizontalAlignment(SwingConstants.LEFT);
@@ -90,7 +90,7 @@ public class AskForPasswordDialog extends InputDialog implements AskDownloadPass
         input = getSmallInputComponent();
         // this.input.setBorder(BorderFactory.createEtchedBorder());
         input.setText(defaultMessage);
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI.T.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
         p.add((JComponent) input, "w 450,pushx,growx");
         getDialog().addWindowFocusListener(new WindowFocusListener() {
 

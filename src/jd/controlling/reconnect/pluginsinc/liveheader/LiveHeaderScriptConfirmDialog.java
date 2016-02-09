@@ -103,7 +103,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     }
 
     public LiveHeaderScriptConfirmDialog(RouterData test, String gatewayAdressHost, String name) {
-        this(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.STYLE_HIDE_ICON, _GUI._.runDetectionWizard_confirm_title(), new AbstractIcon("reconnect", 32), _GUI._.lit_continue(), _GUI._.lit_skip(), test, gatewayAdressHost, name);
+        this(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.STYLE_HIDE_ICON, _GUI.T.runDetectionWizard_confirm_title(), new AbstractIcon("reconnect", 32), _GUI.T.lit_continue(), _GUI.T.lit_skip(), test, gatewayAdressHost, name);
 
     }
 
@@ -125,7 +125,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
     public void addEditAction() {
         setLeftActions(editAction = new AppAction() {
             {
-                setName(_GUI._.LiveHeaderScriptConfirmDialog_LiveHeaderScriptConfirmDialog_edit());
+                setName(_GUI.T.LiveHeaderScriptConfirmDialog_LiveHeaderScriptConfirmDialog_edit());
             }
 
             @Override
@@ -165,7 +165,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                 }
                                 if (StringUtils.isNotEmpty(settings.getPassword()) && !StringUtils.equals(settings.getPassword(), lPassword)) {
 
-                                    if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_password_change(authorization, lPassword), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                    if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_password_change(authorization, lPassword), null, _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                         settings.setPassword(lPassword);
                                     } else {
                                         return;
@@ -173,7 +173,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                                 }
 
                                 if (StringUtils.isNotEmpty(settings.getUserName()) && !StringUtils.equals(settings.getUserName(), lUsername)) {
-                                    if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_username_change(authorization, lUsername), null, _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                    if (UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_confirm_username_change(authorization, lUsername), null, _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                                         settings.setUserName(lUsername);
                                     } else {
                                         return;
@@ -247,7 +247,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                         }.run();
                     } catch (Exception e1) {
                         e1.printStackTrace();
-                        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_warning(), _GUI._.LiveHeaderReconnect_validateAndSet_object_(), null, null, null));
+                        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.lit_warning(), _GUI.T.LiveHeaderReconnect_validateAndSet_object_(), null, null, null));
 
                     }
 
@@ -272,21 +272,21 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         MigPanel p = new MigPanel("ins 0,wrap 2", "[align right][grow,fill]", "[]");
 
         addMessage(p);
-        p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_routername()));
+        p.add(getLabel(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_routername()));
         p.add(new JLabel(StringUtils.isEmpty(name) ? T.T.unknown() : name));
         if (StringUtils.isNotEmpty(routerData.getManufactor())) {
-            p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_Manufactor()));
+            p.add(getLabel(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_Manufactor()));
             p.add(new JLabel(routerData.getManufactor()));
         }
         if (routerData.getAvgScD() > 0) {
-            p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_time()));
+            p.add(getLabel(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_time()));
             p.add(new JLabel(TimeFormatter.formatMilliSeconds(routerData.getAvgScD(), 0)));
         }
         if (StringUtils.isNotEmpty(gateway)) {
-            p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_routerip()));
+            p.add(getLabel(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_routerip()));
             p.add(new JLabel(gateway));
         }
-        p.add(getLabel(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_script_overview()));
+        p.add(getLabel(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_script_overview()));
         p.add(Box.createHorizontalGlue());
 
         textpane = addMessageComponent();
@@ -342,9 +342,9 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
         try {
             textpane.setText(toOverView(routerData.getScript()));
         } catch (Throwable e) {
-            textpane.setText(_GUI._.LiveHeaderScriptConfirmDialog_layoutDialogContent_invalidscript());
+            textpane.setText(_GUI.T.LiveHeaderScriptConfirmDialog_layoutDialogContent_invalidscript());
 
-            UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_OK, e.getMessage(), e.getMessage(), e, null, _GUI._.lit_close()));
+            UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_OK, e.getMessage(), e.getMessage(), e, null, _GUI.T.lit_close()));
         }
     }
 

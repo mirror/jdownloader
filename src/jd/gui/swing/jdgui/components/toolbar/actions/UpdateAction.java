@@ -53,7 +53,7 @@ public class UpdateAction extends AbstractToolBarAction {
 
     @Override
     protected String createTooltip() {
-        return _GUI._.action_start_update_tooltip();
+        return _GUI.T.action_start_update_tooltip();
     }
 
     public class Button extends ExtButton implements UpdaterListener, Flashable, GenericConfigEventListener<Boolean> {
@@ -121,13 +121,13 @@ public class UpdateAction extends AbstractToolBarAction {
 
         @Override
         public void onFlashRegister(long counter) {
-            setToolTipText(_GUI._.UpdateAction_runInEDT_updates_pendings());
+            setToolTipText(_GUI.T.UpdateAction_runInEDT_updates_pendings());
             onFlash(counter);
         }
 
         @Override
         public void onFlashUnRegister(long counter) {
-            setToolTipText(_GUI._.UpdateAction_runInEDT_no_updates_pendings());
+            setToolTipText(_GUI.T.UpdateAction_runInEDT_no_updates_pendings());
             Button.this.setIcon(NewTheme.I().getIcon(getIconKey(), 24));
         }
 

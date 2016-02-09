@@ -1327,7 +1327,7 @@ public class YoutubeDashV2 extends PluginForHost {
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream());
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
             if (dl.getConnection().getResponseCode() == 500) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1475,7 +1475,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                     new File(videoStreamPath).delete();
                                     new File(audioStreamPath).delete();
                                 } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
 
                                 }
                             } else {
@@ -1484,7 +1484,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                     new File(videoStreamPath).delete();
                                     new File(audioStreamPath).delete();
                                 } else {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
 
                                 }
                             }
@@ -1507,7 +1507,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                         new File(audioStreamPath).delete();
                                     } else {
-                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
 
                                     }
                                 } finally {
@@ -1524,7 +1524,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                         new File(audioStreamPath).delete();
                                     } else {
-                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
 
                                     }
                                 } finally {
@@ -1542,7 +1542,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                         new File(audioStreamPath).delete();
                                     } else {
-                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
 
                                     }
                                 } finally {
@@ -1603,7 +1603,7 @@ public class YoutubeDashV2 extends PluginForHost {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).data, resume, 1);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("image/")) {
                 if (dl.getConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
                 }
 
                 this.dl.getConnection().disconnect();
@@ -1624,7 +1624,7 @@ public class YoutubeDashV2 extends PluginForHost {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).data, resume, 1);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("text/xml")) {
                 if (dl.getConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
                 }
 
                 this.dl.getConnection().disconnect();
@@ -1640,7 +1640,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
             if (variant instanceof YoutubeVariant) {
                 if (((YoutubeVariant) variant).name().contains("DEMUX") || ((YoutubeVariant) variant).name().contains("MP3")) {
-                    checkFFmpeg(downloadLink, _GUI._.YoutubeDash_handleDownload_youtube_demux());
+                    checkFFmpeg(downloadLink, _GUI.T.YoutubeDash_handleDownload_youtube_demux());
                 }
             }
 
@@ -1653,7 +1653,7 @@ public class YoutubeDashV2 extends PluginForHost {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).video, resume, getChunksPerStream());
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application")) {
                 if (dl.getConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
                 }
 
                 this.dl.getConnection().disconnect();
@@ -1666,7 +1666,7 @@ public class YoutubeDashV2 extends PluginForHost {
             break;
         case DASH_AUDIO:
         case DASH_VIDEO:
-            checkFFmpeg(downloadLink, _GUI._.YoutubeDash_handleDownload_youtube_dash());
+            checkFFmpeg(downloadLink, _GUI.T.YoutubeDash_handleDownload_youtube_dash());
             handleDash(downloadLink, data, null);
             break;
 
@@ -2117,11 +2117,11 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
-        final JMenu setVariants = new JScrollMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
+        final JMenu setVariants = new JScrollMenu(_GUI.T.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
         setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
         setVariants.setEnabled(false);
 
-        final JMenu addVariants = new JScrollMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add());
+        final JMenu addVariants = new JScrollMenu(_GUI.T.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add());
 
         addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
         addVariants.setEnabled(false);
@@ -2192,7 +2192,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         }
                         groupMenu.add(new JMenuItem(new BasicAction() {
                             {
-                                setName(_GUI._.YoutubeDashV2_add_best(group.getLabel()));
+                                setName(_GUI.T.YoutubeDashV2_add_best(group.getLabel()));
                             }
 
                             @Override
@@ -2269,7 +2269,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                         groupMenu.add(new JMenuItem(new BasicAction() {
                             {
-                                setName(_GUI._.YoutubeDashV2_add_worst(group.getLabel()));
+                                setName(_GUI.T.YoutubeDashV2_add_worst(group.getLabel()));
                             }
 
                             @Override
@@ -2317,7 +2317,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         }
                         groupMenu.add(new JMenuItem(new BasicAction() {
                             {
-                                setName(_GUI._.YoutubeDashV2_add_best(group.getLabel()));
+                                setName(_GUI.T.YoutubeDashV2_add_best(group.getLabel()));
                             }
 
                             @Override
@@ -2381,7 +2381,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                         groupMenu.add(new JMenuItem(new BasicAction() {
                             {
-                                setName(_GUI._.YoutubeDashV2_add_worst(group.getLabel()));
+                                setName(_GUI.T.YoutubeDashV2_add_worst(group.getLabel()));
                             }
 
                             @Override

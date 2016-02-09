@@ -49,7 +49,7 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
 
     @Override
     public String getType() {
-        return _GUI._.CaptchaSolver_Type_paid_online();
+        return _GUI.T.CaptchaSolver_Type_paid_online();
     }
 
     @Override
@@ -71,11 +71,11 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
 
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_CHEAPCAPTCHA, 32));
-                addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_paid_service());
+                addDescription(_GUI.T.AntiCaptchaConfigPanel_onShow_description_paid_service());
 
                 add(new SettingsButton(new AppAction() {
                     {
-                        setName(_GUI._.lit_open_website());
+                        setName(_GUI.T.lit_open_website());
 
                     }
 
@@ -88,14 +88,14 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
                 username = new TextInput(CFG_CHEAP_CAPTCHA.USER_NAME);
                 password = new PasswordInput(CFG_CHEAP_CAPTCHA.PASSWORD);
 
-                this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), new AbstractIcon(IconKey.ICON_LOGINS, 32));
+                this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), new AbstractIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
-                this.addDescriptionPlain(_GUI._.captchasolver_configpanel_my_account_description(CheapCaptchaSolverService.this.getName()));
-                addPair(_GUI._.captchasolver_configpanel_enabled(CheapCaptchaSolverService.this.getName()), null, new Checkbox(CFG_CHEAP_CAPTCHA.ENABLED, username, password));
-                addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, username);
-                addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, password);
+                this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(CheapCaptchaSolverService.this.getName()));
+                addPair(_GUI.T.captchasolver_configpanel_enabled(CheapCaptchaSolverService.this.getName()), null, new Checkbox(CFG_CHEAP_CAPTCHA.ENABLED, username, password));
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);
+                addPair(_GUI.T.captchabrotherhoodService_createPanel_password(), null, password);
 
-                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_CHEAP_CAPTCHA.FEED_BACK_SENDING_ENABLED));
+                addPair(_GUI.T.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_CHEAP_CAPTCHA.FEED_BACK_SENDING_ENABLED));
 
                 addBlackWhiteList(CFG_CHEAP_CAPTCHA.CFG);
 
@@ -131,7 +131,7 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
 
     @Override
     public String getName() {
-        return _GUI._.CheapCaptchaSolver_gettypeName_();
+        return _GUI.T.CheapCaptchaSolver_gettypeName_();
     }
 
     @Override

@@ -37,15 +37,15 @@ public class AddContainerAction extends CustomizableAppAction {
     private static final long serialVersionUID = 4713690050852393405L;
 
     public AddContainerAction() {
-        setName(_GUI._.action_addcontainer());
-        setTooltipText(_GUI._.action_addcontainer_tooltip());
+        setName(_GUI.T.action_addcontainer());
+        setTooltipText(_GUI.T.action_addcontainer_tooltip());
         setIconKey(IconKey.ICON_LOAD);
         setAccelerator(KeyEvent.VK_O);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        final File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI._.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, ContainerPluginController.getInstance().getContainerExtensions(null), true), true);
+        final File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI.T.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, ContainerPluginController.getInstance().getContainerExtensions(null), true), true);
         if (files == null || files.length == 0) {
             return;
         }

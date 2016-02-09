@@ -52,17 +52,17 @@ public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
 
     @Override
     protected String createTooltip() {
-        return _GUI._.action_reconnect_toggle_tooltip();
+        return _GUI.T.action_reconnect_toggle_tooltip();
     }
 
     @Override
     protected String getNameWhenDisabled() {
-        return _GUI._.AutoReconnectToggleAction_getNameWhenDisabled_();
+        return _GUI.T.AutoReconnectToggleAction_getNameWhenDisabled_();
     }
 
     @Override
     protected String getNameWhenEnabled() {
-        return _GUI._.AutoReconnectToggleAction_getNameWhenEnabled_();
+        return _GUI.T.AutoReconnectToggleAction_getNameWhenEnabled_();
     }
 
 }

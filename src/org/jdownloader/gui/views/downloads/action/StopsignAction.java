@@ -26,12 +26,12 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
         super.requestUpdate(requestor);
         if (hasSelection()) {
             if (DownloadWatchDog.getInstance().getSession().isStopMark(getSelection().getRawContext())) {
-                setName(_GUI._.gui_table_contextmenu_stopmark_unset());
+                setName(_GUI.T.gui_table_contextmenu_stopmark_unset());
             } else {
-                setName(_GUI._.gui_table_contextmenu_stopmark_set());
+                setName(_GUI.T.gui_table_contextmenu_stopmark_set());
             }
         } else {
-            setName(_GUI._.gui_table_contextmenu_stopmark());
+            setName(_GUI.T.gui_table_contextmenu_stopmark());
         }
     }
 
@@ -43,9 +43,9 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
     public void actionPerformed(ActionEvent e) {
         final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
         if (selection.isLinkContext()) {
-            JDGui.help(_GUI._.StopsignAction_actionPerformed_help_title_(), _GUI._.StopsignAction_actionPerformed_help_msg_(), new AbstractIcon(IconKey.ICON_STOPSIGN, 32));
+            JDGui.help(_GUI.T.StopsignAction_actionPerformed_help_title_(), _GUI.T.StopsignAction_actionPerformed_help_msg_(), new AbstractIcon(IconKey.ICON_STOPSIGN, 32));
         } else {
-            JDGui.help(_GUI._.StopsignAction_actionPerformed_help_title_package_(), _GUI._.StopsignAction_actionPerformed_help_msg_package_(), new AbstractIcon(IconKey.ICON_STOPSIGN, 32));
+            JDGui.help(_GUI.T.StopsignAction_actionPerformed_help_title_package_(), _GUI.T.StopsignAction_actionPerformed_help_msg_package_(), new AbstractIcon(IconKey.ICON_STOPSIGN, 32));
         }
         final AbstractNode context = selection.getRawContext();
         DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {

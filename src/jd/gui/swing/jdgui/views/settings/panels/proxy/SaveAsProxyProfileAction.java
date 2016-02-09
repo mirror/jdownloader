@@ -23,7 +23,7 @@ public class SaveAsProxyProfileAction extends AppAction {
     private ProxyTable         table;
 
     public SaveAsProxyProfileAction(ProxyTable table) {
-        setName(_GUI._.SaveAsProxyProfileAction_SaveAsProxyProfileAction_());
+        setName(_GUI.T.SaveAsProxyProfileAction_SaveAsProxyProfileAction_());
         setIconKey(IconKey.ICON_EXPORT);
         this.table = table;
     }
@@ -31,7 +31,7 @@ public class SaveAsProxyProfileAction extends AppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.SaveAsProxyProfileAction_actionPerformed_choose_file(), null, null);
+        ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.SaveAsProxyProfileAction_actionPerformed_choose_file(), null, null);
         d.setFileFilter(new FileFilter() {
 
             @Override
@@ -65,7 +65,7 @@ public class SaveAsProxyProfileAction extends AppAction {
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         } catch (Exception e1) {
-            Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+            Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
         }
     }
 

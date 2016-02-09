@@ -19,14 +19,14 @@ import jd.controlling.proxy.ProxyController;
 public class ImportPlainTextAction extends AppAction {
 
     public ImportPlainTextAction(ProxyTable table) {
-        setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_import());
+        setName(_GUI.T.LinkgrabberFilter_LinkgrabberFilter_import());
         setIconKey(IconKey.ICON_IMPORT);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
-            final String txt = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI._.ProxyConfig_actionPerformed_import_title_(), _GUI._.ProxyConfig_actionPerformed_import_proxies_explain_(), null, new AbstractIcon(IconKey.ICON_PROXY, 32), null, null);
+            final String txt = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI.T.ProxyConfig_actionPerformed_import_title_(), _GUI.T.ProxyConfig_actionPerformed_import_proxies_explain_(), null, new AbstractIcon(IconKey.ICON_PROXY, 32), null, null);
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override

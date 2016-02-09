@@ -47,7 +47,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     private int               medium;
 
     public ProgressColumn() {
-        super(_GUI._.ProgressColumn_ProgressColumn());
+        super(_GUI.T.ProgressColumn_ProgressColumn());
         FontMetrics fm = determinatedRenderer.getFontMetrics(determinatedRenderer.getFont());
 
         big = fm.stringWidth(df.format(123.45d) + "%");
@@ -87,7 +87,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
         mpb.setForeground((LAFOptions.getInstance().getColorForTooltipForeground()));
 
         if (updateRanges(obj, mpb)) {
-            JLabel lbl = new JLabel(_GUI._.ProgressColumn_createToolTip_object_());
+            JLabel lbl = new JLabel(_GUI.T.ProgressColumn_createToolTip_object_());
             lbl.setForeground((LAFOptions.getInstance().getColorForTooltipForeground()));
             SwingUtils.toBold(lbl);
             panel.add(lbl);
@@ -186,7 +186,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             final DownloadLink dLink = (DownloadLink) value;
             PluginProgress progress;
             if (dLink.getDefaultPlugin() == null) {
-                return _GUI._.gui_treetable_error_plugin();
+                return _GUI.T.gui_treetable_error_plugin();
             } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
                 final double prgs = progress.getPercent();
                 if (prgs < 0) {

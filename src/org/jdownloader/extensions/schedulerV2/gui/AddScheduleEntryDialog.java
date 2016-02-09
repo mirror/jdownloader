@@ -74,11 +74,11 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
                                                                                };
 
     public AddScheduleEntryDialog() {
-        super(UserIO.NO_ICON, T.T.addScheduleEntryDialog_title(), null, _GUI._.lit_save(), null);
+        super(UserIO.NO_ICON, T.T.addScheduleEntryDialog_title(), null, _GUI.T.lit_save(), null);
     }
 
     public AddScheduleEntryDialog(ScheduleEntry entry) {
-        super(UserIO.NO_ICON, T.T.addScheduleEntryDialog_title_edit(), null, _GUI._.lit_save(), null);
+        super(UserIO.NO_ICON, T.T.addScheduleEntryDialog_title_edit(), null, _GUI.T.lit_save(), null);
         this.editEntry = entry;
     }
 

@@ -70,7 +70,7 @@ public class DomainRuleController implements GenericConfigEventListener<Object> 
                             maxDownloads = Math.max(maxDownloads, dr.getMaxSimultanDownloads());
                         }
                     } catch (Throwable e) {
-                        UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_error_occured(), e.getMessage() + "\r\n" + JSonStorage.toString(dr), e, _GUI._.lit_close(), null));
+                        UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.lit_error_occured(), e.getMessage() + "\r\n" + JSonStorage.toString(dr), e, _GUI.T.lit_close(), null));
                     }
 
                 }

@@ -75,7 +75,7 @@ public class CaptchaSolutionsTooltip extends PanelToolTip {
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                             panel.add(header, "gapbottom 5,spanx");
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_error2(""), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_error2(""), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
                             panel.add(lbl(account.getError()), "gapleft 22");
                         } else {
                             panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
@@ -85,7 +85,7 @@ public class CaptchaSolutionsTooltip extends PanelToolTip {
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                             panel.add(header, "spanx,gapbottom 5,pushx,growx");
                             if (StringUtils.isNotEmpty(account.getUserName())) {
-                                panel.add(lbl(_GUI._.lit_accountid(), NewTheme.I().getIcon(IconKey.ICON_PREMIUM, 18), JLabel.LEFT));
+                                panel.add(lbl(_GUI.T.lit_accountid(), NewTheme.I().getIcon(IconKey.ICON_PREMIUM, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getUserName() + ""));
                             }
                             panel.add(lbl("Tokens", NewTheme.I().getIcon(IconKey.ICON_MONEY, 18), JLabel.LEFT));

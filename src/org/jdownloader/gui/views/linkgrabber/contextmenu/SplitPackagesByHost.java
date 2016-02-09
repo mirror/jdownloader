@@ -35,7 +35,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
 
     public SplitPackagesByHost() {
         super();
-        setName(_GUI._.SplitPackagesByHost_SplitPackagesByHost_object_());
+        setName(_GUI.T.SplitPackagesByHost_SplitPackagesByHost_object_());
         setIconKey(IconKey.ICON_SPLIT_PACKAGES);
     }
 

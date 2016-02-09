@@ -33,7 +33,7 @@ public class ExceptionsTableModel extends ExtTableModel<LinkgrabberFilterRule> i
     @Override
     protected void initColumns() {
 
-        this.addColumn(new ExtCheckColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_enabled()) {
+        this.addColumn(new ExtCheckColumn<LinkgrabberFilterRule>(_GUI.T.settings_linkgrabber_filter_columns_enabled()) {
 
             private static final long serialVersionUID = -4667150369226691276L;
 
@@ -89,7 +89,7 @@ public class ExceptionsTableModel extends ExtTableModel<LinkgrabberFilterRule> i
             }
         });
 
-        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
+        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI.T.settings_linkgrabber_filter_columns_name()) {
 
             @Override
             public boolean isEnabled(LinkgrabberFilterRule value) {
@@ -117,7 +117,7 @@ public class ExceptionsTableModel extends ExtTableModel<LinkgrabberFilterRule> i
             }
         });
 
-        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI._.ExceptionsTableModel_initColumns_condition_()) {
+        addColumn(new ExtTextColumn<LinkgrabberFilterRule>(_GUI.T.ExceptionsTableModel_initColumns_condition_()) {
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -149,7 +149,7 @@ public class ExceptionsTableModel extends ExtTableModel<LinkgrabberFilterRule> i
 
             @Override
             public String getStringValue(LinkgrabberFilterRule value) {
-                return _GUI._.settings_linkgrabber_filter_columns_if(value.toString());
+                return _GUI.T.settings_linkgrabber_filter_columns_if(value.toString());
             }
         });
 

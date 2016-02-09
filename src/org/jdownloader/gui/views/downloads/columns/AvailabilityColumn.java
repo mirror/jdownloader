@@ -48,7 +48,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> implements G
     }
 
     public AvailabilityColumn() {
-        super(_GUI._.AvailabilityColumn_AvailabilityColumn());
+        super(_GUI.T.AvailabilityColumn_AvailabilityColumn());
         unknown = NewTheme.I().getIcon(IconKey.ICON_HELP, 16);
         online = NewTheme.I().getIcon(IconKey.ICON_TRUE, 16);
         mixed = NewTheme.I().getIcon(IconKey.ICON_TRUE_ORANGE, 16);

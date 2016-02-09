@@ -42,11 +42,11 @@ public class PasteLinksAction extends CustomizableAppAction implements ActionCon
 
     private void update() {
         if (isDeepDecryptEnabled()) {
-            setName(_GUI._.PasteLinksAction_PasteLinksAction_deep());
+            setName(_GUI.T.PasteLinksAction_PasteLinksAction_deep());
 
             setIconKey(IconKey.ICON_CLIPBOARD);
         } else {
-            setName(_GUI._.PasteLinksAction_PasteLinksAction());
+            setName(_GUI.T.PasteLinksAction_PasteLinksAction());
 
             setIconKey(IconKey.ICON_CLIPBOARD);
         }

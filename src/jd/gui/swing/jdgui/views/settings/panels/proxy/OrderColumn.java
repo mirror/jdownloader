@@ -33,7 +33,7 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
     private int                       editingRow;
 
     public OrderColumn() {
-        super(_GUI._.settings_linkgrabber_filter_columns_exepriority());
+        super(_GUI.T.settings_linkgrabber_filter_columns_exepriority());
 
         this.editor = new MigPanel("ins 0", "[]0[]", "[grow,fill]");
         this.renderer = new MigPanel("ins 0", "[]0[]", "0[grow,fill]0");

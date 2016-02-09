@@ -43,12 +43,12 @@ public class ExtensionQuickToggleAction extends CustomizableAppAction implements
     public void setSelected(final boolean selected) {
         super.setSelected(selected);
         if (isSelected()) {
-            setName(_GUI._.ExtensionQuickToggleAction_name_selected2(extension.getName()));
-            setTooltipText(_GUI._.ExtensionQuickToggleAction_name_selected_tt(extension.getName()));
+            setName(_GUI.T.ExtensionQuickToggleAction_name_selected2(extension.getName()));
+            setTooltipText(_GUI.T.ExtensionQuickToggleAction_name_selected_tt(extension.getName()));
 
         } else {
-            setTooltipText(_GUI._.ExtensionQuickToggleAction_name_deselected_tt(extension.getName()));
-            setName(_GUI._.ExtensionQuickToggleAction_name_deselected2(extension.getName()));
+            setTooltipText(_GUI.T.ExtensionQuickToggleAction_name_deselected_tt(extension.getName()));
+            setName(_GUI.T.ExtensionQuickToggleAction_name_deselected2(extension.getName()));
         }
     }
 

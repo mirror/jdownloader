@@ -48,7 +48,7 @@ public class BuyAction extends AbstractAction {
 
     public BuyAction(PremiumAccountTable table) {
         this.table = table;
-        this.putValue(NAME, _GUI._.settings_accountmanager_buy());
+        this.putValue(NAME, _GUI.T.settings_accountmanager_buy());
         this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_BUY, 20));
     }
 
@@ -57,7 +57,7 @@ public class BuyAction extends AbstractAction {
     }
 
     public BuyAction(LazyHostPlugin hoster) {
-        this.putValue(NAME, _GUI._.settings_accountmanager_buy());
+        this.putValue(NAME, _GUI.T.settings_accountmanager_buy());
         this.putValue(AbstractAction.SMALL_ICON, new AbstractIcon(IconKey.ICON_BUY, 16));
     }
 
@@ -110,7 +110,7 @@ public class BuyAction extends AbstractAction {
                     @Override
                     protected void runInEDT() {
                         try {
-                            final ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.buyaction_title(), _GUI._.buyaction_message(), options, 0, new AbstractIcon(IconKey.ICON_BUY, 32), _GUI._.buyaction_title_buy_account(), null, null) {
+                            final ComboBoxDialog d = new ComboBoxDialog(0, _GUI.T.buyaction_title(), _GUI.T.buyaction_message(), options, 0, new AbstractIcon(IconKey.ICON_BUY, 32), _GUI.T.buyaction_title_buy_account(), null, null) {
                                 private SearchComboBox<LazyHostPlugin> combo;
 
                                 @Override

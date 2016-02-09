@@ -22,9 +22,9 @@ public class LockAllColumnsAction extends AppAction {
             }
         }
         if (alllocked) {
-            setName(_GUI._.LockAllColumnsAction_LockAllColumnsAction_unlockall_columns_());
+            setName(_GUI.T.LockAllColumnsAction_LockAllColumnsAction_unlockall_columns_());
         } else {
-            setName(_GUI._.LockAllColumnsAction_LockAllColumnsAction_lockall_columns_());
+            setName(_GUI.T.LockAllColumnsAction_LockAllColumnsAction_lockall_columns_());
         }
 
         this.putValue(Action.SMALL_ICON, AWUTheme.getInstance().getIcon("exttable/lockColumn", table.getContextIconSize()));

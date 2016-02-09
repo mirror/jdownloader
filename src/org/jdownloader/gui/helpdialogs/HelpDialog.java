@@ -51,7 +51,7 @@ public class HelpDialog {
             }
         }
         try {
-            ConfirmDialog d = new ConfirmDialog(flags | UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, _GUI._.literall_usage_tipp() + "\r\n\r\n..." + msg, icon, null, null) {
+            ConfirmDialog d = new ConfirmDialog(flags | UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, _GUI.T.literall_usage_tipp() + "\r\n\r\n..." + msg, icon, null, null) {
                 {
                     if (point != null) {
                         setLocator(new DialogLocator() {

@@ -18,19 +18,19 @@ public class CaptchaToogleJACAction extends AbstractToolbarToggleAction {
     @Override
     protected String createTooltip() {
         JacSolverService service = JACSolver.getInstance().getService();
-        return _GUI._.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_toggle(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenDisabled() {
         JacSolverService service = JACSolver.getInstance().getService();
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenDisabled_(service.getName(), service.getType());
     }
 
     @Override
     protected String getNameWhenEnabled() {
         JacSolverService service = JACSolver.getInstance().getService();
-        return _GUI._.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
+        return _GUI.T.createTooltip_Captcha_Service_getNameWhenEnabled_(service.getName(), service.getType());
     }
 
 }

@@ -125,7 +125,7 @@ public class ProviderPanel extends MigPanel {
         }
         if (amount < provider.getAmtMin() || amount > provider.getAmtMax()) {
             input.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
-            Dialog.getInstance().showErrorDialog(_GUI._.DonationDialog_setReturnmask_range2(provider.getAmtMin(), provider.getAmtMax()));
+            Dialog.getInstance().showErrorDialog(_GUI.T.DonationDialog_setReturnmask_range2(provider.getAmtMin(), provider.getAmtMax()));
             return -1;
         }
         return amount;
@@ -155,7 +155,7 @@ public class ProviderPanel extends MigPanel {
         icon.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.gray));
         add(icon, "aligny bottom");
 
-        left.add(new JLabel(_GUI._.DonationDialog_layoutDialogContent_donate_amount()), "alignx right");
+        left.add(new JLabel(_GUI.T.DonationDialog_layoutDialogContent_donate_amount()), "alignx right");
 
         if (provider.getAmtSuggest() != null && provider.getAmtSuggest().length > 0) {
             MigPanel pre = new MigPanel("ins 0", "[]", "[]");
@@ -230,13 +230,13 @@ public class ProviderPanel extends MigPanel {
                 input.setBorder(defaultBorder);
             }
         });
-        recurringLabel = new JLabel(_GUI._.DonationDialog_layoutDialogContent_donate_recurring());
+        recurringLabel = new JLabel(_GUI.T.DonationDialog_layoutDialogContent_donate_recurring());
         // left.add(recurringLabel, "hidemode 2");
         recurring = new JCheckBox();
         // left.add(recurring, "skip 1,hidemode 2");
         recurring.setVisible(provider.isRecurring());
         recurringLabel.setVisible(provider.isRecurring());
-        left.add(new JLabel(_GUI._.DonationDialog_layoutDialogContent_donate_category()), "alignx right");
+        left.add(new JLabel(_GUI.T.DonationDialog_layoutDialogContent_donate_category()), "alignx right");
         long sum = 0;
         for (CategoryPriority c : details.getCategories()) {
             sum += c.getPriority();
@@ -244,7 +244,7 @@ public class ProviderPanel extends MigPanel {
         prioritySum = sum;
         catSel = new PseudoMultiCombo<CategoryPriority>(new CategoryPriority[] {}) {
             protected String getNothingText() {
-                return _GUI._.DonationDialog_layoutDialogContent_donate_for_generel();
+                return _GUI.T.DonationDialog_layoutDialogContent_donate_for_generel();
 
             };
 
@@ -281,7 +281,7 @@ public class ProviderPanel extends MigPanel {
         left.add(catSel, "");
 
         note = new ExtTextArea();
-        note.setHelpText(_GUI._.DonationDialog_layoutDialogContent_donate_help_note());
+        note.setHelpText(_GUI.T.DonationDialog_layoutDialogContent_donate_help_note());
         this.note.setLineWrap(true);
         this.note.setWrapStyleWord(false);
         JScrollPane sp = new JScrollPane(note);

@@ -8,7 +8,7 @@ public abstract class AbstractRemoveAction extends AppAction {
 
     public AbstractRemoveAction() {
         super();
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
     }
 

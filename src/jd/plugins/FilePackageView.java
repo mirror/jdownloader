@@ -314,7 +314,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         this.offline = tmp.newOffline;
         this.online = tmp.newOnline;
         updateAvailability(tmp);
-        this.availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.items);
+        this.availabilityColumnString = _GUI.T.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.items);
     }
 
     public String getCommonSourceUrl() {
@@ -485,7 +485,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
                         @Override
                         public String getDescription() {
-                            return _GUI._.FilePackageView_addLinkToTemp_downloaderror_() + " (" + domainInfo.getTld() + ")";
+                            return _GUI.T.FilePackageView_addLinkToTemp_downloaderror_() + " (" + domainInfo.getTld() + ")";
                         }
                     };
                     tmp.pluginStates.put(id, ps);

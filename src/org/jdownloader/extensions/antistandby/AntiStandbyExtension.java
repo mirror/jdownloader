@@ -111,7 +111,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
                         setThread(thread);
                     }
                 } catch (Throwable e) {
-                    ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI._.lit_error_occured(), _GUI._.special_char_lib_loading_problem(Application.getHome(), AntiStandbyExtension.this.getName()), e, null, _GUI._.lit_close()) {
+                    ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI.T.lit_error_occured(), _GUI.T.special_char_lib_loading_problem(Application.getHome(), AntiStandbyExtension.this.getName()), e, null, _GUI.T.lit_close()) {
                         @Override
                         public ModalityType getModalityType() {
                             return ModalityType.MODELESS;

@@ -101,7 +101,7 @@ public class LinkInfo {
                                     pattern = Pattern.compile(Pattern.quote(fileNameExtension), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
                                 } else {
                                     extension = "";
-                                    desc = _GUI._.settings_linkgrabber_filter_others();
+                                    desc = _GUI.T.settings_linkgrabber_filter_others();
                                     pattern = null;
                                 }
                             }

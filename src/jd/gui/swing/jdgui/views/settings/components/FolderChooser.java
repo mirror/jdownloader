@@ -84,8 +84,8 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
     @Override
     public JPopupMenu getPopupMenu(ExtTextField txt, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
         JPopupMenu menu = new JPopupMenu();
-        menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
-        menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
+        menu.add(new VariableAction(txt, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
+        menu.add(new VariableAction(txt, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
 
         return menu;
     }
@@ -162,7 +162,7 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         }
 
         if (forbidden != null) {
-            UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(forbidden.getAbsolutePath()));
+            UIOManager.I().showErrorMessage(_GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(forbidden.getAbsolutePath()));
             return null;
         }
 
@@ -179,9 +179,9 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
             }
             if (!createFolder.exists()) {
 
-                if (UIOManager.I().showConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(createFolder.getAbsolutePath()))) {
+                if (UIOManager.I().showConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(createFolder.getAbsolutePath()))) {
                     if (!FileCreationManager.getInstance().mkdir(createFolder)) {
-                        UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(createFolder.getAbsolutePath()));
+                        UIOManager.I().showErrorMessage(_GUI.T.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(createFolder.getAbsolutePath()));
                         return presetPath;
                     }
                 }

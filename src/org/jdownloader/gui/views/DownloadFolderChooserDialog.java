@@ -122,7 +122,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         MigPanel ret = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[][][][grow,fill]");
         ExtTextField lbl = new ExtTextField();
         if (path != null) {
-            lbl.setText(_GUI._.OpenDownloadFolderAction_layoutDialogContent_current_(path.getAbsolutePath()));
+            lbl.setText(_GUI.T.OpenDownloadFolderAction_layoutDialogContent_current_(path.getAbsolutePath()));
 
             lbl.setEditable(false);
             if (CrossSystem.isOpenFileSupported()) {
@@ -130,7 +130,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
                 ret.add(new JButton(new AppAction() {
                     {
-                        setName(_GUI._.OpenDownloadFolderAction_actionPerformed_button_());
+                        setName(_GUI.T.OpenDownloadFolderAction_actionPerformed_button_());
                     }
 
                     @Override
@@ -145,7 +145,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
             ret.add(new JSeparator(), "spanx");
         }
-        ret.add(new JLabel(_GUI._.OpenDownloadFolderAction_layoutDialogContent_object_()), "spanx");
+        ret.add(new JLabel(_GUI.T.OpenDownloadFolderAction_layoutDialogContent_object_()), "spanx");
         ret.add(super.layoutDialogContent(), "spanx");
 
         return ret;
@@ -155,7 +155,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     protected void modifiyNamePanel(JPanel namePanel) {
         if (isPackageSubFolderSelectionVisible()) {
             namePanel.setLayout(new MigLayout("ins 0, wrap 2", "[][grow,fill]", "[][]"));
-            namePanel.add(new JLabel(_GUI._.SetDownloadFolderInDownloadTableAction_modifiyNamePanel_package_()));
+            namePanel.add(new JLabel(_GUI.T.SetDownloadFolderInDownloadTableAction_modifiyNamePanel_package_()));
             cbPackage = new javax.swing.JCheckBox();
             cbPackage.setSelected(subfolder);
             namePanel.add(cbPackage);
@@ -185,12 +185,12 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             path = null;
         }
         final File path2 = path;
-        final DownloadFolderChooserDialog d = new DownloadFolderChooserDialog(path, title, _GUI._.OpenDownloadFolderAction_actionPerformed_save_(), null);
+        final DownloadFolderChooserDialog d = new DownloadFolderChooserDialog(path, title, _GUI.T.OpenDownloadFolderAction_actionPerformed_save_(), null);
         d.setPackageSubFolderSelectionVisible(packager);
         if (CrossSystem.isOpenFileSupported()) {
             d.setLeftActions(new AppAction() {
                 {
-                    setName(_GUI._.OpenDownloadFolderAction_actionPerformed_button_());
+                    setName(_GUI.T.OpenDownloadFolderAction_actionPerformed_button_());
                 }
 
                 @Override

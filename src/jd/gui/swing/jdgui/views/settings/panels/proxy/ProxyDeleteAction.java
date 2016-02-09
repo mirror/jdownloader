@@ -19,7 +19,7 @@ public class ProxyDeleteAction extends AppAction {
     public ProxyDeleteAction(ProxyTable table) {
 
         this.table = table;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
 
     }
@@ -27,7 +27,7 @@ public class ProxyDeleteAction extends AppAction {
     public ProxyDeleteAction(final java.util.List<AbstractProxySelectorImpl> selected, boolean force) {
         super();
         this.selected = selected;
-        setName(_GUI._.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
 
     }

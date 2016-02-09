@@ -32,7 +32,7 @@ public class ChunksEditor extends MenuEditor {
     public ChunksEditor(boolean b) {
         super(b);
 
-        add(lbl = getLbl(_GUI._.ChunksEditor_ChunksEditor_(), new AbstractIcon(IconKey.ICON_CHUNKS, 18)));
+        add(lbl = getLbl(_GUI.T.ChunksEditor_ChunksEditor_(), new AbstractIcon(IconKey.ICON_CHUNKS, 18)));
         config = JsonConfig.create(GeneralSettings.class);
         spinner = new ExtSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE));
         try {

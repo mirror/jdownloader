@@ -475,9 +475,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
         String password;
         try {
-            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.JDGui_setVisible_password_(), _GUI._.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
+            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI.T.JDGui_setVisible_password_(), _GUI.T.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
             if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
-                Dialog.getInstance().showMessageDialog(_GUI._.JDGui_setVisible_password_wrong());
+                Dialog.getInstance().showMessageDialog(_GUI.T.JDGui_setVisible_password_wrong());
                 return false;
             }
         } catch (DialogNoAnswerException e) {

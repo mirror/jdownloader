@@ -31,7 +31,7 @@ public class SpeedlimitEditorLink extends MenuItemData implements MenuLink {
 
     public SpeedlimitEditorLink() {
         super();
-        setName(_GUI._.SpeedlimitEditor_SpeedlimitEditor_());
+        setName(_GUI.T.SpeedlimitEditor_SpeedlimitEditor_());
         setIconKey(IconKey.ICON_SPEED);
         //
     }
@@ -44,7 +44,7 @@ public class SpeedlimitEditorLink extends MenuItemData implements MenuLink {
         final ActionData actionData = ad;
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
-        p.add(new JLabel(_GUI._.MenuEditors_editorwidth()));
+        p.add(new JLabel(_GUI.T.MenuEditors_editorwidth()));
         int width = getPreferedEditorWidth();
 
         final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));

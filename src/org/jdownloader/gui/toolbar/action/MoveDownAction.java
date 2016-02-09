@@ -15,7 +15,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 public class MoveDownAction extends AbstractMoveAction {
 
     public MoveDownAction() {
-        setName(_GUI._.MoveDownAction_MoveDownAction());
+        setName(_GUI.T.MoveDownAction_MoveDownAction());
         setIconKey(IconKey.ICON_GO_DOWN);
 
         setAccelerator(PackageControllerTable.KEY_STROKE_ALT_DOWN);

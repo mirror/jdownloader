@@ -239,12 +239,12 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     public void addConditionGui(final JComponent panel) {
         cbAlways = new ExtCheckBox();
         panel.add(cbAlways);
-        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_always()), "spanx");
+        panel.add(new JLabel(_GUI.T.FilterRuleDialog_layoutDialogContent_lbl_always()), "spanx");
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private JComboBox createEnabledBox() {
-        final JComboBox ret = new JComboBox(new String[] { _GUI._.PackagizerFilterRuleDialog_updateGUI_enabled_(), _GUI._.PackagizerFilterRuleDialog_updateGUI_disabled_() });
+        final JComboBox ret = new JComboBox(new String[] { _GUI.T.PackagizerFilterRuleDialog_updateGUI_enabled_(), _GUI.T.PackagizerFilterRuleDialog_updateGUI_disabled_() });
         final ListCellRenderer org = ret.getRenderer();
         ret.setRenderer(new ListCellRenderer() {
 
@@ -286,43 +286,43 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     }
 
     protected JMenu createVariablesMenu(JTextComponent txtPackagename2) {
-        JMenu ret = new JMenu(_GUI._.PackagizerFilterRuleDialog_createVariablesMenu_menu());
+        JMenu ret = new JMenu(_GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_menu());
         // ret.add(new VariableAction(txtPackagename2,
         // _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_hoster(),
         // "<jd:hoster>"));
         // ret.add(new VariableAction(txtPackagename2,
         // _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_source(),
         // "<jd:source>"));
-        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
+        ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
 
-        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename_org(), "<jd:" + PackagizerController.ORGFILENAME + ">"));
-        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filetype_org(), "<jd:" + PackagizerController.ORGFILETYPE + ">"));
+        ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_filename_org(), "<jd:" + PackagizerController.ORGFILENAME + ">"));
+        ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_filetype_org(), "<jd:" + PackagizerController.ORGFILETYPE + ">"));
 
         if (getFilenameFilter().isEnabled()) {
             for (int i = 0; i < getFilenameFilter().calcPlaceholderCount(); i++) {
-                ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename((i + 1)), "<jd:" + PackagizerController.ORGFILENAME + ":" + (i + 1) + ">"));
+                ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_filename((i + 1)), "<jd:" + PackagizerController.ORGFILENAME + ":" + (i + 1) + ">"));
             }
         }
 
-        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.ORGPACKAGENAME + ">"));
+        ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.ORGPACKAGENAME + ">"));
         if (getPackagenameFilter().isEnabled()) {
             for (int i = 0; i < getPackagenameFilter().calcPlaceholderCount(); i++) {
-                ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_package((i + 1)), "<jd:" + PackagizerController.ORGPACKAGENAME + ":" + (i + 1) + ">"));
+                ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_package((i + 1)), "<jd:" + PackagizerController.ORGPACKAGENAME + ":" + (i + 1) + ">"));
             }
         }
         if (getHosterFilter().isEnabled()) {
             for (int i = 0; i < getHosterFilter().calcPlaceholderCount(); i++) {
-                ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_hoster((i + 1)), "<jd:" + PackagizerController.HOSTER + ":" + (i + 1) + ">"));
+                ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_hoster((i + 1)), "<jd:" + PackagizerController.HOSTER + ":" + (i + 1) + ">"));
             }
         }
 
         if (getSourceFilter().isEnabled()) {
             for (int i = 0; i < getSourceFilter().calcPlaceholderCount(); i++) {
-                ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_source((i + 1)), "<jd:" + PackagizerController.SOURCE + ":" + (i + 1) + ">"));
+                ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_source((i + 1)), "<jd:" + PackagizerController.SOURCE + ":" + (i + 1) + ">"));
             }
         }
         if (txtPackagename2 != txtPackagename && txtPackagename2 != txtFilename) {
-            ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
+            ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
         }
         return ret;
     }
@@ -380,18 +380,18 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         MigPanel ret = (MigPanel) super.layoutDialogContent();
 
         /* THEN SET */
-        ret.add(createHeader(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_then()), "gaptop 10, spanx,growx,pushx");
-        lblDest = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_dest());
-        lblPriority = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_priority());
-        lblPackagename = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_packagename());
-        lblFilename = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_filename());
-        lblComment = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_comment());
-        lblExtract = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_extract());
-        lblAutostart = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autostart2());
-        lblautoadd = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autoadd2());
-        lblChunks = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_chunks());
-        lblEnable = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_enable());
-        lblForce = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_force());
+        ret.add(createHeader(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_then()), "gaptop 10, spanx,growx,pushx");
+        lblDest = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_dest());
+        lblPriority = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_priority());
+        lblPackagename = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_packagename());
+        lblFilename = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_filename());
+        lblComment = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_comment());
+        lblExtract = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_extract());
+        lblAutostart = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_autostart2());
+        lblautoadd = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_autoadd2());
+        lblChunks = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_chunks());
+        lblEnable = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_enable());
+        lblForce = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_force());
         cobExtract = createEnabledBox();
         cobAutostart = createEnabledBox();
         cobAutoAdd = createEnabledBox();
@@ -433,7 +433,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         };
 
-        fpDest.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_dest_help());
+        fpDest.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_dest_help());
 
         fpPriority = new FilterPanel("ins 0", "[]0[]8[]0[]8[]0[]8[]0[]8[]0[]", "[]");
         PriorityAction pa_1 = new PriorityAction(Priority.LOWER);
@@ -484,7 +484,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                 return menu;
             }
         };
-        txtPackagename.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_packagename_help_());
+        txtPackagename.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_packagename_help_());
 
         txtNewFilename = new ExtTextField() {
             /**
@@ -505,7 +505,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                 return menu;
             }
         };
-        txtNewFilename.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_filename_help_());
+        txtNewFilename.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_filename_help_());
 
         txtComment = new ExtTextField() {
             /**
@@ -526,7 +526,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                 return menu;
             }
         };
-        txtComment.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_comment_help_());
+        txtComment.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_comment_help_());
 
         spChunks = new ExtSpinner(new SpinnerNumberModel(2, 1, 20, 1));
 
@@ -599,9 +599,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         link(cbEnable, lblEnable, cobEnable);
 
         /* THEN DO */
-        ret.add(createHeader(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_do2()), "gaptop 10, spanx,growx,pushx");
+        ret.add(createHeader(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_do2()), "gaptop 10, spanx,growx,pushx");
 
-        lblMove = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_move());
+        lblMove = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_move());
         fpMove = new PathChooser("PackagizerMove", true) {
 
             /**
@@ -637,14 +637,14 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
 
         };
-        fpMove.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_dest_help());
+        fpMove.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_dest_help());
         cbMove = new ExtCheckBox(fpMove);
         ret.add(cbMove);
         ret.add(lblMove, "spanx 2");
         ret.add(fpMove, "spanx,pushx,growx");
         link(cbMove, lblMove, fpMove);
 
-        lblRename = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_rename());
+        lblRename = createLbl(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_rename());
         txtRename = new ExtTextField() {
             /**
              *
@@ -664,14 +664,14 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                 return menu;
             }
         };
-        txtRename.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_filename_help_());
-        focusHelp(txtRename, _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        txtRename.setHelpText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_filename_help_());
+        focusHelp(txtRename, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
 
-        focusHelp(txtPackagename, _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
-        focusHelp(txtComment, _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
-        focusHelp(txtNewFilename, _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
-        focusHelp(fpDest.getTxt(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
-        focusHelp(fpMove.getTxt(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        focusHelp(txtPackagename, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        focusHelp(txtComment, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        focusHelp(txtNewFilename, _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        focusHelp(fpDest.getTxt(), _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        focusHelp(fpMove.getTxt(), _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
 
         cbRename = new ExtCheckBox(txtRename);
         ChangeListener al = new ChangeListener() {
@@ -686,7 +686,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                     cbSource.setSelected(false);
                     wasSelectedCrawlerSource = cbCrawlerSource.isSelected();
                     if (wasSelectedCrawlerSource || wasSelectedSource) {
-                        JDGui.help(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_title(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_msg(), NewTheme.I().getIcon(IconKey.ICON_RAR, 32));
+                        JDGui.help(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_title(), _GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_help_msg(), NewTheme.I().getIcon(IconKey.ICON_RAR, 32));
                     }
                     cbCrawlerSource.setSelected(false);
                     cbSource.setEnabled(false);
@@ -698,14 +698,14 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                     cobCrawlerSourceOptions.setEnabled(false);
                     lblCrawlerSource.setEnabled(false);
 
-                    cbSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
-                    cobSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
-                    txtSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
-                    lblSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
-                    cbCrawlerSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
-                    cobCrawlerSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
-                    cobCrawlerSourceOptions.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
-                    lblCrawlerSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cbSource.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cobSource.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    txtSource.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    lblSource.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cbCrawlerSource.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cobCrawlerSource.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cobCrawlerSourceOptions.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    lblCrawlerSource.setToolTipText(_GUI.T.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
 
                 } else if (!lblSource.isEnabled() && !cbRename.isSelected() && !cbMove.isSelected()) {
                     cbSource.setSelected(wasSelectedSource);
@@ -741,7 +741,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         updateGUI();
         if (rule.isStaticRule()) {
             okButton.setEnabled(false);
-            okButton.setText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_cannot_modify_());
+            okButton.setText(_GUI.T.PackagizerFilterRuleDialog_layoutDialogContent_cannot_modify_());
             disable(ret);
         }
         JScrollPane sp = new JScrollPane(ret);
@@ -781,7 +781,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             @Override
             public void run() {
 
-                JDGui.help(_GUI._.PackagizerFilterRuleDialog_run_help_title(), _GUI._.PackagizerFilterRuleDialog_run_help_msg(), new AbstractIcon(IconKey.ICON_PACKAGIZER, 32));
+                JDGui.help(_GUI.T.PackagizerFilterRuleDialog_run_help_title(), _GUI.T.PackagizerFilterRuleDialog_run_help_msg(), new AbstractIcon(IconKey.ICON_PACKAGIZER, 32));
             }
         });
     }
@@ -803,7 +803,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             };
             rule.setEnabled(true);
             packagizer.add(rule);
-            d = new TestWaitDialog(text, _GUI._.PackagizerRuleDialog_runTest_title_(rule.toString()), null) {
+            d = new TestWaitDialog(text, _GUI.T.PackagizerRuleDialog_runTest_title_(rule.toString()), null) {
 
                 @Override
                 protected ExtTableModel<CrawledLink> createTableModel() {

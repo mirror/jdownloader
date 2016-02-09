@@ -15,7 +15,7 @@ import jd.plugins.FilePackage;
 public class PackageNameAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
     private static final long   serialVersionUID = -5155537516674035401L;
-    private final static String NAME             = _GUI._.gui_table_contextmenu_editpackagename();
+    private final static String NAME             = _GUI.T.gui_table_contextmenu_editpackagename();
 
     public PackageNameAction() {
         setName(NAME);
@@ -24,7 +24,7 @@ public class PackageNameAction extends CustomizableTableContextAppAction<FilePac
 
     public void actionPerformed(ActionEvent e) {
         final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
-        final String name = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_editpackagename_message(), selection.getFirstPackage().getName());
+        final String name = UserIO.getInstance().requestInputDialog(0, _GUI.T.gui_linklist_editpackagename_message(), selection.getFirstPackage().getName());
         if (name != null) {
             for (final PackageView<FilePackage, DownloadLink> packagee : selection.getPackageViews()) {
                 packagee.getPackage().setName(name);

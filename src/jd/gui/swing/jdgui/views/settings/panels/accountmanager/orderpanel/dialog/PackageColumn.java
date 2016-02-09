@@ -52,7 +52,7 @@ public class PackageColumn extends ExtTextColumn<AccountInterface> {
     }
 
     public PackageColumn() {
-        super(_GUI._.premiumaccounttablemodel_column_hoster());
+        super(_GUI.T.premiumaccounttablemodel_column_hoster());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
         normalBorder = BorderFactory.createEmptyBorder(0, 6, 0, 0);
 
@@ -244,7 +244,7 @@ public class PackageColumn extends ExtTextColumn<AccountInterface> {
 
             ((AccountWrapper) object).setEnabled((Boolean) value);
         } else {
-            if (value != null && value.equals(_GUI._.FileColumn_getStringValue_accountgroup_())) {
+            if (value != null && value.equals(_GUI.T.FileColumn_getStringValue_accountgroup_())) {
                 ((GroupWrapper) object).setName(null);
             } else {
                 ((GroupWrapper) object).setName((String) value);
@@ -295,11 +295,11 @@ public class PackageColumn extends ExtTextColumn<AccountInterface> {
 
         if (value instanceof GroupWrapper) {
             String name = ((GroupWrapper) value).getName();
-            return StringUtils.isEmpty(name) ? _GUI._.FileColumn_getStringValue_accountgroup_() : name;
+            return StringUtils.isEmpty(name) ? _GUI.T.FileColumn_getStringValue_accountgroup_() : name;
 
         } else if (value instanceof AccountWrapper) {
             if (((AccountWrapper) value).getAccount() instanceof FreeAccountReference) {
-                return _GUI._.PackageColumn_getStringValue_freedownload_();
+                return _GUI.T.PackageColumn_getStringValue_freedownload_();
             }
             return value.getHost();
 

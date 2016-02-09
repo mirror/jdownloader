@@ -83,7 +83,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     }
 
     public HosterColumn() {
-        super(_GUI._.HosterColumn_HosterColumn(), null);
+        super(_GUI.T.HosterColumn_HosterColumn(), null);
         panel = new RendererMigPanel("ins 0 0 0 0", "[]", "[grow,fill]");
         labels = new RenderLabel[maxIcons + 1];
 

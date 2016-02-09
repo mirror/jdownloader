@@ -63,7 +63,7 @@ public class YoutubeMp4ToAACAudio implements YoutubeConverter {
                     progress.setProgressSource(this);
                     try {
                         downloadLink.addPluginProgress(progress);
-                        FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
+                        FFmpegProvider.getInstance().install(progress, _GUI.T.YoutubeDash_handleDownload_youtube_dash());
                     } finally {
                         downloadLink.removePluginProgress(progress);
                     }
@@ -87,7 +87,7 @@ public class YoutubeMp4ToAACAudio implements YoutubeConverter {
 
             File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
             if (!ffmpeg.demuxAAC(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());
             }
 
             file.delete();

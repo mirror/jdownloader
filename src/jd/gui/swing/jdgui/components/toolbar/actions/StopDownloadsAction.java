@@ -31,7 +31,7 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
-        setName(_GUI._.StopDownloadsAction());
+        setName(_GUI.T.StopDownloadsAction());
         setAccelerator(KeyEvent.VK_S);
 
     }
@@ -53,7 +53,7 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
                 level = WarnLevel.SEVERE;
             }
             if (JDGui.bugme(level)) {
-                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(bytesToLoose), count), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.lit_are_you_sure(), _GUI.T.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(bytesToLoose), count), new AbstractIcon(IconKey.ICON_STOP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
                     return;
                 }
             }
@@ -85,7 +85,7 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
 
     @Override
     public String createTooltip() {
-        return _GUI._.action_stop_downloads_tooltip();
+        return _GUI.T.action_stop_downloads_tooltip();
     }
 
     @Override

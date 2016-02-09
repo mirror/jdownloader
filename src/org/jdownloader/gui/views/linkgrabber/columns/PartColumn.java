@@ -21,7 +21,7 @@ public class PartColumn extends ExtTextColumn<AbstractNode> {
      */
 
     public PartColumn() {
-        super(_GUI._.LinkGrabberTableModel_partcolumn());
+        super(_GUI.T.LinkGrabberTableModel_partcolumn());
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {

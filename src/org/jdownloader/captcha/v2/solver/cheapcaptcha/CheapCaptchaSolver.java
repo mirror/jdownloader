@@ -126,7 +126,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
 
             String id = new Regex(checkUrl, ".*/(\\d+)$").getMatch(0);
             if (null != checkUrl) {
-                job.setStatus(new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
+                job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
                 while (true) {
                     LinkedHashMap<String, String> pollResponse = Request.parseQuery(br.getPage(checkUrl));
                     String txt = Encoding.urlDecode(pollResponse.get("text"), false);

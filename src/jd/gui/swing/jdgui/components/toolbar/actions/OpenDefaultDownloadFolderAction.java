@@ -38,7 +38,7 @@ public class OpenDefaultDownloadFolderAction extends AbstractToolBarAction {
 
     @Override
     protected String createTooltip() {
-        return _GUI._.action_open_dlfolder_tooltip();
+        return _GUI.T.action_open_dlfolder_tooltip();
     }
 
 }

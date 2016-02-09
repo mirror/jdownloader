@@ -12,8 +12,8 @@ public class RemoveAction extends AppAction {
 
     public RemoveAction(MenuManagerDialog managerFrame) {
         this.managerFrame = managerFrame;
-        setTooltipText(_GUI._.literally_remove());
-        setName(_GUI._.literally_remove());
+        setTooltipText(_GUI.T.literally_remove());
+        setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
     }
 

@@ -49,7 +49,7 @@ public class AggregatedNumbers {
 
     private String format(long totalBytes2) {
         if (totalBytes2 < 0) {
-            return _GUI._.lit_unknown();
+            return _GUI.T.lit_unknown();
         }
         return SizeFormatter.formatBytes(totalBytes2);
     }

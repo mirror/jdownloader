@@ -28,7 +28,7 @@ public class CESBubbleSupport extends AbstractBubbleSupport {
     }
 
     private CESBubbleSupport() {
-        super(_GUI._.CESBubbleSupport_CESBubbleSupport(), CFG_CAPTCHA.REMOTE_CAPTCHA_BUBBLE_ENABLED);
+        super(_GUI.T.CESBubbleSupport_CESBubbleSupport(), CFG_CAPTCHA.REMOTE_CAPTCHA_BUBBLE_ENABLED);
     }
 
     @Override

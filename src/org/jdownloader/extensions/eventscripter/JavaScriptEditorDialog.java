@@ -48,7 +48,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     private HashMap<String, Object>               settingsMap;
 
     public JavaScriptEditorDialog(EventScripterExtension extension, ScriptEntry entry) {
-        super(Dialog.STYLE_HIDE_ICON, T.T.script_editor_title(entry.getName()), null, _GUI._.lit_save(), null);
+        super(Dialog.STYLE_HIDE_ICON, T.T.script_editor_title(entry.getName()), null, _GUI.T.lit_save(), null);
         this.entry = entry;
         this.extension = extension;
 

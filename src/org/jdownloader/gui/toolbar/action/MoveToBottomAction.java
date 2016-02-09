@@ -15,7 +15,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 public class MoveToBottomAction extends AbstractMoveAction {
 
     public MoveToBottomAction() {
-        setName(_GUI._.MoveToBottomAction_MoveToBottomAction());
+        setName(_GUI.T.MoveToBottomAction_MoveToBottomAction());
         setIconKey(IconKey.ICON_GO_BOTTOM);
 
         setAccelerator(PackageControllerTable.KEY_STROKE_ALT_END);

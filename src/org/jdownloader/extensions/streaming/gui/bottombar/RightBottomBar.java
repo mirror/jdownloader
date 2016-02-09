@@ -73,7 +73,7 @@ public class RightBottomBar extends MigPanel {
 
         addButton(new AppAction() {
             {
-                setTooltipText(_GUI._.BottomBar_BottomBar_settings());
+                setTooltipText(_GUI.T.BottomBar_BottomBar_settings());
                 setIconKey(IconKey.ICON_SETTINGS);
                 // setIconSizes(18);
             }

@@ -61,7 +61,7 @@ public class CBSolver extends CESChallengeSolver<String> {
             counter.incrementAndGet();
             String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + Encoding.urlEncode(user) + "&password=" + Encoding.urlEncode(password) + "&captchaSource=jdPlugin&captchaSite=-1&timeout=80&version=1.2.1";
             byte[] data = challenge.getAnnotatedImageBytes();
-            job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
+            job.setStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
             final Browser br = new Browser();
 
@@ -74,7 +74,7 @@ public class CBSolver extends CESChallengeSolver<String> {
             request.setPostBytes(data);
             String ret = br.loadConnection(br.openRequestConnection(request)).getHtmlCode();
 
-            job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
+            job.setStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
             job.getLogger().info("Send Captcha. Answer: " + ret);
             if (!ret.startsWith("OK-")) {

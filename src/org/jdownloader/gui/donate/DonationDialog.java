@@ -75,7 +75,7 @@ public class DonationDialog extends AbstractDialog<Object> {
     private ArrayList<ArrayList<PaymentProvider>> mergedList;
 
     public DonationDialog(DonationDetails details2) {
-        super(0, _GUI._.DonationDialog_DonationDialog_title_(), null, _GUI._.DonationDialog_ok(), null);
+        super(0, _GUI.T.DonationDialog_DonationDialog_title_(), null, _GUI.T.DonationDialog_ok(), null);
         logger = LogController.getInstance().getLogger("DonationDialog");
         this.details = details2;
         br = new Browser();
@@ -132,7 +132,7 @@ public class DonationDialog extends AbstractDialog<Object> {
 
                 @Override
                 public String getString() {
-                    return _GUI._.DonationDialog_layoutDialogContent_please_wait();
+                    return _GUI.T.DonationDialog_layoutDialogContent_please_wait();
                 }
 
                 @Override
@@ -149,7 +149,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                                 if (System.currentTimeMillis() - started > 10 * 60 * 1000l) {
                                     StatsManager.I().track("/donation/button/timeout/600");
                                     DonateFeedback.reportFailed(new Exception("Timeout 600"), "TransactionID:" + transactionID, true);
-                                    Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
+                                    Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_run_failed());
                                     close.set(false);
                                     return;
                                 }
@@ -162,19 +162,19 @@ public class DonationDialog extends AbstractDialog<Object> {
                                     StatsManager.I().track("/donation/button/success");
                                     DonationManager.getInstance().autoHide();
                                     writeTransactionFile(amt, list, noteText, cCode, provider);
-                                    Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_thanks_());
+                                    Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_run_thanks_());
                                     close.set(true);
                                     return;
                                 case FAILED:
                                     StatsManager.I().track("/donation/button/failed");
                                     DonateFeedback.reportFailed(null, "TransactionID:" + transactionID, true);
-                                    Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
+                                    Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_run_failed());
                                     close.set(false);
                                     return;
                                 case CANCELED:
                                     StatsManager.I().track("/donation/button/canceled");
                                     DonateFeedback.reportCanceled("TransactionID:" + transactionID);
-                                    Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
+                                    Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_run_cancel());
                                     close.set(false);
                                     return;
                                 case PENDING:
@@ -230,7 +230,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                     } finally {
                     }
                 }
-            }, UIOManager.BUTTONS_HIDE_OK, _GUI._.DonationDialog_layoutDialogContent_please_wait_title(), _GUI._.DonationDialog_layoutDialogContent_please_wait_progress_msg(), null, null, null);
+            }, UIOManager.BUTTONS_HIDE_OK, _GUI.T.DonationDialog_layoutDialogContent_please_wait_title(), _GUI.T.DonationDialog_layoutDialogContent_please_wait_progress_msg(), null, null, null);
 
             try {
                 Dialog.getInstance().showDialog(d);
@@ -274,7 +274,7 @@ public class DonationDialog extends AbstractDialog<Object> {
 
         p = new MigPanel("ins 5", "0[]0", "[][grow,fill]");
 
-        JLabel top = new JLabel("<html><b>" + _GUI._.DonationDialog_layoutDialogContent_top_text() + "</b></html>");
+        JLabel top = new JLabel("<html><b>" + _GUI.T.DonationDialog_layoutDialogContent_top_text() + "</b></html>");
         p.add(top, "spanx,pushx,growx");
         tabbed = new JTabbedPane();
 
@@ -310,7 +310,7 @@ public class DonationDialog extends AbstractDialog<Object> {
             }
             tabbed.addTab(label.toString(), icon, new ProviderPanel(details, provider));
         }
-        tabbed.addTab(_GUI._.DonationDialog_layoutDialogContent_more(), new AbstractIcon(IconKey.ICON_ADD, 20), more = new JLabel());
+        tabbed.addTab(_GUI.T.DonationDialog_layoutDialogContent_more(), new AbstractIcon(IconKey.ICON_ADD, 20), more = new JLabel());
         p.add(tabbed, "pushx,growx,spanx,pushy,growy,spany");
         tabbed.addChangeListener(new ChangeListener() {
 
@@ -364,7 +364,7 @@ public class DonationDialog extends AbstractDialog<Object> {
             // } else {
             StatsManager.I().track("/donation/button/provider/" + provider.name());
             // }
-            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_NotImplementedProvider_actionPerformed_());
+            Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_NotImplementedProvider_actionPerformed_());
         }
     }
 
@@ -404,7 +404,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                         if (System.currentTimeMillis() - start > 30 * 60 * 1000l) {
                             StatsManager.I().track("/donation/button/timeout/1800");
                             DonateFeedback.reportFailed(new Exception("Timeout 1800"), "TransactionID:" + transactionID, true);
-                            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
+                            Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_run_failed());
                             return;
                         }
                         final String url = DonateAction.SERVER + "payment/getStatus?" + toQuery(transactionID);
@@ -416,17 +416,17 @@ public class DonationDialog extends AbstractDialog<Object> {
                             StatsManager.I().track("/donation/button/success/fallbackwait");
                             writeTransactionFile(amt, list, noteText, cCode, provider);
                             DonationManager.getInstance().autoHide();
-                            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_thanks_());
+                            Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_run_thanks_());
                             return;
                         case FAILED:
                             StatsManager.I().track("/donation/button/failed/fallbackwait");
                             DonateFeedback.reportFailed(null, "TransactionID:" + transactionID, true);
-                            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_failed());
+                            Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_run_failed());
                             return;
                         case CANCELED:
                             StatsManager.I().track("/donation/button/canceled/fallbackwait");
                             DonateFeedback.reportCanceled("TransactionID:" + transactionID);
-                            Dialog.getInstance().showMessageDialog(_GUI._.DonationDialog_run_cancel());
+                            Dialog.getInstance().showMessageDialog(_GUI.T.DonationDialog_run_cancel());
                             return;
                         case PENDING:
                         case UNKNOWN:

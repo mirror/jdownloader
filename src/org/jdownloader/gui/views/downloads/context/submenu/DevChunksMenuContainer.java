@@ -5,7 +5,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class DevChunksMenuContainer extends MenuContainer {
-    final static String NAME = _GUI._.ChunksEditor_ChunksEditor_();
+    final static String NAME = _GUI.T.ChunksEditor_ChunksEditor_();
 
     public DevChunksMenuContainer() {
         setName(NAME);

@@ -32,7 +32,7 @@ public class LinkCrawlerBubbleSupport extends AbstractBubbleSupport implements L
     private ArrayList<Element> elements;
 
     public LinkCrawlerBubbleSupport() {
-        super(_GUI._.plugins_optional_JDLightTray_ballon_newlinks3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED);
+        super(_GUI.T.plugins_optional_JDLightTray_ballon_newlinks3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED);
         elements = new ArrayList<Element>();
         LinkCrawlerBubbleContent.fill(elements);
         LinkCollector.getInstance().getEventsender().addListener(this, true);

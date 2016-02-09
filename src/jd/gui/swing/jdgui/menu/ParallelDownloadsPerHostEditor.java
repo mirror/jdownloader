@@ -36,7 +36,7 @@ public class ParallelDownloadsPerHostEditor extends MenuEditor {
         super(b);
         setLayout(new MigLayout("ins " + getInsetsString(), "6[grow,fill][][]", "[" + getComponentHeight() + "!]"));
 
-        lbl = getLbl(_GUI._.ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_(), new AbstractIcon(IconKey.ICON_BATCH, 18));
+        lbl = getLbl(_GUI.T.ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_(), new AbstractIcon(IconKey.ICON_BATCH, 18));
         spinner = new ExtSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST));
         try {
             ((DefaultEditor) spinner.getEditor()).getTextField().addFocusListener(new FocusListener() {

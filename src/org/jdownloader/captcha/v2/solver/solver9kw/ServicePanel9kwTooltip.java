@@ -83,7 +83,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                                 SwingUtils.toBold(header);
                                 header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                                 panel.add(header, "gapbottom 5,spanx");
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_error2(""), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
+                                panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_error2(""), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getError()), "gapleft 22");
                             } else {
                                 JLabel header = new JLabel("9kw Captcha Solver", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
@@ -108,11 +108,11 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                                 header2.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                                 panel.add(header2, "spanx,gapbottom 5,pushx,growx");
 
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_credits_(), NewTheme.I().getIcon(IconKey.ICON_MONEY, 18), JLabel.LEFT));
+                                panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_credits_(), NewTheme.I().getIcon(IconKey.ICON_MONEY, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getCreditBalance() + ""));
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_solved(), NewTheme.I().getIcon(IconKey.ICON_LOGIN, 18), JLabel.LEFT));
+                                panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_solved(), NewTheme.I().getIcon(IconKey.ICON_LOGIN, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getSolved9kw() + ""));
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_answered(), NewTheme.I().getIcon(IconKey.ICON_LOGOUT, 18), JLabel.LEFT));
+                                panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_answered(), NewTheme.I().getIcon(IconKey.ICON_LOGOUT, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getAnswered9kw() + ""));
                             }
 
@@ -122,19 +122,19 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                             header3.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                             panel.add(header3, "spanx,gapbottom 5,pushx,growx");
 
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_avgsolvetime(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_avgsolvetime(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                             panel.add(lbl(account.getAvgSolvtime() + "s"));
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_queue(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_queue(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                             panel.add(lbl(account.getQueue() + "|" + account.getQueue1() + "|" + account.getQueue2()));
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_worker(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                             panel.add(lbl(account.getWorker()));
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_mouse(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_worker_mouse(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                             panel.add(lbl(account.getWorkerMouse()));
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_confirm(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_worker_confirm(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                             panel.add(lbl(account.getWorkerConfirm()));
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_text(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_worker_text(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                             panel.add(lbl(account.getWorkerText()));
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_inwork(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_inwork(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                             panel.add(lbl(account.getInWork()));
                             // panel.revalidate();
                             // revalidate();
@@ -149,7 +149,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                         @Override
                         protected void runInEDT() {
                             panel.removeAll();
-                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_error()));
+                            panel.add(lbl(_GUI.T.ServicePanel9kwTooltip_runInEDT_error()));
                             panel.repaint();
                         }
                     };
