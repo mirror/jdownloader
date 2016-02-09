@@ -27,10 +27,10 @@ public class UpdateFoundDialog extends ConfirmDialog {
     private AbstractAction nowAction   = null;
 
     public UpdateFoundDialog(final Runnable later, final Runnable now) {
-        super(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _UPDATE._.update_dialog_title_updates_available(), _UPDATE._.update_dialog_msg_x_updates_available(), AWUTheme.I().getIcon("updatericon", 32), null, _UPDATE._.update_dialog_cancel());
+        super(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _UPDATE.T.update_dialog_title_updates_available(), _UPDATE.T.update_dialog_msg_x_updates_available(), AWUTheme.I().getIcon("updatericon", 32), null, _UPDATE.T.update_dialog_cancel());
         this.setTimeout(60000);
         if (later != null) {
-            this.laterAction = new AbstractAction(_UPDATE._.update_dialog_later()) {
+            this.laterAction = new AbstractAction(_UPDATE.T.update_dialog_later()) {
 
                 /**
              * 
@@ -46,7 +46,7 @@ public class UpdateFoundDialog extends ConfirmDialog {
             };
         }
         if (now != null) {
-            this.nowAction = new AbstractAction(_UPDATE._.update_dialog_yes()) {
+            this.nowAction = new AbstractAction(_UPDATE.T.update_dialog_yes()) {
 
                 /**
              * 
@@ -84,19 +84,19 @@ public class UpdateFoundDialog extends ConfirmDialog {
         final JPanel ret = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill][]"));
         ret.add(txt);
 
-        final JButton btn = new JButton(_UPDATE._.update_dialog_news_button());
+        final JButton btn = new JButton(_UPDATE.T.update_dialog_news_button());
         btn.addActionListener(new ActionListener() {
 
             @Override
             public void actionPerformed(final ActionEvent e) {
                 UpdateFoundDialog.this.cancel();
-                CrossSystem.openURLOrShowMessage(_UPDATE._.update_dialog_news_button_url());
+                CrossSystem.openURLOrShowMessage(_UPDATE.T.update_dialog_news_button_url());
 
             }
         });
         btn.setContentAreaFilled(false);
         SwingUtils.toBold(btn);
-        btn.setVisible(!StringUtils.isEmpty(_UPDATE._.update_dialog_news_button_url()));
+        btn.setVisible(!StringUtils.isEmpty(_UPDATE.T.update_dialog_news_button_url()));
         btn.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ret.getBackground().darker()));
         ret.add(Box.createHorizontalGlue(), "split 2,growx,pushx");
         ret.add(btn, "");

@@ -59,7 +59,7 @@ public class ConfirmUpdateDialog extends org.appwork.utils.swing.dialog.ConfirmD
         final JPopupMenu popup = new JPopupMenu();
         JMenuItem mi = new JMenuItem(new AppAction() {
             {
-                setName(_UPDATE._.update_in_next_session());
+                setName(_UPDATE.T.update_in_next_session());
             }
 
             @Override
