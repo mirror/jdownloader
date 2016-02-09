@@ -407,7 +407,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                                 statusbarListener.cleanup();
                             }
                             eventSender.addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
-                            bubbleSupport = new ExtractionBubbleSupport(T._.bubbletype(), CFG_EXTRACTION.BUBBLE_ENABLED_IF_ARCHIVE_EXTRACTION_IS_IN_PROGRESS);
+                            bubbleSupport = new ExtractionBubbleSupport(T.T.bubbletype(), CFG_EXTRACTION.BUBBLE_ENABLED_IF_ARCHIVE_EXTRACTION_IS_IN_PROGRESS);
                             eventSender.addListener(bubbleSupport, true);
                             BubbleNotify.getInstance().registerType(bubbleSupport);
                         }
@@ -477,7 +477,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         if (!org.appwork.utils.Application.isHeadless()) {
                             /* currently disabled as headless does not support log upload */
                             if (StringUtils.isNotEmpty(latestLog)) {
-                                final ExceptionDialog ed = new ExceptionDialog(0, T._.crash_title(), T._.crash_message(), null, null, null);
+                                final ExceptionDialog ed = new ExceptionDialog(0, T.T.crash_title(), T.T.crash_message(), null, null, null);
                                 ed.setMore(latestLog);
                                 final ExceptionDialogInterface dialog = UIOManager.I().show(ExceptionDialogInterface.class, ed);
                                 dialog.throwCloseExceptions();

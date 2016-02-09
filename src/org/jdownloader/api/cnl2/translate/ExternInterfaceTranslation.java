@@ -8,7 +8,7 @@ import org.appwork.txtresource.TranslationFactory;
 @Defaults(lngs = { "en" })
 public interface ExternInterfaceTranslation extends TranslateInterface {
 
-    public static final ExternInterfaceTranslation _ = TranslationFactory.create(ExternInterfaceTranslation.class);
+    public static final ExternInterfaceTranslation T = TranslationFactory.create(ExternInterfaceTranslation.class);
 
     @Default(lngs = { "en" }, values = { "Deny access!" })
     String jd_plugins_optional_interfaces_jdflashgot_security_btn_deny();

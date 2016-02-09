@@ -70,7 +70,7 @@ public class AutoSetupAction extends BasicAction {
         boolean pre = JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled();
         try {
             if (pre) {
-                if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.ipcheck())) {
+                if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T.T.ipcheck())) {
                     return;
                 }
 
@@ -130,7 +130,7 @@ public class AutoSetupAction extends BasicAction {
                         scripts.get(0).getInvoker().getPlugin().setSetup(scripts.get(0));
 
                     } else {
-                        UIOManager.I().showErrorMessage(T._.AutoDetectAction_run_failed());
+                        UIOManager.I().showErrorMessage(T.T.AutoDetectAction_run_failed());
 
                     }
 
@@ -148,7 +148,7 @@ public class AutoSetupAction extends BasicAction {
             JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(pre);
             if (pre) {
 
-                UIOManager.I().showMessageDialog(T._.ipcheckreverted());
+                UIOManager.I().showMessageDialog(T.T.ipcheckreverted());
             }
         }
     }

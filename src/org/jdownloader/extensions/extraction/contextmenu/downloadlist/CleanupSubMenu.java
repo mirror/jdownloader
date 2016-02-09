@@ -22,7 +22,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
 public class CleanupSubMenu extends MenuContainer {
     public CleanupSubMenu() {
-        setName(org.jdownloader.extensions.extraction.translate.T._.context_cleanup());
+        setName(org.jdownloader.extensions.extraction.translate.T.T.context_cleanup());
         setIconKey(IconKey.ICON_DELETE);
 
     }

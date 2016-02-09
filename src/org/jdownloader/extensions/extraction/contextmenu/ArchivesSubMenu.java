@@ -22,7 +22,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
 public class ArchivesSubMenu extends MenuContainer {
     public ArchivesSubMenu() {
-        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_main());
+        setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_main());
         setIconKey(org.jdownloader.gui.IconKey.ICON_COMPRESS);
     }
 

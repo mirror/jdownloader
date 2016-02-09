@@ -42,7 +42,7 @@ public enum EventTrigger implements LabelInterface {
     ON_DOWNLOAD_CONTROLLER_START {
         @Override
         public String getLabel() {
-            return T._.ON_DOWNLOAD_CONTROLLER_START();
+            return T.T.ON_DOWNLOAD_CONTROLLER_START();
         }
 
         public HashMap<String, Object> getTestProperties() {
@@ -59,7 +59,7 @@ public enum EventTrigger implements LabelInterface {
     ON_DOWNLOAD_CONTROLLER_STOPPED {
         @Override
         public String getLabel() {
-            return T._.ON_DOWNLOAD_CONTROLLER_STOPPED();
+            return T.T.ON_DOWNLOAD_CONTROLLER_STOPPED();
         }
 
         public HashMap<String, Object> getTestProperties() {
@@ -74,7 +74,7 @@ public enum EventTrigger implements LabelInterface {
     ON_PACKAGE_FINISHED {
         @Override
         public String getLabel() {
-            return T._.ON_PACKAGE_FINISHED();
+            return T.T.ON_PACKAGE_FINISHED();
         }
 
         public HashMap<String, Object> getTestProperties() {
@@ -91,7 +91,7 @@ public enum EventTrigger implements LabelInterface {
     ON_GENERIC_EXTRACTION {
         @Override
         public String getLabel() {
-            return T._.ON_GENERIC_EXTRACTION();
+            return T.T.ON_GENERIC_EXTRACTION();
         }
 
         public HashMap<String, Object> getTestProperties() {
@@ -109,7 +109,7 @@ public enum EventTrigger implements LabelInterface {
     ON_ARCHIVE_EXTRACTED {
         @Override
         public String getLabel() {
-            return T._.ON_ARCHIVE_EXTRACTED();
+            return T.T.ON_ARCHIVE_EXTRACTED();
         }
 
         public HashMap<String, Object> getTestProperties() {
@@ -126,7 +126,7 @@ public enum EventTrigger implements LabelInterface {
     ON_JDOWNLOADER_STARTED {
         @Override
         public String getLabel() {
-            return T._.ON_JDOWNLOADER_STARTED();
+            return T.T.ON_JDOWNLOADER_STARTED();
         }
 
         public HashMap<String, Object> getTestProperties() {
@@ -141,14 +141,14 @@ public enum EventTrigger implements LabelInterface {
     NONE {
         @Override
         public String getLabel() {
-            return T._.NONE();
+            return T.T.NONE();
         }
 
     },
     ON_OUTGOING_REMOTE_API_EVENT {
         @Override
         public String getLabel() {
-            return T._.ON_OUTGOING_REMOTE_API_EVENT();
+            return T.T.ON_OUTGOING_REMOTE_API_EVENT();
         }
 
         public HashMap<String, Object> getTestProperties() {
@@ -166,7 +166,7 @@ public enum EventTrigger implements LabelInterface {
     ON_NEW_FILE {
         @Override
         public String getLabel() {
-            return T._.ON_NEW_FILE();
+            return T.T.ON_NEW_FILE();
         }
 
         public HashMap<String, Object> getTestProperties() {
@@ -180,7 +180,7 @@ public enum EventTrigger implements LabelInterface {
 
         public String getAPIDescription() {
             StringBuilder sb = new StringBuilder();
-            sb.append(T._.properties_for_eventtrigger(getLabel())).append("\r\n");
+            sb.append(T.T.properties_for_eventtrigger(getLabel())).append("\r\n");
             sb.append("var myStringArray=files;").append("\r\n");
             sb.append("var myString=caller; /*Who created the files*/").append("\r\n");
 
@@ -190,7 +190,7 @@ public enum EventTrigger implements LabelInterface {
     ON_NEW_CRAWLER_JOB {
         @Override
         public String getLabel() {
-            return T._.ON_NEW_CRAWLER_JOB();
+            return T.T.ON_NEW_CRAWLER_JOB();
         }
 
         public boolean isSynchronous() {
@@ -213,7 +213,7 @@ public enum EventTrigger implements LabelInterface {
     ON_PACKAGIZER {
         @Override
         public String getLabel() {
-            return T._.ON_PACKAGIZER();
+            return T.T.ON_PACKAGIZER();
         }
 
         public boolean isSynchronous() {
@@ -236,7 +236,7 @@ public enum EventTrigger implements LabelInterface {
     ON_DOWNLOADS_PAUSE {
         @Override
         public String getLabel() {
-            return T._.ON_DOWNLOADS_PAUSE();
+            return T.T.ON_DOWNLOADS_PAUSE();
         }
 
         public boolean isSynchronous() {
@@ -257,7 +257,7 @@ public enum EventTrigger implements LabelInterface {
     ON_DOWNLOADS_RUNNING {
         @Override
         public String getLabel() {
-            return T._.ON_DOWNLOADS_RUNNING();
+            return T.T.ON_DOWNLOADS_RUNNING();
         }
 
         public boolean isSynchronous() {
@@ -278,7 +278,7 @@ public enum EventTrigger implements LabelInterface {
     ON_DOWNLOADS_STOPPED {
         @Override
         public String getLabel() {
-            return T._.ON_DOWNLOADS_STOPPED();
+            return T.T.ON_DOWNLOADS_STOPPED();
         }
 
         public boolean isSynchronous() {
@@ -300,7 +300,7 @@ public enum EventTrigger implements LabelInterface {
     RECONNECT_BEFORE {
         @Override
         public String getLabel() {
-            return T._.RECONNECT_BEFORE();
+            return T.T.RECONNECT_BEFORE();
         }
 
         public boolean isSynchronous() {
@@ -321,7 +321,7 @@ public enum EventTrigger implements LabelInterface {
     RECONNECT_AFTER {
         @Override
         public String getLabel() {
-            return T._.RECONNECT_AFTER();
+            return T.T.RECONNECT_AFTER();
         }
 
         public boolean isSynchronous() {
@@ -343,7 +343,7 @@ public enum EventTrigger implements LabelInterface {
     CAPTCHA_CHALLENGE_AFTER {
         @Override
         public String getLabel() {
-            return T._.CAPTCHA_CHALLENGE_AFTER();
+            return T.T.CAPTCHA_CHALLENGE_AFTER();
         }
 
         public boolean isSynchronous() {
@@ -366,7 +366,7 @@ public enum EventTrigger implements LabelInterface {
     INTERVAL {
         @Override
         public String getLabel() {
-            return T._.INTERVAL();
+            return T.T.INTERVAL();
         }
 
         @Override
@@ -384,7 +384,7 @@ public enum EventTrigger implements LabelInterface {
                 };
             };
 
-            ret.addPair(T._.interval_settings(), null, spinner);
+            ret.addPair(T.T.interval_settings(), null, spinner);
             return ret;
         }
 
@@ -407,7 +407,7 @@ public enum EventTrigger implements LabelInterface {
     TOOLBAR_BUTTON {
         @Override
         public String getLabel() {
-            return T._.TOOLBAR_BUTTON();
+            return T.T.TOOLBAR_BUTTON();
         }
 
         @Override
@@ -418,7 +418,7 @@ public enum EventTrigger implements LabelInterface {
 
                 };
             };
-            ret.add(new JLabel(T._.TOOLBAR_BUTTON_explain()), "spanx");
+            ret.add(new JLabel(T.T.TOOLBAR_BUTTON_explain()), "spanx");
 
             SettingsButton toolbarManager = new SettingsButton(new AppAction() {
                 {
@@ -462,7 +462,7 @@ public enum EventTrigger implements LabelInterface {
     MAIN_MENU_BUTTON {
         @Override
         public String getLabel() {
-            return T._.MAIN_MENU_BUTTON();
+            return T.T.MAIN_MENU_BUTTON();
         }
 
         @Override
@@ -473,7 +473,7 @@ public enum EventTrigger implements LabelInterface {
 
                 };
             };
-            ret.add(new JLabel(T._.MAIN_MENU_BUTTON_explain()), "spanx");
+            ret.add(new JLabel(T.T.MAIN_MENU_BUTTON_explain()), "spanx");
 
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
@@ -512,7 +512,7 @@ public enum EventTrigger implements LabelInterface {
     DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON {
         @Override
         public String getLabel() {
-            return T._.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON();
+            return T.T.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON();
         }
 
         @Override
@@ -523,7 +523,7 @@ public enum EventTrigger implements LabelInterface {
 
                 };
             };
-            ret.add(new JLabel(T._.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
+            ret.add(new JLabel(T.T.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI._.gui_config_menumanager_downloadlist());
@@ -563,7 +563,7 @@ public enum EventTrigger implements LabelInterface {
     LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON {
         @Override
         public String getLabel() {
-            return T._.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON();
+            return T.T.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON();
         }
 
         @Override
@@ -574,7 +574,7 @@ public enum EventTrigger implements LabelInterface {
 
                 };
             };
-            ret.add(new JLabel(T._.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
+            ret.add(new JLabel(T.T.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI._.gui_config_menumanager_linkgrabber());
@@ -614,7 +614,7 @@ public enum EventTrigger implements LabelInterface {
     DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON {
         @Override
         public String getLabel() {
-            return T._.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON();
+            return T.T.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON();
         }
 
         @Override
@@ -625,7 +625,7 @@ public enum EventTrigger implements LabelInterface {
 
                 };
             };
-            ret.add(new JLabel(T._.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain()), "spanx");
+            ret.add(new JLabel(T.T.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI._.gui_config_menumanager_downloadBottom());
@@ -664,7 +664,7 @@ public enum EventTrigger implements LabelInterface {
     LINKGRABBER_BOTTOM_BAR_BUTTON {
         @Override
         public String getLabel() {
-            return T._.LINKGRABBER_BOTTOM_BAR_BUTTON();
+            return T.T.LINKGRABBER_BOTTOM_BAR_BUTTON();
         }
 
         @Override
@@ -675,7 +675,7 @@ public enum EventTrigger implements LabelInterface {
 
                 };
             };
-            ret.add(new JLabel(T._.LINKGRABBER_BOTTOM_BAR_BUTTON_explain()), "spanx");
+            ret.add(new JLabel(T.T.LINKGRABBER_BOTTOM_BAR_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI._.gui_config_menumanager_linkgrabberBottom());
@@ -715,7 +715,7 @@ public enum EventTrigger implements LabelInterface {
     TRAY_BUTTON {
         @Override
         public String getLabel() {
-            return T._.TRAY_BUTTON();
+            return T.T.TRAY_BUTTON();
         }
 
         @Override
@@ -726,7 +726,7 @@ public enum EventTrigger implements LabelInterface {
 
                 };
             };
-            ret.add(new JLabel(T._.TRAY_BUTTON_explain()), "spanx");
+            ret.add(new JLabel(T.T.TRAY_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
                     setName(_GUI._.gui_config_menumanager_traymenu());
@@ -771,12 +771,12 @@ public enum EventTrigger implements LabelInterface {
     };
 
     public String getAPIDescription() {
-        return T._.none_trigger();
+        return T.T.none_trigger();
     }
 
     protected static String defaultAPIDescription(EventTrigger eventTrigger) {
         StringBuilder sb = new StringBuilder();
-        sb.append(T._.properties_for_eventtrigger(eventTrigger.getLabel())).append("\r\n");
+        sb.append(T.T.properties_for_eventtrigger(eventTrigger.getLabel())).append("\r\n");
 
         for (Entry<String, Object> es : eventTrigger.getTestProperties().entrySet()) {
             sb.append("var ").append(Utils.toMy(Utils.cleanUpClass(es.getValue().getClass().getSimpleName()))).append(" = ").append(es.getKey()).append(";").append("\r\n");

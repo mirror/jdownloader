@@ -18,7 +18,7 @@ public class ValidateArchivesAction extends AbstractExtractionContextAction {
 
     public ValidateArchivesAction() {
         super();
-        setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
+        setName(T.T.ValidateArchiveAction_ValidateArchiveAction_object_());
         setSmallIcon(new ExtractIconVariant("ok", 18, 14, 0, 0).crop());
     }
 
@@ -27,9 +27,9 @@ public class ValidateArchivesAction extends AbstractExtractionContextAction {
         final List<Archive> lArchives = getArchives();
         if (lArchives != null && lArchives.size() > 0) {
             if (lArchives.size() > 1) {
-                setName(T._.ValidateArchiveAction_ValidateArchiveAction_multi());
+                setName(T.T.ValidateArchiveAction_ValidateArchiveAction_multi());
             } else {
-                setName(T._.ValidateArchiveAction_ValidateArchiveAction(lArchives.get(0).getName()));
+                setName(T.T.ValidateArchiveAction_ValidateArchiveAction(lArchives.get(0).getName()));
             }
         }
         super.onAsyncInitDone();

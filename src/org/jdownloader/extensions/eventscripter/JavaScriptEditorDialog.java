@@ -48,7 +48,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     private HashMap<String, Object>               settingsMap;
 
     public JavaScriptEditorDialog(EventScripterExtension extension, ScriptEntry entry) {
-        super(Dialog.STYLE_HIDE_ICON, T._.script_editor_title(entry.getName()), null, _GUI._.lit_save(), null);
+        super(Dialog.STYLE_HIDE_ICON, T.T.script_editor_title(entry.getName()), null, _GUI._.lit_save(), null);
         this.entry = entry;
         this.extension = extension;
 
@@ -124,7 +124,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
         String txt = entry.getScript();
         if (StringUtils.isEmpty(txt)) {
-            txt = T._.emptyScript();
+            txt = T.T.emptyScript();
         }
         editor.setText(txt);
         delayer.resetAndStart();
@@ -134,7 +134,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
             {
                 // setIconKey(IconKey.ICON_TEXT);
                 setSelected(CFG_EVENT_CALLER.CFG.isAPIPanelVisible());
-                setName(T._.editor_showhelp());
+                setName(T.T.editor_showhelp());
             }
 
             @Override
@@ -148,7 +148,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         toolbar.add(new ExtButton(new AppAction() {
             {
 
-                setName(T._.editor_autoformat());
+                setName(T.T.editor_autoformat());
             }
 
             @Override
@@ -162,7 +162,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         toolbar.add(new ExtButton(new AppAction() {
             {
 
-                setName(T._.editor_testcompile());
+                setName(T.T.editor_testcompile());
             }
 
             @Override
@@ -174,7 +174,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
         toolbar.add(new ExtButton(new AppAction() {
             {
-                setName(T._.editor_testrun());
+                setName(T.T.editor_testrun());
 
             }
 

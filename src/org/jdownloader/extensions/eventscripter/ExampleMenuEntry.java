@@ -16,7 +16,7 @@ public class ExampleMenuEntry extends AppAction {
 
     public ExampleMenuEntry(EventScripterExtension eventScripterExtension, String scriptFile, EventTrigger trigger, String description) {
         super();
-        setName(T._.ExampleMenuEntry(trigger.getLabel(), description));
+        setName(T.T.ExampleMenuEntry(trigger.getLabel(), description));
         this.description = description;
         this.scriptFile = scriptFile;
         this.trigger = trigger;

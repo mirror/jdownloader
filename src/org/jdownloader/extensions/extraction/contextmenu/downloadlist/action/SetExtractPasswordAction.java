@@ -18,7 +18,7 @@ public class SetExtractPasswordAction extends AbstractExtractionContextAction {
 
     public SetExtractPasswordAction() {
         super();
-        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_password());
+        setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_password());
         setSmallIcon(new ExtractIconVariant(IconKey.ICON_PASSWORD, 18, 12, -1, -1).crop());
 
     }
@@ -59,9 +59,9 @@ public class SetExtractPasswordAction extends AbstractExtractionContextAction {
                 }
                 final String pw;
                 if (lArchives.size() > 1) {
-                    pw = Dialog.getInstance().showInputDialog(0, org.jdownloader.extensions.extraction.translate.T._.context_password(), (list == null || list.size() == 0) ? org.jdownloader.extensions.extraction.translate.T._.context_password_msg_multi() : org.jdownloader.extensions.extraction.translate.T._.context_password_msg2_multi(sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
+                    pw = Dialog.getInstance().showInputDialog(0, org.jdownloader.extensions.extraction.translate.T.T.context_password(), (list == null || list.size() == 0) ? org.jdownloader.extensions.extraction.translate.T.T.context_password_msg_multi() : org.jdownloader.extensions.extraction.translate.T.T.context_password_msg2_multi(sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
                 } else {
-                    pw = Dialog.getInstance().showInputDialog(0, org.jdownloader.extensions.extraction.translate.T._.context_password(), (list == null || list.size() == 0) ? org.jdownloader.extensions.extraction.translate.T._.context_password_msg(lArchives.get(0).getName()) : org.jdownloader.extensions.extraction.translate.T._.context_password_msg2(lArchives.get(0).getName(), sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
+                    pw = Dialog.getInstance().showInputDialog(0, org.jdownloader.extensions.extraction.translate.T.T.context_password(), (list == null || list.size() == 0) ? org.jdownloader.extensions.extraction.translate.T.T.context_password_msg(lArchives.get(0).getName()) : org.jdownloader.extensions.extraction.translate.T.T.context_password_msg2(lArchives.get(0).getName(), sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
                 }
                 if (!StringUtils.isEmpty(pw)) {
                     list.add(pw);

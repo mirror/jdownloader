@@ -16,7 +16,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
 
     public ExtractArchiveNowAction() {
         super();
-        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract());
+        setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_extract());
         setSmallIcon(new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 20, 3, 3).crop());
     }
 
@@ -35,7 +35,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
                         if (_getExtension().isComplete(archive)) {
                             _getExtension().addToQueue(archive, true);
                         } else {
-                            Dialog.getInstance().showMessageDialog(org.jdownloader.extensions.extraction.translate.T._.cannot_extract_incopmplete(archive.getName()));
+                            Dialog.getInstance().showMessageDialog(org.jdownloader.extensions.extraction.translate.T.T.cannot_extract_incopmplete(archive.getName()));
                         }
                     }
 

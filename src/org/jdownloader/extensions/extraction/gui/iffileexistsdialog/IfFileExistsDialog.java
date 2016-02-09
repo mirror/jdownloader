@@ -134,7 +134,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         txt.setToolTipText(path);
         File localFile = new File(path);
 
-        txt.setText(T._.file_exists_message());
+        txt.setText(T.T.file_exists_message());
         p.add(txt, "spanx");
         p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filename())), "sg 1");
         p.add(new JLabel(new File(path).getName()));
@@ -154,7 +154,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
             p.add(new JLabel(packagename));
         }
 
-        p.add(SwingUtils.toBold(new JLabel(T._.IfFileExistsDialog_layoutDialogContent_archive())), "sg 1");
+        p.add(SwingUtils.toBold(new JLabel(T.T.IfFileExistsDialog_layoutDialogContent_archive())), "sg 1");
         p.add(new JLabel(archive.getName()));
 
         skip = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_skip_());
@@ -193,7 +193,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         p.add(overwrite, "skip 1");
         p.add(rename, "skip 1");
         newName = new JTextField(newNameString);
-        p.add(SwingUtils.toBold(new JLabel(T._.IfFileExistsDialog_layoutDialogContent_newName())), "sg 1");
+        p.add(SwingUtils.toBold(new JLabel(T.T.IfFileExistsDialog_layoutDialogContent_newName())), "sg 1");
         p.add(newName);
 
         IfFileExistsAction def = CFG_EXTRACTION.CFG.getLatestIfFileExistsAction();

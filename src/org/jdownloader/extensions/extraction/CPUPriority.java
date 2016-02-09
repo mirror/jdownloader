@@ -8,20 +8,20 @@ public enum CPUPriority implements LabelInterface {
         @Override
         public String getLabel() {
 
-            return T._.settings_cpupriority_high();
+            return T.T.settings_cpupriority_high();
         }
     },
     MIDDLE(5) {
         @Override
         public String getLabel() {
 
-            return T._.settings_cpupriority_middle();
+            return T.T.settings_cpupriority_middle();
         }
     },
     LOW(10) {
         @Override
         public String getLabel() {
-            return T._.settings_cpupriority_low();
+            return T.T.settings_cpupriority_low();
         }
     };
 

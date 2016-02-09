@@ -15,7 +15,7 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAct
 
     public AutoExtractEnabledToggleAction() {
         super();
-        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autoextract());
+        setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_autoextract());
         setSmallIcon(new ExtractIconVariant("refresh", 18, 14, 0, 0).crop());
         setSelected(false);
     }
@@ -23,9 +23,9 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAct
     public void setSelected(final boolean selected) {
         super.setSelected(selected);
         if (isSelected()) {
-            setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_disable_auto_extract2());
+            setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_disable_auto_extract2());
         } else {
-            setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_disable_auto_extract2());
+            setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_disable_auto_extract2());
         }
     }
 
@@ -47,7 +47,7 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAct
                 archive.setAutoExtract(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
             }
             if (JDGui.bugme(WarnLevel.NORMAL)) {
-                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoextract_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoextract_false());
+                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T.T.set_autoextract_true() : org.jdownloader.extensions.extraction.translate.T.T.set_autoextract_false());
             }
         }
     }

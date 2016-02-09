@@ -253,15 +253,15 @@ public class ExtractionListenerList implements ExtractionListener {
         switch (event.getType()) {
         case QUEUED:
             setStatus(controller, rootArchive, ExtractionStatus.IDLE);
-            setMessage(controller, rootArchive, T._.plugins_optional_extraction_status_queued());
+            setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_queued());
             break;
         case EXTRACTION_FAILED:
             logger.warning("Extraction failed");
             setStatus(controller, rootArchive, ExtractionStatus.ERROR);
-            String errorMsg = T._.failed_no_details();
+            String errorMsg = T.T.failed_no_details();
             ArchiveFile lastAccessArchiveFile = null;
             if (controller.getException() != null) {
-                errorMsg = T._.failed(controller.getException().getMessage());
+                errorMsg = T.T.failed(controller.getException().getMessage());
                 if (controller.getException() instanceof ExtractionException) {
                     lastAccessArchiveFile = ((ExtractionException) controller.getException()).getLatestAccessedArchiveFile();
                 }
@@ -283,7 +283,7 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case PASSWORD_NEEDED_TO_CONTINUE:
             if (ex.getSettings().isAskForUnknownPasswordsEnabled() || controller.isAskForUnknownPassword()) {
-                final ExtractPasswordDialog id = new ExtractPasswordDialog(UIOManager.LOGIC_COUNTDOWN, T._.ask_for_password(), T._.plugins_optional_extraction_askForPassword2(), "", NewTheme.I().getIcon(IconKey.ICON_RAR, 32), null, null, controller);
+                final ExtractPasswordDialog id = new ExtractPasswordDialog(UIOManager.LOGIC_COUNTDOWN, T.T.ask_for_password(), T.T.plugins_optional_extraction_askForPassword2(), "", NewTheme.I().getIcon(IconKey.ICON_RAR, 32), null, null, controller);
                 final String pass = UIOManager.I().show(ExtractPasswordDialogInterface.class, id).getText();
                 if (StringUtils.isEmpty(pass)) {
                     setStatus(controller, rootArchive, ExtractionStatus.ERROR_PW);
@@ -294,9 +294,9 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case START_CRACK_PASSWORD:
             try {
-                setMessage(controller, rootArchive, T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / Math.max(1, controller.getPasswordListSize())) / 100.00));
+                setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / Math.max(1, controller.getPasswordListSize())) / 100.00));
             } catch (Throwable e) {
-                setMessage(controller, rootArchive, T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
+                setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_crackingpass_progress(0.00d));
             }
             break;
         case START:
@@ -305,21 +305,21 @@ public class ExtractionListenerList implements ExtractionListener {
         case OPEN_ARCHIVE_SUCCESS:
             break;
         case PASSWORD_FOUND:
-            setMessage(controller, rootArchive, T._.plugins_optional_extraction_status_passfound());
+            setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_passfound());
             setProgress(controller, rootArchive, 0, 0, green);
             break;
         case PASSWORT_CRACKING:
             final int x = controller.getCrackProgress();
             final int y = Math.max(1, controller.getPasswordListSize());
             try {
-                setMessage(controller, rootArchive, T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * x) / y) / 100.00));
+                setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_crackingpass_progress(((10000 * x) / y) / 100.00));
             } catch (Throwable e) {
-                setMessage(controller, rootArchive, T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
+                setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_crackingpass_progress(0.00d));
             }
             setProgress(controller, rootArchive, x, y, yellow);
             break;
         case EXTRACTING:
-            setMessage(controller, rootArchive, T._.plugins_optional_extraction_status_extracting2());
+            setMessage(controller, rootArchive, T.T.plugins_optional_extraction_status_extracting2());
             setProgress(controller, rootArchive, controller.getProcessedBytes(), controller.getCompleteBytes(), green);
             break;
         case EXTRACTION_FAILED_CRC:
@@ -332,13 +332,13 @@ public class ExtractionListenerList implements ExtractionListener {
                         archiveFile.setStatus(controller, ExtractionStatus.ERROR_CRC);
                     }
                 } else {
-                    final String message = T._.plugins_optional_extraction_error_extrfailedcrc();
+                    final String message = T.T.plugins_optional_extraction_error_extrfailedcrc();
                     for (final ArchiveFile archiveFile : currentArchive.getArchiveFiles()) {
                         archiveFile.setMessage(controller, message);
                     }
                 }
             } else {
-                final String message = T._.plugins_optional_extraction_error_extrfailedcrc();
+                final String message = T.T.plugins_optional_extraction_error_extrfailedcrc();
                 for (final ArchiveFile archiveFile : rootArchive.getArchiveFiles()) {
                     archiveFile.setMessage(controller, message);
                 }
