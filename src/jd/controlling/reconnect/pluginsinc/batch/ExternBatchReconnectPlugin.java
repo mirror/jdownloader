@@ -127,13 +127,13 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
         this.browse.addActionListener(this);
         this.browse.setFileSelectionMode(UserIO.DIRECTORIES_ONLY);
         this.browse.setDialogType(JFileChooser.SAVE_DIALOG);
-        p.add(new JLabel(T._.interaction_batchreconnect_terminal()), "sg left");
+        p.add(new JLabel(T.T.interaction_batchreconnect_terminal()), "sg left");
         p.add(this.txtCommand);
 
-        p.add(new JLabel(T._.interaction_batchreconnect_batch()), "newline,spanx,sg left");
+        p.add(new JLabel(T.T.interaction_batchreconnect_batch()), "newline,spanx,sg left");
         p.add(new JScrollPane(this.txtBatch), "spanx,newline,pushx,growx");
 
-        p.add(new JLabel(T._.interaction_batchreconnect_executein()), "sg left");
+        p.add(new JLabel(T.T.interaction_batchreconnect_executein()), "sg left");
         p.add(this.browse);
         new TextComponentChangeListener(this.txtCommand) {
             @Override
@@ -163,7 +163,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     @Override
     public String getName() {
-        return T._.jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName();
+        return T.T.jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName();
     }
 
     private String getTerminalCommand() {
