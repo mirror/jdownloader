@@ -28,16 +28,16 @@ public class ChatConfigPanel extends ExtensionConfigPanel<ChatExtension> {
     private void initComponents() {
         nick = new TextInput();
         userColors = new Checkbox();
-        userPosition = new ComboBox<String>(getExtension()._.settings_userlist_position_right(), getExtension()._.settings_userlist_position_left());
+        userPosition = new ComboBox<String>(getExtension().T.settings_userlist_position_right(), getExtension().T.settings_userlist_position_left());
         perform = new TextArea();
     }
 
     protected void layoutPanel() {
 
-        addPair(getExtension()._.settings_nick(), null, nick);
-        addPair(getExtension()._.settings_enabled_userlist_colors(), null, userColors);
-        addPair(getExtension()._.settings_userlist_position(), null, userPosition);
-        addPair(getExtension()._.settings_perform(), null, perform);
+        addPair(getExtension().T.settings_nick(), null, nick);
+        addPair(getExtension().T.settings_enabled_userlist_colors(), null, userColors);
+        addPair(getExtension().T.settings_userlist_position(), null, userPosition);
+        addPair(getExtension().T.settings_perform(), null, perform);
 
     }
 

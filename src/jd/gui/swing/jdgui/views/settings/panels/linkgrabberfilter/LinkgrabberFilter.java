@@ -84,14 +84,14 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         setOpaque(false);
         this.add(this.tab, "");
 
-        // this.combobox = new JComboBox(new String[] { _GUI._.LinkgrabberFilter_initComponents_filter_(),
-        // _GUI._.LinkgrabberFilter_initComponents_exceptions_() });
+        // this.combobox = new JComboBox(new String[] { _GUI.T.LinkgrabberFilter_initComponents_filter_(),
+        // _GUI.T.LinkgrabberFilter_initComponents_exceptions_() });
         // final ListCellRenderer org = combobox.getRenderer();
         // combobox.setRenderer(new ListCellRenderer() {
         //
         // public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         // JLabel ret = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-        // ret.setIcon(value == _GUI._.LinkgrabberFilter_initComponents_filter_() ? new AbstractIcon(IconKey.ICON_FALSE, 20) :
+        // ret.setIcon(value == _GUI.T.LinkgrabberFilter_initComponents_filter_() ? new AbstractIcon(IconKey.ICON_FALSE, 20) :
         // new AbstractIcon(IconKey.ICON_TRUE, 20));
         // return ret;
         // }

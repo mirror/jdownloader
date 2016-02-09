@@ -90,7 +90,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
                 password = new PasswordInput(CFG_IMAGE_TYPERZ.PASSWORD);
 
                 this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
-                // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
+                // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(ImageTyperzSolverService.this.getName()));
                 addPair(_GUI.T.captchasolver_configpanel_enabled(ImageTyperzSolverService.this.getName()), null, new Checkbox(CFG_IMAGE_TYPERZ.ENABLED, username, password));
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);

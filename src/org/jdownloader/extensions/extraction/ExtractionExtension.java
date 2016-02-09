@@ -27,17 +27,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
 
-import jd.SecondLevelLaunch;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
-import jd.plugins.AddonPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -91,7 +80,6 @@ import org.jdownloader.extensions.extraction.split.HachaSplit;
 import org.jdownloader.extensions.extraction.split.UnixSplit;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
-import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
@@ -106,6 +94,17 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
+
+import jd.SecondLevelLaunch;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
+import jd.plugins.AddonPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler, PackageControllerModifyVetoListener<FilePackage, DownloadLink> {
 
@@ -130,7 +129,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     public ExtractionExtension() throws StartException {
         super();
-        setTitle(_.name());
+        setTitle(T.name());
         INSTANCE = this;
     }
 
@@ -407,7 +406,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                                 statusbarListener.cleanup();
                             }
                             eventSender.addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
-                            bubbleSupport = new ExtractionBubbleSupport(T.T.bubbletype(), CFG_EXTRACTION.BUBBLE_ENABLED_IF_ARCHIVE_EXTRACTION_IS_IN_PROGRESS);
+                            bubbleSupport = new ExtractionBubbleSupport(T.bubbletype(), CFG_EXTRACTION.BUBBLE_ENABLED_IF_ARCHIVE_EXTRACTION_IS_IN_PROGRESS);
                             eventSender.addListener(bubbleSupport, true);
                             BubbleNotify.getInstance().registerType(bubbleSupport);
                         }
@@ -477,7 +476,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         if (!org.appwork.utils.Application.isHeadless()) {
                             /* currently disabled as headless does not support log upload */
                             if (StringUtils.isNotEmpty(latestLog)) {
-                                final ExceptionDialog ed = new ExceptionDialog(0, T.T.crash_title(), T.T.crash_message(), null, null, null);
+                                final ExceptionDialog ed = new ExceptionDialog(0, T.crash_title(), T.crash_message(), null, null, null);
                                 ed.setMore(latestLog);
                                 final ExceptionDialogInterface dialog = UIOManager.I().show(ExceptionDialogInterface.class, ed);
                                 dialog.throwCloseExceptions();
@@ -599,7 +598,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     public String getDescription() {
-        return _.description();
+        return T.description();
     }
 
     @Override

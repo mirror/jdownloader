@@ -47,7 +47,7 @@ public enum PayProvider implements LabelInterface {
     // OTHER() {
     // @Override
     // public String getLabel() {
-    // return _GUI._.DonationDialog_popup_other();
+    // return _GUI.T.DonationDialog_popup_other();
     // }
     // };
 

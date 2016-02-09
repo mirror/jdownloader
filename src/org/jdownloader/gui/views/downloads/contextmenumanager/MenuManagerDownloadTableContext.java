@@ -139,7 +139,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
 
         // mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new
         // ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true),
-        // IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
+        // IconKey.ICON_DELETE), _GUI.T.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
 
         return delete;
     }

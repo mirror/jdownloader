@@ -365,7 +365,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // final ExtButton refreshBtn = new ExtButton(new AppAction() {
             // {
             // setSmallIcon(new AbstractIcon(IconKey.ICON_REFRESH, 18));
-            // setTooltipText(_GUI._.CaptchaDialog_layoutDialogContent_refresh());
+            // setTooltipText(_GUI.T.CaptchaDialog_layoutDialogContent_refresh());
             // KeyStroke ks = KeyStroke.getKeyStroke(CFG_GUI.CFG.getShortcutForCaptchaDialogRefresh());
             // if (ks == null) {
             // ks = KeyStroke.getKeyStroke("pressed F5");
@@ -731,7 +731,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             }
 
         };
-        // JLabel lbl = new JLabel("<html>" + _GUI._.BrowserCaptchaDialog_layoutDialogContent_explain_() + "</html>");
+        // JLabel lbl = new JLabel("<html>" + _GUI.T.BrowserCaptchaDialog_layoutDialogContent_explain_() + "</html>");
         //
         // iconPanel.add(lbl, "spanx,pushx,growx");
         iconPanel.addDescriptionPlain(_GUI.T.BrowserCaptchaDialog_layoutDialogContent_explain_());

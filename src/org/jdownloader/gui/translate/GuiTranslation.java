@@ -6048,4 +6048,20 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You enabled the link properties panel, but no link or package is selected.\r\nThis panel becomes visible if you select a link or a package." })
 
     String help_enable_table_properties_msg();
+
+    @Default(lngs = { "en" }, values = { "%s1 usenet options" })
+
+    String UsenetConfigPanel_description(String host);
+
+    @Default(lngs = { "en" }, values = { "SSL Enabled" })
+
+    String UsenetConfigPanel_ssl();
+
+    @Default(lngs = { "en" }, values = { "Port" })
+
+    String UsenetConfigPanel_port();
+
+    @Default(lngs = { "en" }, values = { "Server" })
+
+    String UsenetConfigPanel_Server();
 }

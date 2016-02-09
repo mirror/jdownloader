@@ -703,8 +703,8 @@ public class ProxyController implements ProxySelectorInterface {
                                     logger.info("The Library Path probably contains special chars: " + Application.getResource("tmp/jna").getAbsolutePath());
                                     logger.log(e);
                                     // ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN |
-                                    // UIOManager.LOGIC_COUNTDOWN|UIOManager.BUTTONS_HIDE_OK, _GUI._.lit_error_occured(),
-                                    // _GUI._.special_char_lib_loading_problem(Application.getHome(), _GUI._.), e, null, _GUI._.lit_close())
+                                    // UIOManager.LOGIC_COUNTDOWN|UIOManager.BUTTONS_HIDE_OK, _GUI.T.lit_error_occured(),
+                                    // _GUI.T.special_char_lib_loading_problem(Application.getHome(), _GUI.T.), e, null, _GUI.T.lit_close())
                                     // {
                                     // @Override
                                     // public ModalityType getModalityType() {

@@ -288,10 +288,10 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     protected JMenu createVariablesMenu(JTextComponent txtPackagename2) {
         JMenu ret = new JMenu(_GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_menu());
         // ret.add(new VariableAction(txtPackagename2,
-        // _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_hoster(),
+        // _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_hoster(),
         // "<jd:hoster>"));
         // ret.add(new VariableAction(txtPackagename2,
-        // _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_source(),
+        // _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_source(),
         // "<jd:source>"));
         ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
 

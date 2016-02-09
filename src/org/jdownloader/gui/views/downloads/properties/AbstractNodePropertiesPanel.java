@@ -420,7 +420,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         };
         priority.setPopDown(true);
         // downloadPassword = new ExtTextField();
-        // downloadPassword.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_downloadpassword());
+        // downloadPassword.setHelpText(_GUI.T.AddLinksDialog_createExtracOptionsPanel_downloadpassword());
         // downloadPassword.setBorder(BorderFactory.createCompoundBorder(downloadPassword.getBorder(), BorderFactory.createEmptyBorder(2, 6,
         // 1, 6)));
 
@@ -524,8 +524,8 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         };
         autoExtract.setPopDown(true);
 
-        // p.add(createIconLabel("downloadpassword", _GUI._.propertiespanel_downloadpassword(),
-        // _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "alignx right,aligny center,height " + height + "!");
+        // p.add(createIconLabel("downloadpassword", _GUI.T.propertiespanel_downloadpassword(),
+        // _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "alignx right,aligny center,height " + height + "!");
 
         // p.add(downloadPassword, "height " + height + "!");
 

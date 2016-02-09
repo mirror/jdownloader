@@ -33,7 +33,7 @@ public class ImportPopupAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
 
-        // ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
+        // ala.putValue(AbstractAction.NAME, _GUI.T.AddOptionsAction_actionPerformed_addlinks());
         popup.add(new JMenuItem(new ImportPlainTextAction(table)));
         popup.add(new JMenuItem(new LoadProxyProfileAction(table)));
         // popup.add(new JMenuItem(new AddContainerAction()));

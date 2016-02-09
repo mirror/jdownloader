@@ -41,12 +41,12 @@ public class JDChatView extends AddonPanel<ChatExtension> {
 
     @Override
     public String getTitle() {
-        return getExtension()._.jd_plugins_optional_jdchat_JDChatView_title();
+        return getExtension().T.jd_plugins_optional_jdchat_JDChatView_title();
     }
 
     @Override
     public String getTooltip() {
-        return getExtension()._.jd_plugins_optional_jdchat_JDChatView_tooltip();
+        return getExtension().T.jd_plugins_optional_jdchat_JDChatView_tooltip();
 
     }
 

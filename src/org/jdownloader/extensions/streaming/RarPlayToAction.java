@@ -29,9 +29,9 @@ public class RarPlayToAction extends AppAction {
     // device = d;
     // extension = streamingExtension;
     // if (ai != null) {
-    // setName(T._.playto2(ai.getPath(), device.getDisplayName()));
+    // setName(T.T.playto2(ai.getPath(), device.getDisplayName()));
     // } else {
-    // setName(T._.playto(device.getDisplayName()));
+    // setName(T.T.playto(device.getDisplayName()));
     // }
     // Image front = NewTheme.I().getImage("media-playback-start", 20, true);
     // setSmallIcon(new ImageIcon(ImageProvider.merge(IconIO.toBufferedImage(streamingExtension.getIcon(20)), front, 0, 0, 5, 5)));

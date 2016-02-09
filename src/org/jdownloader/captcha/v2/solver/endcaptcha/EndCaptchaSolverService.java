@@ -90,7 +90,7 @@ public class EndCaptchaSolverService extends AbstractSolverService implements Se
                 password = new PasswordInput(CFG_END_CAPTCHA.PASSWORD);
 
                 this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), new AbstractIcon(IconKey.ICON_LOGINS, 32));
-                // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
+                // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(EndCaptchaSolverService.this.getName()));
                 addPair(_GUI.T.captchasolver_configpanel_enabled(EndCaptchaSolverService.this.getName()), null, new Checkbox(CFG_END_CAPTCHA.ENABLED, username, password));
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);

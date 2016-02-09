@@ -105,7 +105,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     public String getName() {
-        return _.getName();
+        return T.getName();
     }
 
     @Override
@@ -615,13 +615,13 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;
-        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), new AbstractIcon(IconKey.ICON_EXIT, 32), _.JDGui_windowClosing_try_asnwer_close(), null);
+        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, T.JDGui_windowClosing_try_title(), T.JDGui_windowClosing_try_msg_2(), new AbstractIcon(IconKey.ICON_EXIT, 32), T.JDGui_windowClosing_try_asnwer_close(), null);
 
         try {
 
             d.setLeftActions(new AppAction() {
                 {
-                    setName(_.JDGui_windowClosing_try_answer_totaskbar());
+                    setName(T.JDGui_windowClosing_try_answer_totaskbar());
                 }
 
                 @Override
@@ -632,7 +632,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 }
             }, new AppAction() {
                 {
-                    setName(_.JDGui_windowClosing_try_answer_tray());
+                    setName(T.JDGui_windowClosing_try_answer_tray());
                     setEnabled(SystemTray.isSupported());
                 }
 
@@ -665,13 +665,13 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;
-        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), new AbstractIcon(IconKey.ICON_EXIT, 32), _.JDGui_windowClosing_try_asnwer_close(), null);
+        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, T.JDGui_windowClosing_try_title(), T.JDGui_windowClosing_try_msg_2(), new AbstractIcon(IconKey.ICON_EXIT, 32), T.JDGui_windowClosing_try_asnwer_close(), null);
 
         try {
 
             d.setLeftActions(new AppAction() {
                 {
-                    setName(_.JDGui_windowClosing_try_answer_totaskbar());
+                    setName(T.JDGui_windowClosing_try_answer_totaskbar());
                 }
 
                 @Override
@@ -682,7 +682,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 }
             }, new AppAction() {
                 {
-                    setName(_.JDGui_windowClosing_try_answer_tray());
+                    setName(T.JDGui_windowClosing_try_answer_tray());
                     setEnabled(SystemTray.isSupported());
                 }
 

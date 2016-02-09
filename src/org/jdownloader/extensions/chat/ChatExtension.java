@@ -175,7 +175,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     public ChatExtension() throws StartException {
         super();
-        setTitle(_.jd_plugins_optional_jdchat_jdchat());
+        setTitle(T.jd_plugins_optional_jdchat_jdchat());
 
     }
 
@@ -361,7 +361,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         final String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
         String nick = getSettings().getNick();
         if (nick == null || nick.equalsIgnoreCase("")) {
-            nick = UserIO.getInstance().requestInputDialog(_.plugins_optional_jdchat_enternick());
+            nick = UserIO.getInstance().requestInputDialog(T.plugins_optional_jdchat_enternick());
             if (nick != null && !nick.equalsIgnoreCase("")) {
                 nick += "[" + loc + "]";
             }
@@ -422,7 +422,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
                 @Override
                 protected void runInEDT() {
-                    tabbedPane.setTitleAt(0, _.gui_tab_title(getCurrentChannel()));
+                    tabbedPane.setTitleAt(0, T.gui_tab_title(getCurrentChannel()));
                 }
             };
             getSettings().setChannelLanguage(newChannel);
@@ -616,7 +616,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             }
         };
         frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
-        JButton closeTab = new JButton(_.jd_plugins_optional_jdchat_closeTab());
+        JButton closeTab = new JButton(T.jd_plugins_optional_jdchat_closeTab());
         closeTab.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 if (ChatExtension.this.tabbedPane.getSelectedIndex() > 0) {
@@ -667,9 +667,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
             @Override
             protected void initMenuPanel(final JPanel menubar) {
-                ChatExtension.this.top = new JTextField(_.jd_plugins_optional_jdchat_JDChat_topic_default());
+                ChatExtension.this.top = new JTextField(T.jd_plugins_optional_jdchat_JDChat_topic_default());
                 menubar.add(top);
-                ChatExtension.this.top.setToolTipText(_.jd_plugins_optional_jdchat_JDChat_topic_tooltip());
+                ChatExtension.this.top.setToolTipText(T.jd_plugins_optional_jdchat_JDChat_topic_tooltip());
             }
 
         };
@@ -1151,7 +1151,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     @Override
     public String getDescription() {
-        return _.description();
+        return T.description();
     }
 
     @Override

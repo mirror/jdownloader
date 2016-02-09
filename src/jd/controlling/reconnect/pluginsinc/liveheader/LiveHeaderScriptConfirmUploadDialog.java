@@ -29,14 +29,14 @@ public class LiveHeaderScriptConfirmUploadDialog extends LiveHeaderScriptConfirm
     // public void addEditAction() {
     // setLeftActions(new AppAction() {
     // {
-    // setName(_GUI._.LiveHeaderScriptConfirmUploadDialog_show_script());
+    // setName(_GUI.T.LiveHeaderScriptConfirmUploadDialog_show_script());
     // }
     //
     // @Override
     // public void actionPerformed(ActionEvent e) {
     //
     // final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL,
-    // T._.script(getRouterName(routerData.getRouterName())), T._.script_check(), routerData.getScript(), null, _GUI._.lit_close(), null) {
+    // T.T.script(getRouterName(routerData.getRouterName())), T.T.script_check(), routerData.getScript(), null, _GUI.T.lit_close(), null) {
     //
     // @Override
     // public JComponent layoutDialogContent() {

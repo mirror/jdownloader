@@ -156,7 +156,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         // }
         // };
         //
-        // addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, box);
+        // addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, box);
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc());
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
 

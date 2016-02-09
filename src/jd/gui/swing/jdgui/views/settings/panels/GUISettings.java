@@ -289,8 +289,8 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         // JSonStorage.saveTo(Application.getResource("cfg/language.json"), newLng);
         //
         // try {
-        // Dialog.getInstance().showConfirmDialog(0, _GUI._.GUISettings_save_language_changed_restart_required_title(),
-        // _GUI._.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
+        // Dialog.getInstance().showConfirmDialog(0, _GUI.T.GUISettings_save_language_changed_restart_required_title(),
+        // _GUI.T.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
         // RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
         // } catch (DialogClosedException e2) {
         //
@@ -559,8 +559,8 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
         this.addHeader(_GUI.T.GUISettings_GUISettings_object_frames(), new AbstractIcon(IconKey.ICON_DESKTOP, 32));
         this.addDescription(_GUI.T.GUISettings_GUISettings_object_frames_description());
-        // this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), new AbstractIcon(IconKey.ICON_barrierfreesettings", 32));
-        // this.addDescription(_JDT._.gui_settings_barrierfree_description());
+        // this.addHeader(_GUI.T.GUISettings_GUISettings_object_accessability(), new AbstractIcon(IconKey.ICON_barrierfreesettings", 32));
+        // this.addDescription(_JDT.T.gui_settings_barrierfree_description());
         this.addDescriptionPlain(_GUI.T.GUISettings_GUISettings_sielntMode_description());
         addPair(_GUI.T.GUISettings_GUISettings_sielntMode(), null, new Checkbox(CFG_SILENTMODE.MANUAL_ENABLED));
         // OS_DEFAULT,

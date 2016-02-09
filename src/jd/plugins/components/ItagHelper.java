@@ -66,12 +66,12 @@ public class ItagHelper {
             // YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
             // @Override
             // public String _getName() {
-            // return _GUI._.YoutubeVariant_name_AAC_128();
+            // return _GUI.T.YoutubeVariant_name_AAC_128();
             // }
             //
             // @Override
             // public String getQualityExtension() {
-            // return _GUI._.YoutubeVariant_filenametag_AAC_128();
+            // return _GUI.T.YoutubeVariant_filenametag_AAC_128();
             // }
             // },
             name = name.toUpperCase(Locale.ENGLISH);
@@ -102,11 +102,11 @@ public class ItagHelper {
             sb.append("{\r\n");
             sb.append("@Override\r\n");
             sb.append("public String _getName() {\r\n");
-            sb.append("    return _GUI._.YoutubeVariant_name_generic_audio(\"" + bitrate + "kbit\",\"" + getExtension(dashAudio) + "\");\r\n");
+            sb.append("    return _GUI.T.YoutubeVariant_name_generic_audio(\"" + bitrate + "kbit\",\"" + getExtension(dashAudio) + "\");\r\n");
             sb.append("}\r\n\r\n");
             sb.append("@Override\r\n");
             sb.append("public String getQualityExtension() {\r\n");
-            sb.append("   return _GUI._.YoutubeVariant_nametag_generic_audio(\"" + bitrate + "kbit\",\"" + getExtension(dashAudio) + "\");\r\n");
+            sb.append("   return _GUI.T.YoutubeVariant_nametag_generic_audio(\"" + bitrate + "kbit\",\"" + getExtension(dashAudio) + "\");\r\n");
             sb.append("}\r\n");
             sb.append("},\r\n");
         }
@@ -125,12 +125,12 @@ public class ItagHelper {
                 // @Override
                 // public String _getName() {
                 //
-                // return _GUI._.YoutubeVariant_name_generic_video("720p","WebM");
+                // return _GUI.T.YoutubeVariant_name_generic_video("720p","WebM");
                 // }
                 //
                 // @Override
                 // public String getQualityExtension() {
-                // return _GUI._.YoutubeVariant_name_generic_video("720p","WebM");
+                // return _GUI.T.YoutubeVariant_name_generic_video("720p","WebM");
                 // }
                 // },
                 String fps = new Regex(dashVideo.name(), "(\\d+fps)").getMatch(0);
@@ -178,11 +178,11 @@ public class ItagHelper {
                 sb.append("{\r\n");
                 sb.append("@Override\r\n");
                 sb.append("public String _getName() {\r\n");
-                sb.append("    return _GUI._.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo) + "\");\r\n");
+                sb.append("    return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo) + "\");\r\n");
                 sb.append("}\r\n\r\n");
                 sb.append("@Override\r\n");
                 sb.append("public String getQualityExtension() {\r\n");
-                sb.append("   return _GUI._.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo) + "\");\r\n");
+                sb.append("   return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo) + "\");\r\n");
                 sb.append("}\r\n");
                 sb.append("},\r\n");
 
@@ -200,12 +200,12 @@ public class ItagHelper {
             // YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null) {
             // @Override
             // public String _getName() {
-            // return _GUI._.YoutubeVariant_name_MP4_360();
+            // return _GUI.T.YoutubeVariant_name_MP4_360();
             // }
             //
             // @Override
             // public String getQualityExtension() {
-            // return _GUI._.YoutubeVariant_filenametag_MP4_360();
+            // return _GUI.T.YoutubeVariant_filenametag_MP4_360();
             // }
             // },
             String fps = new Regex(dashVideo.name(), "(\\d+fps)").getMatch(0);
@@ -253,11 +253,11 @@ public class ItagHelper {
             sb.append("{\r\n");
             sb.append("@Override\r\n");
             sb.append("public String _getName() {\r\n");
-            sb.append("    return _GUI._.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo) + "\");\r\n");
+            sb.append("    return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo) + "\");\r\n");
             sb.append("}\r\n\r\n");
             sb.append("@Override\r\n");
             sb.append("public String getQualityExtension() {\r\n");
-            sb.append("   return _GUI._.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo) + "\");\r\n");
+            sb.append("   return _GUI.T.YoutubeVariant_name_generic_video(\"" + resolution + "p\",\"" + getExtension(dashVideo) + "\");\r\n");
             sb.append("}\r\n");
             sb.append("},\r\n");
 

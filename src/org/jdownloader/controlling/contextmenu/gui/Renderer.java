@@ -87,7 +87,7 @@ public class Renderer implements TreeCellRenderer {
             type = _GUI.T.InfoPanel_update_submenu();
 
             font = bold;
-            // label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(, ));
+            // label.setText(_GUI.T.InfoPanel_updateInfo_header_actionlabel(, ));
 
         } else if (mid instanceof SeparatorData) {
 

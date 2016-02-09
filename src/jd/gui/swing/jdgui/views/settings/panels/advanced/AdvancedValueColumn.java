@@ -90,7 +90,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         // try {
         // editing.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().actionPerformed();
         // } catch (Exception e1) {
-        // Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+        // Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
         // }
         // }
         // }

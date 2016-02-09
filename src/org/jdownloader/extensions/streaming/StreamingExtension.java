@@ -240,7 +240,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     // public void onExtendPopupMenu(final MenuContext<?> context) {
     // if (context instanceof DownloadTableContext) {
     //
-    // final JMenu menu = new JMenu(T._.popup_streaming()) {
+    // final JMenu menu = new JMenu(T.T.popup_streaming()) {
     // /**
     // *
     // */

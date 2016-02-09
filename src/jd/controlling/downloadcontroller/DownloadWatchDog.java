@@ -478,7 +478,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     switch (event.getResult()) {
                     case FAILED:
                         CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(false);
-                        UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());
+                        UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT.T.jd_controlling_reconnect_Reconnector_progress_failed2());
                         break;
                     }
                 }
@@ -2632,50 +2632,50 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             } else if (throwable instanceof NoInternetConnection) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
-                ret.setMessage(_JDT._.plugins_errors_nointernetconn());
+                ret.setMessage(_JDT.T.plugins_errors_nointernetconn());
                 return ret;
             } else if (throwable instanceof UnknownHostException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
-                ret.setMessage(_JDT._.plugins_errors_nointernetconn());
+                ret.setMessage(_JDT.T.plugins_errors_nointernetconn());
                 return ret;
             } else if (throwable instanceof SocketTimeoutException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
-                ret.setMessage(_JDT._.plugins_errors_hosteroffline());
+                ret.setMessage(_JDT.T.plugins_errors_hosteroffline());
                 return ret;
             } else if (throwable instanceof SocketException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
-                ret.setMessage(_JDT._.plugins_errors_disconnect());
+                ret.setMessage(_JDT.T.plugins_errors_disconnect());
                 return ret;
             } else if (throwable instanceof NoGateWayException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(10 * 1000l);
-                ret.setMessage(_JDT._.plugins_errors_proxy_connection());
+                ret.setMessage(_JDT.T.plugins_errors_proxy_connection());
                 return ret;
             } else if (throwable instanceof ProxyConnectException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(10 * 1000l);
-                ret.setMessage(_JDT._.plugins_errors_proxy_connection());
+                ret.setMessage(_JDT.T.plugins_errors_proxy_connection());
                 return ret;
             } else if (throwable instanceof ProxyAuthException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(30 * 1000l);
-                ret.setMessage(_JDT._.plugins_errors_proxy_auth());
+                ret.setMessage(_JDT.T.plugins_errors_proxy_auth());
                 return ret;
             } else if (throwable instanceof IOException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
-                ret.setMessage(_JDT._.plugins_errors_hosterproblem());
+                ret.setMessage(_JDT.T.plugins_errors_hosterproblem());
                 return ret;
             } else if (throwable instanceof InterruptedException) {
                 if (result.getController().isAborting()) {
                     return new DownloadLinkCandidateResult(RESULT.STOPPED, throwable, pluginHost);
                 }
-                pluginException = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT._.plugins_errors_error() + "Interrupted");
+                pluginException = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT.T.plugins_errors_error() + "Interrupted");
             } else {
-                pluginException = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT._.plugins_errors_error() + "Throwable");
+                pluginException = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT.T.plugins_errors_error() + "Throwable");
             }
         }
 
@@ -4004,10 +4004,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     if (con.isAlive() == false) {
                         continue;
                     }
-                    dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_();
+                    dialogTitle = _JDT.T.DownloadWatchDog_onShutdownRequest_();
                     DownloadInterface dl = con.getDownloadInstance();
                     if (dl != null && !con.getDownloadLink().isResumeable()) {
-                        dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_nonresumable();
+                        dialogTitle = _JDT.T.DownloadWatchDog_onShutdownRequest_nonresumable();
                         break;
                     }
                 }
@@ -4015,7 +4015,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (dialogTitle != null) {
                 if (request.isSilent() == false) {
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
-                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), new AbstractIcon(IconKey.ICON_DOWNLOAD, 32), _JDT._.literally_yes(), null)) {
+                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT.T.DownloadWatchDog_onShutdownRequest_msg(), new AbstractIcon(IconKey.ICON_DOWNLOAD, 32), _JDT.T.literally_yes(), null)) {
                             return;
                         }
                     } else {
@@ -4294,7 +4294,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             lst.add(new DownloadLinkCandidate(downloadLink, true));
             if (DISKSPACERESERVATIONRESULT.FAILED.equals(validateDiskFree(lst))) {
 
-                throw new IOException(_GUI._.DownloadWatchDog_move_exception_disk_full(downloadLink.getFileOutput()));
+                throw new IOException(_GUI.T.DownloadWatchDog_move_exception_disk_full(downloadLink.getFileOutput()));
             }
             logger.info("Move " + downloadLink);
             logger.info("From " + oldDir + "/" + oldName + " to " + newDir + "/" + newName);
@@ -4309,7 +4309,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             return;
         } catch (Throwable e) {
             logger.log(e);
-            UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_error_occured(), e.getMessage(), e, _GUI._.lit_close(), null));
+            UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.lit_error_occured(), e.getMessage(), e, _GUI.T.lit_close(), null));
         }
     }
 }

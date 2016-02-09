@@ -58,8 +58,8 @@ public class CaptchaConfigPanel extends AbstractConfigPanel {
 
         }));
         add(container);
-        // this.addHeader(_GUI._.AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_solver(), new AbstractIcon(IconKey.ICON_share", 32));
-        // this.addDescriptionPlain(_GUI._.AntiCaptchaConfigPanel_onShow_description_solver());
+        // this.addHeader(_GUI.T.AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_solver(), new AbstractIcon(IconKey.ICON_share", 32));
+        // this.addDescriptionPlain(_GUI.T.AntiCaptchaConfigPanel_onShow_description_solver());
         // add(psp = new CESSettingsPanel());
     }
 

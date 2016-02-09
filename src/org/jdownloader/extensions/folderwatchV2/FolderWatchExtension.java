@@ -94,7 +94,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     }
 
     public FolderWatchExtension() throws StartException {
-        setTitle(_.title());
+        setTitle(T.title());
     }
 
     @Override
@@ -152,7 +152,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     @Override
     public String getDescription() {
-        return _.description();
+        return T.description();
     }
 
     @Override

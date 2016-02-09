@@ -146,12 +146,12 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
 
     @Override
     public String getTitle() {
-        return getExtension()._.gui_title();
+        return getExtension().T.gui_title();
     }
 
     @Override
     public String getTooltip() {
-        return getExtension()._.gui_tooltip();
+        return getExtension().T.gui_tooltip();
     }
 
     /**

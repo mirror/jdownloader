@@ -21,11 +21,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.plugins.AddonPanel;
-import jd.utils.JDUtilities;
-
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
@@ -54,7 +49,6 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.shutdown.actions.ShutdownToggleAction;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
-import org.jdownloader.extensions.shutdown.translate.T;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
@@ -62,6 +56,11 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.plugins.AddonPanel;
+import jd.utils.JDUtilities;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
 
@@ -83,7 +82,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     public ShutdownExtension() throws StartException {
-        setTitle(_.jd_plugins_optional_jdshutdown());
+        setTitle(T.jd_plugins_optional_jdshutdown());
 
     }
 
@@ -368,8 +367,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 /* try to shutdown */
                 if (showDialog) {
                     logger.info("ask user about shutdown");
-                    final String message = _.interaction_shutdown_dialog_msg_shutdown();
-                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
+                    final String message = T.interaction_shutdown_dialog_msg_shutdown();
+                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, T.interaction_shutdown_dialog_title_shutdown(), message);
                     final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
                     switch (io.getCloseReason()) {
                     case OK:
@@ -389,8 +388,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 /* try to standby */
                 if (showDialog) {
                     logger.info("ask user about standby");
-                    final String message = _.interaction_shutdown_dialog_msg_standby();
-                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_standby(), message);
+                    final String message = T.interaction_shutdown_dialog_msg_standby();
+                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, T.interaction_shutdown_dialog_title_standby(), message);
                     final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
                     switch (io.getCloseReason()) {
                     case OK:
@@ -410,8 +409,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 /* try to hibernate */
                 if (showDialog) {
                     logger.info("ask user about hibernate");
-                    final String message = _.interaction_shutdown_dialog_msg_hibernate();
-                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_hibernate(), message);
+                    final String message = T.interaction_shutdown_dialog_msg_hibernate();
+                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, T.interaction_shutdown_dialog_title_hibernate(), message);
                     final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
                     switch (io.getCloseReason()) {
                     case OK:
@@ -431,8 +430,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 /* try to close */
                 if (showDialog) {
                     logger.info("ask user about closing");
-                    final String message = _.interaction_shutdown_dialog_msg_closejd();
-                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_closejd(), message);
+                    final String message = T.interaction_shutdown_dialog_msg_closejd();
+                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, T.interaction_shutdown_dialog_title_closejd(), message);
                     final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
                     switch (io.getCloseReason()) {
                     case OK:
@@ -498,7 +497,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     public String getDescription() {
-        return _.jd_plugins_optional_jdshutdown_description();
+        return T.jd_plugins_optional_jdshutdown_description();
     }
 
     @Override
@@ -584,7 +583,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 if (isHibernateActivated()) {
                     return;
                 }
-                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T.T.show_admin());
+                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, org.jdownloader.extensions.shutdown.translate.T.T.show_admin());
                 String path = CrossSystem.is64BitOperatingSystem() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
                 try {
                     LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "on" }).toString());
@@ -596,7 +595,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 if (!isHibernateActivated()) {
                     return;
                 }
-                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T.T.show_admin());
+                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, org.jdownloader.extensions.shutdown.translate.T.T.show_admin());
                 path = CrossSystem.is64BitOperatingSystem() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
                 try {
                     LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "off" }).toString());

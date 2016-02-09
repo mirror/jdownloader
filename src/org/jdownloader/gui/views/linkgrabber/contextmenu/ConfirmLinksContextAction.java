@@ -346,17 +346,17 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
                                                 // case EXCLUDE_OFFLINE:
                                                 // return orgRenderer.getListCellRendererComponent(list,
-                                                // _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE(),
+                                                // _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE(),
                                                 // index, isSelected, cellHasFocus);
                                                 //
                                                 // case EXCLUDE_OFFLINE_AND_REMOVE:
                                                 // return orgRenderer.getListCellRendererComponent(list,
-                                                // _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE_AND_REMOVE(),
+                                                // _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE_AND_REMOVE(),
                                                 // index, isSelected, cellHasFocus);
                                                 //
                                                 // case INCLUDE_OFFLINE:
                                                 // return orgRenderer.getListCellRendererComponent(list,
-                                                // _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE(),
+                                                // _GUI.T.ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE(),
                                                 // index, isSelected, cellHasFocus);
 
                                                 }

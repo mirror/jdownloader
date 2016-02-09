@@ -1488,7 +1488,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                     // public String getLabelString() {
                                     // return null;
                                     // }
-                                    // }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(),
+                                    // }, 0, _GUI.T.StatsManager_run_upload_error_title(), _GUI.T.StatsManager_run_upload_error_message(),
                                     // new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
                                     // public java.awt.Dialog.ModalityType getModalityType() {
                                     // return ModalityType.MODELESS;

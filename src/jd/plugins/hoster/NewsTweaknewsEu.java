@@ -33,13 +33,13 @@ public class NewsTweaknewsEu extends UseNet {
         return "http://www.tweaknews.eu/en/conditions";
     }
 
-    public static interface NewsTweakConfigInterface extends UsenetConfigInterface {
+    public static interface NewsTweaknewsEuConfig extends UsenetConfigInterface {
 
     };
 
     @Override
-    public Class<NewsTweakConfigInterface> getConfigInterface() {
-        return NewsTweakConfigInterface.class;
+    public Class<NewsTweaknewsEuConfig> getConfigInterface() {
+        return NewsTweaknewsEuConfig.class;
     }
 
     private final String USENET_USERNAME = "USENET_USERNAME";

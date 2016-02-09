@@ -684,7 +684,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     private void updateName() {
 
         // if (isDeleteFailed() && isDeleteDisabled() && isDeleteFinished() && isDeleteOffline()) {
-        // setName(_GUI._.ContextMenuFactory_createPopup_cleanup_only());
+        // setName(_GUI.T.ContextMenuFactory_createPopup_cleanup_only());
         // } else {
         new EDTRunner() {
 

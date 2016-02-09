@@ -133,7 +133,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, ParseException {
-        // checkFFmpeg(downloadLink, _GUI._.YoutubeDash_handleDownload_youtube_demux());
+        // checkFFmpeg(downloadLink, _GUI.T.YoutubeDash_handleDownload_youtube_demux());
         return super.requestFileInformation(downloadLink);
     }
 

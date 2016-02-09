@@ -22,11 +22,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.nutils.Executer;
-import jd.plugins.AddonPanel;
-
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.Application;
@@ -38,8 +33,12 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.growl.translate.GrowlTranslation;
-import org.jdownloader.extensions.growl.translate.T;
 import org.jdownloader.logging.LogController;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.nutils.Executer;
+import jd.plugins.AddonPanel;
 
 public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslation> implements StateEventListener {
 
@@ -72,7 +71,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                growlNotification(T.T.jd_plugins_optional_JDGrowlNotification_started(), getDateAndTime(), "Programstart");
+                growlNotification(T.jd_plugins_optional_JDGrowlNotification_started(), getDateAndTime(), "Programstart");
             }
 
         });
@@ -81,7 +80,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
 
     @Override
     public String getDescription() {
-        return T.T.jd_plugins_optional_jdgrowlnotification_description();
+        return T.jd_plugins_optional_jdgrowlnotification_description();
     }
 
     @Override
@@ -114,7 +113,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
 
     public GrowlExtension() throws StartException {
         super();
-        setTitle(T.T.jd_plugins_optional_jdgrowlnotification());
+        setTitle(T.jd_plugins_optional_jdgrowlnotification());
     }
 
     private void growlNotification(String headline, String message, String title) {
@@ -141,7 +140,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
     public void onStateChange(StateEvent event) {
         if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
             if (DownloadWatchDog.getInstance().getSession().getDownloadsStarted() > 0) {
-                growlNotification(T.T.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
+                growlNotification(T.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
             }
         }
     }

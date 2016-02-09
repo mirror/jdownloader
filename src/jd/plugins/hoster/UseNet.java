@@ -7,6 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
+import org.appwork.utils.net.usenet.SimpleUseNet;
+import org.appwork.utils.net.usenet.UnrecognizedCommandException;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.proxy.ProxyController;
 import jd.http.BrowserSettingsThread;
@@ -27,14 +35,6 @@ import jd.plugins.components.UsenetFile;
 import jd.plugins.components.UsenetFileSegment;
 import jd.plugins.components.UsenetServer;
 import jd.plugins.download.usenet.SimpleUseNetDownloadInterface;
-
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
-import org.appwork.utils.net.usenet.SimpleUseNet;
-import org.appwork.utils.net.usenet.UnrecognizedCommandException;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class UseNet extends PluginForHost {
@@ -153,13 +153,14 @@ public class UseNet extends PluginForHost {
         final String username = getUsername(account);
         final String password = getPassword(account);
         final UsenetConfigInterface config = getUsenetConfig();
-        UsenetServer server = config.getUsenetServer();
-        if (server == null) {
+        UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
+        if (server == null || !getAvailableUsenetServer().contains(server)) {
             server = getAvailableUsenetServer().get(0);
+            config.setHost(server.getHost());
+            config.setPort(server.getPort());
+            config.setSSLEnabled(server.isSSL());
         }
-        if (server == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+
         final URI uri = new URI("socket://" + server.getHost() + ":" + server.getPort());
         final List<HTTPProxy> proxies = selectProxies(uri);
         final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger()) {
