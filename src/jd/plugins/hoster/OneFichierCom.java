@@ -242,6 +242,10 @@ public class OneFichierCom extends PluginForHost {
         String dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, this.getDownloadlinkNEW(downloadLink));
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
+        if (dl.getConnection().getResponseCode() == 410) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             /*
              * could not resume, fetch new link, either saved link was free and chunks are not supported or somehow a premium link failed -
