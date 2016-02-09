@@ -14,7 +14,7 @@ public class AbortExtractionAction extends AbstractExtractionContextAction {
 
     public AbortExtractionAction() {
         super();
-        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_abort());
+        setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_abort());
         setSmallIcon(new ExtractIconVariant("cancel", 18, 14, 0, 0));
     }
 

@@ -25,9 +25,9 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
 
     public ValidateArchiveAction(ExtractionExtension extractionExtension, Archive... as) {
         if (as.length > 1) {
-            setName(T._.ValidateArchiveAction_ValidateArchiveAction_multi());
+            setName(T.T.ValidateArchiveAction_ValidateArchiveAction_multi());
         } else {
-            setName(T._.ValidateArchiveAction_ValidateArchiveAction(as[0].getName()));
+            setName(T.T.ValidateArchiveAction_ValidateArchiveAction(as[0].getName()));
         }
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 20), NewTheme.I().getImage("ok", 12), 0, 0, 10, 10)));
         extractor = extractionExtension;

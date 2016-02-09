@@ -49,7 +49,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
     @Override
     protected void initColumns() {
 
-        addColumn(new ExtTextColumn<ExtractionController>(T._.tooltip_NameColumn()) {
+        addColumn(new ExtTextColumn<ExtractionController>(T.T.tooltip_NameColumn()) {
             /**
              *
              */
@@ -133,30 +133,30 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 if (event != null) {
                     switch (event) {
                     case START:
-                        return T._.plugins_optional_extraction_status_openingarchive2();
+                        return T.T.plugins_optional_extraction_status_openingarchive2();
                     case START_CRACK_PASSWORD:
                         return "Start password finding";
                     case PASSWORT_CRACKING:
                         try {
-                            return T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * value.getCrackProgress()) / value.getPasswordListSize()) / 100.00);
+                            return T.T.plugins_optional_extraction_status_crackingpass_progress(((10000 * value.getCrackProgress()) / value.getPasswordListSize()) / 100.00);
                         } catch (Throwable e) {
-                            return T._.plugins_optional_extraction_status_crackingpass_progress(0.00d);
+                            return T.T.plugins_optional_extraction_status_crackingpass_progress(0.00d);
                         }
                     case PASSWORD_FOUND:
-                        return T._.plugins_optional_extraction_status_passfound();
+                        return T.T.plugins_optional_extraction_status_passfound();
                     case EXTRACTING:
                         final int size = value.getArchive().getExtractedFiles().size();
                         if (size > 0) {
-                            return T._.plugins_optional_extraction_status_extracting_filename(value.getArchive().getExtractedFiles().get(size - 1).getName());
+                            return T.T.plugins_optional_extraction_status_extracting_filename(value.getArchive().getExtractedFiles().get(size - 1).getName());
                         } else {
-                            return T._.plugins_optional_extraction_status_extracting2();
+                            return T.T.plugins_optional_extraction_status_extracting2();
                         }
                     case FINISHED:
-                        return T._.plugins_optional_extraction_status_extractok();
+                        return T.T.plugins_optional_extraction_status_extractok();
                     case NOT_ENOUGH_SPACE:
-                        return T._.plugins_optional_extraction_status_notenoughspace();
+                        return T.T.plugins_optional_extraction_status_notenoughspace();
                     case FILE_NOT_FOUND:
-                        return T._.plugins_optional_extraction_filenotfound();
+                        return T.T.plugins_optional_extraction_filenotfound();
                     }
                 }
                 return "";

@@ -35,7 +35,7 @@ public class ExtractionBubble extends AbstractNotifyWindow<ExtractionBubbleConte
     private volatile ExtractionEvent   latestEvent = null;
     
     public ExtractionBubble(ExtractionBubbleSupport extractionBubbleSupport, final ExtractionController caller) {
-        super(extractionBubbleSupport, T._.bubble_text(), new ExtractionBubbleContent());
+        super(extractionBubbleSupport, T.T.bubble_text(), new ExtractionBubbleContent());
         this.caller = caller;
         // , _GUI._.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
         

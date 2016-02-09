@@ -125,7 +125,7 @@ public class ScriptEnvironment {
     static void askForPermission(final String string) throws EnvironmentException {
         final ScriptThread env = getScriptThread();
         final String md5 = Hash.getMD5(env.getScript().getScript());
-        ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.permission_title(), T._.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T._.allow(), T._.deny()) {
+        ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.permission_title(), T.T.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T.T.allow(), T.T.deny()) {
 
             @Override
             public String getDontShowAgainKey() {
@@ -837,7 +837,7 @@ public class ScriptEnvironment {
     private static void showMessageDialog(String string) {
         final ScriptThread env = getScriptThread();
 
-        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T._.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel()), string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
+        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T.T.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel()), string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
             @Override
             protected int getPreferredWidth() {
                 return 600;

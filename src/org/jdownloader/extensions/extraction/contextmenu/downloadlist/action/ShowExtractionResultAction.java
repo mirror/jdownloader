@@ -31,7 +31,7 @@ public class ShowExtractionResultAction extends AbstractExtractionContextAction 
     public ShowExtractionResultAction() {
         super();
 
-        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract_show_result());
+        setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_extract_show_result());
         setSmallIcon(new ExtractIconVariant(IconKey.ICON_ABOUT, 18, 16, 0, 0).crop());
 
         // CFG_EXTRACTION.WRITE_EXTRACTION_LOG_ENABLED.getEventSender().addListener(this, true);
@@ -63,7 +63,7 @@ public class ShowExtractionResultAction extends AbstractExtractionContextAction 
             for (Archive archive : lArchives) {
                 if (archive.getExtractLogFile().exists()) {
                     try {
-                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, T._.showextractlog(archive.getName()), IO.readFileToString(archive.getExtractLogFile()), null, null, _GUI._.lit_close()) {
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, T.T.showextractlog(archive.getName()), IO.readFileToString(archive.getExtractLogFile()), null, null, _GUI._.lit_close()) {
 
                             @Override
                             protected int getPreferredHeight() {

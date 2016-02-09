@@ -75,7 +75,7 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
                     return;
                 }
                 try {
-                    Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_are_you_sure(), org.jdownloader.extensions.eventscripter.T._.sure_delete_entries(entries.size()), new AbstractIcon(IconKey.ICON_QUESTION, 32), null, null);
+                    Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_are_you_sure(), org.jdownloader.extensions.eventscripter.T.T.sure_delete_entries(entries.size()), new AbstractIcon(IconKey.ICON_QUESTION, 32), null, null);
                     getExtension().removeScriptEntries(entries);
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
@@ -89,17 +89,17 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
         final ExtButton btnDefault = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_WIZARD);
-                setName(T._.btnExampleScripts());
+                setName(T.T.btnExampleScripts());
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 ExtPopupMenu p = new ExtPopupMenu();
                 ArrayList<ExampleMenuEntry> lst = new ArrayList<ExampleMenuEntry>();
-                lst.add(new ExampleMenuEntry(getExtension(), "infofile.js", EventTrigger.ON_PACKAGE_FINISHED, T._.example_infoFile()));
-                lst.add(new ExampleMenuEntry(getExtension(), "playsound.js", EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED, T._.example_play_sound()));
-                lst.add(new ExampleMenuEntry(getExtension(), "playWavWhenInactive.js", EventTrigger.INTERVAL, T._.example_play_sound_when_inactive()));
-                lst.add(new ExampleMenuEntry(getExtension(), "speedReset.js", EventTrigger.INTERVAL, T._.reset_link_on_low_speed()));
+                lst.add(new ExampleMenuEntry(getExtension(), "infofile.js", EventTrigger.ON_PACKAGE_FINISHED, T.T.example_infoFile()));
+                lst.add(new ExampleMenuEntry(getExtension(), "playsound.js", EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED, T.T.example_play_sound()));
+                lst.add(new ExampleMenuEntry(getExtension(), "playWavWhenInactive.js", EventTrigger.INTERVAL, T.T.example_play_sound_when_inactive()));
+                lst.add(new ExampleMenuEntry(getExtension(), "speedReset.js", EventTrigger.INTERVAL, T.T.reset_link_on_low_speed()));
 
                 java.util.Collections.sort(lst, new Comparator<ExampleMenuEntry>() {
 

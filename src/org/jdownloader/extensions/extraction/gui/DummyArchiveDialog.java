@@ -20,7 +20,7 @@ public class DummyArchiveDialog extends AbstractDialog<Object> {
     private final DummyArchive archive;
 
     public DummyArchiveDialog(DummyArchive da) {
-        super(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.dummyarchivedialog_title(da.getName()), null, T._.close(), null);
+        super(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T.T.dummyarchivedialog_title(da.getName()), null, T.T.close(), null);
         archive = da;
     }
 
@@ -41,22 +41,22 @@ public class DummyArchiveDialog extends AbstractDialog<Object> {
             JLabel lbl = new JLabel();
             d.add(lbl, "pushx,growx");
             lbl.setIcon(new AbstractIcon(IconKey.ICON_OK, 32));
-            lbl.setText(T._.ValidateArchiveAction_actionPerformed_(archive.getSize()));
+            lbl.setText(T.T.ValidateArchiveAction_actionPerformed_(archive.getSize()));
 
             lbl = new JLabel();
             d.add(lbl, "pushx,growx");
             lbl.setIcon(new AbstractIcon(IconKey.ICON_INFO, 32));
-            lbl.setText(T._.ValidateArchiveAction_actionPerformed_information(archive.getArchiveType()));
+            lbl.setText(T.T.ValidateArchiveAction_actionPerformed_information(archive.getArchiveType()));
         } else {
             JLabel lbl = new JLabel();
             d.add(lbl, "pushx,growx");
             lbl.setIcon(new AbstractIcon(IconKey.ICON_STOP, 32));
-            lbl.setText(T._.ValidateArchiveAction_actionPerformed_bad(archive.getSize()));
+            lbl.setText(T.T.ValidateArchiveAction_actionPerformed_bad(archive.getSize()));
 
             lbl = new JLabel();
             d.add(lbl, "pushx,growx");
             lbl.setIcon(new AbstractIcon(IconKey.ICON_INFO, 32));
-            lbl.setText(T._.ValidateArchiveAction_actionPerformed_information(archive.getArchiveType()));
+            lbl.setText(T.T.ValidateArchiveAction_actionPerformed_information(archive.getArchiveType()));
         }
         DummyArchiveContentsTable table = new DummyArchiveContentsTable(archive);
         d.add(new JScrollPane(table), "spanx,pushx,growx");

@@ -70,12 +70,12 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
             switch (event.getType()) {
             case PASSWORD_NEEDED_TO_CONTINUE:
                 if (status != null) {
-                    status.setText(T._.password_required());
+                    status.setText(T.T.password_required());
                 }
                 break;
             case START_CRACK_PASSWORD:
                 if (status != null) {
-                    status.setText(T._.password_search());
+                    status.setText(T.T.password_search());
                 }
                 break;
             case FINISHED:
@@ -100,7 +100,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
             case EXTRACTING:
             case ACTIVE_ITEM:
                 if (status != null) {
-                    status.setText(T._.extracting_in_progress());
+                    status.setText(T.T.extracting_in_progress());
                 }
                 Item item = caller.getCurrentActiveItem();
                 if (item != null && item.getFile() != null) {
@@ -135,30 +135,30 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
         }
 
         if (CFG_EXTRACTION.BUBBLE_CONTENT_ARCHIVENAME_VISIBLE.isEnabled()) {
-            archive = addPair(archive, T._.archive(), IconKey.ICON_EXTRACT);
+            archive = addPair(archive, T.T.archive(), IconKey.ICON_EXTRACT);
         }
 
         if (CFG_EXTRACTION.BUBBLE_CONTENT_EXTRACT_TO_FOLDER_VISIBLE.isEnabled()) {
-            extractTo = addPair(extractTo, T._.archive_folder(), IconKey.ICON_FOLDER);
+            extractTo = addPair(extractTo, T.T.archive_folder(), IconKey.ICON_FOLDER);
         }
 
         if (CFG_EXTRACTION.BUBBLE_CONTENT_CURRENT_FILE_VISIBLE.isEnabled()) {
-            file = addPair(file, T._.archive_file(), IconKey.ICON_FILE);
+            file = addPair(file, T.T.archive_file(), IconKey.ICON_FILE);
         }
 
         if (CFG_EXTRACTION.BUBBLE_CONTENT_STATUS_VISIBLE.isEnabled()) {
-            status = addPair(status, T._.archive_status(), IconKey.ICON_MEDIA_PLAYBACK_START);
+            status = addPair(status, T.T.archive_status(), IconKey.ICON_MEDIA_PLAYBACK_START);
         }
     }
 
     public static void fillElements(ArrayList<Element> elements) {
 
-        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_CIRCLE_PROGRESS_VISIBLE, T._.bubblecontent_progress(), IconKey.ICON_RAR));
+        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_CIRCLE_PROGRESS_VISIBLE, T.T.bubblecontent_progress(), IconKey.ICON_RAR));
         elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_DURATION_VISIBLE, _GUI._.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT));
-        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_ARCHIVENAME_VISIBLE, T._.archive(), IconKey.ICON_EXTRACT));
-        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_EXTRACT_TO_FOLDER_VISIBLE, T._.archive_folder(), IconKey.ICON_FOLDER));
-        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_CURRENT_FILE_VISIBLE, T._.archive_file(), IconKey.ICON_FILE));
-        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_STATUS_VISIBLE, T._.archive_status(), IconKey.ICON_MEDIA_PLAYBACK_START));
+        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_ARCHIVENAME_VISIBLE, T.T.archive(), IconKey.ICON_EXTRACT));
+        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_EXTRACT_TO_FOLDER_VISIBLE, T.T.archive_folder(), IconKey.ICON_FOLDER));
+        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_CURRENT_FILE_VISIBLE, T.T.archive_file(), IconKey.ICON_FILE));
+        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_STATUS_VISIBLE, T.T.archive_status(), IconKey.ICON_MEDIA_PLAYBACK_START));
 
     }
 

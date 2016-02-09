@@ -44,28 +44,28 @@ public class ExtractAction extends AbstractExtractionContextAction {
         ASK_FOR_FOR_EVERY_ARCHIVE {
             @Override
             public String getLabel() {
-                return T._.EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE();
+                return T.T.EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE();
             }
         },
 
         EXTRACT_TO_ARCHIVE_PARENT {
             @Override
             public String getLabel() {
-                return T._.EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT();
+                return T.T.EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT();
             }
         },
 
         ASK_ONCE {
             @Override
             public String getLabel() {
-                return T._.EXTRACTTOPATHLOGIC_ASK_ONCE();
+                return T.T.EXTRACTTOPATHLOGIC_ASK_ONCE();
             }
         },
 
         USE_CUSTOMEXTRACTIONPATH {
             @Override
             public String getLabel() {
-                return T._.EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH();
+                return T.T.EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH();
             }
         };
 
@@ -74,7 +74,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
     private ExtractToPathLogic extractToPathLogic = ExtractToPathLogic.EXTRACT_TO_ARCHIVE_PARENT;
 
     public static String getTranslationForExtractToPathLogic() {
-        return T._.ExtractAction_getTranslationForExtractToPathLogic();
+        return T.T.ExtractAction_getTranslationForExtractToPathLogic();
     }
 
     @Customizer(link = "#getTranslationForExtractToPathLogic")
@@ -94,7 +94,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
     public ExtractAction() {
         super();
 
-        setName(T._.menu_tools_extract_files());
+        setName(T.T.menu_tools_extract_files());
         setIconKey(org.jdownloader.gui.IconKey.ICON_COMPRESS);
 
     }
@@ -126,7 +126,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
                     @Override
                     public String getDescription() {
-                        return org.jdownloader.extensions.extraction.translate.T._.plugins_optional_extraction_filefilter();
+                        return org.jdownloader.extensions.extraction.translate.T.T.plugins_optional_extraction_filefilter();
                     }
                 };
 
@@ -192,9 +192,9 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                                         case EXTRACTION_FAILED:
                                                         case EXTRACTION_FAILED_CRC:
                                                             if (controller.getException() != null) {
-                                                                Dialog.getInstance().showExceptionDialog(org.jdownloader.extensions.extraction.translate.T._.extraction_failed(archiveStartFile.getName()), controller.getException().getLocalizedMessage(), controller.getException());
+                                                                Dialog.getInstance().showExceptionDialog(org.jdownloader.extensions.extraction.translate.T.T.extraction_failed(archiveStartFile.getName()), controller.getException().getLocalizedMessage(), controller.getException());
                                                             } else {
-                                                                Dialog.getInstance().showErrorDialog(org.jdownloader.extensions.extraction.translate.T._.extraction_failed(archiveStartFile.getName()));
+                                                                Dialog.getInstance().showErrorDialog(org.jdownloader.extensions.extraction.translate.T.T.extraction_failed(archiveStartFile.getName()));
                                                             }
                                                             break;
                                                         }
@@ -223,7 +223,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                 public String getString() {
                                     final ExtractionController lController = controller;
                                     if (lController != null) {
-                                        return T._.extractprogress_label(format.format(lController.getProgress()) + " %", lController.getArchive().getExtractedFiles().size() + "");
+                                        return T.T.extractprogress_label(format.format(lController.getProgress()) + " %", lController.getArchive().getExtractedFiles().size() + "");
                                     } else {
                                         return format.format(0d) + " %";
                                     }
@@ -242,7 +242,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                 public String getLabelString() {
                                     return null;
                                 }
-                            }, 0, T._.extracting_archive(archive.getName()), T._.extracting_wait(archive.getName()), new ExtMergedIcon(new AbstractIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 32)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24), 6, 6), null, null) {
+                            }, 0, T.T.extracting_archive(archive.getName()), T.T.extracting_wait(archive.getName()), new ExtMergedIcon(new AbstractIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 32)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24), 6, 6), null, null) {
                                 @Override
                                 public ModalityType getModalityType() {
                                     return ModalityType.MODELESS;

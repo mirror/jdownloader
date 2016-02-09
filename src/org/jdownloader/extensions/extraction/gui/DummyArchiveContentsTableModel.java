@@ -30,7 +30,7 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
 
     @Override
     protected void initColumns() {
-        addColumn(name = new ExtTextColumn<DummyArchiveFile>(T._.filename()) {
+        addColumn(name = new ExtTextColumn<DummyArchiveFile>(T.T.filename()) {
 
             @Override
             public String getStringValue(DummyArchiveFile value) {
@@ -41,31 +41,31 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
             protected String getTooltipText(DummyArchiveFile value) {
                 if (value.getArchiveFile() instanceof FileArchiveFile) {
                     if (((FileArchiveFile) value.getArchiveFile()).getFile().exists()) {
-                        return T._.file_exists();
+                        return T.T.file_exists();
                     } else {
-                        return T._.file_exists_not();
+                        return T.T.file_exists_not();
                     }
                 } else {
                     if (value.getArchiveFile() == null) {
                         if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
-                            return T._.file_exists_not();
+                            return T.T.file_exists_not();
                         }
-                        return T._.unknown_tt();
+                        return T.T.unknown_tt();
                     } else {
                         if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
-                            return T._.offline_tt();
+                            return T.T.offline_tt();
                         }
                         if (value.getOnlineStatus() == AvailableStatus.TRUE) {
-                            return T._.online_tt();
+                            return T.T.online_tt();
                         }
-                        return T._.unknown_tt();
+                        return T.T.unknown_tt();
                     }
                 }
             }
 
         });
 
-        addColumn(linkStatus = new ExtTextColumn<DummyArchiveFile>(T._.exists()) {
+        addColumn(linkStatus = new ExtTextColumn<DummyArchiveFile>(T.T.exists()) {
             private Icon unknown;
             private Icon online;
 
@@ -93,28 +93,28 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
             @Override
             public String getStringValue(DummyArchiveFile value) {
                 if (value.getOnlineStatus() == AvailableStatus.TRUE) {
-                    return T._.online();
+                    return T.T.online();
                 }
                 if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
-                    return T._.offline();
+                    return T.T.offline();
                 }
-                return T._.unknown();
+                return T.T.unknown();
             }
 
             @Override
             protected String getTooltipText(DummyArchiveFile value) {
                 if (value.getOnlineStatus() == AvailableStatus.TRUE) {
-                    return T._.online_tt();
+                    return T.T.online_tt();
                 }
                 if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
-                    return T._.offline_tt();
+                    return T.T.offline_tt();
                 }
-                return T._.unknown_tt();
+                return T.T.unknown_tt();
             }
 
         });
 
-        addColumn(local = new ExtTextColumn<DummyArchiveFile>(T._.local()) {
+        addColumn(local = new ExtTextColumn<DummyArchiveFile>(T.T.local()) {
 
             @Override
             protected Icon getIcon(DummyArchiveFile value) {
@@ -128,9 +128,9 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
             @Override
             public String getStringValue(DummyArchiveFile value) {
                 if (value.isLocalFileAvailable()) { //
-                    return T._.downloadedok();
+                    return T.T.downloadedok();
                 }
-                return T._.downloadedbad();
+                return T.T.downloadedbad();
             }
 
             @Override

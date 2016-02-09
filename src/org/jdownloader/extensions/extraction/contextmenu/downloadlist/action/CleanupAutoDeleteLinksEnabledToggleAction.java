@@ -16,7 +16,7 @@ public class CleanupAutoDeleteLinksEnabledToggleAction extends AbstractExtractio
 
     public CleanupAutoDeleteLinksEnabledToggleAction() {
         super();
-        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autodeletelinks());
+        setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_autodeletelinks());
         setSmallIcon(new ExtractIconVariant(IconKey.ICON_LINK, 18, 14, 0, 0).crop());
         setSelected(false);
     }
@@ -39,7 +39,7 @@ public class CleanupAutoDeleteLinksEnabledToggleAction extends AbstractExtractio
                 archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
             }
             if (JDGui.bugme(WarnLevel.NORMAL)) {
-                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_false());
+                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T.T.set_autoremovelinks_true() : org.jdownloader.extensions.extraction.translate.T.T.set_autoremovelinks_false());
             }
         }
     }

@@ -70,7 +70,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
     protected ArrayList<ScriptEntry> getDefaultScriptList() {
         ArrayList<ScriptEntry> ret = new ArrayList<ScriptEntry>();
         ScriptEntry dfScript = new ScriptEntry();
-        dfScript.setName(T._.example_script_name());
+        dfScript.setName(T.T.example_script_name());
         dfScript.setEventTrigger(EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED);
         dfScript.setScript(null);
         dfScript.setEnabled(false);
@@ -151,7 +151,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                 return true;
             }
         });
-        this.addColumn(new ExtComboColumn<ScriptEntry, EventTrigger>(T._.event_trigger(), new DefaultComboBoxModel<EventTrigger>(EventTrigger.values())) {
+        this.addColumn(new ExtComboColumn<ScriptEntry, EventTrigger>(T.T.event_trigger(), new DefaultComboBoxModel<EventTrigger>(EventTrigger.values())) {
             @Override
             protected String modelItemToString(EventTrigger selectedItem) {
                 return selectedItem.getLabel();
@@ -169,7 +169,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             }
         });
 
-        this.addColumn(new ExtComponentColumn<ScriptEntry>(T._.edit_script()) {
+        this.addColumn(new ExtComponentColumn<ScriptEntry>(T.T.edit_script()) {
             private JButton            editorBtn;
             private JButton            rendererBtn;
             private ScriptEntry        editing;
@@ -208,7 +208,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                                 public String getLabelString() {
                                     return null;
                                 }
-                            }, 0, T._.loading_editor_title(), "", null);
+                            }, 0, T.T.loading_editor_title(), "", null);
 
                             UIOManager.I().show(null, p);
                             JavaScriptEditorDialog d = new JavaScriptEditorDialog(extension, editing);
