@@ -66,6 +66,7 @@ public class BatoTo extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
+        br.setAllowedResponseCodes(405);
         br.getPage(parameter.toString());// needed, sets cookie
         final String id = new Regex(parameter.toString(), "([a-z0-9]+)$").getMatch(0);
         final String url = "http://bato.to/areader?id=" + id + "&p=";
@@ -76,7 +77,10 @@ public class BatoTo extends PluginForDecrypt {
         // Access page one
         br.getPage(url + 1);
 
-        if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"https?://[\\w\\.]*(?:batoto\\.net|bato\\.to)/images/404-Error\\.jpg\" alt=\"File not found\" /></div>|The page you were looking for is no longer available")) {
+        if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"https?://[\\w\\.]*(?:batoto\\.net|bato\\.to)/images/404-Error\\.jpg\" alt=\"File not found\" /></div>|The page you were looking for is no longer available") || this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(url));
+            return decryptedLinks;
+        } else if (this.br.getHttpConnection().getResponseCode() == 405) {
             decryptedLinks.add(this.createOfflinelink(url));
             return decryptedLinks;
         } else if (br.containsHTML(">This chapter has been removed due to infringement\\.<")) {
@@ -87,12 +91,6 @@ public class BatoTo extends PluginForDecrypt {
         String title_comic = this.br.getRegex("<li style=\"display: inline-block; margin-right: \\d+px;\"><a href=\"http://bato\\.to/comic/[^<>\"]+\">([^<>\"]*?)</a>").getMatch(0);
         // We get the title
         String tag_title = this.br.getRegex("value=\"https?://bato\\.to/reader#[a-z0-9]+\" selected=\"selected\">([^<>\"]*?)</option>").getMatch(0);
-        // if (tag_title == null) {
-        // tag_title = br.getRegex("document\\.title = \\'([^<>\"]*?) Page \\d+ \\| Batoto\\!';").getMatch(0);
-        // }
-        // if (tag_title == null) {
-        // tag_title = this.br.getRegex("<title>.*?</title>").getMatch(-1);
-        // }
         if (tag_title == null) {
             /* Fallback if everything else fails! */
             tag_title = id;
@@ -114,8 +112,6 @@ public class BatoTo extends PluginForDecrypt {
         if (pages == null) {
             // even though the cookie is set... they don't always respect this for small page count
             // http://www.batoto.net/read/_/249050/useful-good-for-nothing_ch1_by_suras-place
-            /* TODO: Check if this is still working ... */
-            // br.getPage("?supress_webtoon=t"); // Gets 405.
             // pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
             // Temporary fix:
             String imglist = br.getRegex("(<div style=\"text-align:center\\;\"><img.*?<div)").getMatch(0);

@@ -70,7 +70,7 @@ public class Music163Com extends PluginForHost {
 
     /** TODO 2015-10-30: server seem to have changed from m1.music.126.net to m2.music.126.net but it is (still) down. */
     /* 2015-11-12 m5 works */
-    private static final String           dlurl_format            = "http://m5.music.126.net/%s/%s.mp3";
+    private static final String           dlurl_format            = "http://m1.music.126.net/%s/%s.mp3";
 
     /* Qualities from highest to lowest in KB/s: 320, 160, 96 hMusic is officially only available for logged-in users! */
     public static final String[]          audio_qualities         = { "hMusic", "mMusic", "lMusic", "bMusic" };
@@ -341,8 +341,11 @@ public class Music163Com extends PluginForHost {
         /* User-Agent no necessarily needed! */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.95 Safari/537.36");
         /* Last updated: 2014-12-08 */
-        br.setCookie("http://music.163.com/", "appver", "1.7.3");
+        br.setCookie("http://music.163.com/", "appver", "2.0.2");
         br.setAllowedResponseCodes(400);
+        /* API is very slow sometimes! */
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
     }
 
     @Override
@@ -427,7 +430,7 @@ public class Music163Com extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     * 
+     *
      * @param key
      * @return
      */
