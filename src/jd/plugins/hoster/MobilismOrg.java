@@ -117,10 +117,10 @@ public class MobilismOrg extends antiDDoSForHost {
             /* without account its not possible to download the link */
             return false;
         }
-        long fsize = downloadLink.getVerifiedFileSize();
-        if (fsize == -1) {
-            fsize = downloadLink.getDownloadSize();
-        }
+        // long fsize = downloadLink.getVerifiedFileSize();
+        // if (fsize == -1) {
+        // fsize = downloadLink.getDownloadSize();
+        // }
         final String currentHost = this.correctHost(downloadLink.getHost());
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
