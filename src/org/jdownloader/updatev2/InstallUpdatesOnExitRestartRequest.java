@@ -57,7 +57,7 @@ public class InstallUpdatesOnExitRestartRequest implements RestartRequest {
             // _UPDATE._.confirmdialog_new_update_available_answer_now_install(),
             // _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
-            ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message_launcher(), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+            ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_for_install_message_launcher(), null, _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
 
             try {
 

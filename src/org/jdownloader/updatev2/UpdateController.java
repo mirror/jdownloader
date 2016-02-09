@@ -328,7 +328,7 @@ public class UpdateController implements UpdateCallbackInterface {
         }
         try {
             if (app && appDownloadSize < 0 || updater && updaterDownloadSize < 0) {
-                confirm(0, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_message(), _UPDATE._.confirmdialog_new_update_available_answer_now(), _UPDATE._.confirmdialog_new_update_available_answer_later());
+                confirm(0, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_message(), _UPDATE.T.confirmdialog_new_update_available_answer_now(), _UPDATE.T.confirmdialog_new_update_available_answer_later());
 
             } else {
 
@@ -340,7 +340,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 if (updater) {
                     download += updaterDownloadSize;
                 }
-                confirm(0, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_message_sized(SizeFormatter.formatBytes(download)), _UPDATE._.confirmdialog_new_update_available_answer_now(), _UPDATE._.confirmdialog_new_update_available_answer_later());
+                confirm(0, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_message_sized(SizeFormatter.formatBytes(download)), _UPDATE.T.confirmdialog_new_update_available_answer_now(), _UPDATE.T.confirmdialog_new_update_available_answer_later());
 
             }
 
@@ -379,7 +379,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
                         logger.info("ASK for installing selfupdate");
 
-                        confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+                        confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_for_install_message(), _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
 
                         setUpdateConfirmed(true);
                         handler.setGuiVisible(true, true);
@@ -421,7 +421,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 // can install direct
                 if (!settings.isInstallUpdatesSilentlyIfPossibleEnabled()) {
                     logger.info("ask to install plugins");
-                    confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message_plugin(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+                    confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_for_install_message_plugin(), _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
 
                 }
                 logger.info("run install");
@@ -436,7 +436,7 @@ public class UpdateController implements UpdateCallbackInterface {
                     }
                 }.start();
                 logger.info("set gui finished");
-                handler.setGuiFinished(_UPDATE._.updatedplugins());
+                handler.setGuiFinished(_UPDATE.T.updatedplugins());
 
                 if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled()) {
                     handler.setGuiVisible(false, false);
@@ -457,10 +457,10 @@ public class UpdateController implements UpdateCallbackInterface {
                     List<String> rInstalls = handler.getRequestedInstalls();
                     List<String> ruInstalls = handler.getRequestedUnInstalls();
                     if (rInstalls.size() > 0 || ruInstalls.size() > 0) {
-                        confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle_extensions(), _UPDATE._.confirmdialog_new_update_available_for_install_message_extensions(rInstalls.size(), ruInstalls.size()), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+                        confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle_extensions(), _UPDATE.T.confirmdialog_new_update_available_for_install_message_extensions(rInstalls.size(), ruInstalls.size()), _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
 
                     } else {
-                        confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+                        confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_for_install_message(), _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
                     }
                     setUpdateConfirmed(true);
                     handler.setGuiVisible(true, true);
