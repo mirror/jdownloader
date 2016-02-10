@@ -25,6 +25,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import jd.SecondLevelLaunch;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -51,8 +53,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.LookAndFeelType;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
@@ -105,27 +105,26 @@ public class LookAndFeelController implements LAFManagerInterface {
             return;
         }
 
-        if (CFG_GUI.CFG.getLookAndFeelTheme() == null) {
-            CFG_GUI.CFG.setLookAndFeelTheme(LookAndFeelType.DEFAULT);
+        LookAndFeelType lafTheme = CFG_GUI.CFG.getLookAndFeelTheme();
+        if (lafTheme == null) {
+            lafTheme = LookAndFeelType.DEFAULT;
+            CFG_GUI.CFG.setLookAndFeelTheme(lafTheme);
         }
 
-        try {
-            if (CFG_GUI.CFG.getLookAndFeelTheme() == LookAndFeelType.DEFAULT || Class.forName(CFG_GUI.CFG.getLookAndFeelTheme().getClazz()) != null || CFG_GUI.CFG.getLookAndFeelTheme().getExtensionID() == null) {
-                return;
-            }
-        } catch (ClassNotFoundException e1) {
-        }
-
-        if (UpdateController.getInstance().isExtensionInstalled(CFG_GUI.CFG.getLookAndFeelTheme().getExtensionID())) {
+        if (LookAndFeelType.DEFAULT.equals(lafTheme) || lafTheme.isAvailable() || lafTheme.getExtensionID() == null) {
             return;
         }
-        if (UIOManager.I().showConfirmDialog(0, _GUI.T.LookAndFeelController_handleThemesInstallation_title_(), _GUI.T.LookAndFeelController_handleThemesInstallation_message_(CFG_GUI.CFG.getLookAndFeelTheme().name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
 
+        if (UpdateController.getInstance().isExtensionInstalled(lafTheme.getExtensionID())) {
+            return;
+        }
+        if (UIOManager.I().showConfirmDialog(0, _GUI.T.LookAndFeelController_handleThemesInstallation_title_(), _GUI.T.LookAndFeelController_handleThemesInstallation_message_(lafTheme.name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
+            final LookAndFeelType finalLafTheme = lafTheme;
             new Thread("Install Extension") {
                 public void run() {
                     try {
                         UpdateController.getInstance().setGuiVisible(true);
-                        UpdateController.getInstance().runExtensionInstallation(CFG_GUI.CFG.getLookAndFeelTheme().getExtensionID());
+                        UpdateController.getInstance().runExtensionInstallation(finalLafTheme.getExtensionID());
                         while (true) {
                             Thread.sleep(500);
                             if (!UpdateController.getInstance().isRunning()) {
