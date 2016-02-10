@@ -68,7 +68,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
     /**
@@ -81,6 +81,8 @@ public class SaveTv extends PluginForHost {
     // private static final String APIKEY_windows_xp_dlm_2_2_0_0 = "RTI4NDVGQUQtRkE2My00RTQ2LTlDRTgtRjlBNUE4REY0N0U4";
     // private static final String APIKEY_windows_8_beta_app = "QkQ3NTExRTEtOTk5Ni00QkMwLTlENDctMEI3QjRFNTk4RjI0";
     /* Doc of an eventually soon existing new (finally public) API [Date added: 2015-06-25]: https://api.save.tv/v3/docs/index */
+    private final String          LINKTYPE_NORMAL                           = "https?://(?:www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+";
+    private final String          LINKTYPE_DIRECT                           = "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+";
     public static final String    APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
     public static final double    QUALITY_HD_MB_PER_MINUTE                  = 22;
     public static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
@@ -233,10 +235,19 @@ public class SaveTv extends PluginForHost {
         return "http://www.save.tv/STV/S/misc/terms.cfm";
     }
 
+    /** Users may add direct URLs as not everyone understands how JDownloader works --> Correct that! */
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+        String url = link.getDownloadURL();
+        if (url.matches(LINKTYPE_DIRECT)) {
+            final String telecastID = new Regex(url, "https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_(\\d+)").getMatch(0);
+            url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecastID;
+        } else {
+            url = url.replaceFirst("http://", "https://");
+        }
+        link.setUrlDownload(url);
+        link.setContentUrl(url);
     }
 
     @Override

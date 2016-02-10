@@ -221,12 +221,17 @@ public class DeviantArtCom extends PluginForHost {
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
         } else if (br.containsHTML(TYPE_DOWNLOADFORBIDDEN_SWF)) {
             filesize = getImageSize();
-            final String swf_sandbox = br.getRegex("class=\"flashtime\" src=\"(https?://sandbox\\.deviantart\\.com[^<>\"]*?)\"").getMatch(0);
-            if (swf_sandbox == null) {
+            String url_swf_sandbox = br.getRegex("class=\"flashtime\" src=\"(https?://sandbox\\.deviantart\\.com[^<>\"]*?)\"").getMatch(0);
+            if (url_swf_sandbox == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(swf_sandbox);
+            /* Fix that ... */
+            url_swf_sandbox = url_swf_sandbox.replace("?", "/?");
+            br.getPage(url_swf_sandbox);
             this.DLLINK = br.getRegex("<param name=\"movie\" value=\"(https?://[^<>\"]*?\\.swf)\"").getMatch(0);
+            if (this.DLLINK == null) {
+                this.DLLINK = br.getRegex("id=\"sandboxembed\" src=\"(http[^<>\"]+\\.swf)\"").getMatch(0);
+            }
             filename = findServerFilename(filename);
             ext = "swf";
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_HTML)) {
