@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,8 +48,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
@@ -137,13 +137,9 @@ public class OneFichierCom extends PluginForHost {
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             while (true) {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("User stopped downloads --> Stepping out of loop");
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "User aborted download");
-                    }
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
+                if (this.isAbort()) {
+                    logger.info("User stopped downloads --> Stepping out of loop");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "User aborted download");
                 }
                 links.clear();
                 while (true) {
@@ -237,27 +233,35 @@ public class OneFichierCom extends PluginForHost {
         checkDownloadable();
         // to prevent wasteful requests.
         int i = 0;
-        // 20140920 - stable needs this, as it seems to behave differently! raztoki
-        /* The following code will cover saved directlinks and hotlinked-links. */
-        String dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, this.getDownloadlinkNEW(downloadLink));
-        br.setFollowRedirects(true);
+        /* The following code will cover saved final download links! */
+        String dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, null);
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
+            if (dl.getConnection().getContentType().contains("html")) {
+                // link has expired... but it could be for any reason! dont care!
+                // clear saved final link
+                downloadLink.setProperty(PROPERTY_FREELINK, Property.NULL);
+                br = new Browser();
+            } else {
+                /* resume download */
+                downloadLink.setProperty(PROPERTY_FREELINK, dllink);
+                dl.startDownload();
+                return;
+            }
+        }
+        // this covers downloads that are hot link-able...
+        dllink = getDownloadlinkNEW(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
-        handleDownloadErrorsGeneral();
-        if (dl.getConnection().getContentType().contains("html")) {
-            /*
-             * could not resume, fetch new link, either saved link was free and chunks are not supported or somehow a premium link failed -
-             * either way it should work below then!
-             */
-            br.followConnection();
-            downloadLink.setProperty(PROPERTY_FREELINK, Property.NULL);
-            dllink = null;
-            br.setFollowRedirects(false);
-        } else {
+        if (!dl.getConnection().getContentType().contains("html")) {
             /* resume download */
             downloadLink.setProperty(PROPERTY_FREELINK, dllink);
             dl.startDownload();
             return;
         }
+        // html yo!
+        br.followConnection();
+        dllink = null;
+        br.setFollowRedirects(false);
         // use the English page, less support required
         boolean retried = false;
         while (true) {
@@ -298,11 +302,11 @@ public class OneFichierCom extends PluginForHost {
                 }
                 if (dllink == null) {
                     sleep(2000, downloadLink);
-                    Browser br3 = br.cloneBrowser();
                     Form a2 = br2.getForm(0);
                     if (a2 == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    final Browser br3 = br.cloneBrowser();
                     br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                     sleep(2000, downloadLink);
                     br3.submitForm(a2);
@@ -330,7 +334,6 @@ public class OneFichierCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
-        handleDownloadErrorsGeneral();
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -682,8 +685,6 @@ public class OneFichierCom extends PluginForHost {
                 logger.info("Download failed because: " + e.getMessage());
                 throw e;
             }
-
-            handleDownloadErrorsGeneral();
             if (dl.getConnection().getContentType().contains("html")) {
                 if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
                     dl.getConnection().disconnect();
@@ -700,13 +701,6 @@ public class OneFichierCom extends PluginForHost {
             link.setProperty(PROPERTY_PREMLINK, dllink);
             dl.startDownload();
             return;
-        }
-    }
-
-    private void handleDownloadErrorsGeneral() throws PluginException {
-        if (dl.getConnection().getResponseCode() == 410) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
@@ -741,18 +735,18 @@ public class OneFichierCom extends PluginForHost {
         return formdata;
     }
 
-    /** Returns an accessable downloadlink in the VERY OLD format. */
+    /** Returns an accessible downloadlink in the VERY OLD format. */
     @SuppressWarnings("unused")
     private String getDownloadlinkVERY_OLD(final DownloadLink dl) {
         return "https://" + getFID(dl) + ".1fichier.com/en/index.html";
     }
 
-    /** Returns an accessable downloadlink in the OLD format. */
+    /** Returns an accessible downloadlink in the OLD format. */
     private String getDownloadlinkOLD(final DownloadLink dl) {
         return "https://" + getFID(dl) + ".1fichier.com/";
     }
 
-    /** Returns an accessable downloadlink in the NEW format. */
+    /** Returns an accessible downloadlink in the NEW format. */
     private String getDownloadlinkNEW(final DownloadLink dl) {
         return "https://1fichier.com/?" + getFID(dl);
     }
