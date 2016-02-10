@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,8 +48,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
@@ -234,8 +234,8 @@ public class OneFichierCom extends PluginForHost {
         checkDownloadable();
         // to prevent wasteful requests.
         int i = 0;
-        /* The following code will cover saved final download links! */
-        String dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, null);
+        /* The following code will cover saved hotlinks */
+        String dllink = downloadLink.getStringProperty(PROPERTY_HOTLINK, null);
         if (dllink != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -251,15 +251,33 @@ public class OneFichierCom extends PluginForHost {
                 return;
             }
         }
-        // this covers downloads that are hot link-able...
+        // retry/resume of cached free link!
+        dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, null);
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
+            if (dl.getConnection().getContentType().contains("html")) {
+                dl.getConnection().disconnect();
+                // link has expired... but it could be for any reason! dont care!
+                // clear saved final link
+                downloadLink.setProperty(PROPERTY_FREELINK, Property.NULL);
+                br = new Browser();
+            } else {
+                /* resume download */
+                downloadLink.setProperty(PROPERTY_FREELINK, dllink);
+                dl.startDownload();
+                return;
+            }
+        }
+        // this covers virgin downloads which end up been hot link-able...
         dllink = getDownloadlinkNEW(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
         if (!dl.getConnection().getContentType().contains("html")) {
             /* resume download */
-            downloadLink.setProperty(PROPERTY_FREELINK, dllink);
+            downloadLink.setProperty(PROPERTY_HOTLINK, dllink);
             dl.startDownload();
             return;
         }
+        // not hotlinkable.. standard free link...
         // html yo!
         br.followConnection();
         dllink = null;
