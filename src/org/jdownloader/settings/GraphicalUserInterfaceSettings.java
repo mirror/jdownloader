@@ -514,7 +514,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         private final String clazz;
         private final String extensionID;
 
-        public String getExtensionID() {
+        public final String getExtensionID() {
             return extensionID;
         }
 
