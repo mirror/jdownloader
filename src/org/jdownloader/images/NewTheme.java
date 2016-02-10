@@ -54,11 +54,10 @@ public class NewTheme extends Theme {
      */
     private NewTheme() {
         super("org/jdownloader/");
-
         AWUTheme.getInstance().setNameSpace(getNameSpace());
         AWUTheme.I().setDelegate(this);
         try {
-            LAFOptions inst = LAFOptions.getInstance();
+            final LAFOptions inst = LAFOptions.getInstance();
             if (inst != null) {
                 setTheme(inst.getCfg().getIconSetID());
             }
@@ -71,7 +70,6 @@ public class NewTheme extends Theme {
     public void setTheme(String theme) {
         super.setTheme(theme);
         AWUTheme.getInstance().setTheme(theme);
-
     }
 
     protected String getCacheKey(final Object... objects) {
