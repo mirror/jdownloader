@@ -129,6 +129,7 @@ public class UsenetConfigPanel<T extends UsenetConfigInterface> extends PluginCo
 
     @Override
     public void actionPerformed(ActionEvent e) {
+
         if (e.getSource() == cmbServer) {
             cf.setHost(cmbServer.getSelectedItem());
 
@@ -141,6 +142,11 @@ public class UsenetConfigPanel<T extends UsenetConfigInterface> extends PluginCo
             return;
         }
 
+        updateModels();
+
+    }
+
+    private void updateModels() {
         String host = cf.getHost();
         if (host == null) {
             host = availableServers[0].getHost();
@@ -180,12 +186,14 @@ public class UsenetConfigPanel<T extends UsenetConfigInterface> extends PluginCo
         }
         cbSSL.setSelected(cf.isSSLEnabled());
         cmbPort.setSelectedItem(cf.getPort());
-
     }
 
     @Override
     public void reset() {
-        cmbServer.setSelectedItem(null);
+        cf.setHost(availableServers[0].getHost());
+        cf.setSSLEnabled(availableServers[0].isSSL());
+        cf.setPort(availableServers[0].getPort());
+        updateModels();
     }
 
     @Override
