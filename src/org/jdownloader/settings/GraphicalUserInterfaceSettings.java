@@ -21,7 +21,6 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
-import org.jdownloader.gui.laf.plain.PlainLookAndFeel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
@@ -504,7 +503,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         SKY_METALLIC("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel"),
         STANDARD("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel"),
         WHITE_VISION("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel"),
-        JD_PLAIN("theme-plain", PlainLookAndFeel.class.getName()),
+        JD_PLAIN("theme-plain", "org.jdownloader.gui.laf.plain.PlainLookAndFeel"),
         DEFAULT(null, "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
 
         private final String clazz;
