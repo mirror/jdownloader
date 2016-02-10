@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" }, flags = { 0 })
 public class BeegCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -53,10 +52,12 @@ public class BeegCom extends PluginForHost {
     }
 
     private static final String INVALIDLINKS = "http://(www\\.)?beeg\\.com/generator.+";
+    private boolean             server_issue = false;
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        server_issue = false;
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -81,9 +82,13 @@ public class BeegCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (DLLINK.startsWith("//")) {
-            DLLINK = "https:" + Encoding.urlDecode(DLLINK, false);
+            DLLINK = "https:" + DLLINK;
         }
         DLLINK = DLLINK.replace("{DATA_MARKERS}", "data=pc.DE");
+        final String key = new Regex(this.DLLINK, "/key=([^<>\"=]+)%2Cend=").getMatch(0);
+        if (key != null) {
+
+        }
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
@@ -93,16 +98,15 @@ public class BeegCom extends PluginForHost {
             filename = filename.substring(0, filename.length() - 1);
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Referer", downloadLink.getDownloadURL());
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br.openGetConnection(DLLINK);
             if (con.isOK() && !con.getContentType().contains("html") && !con.getContentType().contains("text")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                server_issue = true;
             }
             return AvailableStatus.TRUE;
         } finally {
@@ -116,12 +120,20 @@ public class BeegCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issue) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue", 30 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("text")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /** TODO: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/beeg.py */
+    private String decryptKey(final String key) {
+        return null;
     }
 
     @Override
