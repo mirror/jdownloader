@@ -117,7 +117,6 @@ import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
-import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 import com.btr.proxy.selector.pac.PACScriptEngineFactory;
@@ -852,23 +851,6 @@ public class SecondLevelLaunch {
 
                 org.jdownloader.images.NewTheme.getInstance().setTheme(theme);
 
-                if (StringUtils.equals("standard", theme)) {
-                    SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            final String extensionID = "iconset-" + theme;
-                            if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
-                                try {
-                                    UpdateController.getInstance().runExtensionInstallation(extensionID);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    });
-
-                }
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
             }

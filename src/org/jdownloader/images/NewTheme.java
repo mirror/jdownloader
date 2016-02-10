@@ -17,6 +17,7 @@ import org.appwork.resources.Theme;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 /**
  * New JDownloader Icon Theme Support
@@ -56,7 +57,14 @@ public class NewTheme extends Theme {
 
         AWUTheme.getInstance().setNameSpace(getNameSpace());
         AWUTheme.I().setDelegate(this);
-
+        try {
+            LAFOptions inst = LAFOptions.getInstance();
+            if (inst != null) {
+                setTheme(inst.getCfg().getIconSetID());
+            }
+        } catch (Throwable e) {
+            // LAFOPtions not initialized yet
+        }
     }
 
     @Override
