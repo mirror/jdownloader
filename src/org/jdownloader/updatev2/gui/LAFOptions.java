@@ -17,15 +17,7 @@ import org.appwork.storage.config.handler.DefaultFactoryInterface;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
-import org.jdownloader.gui.laf.DefaultLookAndFeelExtension;
-import org.jdownloader.gui.laf.LookAndFeelExtension;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.updatev2.UpdateController;
-
-import jd.SecondLevelLaunch;
-import jd.gui.swing.laf.LookAndFeelController;
 
 public class LAFOptions {
 
@@ -65,7 +57,7 @@ public class LAFOptions {
         String name = (i >= 0 ? laf.substring(i + 1) : laf);
         String path = "cfg/laf/" + name;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
-        if (!LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL.equals(laf)) {
+        if (!"org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel".equals(laf)) {
             try {
                 extension = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
             } catch (Throwable e) {
@@ -130,25 +122,6 @@ public class LAFOptions {
         // public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
         // }
         // });
-        final String theme = INSTANCE.getCfg().getIconSetID();
-        NewTheme.getInstance().setTheme(theme);
-        if (StringUtils.equals("standard", theme)) {
-            SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
-
-                @Override
-                public void run() {
-                    final String extensionID = "iconset-" + theme;
-                    if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
-                        try {
-                            UpdateController.getInstance().runExtensionInstallation(extensionID);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-
-        }
 
     }
 

@@ -36,6 +36,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
@@ -244,6 +245,7 @@ public class LookAndFeelController implements LAFManagerInterface {
                 }
                 SyntheticaHelper.init(laf, liz);
                 LAFOptions.init(laf);
+
                 ExtTooltip.setForgroundColor(LAFOptions.getInstance().getColorForTooltipForeground());
 
             } else {
@@ -275,6 +277,32 @@ public class LookAndFeelController implements LAFManagerInterface {
                 e1.printStackTrace();
             }
         } finally {
+            try {
+                final String theme = LAFOptions.getInstance().getCfg().getIconSetID();
+
+                org.jdownloader.images.NewTheme.getInstance().setTheme(theme);
+
+                if (StringUtils.equals("standard", theme)) {
+                    SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            final String extensionID = "iconset-" + theme;
+                            if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
+                                try {
+                                    UpdateController.getInstance().runExtensionInstallation(extensionID);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+
+                }
+            } catch (Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
+
             LogController.GL.info("LAF init: " + (System.currentTimeMillis() - t));
         }
     }

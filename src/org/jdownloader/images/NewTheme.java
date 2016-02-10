@@ -56,6 +56,7 @@ public class NewTheme extends Theme {
 
         AWUTheme.getInstance().setNameSpace(getNameSpace());
         AWUTheme.I().setDelegate(this);
+
     }
 
     @Override
