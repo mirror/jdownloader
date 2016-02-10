@@ -27,8 +27,6 @@ import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
-import jd.gui.swing.laf.LookAndFeelController;
-
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
@@ -507,7 +505,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         STANDARD("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel"),
         WHITE_VISION("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel"),
         JD_PLAIN("theme-plain", PlainLookAndFeel.class.getName()),
-        DEFAULT(null, LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
+        DEFAULT(null, "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
 
         private final String clazz;
         private String       extensionID;
