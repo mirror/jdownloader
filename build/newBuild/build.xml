@@ -383,8 +383,8 @@
 
 
 			<fileset dir="themes">
-				<include name="**/images/dialog/**/*" />
-				<include name="**/images/update*" />
+				<include name="themes/standard/**/images/dialog/**/*" />
+				<include name="themes/standard/**/images/update*" />
 			</fileset>
 		</jar>
 		<delete file="${dist}/Manifest.MF" failonerror="true" />
