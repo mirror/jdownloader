@@ -336,10 +336,14 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
 
     @Override
     public void customizePaintHeaderScrollPaneBorder(JComponent c, Graphics g) {
+        // do NOT use HeaderScrollPane casting here!. java compiler will pre-optimize the code to require HeaderScrollPane to load this
+        // class
         final JScrollPane scrollPane = (JScrollPane) c;
         final Color headerColor = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
         final Color headerlineColor = (LAFOptions.getInstance().getColorForPanelBorders());
         if (scrollPane.getColumnHeader() != null) {
+            // here it is safe because java compiler cannot pre-optimize the if branch, because HeaderScrollPane is only required within
+            // this statement
             g.setColor(headerColor);
             final int in = scrollPane.getBorder().getBorderInsets(scrollPane).top;
             final int headerHeight = ((org.jdownloader.gui.views.components.HeaderScrollPane) scrollPane).getHeaderHeight();
