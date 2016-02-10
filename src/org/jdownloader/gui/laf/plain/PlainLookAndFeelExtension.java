@@ -11,38 +11,35 @@ import javax.swing.JScrollPane;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.gui.components.OverviewHeaderScrollPane;
-import org.jdownloader.gui.laf.DefaultLookAndFeelExtension;
-import org.jdownloader.gui.views.components.HeaderScrollPane;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberSideBarHeader;
+import org.jdownloader.updatev2.gui.DefaultLookAndFeelExtension;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
 
     @Override
-    public void customizeHeaderScrollPane(HeaderScrollPane headerScrollPane) {
+    public void customizeHeaderScrollPane(JComponent headerScrollPane) {
         headerScrollPane.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.getInstance().getColorForPanelBorders()));
 
     }
 
-    public void customizePaintHeaderScrollPaneBorder(HeaderScrollPane pane, Graphics g) {
+    public void customizePaintHeaderScrollPaneBorder(JComponent pane, Graphics g) {
         // do nothing
     }
 
     @Override
-    public void customizeLinkgrabberSidebarHeader(JLabel lbl, LinkGrabberSideBarHeader linkGrabberSideBarHeader) {
+    public void customizeLinkgrabberSidebarHeader(JLabel lbl, JComponent linkGrabberSideBarHeader) {
         SwingUtils.toBold(lbl);
     }
 
     @Override
-    public JComponent customizeLayoutWrapTitledPanels(HeaderScrollPane pane) {
+    public JComponent customizeLayoutWrapTitledPanels(JComponent c) {
+        JScrollPane pane = (JScrollPane) c;
         MigPanel wrapper = new MigPanel("ins 1", "[grow,fill]", "[grow,fill]");
         wrapper.setOpaque(false);
         wrapper.setBackground(null);
         wrapper.add(pane);
 
-        if (pane instanceof OverviewHeaderScrollPane) {
+        if (pane instanceof org.jdownloader.gui.components.OverviewHeaderScrollPane) {
             Component view = pane.getViewport().getView();
             if (!"wrapper".equals(view.getName())) {
 
@@ -70,7 +67,7 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
     }
 
     @Override
-    public void customizeLinksTable(PackageControllerTable table, JScrollPane tableScrollPane) {
+    public void customizeLinksTable(JComponent table, JScrollPane tableScrollPane) {
         // tableScrollPane.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.getInstance().getColorForPanelBorders()));
     }
 

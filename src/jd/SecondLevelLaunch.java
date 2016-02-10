@@ -70,6 +70,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
@@ -116,6 +117,7 @@ import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 import com.btr.proxy.selector.pac.PACScriptEngineFactory;
@@ -845,6 +847,31 @@ public class SecondLevelLaunch {
             lafInit.start();
         } else {
             LAFOptions.init("org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
+            try {
+                final String theme = LAFOptions.getInstance().getCfg().getIconSetID();
+
+                org.jdownloader.images.NewTheme.getInstance().setTheme(theme);
+
+                if (StringUtils.equals("standard", theme)) {
+                    SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            final String extensionID = "iconset-" + theme;
+                            if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
+                                try {
+                                    UpdateController.getInstance().runExtensionInstallation(extensionID);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+
+                }
+            } catch (Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
         }
         Locale.setDefault(TranslationFactory.getDesiredLocale());
         // Disable silentmode on each session start

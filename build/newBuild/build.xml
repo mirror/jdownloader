@@ -209,7 +209,7 @@
 		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${dep.jdupdateclient}/src">
 				<include name="org/jdownloader/container/mydns.key" />
-				<include name="org/jdownloader/container/mydns.crt" />		
+				<include name="org/jdownloader/container/mydns.crt" />
 			</fileset>
 			<fileset dir="${cls}">
 
@@ -225,18 +225,33 @@
 			<fileset dir="${cls}">
 
 				<include name="org/jdownloader/gui/laf/**/*" />
-
+				<exclude name="org/jdownloader/gui/laf/plain/**/*" />
 			</fileset>
 
 			<fileset dir="src">
 
 				<include name="org/jdownloader/gui/laf/**/*" />
+				<exclude name="org/jdownloader/gui/laf/plain/**/*" />
 				<exclude name="**/*.java" />
 			</fileset>
 
 		</jar>
 
+		<jar file="${dist}/libs/laf/syntheticaJDPlain.jar" manifest="${dist}/Manifest.MF">
 
+			<fileset dir="${cls}">
+
+
+				<include name="org/jdownloader/gui/laf/plain/**/*" />
+			</fileset>
+
+			<fileset dir="src">
+
+				<include name="org/jdownloader/gui/laf/plain/**/*" />
+				<exclude name="**/*.java" />
+			</fileset>
+
+		</jar>
 
 
 

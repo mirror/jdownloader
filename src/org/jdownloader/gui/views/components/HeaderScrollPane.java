@@ -11,9 +11,9 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.table.JTableHeader;
 
 import org.appwork.app.gui.BasicGui;
-import org.jdownloader.gui.laf.LookAndFeelExtension;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.updatev2.gui.LAFOptions;
+import org.jdownloader.updatev2.gui.LookAndFeelExtension;
 
 import jd.gui.swing.laf.LookAndFeelController;
 

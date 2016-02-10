@@ -1,4 +1,4 @@
-package org.jdownloader.gui.laf;
+package org.jdownloader.updatev2.gui;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -8,12 +8,6 @@ import java.awt.Rectangle;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
-
-import org.jdownloader.gui.views.components.HeaderScrollPane;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberSideBarHeader;
-import org.jdownloader.updatev2.gui.HorizontalPostion;
-import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     public static final String ALICE_BLUE_APPROX                                 = "ffF5FCFF";
@@ -35,11 +29,11 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     }
 
     @Override
-    public void customizeHeaderScrollPane(HeaderScrollPane headerScrollPane) {
+    public void customizeHeaderScrollPane(JComponent headerScrollPane) {
     }
 
     @Override
-    public void customizeLinksTable(PackageControllerTable table, JScrollPane tableScrollPane) {
+    public void customizeLinksTable(JComponent c, JScrollPane tableScrollPane) {
         tableScrollPane.setBorder(null);
         // LAFSettings.class
     }
@@ -331,18 +325,18 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     }
 
     @Override
-    public JComponent customizeLayoutWrapTitledPanels(HeaderScrollPane pane) {
+    public JComponent customizeLayoutWrapTitledPanels(JComponent pane) {
         return pane;
     }
 
     @Override
-    public void customizeLinkgrabberSidebarHeader(JLabel lbl, LinkGrabberSideBarHeader linkGrabberSideBarHeader) {
+    public void customizeLinkgrabberSidebarHeader(JLabel lbl, JComponent linkGrabberSideBarHeader) {
 
     }
 
     @Override
-    public void customizePaintHeaderScrollPaneBorder(HeaderScrollPane pane, Graphics g) {
-
+    public void customizePaintHeaderScrollPaneBorder(JComponent c, Graphics g) {
+        org.jdownloader.gui.views.components.HeaderScrollPane pane = (org.jdownloader.gui.views.components.HeaderScrollPane) c;
         Color headerColor = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
 
         Color headerlineColor = (LAFOptions.getInstance().getColorForPanelBorders());

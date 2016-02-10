@@ -1,4 +1,4 @@
-package org.jdownloader.gui.laf;
+package org.jdownloader.updatev2.gui;
 
 import java.awt.Graphics;
 import java.awt.Insets;
@@ -10,17 +10,12 @@ import javax.swing.JScrollPane;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.handler.StorageHandler;
-import org.jdownloader.gui.views.components.HeaderScrollPane;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberSideBarHeader;
-import org.jdownloader.updatev2.gui.HorizontalPostion;
-import org.jdownloader.updatev2.gui.LAFSettings;
 
 public abstract class LookAndFeelExtension implements LAFSettings {
 
-    public abstract void customizeHeaderScrollPane(HeaderScrollPane headerScrollPane);
+    public abstract void customizeHeaderScrollPane(JComponent headerScrollPane);
 
-    public abstract void customizeLinksTable(PackageControllerTable table, JScrollPane tableScrollPane);
+    public abstract void customizeLinksTable(JComponent table, JScrollPane tableScrollPane);
 
     @Override
     public void setColorForConfigHeaderTextColor(String color) {
@@ -291,27 +286,10 @@ public abstract class LookAndFeelExtension implements LAFSettings {
 
     public abstract void customizeBoundsForBottombarPopupButton(Rectangle bounds);
 
-    public abstract JComponent customizeLayoutWrapTitledPanels(HeaderScrollPane pane);
-    // public void customizeDownloadsPanelLayoutAddOverview(Component overView, DownloadsPanel panel, boolean showOverview, boolean
-    // showProperties) {
-    // }
-    //
-    // public void customizeDownloadsPanelLayoutAddProperties(PropertiesScrollPane propertiesPanel, DownloadsPanel downloadsPanel, boolean
-    // enabled, boolean showProperties) {
-    // }
-    //
-    // public void customizeDownloadsPanelLayoutAddTable(JScrollPane tableScrollPane, DownloadsPanel downloadsPanel, boolean enabled,
-    // boolean showProperties) {
-    // }
-    //
-    // public void customizeDownloadsPanelLayoutAddBottomBar(CustomizeableActionBar bottomBar, DownloadsPanel downloadsPanel, boolean
-    // enabled, boolean showProperties) {
-    // }
+    public abstract JComponent customizeLayoutWrapTitledPanels(JComponent pane);
 
-    public abstract void customizeLinkgrabberSidebarHeader(JLabel lbl, LinkGrabberSideBarHeader linkGrabberSideBarHeader);
-    // public abstract void customizeTitledPanels(JComponent properties,
-    // org.jdownloader.gui.views.linkgrabber.properties.PropertiesScrollPane scrollPane);
+    public abstract void customizeLinkgrabberSidebarHeader(JLabel lbl, JComponent linkGrabberSideBarHeader);
 
-    public abstract void customizePaintHeaderScrollPaneBorder(HeaderScrollPane headerScrollPane, Graphics g);
+    public abstract void customizePaintHeaderScrollPaneBorder(JComponent headerScrollPane, Graphics g);
 
 }
