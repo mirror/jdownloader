@@ -410,8 +410,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setSpeedmeterAntiAliasingEnabled(boolean b);
 
     public static enum MacDockProgressDisplay {
-        @EnumLabel("Total Progress") TOTAL_PROGRESS,
-        @EnumLabel("Nothing") NOTHING;
+        @EnumLabel("Total Progress")
+        TOTAL_PROGRESS,
+        @EnumLabel("Nothing")
+        NOTHING;
     }
 
     @DefaultEnumValue("TOTAL_PROGRESS")
@@ -433,9 +435,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setCaptchaDebugModeEnabled(boolean b);
 
     public static enum StartButtonAction {
-        @EnumLabel("Add all Linkgrabber links and start Downloads.") ADD_ALL_LINKS_AND_START_DOWNLOADS,
-        @EnumLabel("Start Downloads only") START_DOWNLOADS_ONLY,
-        @EnumLabel("Do Nothing - Disable Action") DISABLED
+        @EnumLabel("Add all Linkgrabber links and start Downloads.")
+        ADD_ALL_LINKS_AND_START_DOWNLOADS,
+        @EnumLabel("Start Downloads only")
+        START_DOWNLOADS_ONLY,
+        @EnumLabel("Do Nothing - Disable Action")
+        DISABLED
     }
 
     @DefaultEnumValue("ADD_ALL_LINKS_AND_START_DOWNLOADS")
@@ -507,7 +512,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         DEFAULT(null, "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
 
         private final String clazz;
-        private String       extensionID;
+        private final String extensionID;
 
         public String getExtensionID() {
             return extensionID;
@@ -520,14 +525,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         private LookAndFeelType(String extensionID, String clazz) {
             this.clazz = clazz;
             this.extensionID = extensionID;
-
         }
 
         public boolean isAvailable() {
             try {
-                final Class<?> c = Class.forName(clazz);
+                final Class<?> c = Class.forName(getClazz());
                 return c != null;
-            } catch (ClassNotFoundException e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
             return false;
@@ -580,9 +584,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setUpdateButtonFlashingEnabled(boolean b);
 
     public static enum ShowSpeedInWindowTitleTrigger {
-        @EnumLabel("Never") NEVER,
-        @EnumLabel("Only if JD is minimized to Taskbar") WHEN_WINDOW_IS_MINIMIZED,
-        @EnumLabel("Always") ALWAYS
+        @EnumLabel("Never")
+        NEVER,
+        @EnumLabel("Only if JD is minimized to Taskbar")
+        WHEN_WINDOW_IS_MINIMIZED,
+        @EnumLabel("Always")
+        ALWAYS
     }
 
     @AboutConfig
@@ -599,10 +606,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setPremiumStatusBarDisabledAccountExpire(int i);
 
     public static enum PremiumStatusBarDisplay {
-        @EnumLabel("Group by Account Type") GROUP_BY_ACCOUNT_TYPE,
-        @EnumLabel("Group supported Hoster") GROUP_BY_SUPPORTED_HOSTS,
-        @EnumLabel("Don't Group") DONT_GROUP,
-        @EnumLabel("Group supported Accounts") GROUP_BY_SUPPORTED_ACCOUNTS
+        @EnumLabel("Group by Account Type")
+        GROUP_BY_ACCOUNT_TYPE,
+        @EnumLabel("Group supported Hoster")
+        GROUP_BY_SUPPORTED_HOSTS,
+        @EnumLabel("Don't Group")
+        DONT_GROUP,
+        @EnumLabel("Group supported Accounts")
+        GROUP_BY_SUPPORTED_ACCOUNTS
 
     }
 
@@ -613,11 +624,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setPremiumStatusBarDisplay(PremiumStatusBarDisplay type);
 
     public static enum PackageDoubleClickAction {
-        @EnumLabel("Expand or collapse Folder") EXPAND_COLLAPSE_TOGGLE,
-        @EnumLabel("Open Downloadfolder") OPEN_FOLDER,
-        @EnumLabel("Rename package") RENAME,
-        @EnumLabel("Open Link or Package Properties Panel") OPEN_PROPERTIES_PANEL,
-        @EnumLabel("Do nothing") NOTHING
+        @EnumLabel("Expand or collapse Folder")
+        EXPAND_COLLAPSE_TOGGLE,
+        @EnumLabel("Open Downloadfolder")
+        OPEN_FOLDER,
+        @EnumLabel("Rename package")
+        RENAME,
+        @EnumLabel("Open Link or Package Properties Panel")
+        OPEN_PROPERTIES_PANEL,
+        @EnumLabel("Do nothing")
+        NOTHING
     }
 
     @AboutConfig
@@ -628,11 +644,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     public static enum LinkDoubleClickAction {
 
-        @EnumLabel("Open Downloadfolder") OPEN_FOLDER,
-        @EnumLabel("Open File") OPEN_FILE,
-        @EnumLabel("Rename File") RENAME,
-        @EnumLabel("Open Link or Package Properties Panel") OPEN_PROPERTIES_PANEL,
-        @EnumLabel("Do nothing") NOTHING
+        @EnumLabel("Open Downloadfolder")
+        OPEN_FOLDER,
+        @EnumLabel("Open File")
+        OPEN_FILE,
+        @EnumLabel("Rename File")
+        RENAME,
+        @EnumLabel("Open Link or Package Properties Panel")
+        OPEN_PROPERTIES_PANEL,
+        @EnumLabel("Do nothing")
+        NOTHING
     }
 
     @AboutConfig
@@ -740,13 +761,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setDownloadsPropertiesPanelDownloadFromVisible(boolean v);
 
     public static enum RlyWarnLevel {
-        @EnumLabel("HIGH! Show all 'Are you sure?' dialogs!") HIGH,
+        @EnumLabel("HIGH! Show all 'Are you sure?' dialogs!")
+        HIGH,
 
-        @EnumLabel("NORMAL! Show the most important 'Are you sure?' dialogs!") NORMAL,
+        @EnumLabel("NORMAL! Show the most important 'Are you sure?' dialogs!")
+        NORMAL,
         @EnumLabel("LOW! Show only severe 'Are you sure?' dialogs!")
         /** Only severe ones */
         LOW,
-        @EnumLabel("DISABLED! Hide all 'Are you sure?' dialogs! (As far as possible)") DISABLED;
+        @EnumLabel("DISABLED! Hide all 'Are you sure?' dialogs! (As far as possible)")
+        DISABLED;
     }
 
     @AboutConfig
