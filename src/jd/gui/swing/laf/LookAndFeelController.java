@@ -25,6 +25,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import jd.SecondLevelLaunch;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -51,8 +53,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.LookAndFeelType;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
@@ -102,16 +102,13 @@ public class LookAndFeelController implements LAFManagerInterface {
 
     protected void handleThemesInstallation() {
         if (UpdateController.getInstance().getHandler() == null) {
-
             return;
         }
-
         try {
             if (CFG_GUI.CFG.getLookAndFeelTheme() == LookAndFeelType.DEFAULT || Class.forName(CFG_GUI.CFG.getLookAndFeelTheme().getClazz()) != null) {
                 return;
             }
         } catch (ClassNotFoundException e1) {
-
         }
         if (UpdateController.getInstance().isExtensionInstalled("synthetica-themes")) {
             return;
@@ -121,29 +118,23 @@ public class LookAndFeelController implements LAFManagerInterface {
             new Thread("Install Extension") {
                 public void run() {
                     try {
-
                         UpdateController.getInstance().setGuiVisible(true);
                         UpdateController.getInstance().runExtensionInstallation("synthetica-themes");
-
                         while (true) {
                             Thread.sleep(500);
                             if (!UpdateController.getInstance().isRunning()) {
                                 break;
                             }
                             UpdateController.getInstance().waitForUpdate();
-
                         }
                     } catch (Exception e) {
                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-                    } finally {
-
                     }
                 }
             }.start();
         } else {
             CFG_GUI.CFG.setLookAndFeelTheme(LookAndFeelType.DEFAULT);
         }
-
     }
 
     /**
@@ -192,9 +183,7 @@ public class LookAndFeelController implements LAFManagerInterface {
             } finally {
                 LogController.GL.info("Use Look & Feel: " + laf);
             }
-
             if (laf.contains("Synthetica") || laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL) || laf.equals(JD_PLAIN)) {
-
                 //
                 String liz = null;
                 try {
@@ -244,16 +233,12 @@ public class LookAndFeelController implements LAFManagerInterface {
                 }
                 SyntheticaHelper.init(laf, liz);
                 LAFOptions.init(laf);
-
                 ExtTooltip.setForgroundColor(LAFOptions.getInstance().getColorForTooltipForeground());
-
             } else {
                 /* init for all other laf */
-
                 UIManager.setLookAndFeel(laf);
                 LAFOptions.init(laf);
             }
-
         } catch (Throwable e) {
             LogController.CL().log(e);
             try {
@@ -263,7 +248,6 @@ public class LookAndFeelController implements LAFManagerInterface {
                     LogController.CL().info("Don't set System look and feel " + currentLaf + " is already set");
                     return;
                 }
-
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 LAFOptions.init(UIManager.getSystemLookAndFeelClassName());
             } catch (ClassNotFoundException e1) {
@@ -278,19 +262,16 @@ public class LookAndFeelController implements LAFManagerInterface {
         } finally {
             try {
                 final String theme = LAFOptions.getInstance().getCfg().getIconSetID();
-
                 org.jdownloader.images.NewTheme.getInstance().setTheme(theme);
-
-                if (StringUtils.equals("standard", theme)) {
+                if (!StringUtils.equals("standard", theme) && StringUtils.isNotEmpty(theme)) {
                     SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
 
                         @Override
                         public void run() {
-                            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+                            SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
                                 @Override
                                 public void run() {
-
                                     final String extensionID = "iconset-" + theme;
                                     if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
                                         try {
@@ -309,7 +290,6 @@ public class LookAndFeelController implements LAFManagerInterface {
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
             }
-
             LogController.GL.info("LAF init: " + (System.currentTimeMillis() - t));
         }
     }
