@@ -10,6 +10,7 @@ public interface DownloadLinkView {
 
     long getSpeedBps();
 
+    @Deprecated
     long[] getChunksProgress();
 
     /**
