@@ -10,12 +10,12 @@ import javax.swing.JViewport;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.table.JTableHeader;
 
+import jd.gui.swing.laf.LookAndFeelController;
+
 import org.appwork.app.gui.BasicGui;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.updatev2.gui.LAFOptions;
 import org.jdownloader.updatev2.gui.LookAndFeelExtension;
-
-import jd.gui.swing.laf.LookAndFeelController;
 
 public class HeaderScrollPane extends JScrollPane {
 
@@ -97,12 +97,10 @@ public class HeaderScrollPane extends JScrollPane {
     // }
 
     protected int getPrefHeaderHeight() {
-
         return getColumnHeader() == null ? 0 : getColumnHeader().getPreferredSize().height;
     }
 
     public int getHeaderHeight() {
-
         return getColumnHeader() == null ? 0 : getColumnHeader().getHeight();
     }
 
