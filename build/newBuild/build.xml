@@ -206,14 +206,8 @@
 			</fileset>
 		</jar>
 
-		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${dep.jdupdateclient}/src">
-				<include name="org/jdownloader/container/mydns.key" />
-				<include name="org/jdownloader/container/mydns.crt" />
-			</fileset>
-			<fileset dir="${cls}">
-
-				<include name="org/jdownloader/container/**/*" />
+		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">			
+			<fileset dir="${cls}">				
 				<include name="org/jdownloader/container/**/*" />
 			</fileset>
 		</jar>
