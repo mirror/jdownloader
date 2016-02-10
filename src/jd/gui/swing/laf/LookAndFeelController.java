@@ -25,6 +25,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import jd.SecondLevelLaunch;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -43,8 +45,6 @@ import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowsWindowManager;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
-import org.jdownloader.gui.laf.plain.PlainLookAndFeel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
@@ -54,11 +54,10 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.SecondLevelLaunch;
-
 public class LookAndFeelController implements LAFManagerInterface {
-    public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = JDDefaultLookAndFeel.class.getName();
-    public static final String                 JD_PLAIN                                                      = PlainLookAndFeel.class.getName();
+    public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
+    public static final String                 JD_PLAIN                                                      = "org.jdownloader.gui.laf.plain.PlainLookAndFeel";
+
     private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
 
     /**
