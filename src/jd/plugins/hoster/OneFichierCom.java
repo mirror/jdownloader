@@ -56,6 +56,7 @@ public class OneFichierCom extends PluginForHost {
     private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe)";
 
     private final String         PROPERTY_FREELINK            = "freeLink";
+    private final String         PROPERTY_HOTLINK             = "hotlink";
     private final String         PROPERTY_PREMLINK            = "premLink";
     private final String         PREFER_RECONNECT             = "PREFER_RECONNECT";
     private final String         PREFER_SSL                   = "PREFER_SSL";
@@ -241,18 +242,18 @@ public class OneFichierCom extends PluginForHost {
                 dl.getConnection().disconnect();
                 // link has expired... but it could be for any reason! dont care!
                 // clear saved final link
-                downloadLink.setProperty(PROPERTY_FREELINK, Property.NULL);
+                downloadLink.setProperty(PROPERTY_HOTLINK, Property.NULL);
                 br = new Browser();
             } else {
                 /* resume download */
-                downloadLink.setProperty(PROPERTY_FREELINK, dllink);
+                downloadLink.setProperty(PROPERTY_HOTLINK, dllink);
                 dl.startDownload();
                 return;
             }
         }
         // this covers downloads that are hot link-able...
         dllink = getDownloadlinkNEW(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
         if (!dl.getConnection().getContentType().contains("html")) {
             /* resume download */
             downloadLink.setProperty(PROPERTY_FREELINK, dllink);
