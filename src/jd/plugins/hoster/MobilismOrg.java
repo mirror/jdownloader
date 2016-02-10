@@ -33,9 +33,12 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkInfo;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 /**
  *
@@ -121,6 +124,11 @@ public class MobilismOrg extends antiDDoSForHost {
         // if (fsize == -1) {
         // fsize = downloadLink.getDownloadSize();
         // }
+        final LinkInfo linkInfo = downloadLink.getLinkInfo();
+        if (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(linkInfo.getExtension())) {
+            // videos are no longer allowed
+            return false;
+        }
         final String currentHost = this.correctHost(downloadLink.getHost());
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
