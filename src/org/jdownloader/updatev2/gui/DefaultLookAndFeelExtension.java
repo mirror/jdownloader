@@ -336,17 +336,16 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
 
     @Override
     public void customizePaintHeaderScrollPaneBorder(JComponent c, Graphics g) {
-        org.jdownloader.gui.views.components.HeaderScrollPane pane = (org.jdownloader.gui.views.components.HeaderScrollPane) c;
-        Color headerColor = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
-
-        Color headerlineColor = (LAFOptions.getInstance().getColorForPanelBorders());
-        if (pane.getColumnHeader() != null) {
+        final JScrollPane scrollPane = (JScrollPane) c;
+        final Color headerColor = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
+        final Color headerlineColor = (LAFOptions.getInstance().getColorForPanelBorders());
+        if (scrollPane.getColumnHeader() != null) {
             g.setColor(headerColor);
-            int in = pane.getBorder().getBorderInsets(pane).top;
-            g.fillRect(1, 1, pane.getWidth() - 2, pane.getHeaderHeight() + in - 1);
+            final int in = scrollPane.getBorder().getBorderInsets(scrollPane).top;
+            final int headerHeight = ((org.jdownloader.gui.views.components.HeaderScrollPane) scrollPane).getHeaderHeight();
+            g.fillRect(1, 1, scrollPane.getWidth() - 2, headerHeight + in - 1);
             g.setColor(headerlineColor);
-            g.drawLine(1, pane.getHeaderHeight() + in - 1, pane.getWidth() - 2, pane.getHeaderHeight() + in - 1);
+            g.drawLine(1, headerHeight + in - 1, scrollPane.getWidth() - 2, headerHeight + in - 1);
         }
     }
-
 }
