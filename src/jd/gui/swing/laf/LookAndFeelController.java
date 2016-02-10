@@ -25,8 +25,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -53,6 +51,8 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.LookAndFeelType;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
@@ -104,13 +104,19 @@ public class LookAndFeelController implements LAFManagerInterface {
         if (UpdateController.getInstance().getHandler() == null) {
             return;
         }
+
+        if (CFG_GUI.CFG.getLookAndFeelTheme() == null) {
+            CFG_GUI.CFG.setLookAndFeelTheme(LookAndFeelType.DEFAULT);
+        }
+
         try {
-            if (CFG_GUI.CFG.getLookAndFeelTheme() == LookAndFeelType.DEFAULT || Class.forName(CFG_GUI.CFG.getLookAndFeelTheme().getClazz()) != null) {
+            if (CFG_GUI.CFG.getLookAndFeelTheme() == LookAndFeelType.DEFAULT || Class.forName(CFG_GUI.CFG.getLookAndFeelTheme().getClazz()) != null || CFG_GUI.CFG.getLookAndFeelTheme().getExtensionID() == null) {
                 return;
             }
         } catch (ClassNotFoundException e1) {
         }
-        if (UpdateController.getInstance().isExtensionInstalled("synthetica-themes")) {
+
+        if (UpdateController.getInstance().isExtensionInstalled(CFG_GUI.CFG.getLookAndFeelTheme().getExtensionID())) {
             return;
         }
         if (UIOManager.I().showConfirmDialog(0, _GUI.T.LookAndFeelController_handleThemesInstallation_title_(), _GUI.T.LookAndFeelController_handleThemesInstallation_message_(CFG_GUI.CFG.getLookAndFeelTheme().name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
@@ -119,7 +125,7 @@ public class LookAndFeelController implements LAFManagerInterface {
                 public void run() {
                     try {
                         UpdateController.getInstance().setGuiVisible(true);
-                        UpdateController.getInstance().runExtensionInstallation("synthetica-themes");
+                        UpdateController.getInstance().runExtensionInstallation(CFG_GUI.CFG.getLookAndFeelTheme().getExtensionID());
                         while (true) {
                             Thread.sleep(500);
                             if (!UpdateController.getInstance().isRunning()) {
@@ -275,6 +281,8 @@ public class LookAndFeelController implements LAFManagerInterface {
                                     final String extensionID = "iconset-" + theme;
                                     if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
                                         try {
+
+                                            UpdateController.getInstance().setGuiVisible(true);
                                             UpdateController.getInstance().runExtensionInstallation(extensionID);
                                         } catch (InterruptedException e) {
                                             e.printStackTrace();
