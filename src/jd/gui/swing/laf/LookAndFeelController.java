@@ -25,8 +25,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -53,6 +51,8 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.LookAndFeelType;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
@@ -286,14 +286,22 @@ public class LookAndFeelController implements LAFManagerInterface {
 
                         @Override
                         public void run() {
-                            final String extensionID = "iconset-" + theme;
-                            if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
-                                try {
-                                    UpdateController.getInstance().runExtensionInstallation(extensionID);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+                                @Override
+                                public void run() {
+
+                                    final String extensionID = "iconset-" + theme;
+                                    if (!UpdateController.getInstance().isExtensionInstalled(extensionID)) {
+                                        try {
+                                            UpdateController.getInstance().runExtensionInstallation(extensionID);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
                                 }
-                            }
+                            });
+
                         }
                     });
 
