@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.mozilla.javascript.ConsString;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,8 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" }, flags = { 0 })
 public class ImgSrcRu extends PluginForHost {
@@ -112,7 +112,7 @@ public class ImgSrcRu extends PluginForHost {
 
     /**
      * because stable is lame!
-     * */
+     */
     public void setBrowser(final Browser ibr) {
         this.br = ibr;
     }
@@ -151,7 +151,7 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() throws Exception {
-        String js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var [a-z]='[a-zA-Z0-9]+';[\r\n\t ]+var [a-z]=[^<]+)</script>").getMatch(0);
+        String js = br.getRegex("<script(?: type=\"text/javascript\")?>([\r\n\t ]+var [a-z]='[a-zA-Z0-9]+';[\r\n\t ]+var [a-z]=[^<]+)</script>").getMatch(0);
         if (js == null) {
             logger.warning("Could not find JS!");
         } else {
