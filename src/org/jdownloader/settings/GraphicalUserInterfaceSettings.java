@@ -3,6 +3,8 @@ package org.jdownloader.settings;
 import java.awt.event.KeyEvent;
 import java.util.HashMap;
 
+import jd.gui.swing.laf.LookAndFeelController;
+
 import org.appwork.storage.Storable;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -21,8 +23,6 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
-import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
-import org.jdownloader.gui.laf.plain.PlainLookAndFeel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
@@ -509,8 +509,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         SKY_METALLIC("de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel"),
         STANDARD("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel"),
         WHITE_VISION("de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel"),
-        JD_PLAIN(PlainLookAndFeel.class.getName()),
-        DEFAULT(JDDefaultLookAndFeel.class.getName());
+        JD_PLAIN(LookAndFeelController.JD_PLAIN),
+        DEFAULT(LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL);
         private final String clazz;
 
         public final String getClazz() {
