@@ -1,11 +1,8 @@
 package org.jdownloader.updatev2.gui;
 
 import java.awt.Color;
-import java.io.File;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map.Entry;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -13,24 +10,21 @@ import javax.swing.JLabel;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.StorageHandlerFactory;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
-import org.appwork.storage.config.handler.DefaultFactoryInterface;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
 public class LAFOptions {
 
-    public static BooleanKeyHandler TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED = null;
-    public static IntegerKeyHandler CUSTOM_TABLE_ROW_HEIGHT;
-    private static LAFOptions       INSTANCE;
+    public static BooleanKeyHandler    TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED = null;
+    public static IntegerKeyHandler    CUSTOM_TABLE_ROW_HEIGHT;
+    private static LAFOptions          INSTANCE;
     /**
      * Increase this value and set ColorForTableRowGap to show a gap between two links. Check CustomTableRowHeight as well
      **/
-    public static IntegerKeyHandler LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT;
+    public static IntegerKeyHandler    LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT;
+    public static LookAndFeelExtension EXTENSION;
 
     /**
      * get the only existing instance of LAFOptions. This is a singleton
@@ -54,53 +48,29 @@ public class LAFOptions {
 
     /**
      * Create a new instance of LAFOptions. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     *
+     * @param laf
      */
     private LAFOptions(String laf) {
+
         int i = laf.lastIndexOf(".");
         String name = (i >= 0 ? laf.substring(i + 1) : laf);
         String path = "cfg/laf/" + name;
+        LookAndFeelExtension ext = null;
         if (!"org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel".equals(laf)) {
             try {
-                extension = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
+                ext = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
             }
         }
-        if (extension == null) {
-            extension = new DefaultLookAndFeelExtension();
+        if (ext == null) {
+            ext = new DefaultLookAndFeelExtension();
         }
-        cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class, new StorageHandlerFactory<LAFSettings>() {
 
-            @Override
-            public StorageHandler<LAFSettings> create(File path, Class<LAFSettings> configInterface) {
-                return new StorageHandler<LAFSettings>(path, configInterface) {
-                    @Override
-                    protected void preInit(File path, Class<LAFSettings> configInterfac) {
-                        setDefaultFactory(new DefaultFactoryInterface() {
-
-                            @Override
-                            public Object getDefaultValue(KeyHandler<?> handler, Object o) {
-
-                                Object def = o;
-                                try {
-                                    def = handler.getGetMethod().invoke(extension, new Object[] {});
-                                } catch (Throwable e) {
-                                    LoggerFactory.getDefaultLogger().log(e);
-
-                                }
-
-                                return def;
-
-                            }
-                        });
-                    }
-                };
-            }
-        });
-
-        for (Entry<Method, KeyHandler<?>> e : cfg._getStorageHandler().getMap().entrySet()) {
-            e.getValue().setAllowWriteDefaultObjects(false);
-        }
+        extension = ext;
+        LAFOptions.EXTENSION = ext;
+        cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
 
     }
 
@@ -117,23 +87,6 @@ public class LAFOptions {
         LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("LinkTableHorizontalRowLineWeight", IntegerKeyHandler.class);
         CUSTOM_TABLE_ROW_HEIGHT = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
         TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("TableAlternateRowHighlightEnabled", BooleanKeyHandler.class);
-        // INSTANCE.getCfg()._getStorageHandler().getKeyHandler("ThemeID", StringKeyHandler.class).getEventSender().addListener(new
-        // GenericConfigEventListener<String>() {
-        //
-        // @Override
-        // public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-        //
-        // try {
-        // UpdateController.getInstance().runExtensionInstallation("icons-" + LAFOptions.getInstance().getCfg().getThemeID());
-        // } catch (InterruptedException e) {
-        // e.printStackTrace();
-        // }
-        // }
-        //
-        // @Override
-        // public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
-        // }
-        // });
 
     }
 

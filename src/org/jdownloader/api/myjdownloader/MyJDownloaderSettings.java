@@ -1,7 +1,6 @@
 package org.jdownloader.api.myjdownloader;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.StorageHandlerFactoryRequired;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
@@ -13,11 +12,12 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 
 //org.jdownloader.extensions.myjdownloader.MyJDownloaderExtension has been the old path of the settingsfile
-
-public interface MyJDownloaderSettings extends ConfigInterface, StorageHandlerFactoryRequired {
+@StorageHandlerFactoryAnnotation(MyJDownloaderSettingsStorageHandlerFactory.class)
+public interface MyJDownloaderSettings extends ConfigInterface {
 
     public static enum DIRECTMODE {
         @EnumLabel("Disable direct connections") NONE,

@@ -1,13 +1,14 @@
 package org.jdownloader.updatev2.gui;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.StorageHandlerFactoryRequired;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
 
-public interface LAFSettings extends ConfigInterface, StorageHandlerFactoryRequired {
+@StorageHandlerFactoryAnnotation(LAFSettingsStorageHandlerFactory.class)
+public interface LAFSettings extends ConfigInterface {
 
     // Static Mappings for interface
 
