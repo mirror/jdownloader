@@ -140,6 +140,9 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
         }
         OutputStream out = null;
         try {
+            if ("myjdownloader".equalsIgnoreCase(key)) {
+                key = IconKey.ICON_LOGO_MYJDOWNLOADER;
+            }
             /* we force content type to image/png and allow caching of the image */
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
@@ -161,7 +164,6 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
                 out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
                 ImageIO.write(ico, "png", out);
             } else {
-
                 BufferedImage ico = IconIO.toBufferedImage(new AbstractIcon(key, size));
                 out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
                 ImageIO.write(ico, "png", out);
