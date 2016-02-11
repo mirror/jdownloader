@@ -61,7 +61,12 @@ public class IconSetterGui extends BasicGui {
         p.add(bar);
 
         getFrame().setContentPane(p);
-        getFrame().revalidate();
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            getFrame().revalidate();
+        } else {
+            getFrame().invalidate();
+            getFrame().validate();
+        }
         // getFrame().pack();
 
     }
@@ -133,7 +138,12 @@ public class IconSetterGui extends BasicGui {
 
                 }), "spanx,pushx,growx");
                 getFrame().setContentPane(p);
-                getFrame().revalidate();
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    getFrame().revalidate();
+                } else {
+                    getFrame().invalidate();
+                    getFrame().validate();
+                }
                 // getFrame().pack();
             }
         };
@@ -209,7 +219,12 @@ public class IconSetterGui extends BasicGui {
                 p.add(sp = new JScrollPane(table), "spanx,pushx,growx");
                 // sp.setPreferredSize(new Dimension(table.getPreferredSize().width, table.getPreferredSize().height));
                 getFrame().setContentPane(p);
-                getFrame().revalidate();
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    getFrame().revalidate();
+                } else {
+                    getFrame().invalidate();
+                    getFrame().validate();
+                }
                 // getFrame().pack();
             }
         };

@@ -13,6 +13,7 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
@@ -158,7 +159,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
 
             }
         }
-        Container p = getParent();
+        final Container p = getParent();
         if (p != null) {
 
             SwingUtilities.invokeLater(new Runnable() {
@@ -166,9 +167,14 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
                 @Override
                 public void run() {
                     revalidate();
-                    getParent().revalidate();
+                    if (Application.getJavaVersion() >= Application.JAVA17) {
+                        p.revalidate();
+                    } else {
+                        p.invalidate();
+                        p.validate();
+                    }
                     doLayout();
-                    getParent().doLayout();
+                    p.doLayout();
                 }
             });
         }
