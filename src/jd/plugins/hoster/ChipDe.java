@@ -165,9 +165,9 @@ public class ChipDe extends PluginForHost {
 
             /*
              * Include linkid in this case because otherwise links could be identified as duplicates / mirrors wrongly e.g.
-             * 
+             *
              * http://download.chip.eu/en/Firefox_115074.html
-             * 
+             *
              * http://download.chip.eu/en/Firefox_106534.html
              */
             if (filename == null) {
@@ -251,6 +251,7 @@ public class ChipDe extends PluginForHost {
             }
             filename = Encoding.htmlDecode(filename).trim();
             filename += "." + ext;
+            this.br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 try {
@@ -464,9 +465,11 @@ public class ChipDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* They use waay more arguments via browser - we don't need them :) */
-        final String postData = "&cache_st=5&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&entry_id=" + entry_id + "&urid=2.34";
-        this.br.postPage("http://cdnapi.kaltura.com/html5/html5lib/v2.34/mwEmbedFrame.php", postData);
-        final String json = this.br.getRegex("window\\.kalturaIframePackageData = (\\{.*?\\});").getMatch(0);
+        final String postData = "cache_st=5&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&entry_id=" + entry_id + "&urid=2.39";
+        final Browser tempbr = new Browser();
+        /* Beware of the Content-Type - it will not work using 'application/json; charset=utf-8' */
+        tempbr.postPage("http://cdnapi.kaltura.com/html5/html5lib/v2.39/mwEmbedFrame.php", postData);
+        final String json = tempbr.getRegex("window\\.kalturaIframePackageData = (\\{.*?\\});").getMatch(0);
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
