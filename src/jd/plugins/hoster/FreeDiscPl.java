@@ -156,6 +156,11 @@ public class FreeDiscPl extends PluginForHost {
                 }
                 if (ext == null || (ext != null && ext.length() <= 5)) {
                     downloadLink.setFinalFileName(downloadLink.getName() + ".mp4");
+                } else if (ext.length() > 5) {
+                    ext = dllink.substring(dllink.lastIndexOf(".") + 1);
+                    if (ext.matches(KNOWN_EXTENSIONS)) {
+                        downloadLink.setFinalFileName(downloadLink.getName() + "." + ext);
+                    }
                 }
             } else {
                 final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -176,7 +181,9 @@ public class FreeDiscPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
                     }
                 }
-                dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+                String downloadUrlJson = getJsonNested(br.toString(), "download_data");
+                dllink = getJson(downloadUrlJson, "download_url") + getJson(downloadUrlJson, "item_id") + "/" + getJson(downloadUrlJson, "time");
+                // dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);               
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -343,7 +350,7 @@ public class FreeDiscPl extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        // br.getPage(link.getDownloadURL());
         if (account.getBooleanProperty("free", false)) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
@@ -378,6 +385,28 @@ public class FreeDiscPl extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    /*
+     * *
+     * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
+     * 
+     * @author raztoki
+     */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    private String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    private String getJsonNested(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonNested(source, key);
     }
 
 }
