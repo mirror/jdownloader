@@ -119,22 +119,24 @@ public class LinkTreeUtils {
 
     public static File getRawDownloadDirectory(AbstractNode node) {
         String directory = null;
-        if (node instanceof DownloadLink) {
-            final FilePackage parent = ((DownloadLink) node).getFilePackage();
-            if (parent != null) {
-                directory = parent.getView().getDownloadDirectory();
+        if (node != null) {
+            if (node instanceof DownloadLink) {
+                final FilePackage parent = ((DownloadLink) node).getFilePackage();
+                if (parent != null) {
+                    directory = parent.getView().getDownloadDirectory();
+                }
+            } else if (node instanceof FilePackage) {
+                directory = ((FilePackage) node).getView().getDownloadDirectory();
+            } else if (node instanceof CrawledLink) {
+                final CrawledPackage parent = ((CrawledLink) node).getParentNode();
+                if (parent != null) {
+                    directory = parent.getRawDownloadFolder();
+                }
+            } else if (node instanceof CrawledPackage) {
+                directory = ((CrawledPackage) node).getRawDownloadFolder();
+            } else {
+                throw new WTFException("Unknown Type: " + node.getClass());
             }
-        } else if (node instanceof FilePackage) {
-            directory = ((FilePackage) node).getView().getDownloadDirectory();
-        } else if (node instanceof CrawledLink) {
-            final CrawledPackage parent = ((CrawledLink) node).getParentNode();
-            if (parent != null) {
-                directory = parent.getRawDownloadFolder();
-            }
-        } else if (node instanceof CrawledPackage) {
-            directory = ((CrawledPackage) node).getRawDownloadFolder();
-        } else {
-            throw new WTFException("Unknown Type: " + node.getClass());
         }
         return getRawDownloadDirectory(directory);
     }

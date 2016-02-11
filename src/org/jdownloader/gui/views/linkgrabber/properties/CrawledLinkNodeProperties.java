@@ -10,6 +10,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
@@ -18,6 +19,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.properties.AbstractNodeProperties;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
+import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledLinkNodeProperties extends AbstractNodeProperties {
 
@@ -79,7 +81,11 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties {
 
     @Override
     protected String loadSaveTo() {
-        return LinkTreeUtils.getRawDownloadDirectory(currentPackage).getAbsolutePath();
+        if (currentPackage != null) {
+            return LinkTreeUtils.getRawDownloadDirectory(currentPackage).getAbsolutePath();
+        } else {
+            return JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+        }
     }
 
     @Override
@@ -133,28 +139,35 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties {
 
     @Override
     protected String loadPackageName() {
-        return currentPackage.getName();
+        if (currentPackage != null) {
+            return currentPackage.getName();
+        } else {
+            return "";
+        }
     }
 
     @Override
     protected void savePackageName(String text) {
-        currentPackage.setName(text);
+        if (currentPackage != null) {
+            currentPackage.setName(text);
+        }
     }
 
     @Override
     protected void saveSaveTo(final String str) {
-        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage)) {
-            /**
-             *
-             */
-            private static final long serialVersionUID = -7244902643764170242L;
+        if (currentPackage != null) {
+            new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage)) {
+                /**
+                 *
+                 */
+                private static final long serialVersionUID = -7244902643764170242L;
 
-            protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
+                protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
-                return new File(str);
-            };
-        }.actionPerformed(null);
-
+                    return new File(str);
+                };
+            }.actionPerformed(null);
+        }
     }
 
     @Override

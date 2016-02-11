@@ -11,6 +11,7 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.Archive;
@@ -19,6 +20,7 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveVal
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
+import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkNodeProperties extends AbstractNodeProperties {
 
@@ -80,7 +82,18 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
 
     @Override
     protected String loadPackageName() {
-        return currentPackage.getName();
+        if (currentPackage != null) {
+            return currentPackage.getName();
+        } else {
+            return "";
+        }
+    }
+
+    @Override
+    protected void savePackageName(String text) {
+        if (currentPackage != null) {
+            currentPackage.setName(text);
+        }
     }
 
     @Override
@@ -90,7 +103,11 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
 
     @Override
     protected String loadSaveTo() {
-        return LinkTreeUtils.getRawDownloadDirectory(currentPackage).getAbsolutePath();
+        if (currentPackage != null) {
+            return LinkTreeUtils.getRawDownloadDirectory(currentPackage).getAbsolutePath();
+        } else {
+            return JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+        }
     }
 
     @Override
@@ -128,28 +145,24 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
     }
 
     @Override
-    protected void savePackageName(String text) {
-        currentPackage.setName(text);
-    }
-
-    @Override
     protected void savePriority(Priority priop) {
         currentLink.setPriorityEnum(priop);
     }
 
     @Override
     protected void saveSaveTo(final String stringpath) {
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentLink)) {
-            /**
-             *
-             */
-            private static final long serialVersionUID = -3767832209839199384L;
+        if (currentPackage != null) {
+            new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentLink)) {
+                /**
+                 *
+                 */
+                private static final long serialVersionUID = -3767832209839199384L;
 
-            protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
-                return new File(stringpath);
-            };
-        }.actionPerformed(null);
-
+                protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
+                    return new File(stringpath);
+                };
+            }.actionPerformed(null);
+        }
         // currentPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(destination.getPath(), currentPackage.getName()));
     }
 
