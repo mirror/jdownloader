@@ -21,6 +21,8 @@ import javax.swing.plaf.synth.SynthGraphicsUtils;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
@@ -105,8 +107,8 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     }
 
     protected void initAlternateRowHighlighter() {
-        if (LAFOptions.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED.isEnabled()) {
-
+        final BooleanKeyHandler enabled = LAFOptions.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED;
+        if (enabled != null && enabled.isEnabled()) {
             this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null));
         }
     }
@@ -206,9 +208,12 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         col.configureRendererComponent("T§gj²*", true, true, 1, 1);
         int prefHeight = rend.getPreferredSize().height;
 
-        Integer custom = LAFOptions.CUSTOM_TABLE_ROW_HEIGHT.getValue();
-        LAFOptions.CUSTOM_TABLE_ROW_HEIGHT.getEventSender().addListener(this, true);
-
+        final IntegerKeyHandler customRowHeight = LAFOptions.CUSTOM_TABLE_ROW_HEIGHT;
+        Integer custom = null;
+        if (customRowHeight != null) {
+            custom = customRowHeight.getValue();
+            customRowHeight.getEventSender().addListener(this, true);
+        }
         if (custom != null && custom > 0) {
             return custom;
         } else {
