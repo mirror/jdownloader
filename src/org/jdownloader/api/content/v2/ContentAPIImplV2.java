@@ -136,7 +136,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
     @Override
     public void getIcon(RemoteAPIRequest request, RemoteAPIResponse response, String key, int size) throws InternalApiException, APIFileNotFoundException, BadRequestException {
         if (size > 128) {
-            throw new BadRequestException("Size is limited to 128px");
+            throw new BadRequestException("Size is limited to 128px!");
         }
         OutputStream out = null;
         try {
