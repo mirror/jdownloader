@@ -5,7 +5,7 @@ public class SkipException extends Exception {
     private SkipRequest skipRequest;
 
     public SkipException(SkipRequest single) {
-        super();
+        super(single.name());
         this.skipRequest = single;
     }
 

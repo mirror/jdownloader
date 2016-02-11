@@ -33,7 +33,7 @@ public class PluginException extends Exception {
     }
 
     public PluginException(int linkStatus, String errorMessage, long value) {
-        super(DownloadLink.deDuplicateString(errorMessage));
+        super(errorMessage);
         this.linkStatus = linkStatus;
         this.value = value;
     }
@@ -56,7 +56,7 @@ public class PluginException extends Exception {
 
     /**
      * JD2Only
-     * 
+     *
      * @return
      */
     public int getLinkStatus() {

@@ -21,6 +21,11 @@ public class BlockDownloadCaptchasByHost implements SessionBlackListEntry<Object
     }
 
     @Override
+    public String toString() {
+        return "BlockDownloadCaptchasByHost:" + getBlockedHost();
+    }
+
+    @Override
     public boolean matches(Challenge<Object> c) {
         return StringUtils.equals(c.getHost(), getBlockedHost());
     }

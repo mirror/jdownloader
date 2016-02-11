@@ -33,6 +33,16 @@ public class BlockCrawlerCaptchasByHost implements BlacklistEntry {
     }
 
     @Override
+    public String toString() {
+        final LinkCrawler lcrawler = getCrawler();
+        if (lcrawler != null) {
+            return "BlockCrawlerCaptchasByHost:" + lcrawler.getCreated() + ":" + getHost();
+        } else {
+            return "BlockCrawlerCaptchasByHost:" + getHost();
+        }
+    }
+
+    @Override
     public boolean matches(Challenge c) {
         final LinkCrawler lcrawler = getCrawler();
         if (lcrawler != null && lcrawler.isRunning()) {

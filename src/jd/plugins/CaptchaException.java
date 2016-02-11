@@ -1,8 +1,8 @@
 package jd.plugins;
 
-import org.jdownloader.captcha.blacklist.BlacklistEntry;
-
 import jd.controlling.captcha.SkipRequest;
+
+import org.jdownloader.captcha.blacklist.BlacklistEntry;
 
 public class CaptchaException extends PluginException {
 
@@ -31,11 +31,24 @@ public class CaptchaException extends PluginException {
         this.blackListEntry = blackListEntry;
     }
 
+    @Override
+    public String toString() {
+        final String s = getClass().getName();
+        final StringBuilder sb = new StringBuilder();
+        sb.append(s);
+        if (skipRequest != null) {
+            sb.append(":SkipRequest=").append(skipRequest.name());
+        }
+        if (blackListEntry != null) {
+            sb.append(":BlacklistEntry=").append(blackListEntry.toString());
+        }
+        return sb.toString();
+    }
+
     public void throwMeIfNoRefresh() throws CaptchaException {
         switch (getSkipRequest()) {
         case REFRESH:
             return;
-
         default:
             throw this;
         }

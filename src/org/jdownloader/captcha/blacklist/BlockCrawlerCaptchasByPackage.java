@@ -30,6 +30,16 @@ public class BlockCrawlerCaptchasByPackage implements BlacklistEntry {
     }
 
     @Override
+    public String toString() {
+        final LinkCrawler lcrawler = getCrawler();
+        if (lcrawler != null) {
+            return "BlockCrawlerCaptchasByPackage:" + lcrawler.getCreated() + ":" + origin.getUniqueID();
+        } else {
+            return "BlockCrawlerCaptchasByPackage:" + origin.getUniqueID();
+        }
+    }
+
+    @Override
     public boolean matches(Challenge c) {
         final LinkCrawler lcrawler = getCrawler();
         if (lcrawler != null && lcrawler.isRunning()) {
