@@ -194,6 +194,11 @@ public class DeviantArtCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
+            /* Special: Prefer server filename */
+            filename_server = findServerFilename(null);
+            if (filename_server != null) {
+                filename = filename_server;
+            }
             filesize = getfileSize();
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_TXT)) {
             ext = "txt";
