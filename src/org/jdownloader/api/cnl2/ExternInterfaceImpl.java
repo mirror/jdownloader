@@ -41,6 +41,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -109,7 +110,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     }
 
     public void jdcheckjson(RemoteAPIResponse response) throws InternalApiException {
-        MyJDownloaderSettings set = JsonConfig.create(MyJDownloaderSettings.class);
+        MyJDownloaderSettings set = CFG_MYJD.CFG;
         JSonObject obj = new JSonObject();
         obj.put("version", new JSonValue(JDUtilities.getRevision()));
         obj.put("deviceId", new JSonValue(set.getUniqueDeviceIDV2()));

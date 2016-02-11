@@ -1,6 +1,7 @@
 package org.jdownloader.updatev2.gui;
 
 import java.awt.Color;
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
@@ -12,10 +13,12 @@ import javax.swing.JLabel;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.StorageHandlerFactory;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.DefaultFactoryInterface;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
@@ -56,7 +59,6 @@ public class LAFOptions {
         int i = laf.lastIndexOf(".");
         String name = (i >= 0 ? laf.substring(i + 1) : laf);
         String path = "cfg/laf/" + name;
-        cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
         if (!"org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel".equals(laf)) {
             try {
                 extension = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
@@ -67,28 +69,38 @@ public class LAFOptions {
         if (extension == null) {
             extension = new DefaultLookAndFeelExtension();
         }
+        cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class, new StorageHandlerFactory<LAFSettings>() {
+
+            @Override
+            public StorageHandler<LAFSettings> create(File path, Class<LAFSettings> configInterface) {
+                return new StorageHandler<LAFSettings>(path, configInterface) {
+                    @Override
+                    protected void preInit(File path, Class<LAFSettings> configInterfac) {
+                        setDefaultFactory(new DefaultFactoryInterface() {
+
+                            @Override
+                            public Object getDefaultValue(KeyHandler<?> handler, Object o) {
+
+                                Object def = o;
+                                try {
+                                    def = handler.getGetMethod().invoke(extension, new Object[] {});
+                                } catch (Throwable e) {
+                                    LoggerFactory.getDefaultLogger().log(e);
+
+                                }
+
+                                return def;
+
+                            }
+                        });
+                    }
+                };
+            }
+        });
 
         for (Entry<Method, KeyHandler<?>> e : cfg._getStorageHandler().getMap().entrySet()) {
             e.getValue().setAllowWriteDefaultObjects(false);
         }
-
-        cfg._getStorageHandler().setDefaultFactory(new DefaultFactoryInterface() {
-
-            @Override
-            public Object getDefaultValue(KeyHandler<?> handler, Object o) {
-
-                Object def = o;
-                try {
-                    def = handler.getGetMethod().invoke(extension, new Object[] {});
-                } catch (Throwable e) {
-                    LoggerFactory.getDefaultLogger().log(e);
-
-                }
-
-                return def;
-
-            }
-        });
 
     }
 
