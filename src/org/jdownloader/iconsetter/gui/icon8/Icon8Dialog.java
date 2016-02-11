@@ -28,9 +28,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.nutils.encoding.Base64;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
@@ -43,6 +40,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.PseudoCombo;
 import org.jdownloader.iconsetter.IconResource;
 import org.jdownloader.iconsetter.IconSetMaker;
 import org.jdownloader.iconsetter.gui.Icon8Resource;
@@ -53,16 +51,20 @@ import com.kitfox.svg.SVGElement;
 import com.kitfox.svg.SVGUniverse;
 import com.kitfox.svg.animation.AnimationElement;
 
+import jd.nutils.encoding.Base64;
+import jd.nutils.encoding.Encoding;
+
 public class Icon8Dialog extends AbstractDialog<Object> {
 
-    private ExtTextField  search;
-    private IconResource  res;
-    private IconSetMaker  owner;
-    private JPanel        color;
-    private MigPanel      p;
-    private MigPanel      card;
-    protected Icon8Table  table;
-    private Icon8Resource selectedIcon;
+    private ExtTextField       search;
+    private IconResource       res;
+    private IconSetMaker       owner;
+    private JPanel             color;
+    private MigPanel           p;
+    private MigPanel           card;
+    protected Icon8Table       table;
+    private Icon8Resource      selectedIcon;
+    private PseudoCombo<Style> style;
 
     @Override
     protected void setReturnmask(boolean b) {
@@ -127,22 +129,28 @@ public class Icon8Dialog extends AbstractDialog<Object> {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                new Thread("Icons8Scanner") {
-                    public void run() {
-                        query(new EDTHelper<String>() {
-
-                            @Override
-                            public String edtRun() {
-                                return search.getText();
-                            }
-                        }.getReturnValue());
-
-                    };
-                }.start();
+                updateSearch();
             }
         });
+        style = new PseudoCombo<Style>(Style.values()) {
+            @Override
+            protected String getLabel(Style v, boolean closed) {
+                return v.getKey();
+            }
+
+            @Override
+            public void onChanged(Style newValue) {
+                super.onChanged(newValue);
+                JsonConfig.create(IconSetterConfig.class).setLastUsedStyle(style.getSelectedItem());
+                updateSearch();
+            }
+        };
+
         p.add(new JLabel("Search:"));
         p.add(search, "spanx");
+        p.add(new JLabel("Style:"));
+        p.add(style, "spanx");
+        style.setSelectedItem(JsonConfig.create(IconSetterConfig.class).getLastUsedStyle());
         p.add(new JLabel("Color:"));
         color = new JPanel();
         color.setOpaque(true);
@@ -171,6 +179,12 @@ public class Icon8Dialog extends AbstractDialog<Object> {
                     public String edtRun() {
                         return search.getText();
                     }
+                }.getReturnValue(), new EDTHelper<Style>() {
+
+                    @Override
+                    public Style edtRun() {
+                        return style.getSelectedItem();
+                    }
                 }.getReturnValue());
 
             };
@@ -178,7 +192,7 @@ public class Icon8Dialog extends AbstractDialog<Object> {
         return p;
     }
 
-    protected synchronized void query(String searchTags) {
+    protected synchronized void query(String searchTags, Style style) {
         try {
             new EDTRunner() {
 
@@ -321,5 +335,26 @@ public class Icon8Dialog extends AbstractDialog<Object> {
 
         };
 
+    }
+
+    private void updateSearch() {
+        new Thread("Icons8Scanner") {
+            public void run() {
+                query(new EDTHelper<String>() {
+
+                    @Override
+                    public String edtRun() {
+                        return search.getText();
+                    }
+                }.getReturnValue(), new EDTHelper<Style>() {
+
+                    @Override
+                    public Style edtRun() {
+                        return style.getSelectedItem();
+                    }
+                }.getReturnValue());
+
+            };
+        }.start();
     }
 }
