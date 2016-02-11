@@ -331,7 +331,7 @@ public class JustinTv extends PluginForHost {
                 }
                 for (String iframe : iframes) {
                     iframe = Encoding.htmlDecode(iframe);
-                    if (StringUtils.containsIgnoreCase(iframe, "/authentications/new")) {
+                    if (StringUtils.containsIgnoreCase(iframe, "/authentications/new") || StringUtils.containsIgnoreCase(iframe, "username=")) {
                         br.getPage(iframe);
                         break;
                     }
