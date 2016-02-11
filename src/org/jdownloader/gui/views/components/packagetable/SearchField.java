@@ -26,14 +26,19 @@ import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
 import javax.swing.border.Border;
+import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.synth.SynthButtonUI;
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthLookAndFeel;
 import javax.swing.plaf.synth.SynthPainter;
 
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Application;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
@@ -43,15 +48,12 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 public class SearchField<SearchCat extends SearchCatInterface, PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> extends ExtTextField implements MouseMotionListener, MouseListener {
     /**
      *
      */
-    private static final long                                                                  serialVersionUID = -8079363840549073686L;
-    private static final int                                                                   SIZE             = 20;
+    private static final long                                                                  serialVersionUID        = -8079363840549073686L;
+    private static final int                                                                   SIZE                    = 20;
     private Image                                                                              img;
     private DelayedRunnable                                                                    delayedFilter;
     private PackageControllerTable<PackageType, ChildType>                                     table2Filter;
@@ -61,16 +63,17 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private Color                                                                              bgColor;
     private volatile SearchCat[]                                                               searchCategories;
     private Image                                                                              popIcon;
-    private int                                                                                iconGap          = 38;
+    private int                                                                                iconGap                 = 38;
     private Border                                                                             orgBorder;
     private Image                                                                              close;
 
-    private int                                                                                closeXPos        = -1;
-    private boolean                                                                            mouseoverClose   = false;
-    private volatile boolean                                                                   closeEnabled     = false;
-    private NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>> appliedFilter    = new NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>>(null);
+    private int                                                                                closeXPos               = -1;
+    private boolean                                                                            mouseoverClose          = false;
+    private volatile boolean                                                                   closeEnabled            = false;
+    private NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>> appliedFilter           = new NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>>(null);
     private AppAction                                                                          focusAction;
     private JButton                                                                            button;
+    private boolean                                                                            synthButtonUIAccessable = Application.getJavaVersion() >= Application.JAVA17;
 
     public boolean isEmpty() {
         return appliedFilter.get() == null;
@@ -135,55 +138,53 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         delayedFilter.run();
     }
 
+    protected final boolean isSynthButtonUIAvailable(ButtonUI buttonUI) {
+        if (synthButtonUIAccessable) {
+            return buttonUI instanceof SynthButtonUI;
+        } else {
+            return false;
+        }
+    }
+
+    private Method synthLookAndFeelUpdateMethod = null;
+
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
-
         super.paintComponent(g);
-
         if (label != null) {
-            if (!(button.getUI() instanceof SynthButtonUI)) {
+            if (isSynthButtonUIAvailable(button.getUI())) {
+                try {
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
+                    button.setOpaque(false);
+                    button.setBackground(null);
+                    button.setSize(labelWidth + 5 + iconGap + 8 - 1, getHeight());
+                    SynthContext context = ((SynthButtonUI) button.getUI()).getContext(button);
+                    if (synthLookAndFeelUpdateMethod == null) {
+                        synthLookAndFeelUpdateMethod = SynthLookAndFeel.class.getDeclaredMethod("update", new Class[] { SynthContext.class, Graphics.class });
+                        synthLookAndFeelUpdateMethod.setAccessible(true);
+                    }
+                    synthLookAndFeelUpdateMethod.invoke(null, new Object[] { context, g2 });
+                    SynthPainter painter = context.getStyle().getPainter(context);
+                    g2.setClip(0, 0, labelWidth + 5 + iconGap + 8 + 1, getHeight());
+                    painter.paintButtonBackground(context, g2, 0, 0, labelWidth + 5 + iconGap + 8 - 1 + 4, getHeight());
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+                    g2.setClip(null);
+                    g2.setColor(getBackground().darker().darker());
+                    g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 2);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    synthButtonUIAccessable = false;
+                } finally {
+                    g2.setComposite(comp);
+                }
+            } else {
                 g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-
                 g2.setColor(bgColor);
-
                 g2.fillRect(1, 1, labelWidth + 5 + iconGap + 8 - 1, getHeight() - 1);
                 g2.setColor(getBackground().darker());
                 g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 1);
                 g2.setComposite(comp);
-            } else {
-                try {
-                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
-
-                    button.setOpaque(false);
-                    button.setBackground(null);
-
-                    button.setSize(labelWidth + 5 + iconGap + 8 - 1, getHeight());
-
-                    SynthContext context = ((SynthButtonUI) button.getUI()).getContext(button);
-                    Method method;
-
-                    method = SynthLookAndFeel.class.getDeclaredMethod("update", new Class[] { SynthContext.class, Graphics.class });
-
-                    method.setAccessible(true);
-                    method.invoke(null, new Object[] { context, g2 });
-
-                    SynthPainter painter = context.getStyle().getPainter(context);
-
-                    g2.setClip(0, 0, labelWidth + 5 + iconGap + 8 + 1, getHeight());
-                    painter.paintButtonBackground(context, g2, 0, 0, labelWidth + 5 + iconGap + 8 - 1 + 4, getHeight());
-
-                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
-
-                    g2.setClip(null);
-                    g2.setColor(getBackground().darker().darker());
-                    g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 2);
-
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                } finally {
-                    g2.setComposite(comp);
-                }
             }
             final SearchCat cat = getSelectedCategory();
             if (cat != null) {
@@ -195,58 +196,46 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             // label.paintComponents(g2);
             g2.translate(-iconGap - 1, 0);
         } else {
-            if ((button.getUI() instanceof SynthButtonUI)) {
+            if (isSynthButtonUIAvailable(button.getUI())) {
                 try {
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
-
                     button.setOpaque(false);
                     button.setBackground(null);
-
                     button.setSize(labelWidth + 5 + iconGap + 8 - 1, getHeight());
-
                     SynthContext context = ((SynthButtonUI) button.getUI()).getContext(button);
-                    Method method;
-
-                    method = SynthLookAndFeel.class.getDeclaredMethod("update", new Class[] { SynthContext.class, Graphics.class });
-
-                    method.setAccessible(true);
-                    method.invoke(null, new Object[] { context, g2 });
-
+                    if (synthLookAndFeelUpdateMethod == null) {
+                        synthLookAndFeelUpdateMethod = SynthLookAndFeel.class.getDeclaredMethod("update", new Class[] { SynthContext.class, Graphics.class });
+                        synthLookAndFeelUpdateMethod.setAccessible(true);
+                    }
+                    synthLookAndFeelUpdateMethod.invoke(null, new Object[] { context, g2 });
                     SynthPainter painter = context.getStyle().getPainter(context);
-
                     g2.setClip(0, 0, 26, getHeight());
                     painter.paintButtonBackground(context, g2, 0, 0, 26 + 3, getHeight());
-
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
-
                     g2.setClip(null);
                     g2.setColor(getBackground().darker().darker());
                     g2.drawLine(26, 1, 26, getHeight() - 1);
                 } catch (Throwable e) {
                     e.printStackTrace();
+                    synthButtonUIAccessable = false;
                 } finally {
                     g2.setComposite(comp);
                 }
             } else {
-
                 g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
                 g2.setColor(bgColor);
                 g2.fillRect(0, 0, 26, getHeight());
                 g2.setColor(getBackground().darker());
                 g2.drawLine(26, 1, 26, getHeight() - 1);
                 g2.setComposite(comp);
-
             }
             g2.drawImage(img, 3, 3, 3 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
         }
         if (closeEnabled) {
-
             closeXPos = getWidth() - close.getWidth(null) - (getHeight() - close.getHeight(null)) / 2;
             g2.drawImage(close, closeXPos, (getHeight() - close.getHeight(null)) / 2, close.getWidth(null), close.getHeight(null), null);
-
         }
         // g2.dispose();
-
     }
 
     protected final boolean isFullMatchPattern(Pattern pattern) {
