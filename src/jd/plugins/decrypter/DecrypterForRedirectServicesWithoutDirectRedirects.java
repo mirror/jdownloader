@@ -410,8 +410,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 finallink = br.getRegex("<iframe src=\"([^<>\"\\']+)\"").getMatch(0);
                 if (finallink != null) {
                     finallink = Encoding.deepHtmlDecode(finallink);
-                    /* Temporary workaround */
-                    finallink = finallink.replace("&#56", "8");
                 }
             } else if (parameter.contains("dwz.cn/")) {
                 // It's a normal redirector but needs special handling, maybe
