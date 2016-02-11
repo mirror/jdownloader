@@ -19,27 +19,22 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
 
             @Override
             protected void preInit(File path, Class<LAFSettings> configInterfac) {
-                final LookAndFeelExtension extension = LAFOptions.EXTENSION;
                 setDefaultFactory(new DefaultFactoryInterface() {
 
                     @Override
                     public Object getDefaultValue(KeyHandler<?> handler, Object o) {
-
                         Object def = o;
                         try {
-                            def = handler.getGetMethod().invoke(extension, new Object[] {});
+                            def = handler.getGetMethod().invoke(LAFOptions.getLookAndFeelExtension(), new Object[] {});
                         } catch (Throwable e) {
                             LoggerFactory.getDefaultLogger().log(e);
-
                         }
-
                         return def;
 
                     }
                 });
             }
         };
-
         for (Entry<Method, KeyHandler<?>> e : ret.getMap().entrySet()) {
             e.getValue().setAllowWriteDefaultObjects(false);
         }

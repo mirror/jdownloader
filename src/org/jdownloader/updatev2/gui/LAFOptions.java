@@ -17,14 +17,14 @@ import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
 public class LAFOptions {
 
-    public static BooleanKeyHandler    TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED = null;
-    public static IntegerKeyHandler    CUSTOM_TABLE_ROW_HEIGHT;
-    private static LAFOptions          INSTANCE;
+    public static BooleanKeyHandler TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED;
+    public static IntegerKeyHandler CUSTOM_TABLE_ROW_HEIGHT;
+    private static LAFOptions       INSTANCE;
+
     /**
      * Increase this value and set ColorForTableRowGap to show a gap between two links. Check CustomTableRowHeight as well
      **/
-    public static IntegerKeyHandler    LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT;
-    public static LookAndFeelExtension EXTENSION;
+    // public static IntegerKeyHandler LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT;
 
     /**
      * get the only existing instance of LAFOptions. This is a singleton
@@ -39,8 +39,12 @@ public class LAFOptions {
         return LAFOptions.INSTANCE;
     }
 
-    private LAFSettings          cfg;
-    private LookAndFeelExtension extension;
+    private final LAFSettings           cfg;
+    private static LookAndFeelExtension LAFEXTENSION;
+
+    public static LookAndFeelExtension getLookAndFeelExtension() {
+        return LAFEXTENSION;
+    }
 
     public LAFSettings getCfg() {
         return cfg;
@@ -52,10 +56,9 @@ public class LAFOptions {
      * @param laf
      */
     private LAFOptions(String laf) {
-
-        int i = laf.lastIndexOf(".");
-        String name = (i >= 0 ? laf.substring(i + 1) : laf);
-        String path = "cfg/laf/" + name;
+        final int i = laf.lastIndexOf(".");
+        final String name = (i >= 0 ? laf.substring(i + 1) : laf);
+        final String path = "cfg/laf/" + name;
         LookAndFeelExtension ext = null;
         if (!"org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel".equals(laf)) {
             try {
@@ -67,15 +70,12 @@ public class LAFOptions {
         if (ext == null) {
             ext = new DefaultLookAndFeelExtension();
         }
-
-        extension = ext;
-        LAFOptions.EXTENSION = ext;
+        LAFEXTENSION = ext;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
-
     }
 
     public LookAndFeelExtension getExtension() {
-        return extension;
+        return LAFEXTENSION;
     }
 
     public synchronized static void init(String laf) {
@@ -83,11 +83,10 @@ public class LAFOptions {
             return;
         }
         INSTANCE = new LAFOptions(laf);
-
-        LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("LinkTableHorizontalRowLineWeight", IntegerKeyHandler.class);
+        // LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("LinkTableHorizontalRowLineWeight",
+        // IntegerKeyHandler.class);
         CUSTOM_TABLE_ROW_HEIGHT = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
         TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED = INSTANCE.getCfg()._getStorageHandler().getKeyHandler("TableAlternateRowHighlightEnabled", BooleanKeyHandler.class);
-
     }
 
     private static HashMap<String, Color> CACHE = new HashMap<String, Color>();
@@ -101,13 +100,11 @@ public class LAFOptions {
     }
 
     public static String toHex(Color c) {
-
         return hex(c.getAlpha()) + hex(c.getRed()) + hex(c.getGreen()) + hex(c.getBlue());
     }
 
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(LAFSettings.class);
-
     }
 
     public static Color createColor(String str) {
@@ -188,8 +185,7 @@ public class LAFOptions {
     }
 
     public void applyBackground(String color, JComponent field) {
-
-        Color col = createColor(color);
+        final Color col = createColor(color);
         if (col != null) {
             applyBackground(col, field);
         }
@@ -197,7 +193,6 @@ public class LAFOptions {
 
     public void applyPanelBackground(JComponent rightPanel) {
         applyBackground(cfg.getColorForPanelBackground(), rightPanel);
-
     }
 
     public Color getColorForPanelHeaderBackground() {
@@ -209,7 +204,6 @@ public class LAFOptions {
     }
 
     public static void applyBackground(Color color, JComponent field) {
-
         field.setBackground(color);
         field.setOpaque(true);
     }
