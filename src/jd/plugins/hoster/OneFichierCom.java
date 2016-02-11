@@ -21,7 +21,6 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -49,10 +48,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe)";
 
     private final String         PROPERTY_FREELINK            = "freeLink";
@@ -101,19 +99,11 @@ public class OneFichierCom extends PluginForHost {
             if (idhostandName != null) {
                 link.setUrlDownload(idhostandName[0] + idhostandName[1] + idhostandName[2]);
                 linkID = getHost() + "://" + idhostandName[1];
-                try {
-                    link.setLinkID(linkID);
-                } catch (final Throwable t) {
-                    link.setProperty("LINKDUPEID", linkID);
-                }
+                link.setLinkID(linkID);
             }
         } else {
             linkID = getHost() + "://" + new Regex(url, "([a-z0-9]+)$").getMatch(0);
-            try {
-                link.setLinkID(linkID);
-            } catch (final Throwable t) {
-                link.setProperty("LINKDUPEID", linkID);
-            }
+            link.setLinkID(linkID);
         }
     }
 
@@ -217,7 +207,7 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if (account == null && (link != null && link.getProperty("HOTLINK", null) != null)) {
+        if (account == null && (link != null && link.getProperty(PROPERTY_HOTLINK, null) != null)) {
             return Integer.MAX_VALUE;
         }
         return super.getMaxSimultanDownload(link, account);
@@ -244,6 +234,7 @@ public class OneFichierCom extends PluginForHost {
                 // clear saved final link
                 downloadLink.setProperty(PROPERTY_HOTLINK, Property.NULL);
                 br = new Browser();
+                prepareBrowser(br);
             } else {
                 /* resume download */
                 downloadLink.setProperty(PROPERTY_HOTLINK, dllink);
@@ -261,6 +252,7 @@ public class OneFichierCom extends PluginForHost {
                 // clear saved final link
                 downloadLink.setProperty(PROPERTY_FREELINK, Property.NULL);
                 br = new Browser();
+                prepareBrowser(br);
             } else {
                 /* resume download */
                 downloadLink.setProperty(PROPERTY_FREELINK, dllink);
@@ -390,7 +382,7 @@ public class OneFichierCom extends PluginForHost {
         errorIpBlockedHandling(ibr);
     }
 
-    private void errorIpBlockedHandling(Browser br) throws PluginException {
+    private void errorIpBlockedHandling(final Browser br) throws PluginException {
         String waittime = br.getRegex("you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
         if (waittime == null) {
             waittime = br.getRegex(">You must wait (\\d+) minutes").getMatch(0);
@@ -439,8 +431,6 @@ public class OneFichierCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         // API login workaround for slow servers
         for (int i = 1; i <= 3; i++) {
             logger.info("1fichier.com: API login try 1 / " + i);
@@ -473,14 +463,9 @@ public class OneFichierCom extends PluginForHost {
             }
             ai.setStatus("Free Account (Credits available)");
             account.setValid(true);
-            maxPrem.set(maxdownloads_free);
-            account.setProperty("free", true);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxdownloads_free);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(maxdownloads_free);
+            account.setConcurrentUsePossible(false);
             account.setProperty("freeAPIdisabled", true);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("https://www.1fichier.com/en/console/details.pl");
@@ -501,14 +486,9 @@ public class OneFichierCom extends PluginForHost {
                     ai.setStatus("Free Account (No credits available)");
                 }
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
-                account.setProperty("free", true);
-                maxPrem.set(maxdownloads_free);
-                try {
-                    account.setType(AccountType.FREE);
-                    account.setMaxSimultanDownloads(maxdownloads_free);
-                    account.setConcurrentUsePossible(false);
-                } catch (final Throwable e) {
-                }
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(maxdownloads_free);
+                account.setConcurrentUsePossible(false);
                 account.setProperty("freeAPIdisabled", false);
             }
             return ai;
@@ -518,14 +498,9 @@ public class OneFichierCom extends PluginForHost {
             ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
             /* Premiumusers have no (daily) trafficlimits */
             ai.setUnlimitedTraffic();
-            maxPrem.set(maxdownloads_account_premium);
-            account.setProperty("free", false);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxdownloads_account_premium);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxdownloads_account_premium);
+            account.setConcurrentUsePossible(true);
             return ai;
         }
     }
@@ -591,19 +566,13 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
-    }
-
-    @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         String dllink;
         setConstants(account, link);
         requestFileInformation(link);
         checkDownloadable();
         br = new Browser();
-        if (account.getBooleanProperty("free", false) && account.getBooleanProperty("freeAPIdisabled")) {
+        if (AccountType.FREE.equals(account.getType()) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
@@ -624,7 +593,7 @@ public class OneFichierCom extends PluginForHost {
             URLConnectionAdapter con = null;
             for (int i = 0; i != 2; i++) {
                 try {
-                    con = openConnection(this.br, url);
+                    con = br.openHeadConnection(url);
                     break;
                 } catch (final ConnectException c) {
                     if (i + 1 == 2) {
@@ -730,8 +699,7 @@ public class OneFichierCom extends PluginForHost {
         if (passCode == null) {
             passCode = Plugin.getUserInput("Password?", this.currDownloadLink);
         }
-        String postData = "pass=" + Encoding.urlEncode(passCode) + "&";
-        postData += getSSLFormValue();
+        String postData = "pass=" + Encoding.urlEncode(passCode) + "&" + getSSLFormValue();
         br.postPage(br.getURL(), postData);
         if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
             this.currDownloadLink.setProperty("pass", Property.NULL);
@@ -796,7 +764,7 @@ public class OneFichierCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -812,20 +780,6 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String link) throws IOException {
-        URLConnectionAdapter con = null;
-        if (isJDStable()) {
-            con = br.openGetConnection(link);
-        } else {
-            con = br.openHeadConnection(link);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     /** This function is there to make sure that we're really logged in (handling without API). */
@@ -878,23 +832,19 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private void prepareBrowser(final Browser br) {
-        try {
-            if (br == null) {
-                return;
-            }
-            br.setConnectTimeout(3 * 60 * 1000);
-            br.setReadTimeout(3 * 60 * 1000);
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.117 Safari/537.36");
-            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
-            br.getHeaders().put("Pragma", null);
-            br.getHeaders().put("Cache-Control", null);
-            br.setCustomCharset("utf-8");
-            // we want ENGLISH!
-            br.setCookie(this.getHost(), "LG", "en");
-        } catch (Throwable e) {
-            /* setCookie throws exception in 09580 */
+        if (br == null) {
+            return;
         }
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Cache-Control", null);
+        br.setCustomCharset("utf-8");
+        // we want ENGLISH!
+        br.setCookie(this.getHost(), "LG", "en");
     }
 
     @Override
