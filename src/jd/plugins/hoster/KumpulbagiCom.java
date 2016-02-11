@@ -18,13 +18,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,20 +36,43 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kumpulbagi.com" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id", "kumpulbagi.com" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+", "REGEX_NOT_POSSIBLE" }, flags = { 2, 0 })
 public class KumpulbagiCom extends PluginForHost {
 
     public KumpulbagiCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(MAINPAGE);
+        this.enablePremium(MAINPAGE);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://kumpulbagi.com/termosecondicoes.aspx";
+        return "http://kumpulbagi.id/termosecondicoes.aspx";
     }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("kumpulbagi.com".equals(getHost())) {
+            if (host == null || "kumpulbagi.com".equals(host)) {
+                return "kumpulbagi.id";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -71,22 +96,33 @@ public class KumpulbagiCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "free_directlink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         handlePWProtected(downloadLink);
-        final String req_token = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        String req_token = this.br.getCookie(MAINPAGE, "__RequestVerificationToken");
+        if (req_token == null) {
+            req_token = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        }
         final String fid = downloadLink.getStringProperty("plain_fid", null);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        final String dllink_stream = this.br.getRegex("data\\-player=\"video\" data\\-player\\-file=\"(http[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
-            if (req_token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (req_token != null) {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/action/DownloadFile?location=fi&f=" + fid, "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
+                dllink = PluginJSonUtils.getJson(br, "DownloadUrl");
             }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("/action/DownloadFile?location=fi&f=" + fid, "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
-            dllink = PluginJSonUtils.getJson(br, "DownloadUrl");
             if (dllink == null) {
+                /* Try fallback to stream-url. Usually needed if a file is only downloadable via account. */
+                dllink = dllink_stream;
+            }
+            if (dllink == null) {
+                if (this.br.containsHTML("\"login")) {
+                    /* Free- or premium account needed! */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -95,13 +131,13 @@ public class KumpulbagiCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -151,6 +187,90 @@ public class KumpulbagiCom extends PluginForHost {
             /* We don't want to work with the encoded json bla html response */
             br.getPage(dl.getStringProperty("mainlink", null));
         }
+    }
+
+    private static final String MAINPAGE = "http://kumpulbagi.id";
+    private static Object       LOCK     = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(MAINPAGE, cookies);
+                    return;
+                }
+                br.getPage(MAINPAGE + "/");
+                br.getPage("/action/Account/Login?returnUrl=%2F");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                String req_token = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (req_token == null) {
+                    req_token = this.br.getCookie(MAINPAGE, "__RequestVerificationToken");
+                }
+                if (req_token == null) {
+                    req_token = "undefined";
+                }
+                br.postPage("/action/Account/Login?returnUrl=%2F", "__RequestVerificationToken=" + req_token + "&UserName=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, ".ASPXAUTH") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                br.getPage(MAINPAGE + "/");
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        /* Only free accounts are supported so far */
+        if (true) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Registered (free) user");
+        } else {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium User");
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.getPage(link.getStringProperty("mainlink", null));
+        if (account.getType() == AccountType.FREE) {
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            doFree(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_premium_directlink");
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

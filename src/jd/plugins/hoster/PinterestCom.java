@@ -366,7 +366,7 @@ public class PinterestCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's Pornhub plugin helps downloading pictures from pinterest.com.";
+        return "JDownloader's Pinterest plugin helps downloading pictures from pinterest.com.";
     }
 
     public static final String  ENABLE_DESCRIPTION_IN_FILENAMES        = "ENABLE_DESCRIPTION_IN_FILENAMES";

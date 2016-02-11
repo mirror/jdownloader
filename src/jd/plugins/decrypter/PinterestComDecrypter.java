@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.uio.UIOManager;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -37,6 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.uio.UIOManager;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/|resource/)[^/]+/[^/]+/" }, flags = { 0 })
 public class PinterestComDecrypter extends PluginForDecrypt {
@@ -277,7 +277,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     /** Log in the account of the hostplugin */
-    @SuppressWarnings({ "deprecation", "static-access" })
+    @SuppressWarnings({ "deprecation" })
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("pinterest.com");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
@@ -286,7 +286,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             return false;
         }
         try {
-            ((jd.plugins.hoster.PinterestCom) hostPlugin).login(this.br, aa, force);
+            jd.plugins.hoster.PinterestCom.login(this.br, aa, force);
         } catch (final PluginException e) {
             aa.setValid(false);
             return false;
