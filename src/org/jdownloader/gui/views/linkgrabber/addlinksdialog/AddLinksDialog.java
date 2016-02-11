@@ -29,6 +29,20 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.parser.html.HTMLParser;
+import jd.plugins.DownloadLink;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -71,20 +85,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.ClipboardContent;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.parser.html.HTMLParser;
-import jd.plugins.DownloadLink;
-
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextArea                         input;
@@ -116,7 +116,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextField                        comment;
 
-    private JCheckBox                           overwritePackagizer;;
+    private JCheckBox                           overwritePackagizer;                   ;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -453,17 +453,17 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_LINKGRABBER, 32)), "aligny top,height 32!,width 32!");
 
         p.add(sp, "height 30:100:n,spanx");
-        p.add(createIconLabel("save", _GUI.T.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!,height " + height + "!");
+        p.add(createIconLabel(IconKey.ICON_SAVE, _GUI.T.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!,height " + height + "!");
 
         p.add(destination.getDestination(), "height " + height + "!");
         p.add(destination.getButton(), "sg right,height " + height + "!");
 
-        p.add(createIconLabel("package_open", _GUI.T.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
+        p.add(createIconLabel(IconKey.ICON_PACKAGE_OPEN, _GUI.T.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
         p.add(packagename, "spanx,height " + height + "!");
-        p.add(createIconLabel("document", _GUI.T.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
+        p.add(createIconLabel(IconKey.ICON_DOCUMENT, _GUI.T.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
         p.add(comment, "spanx,height " + height + "!");
 
-        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_COMPRESS, 24)).add(new AbstractIcon("lock", 18), 6, 6), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
+        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_COMPRESS, 24)).add(new AbstractIcon(IconKey.ICON_LOCK, 18), 6, 6), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
 
         p.add(password, "pushx,growx,height " + height + "!");
         MigPanel subpanel = new MigPanel("ins 0", "[grow,fill][]", "[" + height + "!,grow]");
@@ -474,7 +474,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         lbl.setHorizontalAlignment(SwingConstants.RIGHT);
         subpanel.add(extractToggle, "aligny center");
 
-        p.add(createIconLabel(new BadgeIcon("password", "download", 24), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
+        p.add(createIconLabel(new BadgeIcon(IconKey.ICON_PASSWORD, IconKey.ICON_DOWNLOAD, 24), _GUI.T.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
 
         p.add(downloadPassword);
         p.add(priority, "sg right");
