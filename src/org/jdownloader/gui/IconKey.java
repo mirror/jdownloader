@@ -152,6 +152,7 @@ public class IconKey {
     public static final String ICON_PRIO_2                      = "prio_2";
     public static final String ICON_BAD                         = "bad";
     public static final String ICON_REMOVE_DUPES                = "remove_dupes";
+    public static final String ICON_DOWNLOADPASSWORD            = "downloadpassword";
     public static final String ICON_EXTRACTION_TRUE_FAILED      = "extraction_true_failed";
     public static final String ICON_PLAY                        = "play";
     public static final String ICON_HOME                        = "home";
@@ -259,6 +260,7 @@ public class IconKey {
     public static final String ICON_PRIO_0                      = "prio_0";
     public static final String ICON_DOWNLOADPATH                = "downloadpath";
     public static final String ICON_MEDIA_PLAYBACK_STOP         = "media-playback-stop";
+    public static final String ICON_ADDCONTAINER                = "addContainer";
     public static final String ICON_SILENTMODE                  = "silentmode";
     public static final String ICON_EXTRACT                     = "extract";
     public static final String ICON_DELETE                      = "delete";
@@ -305,5 +307,6 @@ public class IconKey {
     public static final String ICON_UPDATE_B                    = "update_b";
     public static final String ICON_PARALELL                    = "paralell";
     public static final String ICON_REFRESH                     = "refresh";
+    public static final String ICON_FOLDER_OPEN                 = "folder_open";
     public static final String ICON_MORE                        = "more";
 }

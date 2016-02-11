@@ -8,6 +8,8 @@ import java.util.HashMap;
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
 
+import jd.plugins.FavitIcon;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
@@ -28,6 +30,7 @@ import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
@@ -35,18 +38,16 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface;
 import org.jdownloader.myjdownloader.client.json.IconDescriptor;
 
-import jd.plugins.FavitIcon;
-
 public class ContentAPIImplV2 implements ContentAPIV2 {
-    private SimpleMapper                    mapper;
-    private HashMap<String, IconDescriptor> descriptorMap;
+
+    private final String                          usedByWebInterface = IconKey.ICON_FOLDER_OPEN + IconKey.ICON_DOWNLOADPASSWORD + IconKey.ICON_ADDCONTAINER;
+    private final SimpleMapper                    mapper;
+    private final HashMap<String, IconDescriptor> descriptorMap;
 
     public ContentAPIImplV2() {
         RemoteAPIController.validateInterfaces(ContentAPIV2.class, ContentInterface.class);
         mapper = new SimpleMapper();
-
         descriptorMap = new HashMap<String, IconDescriptor>();
-
     }
 
     public void getFavIcon(RemoteAPIRequest request, RemoteAPIResponse response, String hostername) throws InternalApiException, APIFileNotFoundException {
