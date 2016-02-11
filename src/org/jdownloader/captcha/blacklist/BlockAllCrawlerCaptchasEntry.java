@@ -27,6 +27,16 @@ public class BlockAllCrawlerCaptchasEntry implements BlacklistEntry {
     }
 
     @Override
+    public String toString() {
+        final LinkCrawler lcrawler = getCrawler();
+        if (lcrawler != null) {
+            return "BlockAllCrawlerCaptchasEntry:" + lcrawler.getCreated();
+        } else {
+            return "BlockAllCrawlerCaptchasEntry";
+        }
+    }
+
+    @Override
     public boolean matches(Challenge c) {
         final LinkCrawler lcrawler = getCrawler();
         if (lcrawler != null && lcrawler.isRunning()) {

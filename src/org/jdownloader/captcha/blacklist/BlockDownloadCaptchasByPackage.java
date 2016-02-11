@@ -30,6 +30,16 @@ public class BlockDownloadCaptchasByPackage implements SessionBlackListEntry<Obj
     }
 
     @Override
+    public String toString() {
+        final FilePackage filePackage = getFilePackage();
+        if (filePackage != null) {
+            return "BlockDownloadCaptchasByPackage:" + filePackage.getUniqueID();
+        } else {
+            return "BlockDownloadCaptchasByPackage";
+        }
+    }
+
+    @Override
     public boolean matches(Challenge<Object> c) {
         final FilePackage filePackage = getFilePackage();
         if (filePackage != null) {

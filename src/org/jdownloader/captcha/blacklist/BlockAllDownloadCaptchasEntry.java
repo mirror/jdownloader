@@ -13,6 +13,11 @@ public class BlockAllDownloadCaptchasEntry implements SessionBlackListEntry {
     }
 
     @Override
+    public String toString() {
+        return "BlockAllDownloadCaptchasEntry";
+    }
+
+    @Override
     public boolean matches(Challenge c) {
         return true;
     }
