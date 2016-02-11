@@ -90,7 +90,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/antlr-runtime.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaPlain.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on.jar"/>
-	<classpathentry kind="lib" path="/JDClosed/libs/jxbrowser/license.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/svgSalamander-tiny.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
