@@ -82,8 +82,7 @@ public class BaixarPremiumNet extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         if (!((jd.plugins.hoster.BaixarPremiumNet) JDUtilities.getPluginForHost("baixarpremium.net")).login(br, account, true)) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -262,6 +261,13 @@ public class BaixarPremiumNet extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("/acoes/deslogado/logar.php", postData);
                 if (br.getCookie(currenthost, "utmhb") == null || br.containsHTML("Login/E-mail ou senha inválida")) {
+                    if (br.toString().equals("6")) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeine IP ist gesperrt.\r\nÄndere deine IP und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour IP is banned.\r\nChange your IP and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

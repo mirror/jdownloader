@@ -19,12 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -134,13 +132,14 @@ public class MegarapidoNet extends PluginForHost {
             }
         }
 
-        login(account, false);
+        login(account);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             this.getAPISafe("http://megarapido.net/gerador");
             final String userID = br.getRegex("name=\"user\" value=\"(\\d+)\"").getMatch(0);
             if (userID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* Should never happen */
+                handleErrorRetries("useridnull", 10);
             }
             final String dlurl = Encoding.urlEncode(link.getDownloadURL());
             String postData = "urllist=" + dlurl + "&links=" + dlurl + "&exibir=normal&usar=premium&user=" + userID + "&autoreset=";
@@ -148,7 +147,7 @@ public class MegarapidoNet extends PluginForHost {
             dllink = br.getRegex("('|\")(https?://[a-z0-9-\\.]+\\.megarapido\\.net/.*?)\\1").getMatch(1);
             if (dllink == null) {
                 /* Should never happen */
-                handleErrorRetries("dllinknull", 5);
+                handleErrorRetries("dllinknull", 50);
             }
         }
         handleDL(account, link, dllink);
@@ -247,7 +246,7 @@ public class MegarapidoNet extends PluginForHost {
         setConstants(account, null);
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        login(account);
         if (!br.getURL().endsWith("/gerador")) {
             br.getPage("/gerador");
         }
@@ -293,39 +292,23 @@ public class MegarapidoNet extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account) throws Exception {
         synchronized (LOCK) {
             try {
-                /* Load cookies */
                 br.setCookiesExclusive(true);
                 this.br = newBrowser();
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(DOMAIN, key, value);
-                        }
-                        if (force) {
-                            /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
-                            br.getPage("http://megarapido.net/");
-                            if (br.containsHTML("/sair\\.php\">SAIR</a>")) {
-                                return;
-                            }
-                            /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                            if (br.getCookies(DOMAIN) != null) {
-                                br.clearCookies(DOMAIN);
-                            }
-                        } else {
-                            return;
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    br.getPage("http://megarapido.net/");
+                    if (br.containsHTML("/sair\\.php\">SAIR</a>")) {
+                        /* Existing cookies are valid --> Save new timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    }
+                    /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
+                    if (br.getCookies(DOMAIN) != null) {
+                        br.clearCookies(DOMAIN);
                     }
                 }
                 br.setFollowRedirects(true);
@@ -346,17 +329,9 @@ public class MegarapidoNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(DOMAIN);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -416,7 +391,7 @@ public class MegarapidoNet extends PluginForHost {
             case 1:
                 /* Host currently not supported --> deactivate it for some hours. */
                 statusMessage = "Host is currently not supported";
-                tempUnavailableHoster(3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(3 * 60 * 1000l);
                 break;
             default:
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
@@ -447,9 +422,7 @@ public class MegarapidoNet extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
-            /* TODO: Remove plugin defect once all known errors are correctly handled */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, error);
+            tempUnavailableHoster(2 * 60 * 1000l);
         }
     }
 
