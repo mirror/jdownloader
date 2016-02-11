@@ -309,9 +309,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             Graphics2D g2 = (Graphics2D) g;
             Composite comp = g2.getComposite();
             final Rectangle visibleRect = this.getVisibleRect();
-
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
-
             if (filteredColumn >= 0) {
                 Rectangle first = this.getCellRect(0, filteredColumn, true);
 
@@ -321,7 +319,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
                     g2.fillRect(Math.max(first.x, visibleRect.x), visibleRect.y, w, visibleRect.height);
                 }
             }
-
             g2.setComposite(comp);
         }
     }
