@@ -10,6 +10,12 @@ import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.RefreshAction;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountInterface;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountWrapper;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.tree.TreeNodeInterface;
@@ -24,12 +30,6 @@ import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.FreeAccountReference;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.RefreshAction;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountInterface;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountWrapper;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
 
 public class EditHosterRuleDialog extends AbstractDialog<Integer> {
 
@@ -56,16 +56,12 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
 
     @Override
     protected Integer createReturnValue() {
-
         return getReturnmask();
-
     }
 
     @Override
     public JComponent layoutDialogContent() {
-
         MigPanel ret = new MigPanel("ins 0, wrap 1", "[grow,fill]", "[][grow,fill][]");
-
         JTextArea txt = new JTextArea();
         SwingUtils.setOpaque(txt, false);
         txt.setEditable(false);
@@ -74,11 +70,8 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
         txt.setFocusable(false);
         // txt.setEnabled(false);
         txt.setText(_GUI.T.EditHosterRuleDialog_layoutDialogContent_description_(rule.getHoster()));
-
         ret.add(txt, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
-
         model = new HosterPriorityTableModel();
-
         ArrayList<AccountInterface> ls = new ArrayList<AccountInterface>();
         for (AccountGroup a : rule.getAccounts()) {
             ls.add(new GroupWrapper(a));
