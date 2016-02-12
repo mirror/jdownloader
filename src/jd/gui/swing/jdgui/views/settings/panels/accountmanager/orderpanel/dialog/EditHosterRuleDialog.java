@@ -10,24 +10,26 @@ import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.RefreshAction;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountInterface;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountWrapper;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.tree.TreeNodeInterface;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
+import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.controlling.hosterrule.AccountGroup;
 import org.jdownloader.controlling.hosterrule.AccountReference;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.FreeAccountReference;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.RefreshAction;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountInterface;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountWrapper;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
 
 public class EditHosterRuleDialog extends AbstractDialog<Integer> {
 
@@ -37,6 +39,8 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
 
     public EditHosterRuleDialog(AccountUsageRule editing) {
         super(0, _GUI.T.EditHosterRuleDialog_EditHosterRuleDialog_title_(editing.getHoster()), null, _AWU.T.lit_save(), null);
+        setLocator(new RememberRelativeDialogLocator("EditHosterRuleDialog", JDGui.getInstance().getMainFrame()));
+        setDimensor(new RememberLastDialogDimension("EditHosterRuleDialog"));
         this.rule = editing;
     }
 
