@@ -37,21 +37,23 @@ public class HorizontalScrollbarAction extends AppAction implements GenericConfi
     }
 
     public static void setup(final BooleanKeyHandler keyHandler, final ExtTable table) {
+        try {
+            JScrollPane sp = (JScrollPane) table.getParent().getParent();
 
-        JScrollPane sp = (JScrollPane) table.getParent().getParent();
+            if (keyHandler.isEnabled()) {
+                table.setColumnSaveID("hBAR");
+                table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+                sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            } else {
+                table.setColumnSaveID(null);
+                table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+                sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+                sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            }
+        } catch (Exception e) {
 
-        if (keyHandler.isEnabled()) {
-            table.setColumnSaveID("hBAR");
-            table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-            sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-            sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        } else {
-            table.setColumnSaveID(null);
-            table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-            sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-            sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         }
-
     }
 
     @Override

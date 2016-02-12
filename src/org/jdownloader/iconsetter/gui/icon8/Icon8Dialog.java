@@ -65,6 +65,7 @@ public class Icon8Dialog extends AbstractDialog<Object> {
     protected Icon8Table       table;
     private Icon8Resource      selectedIcon;
     private PseudoCombo<Style> style;
+    private String             lastSearch;
 
     @Override
     protected void setReturnmask(boolean b) {
@@ -75,26 +76,72 @@ public class Icon8Dialog extends AbstractDialog<Object> {
                     List<Icon8Resource> sel = table.getModel().getSelectedObjects();
                     if (sel != null && sel.size() > 0) {
                         selectedIcon = sel.get(0);
-                        File filePath = res.getFile(owner.getResoureSet());
-                        byte[] png;
 
-                        png = selectedIcon.createPNG(32, new EDTHelper<Color>() {
+                        // byte[] png;
+                        //
+                        // png = selectedIcon.createPNG(32, new EDTHelper<Color>() {
+                        //
+                        // @Override
+                        // public Color edtRun() {
+                        // return color.getBackground();
+                        // }
+                        //
+                        // }.getReturnValue());
+                        //
+                        // if (png != null && png.length > 0) {
+                        // filePath.delete();
+                        // filePath.getParentFile().mkdirs();
+                        // IO.writeToFile(filePath, png);
+                        // File info = new File(filePath.getAbsolutePath() + ".icon8");
+                        // info.delete();
+                        // IO.writeStringToFile(info, selectedIcon.getId());
+                        // }
+                        final File png = res.getFile(owner.getResoureSet(), "png");
+                        final File svg = res.getFile(owner.getResoureSet(), "svg");
+                        final File svgInfo = res.getFile(owner.getResoureSet(), "svg.icons8");
+                        png.delete();
+                        svg.delete();
+                        svgInfo.delete();
+                        new Thread("Write SVG") {
+                            public void run() {
+                                try {
+                                    File png = res.getFile(owner.getResoureSet(), "png");
+                                    File svg = res.getFile(owner.getResoureSet(), "svg");
+                                    png.delete();
+                                    svg.delete();
+                                    byte[] bytes;
 
-                            @Override
-                            public Color edtRun() {
-                                return color.getBackground();
-                            }
+                                    bytes = selectedIcon.createSVG(new EDTHelper<Color>() {
 
-                        }.getReturnValue());
+                                        @Override
+                                        public Color edtRun() {
+                                            return color.getBackground();
+                                        }
 
-                        if (png != null && png.length > 0) {
-                            filePath.delete();
-                            filePath.getParentFile().mkdirs();
-                            IO.writeToFile(filePath, png);
-                            File info = new File(filePath.getAbsolutePath() + ".icon8");
-                            info.delete();
-                            IO.writeStringToFile(info, selectedIcon.getId());
-                        }
+                                    }.getReturnValue());
+
+                                    if (bytes != null && bytes.length > 0) {
+
+                                        svg.getParentFile().mkdirs();
+                                        IO.writeToFile(svg, bytes);
+
+                                        IO.writeStringToFile(svgInfo, selectedIcon.getInfoString());
+                                    }
+                                    new EDTRunner() {
+
+                                        @Override
+                                        protected void runInEDT() {
+                                            table.invalidate();
+                                            table.repaint();
+                                        }
+                                    };
+                                } catch (Throwable e) {
+                                    UIOManager.I().showException(e.getMessage(), e);
+
+                                }
+                            };
+                        }.start();
+
                     }
                 }
             } catch (Throwable e) {
@@ -122,27 +169,31 @@ public class Icon8Dialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
         okButton.setEnabled(false);
-        p = new MigPanel("ins 5,wrap 2", "[][grow,fill]", "[24!][24!][grow,fill]");
+        p = new MigPanel("ins 5,wrap 2", "[][grow,fill]", "[24!][24!][24!][grow,fill]");
         search = new ExtTextField();
-        search.setText(res.getTags());
+        search.setText(res.getTags(owner.getResoureSet()));
         search.addActionListener(new ActionListener() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                updateSearch();
+                if (color != null) {
+                    updateSearch();
+                }
             }
         });
         style = new PseudoCombo<Style>(Style.values()) {
             @Override
             protected String getLabel(Style v, boolean closed) {
-                return v.getKey();
+                return v.getLabel();
             }
 
             @Override
             public void onChanged(Style newValue) {
                 super.onChanged(newValue);
                 JsonConfig.create(IconSetterConfig.class).setLastUsedStyle(style.getSelectedItem());
-                updateSearch();
+                if (color != null) {
+                    updateSearch();
+                }
             }
         };
 
@@ -193,6 +244,7 @@ public class Icon8Dialog extends AbstractDialog<Object> {
     }
 
     protected synchronized void query(String searchTags, Style style) {
+        lastSearch = searchTags;
         try {
             new EDTRunner() {
 
@@ -208,7 +260,13 @@ public class Icon8Dialog extends AbstractDialog<Object> {
             }.waitForEDT();
             SimpleHTTP br = new SimpleHTTP();
 
-            String xml = br.getPage(new URL("https://api.icons8.com/api/iconsets/search?term=" + Encoding.urlEncode(searchTags) + "&amount=100"));
+            String xml = null;
+
+            if (style == null || style == Style.ALL) {
+                xml = br.getPage(new URL("https://api.icons8.com/api/iconsets/search?term=" + Encoding.urlEncode(searchTags) + "&amount=100"));
+            } else {
+                xml = br.getPage(new URL("https://api.icons8.com/api/iconsets/search?term=" + Encoding.urlEncode(searchTags) + "&amount=100" + "&platform=" + Encoding.urlEncode(style.getKey())));
+            }
             String[] icons = new Regex(xml, "(<icon .*?</icon>)").getColumn(0);
             final ArrayList<Icon8Resource> iconsList = new ArrayList<Icon8Resource>();
             for (String icon : icons) {
@@ -296,7 +354,8 @@ public class Icon8Dialog extends AbstractDialog<Object> {
                     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     // int x = 0;
                     // int y = 0;
-
+                    // g.setColor(Color.RED);
+                    // g.drawRect(1, 1, size, size);
                     int width = size;
                     int height = size;
                     g.translate(x, y);
@@ -313,7 +372,8 @@ public class Icon8Dialog extends AbstractDialog<Object> {
                     g.setTransform(oldXform);
 
                     g.translate(-x, -y);
-
+                    g.setColor(Color.RED);
+                    g.drawRect(1, 1, size, size);
                     // diagram.render(g);
                     // g.dispose();
 
@@ -356,5 +416,9 @@ public class Icon8Dialog extends AbstractDialog<Object> {
 
             };
         }.start();
+    }
+
+    public String getLastSearchString() {
+        return lastSearch;
     }
 }

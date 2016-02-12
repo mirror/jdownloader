@@ -25,6 +25,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.components.PseudoCombo;
+import org.jdownloader.iconsetter.IconResource;
 import org.jdownloader.iconsetter.IconSetMaker;
 import org.jdownloader.iconsetter.ResourceSet;
 import org.jdownloader.images.NewTheme;
@@ -82,8 +83,8 @@ public class IconSetterGui extends BasicGui {
             @Override
             protected void runInEDT() {
                 MigPanel p = new MigPanel("ins 5,wrap 2,", "[][grow,fill]", "[40!,fill][24!]");
-
-                PseudoCombo<ResourceSet> combo = new PseudoCombo<ResourceSet>(owner.getResourceSets().toArray(new ResourceSet[] {})) {
+                List<ResourceSet> sets = owner.getResourceSets();
+                PseudoCombo<ResourceSet> combo = new PseudoCombo<ResourceSet>(sets.toArray(new ResourceSet[] {})) {
                     @Override
                     protected String getLabel(ResourceSet v, boolean closed) {
                         return v.getName();
@@ -98,16 +99,16 @@ public class IconSetterGui extends BasicGui {
                     protected Icon getIcon(ResourceSet v, boolean closed) {
 
                         try {
-                            File file = Application.getResource("themes/" + v.getName() + "/" + v.getIcons().get(0).getPath());
+                            IconResource file = v.getIcons().get(0);
                             int smallest = v.getIcons().get(0).getPath().length();
                             for (int i = 0; i < v.getIcons().size(); i++) {
                                 if (v.getIcons().get(i).getPath().length() < smallest) {
                                     smallest = v.getIcons().get(i).getPath().length();
-                                    file = Application.getResource("themes/" + v.getName() + "/" + v.getIcons().get(i).getPath());
+                                    file = v.getIcons().get(i);
                                 }
                             }
 
-                            return new ImageIcon(IconIO.getScaledInstance(ImageIO.read(file), 32, 32));
+                            return file.getIcon(v.getName(), 32);
                         } catch (Throwable e) {
 
                             return null;
@@ -127,7 +128,7 @@ public class IconSetterGui extends BasicGui {
                         InputDialog d = new InputDialog(0, "Choose Name", "Choose Name", null);
                         UIOManager.I().show(null, d);
                         d.getText();
-                        File file = Application.getResource("themes/" + d.getText() + "/");
+                        File file = new File(IconSetMaker.THEMES, "themes/" + d.getText() + "/");
                         if (file.exists()) {
                             UIOManager.I().showErrorMessage(d.getText() + " already exists...");
                             return;
@@ -173,12 +174,12 @@ public class IconSetterGui extends BasicGui {
                     @Override
                     protected Icon getIcon(ResourceSet v, boolean closed) {
                         try {
-                            File file = Application.getResource("themes/" + v.getName() + "/" + v.getIcons().get(0).getPath());
+                            File file = new File(IconSetMaker.THEMES, "themes/" + v.getName() + "/" + v.getIcons().get(0).getPath());
                             int smallest = v.getIcons().get(0).getPath().length();
                             for (int i = 0; i < v.getIcons().size(); i++) {
                                 if (v.getIcons().get(i).getPath().length() < smallest) {
                                     smallest = v.getIcons().get(i).getPath().length();
-                                    file = Application.getResource("themes/" + v.getName() + "/" + v.getIcons().get(i).getPath());
+                                    file = new File(IconSetMaker.THEMES, "themes/" + v.getName() + "/" + v.getIcons().get(i).getPath());
                                 }
                             }
 
@@ -203,7 +204,7 @@ public class IconSetterGui extends BasicGui {
                         InputDialog d = new InputDialog(0, "Choose Name", "Choose Name", null);
                         UIOManager.I().show(null, d);
                         d.getText();
-                        File file = Application.getResource("themes/" + d.getText() + "/");
+                        File file = new File(IconSetMaker.THEMES, "themes/" + d.getText() + "/");
                         if (file.exists()) {
                             UIOManager.I().showErrorMessage(d.getText() + " already exists...");
                             return;

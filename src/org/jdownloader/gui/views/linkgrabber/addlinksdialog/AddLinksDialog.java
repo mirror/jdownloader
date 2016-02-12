@@ -29,20 +29,6 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.ClipboardContent;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.parser.html.HTMLParser;
-import jd.plugins.DownloadLink;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -85,6 +71,20 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.parser.html.HTMLParser;
+import jd.plugins.DownloadLink;
+
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextArea                         input;
@@ -116,7 +116,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextField                        comment;
 
-    private JCheckBox                           overwritePackagizer;                   ;
+    private JCheckBox                           overwritePackagizer;;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -431,7 +431,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         priority.setRenderer(new ListCellRenderer() {
 
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                JLabel r = (JLabel) org.getListCellRendererComponent(list, ((Priority) value)._(), index, isSelected, cellHasFocus);
+                JLabel r = (JLabel) org.getListCellRendererComponent(list, ((Priority) value).T(), index, isSelected, cellHasFocus);
                 r.setIcon(((Priority) value).loadIcon(20));
                 return r;
             }

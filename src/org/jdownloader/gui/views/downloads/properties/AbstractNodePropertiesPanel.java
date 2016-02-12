@@ -398,7 +398,7 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
             @Override
             protected String getLabel(Priority v, boolean closed) {
-                return v._();
+                return v.T();
             }
 
             @Override

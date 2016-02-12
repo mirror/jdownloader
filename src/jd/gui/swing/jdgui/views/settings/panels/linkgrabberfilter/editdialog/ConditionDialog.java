@@ -10,8 +10,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -450,52 +448,48 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
 
             public void actionPerformed(ActionEvent e) {
-                try {
-                    final JPopupMenu p = new JPopupMenu();
 
-                    URL url = NewTheme.I().getURL("images/", "help", ".png");
+                final JPopupMenu p = new JPopupMenu();
 
-                    File imagesDir = new File(url.toURI()).getParentFile();
+                File imagesDir = NewTheme.I().getImagesDirectory();
 
-                    String[] names = imagesDir.list(new FilenameFilter() {
+                String[] names = imagesDir.list(new FilenameFilter() {
 
-                        public boolean accept(File dir, String name) {
-                            return name.endsWith(".png");
+                    public boolean accept(File dir, String name) {
+                        return name.endsWith(".png") || name.endsWith(".svg");
+                    }
+                });
+
+                final JList list = new JList(names);
+                list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+                final ListCellRenderer org = list.getCellRenderer();
+                list.setCellRenderer(new ListCellRenderer() {
+
+                    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                        String key = value.toString().substring(0, value.toString().length() - 4);
+                        JLabel ret = (JLabel) org.getListCellRendererComponent(list, "", index, isSelected, cellHasFocus);
+                        ret.setIcon(NewTheme.I().getIcon(key, 20));
+                        return ret;
+                    }
+                });
+                list.setFixedCellHeight(22);
+                list.setFixedCellWidth(22);
+                list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+                    public void valueChanged(ListSelectionEvent e) {
+                        if (e.getValueIsAdjusting()) {
+                            return;
                         }
-                    });
+                        String v = list.getSelectedValue().toString();
 
-                    final JList list = new JList(names);
-                    list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-                    final ListCellRenderer org = list.getCellRenderer();
-                    list.setCellRenderer(new ListCellRenderer() {
+                        ConditionDialog.this.setIconKey(v.substring(0, v.length() - 4));
+                        p.setVisible(false);
+                    }
+                });
+                p.add(list);
+                p.show(btnIcon, 0, btnIcon.getHeight());
 
-                        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                            String key = value.toString().substring(0, value.toString().length() - 4);
-                            JLabel ret = (JLabel) org.getListCellRendererComponent(list, "", index, isSelected, cellHasFocus);
-                            ret.setIcon(NewTheme.I().getIcon(key, 20));
-                            return ret;
-                        }
-                    });
-                    list.setFixedCellHeight(22);
-                    list.setFixedCellWidth(22);
-                    list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                    list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
-                        public void valueChanged(ListSelectionEvent e) {
-                            if (e.getValueIsAdjusting()) {
-                                return;
-                            }
-                            String v = list.getSelectedValue().toString();
-
-                            ConditionDialog.this.setIconKey(v.substring(0, v.length() - 4));
-                            p.setVisible(false);
-                        }
-                    });
-                    p.add(list);
-                    p.show(btnIcon, 0, btnIcon.getHeight());
-                } catch (URISyntaxException e1) {
-                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
-                }
             }
         });
 
