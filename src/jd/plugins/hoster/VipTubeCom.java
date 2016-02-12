@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -114,12 +113,7 @@ public class VipTubeCom extends PluginForHost {
                 }
                 dllink = Encoding.htmlDecode(dllink);
                 filename = filename.trim();
-                final String tempfilename = getFileNameFromURL(new URL(dllink));
-                String ext = tempfilename.substring(tempfilename.lastIndexOf("."));
-                if (ext == null || ext.length() > 5) {
-                    ext = ".mp4";
-                }
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + getFileNameExtensionFromString(dllink, ".mp4"));
                 br.getHeaders().put("Accept", "*/*");
                 final Browser br2 = br.cloneBrowser();
                 // In case the link redirects to the finallink

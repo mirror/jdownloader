@@ -492,41 +492,40 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr).getToken();
                 cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            } else {
-                // recapthca v1
-                if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                    // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                    // we will manually remove all those
-                    while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                        cloudflare.remove("recaptcha_response_field");
-                    }
-                    while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                        cloudflare.remove("recaptcha_challenge_field");
-                    }
-                    // this one is null, needs to be ""
-                    if (cloudflare.hasInputFieldByName("message")) {
-                        cloudflare.remove("message");
-                        cloudflare.put("messsage", "\"\"");
-                    }
-                    // recaptcha bullshit,
-                    String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                    if (apiKey == null) {
-                        apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                        if (apiKey == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                    final Recaptcha rc = new Recaptcha(ibr, this);
-                    rc.setId(apiKey);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String response = getCaptchaCode("recaptcha", cf, param);
-                    if (inValidate(response)) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                    cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+            }
+            // recapthca v1
+            else if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                // we will manually remove all those
+                while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                    cloudflare.remove("recaptcha_response_field");
                 }
+                while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                    cloudflare.remove("recaptcha_challenge_field");
+                }
+                // this one is null, needs to be ""
+                if (cloudflare.hasInputFieldByName("message")) {
+                    cloudflare.remove("message");
+                    cloudflare.put("messsage", "\"\"");
+                }
+                // recaptcha bullshit,
+                String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                if (apiKey == null) {
+                    apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                    if (apiKey == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                final Recaptcha rc = new Recaptcha(ibr, this);
+                rc.setId(apiKey);
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String response = getCaptchaCode("recaptcha", cf, param);
+                if (inValidate(response)) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
             }
             if (request != null) {
                 ibr.openFormConnection(cloudflare);
@@ -577,7 +576,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             // this basically indicates that the site is down, no need to retry.
             // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
             responseCode5xx++;
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"Origin Sever\" is down!", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"521 Origin Sever\" is down!", 5 * 60 * 1000l);
         } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 525) {
             // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
             // additional request could work via additional IP
@@ -595,7 +594,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             // server.<
             // cache system with possible origin dependency... we will wait and retry
             if (responseCode5xx == 4) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare can not contact \"Origin Server\"", 5 * 60 * 1000l);
+                // this only shows the last error in request, not the previous retries.
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"" + responseCode + " " + ibr.getHttpConnection().getResponseMessage() + "\"", 5 * 60 * 1000l);
             }
             responseCode5xx++;
             // this html based cookie, set by <meta (for responseCode 522)
@@ -805,7 +805,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     engine.eval("document = \"\";");
                     engine.eval(decode);
                     final ConsString y = (ConsString) engine.get("y");
-                    ibr.setCookie(this.getHost(), y.toString().split("=")[0], y.toString().split("=")[1]);
+                    ibr.setCookie(ibr.getHost(), y.toString().split("=")[0], y.toString().split("=")[1]);
                 } catch (final Throwable e) {
                     e.printStackTrace();
                 }

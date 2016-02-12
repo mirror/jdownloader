@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -90,9 +89,7 @@ public class SubmitYourFlicksCom extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = getFileNameFromURL(new URL(dllink));
-        ext = ext.contains(".") ? ext.substring(ext.lastIndexOf(".")) : ext;
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + (ext != null ? ext : ".mp4"));
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + getFileNameExtensionFromString(dllink, ".mp4"));
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

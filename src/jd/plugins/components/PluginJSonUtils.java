@@ -133,6 +133,9 @@ public class PluginJSonUtils {
      * @return
      */
     public static String getJson(final String source, final String key) {
+        if (source == null || key == null) {
+            return null;
+        }
         // json based
         String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
@@ -222,6 +225,9 @@ public class PluginJSonUtils {
      * @author raztoki
      */
     public static String getJsonArray(final String source, final String key) {
+        if (source == null || key == null) {
+            return null;
+        }
         String result = new Regex(source, "\"" + Pattern.quote(key) + "\"\\s*:\\s*(\\[\\s*\\{.*?\\}\\s*\\]|\\[.*?\\])\\s*(?:,|\\})").getMatch(0);
         if (result == null) {
             // javascript doesn't always encase keyname with quotation
@@ -276,7 +282,7 @@ public class PluginJSonUtils {
      * @return
      */
     public static String getJsonNested(final String source, final String key) {
-        if (source == null) {
+        if (source == null || key == null) {
             return null;
         }
         String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\\{(.*?)\\}(?:,|\\})").getMatch(0);
@@ -298,7 +304,7 @@ public class PluginJSonUtils {
      * @return
      */
     public static String ammendJson(final String source, final String key, final Object value) {
-        if (key == null) {
+        if (source == null || key == null) {
             return null;
         }
 

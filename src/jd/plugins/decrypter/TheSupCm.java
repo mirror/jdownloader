@@ -16,12 +16,9 @@
 
 package jd.plugins.decrypter;
 
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -86,9 +83,7 @@ public class TheSupCm extends PluginForDecrypt {
             final Integer index = (Integer) DummyScriptEnginePlugin.walkJson(resource, "index");
             if (image != null && name != null && index != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + image);
-                String ext = getFileNameFromURL(new URL(image));
-                ext = StringUtils.isNotEmpty(ext) && ext.contains(".") ? ext.substring(ext.lastIndexOf(".")) : "jpg";
-                dl.setFinalFileName(df.format((index + 1)) + " - " + name.replaceFirst("(?:_?\\d+\\s+Jpg)?\\s*-\\s*\\d+\\s*$", "") + ext);
+                dl.setFinalFileName(df.format((index + 1)) + " - " + name.replaceFirst("(?:_?\\d+\\s+Jpg)?\\s*-\\s*\\d+\\s*$", "") + getFileNameExtensionFromString(image, ".jpg"));
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }

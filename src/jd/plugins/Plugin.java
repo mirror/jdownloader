@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -251,6 +252,77 @@ public abstract class Plugin implements ActionListener {
 
     public static String getFileNameFromDispositionHeader(String header) {
         return HTTPConnectionUtils.getFileNameFromDispositionHeader(header);
+    }
+
+    /**
+     * Determines file extension, from provided String. <br />
+     * Must be a valid URL otherwise failover will be returned <br />
+     * This should be more fail proof than getFileNameExtensionFromString
+     *
+     * @since JD2
+     * @author raztoki
+     * @throws MalformedURLException
+     */
+    public static String getFileNameExtensionFromURL(final String url, final String failover) {
+        if (url == null) {
+            return null;
+        }
+        final URL u;
+        try {
+            u = new URL(url);
+        } catch (final MalformedURLException e) {
+            return failover;
+        }
+        // should have had all the cleanup from the getFileNameFromURL
+        final String output = Plugin.getFileNameFromURL(u);
+        if (output != null && output.contains(".")) {
+            return output.substring(output.lastIndexOf("."));
+        }
+        return failover;
+    }
+
+    /**
+     * Wrapper
+     *
+     * @since JD2
+     * @author raztoki
+     * @param url
+     * @return
+     * @throws MalformedURLException
+     */
+    public static String getFileNameExtensionFromURL(final String url) {
+        return getFileNameExtensionFromURL(url, null);
+    }
+
+    /**
+     * Determines file extension, from a provided String. <br />
+     * Can be used without a VALID URL, or part url or just filename. <br />
+     * Will fix file.exe+junk etc.
+     *
+     * @since JD2
+     * @author raztoki
+     */
+    public static String getFileNameExtensionFromString(final String filename, final String failover) {
+        if (filename == null) {
+            return null;
+        }
+        String output = extractFileNameFromURL(filename);
+        if (output != null && output.contains(".")) {
+            return output.substring(output.lastIndexOf("."));
+        }
+        return failover;
+    }
+
+    /**
+     * Wrapper
+     *
+     * @since JD2
+     * @author raztoki
+     * @param filename
+     * @return
+     */
+    public static String getFileNameExtensionFromString(final String filename) {
+        return getFileNameExtensionFromString(filename, null);
     }
 
     /**

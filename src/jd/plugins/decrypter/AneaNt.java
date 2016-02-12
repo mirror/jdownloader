@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -137,10 +136,8 @@ public class AneaNt extends PluginForDecrypt {
                     progress.increase(1);
                     continue;
                 }
-                String extension = getFileNameFromURL(new URL(img));
-                extension = extension.contains(".") ? extension.substring(extension.lastIndexOf(".")) : ".jpg";
                 final DownloadLink link = createDownloadlink("ANIMEA://" + img);
-                link.setFinalFileName((useTitle + " – page " + pageNumber + extension).replace(" ", "_"));
+                link.setFinalFileName((useTitle + " – page " + pageNumber + getFileNameExtensionFromString(img, "jpg")).replace(" ", "_"));
                 link.setAvailable(true);
                 link.setProperty("fastAdd", "true");
                 fp.add(link);
