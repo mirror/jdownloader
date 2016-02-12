@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -162,7 +161,7 @@ public class Srnnks extends PluginForDecrypt {
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
 
-                if (Reconnecter.waitForNewIP(15000, false)) {
+                if (false) {
                     Srnnks.LATEST_RECONNECT.set(System.currentTimeMillis());
                     // redo the request
                     br.loadConnection(br.openRequestConnection(null));

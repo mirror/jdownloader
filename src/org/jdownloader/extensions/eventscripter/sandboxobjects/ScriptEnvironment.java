@@ -777,7 +777,7 @@ public class ScriptEnvironment {
     @ScriptAPI(description = "Perform a reconnect and wait for it", parameters = {}, example = "var success= doReconnect();")
     public static boolean doReconnect() throws EnvironmentException {
         try {
-            return DownloadWatchDog.getInstance().requestReconnect(false) == Reconnecter.ReconnectResult.SUCCESSFUL;
+            return DownloadWatchDog.getInstance().requestReconnect(true) == Reconnecter.ReconnectResult.SUCCESSFUL;
         } catch (InterruptedException e) {
             throw new EnvironmentException(e);
         }
