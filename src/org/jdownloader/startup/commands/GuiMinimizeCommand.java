@@ -14,35 +14,37 @@ public class GuiMinimizeCommand extends AbstractStartupCommand {
 
     @Override
     public void run(final String command, final String... parameters) {
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        if (!org.appwork.utils.Application.isHeadless()) {
+            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-            @Override
-            public void run() {
-                new EDTRunner() {
+                @Override
+                public void run() {
+                    new EDTRunner() {
 
-                    @Override
-                    protected void runInEDT() {
-                        JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_MINIMIZED);
-                    }
-                };
+                        @Override
+                        protected void runInEDT() {
+                            JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_MINIMIZED);
+                        }
+                    };
 
-            }
+                }
 
-        });
-        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+            });
+            SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
-            @Override
-            public void run() {
-                new EDTRunner() {
+                @Override
+                public void run() {
+                    new EDTRunner() {
 
-                    @Override
-                    protected void runInEDT() {
-                        JDGui.getInstance().setWindowToTray(true);
-                    }
-                };
+                        @Override
+                        protected void runInEDT() {
+                            JDGui.getInstance().setWindowToTray(true);
+                        }
+                    };
 
-            }
-        });
+                }
+            });
+        }
     }
 
     @Override

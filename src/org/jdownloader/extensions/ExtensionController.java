@@ -162,18 +162,19 @@ public class ExtensionController implements MenuExtenderHandler {
             list = Collections.unmodifiableList(ret);
 
             initUninstalledExtensions();
-            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+            if (!org.appwork.utils.Application.isHeadless()) {
+                SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-                public void run() {
-                    List<LazyExtension> llist = list;
-                    for (LazyExtension plg : llist) {
-                        if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
-                            plg._getExtension().getGUI().restore();
+                    public void run() {
+                        List<LazyExtension> llist = list;
+                        for (LazyExtension plg : llist) {
+                            if (plg._getExtension() != null && plg._getExtension().getGUI() != null) {
+                                plg._getExtension().getGUI().restore();
+                            }
                         }
                     }
-                }
-
-            });
+                });
+            }
         }
         getEventSender().fireEvent(new ExtensionControllerEvent(this, ExtensionControllerEvent.Type.UPDATED));
     }

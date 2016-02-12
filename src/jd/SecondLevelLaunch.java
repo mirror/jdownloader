@@ -44,6 +44,21 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
 
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.resources.AWUTheme;
@@ -125,21 +140,6 @@ import com.btr.proxy.selector.pac.PacScriptParser;
 import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
-
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.jdgui.JDGui;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
 
 public class SecondLevelLaunch {
     static {
@@ -924,38 +924,40 @@ public class SecondLevelLaunch {
                             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
                                 @Override
                                 public void run() {
-                                    final GraphicalUserInterfaceSettings guiConfig = JsonConfig.create(GraphicalUserInterfaceSettings.class);
-                                    new EDTRunner() {
-                                        /*
-                                         * moved to edt. rar init freezes under linux
-                                         */
-                                        @Override
-                                        protected void runInEDT() {
-                                            /* init clipboardMonitoring stuff */
-                                            if (guiConfig.isSkipClipboardMonitorFirstRound()) {
-                                                ClipboardMonitoring.setFirstRoundDone(false);
-                                            }
-                                            if (!guiConfig.isClipboardMonitorProcessHTMLFlavor()) {
-                                                ClipboardMonitoring.setHtmlFlavorAllowed(false);
-                                            }
-                                            if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
-                                                ClipboardMonitoring.getINSTANCE().startMonitoring();
-                                            }
-                                            org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                                    if (!org.appwork.utils.Application.isHeadless()) {
+                                        final GraphicalUserInterfaceSettings guiConfig = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+                                        new EDTRunner() {
+                                            /*
+                                             * moved to edt. rar init freezes under linux
+                                             */
+                                            @Override
+                                            protected void runInEDT() {
+                                                /* init clipboardMonitoring stuff */
+                                                if (guiConfig.isSkipClipboardMonitorFirstRound()) {
+                                                    ClipboardMonitoring.setFirstRoundDone(false);
+                                                }
+                                                if (!guiConfig.isClipboardMonitorProcessHTMLFlavor()) {
+                                                    ClipboardMonitoring.setHtmlFlavorAllowed(false);
+                                                }
+                                                if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
+                                                    ClipboardMonitoring.getINSTANCE().startMonitoring();
+                                                }
+                                                org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-                                                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                    if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {
-                                                        ClipboardMonitoring.getINSTANCE().startMonitoring();
-                                                    } else {
-                                                        ClipboardMonitoring.getINSTANCE().stopMonitoring();
+                                                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                                                        if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {
+                                                            ClipboardMonitoring.getINSTANCE().startMonitoring();
+                                                        } else {
+                                                            ClipboardMonitoring.getINSTANCE().stopMonitoring();
+                                                        }
                                                     }
-                                                }
 
-                                                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                                                }
-                                            });
-                                        }
-                                    }.start(true);
+                                                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                                                    }
+                                                });
+                                            }
+                                        }.start(true);
+                                    }
                                     new Thread("ExecuteWhenGuiReachedThread: Init Clipboard and ChallengeResponseController") {
                                         public void run() {
                                             ChallengeResponseController.getInstance().init();
