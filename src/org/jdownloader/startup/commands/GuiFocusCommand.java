@@ -4,7 +4,6 @@ import jd.SecondLevelLaunch;
 import jd.gui.UIConstants;
 import jd.gui.swing.jdgui.JDGui;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
 
 public class GuiFocusCommand extends AbstractStartupCommand {
@@ -16,39 +15,38 @@ public class GuiFocusCommand extends AbstractStartupCommand {
 
     @Override
     public void run(final String command, final String... parameters) {
-        if (Application.isHeadless()) {
-            return;
+        if (!org.appwork.utils.Application.isHeadless()) {
+            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+                @Override
+                public void run() {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                        }
+                    };
+
+                }
+
+            });
+
+            SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+
+                @Override
+                public void run() {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            JDGui.getInstance().setWindowToTray(false);
+                        }
+                    };
+
+                }
+            });
         }
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
-            @Override
-            public void run() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
-                    }
-                };
-
-            }
-
-        });
-
-        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
-            @Override
-            public void run() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        JDGui.getInstance().setWindowToTray(false);
-                    }
-                };
-
-            }
-        });
     }
 
     @Override
