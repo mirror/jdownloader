@@ -75,7 +75,9 @@ public class CosyUploadCom extends PluginForDecrypt {
             for (String link : br.getRegex("\'link_for_upload_" + uploadId + "_([^\']+)").getColumn(0)) {
                 br.getPage("https://cosyupload.com/uploads/open_link/?upload_id=" + uploadId + "&server=" + link);
                 String finallink = br.getRegex("\"link\":\"(http[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null) continue;
+                if (finallink == null) {
+                    continue;
+                }
                 decryptedLinks.add(createDownloadlink(finallink));
             }
 
@@ -93,7 +95,9 @@ public class CosyUploadCom extends PluginForDecrypt {
     private ArrayList<DownloadLink> loadcontainer(final Browser br, final String dlclinks) throws IOException, PluginException {
         final Browser brc = br.cloneBrowser();
 
-        if (dlclinks == null) { return new ArrayList<DownloadLink>(); }
+        if (dlclinks == null) {
+            return new ArrayList<DownloadLink>();
+        }
         String test = Encoding.htmlDecode(dlclinks);
         File file = null;
         URLConnectionAdapter con = null;
@@ -101,13 +105,15 @@ public class CosyUploadCom extends PluginForDecrypt {
             con = brc.openGetConnection(dlclinks);
             if (con.getResponseCode() == 200) {
                 if (con.isContentDisposition()) {
-                    test = Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition"));
+                    test = Plugin.getFileNameFromDispositionHeader(con);
                 } else {
                     String s = new Regex(test, "server=(.*?)\\&").getMatch(0);
                     test = JDHash.getMD5(s) + "_" + s + ".dlc";
                 }
                 file = JDUtilities.getResourceFile("tmp/cosyupload/" + test);
-                if (file == null) { return new ArrayList<DownloadLink>(); }
+                if (file == null) {
+                    return new ArrayList<DownloadLink>();
+                }
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
             } else {
@@ -116,7 +122,9 @@ public class CosyUploadCom extends PluginForDecrypt {
 
             if (file != null && file.exists() && file.length() > 100) {
                 final ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                if (decryptedLinks.size() > 0) return decryptedLinks;
+                if (decryptedLinks.size() > 0) {
+                    return decryptedLinks;
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
