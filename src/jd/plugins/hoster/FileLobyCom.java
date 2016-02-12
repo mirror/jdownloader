@@ -20,6 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,12 +35,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileloby.com" }, urls = { "https?://(www\\.)?fileloby\\.com/[A-Za-z0-9]+" }, flags = { 0 })
 public class FileLobyCom extends PluginForHost {
@@ -47,7 +49,7 @@ public class FileLobyCom extends PluginForHost {
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.3.8-psp
+    // YetiShareBasic Version 0.3.8-psp 0.6.0-psp(dofree)
     // mods:
     // limit-info:
     // protocol: no https
@@ -65,6 +67,7 @@ public class FileLobyCom extends PluginForHost {
     private final String         type                                         = "html";
     private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     additional_WAIT_SECONDS                      = 3;
+    private static final int     directlinkfound_WAIT_SECONDS                 = 10;
     private static final boolean supportshttps                                = false;
     private static final boolean supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
@@ -109,8 +112,7 @@ public class FileLobyCom extends PluginForHost {
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
-            if (!br.getURL().contains("~i")) {
+            if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
@@ -168,53 +170,38 @@ public class FileLobyCom extends PluginForHost {
         doFree(downloadLink, free_RESUME, free_MAXCHUNKS, "free_directlink");
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String continue_link = null;
         boolean captcha = false;
-        boolean hasFollowedConnection = false;
+        boolean success = false;
+        final long timeBeforeDirectlinkCheck = System.currentTimeMillis();
         try {
             continue_link = checkDirectLink(downloadLink, directlinkproperty);
             if (continue_link != null) {
+                /*
+                 * Let the server 'calm down' (if it was slow before) otherwise it will thing that we tried to open two connections as we
+                 * checked the directlink before and return an error.
+                 */
+                if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
+                    sleep(directlinkfound_WAIT_SECONDS * 1000l, downloadLink);
+                }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
             } else {
                 if (available_CHECK_OVER_INFO_PAGE) {
                     br.getPage(downloadLink.getDownloadURL());
                 }
-                if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT)) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SIMULTANDLSLIMIT, 1 * 60 * 1000l);
-                } else if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
-                    final String wait_minutes = new Regex(br.getURL(), "wait\\+(\\d+)\\+minutes?").getMatch(0);
-                    if (wait_minutes != null) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, Integer.parseInt(wait_minutes) * 60 * 1001l);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT, wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT * 60 * 1001l);
-                } else if (br.getURL().contains(url_ERROR_SERVER)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SERVER, 5 * 60 * 1000l);
-                } else if (br.getURL().contains(url_ERROR_PREMIUMONLY)) {
-                    try {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                    } catch (final Throwable e) {
-                        if (e instanceof PluginException) {
-                            throw (PluginException) e;
-                        }
-                    }
-                    throw new PluginException(LinkStatus.ERROR_FATAL, errortext_ERROR_PREMIUMONLY);
-                }
-
-                /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
-                for (int i = 1; i <= 3; i++) {
+                handleErrors();
+                /* Passwords are usually before waittime. */
+                handlePassword(downloadLink);
+                /* Handle up to 3 pre-download pages before the (eventually existing) captcha */;
+                for (int i = 1; i <= 5; i++) {
                     logger.info("Handling pre-download page #" + i);
-                    continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
-                    if (continue_link == null) {
-                        continue_link = getDllink();
-                    }
-                    if (continue_link == null) {
-                        continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
-                    }
-                    if (continue_link == null && i == 0) {
-                        continue_link = downloadLink.getDownloadURL() + "?d=1";
-                        logger.info("Could not find continue_link --> Using standard continue_link, continuing...");
-                    } else if (continue_link == null && i > 0) {
+                    continue_link = getContinueLink();
+                    if (i == 1 && continue_link == null) {
+                        logger.info("No continue_link available, plugin broken");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if (continue_link == null) {
                         logger.info("No continue_link available, stepping out of pre-download loop");
                         break;
                     } else {
@@ -227,64 +214,58 @@ public class FileLobyCom extends PluginForHost {
                     } else {
                         logger.info("Current pre-download page has no waittime");
                     }
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
+                    final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+                    if (br.containsHTML("data\\-sitekey=")) {
+                        captcha = true;
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        success = true;
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
+                    } else if (rcID != null) {
+                        captcha = true;
+                        success = false;
+                        final Recaptcha rc = new Recaptcha(br, this);
+                        rc.setId(rcID);
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(cf, downloadLink);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
+                    } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        logger.info("Detected captcha method \"solvemedia\" for this host");
+                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                        if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                            sm.setSecure(true);
+                        }
+                        File cf = null;
+                        try {
+                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        } catch (final Exception e) {
+                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                            }
+                            throw e;
+                        }
+                        final String code = getCaptchaCode(cf, downloadLink);
+                        final String chid = sm.getChallenge(code);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
+                    } else {
+                        success = true;
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
+                    }
                     if (dl.getConnection().isContentDisposition()) {
+                        success = true;
                         break;
                     }
                     br.followConnection();
-                    hasFollowedConnection = true;
-                    if (br.getURL().contains(url_ERROR_SERVER)) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SERVER, 5 * 60 * 1000l);
+                    handleErrors();
+                    if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        logger.info("Wrong captcha");
+                        continue;
                     }
                 }
             }
             if (!dl.getConnection().isContentDisposition()) {
-                if (!hasFollowedConnection) {
-                    br.followConnection();
-                }
-                handleErrors();
-                String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
-                if (captchaAction == null) {
-                    captchaAction = br.getRegex("\"(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)\"").getMatch(0);
-                }
-                final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                if (captchaAction == null || rcID == null) {
-                    logger.warning("Failed to find captcha information");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                captcha = true;
-                final Recaptcha rc = new Recaptcha(br, this);
-                rc.setId(rcID);
-                rc.load();
-                for (int icaptcha = 1; icaptcha <= 5; icaptcha++) {
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=Submit&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
-                    if (!dl.getConnection().isContentDisposition()) {
-                        br.followConnection();
-                        continue_link = getDllink();
-                        if (continue_link != null) {
-                            logger.info("Found continue_link after captcha --> Using that");
-                            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
-                            hasFollowedConnection = false;
-                            break;
-                        }
-                        if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-                        }
-                        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                            rc.reload();
-                            continue;
-                        }
-                    }
-                    break;
-                }
-            }
-            if (!dl.getConnection().isContentDisposition()) {
-                if (!hasFollowedConnection) {
-                    br.followConnection();
-                }
-                if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                br.followConnection();
+                if (captcha && !success) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 handleErrors();
@@ -297,9 +278,35 @@ public class FileLobyCom extends PluginForHost {
             }
             throw e;
         }
+        handleServerErrors();
         continue_link = dl.getConnection().getURL().toString();
         downloadLink.setProperty(directlinkproperty, continue_link);
         dl.startDownload();
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        }
+    }
+
+    private String getContinueLink() {
+        String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        if (continue_link == null) {
+            continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = br.getRegex("(?:\"|\\')(https?://(www\\.)?" + domains + "/[^<>\"]*?pt=[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = getDllink();
+        }
+        return continue_link;
     }
 
     private String getDllink() {
@@ -311,6 +318,29 @@ public class FileLobyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SIMULTANDLSLIMIT, 1 * 60 * 1000l);
+        }
+    }
+
+    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+        if (br.getURL().contains("/file_password.html")) {
+            logger.info("Current link is password protected");
+            String passCode = dl.getStringProperty("pass", null);
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", dl);
+                if (passCode == null || passCode.equals("")) {
+                    logger.info("User has entered blank password, exiting handlePassword");
+                    dl.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
+                dl.setProperty("pass", passCode);
+            }
+            br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            if (br.getURL().contains("/file_password.html")) {
+                logger.info("User entered incorrect password --> Retrying");
+                dl.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+            logger.info("User entered correct password --> Continuing");
         }
     }
 
@@ -345,7 +375,7 @@ public class FileLobyCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;

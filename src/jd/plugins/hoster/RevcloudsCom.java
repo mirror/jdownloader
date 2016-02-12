@@ -17,13 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -46,69 +44,65 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "revclouds.com" }, urls = { "https?://(www\\.)?revclouds\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class RevcloudsCom extends PluginForHost {
+public class RevcloudsCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
-    private static final String            HTML_PASSWORDPROTECTED         = "<br><b>Passwor(d|t):</b> <input";
-    private static final String            HTML_MAINTENANCE_MODE          = ">This server is in maintenance mode|>Servers? Maintenance";
+    private static final String  HTML_PASSWORDPROTECTED         = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  HTML_MAINTENANCE_MODE          = ">This server is in maintenance mode|>Servers? Maintenance";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                    = "http://revclouds.com";
-    private static final String            NICE_HOST                      = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty              = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                    = "http://revclouds.com";
+    private static final String  NICE_HOST                      = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty              = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                        = "(revclouds\\.com)";
+    private static final String  DOMAINS                        = "(revclouds\\.com)";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
      */
-    private static final boolean           AUDIOHOSTER                    = false;
+    private static final boolean AUDIOHOSTER                    = false;
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
-    private static final boolean           VIDEOHOSTER                    = false;
+    private static final boolean VIDEOHOSTER                    = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private static final boolean           VIDEOHOSTER_2                  = false;
+    private static final boolean VIDEOHOSTER_2                  = false;
     /* Enable this for imagehosts */
-    private static final boolean           IMAGEHOSTER                    = false;
+    private static final boolean IMAGEHOSTER                    = false;
 
-    private static final boolean           SUPPORTS_HTTPS                 = true;
-    private static final boolean           SUPPORTS_HTTPS_FORCED          = true;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ALT    = true;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE  = true;
-    private static final boolean           ENABLE_RANDOM_UA               = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK     = true;
+    private static final boolean SUPPORTS_HTTPS                 = true;
+    private static final boolean SUPPORTS_HTTPS_FORCED          = true;
+    private static final boolean SUPPORTS_AVAILABLECHECK_ALT    = true;
+    private static final boolean SUPPORTS_AVAILABLECHECK_ABUSE  = true;
+    private static final boolean ENABLE_HTML_FILESIZE_CHECK     = true;
     /* Waittime stuff */
-    private static final boolean           WAITFORCED                     = false;
-    private static final int               WAITSECONDSMIN                 = 3;
-    private static final int               WAITSECONDSMAX                 = 100;
-    private static final int               WAITSECONDSFORCED              = 5;
+    private static final boolean WAITFORCED                     = false;
+    private static final int     WAITSECONDSMIN                 = 3;
+    private static final int     WAITSECONDSMAX                 = 100;
+    private static final int     WAITSECONDSFORCED              = 5;
     /* Linktypes */
-    private static final String            TYPE_EMBED                     = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String            TYPE_NORMAL                    = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
-    private static final String            USERTEXT_ALLWAIT_SHORT         = "Waiting till new downloads can be started";
-    private static final String            USERTEXT_MAINTENANCE           = "This server is under maintenance";
-    private static final String            USERTEXT_PREMIUMONLY_LINKCHECK = "Only downloadable via premium or registered";
+    private static final String  TYPE_EMBED                     = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private static final String  TYPE_NORMAL                    = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String  USERTEXT_ALLWAIT_SHORT         = "Waiting till new downloads can be started";
+    private static final String  USERTEXT_MAINTENANCE           = "This server is under maintenance";
+    private static final String  USERTEXT_PREMIUMONLY_LINKCHECK = "Only downloadable via premium or registered";
 
     /* Properties */
-    private static final String            PROPERTY_DLLINK_FREE           = "freelink";
-    private static final String            PROPERTY_PASS                  = "pass";
+    private static final String  PROPERTY_DLLINK_FREE           = "freelink";
+    private static final String  PROPERTY_PASS                  = "pass";
 
     /* Used variables */
-    private String                         correctedBR                    = "";
-    private String                         fuid                           = null;
-    private String                         passCode                       = null;
+    private String               correctedBR                    = "";
+    private String               fuid                           = null;
+    private String               passCode                       = null;
 
-    private static AtomicReference<String> agent                          = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload   = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload   = new AtomicInteger(1);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                        = new AtomicInteger(1);
+    private static AtomicInteger maxFree                        = new AtomicInteger(1);
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.7.0.5
@@ -117,7 +111,7 @@ public class RevcloudsCom extends PluginForHost {
     // limit-info:
     // protocol: no https
     // captchatype: null
-    // other:
+    // other: abbreviated filename support same as backin.net
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
@@ -158,7 +152,6 @@ public class RevcloudsCom extends PluginForHost {
         Browser altbr = null;
         br.setFollowRedirects(true);
         correctDownloadLink(link);
-        prepBrowser(br);
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
@@ -187,7 +180,7 @@ public class RevcloudsCom extends PluginForHost {
                     }
                 }
                 if (SUPPORTS_AVAILABLECHECK_ALT) {
-                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                    postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
                 }
                 /* 2nd offline check */
@@ -215,6 +208,13 @@ public class RevcloudsCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
+
+        // abbreviated over x chars long
+        if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.warning("filename length is larrrge");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        }
+
         /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
         if (IMAGEHOSTER && fileInfo[0] == null) {
             fileInfo[0] = this.fuid;
@@ -236,7 +236,7 @@ public class RevcloudsCom extends PluginForHost {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
             try {
-                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                 fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }
@@ -311,9 +311,9 @@ public class RevcloudsCom extends PluginForHost {
         return fileInfo;
     }
 
-    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
-        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
-        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
+        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        return br.getRegex("<b>Filename:?</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     @Override
@@ -337,7 +337,7 @@ public class RevcloudsCom extends PluginForHost {
             try {
                 logger.info("Trying to get link via mp3embed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/mp3embed-" + fuid);
+                getPage(brv, "/mp3embed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
@@ -356,7 +356,7 @@ public class RevcloudsCom extends PluginForHost {
             try {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/vidembed-" + fuid);
+                getPage(brv, "/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     logger.info("Failed to get link via vidembed because: " + br.toString());
@@ -633,18 +633,15 @@ public class RevcloudsCom extends PluginForHost {
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
-        /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
         }
+        return prepBr;
+
     }
 
     /**
@@ -692,7 +689,7 @@ public class RevcloudsCom extends PluginForHost {
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)\\1").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -757,24 +754,27 @@ public class RevcloudsCom extends PluginForHost {
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1 links */
-            finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(\"|\\')").getMatch(1);
+            finallink = new Regex(decoded, "(\"|')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))\\1").getMatch(1);
         }
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
-    private void postPage(final String page, final String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(final String page, final String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void submitForm(final Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -840,22 +840,6 @@ public class RevcloudsCom extends PluginForHost {
             }
         }
         return null;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /**

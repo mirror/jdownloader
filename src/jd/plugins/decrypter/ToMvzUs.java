@@ -20,42 +20,49 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30086 $", interfaceVersion = 3, names = { "twomovies.us" }, urls = { "http://(?:www\\.)?twomovies\\.us/(?:watch_movie/[a-zA-z0-9_]+|watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/))" }, flags = { 0 })
-public class ToMvzUs extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 30086 $", interfaceVersion = 3, names = { "twomovies.us" }, urls = { "https?://(?:www\\.)?twomovies\\.(?:us|net)/(?:watch_movie/[a-zA-z0-9_]+|watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/))" }, flags = { 0 })
+public class ToMvzUs extends antiDDoSForDecrypt {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "twomovies.us", "twomovies.net" };
+    }
 
     public ToMvzUs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    final String host = "http://(?:www\\.)?twomovies\\.us/";
+    final String host = "https?://(?:www\\.)?twomovies\\.(?:us|net)/";
     final String fm   = host + "full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/)";
     final String wt   = host + "(?:watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|watch_movie/[a-zA-z0-9_]+)";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // lets force https, and correct host so that we don't have issues with cookies
+        final String parameter = param.toString().replace("http://", "https://").replace("twomovies.us/", "twomovies.net/");
         br.setFollowRedirects(true);
         // cookie needed for seeing links!
-        br.setCookie(this.getHost(), "links_tos", "1");
-        br.getPage(parameter);
+        final String cookie_host = Browser.getHost(parameter);
+        br.setCookie(cookie_host, "links_tos", "1");
+        br.setCookie(cookie_host, "js_enabled", "true");
+        getPage(parameter);
         if (br.getHttpConnection() == null || !br.getHttpConnection().isOK()) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (parameter.matches(fm) && br.getURL().matches(host + "watch_[^/]+/.+")) {
             // redirect happened back to the main subgroup, this happens when the parameter doesn't end with /
-            System.out.println(parameter);
             return decryptedLinks;
         }
         // tv ep each mirror, movie each mirror.
@@ -86,6 +93,8 @@ public class ToMvzUs extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(src));
                 }
             }
+        } else {
+            System.out.println("Possible error: break point me");
         }
     }
 
@@ -97,7 +106,7 @@ public class ToMvzUs extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(ep));
             }
         } else {
-            System.out.println(1);
+            System.out.println("Possible error: break point me");
         }
     }
 

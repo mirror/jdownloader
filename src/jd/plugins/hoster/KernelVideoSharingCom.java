@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -72,8 +71,6 @@ public class KernelVideoSharingCom extends PluginForHost {
      *
      */
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension            = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume                  = true;
     private static final int     free_maxchunks               = 0;
@@ -261,12 +258,8 @@ public class KernelVideoSharingCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        String ext = getFileNameFromURL(new URL(dllink));
-        ext = ext.contains(".") ? ext.substring(ext.lastIndexOf(".")) : ext;
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
