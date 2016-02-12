@@ -284,6 +284,11 @@ public class DeviantArtCom extends PluginForHost {
             if (ext == null) {
                 ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
             }
+            /* Workaround for possible Browser bug */
+            final String cookie = this.br.getCookie(null, "userinfo");
+            if (cookie != null) {
+                br.setCookie(this.getHost(), "userinfo", cookie);
+            }
             filename = findServerFilename(filename);
             if (ext == null || ext.length() > 5) {
                 final String dllink = getCrippledDllink();
