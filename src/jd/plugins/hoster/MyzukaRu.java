@@ -170,7 +170,7 @@ public class MyzukaRu extends PluginForHost {
         if (!yt_loaded.getAndSet(true)) {
             JDUtilities.getPluginForHost("youtube.com");
         }
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override

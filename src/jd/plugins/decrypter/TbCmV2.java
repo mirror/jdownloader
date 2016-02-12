@@ -1093,7 +1093,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     round = antiDdosSleep(round);
                     pbr.getPage(jsonPage);
                     String output = pbr.toString().replace("\\n", " ");
-                    output = jd.plugins.hoster.Youtube.unescape(output);
+                    output = jd.nutils.encoding.Encoding.unescapeYoutube(output);
                     output = output.replaceAll("[ ]{2,}", "");
                     pbr.getRequest().setHtmlCode(output);
                 } else if (nextPage != null) {
@@ -1144,7 +1144,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     li = br.cloneBrowser();
                     li.getPage(pageUrl);
                     checkErrors(li);
-                    content = jd.plugins.hoster.Youtube.unescape(li.toString());
+                    content = jd.nutils.encoding.Encoding.unescapeYoutube(li.toString());
                 }
 
                 String[] videos = new Regex(content, "href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)").getColumn(0);
@@ -1219,7 +1219,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                     }
                     checkErrors(li);
-                    content = jd.plugins.hoster.Youtube.unescape(li.toString());
+                    content = jd.nutils.encoding.Encoding.unescapeYoutube(li.toString());
                 }
 
                 String[] videos = new Regex(content, "href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)").getColumn(0);

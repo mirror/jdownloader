@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import org.appwork.exceptions.WTFException;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spiegel.tv" }, urls = { "http://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+|http://(?:www\\.)?spiegel\\.de/video/(?:embedurl/)?[a-z0-9\\-_]*?video\\-[a-z0-9\\-_]*?\\.html", "http://(?:www\\.)?spiegel\\.tv/(?:#/)?filme/[a-z0-9\\-]+/" }, flags = { 0, 0 })
 public class SpiegelDe extends PluginForHost {
@@ -224,20 +224,25 @@ public class SpiegelDe extends PluginForHost {
         } else if (new Regex(downloadLink.getDownloadURL(), pattern_supported_video).matches()) {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, DLLINK, true, 0);
             if (this.dl.startDownload()) {
+
                 if (downloadLink.getProperty("convertto") != null) {
-                    JDUtilities.getPluginForDecrypt("youtube.com");
-                    final jd.plugins.decrypter.TbCm.DestinationFormat convertTo = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-                    jd.plugins.decrypter.TbCm.DestinationFormat inType;
-                    if (convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOIPHONE || convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_MP4 || convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_3GP) {
-                        inType = convertTo;
-                    } else {
-                        inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_FLV;
-                    }
-                    /* to load the TbCm plugin */
+                    throw new WTFException("Convert disabled");
                     // JDUtilities.getPluginForDecrypt("youtube.com");
-                    if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, inType, convertTo)) {
-                        logger.severe("Video-Convert failed!");
-                    }
+                    // final jd.plugins.decrypter.TbCm.DestinationFormat convertTo =
+                    // jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
+                    // jd.plugins.decrypter.TbCm.DestinationFormat inType;
+                    // if (convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOIPHONE || convertTo ==
+                    // jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_MP4 || convertTo ==
+                    // jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_3GP) {
+                    // inType = convertTo;
+                    // } else {
+                    // inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_FLV;
+                    // }
+                    // /* to load the TbCm plugin */
+                    // // JDUtilities.getPluginForDecrypt("youtube.com");
+                    // if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, inType, convertTo)) {
+                    // logger.severe("Video-Convert failed!");
+                    // }
 
                 }
             }
@@ -319,7 +324,7 @@ public class SpiegelDe extends PluginForHost {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
@@ -329,7 +334,7 @@ public class SpiegelDe extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }

@@ -237,7 +237,7 @@ public class FreeDiscPl extends PluginForHost {
             }
             pluginloaded = true;
         }
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     private static final String MAINPAGE = "http://freedisc.pl";

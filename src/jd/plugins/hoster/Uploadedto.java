@@ -1921,7 +1921,7 @@ public class Uploadedto extends PluginForHost {
     private String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         JDUtilities.getPluginForHost("youtube.com");
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
 }

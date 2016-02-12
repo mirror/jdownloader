@@ -430,7 +430,7 @@ public class U115Com extends PluginForHost {
             }
             pluginloaded = true;
         }
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     public void setConfigElements() {

@@ -146,7 +146,7 @@ public class CopiapopEs extends PluginForHost {
             }
             pluginloaded = true;
         }
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     @Override
