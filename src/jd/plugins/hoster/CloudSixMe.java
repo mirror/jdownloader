@@ -26,11 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,6 +48,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudsix.me" }, urls = { "https?://(www\\.)?cloudsix\\.me/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class CloudSixMe extends antiDDoSForHost {
@@ -996,8 +996,8 @@ public class CloudSixMe extends antiDDoSForHost {
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
                         /* Verify cookies - also works as a workaround for (cloudflare) login captchas. */
-                        getPage(COOKIE_HOST);
-                        if (!this.br.containsHTML("cloudsix\\.me/\\?op=registration\"")) {
+                        getPage("https://" + this.getHost() + "/");
+                        if (!this.br.containsHTML(this.getHost() + "/\\?op=registration\"")) {
                             return;
                         }
                         /* Remove cookies / headers */
@@ -1005,7 +1005,8 @@ public class CloudSixMe extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
+                getPage("https://" + this.getHost() + "/");
+                getPage("/login.html");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
