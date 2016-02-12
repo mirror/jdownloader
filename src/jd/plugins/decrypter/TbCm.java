@@ -66,7 +66,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
@@ -206,7 +205,7 @@ public class TbCm extends PluginForDecrypt {
     static class InfoList extends ArrayList<Info> {
 
         /**
-         * 
+         *
          */
         private static final long serialVersionUID = -6005153187820351430L;
 
@@ -267,12 +266,6 @@ public class TbCm extends PluginForDecrypt {
             switch (OutType) {
             case AUDIO_MP3:
                 System.out.println("Convert FLV to mp3...");
-                new FLV(downloadlink.getFileOutput(), true, true);
-
-                // FLV löschen
-                new File(downloadlink.getFileOutput()).delete();
-                // AVI löschen
-                new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, ".avi")).delete();
 
                 return true;
             default:
@@ -289,7 +282,7 @@ public class TbCm extends PluginForDecrypt {
 
     /**
      * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
      * @return The success of the conversion.
@@ -381,7 +374,7 @@ public class TbCm extends PluginForDecrypt {
 
     /**
      * Converts the the time of the Google format to the SRT format.
-     * 
+     *
      * @param time
      *            . The time from the Google XML.
      * @return The converted time as String.
@@ -950,7 +943,11 @@ public class TbCm extends PluginForDecrypt {
                     // not sure about streaming links and '"youtubeJD" it never had it before... -raz
                     final DownloadLink thislink = this.createDownloadlink(info[1]);
                     thislink.setProperty("ALLOW_DUPE", true);
-                   try{/*JD2 only*/thislink.setContentUrl(info[2]);}catch(Throwable e){/*Stable*/ thislink.setBrowserUrl(info[2]);}
+                    try {/* JD2 only */
+                        thislink.setContentUrl(info[2]);
+                    } catch (Throwable e) {/* Stable */
+                        thislink.setBrowserUrl(info[2]);
+                    }
                     thislink.setFinalFileName(info[0]);
                     thislink.setProperty("convertto", info[3]);
 
@@ -1175,24 +1172,24 @@ public class TbCm extends PluginForDecrypt {
                             }
                         }
                     } else
-                    // Handle MP3
-                    if ((format == 0 || format == 5 || format == 6) && mp3.get()) {
-                        try {
-                            if (fast) {
-                                this.addtopos(DestinationFormat.AUDIO_MP3, dlLink, -1, "", itag);
-                            } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                Thread.sleep(100);
-                                this.addtopos(DestinationFormat.AUDIO_MP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", itag);
-                            }
-                        } catch (final Throwable e) {
-                            e.printStackTrace();
-                        } finally {
+                        // Handle MP3
+                        if ((format == 0 || format == 5 || format == 6) && mp3.get()) {
                             try {
-                                this.br.getHttpConnection().disconnect();
+                                if (fast) {
+                                    this.addtopos(DestinationFormat.AUDIO_MP3, dlLink, -1, "", itag);
+                                } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                    Thread.sleep(100);
+                                    this.addtopos(DestinationFormat.AUDIO_MP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", itag);
+                                }
                             } catch (final Throwable e) {
+                                e.printStackTrace();
+                            } finally {
+                                try {
+                                    this.br.getHttpConnection().disconnect();
+                                } catch (final Throwable e) {
+                                }
                             }
                         }
-                    }
                 }
 
                 Info bestDashAudio = null;
@@ -1398,7 +1395,11 @@ public class TbCm extends PluginForDecrypt {
                         }
                         DownloadLink dlink = this.createDownloadlink("youtubeJD" + link);
                         dlink.setProperty("ALLOW_DUPE", true);
-                       try{/*JD2 only*/dlink.setContentUrl(currentVideoUrl);}catch(Throwable e){/*Stable*/ dlink.setBrowserUrl(currentVideoUrl);}
+                        try {/* JD2 only */
+                            dlink.setContentUrl(currentVideoUrl);
+                        } catch (Throwable e) {/* Stable */
+                            dlink.setBrowserUrl(currentVideoUrl);
+                        }
 
                         /** FILENAME PART3 START */
                         String subtitleName = formattedFilename;
@@ -1451,7 +1452,7 @@ public class TbCm extends PluginForDecrypt {
                 }
             } catch (final IOException e) {
                 this.br.getHttpConnection().disconnect();
-                logger.log( e);
+                logger.log(e);
                 // return null;
             }
         }
@@ -1502,7 +1503,11 @@ public class TbCm extends PluginForDecrypt {
             }
         }
         thislink.setAvailable(true);
-       try{/*JD2 only*/thislink.setContentUrl(currentVideoURL);}catch(Throwable e){/*Stable*/ thislink.setBrowserUrl(currentVideoURL);}
+        try {/* JD2 only */
+            thislink.setContentUrl(currentVideoURL);
+        } catch (Throwable e) {/* Stable */
+            thislink.setBrowserUrl(currentVideoURL);
+        }
         /** FILENAME PART2 START */
         String currentFilename = formattedFilename;
         currentFilename = currentFilename.replace("*quality*", desc);
@@ -1584,7 +1589,11 @@ public class TbCm extends PluginForDecrypt {
         DownloadLink dlink = this.createDownloadlink("youtubeJD" + link);
         dlink.setProperty("ALLOW_DUPE", true);
         filePackage.add(dlink);
-       try{/*JD2 only*/dlink.setContentUrl(browserurl);}catch(Throwable e){/*Stable*/ dlink.setBrowserUrl(browserurl);}
+        try {/* JD2 only */
+            dlink.setContentUrl(browserurl);
+        } catch (Throwable e) {/* Stable */
+            dlink.setBrowserUrl(browserurl);
+        }
 
         dlink.setFinalFileName(name);
         dlink.setProperty("name", name);
@@ -1889,7 +1898,7 @@ public class TbCm extends PluginForDecrypt {
 
     /**
      * *
-     * 
+     *
      * @param s
      * @return
      * @throws IOException
