@@ -284,7 +284,7 @@ public class DeviantArtCom extends PluginForHost {
             if (ext == null) {
                 ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
             }
-            /* Workaround for possible Browser bug */
+            /* Workaround for invalid domain(s) e.g. "laur-.deviantart.com" */
             final String cookie = this.br.getCookie(null, "userinfo");
             if (cookie != null) {
                 br.setCookie(this.getHost(), "userinfo", cookie);
