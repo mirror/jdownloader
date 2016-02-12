@@ -2,6 +2,8 @@ package org.jdownloader.gui.toolbar.action;
 
 import java.awt.event.ActionEvent;
 
+import jd.controlling.captcha.CaptchaSettings;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -11,11 +13,9 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
-import jd.controlling.captcha.CaptchaSettings;
-
 public class CaptchaModeChangeAction extends AbstractToolBarAction implements GenericConfigEventListener<Enum> {
 
-    private EnumKeyHandler keyHandler;
+    private final EnumKeyHandler keyHandler;
 
     public CaptchaModeChangeAction() {
         setIconKey(IconKey.ICON_DIALOGOCR);
@@ -29,11 +29,14 @@ public class CaptchaModeChangeAction extends AbstractToolBarAction implements Ge
 
             @Override
             protected void runInEDT() {
-                CaptchaSettings.MODE mode2 = mode;
-                if (mode2 == null) {
-                    mode2 = CaptchaSettings.MODE.NORMAL;
+                final CaptchaSettings.MODE finalMode;
+                if (mode == null) {
+                    finalMode = CaptchaSettings.MODE.NORMAL;
+                } else {
+                    finalMode = mode;
                 }
-                switch (mode2) {
+                keyHandler.setValue(finalMode);
+                switch (finalMode) {
                 case NORMAL:
                     setSelected(true);
                     break;
@@ -41,13 +44,13 @@ public class CaptchaModeChangeAction extends AbstractToolBarAction implements Ge
                     setSelected(false);
                     break;
                 }
-                setName(mode2.name());
+                setName(finalMode.name());
             }
         };
     }
 
     public void actionPerformed(ActionEvent e) {
-        boolean sel = isSelected();
+        final boolean sel = isSelected();
         if (sel) {
             setSelected(CaptchaSettings.MODE.NORMAL);
         } else {
