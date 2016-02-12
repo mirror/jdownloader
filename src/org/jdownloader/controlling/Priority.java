@@ -25,7 +25,7 @@ public enum Priority {
         this.translation = translation;
     }
 
-    public String _() {
+    public String T() {
         return translation;
     }
 

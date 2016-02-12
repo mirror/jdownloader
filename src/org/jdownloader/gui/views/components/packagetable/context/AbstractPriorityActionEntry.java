@@ -3,16 +3,6 @@ package org.jdownloader.gui.views.components.packagetable.context;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -26,6 +16,16 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> implements GUIListener, ActionContext {
 
@@ -60,9 +60,9 @@ public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPa
 
     private void updateStateAndLabelAndIcon() {
         if (isForceMode() && !metaCtrl || metaCtrl) {
-            setName(priority._() + " " + _GUI.T.system_download_triggerfileexists_overwrite());
+            setName(priority.T() + " " + _GUI.T.system_download_triggerfileexists_overwrite());
         } else {
-            setName(priority._());
+            setName(priority.T());
         }
     }
 

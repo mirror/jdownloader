@@ -70,6 +70,7 @@ public class LAFOptions {
         if (ext == null) {
             ext = new DefaultLookAndFeelExtension();
         }
+
         LAFEXTENSION = ext;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
     }

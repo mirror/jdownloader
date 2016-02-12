@@ -35,6 +35,10 @@ public class SetTableModel extends ExtTableModel<IconResource> {
         super.init("SetTableModel");
     }
 
+    public ResourceSet getSelected() {
+        return selected;
+    }
+
     @Override
     protected void init(String id) {
 
@@ -46,7 +50,16 @@ public class SetTableModel extends ExtTableModel<IconResource> {
 
             @Override
             public String getStringValue(IconResource value) {
-                return value.getPath().replace("org/jdownloader/images", "");
+
+                String ret = value.getPath().replace("org/jdownloader/images", "");
+                if (value.getFile(getSelected(), "png").exists()) {
+                    ret += " PNG";
+                }
+                if (value.getFile(getSelected(), "svg").exists()) {
+                    ret += " SVG";
+                }
+
+                return ret;
             }
         });
         addColumn(new ExtTextColumn<IconResource>("Standard") {
@@ -141,6 +154,68 @@ public class SetTableModel extends ExtTableModel<IconResource> {
                 return null;
             }
         });
+
+        // addColumn(new ExtComponentColumn<IconResource>("Edit") {
+        //
+        // private JButton bt = new JButton("Edit");
+        //
+        // @Override
+        // public boolean isResizable() {
+        // return false;
+        // }
+        //
+        // @Override
+        // public int getDefaultWidth() {
+        // return getMinWidth();
+        // }
+        //
+        // @Override
+        // public int getMaxWidth() {
+        // return getMinWidth();
+        // }
+        //
+        // @Override
+        // public int getMinWidth() {
+        // return 32;
+        // }
+        //
+        // @Override
+        // public boolean onSingleClick(MouseEvent e, IconResource obj) {
+        // return super.onSingleClick(e, obj);
+        // }
+        //
+        // @Override
+        // public boolean isEditable(IconResource obj) {
+        // return false;
+        // }
+        //
+        // @Override
+        // protected JComponent getInternalEditorComponent(IconResource value, boolean isSelected, int row, int column) {
+        // return bt;
+        // }
+        //
+        // @Override
+        // protected JComponent getInternalRendererComponent(IconResource value, boolean isSelected, boolean hasFocus, int row, int column)
+        // {
+        // return bt;
+        // }
+        //
+        // @Override
+        // public void configureEditorComponent(IconResource value, boolean isSelected, int row, int column) {
+        // }
+        //
+        // @Override
+        // public void configureRendererComponent(IconResource value, boolean isSelected, boolean hasFocus, int row, int column) {
+        // }
+        //
+        // @Override
+        // public void resetEditor() {
+        // }
+        //
+        // @Override
+        // public void resetRenderer() {
+        // }
+        // });
     }
 
 }

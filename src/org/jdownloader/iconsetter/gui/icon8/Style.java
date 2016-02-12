@@ -1,7 +1,7 @@
 package org.jdownloader.iconsetter.gui.icon8;
 
 public enum Style {
-    ALL(null, "All"),
+    ALL("All", null),
     IOS9("iOS 9", "ios7"),
     WIN10("Windows 10", "win10"),
     WIN8("Windows 8", "win8"),
@@ -21,7 +21,7 @@ public enum Style {
 
     private String label;
 
-    private Style(String key, String label) {
+    private Style(String label, String key) {
         this.key = key;
         this.label = label;
 

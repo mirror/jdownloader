@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.FileHandler;
 import org.appwork.utils.Files;
@@ -25,6 +26,20 @@ import com.kitfox.svg.SVGException;
 import jd.gui.swing.laf.LookAndFeelController;
 
 public class IconSetMaker {
+    public static File WORKSPACE;
+    public static File THEMES;
+
+    static {
+        try {
+            WORKSPACE = new File(Main.class.getResource("/").toURI()).getParentFile();
+        } catch (URISyntaxException e) {
+            throw new WTFException(e);
+        }
+        if (WORKSPACE.getName().equals("JDownloaderUpdater")) {
+            WORKSPACE = new File(WORKSPACE.getParentFile(), "JDownloader");
+        }
+        THEMES = new File(WORKSPACE, "themes");
+    }
 
     public static void main(String[] args) throws Throwable {
         Application.setApplication(".jd_home");
@@ -118,21 +133,15 @@ public class IconSetMaker {
     private void scanThemes() throws MalformedURLException, IOException, InterruptedException, SVGException, DialogClosedException, DialogCanceledException, URISyntaxException {
         final HashMap<String, IconResource> map = new HashMap<String, IconResource>();
 
-        final File standard = Application.getResource("themes/standard");
-
-        if (standard.exists()) {
-            Files.deleteRecursiv(standard);
+        final File jdHome = Application.getResource("themes");
+        if (jdHome.exists()) {
+            Files.deleteRecursiv(jdHome);
         }
 
-        File workspace = new File(Main.class.getResource("/").toURI()).getParentFile();
-        if (workspace.getName().equals("JDownloaderUpdater")) {
-            workspace = new File(workspace.getParentFile(), "JDownloader");
-        }
-        org.jdownloader.startup.Main.copyResource(workspace, "themes/themes", "themes");
-
+        File standard = new File(THEMES, "themes/standard");
         standardSet = scanTheme(map, standard);
 
-        for (File folder : Application.getResource("themes/").listFiles(new FileFilter() {
+        for (File folder : new File(THEMES, "themes/").listFiles(new FileFilter() {
 
             @Override
             public boolean accept(File pathname) {
@@ -165,6 +174,7 @@ public class IconSetMaker {
                 if (f.getName().toLowerCase(Locale.ENGLISH).endsWith(".png") || f.getName().toLowerCase(Locale.ENGLISH).endsWith(".svg")) {
                     IconResource ir;
                     String rel = Files.getRelativePath(theme, f);
+                    rel = rel.replaceAll("\\.\\w\\w\\w$", "");
                     if (rel.startsWith("org/jdownloader/images/uploaded/")) {
                         return true;
                     }
@@ -204,7 +214,8 @@ public class IconSetMaker {
     public ResourceSet createNewResourceSet(String text) {
         ResourceSet set;
         resources.add(set = new ResourceSet(text));
-        Application.getResource("themes/" + text + "/org/jdownloader/images/").mkdirs();
+
+        new File(THEMES, "themes/" + text + "/org/jdownloader/images/").mkdirs();
 
         return set;
     }

@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +19,8 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.extensions.extraction.ExtractionEvent;
@@ -36,6 +39,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
@@ -61,6 +65,28 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));
         tableModel = DownloadsTableModel.getInstance();
         table = new DownloadsTable(tableModel);
+
+        BasicJDTable<String> rep = new BasicJDTable<String>(new ExtTableModel<String>("TEST") {
+            {
+                setTableData(Arrays.asList(new String[] { "a", "b" }));
+            }
+
+            @Override
+            protected void initColumns() {
+                addColumn(new ExtTextColumn<String>("DI") {
+                    @Override
+                    public boolean isEditable(String obj) {
+                        return true;
+                    }
+
+                    @Override
+                    public String getStringValue(String value) {
+                        return "Test";
+                    }
+
+                });
+            }
+        });
         tableScrollPane = new JScrollPane(table);
 
         tableScrollPane.addComponentListener(new ComponentListener() {

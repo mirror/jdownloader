@@ -8,6 +8,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtSpinnerColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.iconsetter.gui.Icon8Resource;
 
@@ -33,6 +34,28 @@ public class Icon8TableModel extends ExtTableModel<Icon8Resource> {
     @Override
     protected void initColumns() {
         ExtTextColumn<Icon8Resource> sortOn;
+        addColumn(new ExtSpinnerColumn<Icon8Resource>("Relevance") {
+
+            @Override
+            protected Number getNumber(Icon8Resource value) {
+                return value.getRelevance(icon8Dialog.getLastSearchString());
+
+            }
+
+            @Override
+            protected void setNumberValue(Number value, Icon8Resource object) {
+            }
+
+            @Override
+            public boolean isEditable(Icon8Resource obj) {
+                return false;
+            }
+
+            @Override
+            public String getStringValue(Icon8Resource value) {
+                return value.getRelevance(icon8Dialog.getLastSearchString()) + "";
+            }
+        });
         addColumn(sortOn = new ExtTextColumn<Icon8Resource>("Name") {
 
             @Override

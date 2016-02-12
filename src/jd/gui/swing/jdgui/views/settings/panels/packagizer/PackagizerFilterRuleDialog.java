@@ -30,13 +30,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterPanel;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.components.ExtCheckBox;
@@ -67,6 +60,13 @@ import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterPanel;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
+
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
     private class PriorityAction extends AbstractAction {
 
@@ -91,7 +91,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         }
 
         public String getTooltipText() {
-            return priority._();
+            return priority.T();
         }
 
     }

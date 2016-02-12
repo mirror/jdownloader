@@ -11,14 +11,35 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.Locale;
 
 import javax.imageio.ImageIO;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.appwork.utils.StringUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import com.kitfox.svg.SVGDiagram;
 import com.kitfox.svg.SVGElement;
 import com.kitfox.svg.SVGException;
 import com.kitfox.svg.SVGUniverse;
 import com.kitfox.svg.animation.AnimationElement;
+
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Operation;
 
 public class Icon8Resource {
 
@@ -104,5 +125,75 @@ public class Icon8Resource {
         ByteArrayOutputStream bao;
         ImageIO.write(bi, "png", bao = new ByteArrayOutputStream());
         return bao.toByteArray();
+    }
+
+    public byte[] createSVG(Color color) throws UnsupportedEncodingException {
+        String hex = "#" + String.format("%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+
+        try {
+
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            docFactory.setValidating(false);
+
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+
+            Document doc = docBuilder.parse(new ByteArrayInputStream(svg.getBytes("iso-8859-1")));
+
+            Node svg = doc.getElementsByTagName("svg").item(0);
+            NamedNodeMap attributes = svg.getAttributes();
+            Node style = attributes.getNamedItem("style");
+            if (style != null) {
+                String css = style.getNodeValue();
+                if (StringUtils.isNotEmpty(css) && !css.trim().endsWith(";")) {
+                    css = css.trim() + ";";
+                }
+                style.setNodeValue(css + "fill:" + hex + ";");
+
+            } else {
+                ((Element) svg).setAttribute("style", "fill:" + hex);
+            }
+
+            // write the content into xml file
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(doc);
+            ByteArrayOutputStream bao;
+            StreamResult result = new StreamResult(bao = new ByteArrayOutputStream());
+            transformer.transform(source, result);
+
+            return bao.toByteArray();
+
+        } catch (ParserConfigurationException pce) {
+            pce.printStackTrace();
+        } catch (TransformerException tfe) {
+            tfe.printStackTrace();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        } catch (SAXException sae) {
+            sae.printStackTrace();
+        }
+
+        String svg = this.svg.replaceAll("/svg\" ", "/svg\" style=\"fill:" + hex + "\" ");
+        return svg.getBytes("ASCII");
+
+    }
+
+    public String getInfoString() {
+        return "id=" + id + "\r\nname=" + name;
+    }
+
+    public Number getRelevance(String lastSearchString) {
+        DiffMatchPatch differ = new DiffMatchPatch();
+
+        LinkedList<Diff> diff = differ.diffMain(" " + lastSearchString + " ".toLowerCase(Locale.ENGLISH), " " + name + " ".toLowerCase(Locale.ENGLISH));
+        int eq = 0;
+        for (Diff d : diff) {
+            if (d.operation == Operation.EQUAL) {
+                eq += d.text.length() * d.text.length();
+            }
+        }
+        int relevance = 200 - differ.diffLevenshtein(diff);
+
+        return eq;
     }
 }
