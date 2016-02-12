@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3dl.tv" }, urls = { "http://(www\\.)?(music|games|movies|serien|apps|porn)\\.3dl\\.tv/(download/\\d+/[^<>\"/]+/detail\\.html|folder/[a-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3dl.tv" }, urls = { "http://(www\\.)?(music|games|movies|serien|apps|porn)\\.3dl\\.tv/(download/\\d+/[^<>\"/]+/detail\\.html|folder/[a-z0-9]+)" }, flags = { 0 })
 public class ThreeDlTv extends PluginForDecrypt {
 
     public ThreeDlTv(PluginWrapper wrapper) {
@@ -44,90 +44,96 @@ public class ThreeDlTv extends PluginForDecrypt {
         return 1;
     }
 
+    private static Object LOCK = new Object();
+
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> passwords = new ArrayList<String>();
-        String parameter = param.toString();
-        br.getPage(parameter);
-        final String currentdomain = new Regex(parameter, "(http://(www\\.)?[a-z]+\\.3dl\\.tv)").getMatch(0);
-        if (parameter.matches(".*?\\.3dl\\.tv/download/\\d+/[^<>\"/]+/detail\\.html")) {
-            if (br.containsHTML(">Dieser Eintrag existiert nicht mehr")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            final String password = br.getRegex("<th>Passwort:</th><td colspan=\"3\"><input type=\"text\" value=\"([^<>\"]*?)\"").getMatch(0);
-            String fpName = br.getRegex("<th>Titel:</th><td>([^<>\"]*?)<br").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<table cellpadding=\"0\" cellspacing=\"0\"><tr><td><div>([^<>\"]*?)</div></td><td").getMatch(0);
-            }
-            final String[] folders = br.getRegex("(/folder/[a-z0-9]+)").getColumn(0);
-            if (folders == null || folders.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String folder : folders) {
-                DownloadLink linkl = createDownloadlink(currentdomain + folder);
-                passwords.add(password);
-                if (password != null) {
-                    linkl.setSourcePluginPasswordList(passwords);
+        synchronized (LOCK) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            ArrayList<String> passwords = new ArrayList<String>();
+            String parameter = param.toString();
+            br.getPage(parameter);
+            final String currentdomain = new Regex(parameter, "(http://(www\\.)?[a-z]+\\.3dl\\.tv)").getMatch(0);
+            if (parameter.matches(".*?\\.3dl\\.tv/download/\\d+/[^<>\"/]+/detail\\.html")) {
+                if (br.containsHTML(">Dieser Eintrag existiert nicht mehr")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
                 }
-                decryptedLinks.add(linkl);
-            }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
-            }
-        } else {
-            if (br.containsHTML(">Der Zugriff auf diesen Link Ordner wurde aus Sicherheitsgr")) {
-                logger.info("Can't access link, IP blocked, wait at least 10 minutes!");
-                return decryptedLinks;
-            }
-            if (br.containsHTML(">Error 404 \\- Ordner nicht gefunden<|>Error 404<")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            for (int i = 1; i <= 5; i++) {
-                final String captchaLink = br.getRegex("\"((https?://(\\w+\\.)?3dl\\.tv)?/index\\.php\\?action=captcha\\&token=[^\"\\']+)").getMatch(0);
-                if (captchaLink == null) {
+                final String password = br.getRegex("<th>Passwort:</th><td colspan=\"3\"><input type=\"text\" value=\"([^<>\"]*?)\"").getMatch(0);
+                String fpName = br.getRegex("<th>Titel:</th><td>([^<>\"]*?)<br").getMatch(0);
+                if (fpName == null) {
+                    fpName = br.getRegex("<table cellpadding=\"0\" cellspacing=\"0\"><tr><td><div>([^<>\"]*?)</div></td><td").getMatch(0);
+                }
+                final String[] folders = br.getRegex("(/folder/[a-z0-9]+)").getColumn(0);
+                if (folders == null || folders.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final String code = getCaptchaCode("3dlcaptcharecognition_is_broken", captchaLink, param);
-                br.postPage(parameter, "answer=" + code);
-                if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) {
-                    this.sleep(3 * 1000l, param);
-                    continue;
-                }
-                break;
-            }
-            if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-            // Add links via CNL
-            Form cnlform = br.getForm(0);
-            if (cnlform != null) {
-                final Browser cnlbr = br.cloneBrowser();
-                cnlbr.setConnectTimeout(5000);
-                cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
-                try {
-                    cnlbr.submitForm(cnlform);
-                    if (cnlbr.containsHTML("success")) {
-                        return decryptedLinks;
+                for (String folder : folders) {
+                    DownloadLink linkl = createDownloadlink(currentdomain + folder);
+                    passwords.add(password);
+                    if (password != null) {
+                        linkl.setSourcePluginPasswordList(passwords);
                     }
-                } catch (final Throwable e) {
+                    decryptedLinks.add(linkl);
+                }
+                if (fpName != null) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(Encoding.htmlDecode(fpName.trim()));
+                    fp.addLinks(decryptedLinks);
+                }
+            } else {
+                if (br.containsHTML(">Der Zugriff auf diesen Link Ordner wurde aus Sicherheitsgr")) {
+                    logger.info("Can't access link, IP blocked, wait at least 10 minutes!");
+                    return decryptedLinks;
+                }
+                if (br.containsHTML(">Error 404 \\- Ordner nicht gefunden<|>Error 404<")) {
+                    logger.info("Link offline: " + parameter);
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                for (int i = 1; i <= 5; i++) {
+                    final String captchaLink = br.getRegex("\"((https?://(\\w+\\.)?3dl\\.tv)?/index\\.php\\?action=captcha\\&token=[^\"\\']+)").getMatch(0);
+                    if (captchaLink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    final String code = getCaptchaCode("3dlcaptcharecognition_is_broken", captchaLink, param);
+                    br.postPage(parameter, "answer=" + code);
+                    if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) {
+                        this.sleep(3 * 1000l, param);
+                        continue;
+                    }
+                    break;
+                }
+                if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+                // Add links via CNL
+                Form cnlform = br.getForm(0);
+                if (cnlform != null) {
+                    final Browser cnlbr = br.cloneBrowser();
+                    cnlbr.setConnectTimeout(5000);
+                    cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+                    try {
+                        cnlbr.submitForm(cnlform);
+                        if (cnlbr.containsHTML("success")) {
+                            return decryptedLinks;
+                        }
+                    } catch (final Throwable e) {
+                    }
                 }
             }
-        }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            if (this.br.containsHTML(">Der Zugriff auf diesen Link Ordner wurde aus Sicherheitsgründen")) {
-                logger.info("IP Limit reached - cannot decrypt links from this website at the moment ...");
-                return decryptedLinks;
+            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+                if (this.br.containsHTML(">Der Zugriff auf diesen Link Ordner wurde aus Sicherheitsgründen")) {
+                    logger.info("IP Limit reached - cannot decrypt links from this website at the moment ...");
+                    return decryptedLinks;
+                }
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            return decryptedLinks;
         }
-        return decryptedLinks;
     }
 
     /* NO OVERRIDE!! */
