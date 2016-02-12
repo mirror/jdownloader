@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
-import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
@@ -18,7 +18,10 @@ public class ReconnectAction extends AbstractScheduleAction<ScheduleActionEmptyC
 
     @Override
     public void execute() {
-        Reconnecter.getInstance().doReconnect();
+        try {
+            DownloadWatchDog.getInstance().requestReconnect(true);
+        } catch (InterruptedException e) {
+        }
     }
 
 }

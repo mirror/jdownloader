@@ -47,14 +47,6 @@ public final class Reconnecter {
         return Reconnecter.INSTANCE;
     }
 
-    /**
-     * can be removed after next stable
-     */
-    public static boolean waitForNewIP(final int i, final boolean b) {
-        System.out.println("TODO: fixme");
-        return false;
-    }
-
     private final ReconnectEventSender eventSender;
     private final ReconnectConfig      storage;
 
@@ -68,8 +60,16 @@ public final class Reconnecter {
     }
 
     public ReconnectResult doReconnect() {
-        if (!IPController.getInstance().isInvalidated()) { return ReconnectResult.VALIDIP; }
-        if (!running.compareAndSet(false, true)) { return ReconnectResult.RUNNING; }
+        return doReconnect(false);
+    }
+
+    public ReconnectResult doReconnect(final boolean forceReconnect) {
+        if (!forceReconnect && !IPController.getInstance().isInvalidated()) {
+            return ReconnectResult.VALIDIP;
+        }
+        if (!running.compareAndSet(false, true)) {
+            return ReconnectResult.RUNNING;
+        }
         ReconnectResult result = null;
         try {
             LogSource logger = LogController.CL(false);
@@ -82,7 +82,9 @@ public final class Reconnecter {
                     logger.setAllowTimeoutFlush(false);
                     logger.info("Perform reconnect");
                     plugin = ReconnectPluginController.getInstance().getActivePlugin();
-                    if (plugin == DummyRouterPlugin.getInstance()) { throw new ReconnectException("Invalid Plugin"); }
+                    if (plugin == DummyRouterPlugin.getInstance()) {
+                        throw new ReconnectException("Invalid Plugin");
+                    }
                     this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.BEFORE, plugin));
                     logger.info("Try to reconnect: " + plugin);
                     int maxretries = storage.getMaxReconnectRetryNum();
@@ -102,7 +104,9 @@ public final class Reconnecter {
             } catch (Throwable e) {
                 logger.log(e);
             } finally {
-                if (result == null) result = ReconnectResult.FAILED;
+                if (result == null) {
+                    result = ReconnectResult.FAILED;
+                }
                 switch (result) {
                 case SUCCESSFUL:
                     logger.clear();
