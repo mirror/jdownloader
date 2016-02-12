@@ -284,7 +284,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
             pluginloaded = true;
         }
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     /** @description: Differ between subfolders & downloadlinks and add them */

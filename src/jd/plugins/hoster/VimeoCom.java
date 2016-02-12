@@ -708,7 +708,7 @@ public class VimeoCom extends PluginForHost {
             }
             ut_pluginLoaded = true;
         }
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     /**

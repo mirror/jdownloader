@@ -100,7 +100,7 @@ public class DropboxFolder extends PluginForDecrypt {
         final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
         if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
 
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     /* NO OVERRIDE!! */

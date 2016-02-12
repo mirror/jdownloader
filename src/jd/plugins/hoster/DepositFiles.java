@@ -259,7 +259,7 @@ public class DepositFiles extends antiDDoSForHost {
             String eval = br.getRegex("class=\"info\".*?unescape\\('(.*?)'").getMatch(0);
             if (eval != null) {
                 JDUtilities.getPluginForHost("youtube.com");
-                eval = jd.plugins.hoster.Youtube.unescape(eval);
+                eval = jd.nutils.encoding.Encoding.unescapeYoutube(eval);
                 fileName = new Regex(eval, FILE_INFO_NAME).getMatch(0);
             }
         }

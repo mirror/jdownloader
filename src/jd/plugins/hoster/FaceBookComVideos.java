@@ -688,7 +688,7 @@ public class FaceBookComVideos extends PluginForHost {
             }
             pluginloaded = true;
         }
-        return jd.plugins.hoster.Youtube.unescape(s);
+        return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
     public String decodeUnicode(final String s) {
