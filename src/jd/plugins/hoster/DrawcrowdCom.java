@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.net.URL;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -83,12 +82,8 @@ public class DrawcrowdCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String dllinkfilename = getFileNameFromURL(new URL(dllink));
-        String ext = !inValidate(dllinkfilename) && dllinkfilename.contains(".") ? dllinkfilename.substring(dllinkfilename.lastIndexOf(".")) : ".jpg";
         /* Make sure that we get a correct extension */
-        if (!ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = ".jpg";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

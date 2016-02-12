@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -254,9 +253,7 @@ public class NowVideoEu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // set correct file extension, flv != avi!
-        final String name = getFileNameFromURL(new URL(dllink));
-        final String ext = name.substring(name.lastIndexOf("."));
-        downloadLink.setFinalFileName(filename + ext);
+        downloadLink.setFinalFileName(filename + getFileNameExtensionFromString(dllink, ".flv"));
         // end of final filename correction
         while (true) {
             if (errCount >= 1) {
@@ -424,9 +421,7 @@ public class NowVideoEu extends PluginForHost {
             }
         }
         // set correct file extension, flv != avi!
-        final String name = getFileNameFromURL(new URL(dllink));
-        final String ext = name.substring(name.lastIndexOf("."));
-        link.setFinalFileName(filename + ext);
+        link.setFinalFileName(filename + getFileNameExtensionFromString(dllink, ".mp4"));
         // end of final filename correction
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

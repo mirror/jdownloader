@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -46,7 +47,8 @@ public class UnLimitCoIl extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         String url = link.getDownloadURL();
-        url = url.replaceFirst("http://.*?/", "http://unlimit.co.il/");
+        // without www the urls will return 404 in a redirect issue.
+        url = url.replaceFirst("http://.*?/", "http://www.unlimit.co.il/");
         link.setUrlDownload(url);
     }
 
@@ -83,8 +85,12 @@ public class UnLimitCoIl extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         Form loginForm = br.getFormbyProperty("name", "frmLogin");
-        if (loginForm == null) loginForm = br.getFormbyProperty("id", "frmLogin");
-        if (loginForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (loginForm == null) {
+            loginForm = br.getFormbyProperty("id", "frmLogin");
+        }
+        if (loginForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         loginForm.put("phoneNumber", account.getPass());
         // chunks are broken at the moment, response contains invalid
         // content-range
@@ -103,6 +109,8 @@ public class UnLimitCoIl extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        br = new Browser();
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         // We have to set this charset, utf-8 doesn't work here!
         br.setCustomCharset("windows-1255");
@@ -111,19 +119,24 @@ public class UnLimitCoIl extends PluginForHost {
         boolean offline = false;
         try {
             con = br.openGetConnection(link.getDownloadURL());
-            if (con.getResponseCode() == 404)
+            if (con.getResponseCode() == 404) {
                 offline = true;
-            else
+            } else {
                 br.followConnection();
+            }
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
-        if (offline || br.containsHTML("(>404 Not Found<|<H1>Not Found</H1>|was not found on this server\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (offline || br.containsHTML("(>404 Not Found<|<H1>Not Found</H1>|was not found on this server\\.)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = new Regex(link.getDownloadURL(), "unlimit\\.co\\.il/getfile\\.php\\?name=\\d+-\\d+-(.+)").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim().replaceAll("\\&hdd=\\d+", ""));
         link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.unlimitcoil.only4premium", ONLY4PREMIUMUSERTEXT));
         return AvailableStatus.TRUE;

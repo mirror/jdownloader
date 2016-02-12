@@ -24,10 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -36,26 +32,30 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+
 public class AccountInfo extends Property {
 
-    private static final long serialVersionUID       = 1825140346023286206L;
+    private static final long serialVersionUID = 1825140346023286206L;
 
-    private long              account_validUntil     = -1;
+    private long account_validUntil = -1;
 
-    private long              account_trafficLeft    = -1;
-    private long              account_trafficMax     = -1;
+    private long account_trafficLeft = -1;
+    private long account_trafficMax  = -1;
 
-    private long              account_filesNum       = -1;
-    private long              account_premiumPoints  = -1;
-    private long              account_accountBalance = -1;
-    private long              account_usedSpace      = -1;
+    private long account_filesNum       = -1;
+    private long account_premiumPoints  = -1;
+    private long account_accountBalance = -1;
+    private long account_usedSpace      = -1;
 
-    private String            account_status;
-    private long              account_createTime     = 0;
+    private String  account_status;
+    private long    account_createTime = 0;
     /**
      * indicator that host, account has special traffic handling, do not temp disable if traffic =0
      */
-    private boolean           specialTraffic         = false;
+    private boolean specialTraffic     = false;
 
     public long getCreateTime() {
         return account_createTime;
@@ -75,7 +75,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel (in Cent) Geld gerade auf diesem Account ist
-     * 
+     *
      * @return
      */
     public long getAccountBalance() {
@@ -84,7 +84,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviele Files auf dem Account hochgeladen sind
-     * 
+     *
      * @return
      */
     public long getFilesNum() {
@@ -93,7 +93,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt an wieviele PremiumPunkte der Account hat
-     * 
+     *
      * @return
      */
     public long getPremiumPoints() {
@@ -106,7 +106,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt an wieviel Traffic noch frei ist (in bytes)
-     * 
+     *
      * @return
      */
     public long getTrafficLeft() {
@@ -119,7 +119,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel Platz (bytes) die Oploads auf diesem Account belegen
-     * 
+     *
      * @return
      */
     public long getUsedSpace() {
@@ -128,7 +128,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw. ausgelaufen ist.(-1 für Nie)
-     * 
+     *
      * @return
      */
     public long getValidUntil() {
@@ -137,7 +137,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück ob der Account abgelaufen ist
-     * 
+     *
      * @return
      */
     public boolean isExpired() {
@@ -221,7 +221,7 @@ public class AccountInfo extends Property {
 
     /**
      * Wrapper, will use standard httpd Date pattern.
-     * 
+     *
      * @author raztoki
      * @param validuntil
      * @param br
@@ -236,7 +236,7 @@ public class AccountInfo extends Property {
      * server time. <br />
      * This should also allow when computer clocks are wrong. <br />
      * *** WARNING *** This method wont work when httpd DATE response isn't of hoster time!
-     * 
+     *
      * @author raztoki
      * @since JD2
      * @param validuntil
@@ -274,7 +274,7 @@ public class AccountInfo extends Property {
 
     /**
      * -1 für Niemals ablaufen
-     * 
+     *
      * @param validUntil
      */
     public void setValidUntil(final long validUntil) {
@@ -283,12 +283,11 @@ public class AccountInfo extends Property {
 
     /**
      * Removes forbidden hosts, adds host corrections, de-dupes, and then sets AccountInfo property 'multiHostSupport'
-     * 
+     *
      * @author raztoki
      * @param multiHostPlugin
-     *            TODO
      * @since JD2
-     * */
+     */
 
     public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupport) {
         setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder());

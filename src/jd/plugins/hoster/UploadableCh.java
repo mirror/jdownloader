@@ -219,7 +219,7 @@ public class UploadableCh extends PluginForHost {
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("Referer", postLink);
             br.postPage("/file/" + fid, "downloadLink=show");
-            if (br.containsHTML("fail")) {
+            if ("fail".equals(br.toString())) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
             br.postPage("/file/" + fid, "download=normal");
