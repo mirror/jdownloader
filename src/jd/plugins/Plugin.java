@@ -34,6 +34,27 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.uio.CloseReason;
@@ -58,27 +79,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.UserIOProgress;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -250,8 +250,9 @@ public abstract class Plugin implements ActionListener {
         return Encoding.htmlDecode(filename);
     }
 
-    public static String getFileNameFromDispositionHeader(String header) {
-        return HTTPConnectionUtils.getFileNameFromDispositionHeader(header);
+    public static String getFileNameFromDispositionHeader(final URLConnectionAdapter urlConnection) {
+        final String contentDisposition = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION);
+        return HTTPConnectionUtils.getFileNameFromDispositionHeader(contentDisposition);
     }
 
     /**
@@ -332,11 +333,11 @@ public abstract class Plugin implements ActionListener {
      * @return Filename aus dem header (content disposition) extrahiert
      */
     public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
-        String contentDisposition = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION);
-        if (contentDisposition == null || contentDisposition.indexOf("filename") < 0 && contentDisposition.indexOf("file_name") < 0) {
+        final String fileName = getFileNameFromDispositionHeader(urlConnection);
+        if (StringUtils.isEmpty(fileName)) {
             return Plugin.getFileNameFromURL(urlConnection.getURL());
         } else {
-            return Plugin.getFileNameFromDispositionHeader(contentDisposition);
+            return fileName;
         }
     }
 

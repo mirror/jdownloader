@@ -112,7 +112,7 @@ public class DivShareCom extends PluginForHost {
             try {
                 con = br.openGetConnection(redirect);
                 if (con.isContentDisposition()) {
-                    downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition")).replace("_", "."));
+                    downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con).replace("_", "."));
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     return AvailableStatus.TRUE;
                 }
