@@ -90,14 +90,14 @@ public class XTubeCom extends PluginForHost {
         br.setCookie(MAINPAGE, "cookie_warning", "S");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">This video has been removed from XTube")) {
+        if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">Video not available<|>This video has been removed from XTube")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
         if (br.getURL().contains("play.php?preview_id=")) {
             filename = br.getRegex("class=\"sectionNoStyleHeader\">([^<>\"]*?)</div>").getMatch(0);
         } else {
-            filename = br.getRegex("<div class=\"font_b_12px\">(.*?)</div><div").getMatch(0);
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             // For DVD preview links
             if (filename == null) {
                 filename = br.getRegex("id=\"videoDetails\">[\t\n\r ]+<p class=\"title\">([^<>\"]*?)</p>").getMatch(0);
@@ -117,6 +117,7 @@ public class XTubeCom extends PluginForHost {
             DLLINK = br.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
         }
         if (filename == null || DLLINK == null || DLLINK.length() > 500) {
+            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK.trim());
@@ -124,7 +125,7 @@ public class XTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        downloadLink.setFinalFileName(filename + ".mp4");
         br.setDebug(true);
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
