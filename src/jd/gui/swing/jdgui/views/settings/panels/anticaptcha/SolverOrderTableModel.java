@@ -224,12 +224,12 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
         // }
         // });
         this.addColumn(new ExtComponentColumn<SolverService>(_GUI.T.SolverOrderTableModel_initColumns_timeout()) {
-            private JButton            editorBtn;
-            private JButton            rendererBtn;
-            private SolverService      editing;
-            protected MigPanel         editor;
+            private JButton editorBtn;
+            private JButton rendererBtn;
+            private SolverService editing;
+            protected MigPanel editor;
             protected RendererMigPanel renderer;
-            private RenderLabel        label;
+            private RenderLabel label;
 
             {
                 editorBtn = new JButton("");
@@ -353,12 +353,12 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
         });
         this.addColumn(new ExtComponentColumn<SolverService>(_GUI.T.lit_settings()) {
-            private JButton            editorBtn;
-            private JButton            rendererBtn;
-            private SolverService      editing;
-            protected MigPanel         editor;
+            private JButton editorBtn;
+            private JButton rendererBtn;
+            private SolverService editing;
+            protected MigPanel editor;
             protected RendererMigPanel renderer;
-            private RenderLabel        label;
+            private RenderLabel label;
 
             {
                 editorBtn = new JButton("");

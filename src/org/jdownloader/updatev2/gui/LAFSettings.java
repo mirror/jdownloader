@@ -1,21 +1,21 @@
 package org.jdownloader.updatev2.gui;
 
-import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
+import org.appwork.swing.synthetica.SyntheticaSettings;
 
 @StorageHandlerFactoryAnnotation(LAFSettingsStorageHandlerFactory.class)
-public interface LAFSettings extends ConfigInterface {
+public interface LAFSettings extends SyntheticaSettings {
 
     // Static Mappings for interface
 
     // org.jdownloader.settings.GraphicalUserInterfaceSettings
 
-    public static final String ALICE_BLUE_APPROX                                 = "ffF5FCFF";
-    public static final String ALPHA_CC_TROPICAL_BLUE_APPROX                     = "ccCAE8FA";
+    public static final String ALICE_BLUE_APPROX             = "ffF5FCFF";
+    public static final String ALPHA_CC_TROPICAL_BLUE_APPROX = "ccCAE8FA";
 
     public static final String BLACK                                             = "FF000000";
     public static final String DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";

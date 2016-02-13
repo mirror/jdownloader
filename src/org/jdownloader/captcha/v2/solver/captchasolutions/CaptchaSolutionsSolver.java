@@ -32,7 +32,7 @@ import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.encoding.Encoding;
 
-public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implements GenericConfigEventListener<String> {
+public class CaptchaSolutionsSolver extends CESChallengeSolver<String>implements GenericConfigEventListener<String> {
 
     private CaptchaSolutionsConfigInterface     config;
     private static final CaptchaSolutionsSolver INSTANCE   = new CaptchaSolutionsSolver();
@@ -93,7 +93,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
             r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
             r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
 
-            r.addFormData(new FormData("captcha", "image.jpg", "image/jpg", challenge.getAnnotatedImageBytes()));
+            r.addFormData(new FormData("captcha", "image.png", "image/png", challenge.getAnnotatedImageBytes()));
 
             URLConnectionAdapter conn = br.openRequestConnection(r);
             br.loadConnection(conn);

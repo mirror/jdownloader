@@ -68,6 +68,7 @@ import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.UpdaterTranslation;
+import org.jdownloader.updatev2.gui.LAFOptions;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
@@ -87,7 +88,7 @@ import jd.gui.swing.jdgui.JDGui;
  * @author thomas
  *
  */
-public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslatorTranslation> implements MenuExtenderHandler {
+public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslatorTranslation>implements MenuExtenderHandler {
     /**
      * Extension GUI
      */
@@ -419,7 +420,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             //
             if (fontname.equalsIgnoreCase("default")) {
 
-                fontname = SyntheticaHelper.getDefaultFont();
+                fontname = new SyntheticaHelper(LAFOptions.getInstance().getCfg()).getDefaultFont();
                 if (fontname == null) {
                     fontname = "Tahoma";
                 }
