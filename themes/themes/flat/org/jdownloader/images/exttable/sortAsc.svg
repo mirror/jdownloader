@@ -8,13 +8,13 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    style="fill:#000000"
-   viewBox="0 0 12 24"
+   viewBox="0 0 9 12"
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
    sodipodi:docname="sortAsc.svg"
-   width="12"
-   height="24">
+   width="9"
+   height="12">
   <metadata
      id="metadata10">
     <rdf:RDF>
@@ -23,7 +23,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -45,13 +45,17 @@
      inkscape:zoom="9.8333333"
      inkscape:cx="4.8800521"
      inkscape:cy="12"
-     inkscape:window-x="161"
-     inkscape:window-y="619"
+     inkscape:window-x="239"
+     inkscape:window-y="289"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg2" />
+     inkscape:current-layer="svg2"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
   <path
-     d="M 5.9999995,0 0,24 12,24 5.9999995,0 Z"
+     d="M 4.4999996,0 0,12 9,12 4.4999996,0 Z"
      id="path4"
      inkscape:connector-curvature="0"
-     style="fill:#000000;fill-opacity:0.4384858" />
+     style="fill:#000000;fill-opacity:0.43848584" />
 </svg>

@@ -97,7 +97,7 @@ public class IconResource {
             file = new File(IconSetMaker.THEMES, "themes/" + name + "/" + getPath() + ".png");
 
             try {
-                BufferedImage image = IconIO.getScaledInstance(ImageIO.read(file), size, size);
+                BufferedImage image = size > 0 ? IconIO.getScaledInstance(ImageIO.read(file), size, size) : ImageIO.read(file);
                 Graphics g = image.getGraphics();
                 g.setColor(Color.RED);
                 g.drawRect(0, 0, image.getWidth(null) - 1, image.getHeight(null) - 1);

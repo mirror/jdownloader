@@ -123,6 +123,7 @@ public class NewTheme extends Theme {
         ret = getCached(key);
         if (ret == null) {
             Icon back = getIcon(path, size, false);
+            // y back = new IdentifierImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(back)), path);
             Icon checkBox = selected ? CheckBoxIcon.TRUE : CheckBoxIcon.FALSE;
             checkBox = IconIO.getScaledInstance(checkBox, (int) (size * 0.5), (int) (size * 0.5));
             if (red != null) {// works for synthetica default LAF only
@@ -150,7 +151,7 @@ public class NewTheme extends Theme {
 
             }
 
-            ret = new ImageIcon(ImageProvider.merge(back, checkBox, 3, 0, 0, back.getIconHeight() - checkBox.getIconHeight() + 3));
+            ret = new ImageIcon(ImageProvider.merge(back, checkBox, 3, 0, 0, back.getIconHeight() - checkBox.getIconHeight() + 2));
             cache(ret, key);
         }
         return ret;

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?><!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  --><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" enable-background="new 0 0 48 48" height="48px" id="????????_1" preserveAspectRatio="xMidYMid meet" style="fill:#0066ff" version="1.1" viewBox="0 0 48 48" width="48px" x="0px" xml:space="preserve" y="0px" zoomAndPan="magnify">
+<polygon fill="#F44336" points="42,42 6,42 6,6 37,6 42,11 "/>
+<path d="M39,39c0,0.553-0.447,1-1,1H10c-0.553,0-1-0.447-1-1V25c0-0.553,0.447-1,1-1h28c0.553,0,1,0.447,1,1V39z" fill="#FFFFFF"/>
+<g>
+	<rect fill="#CFD8DC" height="2" width="22" x="13" y="31"/>
+	<rect fill="#CFD8DC" height="2" width="22" x="13" y="27"/>
+	<rect fill="#CFD8DC" height="2" width="22" x="13" y="35"/>
+</g>
+<path d="M9,6v10c0,1.104,0.896,2,2,2h15c1.104,0,2-0.896,2-2V6H9z" fill="#C62828"/>
+<path d="M15,6v10c0,1.104,0.896,2,2,2h15c1.104,0,2-0.896,2-2V6H15z" fill="#B0BEC5"/>
+<rect fill="#263238" height="8" width="4" x="26" y="8"/>
+</svg>
