@@ -129,6 +129,9 @@ public class InstaGramCom extends PluginForHost {
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
+        if (ext.length() < 3) {
+            ext = ".jpg";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
