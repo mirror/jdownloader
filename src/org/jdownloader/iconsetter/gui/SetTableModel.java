@@ -52,16 +52,44 @@ public class SetTableModel extends ExtTableModel<IconResource> {
             public String getStringValue(IconResource value) {
 
                 String ret = value.getPath().replace("org/jdownloader/images", "");
-                if (value.getFile(getSelected(), "png").exists()) {
-                    ret += " PNG";
-                }
-                if (value.getFile(getSelected(), "svg").exists()) {
-                    ret += " SVG";
-                }
 
                 return ret;
             }
         });
+
+        addColumn(new ExtTextColumn<IconResource>("PNG") {
+
+            @Override
+            public String getStringValue(IconResource value) {
+
+                if (value.getFile(getSelected(), "png").exists()) {
+                    return "X";
+                }
+                return "";
+            }
+        });
+        addColumn(new ExtTextColumn<IconResource>("SVG") {
+
+            @Override
+            public String getStringValue(IconResource value) {
+
+                if (value.getFile(getSelected(), "svg").exists()) {
+                    return "X";
+                }
+                return "";
+            }
+        });
+        addColumn(new ExtTextColumn<IconResource>("Standard Size") {
+
+            @Override
+            public String getStringValue(IconResource value) {
+
+                Icon org = value.getIcon("standard", -1);
+
+                return org.getIconWidth() + " x " + org.getIconHeight();
+            }
+        });
+
         addColumn(new ExtTextColumn<IconResource>("Standard") {
             private int minWidth;
 
