@@ -272,6 +272,46 @@ public abstract class LookAndFeelExtension implements LAFSettings {
         throw new WTFException("Not Implemented. Do not use this method");
     }
 
+    @Override
+    public void setAnimationEnabled(boolean b) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
+    @Override
+    public void setFontName(String name) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
+    @Override
+    public void setFontRespectsSystemDPI(boolean b) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
+    @Override
+    public void setFontScaleFactor(int b) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
+    @Override
+    public void setLanguage(String lng) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
+    @Override
+    public void setTextAntiAliasEnabled(boolean b) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
+    @Override
+    public void setWindowDecorationEnabled(boolean b) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
+    @Override
+    public void setWindowOpaque(boolean b) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
     public abstract String customizeOverviewPanelInsets();
 
     public abstract String customizePanelHeaderInsets();

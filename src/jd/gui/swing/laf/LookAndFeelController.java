@@ -25,8 +25,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -54,11 +52,13 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class LookAndFeelController implements LAFManagerInterface {
-    public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
-    public static final String                 JD_PLAIN                                                      = "org.jdownloader.gui.laf.plain.PlainLookAndFeel";
+import jd.SecondLevelLaunch;
 
-    private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
+public class LookAndFeelController implements LAFManagerInterface {
+    public static final String DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
+    public static final String JD_PLAIN                                                      = "org.jdownloader.gui.laf.plain.PlainLookAndFeel";
+
+    private static final LookAndFeelController INSTANCE = new LookAndFeelController();
 
     /**
      * get the only existing instance of LookAndFeelController. This is a singleton
@@ -236,8 +236,10 @@ public class LookAndFeelController implements LAFManagerInterface {
                     }
                 } catch (Exception e) {
                 }
-                SyntheticaHelper.init(laf, liz);
+
                 LAFOptions.init(laf);
+                new SyntheticaHelper(LAFOptions.getInstance().getCfg()).load(laf, liz);
+
                 ExtTooltip.setForgroundColor(LAFOptions.getInstance().getColorForTooltipForeground());
             } else {
                 /* init for all other laf */

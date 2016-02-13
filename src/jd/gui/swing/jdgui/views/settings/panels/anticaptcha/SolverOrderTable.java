@@ -1,10 +1,12 @@
 package jd.gui.swing.jdgui.views.settings.panels.anticaptcha;
 
 import java.awt.Dimension;
+import java.awt.event.MouseEvent;
+
+import org.appwork.uio.UIOManager;
+import org.jdownloader.captcha.v2.SolverService;
 
 import jd.gui.swing.jdgui.BasicJDTable;
-
-import org.jdownloader.captcha.v2.SolverService;
 
 public class SolverOrderTable extends BasicJDTable<SolverService> {
 
@@ -13,6 +15,14 @@ public class SolverOrderTable extends BasicJDTable<SolverService> {
         setShowHorizontalLineBelowLastEntry(false);
         setShowHorizontalLines(true);
 
+    }
+
+    @Override
+    protected boolean onDoubleClick(MouseEvent e, SolverService obj) {
+
+        SolverPropertiesDialog d = new SolverPropertiesDialog(obj, obj.getConfigPanel());
+        UIOManager.I().show(null, d);
+        return true;
     }
 
     @Override

@@ -26,11 +26,11 @@ import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import net.miginfocom.swing.MigLayout;
 
 public class CaptchaSolutionsTooltip extends PanelToolTip {
-    private Color        color;
+    private Color color;
 
     private ServicePanel owner;
 
-    private JComponent   activeComponent;
+    private JComponent activeComponent;
 
     public Point getDesiredLocation(JComponent activeComponent, Point ttPosition) {
         if (activeComponent != null) {
@@ -51,7 +51,7 @@ public class CaptchaSolutionsTooltip extends PanelToolTip {
         JProgressBar progress = new JProgressBar();
         progress.setIndeterminate(true);
         panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-        JLabel header = new JLabel("CaptchaSolutions.com Solver", new AbstractIcon("CaptchaSolutions", 18), JLabel.LEFT);
+        JLabel header = new JLabel("CaptchaSolutions.com Solver", new AbstractIcon(IconKey.ICON_LOGO_CAPTCHASOLUTIONS, 18), JLabel.LEFT);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
         SwingUtils.toBold(header);
         header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -70,7 +70,7 @@ public class CaptchaSolutionsTooltip extends PanelToolTip {
                         // panel.setPreferredSize(null);
                         if (!account.isValid()) {
                             panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
-                            JLabel header = new JLabel("CaptchaSolutions.com Solver", new AbstractIcon("CaptchaSolutions", 18), JLabel.LEFT);
+                            JLabel header = new JLabel("CaptchaSolutions.com Solver", new AbstractIcon(IconKey.ICON_LOGO_CAPTCHASOLUTIONS, 18), JLabel.LEFT);
                             header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -79,7 +79,7 @@ public class CaptchaSolutionsTooltip extends PanelToolTip {
                             panel.add(lbl(account.getError()), "gapleft 22");
                         } else {
                             panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
-                            JLabel header = new JLabel("CaptchaSolutions.com Solver", new AbstractIcon("CaptchaSolutions", 18), JLabel.LEFT);
+                            JLabel header = new JLabel("CaptchaSolutions.com Solver", new AbstractIcon(IconKey.ICON_LOGO_CAPTCHASOLUTIONS, 18), JLabel.LEFT);
                             header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                             SwingUtils.toBold(header);
                             header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());

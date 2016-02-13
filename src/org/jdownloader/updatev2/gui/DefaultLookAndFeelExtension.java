@@ -10,8 +10,8 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 
 public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
-    public static final String ALICE_BLUE_APPROX                                 = "ffF5FCFF";
-    public static final String ALPHA_CC_TROPICAL_BLUE_APPROX                     = "ccCAE8FA";
+    public static final String ALICE_BLUE_APPROX             = "ffF5FCFF";
+    public static final String ALPHA_CC_TROPICAL_BLUE_APPROX = "ccCAE8FA";
 
     public static final String BLACK                                             = "FF000000";
     public static final String DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
@@ -29,13 +29,78 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     }
 
     @Override
+    public void customizeBoundsForBottombarPopupButton(Rectangle bounds) {
+        bounds.x -= 3;
+        bounds.width += 2;
+    }
+
+    @Override
     public void customizeHeaderScrollPane(JComponent headerScrollPane) {
+    }
+
+    @Override
+    public int customizeLayoutGetDefaultGap() {
+        return 2;
+    }
+
+    @Override
+    public JComponent customizeLayoutWrapTitledPanels(JComponent pane) {
+        return pane;
+    }
+
+    @Override
+    public void customizeLinkgrabberSidebarHeader(JLabel lbl, JComponent linkGrabberSideBarHeader) {
+
     }
 
     @Override
     public void customizeLinksTable(JComponent c, JScrollPane tableScrollPane) {
         tableScrollPane.setBorder(null);
         // LAFSettings.class
+    }
+
+    @Override
+    public int customizeMenuItemIconTextGap() {
+        return 7;
+    }
+
+    @Override
+    public int customizeMenuItemIndentForToggleItems() {
+        return 26;
+    }
+
+    @Override
+    public String customizeOverviewPanelInsets() {
+        return "0 0 1 0";
+    }
+
+    @Override
+    public void customizePaintHeaderScrollPaneBorder(JComponent c, Graphics g) {
+        // do NOT use HeaderScrollPane casting here!. java compiler will pre-optimize the code to require HeaderScrollPane to load this
+        // class
+        final JScrollPane scrollPane = (JScrollPane) c;
+        final Color headerColor = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
+        final Color headerlineColor = (LAFOptions.getInstance().getColorForPanelBorders());
+        if (scrollPane.getColumnHeader() != null) {
+            // here it is safe because java compiler cannot pre-optimize the if branch, because HeaderScrollPane is only required within
+            // this statement
+            g.setColor(headerColor);
+            final int in = scrollPane.getBorder().getBorderInsets(scrollPane).top;
+            final int headerHeight = ((org.jdownloader.gui.views.components.HeaderScrollPane) scrollPane).getHeaderHeight();
+            g.fillRect(1, 1, scrollPane.getWidth() - 2, headerHeight + in - 1);
+            g.setColor(headerlineColor);
+            g.drawLine(1, headerHeight + in - 1, scrollPane.getWidth() - 2, headerHeight + in - 1);
+        }
+    }
+
+    @Override
+    public String customizePanelHeaderInsets() {
+        return "0 0 1 0";
+    }
+
+    @Override
+    public Insets customizePopupBorderInsets() {
+        return new Insets(0, 2, 4, 2);
     }
 
     @Override
@@ -249,8 +314,28 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     }
 
     @Override
+    public String getFontName() {
+        return "default";
+    }
+
+    @Override
+    public int getFontScaleFactor() {
+        return 100;
+    }
+
+    @Override
     public String getIconSetID() {
         return "standard";
+    }
+
+    @Override
+    public String getLanguage() {
+        return null;
+    }
+
+    @Override
+    public int getLinkTableHorizontalRowLineWeight() {
+        return 0;
     }
 
     @Override
@@ -269,6 +354,16 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     }
 
     @Override
+    public boolean isAnimationEnabled() {
+        return true;
+    }
+
+    @Override
+    public boolean isFontRespectsSystemDPI() {
+        return true;
+    }
+
+    @Override
     public boolean isPaintStatusbarTopBorder() {
         return false;
     }
@@ -284,72 +379,18 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     }
 
     @Override
-    public String customizeOverviewPanelInsets() {
-        return "0 0 1 0";
+    public boolean isTextAntiAliasEnabled() {
+        return false;
     }
 
     @Override
-    public String customizePanelHeaderInsets() {
-        return "0 0 1 0";
+    public boolean isWindowDecorationEnabled() {
+        return false;
     }
 
     @Override
-    public int getLinkTableHorizontalRowLineWeight() {
-        return 0;
+    public boolean isWindowOpaque() {
+        return false;
     }
 
-    @Override
-    public int customizeMenuItemIconTextGap() {
-        return 7;
-    }
-
-    @Override
-    public int customizeMenuItemIndentForToggleItems() {
-        return 26;
-    }
-
-    @Override
-    public Insets customizePopupBorderInsets() {
-        return new Insets(0, 2, 4, 2);
-    }
-
-    @Override
-    public int customizeLayoutGetDefaultGap() {
-        return 2;
-    }
-
-    @Override
-    public void customizeBoundsForBottombarPopupButton(Rectangle bounds) {
-        bounds.x -= 3;
-        bounds.width += 2;
-    }
-
-    @Override
-    public JComponent customizeLayoutWrapTitledPanels(JComponent pane) {
-        return pane;
-    }
-
-    @Override
-    public void customizeLinkgrabberSidebarHeader(JLabel lbl, JComponent linkGrabberSideBarHeader) {
-
-    }
-
-    @Override
-    public void customizePaintHeaderScrollPaneBorder(JComponent c, Graphics g) {
-        // do NOT use HeaderScrollPane casting here!. java compiler will pre-optimize the code to require HeaderScrollPane to load this
-        // class
-        final JScrollPane scrollPane = (JScrollPane) c;
-        final Color headerColor = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
-        final Color headerlineColor = (LAFOptions.getInstance().getColorForPanelBorders());
-        if (scrollPane.getColumnHeader() != null) {
-            // here it is safe because java compiler cannot pre-optimize the if branch, because HeaderScrollPane is only required within
-            // this statement
-            g.setColor(headerColor);
-            final int in = scrollPane.getBorder().getBorderInsets(scrollPane).top;
-            final int headerHeight = ((org.jdownloader.gui.views.components.HeaderScrollPane) scrollPane).getHeaderHeight();
-            g.fillRect(1, 1, scrollPane.getWidth() - 2, headerHeight + in - 1);
-            g.setColor(headerlineColor);
-            g.drawLine(1, headerHeight + in - 1, scrollPane.getWidth() - 2, headerHeight + in - 1);
-        }
-    }
 }
