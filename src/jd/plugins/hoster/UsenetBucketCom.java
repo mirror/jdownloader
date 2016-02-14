@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -17,6 +15,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UsenetConfigInterface;
 import jd.plugins.components.UsenetServer;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "usenetbucket.com" }, urls = { "" }, flags = { 0 })
 public class UsenetBucketCom extends UseNet {
@@ -92,6 +93,10 @@ public class UsenetBucketCom extends UseNet {
                 if (br.getCookie(getHost(), "PHPSESSID") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+            }
+            if (!StringUtils.containsIgnoreCase(br.getURL(), "en/controlpanel")) {
+                // switch to english
+                br.getPage("https://www.usenetbucket.com/en/controlpanel/");
             }
             account.saveCookies(br.getCookies(getHost()), "");
             final String userName = br.getRegex("<td>Username</td>.*?<td>(.*?)</td>").getMatch(0);
