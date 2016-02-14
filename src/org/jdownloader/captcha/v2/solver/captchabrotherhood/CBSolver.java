@@ -8,6 +8,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -24,10 +28,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CBH;
-
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
 
 public class CBSolver extends CESChallengeSolver<String> {
 
@@ -205,7 +205,9 @@ public class CBSolver extends CESChallengeSolver<String> {
             br.setVerbose(true);
             String result = br.postPage("http://www.captchabrotherhood.com/askCredits.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&version=1.1.8", "");
             if (result.startsWith("OK-")) {
-                ret.setBalance(Integer.parseInt(result.substring(3)));
+                String balance = result.substring(3);
+                balance = balance.replace(".-", "");
+                ret.setBalance(Float.valueOf(balance).intValue());
             } else {
                 ret.setError(result);
             }

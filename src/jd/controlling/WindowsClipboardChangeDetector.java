@@ -96,6 +96,10 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     }
 
     @Override
+    protected void slowDown(Throwable e) {
+    }
+
+    @Override
     protected boolean hasChanges() {
         final int currentClipboardSequenceNumber = user32.GetClipboardSequenceNumber();
         if (currentClipboardSequenceNumber != 0) {

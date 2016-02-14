@@ -122,7 +122,7 @@ public class ClipboardMonitoring {
             }
         }
 
-        protected void slowDown() {
+        protected void slowDown(Throwable e) {
             waitTimeout = 5000;
         }
 
@@ -337,8 +337,11 @@ public class ClipboardMonitoring {
                                 setCurrentContent(handleThisRound);
                             }
                         } catch (final Throwable e) {
-                            clipboardChangeDetector.slowDown();
+                            clipboardChangeDetector.slowDown(e);
                             final String message = e.getMessage();
+                            if (message != null) {
+                                logger.severe(message);
+                            }
                             if (!StringUtils.containsIgnoreCase(message, "Owner failed to convert data") && !StringUtils.containsIgnoreCase(message, "Owner timed out") && !StringUtils.containsIgnoreCase(message, "system clipboard data unavailable")) {
                                 logger.log(e);
                             }
