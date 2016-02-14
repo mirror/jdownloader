@@ -36,7 +36,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
@@ -54,6 +53,7 @@ import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -64,7 +64,7 @@ import jd.gui.swing.jdgui.views.ClosableView;
 
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
-    private static final long     serialVersionUID               = -1531827591735215594L;
+    private static final long serialVersionUID = -1531827591735215594L;
 
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
@@ -77,12 +77,12 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     //
     // private Font specialDealFont;
     // private Color specialDealColor;
-    private Rectangle             specialDealBounds;
-    private boolean               specialDealMouseOver           = false;
+    private Rectangle specialDealBounds;
+    private boolean   specialDealMouseOver = false;
 
-    private View                  donatePanel;
+    private View donatePanel;
 
-    private DonateTabHeader       donateHeader;
+    private DonateTabHeader donateHeader;
 
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) {
@@ -270,10 +270,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     private MainTabbedPane() {
         this.setMinimumSize(new Dimension(300, 100));
-        this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
+        this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.setOpaque(false);
-
-        JLabel dummyLbl = new JLabel();
 
         // specialDealFont = dummyLbl.getFont();
 
@@ -353,7 +351,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             }
 
         });
-
+        LAFOptions.getInstance().getExtension().customizeMainTabbedPane(this);
     }
 
     public void notifyCurrentTab() {
