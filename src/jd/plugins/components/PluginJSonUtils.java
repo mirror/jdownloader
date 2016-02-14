@@ -304,7 +304,7 @@ public class PluginJSonUtils {
      * @return
      */
     public static String ammendJson(final String source, final String key, final Object value) {
-        if (source == null || key == null) {
+        if (key == null || value == null) {
             return null;
         }
 
