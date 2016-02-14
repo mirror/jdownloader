@@ -3,19 +3,20 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import jd.controlling.TaskQueue;
-
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
+import org.jdownloader.gui.IconKey;
+
+import jd.controlling.TaskQueue;
 
 public class AbortExtractionAction extends AbstractExtractionContextAction {
 
     public AbortExtractionAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_abort());
-        setSmallIcon(new ExtractIconVariant("cancel", 18, 14, 0, 0));
+        setIconKey(IconKey.ICON_CANCEL);
     }
 
     @Override

@@ -16,7 +16,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -27,7 +26,6 @@ import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
@@ -37,24 +35,24 @@ import net.miginfocom.swing.MigLayout;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener {
 
-    private static final long               serialVersionUID = 4715904261105562064L;
+    private static final long serialVersionUID = 4715904261105562064L;
 
-    private static final int                DOCKING_DISTANCE = 25;
+    private static final int DOCKING_DISTANCE = 25;
 
-    private final DragDropHandler           ddh;
-    private boolean                         enableDocking;
+    private final DragDropHandler ddh;
+    private boolean               enableDocking;
 
-    private NullsafeAtomicReference<Thread> updater          = new NullsafeAtomicReference<Thread>(null);
+    private NullsafeAtomicReference<Thread> updater = new NullsafeAtomicReference<Thread>(null);
     private Point                           point;
 
-    private JDProgressBar                   prgTotal;
-    private JLabel                          lblProgress;
-    private JLabel                          lblETA;
-    private JLabel                          lblHelp;
+    private JDProgressBar prgTotal;
+    private JLabel        lblProgress;
+    private JLabel        lblETA;
+    private JLabel        lblHelp;
 
-    private SpeedMeterPanel                 speedmeter;
+    private SpeedMeterPanel speedmeter;
 
-    private InfoBarExtension                extension;
+    private InfoBarExtension extension;
 
     public InfoDialog(InfoBarExtension infoBarExtension) {
         super();
@@ -101,7 +99,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         JPanel panel = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill,200]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
         panel.add(speedmeter = new SpeedMeterPanel(false, true), "h 30!");
-        speedmeter.setAntiAliasing(JsonConfig.create(GraphicalUserInterfaceSettings.class).isSpeedmeterAntiAliasingEnabled());
+
         panel.add(lblProgress, "split 2");
         panel.add(lblETA);
         panel.add(prgTotal);

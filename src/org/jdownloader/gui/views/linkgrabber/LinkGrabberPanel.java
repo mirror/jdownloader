@@ -61,13 +61,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         return table;
     }
 
-    private JScrollPane                tableScrollPane;
-    private LinkGrabberSidebar         sidebar;
+    private JScrollPane        tableScrollPane;
+    private LinkGrabberSidebar sidebar;
 
-    private HeaderScrollPane           sidebarScrollPane;
+    private HeaderScrollPane sidebarScrollPane;
 
-    private CustomizeableActionBar     rightBar;
-    private CustomizeableActionBar     leftBar;
+    private CustomizeableActionBar rightBar;
+    private CustomizeableActionBar leftBar;
 
     private JComponent                 sidebarContainer;
     private LinkgrabberWidgetContainer widgetContainer;

@@ -3,20 +3,21 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
+import org.jdownloader.gui.IconKey;
+
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 
 public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAction {
 
     public AutoExtractEnabledToggleAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_autoextract());
-        setSmallIcon(new ExtractIconVariant("refresh", 18, 14, 0, 0).crop());
+        setIconKey(IconKey.ICON_REFRESH);
         setSelected(false);
     }
 

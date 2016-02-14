@@ -151,35 +151,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         return super.onSingleClick(e, obj);
     }
 
-    // private void showPropertiesMenu(Point point, AbstractNode obj) {
-    // JPopupMenu m = new JPopupMenu();
-    //
-    // if (obj instanceof AbstractPackageNode) {
-    //
-    // Image back = (((AbstractPackageNode<?, ?>) obj).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) :
-    // NewTheme.I().getImage("tree_package_closed", 32));
-    //
-    // m.add(SwingUtils.toBold(new JLabel(_GUI.T.ContextMenuFactory_createPopup_properties(obj.getName()), new
-    // ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)), SwingConstants.LEFT)));
-    // m.add(new JSeparator());
-    // } else if (obj instanceof DownloadLink) {
-    //
-    // Image back = (((DownloadLink) obj).getIcon().getImage());
-    //
-    // m.add(SwingUtils.toBold(new JLabel(_GUI.T.ContextMenuFactory_createPopup_properties(obj.getName()), new
-    // ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)), SwingConstants.LEFT)));
-    // m.add(new JSeparator());
-    // }
-    //
-    // final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(point);
-    //
-    // for (Component mm : DownloadTableContextMenuFactory.fillPropertiesMenu(new SelectionInfo<FilePackage, DownloadLink>(obj,
-    // getModel().getSelectedObjects()), col)) {
-    // m.add(mm);
-    // }
-    // m.show(this, point.x, point.y);
-    // }
-
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         final SelectionInfo<FilePackage, DownloadLink> selectionInfo = getSelectionInfo();

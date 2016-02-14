@@ -50,27 +50,10 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.gui.swing.components.SetIconInterface;
-import jd.gui.swing.components.SetLabelInterface;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import net.miginfocom.swing.MigLayout;
-
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
@@ -94,18 +77,33 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import net.miginfocom.swing.MigLayout;
+
 public class MainToolBar extends JToolBar implements MouseListener, DownloadWatchdogListener, GenericConfigEventListener<Boolean> {
 
-    private static final long          serialVersionUID = 922971719957349497L;
+    private static final long serialVersionUID = 922971719957349497L;
 
-    private static MainToolBar         INSTANCE         = null;
+    private static MainToolBar INSTANCE = null;
 
-    private volatile SpeedMeterPanel   speedmeter;
-    private JRootPane                  rootpane;
+    private volatile SpeedMeterPanel speedmeter;
+    private JRootPane                rootpane;
 
-    private boolean                    initDone         = false;
+    private boolean initDone = false;
 
-    private LogSource                  logger;
+    private LogSource logger;
 
     private HashMap<KeyStroke, Action> shortCutActions;
 
@@ -120,6 +118,28 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
         return INSTANCE;
     }
 
+    // @Override
+    // public Dimension getPreferredSize() {
+    // Dimension ret = super.getPreferredSize();
+    // ret.height = 38;
+    // return ret;
+    // }
+    //
+    // @Override
+    // public Dimension getMinimumSize() {
+    //
+    // Dimension ret = super.getMinimumSize();
+    // ret.height = 38;
+    // return ret;
+    // }
+    //
+    // @Override
+    // public Dimension getSize() {
+    // Dimension ret = super.getSize();
+    // ret.height = 38;
+    // return ret;
+    // }
+
     private MainToolBar() {
         super();
         logger = LogController.getInstance().getLogger("MainToolbar");
@@ -127,7 +147,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
         this.addMouseListener(this);
         this.setRollover(true);
         this.setFloatable(false);
-        setPreferredSize(new Dimension(-1, 38));
+
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -136,7 +156,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     @Override
                     protected void runInEDT() {
                         speedmeter = new SpeedMeterPanel(true, false);
-                        speedmeter.setAntiAliasing(JsonConfig.create(SyntheticaSettings.class).isTextAntiAliasEnabled());
+
                         speedmeter.addMouseListener(new MouseAdapter() {
 
                             @Override
@@ -183,6 +203,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
         });
 
+        LAFOptions.getInstance().getExtension().customizeToolbar(this);
+
     }
 
     /**
@@ -192,6 +214,11 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
      */
     public void registerAccelerators(final JDGui jdGui) {
         this.rootpane = jdGui.getMainFrame().getRootPane();
+    }
+
+    @Override
+    public void setVisible(boolean aFlag) {
+        super.setVisible(aFlag);
     }
 
     /**

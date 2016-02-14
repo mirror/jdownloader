@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.components.speedmeter;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -31,11 +29,13 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+
 public class SpeedMeterPanel extends Graph {
 
-    private static final long     serialVersionUID = 5571694800446993879L;
+    private static final long serialVersionUID = 5571694800446993879L;
 
-    private final Limiter         speedLimiter;
+    private final Limiter speedLimiter;
 
     private final GeneralSettings config;
 
@@ -95,6 +95,7 @@ public class SpeedMeterPanel extends Graph {
         if (start) {
             start();
         }
+        setAntiAliasing(LAFOptions.getInstance().getCfg().isSpeedmeterAntiAliasingEnabled());
     }
 
     protected String createTooltipText() {

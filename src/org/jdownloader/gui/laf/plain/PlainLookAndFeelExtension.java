@@ -1,16 +1,22 @@
 package org.jdownloader.gui.laf.plain;
 
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
+import javax.swing.JToolBar;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.gui.DefaultLookAndFeelExtension;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -19,6 +25,25 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
     @Override
     public void customizeHeaderScrollPane(JComponent headerScrollPane) {
         headerScrollPane.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.getInstance().getColorForPanelBorders()));
+
+    }
+
+    @Override
+    public boolean isSpeedmeterAntiAliasingEnabled() {
+        return true;
+    }
+
+    @Override
+    public void customizeMenuBar(JMenuBar menubar) {
+
+        menubar.add(new JMenu(_GUI.T.MenuBar_loading()));
+    }
+
+    @Override
+    public void customizeToolbar(JToolBar toolbar) {
+
+        toolbar.setMinimumSize(new Dimension(36, 36));
+        toolbar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)), BorderFactory.createEmptyBorder(2, 0, 2, 0)));
 
     }
 
@@ -73,7 +98,7 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
 
     @Override
     public int customizeMenuItemIconTextGap() {
-        return super.customizeMenuItemIconTextGap();
+        return 17;
     }
 
     @Override
@@ -88,7 +113,7 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
 
     @Override
     public String getColorForConfigHeaderTextColor() {
-        return "ff4080f3";
+        return "ff222222";
     }
 
     @Override
@@ -103,7 +128,7 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
 
     @Override
     public String getColorForTooltipForeground() {
-        return "ff8caeca";
+        return "ff222222";
     }
 
     @Override

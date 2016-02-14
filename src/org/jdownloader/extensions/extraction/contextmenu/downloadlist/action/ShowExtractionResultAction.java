@@ -4,8 +4,6 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.List;
 
-import jd.gui.swing.jdgui.JDGui;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -22,6 +20,8 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
+import jd.gui.swing.jdgui.JDGui;
+
 public class ShowExtractionResultAction extends AbstractExtractionContextAction implements GenericConfigEventListener<Boolean> {
 
     /**
@@ -32,7 +32,7 @@ public class ShowExtractionResultAction extends AbstractExtractionContextAction 
         super();
 
         setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_extract_show_result());
-        setSmallIcon(new ExtractIconVariant(IconKey.ICON_ABOUT, 18, 16, 0, 0).crop());
+        setIconKey(IconKey.ICON_ABOUT);
 
         // CFG_EXTRACTION.WRITE_EXTRACTION_LOG_ENABLED.getEventSender().addListener(this, true);
         updateVisibility();

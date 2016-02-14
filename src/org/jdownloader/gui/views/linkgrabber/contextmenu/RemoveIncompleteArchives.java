@@ -4,18 +4,11 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
 import org.appwork.uio.UIOManager;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -27,12 +20,18 @@ import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractIconVariant;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.action.ByPassDialogSetup;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 
 public class RemoveIncompleteArchives extends CustomizableAppAction implements ExtTableListener, ActionContext, ExtTableModelListener {
 
@@ -45,7 +44,7 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
 
     public RemoveIncompleteArchives() {
         setName(_GUI.T.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
-        setSmallIcon(new ExtractIconVariant("error", 18));
+        setIconKey(IconKey.ICON_EXTRACT_ERROR);
         addContextSetup(byPassDialog = new ByPassDialogSetup());
         initIncludeSelectionSupport();
     }

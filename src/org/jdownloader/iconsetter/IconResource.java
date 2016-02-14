@@ -44,10 +44,10 @@ public class IconResource {
 
     public String getTags(ResourceSet resourceSet) {
         String name = new File(path).getName();
-        // name = name.replaceAll("\\..+$", "");
-        name = name.replaceAll("\\W+", " ");
-        name = name.replaceAll("([a-z])\\s*([A-Z])", "$1 $2");
-        name = name.toLowerCase(Locale.ENGLISH);
+
+        HashSet<String> tags2 = new HashSet<String>();
+        tags2.addAll(tags);
+        addTags(tags2, name);
         File svg = getFile(resourceSet, "svg.icons8");
         if (svg.exists()) {
             String str;
@@ -62,8 +62,7 @@ public class IconResource {
                     fis.close();
                 }
                 if (props.getProperty("name") != null) {
-                    name = name.replace(props.getProperty("name").toLowerCase(Locale.ENGLISH), "");
-                    name += " " + props.getProperty("name");
+                    addTags(tags2, props.getProperty("name"));
 
                 }
 
@@ -72,7 +71,15 @@ public class IconResource {
             }
 
         }
-        return name;
+
+        StringBuilder sb = new StringBuilder();
+        for (String s : tags2) {
+            if (sb.length() > 0) {
+                sb.append(" ");
+            }
+            sb.append(s);
+        }
+        return sb.toString();
     }
 
     public Icon getIcon(String name, int size) {
@@ -114,6 +121,28 @@ public class IconResource {
 
         return new File(IconSetMaker.THEMES, "themes/" + resoureSet.getName() + "/" + getPath() + "." + ext);
 
+    }
+
+    private HashSet<String> tags = new HashSet<String>();
+
+    public void addTags(String name) {
+
+        // name = name.replaceAll("\\..+$", "");
+        addTags(tags, name);
+    }
+
+    private void addTags(HashSet<String> tags, String name) {
+        name = cleanName(name);
+        for (String n : name.split("\\s+")) {
+            tags.add(n);
+        }
+    }
+
+    private String cleanName(String name) {
+        name = name.replaceAll("[^A-Za-z]", " ");
+        name = name.replaceAll("([a-z])\\s*([A-Z])", "$1 $2");
+        name = name.toLowerCase(Locale.ENGLISH);
+        return name;
     }
 
 }

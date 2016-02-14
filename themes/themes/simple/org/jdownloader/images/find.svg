@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?><!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  --><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" enable-background="new 0 0 48 48" height="48px" id="????????_1" preserveAspectRatio="xMidYMid meet" style="fill:#000000" version="1.1" viewBox="0 0 48 48" width="48px" x="0px" xml:space="preserve" y="0px" zoomAndPan="magnify">
+<path d="M34,13c0,0.553-0.447,1-1,1H5c-0.553,0-1-0.447-1-1V6c0-0.553,0.447-1,1-1h28c0.553,0,1,0.447,1,1V13z" fill="#3F51B5"/>
+<path d="M37.054,31.5c0-2.321-1.222-4.354-3.054-5.504V10H4v29h30v-1.996C35.832,35.854,37.054,33.821,37.054,31.5z" fill="#BBDEFB"/>
+<g>
+	
+		<rect fill="#616161" height="9.161" transform="matrix(0.7069 -0.7074 0.7074 0.7069 -16.8452 39.3499)" width="2" x="38.053" y="35.418"/>
+	<path d="M30.554,23c-4.693,0-8.5,3.807-8.5,8.5s3.807,8.5,8.5,8.5s8.5-3.807,8.5-8.5S35.247,23,30.554,23z    M30.554,38c-3.589,0-6.5-2.911-6.5-6.5s2.911-6.5,6.5-6.5s6.5,2.911,6.5,6.5S34.143,38,30.554,38z" fill="#616161"/>
+</g>
+<rect fill="#37474F" height="5.856" transform="matrix(0.7069 -0.7074 0.7074 0.7069 -17.3292 40.5189)" width="2" x="39.222" y="38.239"/>
+<g>
+	<path d="M21.024,27H13v2h7.313C20.482,28.303,20.722,27.635,21.024,27z" fill="#1976D2"/>
+	<rect fill="#1976D2" height="2" width="16" x="13" y="15"/>
+	<path d="M24.354,23H13v2h9.264C22.864,24.24,23.568,23.568,24.354,23z" fill="#1976D2"/>
+	<rect fill="#1976D2" height="2" width="16" x="13" y="19"/>
+	<rect fill="#1976D2" height="2" width="2" x="9" y="31"/>
+	<path d="M20,31.5c0-0.169,0.018-0.333,0.025-0.5H13v2h7h0.119C20.049,32.509,20,32.011,20,31.5z" fill="#1976D2"/>
+	<rect fill="#1976D2" height="2" width="2" x="9" y="27"/>
+	<rect fill="#1976D2" height="2" width="2" x="9" y="15"/>
+	<rect fill="#1976D2" height="2" width="2" x="9" y="23"/>
+	<rect fill="#1976D2" height="2" width="2" x="9" y="19"/>
+</g>
+</svg>

@@ -1100,24 +1100,24 @@ Menu
 
     <state>
       <opaque value="false" />
-      <color type="BACKGROUND" value="#57AAF1" />
-      <color type="FOREGROUND" value="#000000" />
-      <color type="TEXT_FOREGROUND" value="#000000" />
+      <color type="BACKGROUND" value="#FFFFF" />
+      <color type="FOREGROUND" value="#22222" />
+      <color type="TEXT_FOREGROUND" value="#22222" />
       <property key="Menu.arrowIcon" value="arrowIcon"/>
 
       <object class="javax.swing.plaf.ColorUIResource" id="toplevelTextColor">
-        <!-- #FFFFFF -->
-        <int>255</int>
-        <int>255</int>
-        <int>255</int>
+        <!-- #222222 -->
+        <int>34</int>
+        <int>34</int>
+        <int>34</int>
       </object>
       <defaultsProperty key="Synthetica.menu.toplevel.textColor" type="idref" value="toplevelTextColor"/>
 
       <object class="javax.swing.plaf.ColorUIResource" id="toplevelInactiveTextColor">
-        <!-- #FFFFFF -->
-        <int>255</int>
-        <int>255</int>
-        <int>255</int>
+        <!-- #222222 -->
+        <int>34</int>
+        <int>34</int>
+        <int>34</int>
       </object>
       <defaultsProperty key="Synthetica.menu.toplevel.textColor.inactive" type="idref" value="toplevelInactiveTextColor"/>
       <defaultsProperty key="Synthetica.menu.toplevel.background.insets" type="insets" value="8 8 8 8"/>
@@ -1132,15 +1132,15 @@ Menu
 
     <state value="SELECTED">
       <opaque value="true" />
-      <color type="BACKGROUND" value="#4080F3" />
-      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+      <color type="BACKGROUND" value="#ffffff" />
+      <color type="TEXT_FOREGROUND" value="#222222" />
       <property key="Menu.arrowIcon" value="arrowIconSelected"/>
 
       <object class="javax.swing.plaf.ColorUIResource" id="toplevelSelectedTextColor">
-        <!-- #FFFFFF -->
-        <int>255</int>
-        <int>255</int>
-        <int>255</int>
+        <!-- #222222 -->
+        <int>34</int>
+        <int>34</int>
+        <int>34</int>
       </object>
       <defaultsProperty key="Synthetica.menu.toplevel.textColor.selected" type="idref" value="toplevelSelectedTextColor"/>
 
@@ -1190,7 +1190,7 @@ MenuBar
   <style id="menuBar">
     <state>
       <opaque value="false" />
-      <color type="BACKGROUND" value="#57AAF1" />
+      <color type="BACKGROUND" value="#ffffff" />
       <string id="menuBarBackground">/org/jdownloader/gui/laf/plain/images/menuBarBackground.png</string>
       <defaultsProperty key="Synthetica.menuBar.background.active" type="idref" value="menuBarBackground"/>
       <string id="menuBarBackground">/org/jdownloader/gui/laf/plain/images/menuBarBackground4_inactive.png,/org/jdownloader/gui/laf/plain/images/menuBarBackground3_inactive.png,/org/jdownloader/gui/laf/plain/images/menuBarBackground2_inactive.png,/org/jdownloader/gui/laf/plain/images/menuBarBackground_inactive.png</string>

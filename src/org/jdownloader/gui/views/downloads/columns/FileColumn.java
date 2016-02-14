@@ -12,22 +12,11 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.border.Border;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcrawler.ArchiveCrawledPackage;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.NaturalOrderComparator;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
@@ -49,7 +38,19 @@ import org.jdownloader.gui.views.downloads.action.OpenFileAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcrawler.ArchiveCrawledPackage;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.NaturalOrderComparator;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
+public class FileColumn extends ExtTextColumn<AbstractNode>implements GenericConfigEventListener<Boolean> {
 
     /**
      *
@@ -68,10 +69,12 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         super(_GUI.T.filecolumn_title());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
         normalBorder = BorderFactory.createEmptyBorder(0, 0, 0, 0);
-        iconPackageOpen = NewTheme.I().getIcon(IconKey.ICON_TREE_PACKAGE_OPEN, 32);
-        iconArchiveOpen = NewTheme.I().getIcon(IconKey.ICON_TREE_ARCHIVE_OPEN, 32);
-        iconArchive = NewTheme.I().getIcon(IconKey.ICON_TREE_ARCHIVE, 32);
-        iconPackageClosed = NewTheme.I().getIcon(IconKey.ICON_TREE_PACKAGE_CLOSED, 32);
+        Icon open = NewTheme.I().getIcon(IconKey.ICON_MINUS, -1, false);
+        Icon closed = NewTheme.I().getIcon(IconKey.ICON_PLUS, -1, false);
+        iconPackageOpen = new ExtMergedIcon(open, 0, 0).add(NewTheme.I().getIcon(IconKey.ICON_PACKAGE_OPEN, 16), 16, 0);
+        iconArchiveOpen = new ExtMergedIcon(open, 0, 0).add(NewTheme.I().getIcon(IconKey.ICON_RAR, 16), 16, 0);
+        iconArchive = new ExtMergedIcon(closed, 0, 0).add(NewTheme.I().getIcon(IconKey.ICON_RAR, 16), 16, 0);
+        iconPackageClosed = new ExtMergedIcon(closed, 0, 0).add(NewTheme.I().getIcon(IconKey.ICON_PACKAGE_CLOSED, 16), 16, 0);
         setClickcount(0);
         hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
