@@ -28,37 +28,14 @@ public interface LAFSettings extends SyntheticaSettings {
     public static final String RED                                               = "FFFF0000";
     public static final String TROPICAL_BLUE_APPROX                              = "ffCAE8FA";
 
-    // private String colorForDownloadOverviewHeader = null;
-    // private String colorForErrorForeground = "FFFF0000";
-    //
-    // private String colorForSortedColumnView = toHex(Color.ORANGE);
-    //
-    // private String colorForFilteredTableView = toHex(Color.GREEN);
-    //
-    // private String menuBackgroundPainterClass = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
-    //
-    // private boolean paintStatusbarTopBorder = false;
-    //
-    // private String colorForPanelBackground = "ffF5FCFF";
-    //
-    // private String colorForPanelHeader = "ffD7E7F0";
-    //
-    // private String colorForPanelHeaderForeground = BLACK;
-    // private String colorForPanelHeaderLine = "ffC0C0C0";
-    //
-    // private int[] popupBorderInsets = new int[] { 0, 2, 4, 2 };
-    //
-    // private String colorForTablePackageRowBackground = "FFDEE7ED";
-    // private String colorForTablePackageRowForeground = BLACK;
-    // private String colorForTooltipForeground = "ffF5FCFF";
-    // private String colorForSelectedRowsForeground = BLACK;
-    // private String colorForSelectedRowsBackground = "ffCAE8FA";
-    // private String colorForMouseOverRowBackground = "ccCAE8FA";
-    // private String colorForMouseOverRowForeground = null;
-    // private String colorForAlternateRowForeground = null;
-    // private String colorForAlternateRowBackground = "03000000";
-    // private String colorForScrollbarsNormalState = "ffD7E7F0";
-    // private String colorForScrollbarsMouseOverState = "ffABC7D8";
+    @AboutConfig
+    @DescriptionForConfigEntry("Paint all labels/text with or without antialias. Default value is false.")
+
+    @RequiresRestart("A JDownloader Restart is Required")
+    boolean isSpeedmeterAntiAliasingEnabled();
+
+    void setSpeedmeterAntiAliasingEnabled(boolean b);
+
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")

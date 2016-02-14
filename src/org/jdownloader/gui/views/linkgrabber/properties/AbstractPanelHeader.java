@@ -2,8 +2,6 @@ package org.jdownloader.gui.views.linkgrabber.properties;
 
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -28,19 +26,31 @@ public abstract class AbstractPanelHeader extends MigPanel {
     private JLabel    icon;
     private String    labelString;
 
-    private void updateLabelString() {
-        if (labelString != null) {
-            ;
-            lbl.setText("");
-            try {
-                lbl.setText(org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(lbl, lbl.getFontMetrics(getFont()), labelString, lbl.getWidth() - 15));
-            } catch (Throwable e) {
-                // http://www.oracle.com/technetwork/java/faq-sun-packages-142232.html
-                e.printStackTrace();
-                lbl.setText(labelString);
-            }
-        }
-    }
+    // private void updateLabelString() {
+    // if (labelString != null) {
+    // ;
+    // lbl.setText("");
+    // try {
+    // int max = getSize().width - getInsets().left - getInsets().right;
+    // System.out.println(getPreferredSize());
+    // for (Component c : getComponents()) {
+    // if (c != lbl) {
+    // max -= c.getPreferredSize().width + 4;
+    // }
+    // }
+    // Dimension size = lbl.getSize();
+    // String cropped = org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(lbl, lbl.getFontMetrics(getFont()),
+    // labelString, max);
+    // System.out.println(max + " cropped " + size + " - " + cropped);
+    //
+    // lbl.setText(cropped);
+    // } catch (Throwable e) {
+    // // http://www.oracle.com/technetwork/java/faq-sun-packages-142232.html
+    // e.printStackTrace();
+    // lbl.setText(labelString);
+    // }
+    // }
+    // }
 
     protected void setIcon(Icon icon) {
         this.icon.setIcon(icon);
@@ -48,7 +58,7 @@ public abstract class AbstractPanelHeader extends MigPanel {
 
     protected void setText(String str) {
         labelString = str;
-        updateLabelString();
+
     }
 
     private JTableHeader tableHeader;
@@ -64,16 +74,34 @@ public abstract class AbstractPanelHeader extends MigPanel {
     public AbstractPanelHeader(String title, Icon imageIcon) {
         super("ins " + LAFOptions.getInstance().getExtension().customizePanelHeaderInsets(), "[]2[grow,fill][]0[]", "[grow,fill]");
         tableHeader = new JTableHeader();
-        lbl = SwingUtils.toBold(new JLabel(""));
-        this.addHierarchyBoundsListener(new HierarchyBoundsListener() {
+        lbl = SwingUtils.toBold(new JLabel("") {
+            private boolean paint;
 
             @Override
-            public void ancestorResized(HierarchyEvent e) {
-                updateLabelString();
+            public void paint(Graphics g) {
+                super.paint(g);
             }
 
             @Override
-            public void ancestorMoved(HierarchyEvent e) {
+            public String getText() {
+
+                if (labelString != null && paint) {
+                    String pref = org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper.clipStringIfNecessary(this, getFontMetrics(getFont()), labelString, getWidth());
+
+                    return pref;
+                }
+                return "";
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                paint = true;
+                try {
+                    super.paintComponent(g);
+                } finally {
+                    paint = false;
+                }
+
             }
         });
 
@@ -110,6 +138,7 @@ public abstract class AbstractPanelHeader extends MigPanel {
         add(bt, "width 17!,height 17!");
         setText(title);
         setIcon(imageIcon);
+
     }
 
     abstract protected void onSettings(ExtButton options);

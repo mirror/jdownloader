@@ -19,8 +19,7 @@ public class SetExtractPasswordAction extends AbstractExtractionContextAction {
     public SetExtractPasswordAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_password());
-        setSmallIcon(new ExtractIconVariant(IconKey.ICON_PASSWORD, 18, 12, -1, -1).crop());
-
+        setIconKey(IconKey.ICON_PASSWORD);
     }
 
     @Override

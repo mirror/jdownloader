@@ -3,21 +3,21 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+
 public class CleanupAutoDeleteLinksEnabledToggleAction extends AbstractExtractionContextAction {
 
     public CleanupAutoDeleteLinksEnabledToggleAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_autodeletelinks());
-        setSmallIcon(new ExtractIconVariant(IconKey.ICON_LINK, 18, 14, 0, 0).crop());
+        setIconKey(IconKey.ICON_LINK);
         setSelected(false);
     }
 

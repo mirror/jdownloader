@@ -6,9 +6,6 @@ import java.awt.Point;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -29,6 +26,9 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import net.miginfocom.swing.MigLayout;
 
 public class DownloadsPabelWidgetContainer extends WidgetContainer implements GenericConfigEventListener<Boolean> {
     /**
@@ -174,7 +174,8 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
         ret = new OverviewHeaderScrollPane(overView);
 
         LAFOptions.getInstance().applyPanelBackground(ret);
-        ret.setColumnHeaderView(new DownloadOverViewHeader(overView) {
+        final DownloadOverViewHeader header;
+        ret.setColumnHeaderView(header = new DownloadOverViewHeader(overView) {
 
             private static final long serialVersionUID = 1L;
 

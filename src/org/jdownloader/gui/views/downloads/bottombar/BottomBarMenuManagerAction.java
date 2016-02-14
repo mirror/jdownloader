@@ -12,7 +12,7 @@ public class BottomBarMenuManagerAction extends CustomizableAppAction {
     public BottomBarMenuManagerAction() {
 
         setName(_GUI.T.BottomBarMenuManagerAction_BottomBarMenuManagerAction());
-        setIconKey(IconKey.ICON_EDIT);
+        setIconKey(IconKey.ICON_BOTTOMBAR);
     }
 
     @Override

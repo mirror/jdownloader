@@ -30,6 +30,7 @@ import javax.swing.event.ListSelectionListener;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.IO;
@@ -66,6 +67,7 @@ public class Icon8Dialog extends AbstractDialog<Object> {
     private Icon8Resource      selectedIcon;
     private PseudoCombo<Style> style;
     private String             lastSearch;
+    private ExtSpinner         alphaSpinner;
 
     @Override
     protected void setReturnmask(boolean b) {
@@ -205,7 +207,8 @@ public class Icon8Dialog extends AbstractDialog<Object> {
         p.add(new JLabel("Color:"));
         color = new JPanel();
         color.setOpaque(true);
-        color.setBackground(new Color(JsonConfig.create(IconSetterConfig.class).getColor()));
+        color.setBackground(new Color(JsonConfig.create(IconSetterConfig.class).getColor(), true));
+
         color.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -219,6 +222,9 @@ public class Icon8Dialog extends AbstractDialog<Object> {
         });
 
         p.add(color);
+        // p.add(new JLabel("Alpha:"));
+        // alphaSpinner= new ExtSpinner(new SpinnerNumberModel(255,1, 255, 1));
+        // alphaSpinner.setValue(value);
         card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");
         p.add(card, "spanx,pushx,growx");
 
@@ -343,8 +349,25 @@ public class Icon8Dialog extends AbstractDialog<Object> {
                     SVGDiagram diagram = universe.getDiagram(uri);
                     SVGElement root = diagram.getRoot();
                     // set color
+                    float alpha = color.getBackground().getAlpha() / 255f;
+
                     String hex = "#" + String.format("%02x%02x%02x", color.getBackground().getRed(), color.getBackground().getGreen(), color.getBackground().getBlue());
                     root.addAttribute("fill", AnimationElement.AT_CSS, hex);
+                    root.addAttribute("fill-opacity", AnimationElement.AT_CSS, alpha + "");
+
+                    // Node svg = doc.getElementsByTagName("svg").item(0);
+                    // NamedNodeMap attributes = svg.getAttributes();
+                    // Node style = attributes.getNamedItem("style");
+                    // if (style != null) {
+                    // String css = style.getNodeValue();
+                    // if (StringUtils.isNotEmpty(css) && !css.trim().endsWith(";")) {
+                    // css = css.trim() + ";";
+                    // }
+                    // style.setNodeValue(css + "fill:" + hex + ";fill-opacity:" + alpha);
+                    //
+                    // } else {
+                    // ((Element) svg).setAttribute("style", "fill:" + hex + ";fill-opacity:" + alpha);
+                    // }
 
                     diagram.updateTime(0d);
                     diagram.setIgnoringClipHeuristic(true);

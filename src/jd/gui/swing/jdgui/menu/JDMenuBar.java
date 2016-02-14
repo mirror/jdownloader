@@ -13,8 +13,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.KeyStroke;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -29,6 +27,9 @@ import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.views.downloads.bottombar.HorizontalBoxItem;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.SecondLevelLaunch;
 
 public class JDMenuBar extends JMenuBar implements MouseListener {
     private static final JDMenuBar INSTANCE = new JDMenuBar();
@@ -68,8 +69,17 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
         this.addMouseListener(this);
         logger = LogController.getInstance().getLogger(JDMenuBar.class.getName());
+        LAFOptions.getInstance().getExtension().customizeMenuBar(this);
+        // add(new JMenu("Menu is loading...."));
 
     }
+
+    // @Override
+    // public Dimension getPreferredSize() {
+    // Dimension ret = super.getPreferredSize();
+    // // ret.height = 24;
+    // return ret;
+    // }
 
     protected void addImpl(Component comp, Object constraints, int index) {
         super.addImpl(comp, constraints, index);

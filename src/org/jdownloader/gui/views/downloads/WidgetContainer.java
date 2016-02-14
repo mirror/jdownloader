@@ -9,6 +9,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class WidgetContainer extends MigPanel {
     public WidgetContainer() {
         setOpaque(false);
+
     }
 
     public void relayout() {

@@ -217,7 +217,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                 }
                 Collection<String> ids = addAt._getItemIdentifiers();
 
-                System.out.println(parent);
+                // System.out.println(parent);
 
                 if (c.getType() == Type.CONTAINER) {
 

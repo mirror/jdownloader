@@ -17,7 +17,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
     public ExtractArchiveNowAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T.T.contextmenu_extract());
-        setSmallIcon(new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 20, 3, 3).crop());
+        setIconKey(IconKey.ICON_RUN);
     }
 
     @Override

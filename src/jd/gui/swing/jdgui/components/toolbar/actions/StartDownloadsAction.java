@@ -11,7 +11,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -26,7 +25,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
@@ -50,8 +48,6 @@ import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 
 public class StartDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum>, ActionContext {
-
-    private static final String ICON_KEY = "media-playback-start";
 
     /**
      * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
@@ -103,7 +99,9 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
             DownloadWatchDog.getInstance().startDownloads();
 
         }
-        if (badge != null) {
+        DownloadSession session = DownloadWatchDog.getInstance().getSession();
+
+        if (session != null && session.isForcedOnlyModeEnabled()) {
             DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
 
                 @Override
@@ -121,13 +119,15 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
     @Override
     public String createTooltip() {
-        if (badge != null) {
+        DownloadSession session = DownloadWatchDog.getInstance().getSession();
+
+        if (session != null && session.isForcedOnlyModeEnabled()) {
             return _JDT.T.StartDownloadsAction_forced_createTooltip_();
         }
         return _JDT.T.StartDownloadsAction_createTooltip_();
     }
 
-    private boolean            hideIfDownloadsAreRunning     = false;
+    private boolean hideIfDownloadsAreRunning = false;
 
     public static final String HIDE_IF_DOWNLOADS_ARE_RUNNING = "HideIfDownloadsAreRunning";
 
@@ -162,9 +162,6 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
         return null;
     }
 
-    private String        badge        = null;
-    private static String BADGE_FORCED = IconKey.ICON_PRIO_3_CLEAR;
-
     private void updateEnableState() {
 
         new EDTRunner() {
@@ -175,22 +172,28 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                 boolean enable = (!DownloadWatchDog.getInstance().isRunning());
                 // putValue(Action.SMALL_ICON, null);
                 // putValue(Action.LARGE_ICON_KEY, null);
-                String newBadge = null;
+                Icon newSmall = normalSmall;
 
                 if (session != null && DownloadWatchDog.getInstance().isRunning()) {
                     enable |= session.isForcedOnlyModeEnabled();
                     if (session.isForcedOnlyModeEnabled()) {
+                        newSmall = forcedSmall;
 
-                        newBadge = BADGE_FORCED;
                     }
                 }
-                if (!StringUtils.equals(newBadge, badge)) {
-                    // fire Icon changed
-                    badge = newBadge;
+
+                if (newSmall != smallIcon) {
+                    if (newSmall == forcedSmall) {
+                        smallIcon = forcedSmall;
+                        largeIcon = forcedLarge;
+                    } else {
+                        smallIcon = normalSmall;
+                        largeIcon = normalLarge;
+                    }
                     firePropertyChange(Action.SMALL_ICON, new Object(), new Object());
                     firePropertyChange(Action.LARGE_ICON_KEY, new Object(), new Object());
                 }
-                if (badge != null) {
+                if (smallIcon == forcedSmall) {
                     setTooltipText(_JDT.T.StartDownloadsAction_forced_createTooltip_());
 
                 } else {
@@ -213,16 +216,19 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
         };
     }
 
+    private Icon normalSmall = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 18);
+    private Icon forcedSmall = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START_FORCED, 18);;
+    private Icon normalLarge = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24);
+    private Icon forcedLarge = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START_FORCED, 24);;
+    private Icon smallIcon   = normalSmall;
+    private Icon largeIcon   = normalLarge;
+
     /**
      * @return
      */
     protected Icon getSmallIconForToolbar() {
 
-        if (badge == null) {
-            return new AbstractIcon(ICON_KEY, 18);
-        } else {
-            return new BadgeIcon(ICON_KEY, badge, 18, 10, 0, 0);
-        }
+        return smallIcon;
 
     }
 
@@ -230,11 +236,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
      * @return
      */
     protected Icon getLargeIconForToolbar() {
-        if (badge == null) {
-            return new AbstractIcon(ICON_KEY, 24);
-        } else {
-            return new BadgeIcon(ICON_KEY, badge, 24, 12, 0, 0);
-        }
+        return largeIcon;
     }
 
     @Override

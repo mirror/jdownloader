@@ -2,6 +2,7 @@ package org.jdownloader.iconsetter;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -9,12 +10,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.FileHandler;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -179,9 +182,31 @@ public class IconSetMaker {
                         return true;
                     }
                     ir = map.get(rel);
+                    String nameTags = null;
+                    try {
+                        File icon8 = new File(f.getAbsolutePath() + ".icons8");
+                        if (icon8.exists()) {
+                            Properties p = new Properties();
+                            FileInputStream fis = new FileInputStream(icon8);
+                            try {
+                                p.load(fis);
+                            } finally {
+                                fis.close();
+                            }
+                            nameTags = p.getProperty("name");
+                        }
+                    } catch (Throwable e) {
+                        LoggerFactory.getDefaultLogger().log(e);
+                    }
                     if (ir == null) {
                         ir = new IconResource(rel, Hash.getMD5(f));
+                        if (nameTags != null) {
+                            ir.addTags(nameTags);
+                        }
                     } else {
+                        if (nameTags != null) {
+                            ir.addTags(nameTags);
+                        }
                         if (Hash.getMD5(f).equals(ir.getStandardMd5())) {
                             // System.out.println("Removed Standart File: "+f);
                             // f.delete();

@@ -6,7 +6,9 @@ import java.awt.Rectangle;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
+import javax.swing.JToolBar;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.handler.StorageHandler;
@@ -16,6 +18,11 @@ public abstract class LookAndFeelExtension implements LAFSettings {
     public abstract void customizeHeaderScrollPane(JComponent headerScrollPane);
 
     public abstract void customizeLinksTable(JComponent table, JScrollPane tableScrollPane);
+
+    @Override
+    public void setSpeedmeterAntiAliasingEnabled(boolean b) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
 
     @Override
     public void setColorForConfigHeaderTextColor(String color) {
@@ -331,5 +338,9 @@ public abstract class LookAndFeelExtension implements LAFSettings {
     public abstract void customizeLinkgrabberSidebarHeader(JLabel lbl, JComponent linkGrabberSideBarHeader);
 
     public abstract void customizePaintHeaderScrollPaneBorder(JComponent headerScrollPane, Graphics g);
+
+    public abstract void customizeMenuBar(JMenuBar menubar);
+
+    public abstract void customizeToolbar(JToolBar toolbar);
 
 }

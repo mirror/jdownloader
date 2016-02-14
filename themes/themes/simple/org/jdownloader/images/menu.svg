@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?><!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  --><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" enable-background="new 0 0 48 48" height="48px" id="????????_1" preserveAspectRatio="xMidYMid meet" style="fill:#000000" version="1.1" viewBox="0 0 48 48" width="48px" x="0px" xml:space="preserve" y="0px" zoomAndPan="magnify">
+<path d="M35,6H7C6.448,6,6,6.447,6,7v35h30V7C36,6.447,35.553,6,35,6z" fill="#BBDEFB"/>
+<path d="M24,6h11c0.553,0,1,0.447,1,1v29H24V6z" fill="#2196F3"/>
+<rect fill="#3F51B5" height="6" width="36" x="6" y="36"/>
+<circle cx="10" cy="39" fill="#FFEB3B" r="2"/>
+<g>
+	<rect fill="#1976D2" height="2" width="12" x="9" y="9"/>
+	<rect fill="#1976D2" height="2" width="12" x="9" y="13"/>
+</g>
+<path d="M34.125,32c0-0.553-0.447-1-1-1H27c-0.553,0-1,0.447-1,1l0,0c0,0.553,0.447,1,1,1h6.125  C33.678,33,34.125,32.553,34.125,32L34.125,32z" fill="#FAFAFA"/>
+</svg>

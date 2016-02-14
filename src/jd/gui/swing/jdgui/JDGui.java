@@ -58,21 +58,6 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.nutils.Screen;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -150,16 +135,31 @@ import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
 
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.nutils.Screen;
+import net.miginfocom.swing.MigLayout;
+
 public class JDGui implements UpdaterListener, OwnerFinder {
-    private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_UPDATE = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_TITLE             = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_TITLE = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_SPEED_AVERAGE     = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_SPEED_AVERAGE = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
 
     private static final String TITLE_PATTERN_RUNNING_DOWNLOADS = "\\|([^\\|]*)\\#RUNNING_DOWNLOADS([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_SPEED             = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_SPEED = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
 
     static {
         if (Application.isHeadless()) {
@@ -216,29 +216,29 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private MainFrameClosingHandler closingHandler;
 
-    private DownloadsView           downloadView;
+    private DownloadsView downloadView;
 
-    private Thread                  initThread = null;
+    private Thread initThread = null;
 
-    private LinkGrabberView         linkgrabberView;
-    private LogSource               logger;
-    protected JDownloaderMainFrame  mainFrame;
+    private LinkGrabberView        linkgrabberView;
+    private LogSource              logger;
+    protected JDownloaderMainFrame mainFrame;
 
-    private MainTabbedPane          mainTabbedPane;
-    private JDMenuBar               menuBar;
-    private StatusBarImpl           statusBar;
+    private MainTabbedPane mainTabbedPane;
+    private JDMenuBar      menuBar;
+    private StatusBarImpl  statusBar;
 
-    private MainToolBar             toolBar;
+    private MainToolBar toolBar;
 
-    private final TrayExtension     tray;
+    private final TrayExtension tray;
 
-    private Thread                  trayIconChecker;
+    private Thread trayIconChecker;
 
-    private JPanel                  waitingPane;
+    private JPanel waitingPane;
 
-    private volatile Timer          speedInTitleUpdater;
+    private volatile Timer speedInTitleUpdater;
 
-    private boolean                 busy;
+    private boolean busy;
 
     private JDGui() {
         logger = LogController.getInstance().getLogger("Gui");
@@ -1326,7 +1326,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
         this.mainFrame.setContentPane(contentPane);
         this.mainFrame.setJMenuBar(this.menuBar);
-        this.mainFrame.add(this.toolBar, "dock NORTH,height 38!");
+        this.mainFrame.add(this.toolBar, "dock NORTH");
 
     }
 

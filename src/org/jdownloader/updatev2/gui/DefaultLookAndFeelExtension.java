@@ -1,13 +1,19 @@
 package org.jdownloader.updatev2.gui;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
+import javax.swing.JToolBar;
+
+import org.jdownloader.gui.translate._GUI;
 
 public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     public static final String ALICE_BLUE_APPROX             = "ffF5FCFF";
@@ -390,6 +396,21 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
 
     @Override
     public boolean isWindowOpaque() {
+        return false;
+    }
+
+    @Override
+    public void customizeMenuBar(JMenuBar menubar) {
+        menubar.add(new JMenu(_GUI.T.MenuBar_loading()));
+    }
+
+    @Override
+    public void customizeToolbar(JToolBar toolbar) {
+        toolbar.setMinimumSize(new Dimension(36, 36));
+    }
+
+    @Override
+    public boolean isSpeedmeterAntiAliasingEnabled() {
         return false;
     }
 

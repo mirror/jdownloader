@@ -6064,4 +6064,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Server" })
 
     String UsenetConfigPanel_Server();
+
+    @Default(lngs = { "en" }, values = { "Loading Menu & Toolbar..." })
+
+    String MenuBar_loading();
 }

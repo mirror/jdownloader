@@ -12,6 +12,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -92,8 +93,9 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String>implements
             r.addFormData(new FormData("p", "upload"));
             r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
             r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
-
-            r.addFormData(new FormData("captcha", "image.png", "image/png", challenge.getAnnotatedImageBytes()));
+            // byte[] bytes = challenge.getAnnotatedImageBytes();
+            byte[] bytes = IO.readFile(challenge.getImageFile());
+            r.addFormData(new FormData("captcha", "image.jpg", "image/jpg", bytes));
 
             URLConnectionAdapter conn = br.openRequestConnection(r);
             br.loadConnection(conn);

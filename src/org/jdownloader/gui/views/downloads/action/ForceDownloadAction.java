@@ -1,18 +1,12 @@
 package org.jdownloader.gui.views.downloads.action;
 
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.JDGui;
@@ -21,20 +15,13 @@ import jd.plugins.FilePackage;
 
 public class ForceDownloadAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
-    private static final long   serialVersionUID = 7107840091963427544L;
+    private static final long serialVersionUID = 7107840091963427544L;
 
-    private final static String NAME             = _GUI.T.ForceDownloadAction_ForceDownloadAction();
-    private final static Icon   ICON             = getICON();
-
-    private final static Icon getICON() {
-        final Image add = NewTheme.I().getImage("media-playback-start", 20);
-        final Image play = NewTheme.I().getImage("prio_3", 14);
-        return new ImageIcon(ImageProvider.merge(add, play, -4, 0, 6, 10));
-    }
+    private final static String NAME = _GUI.T.ForceDownloadAction_ForceDownloadAction();
 
     public ForceDownloadAction() {
         super();
-        setSmallIcon(ICON);
+        setIconKey(IconKey.ICON_MEDIA_PLAYBACK_START_FORCED);
         setName(NAME);
     }
 

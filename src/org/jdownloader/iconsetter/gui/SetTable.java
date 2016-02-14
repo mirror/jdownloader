@@ -31,6 +31,7 @@ public class SetTable extends BasicJDTable<IconResource> {
         super(setTableModel);
         setRowHeight(36);
         this.owner = owner;
+        setSearchEnabled(true);
     }
 
     @Override
