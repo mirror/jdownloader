@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 
 import org.appwork.swing.MigPanel;
@@ -34,6 +35,12 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
     }
 
     @Override
+    public void customizeMainTabbedPane(JTabbedPane tabbedPane) {
+        tabbedPane.setOpaque(true);
+        tabbedPane.setBackground(Color.WHITE);
+    }
+
+    @Override
     public void customizeMenuBar(JMenuBar menubar) {
 
         menubar.add(new JMenu(_GUI.T.MenuBar_loading()));
@@ -43,7 +50,7 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
     public void customizeToolbar(JToolBar toolbar) {
 
         toolbar.setMinimumSize(new Dimension(36, 36));
-        toolbar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)), BorderFactory.createEmptyBorder(2, 0, 2, 0)));
+        toolbar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, new Color(220, 220, 220)), BorderFactory.createEmptyBorder(2, 0, 2, 0)));
 
     }
 

@@ -11,6 +11,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 
 import org.jdownloader.gui.translate._GUI;
@@ -412,6 +413,10 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     @Override
     public boolean isSpeedmeterAntiAliasingEnabled() {
         return false;
+    }
+
+    @Override
+    public void customizeMainTabbedPane(JTabbedPane tabbedPane) {
     }
 
 }

@@ -8,6 +8,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 
 import org.appwork.exceptions.WTFException;
@@ -342,5 +343,7 @@ public abstract class LookAndFeelExtension implements LAFSettings {
     public abstract void customizeMenuBar(JMenuBar menubar);
 
     public abstract void customizeToolbar(JToolBar toolbar);
+
+    public abstract void customizeMainTabbedPane(JTabbedPane tabbedPane);
 
 }
