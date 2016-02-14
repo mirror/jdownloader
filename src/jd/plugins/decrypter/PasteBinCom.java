@@ -27,14 +27,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=|raw/)?[0-9A-Za-z]+" }, flags = { 0 })
 public class PasteBinCom extends PluginForDecrypt {
 
     public PasteBinCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_invalid = "http://(www\\.)?pastebin\\.com/(languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
+    private final String type_invalid = "http://(www\\.)?pastebin\\.com/(languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -61,7 +61,7 @@ public class PasteBinCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
-        if (plaintxt == null && parameter.contains("raw.php")) {
+        if (plaintxt == null && (parameter.contains("raw.php") || parameter.contains("/raw/"))) {
             plaintxt = br.toString();
         }
         if (plaintxt == null) {
