@@ -61,13 +61,13 @@ public class ILoadUsenet extends UseNet {
                 login = br.getFormbyActionRegex(".*dologin.*");
                 if (login != null && login.containsHTML("j_username") && login.containsHTML("j_password")) {
                     br.getCookies(getHost()).clear();
-                } else if (br.getCookie(getHost(), "JSESSIONID") == null || br.getCookie(getHost(), "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null) {
+                } else if (br.getCookie(getHost(), "JSESSIONID") == null || (br.getCookie(getHost(), "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null && br.getCookie(getHost(), "remember-me") == null)) {
                     br.getCookies(getHost()).clear();
                 } else {
                     br.getPage("https://www.iload-usenet.com/account/home?_lang=en_US");
                 }
             }
-            if (br.getCookie(getHost(), "JSESSIONID") == null || br.getCookie(getHost(), "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null) {
+            if (br.getCookie(getHost(), "JSESSIONID") == null || (br.getCookie(getHost(), "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null && br.getCookie(getHost(), "remember-me") == null)) {
                 account.clearCookies("");
                 br.setCookie(getHost(), "language", "en");
                 br.getPage("https://www.iload-usenet.com/home?_lang=en_US");
@@ -86,7 +86,7 @@ public class ILoadUsenet extends UseNet {
                     }
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (br.getCookie(getHost(), "JSESSIONID") == null || br.getCookie(getHost(), "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null) {
+                if (br.getCookie(getHost(), "JSESSIONID") == null || (br.getCookie(getHost(), "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null && br.getCookie(getHost(), "remember-me") == null)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
