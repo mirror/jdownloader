@@ -6,6 +6,14 @@ import java.util.List;
 
 import javax.swing.Icon;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -16,14 +24,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.SkipReason;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class SkipAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -116,7 +116,7 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
                     }
                     if (count > 0 && DownloadWatchDog.getInstance().getNonResumableBytes(lSelection) > 0) {
                         if (JDGui.bugme(WarnLevel.SEVERE)) {
-                            if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes(selection)), count), new AbstractIcon(IconKey.ICON_SKIPPED, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
+                            if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes(selection)), count), new AbstractIcon(IconKey.ICON_SKIPPED, 32), _GUI.T.lit_yes(), _GUI.T.lit_no(), "org.jdownloader.gui.views.downloads.action.SkipAction")) {
                                 return null;
                             }
 

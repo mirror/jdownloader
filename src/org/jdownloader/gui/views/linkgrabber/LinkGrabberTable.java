@@ -281,7 +281,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
         //
         if (JDGui.bugme(WarnLevel.NORMAL)) {
-            UIOManager.I().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.getNextSortIdentifier_sort_warning_rly_title_(), _JDT.T.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), new AbstractIcon(IconKey.ICON_HELP, 32), _JDT.T.basics_yes(), _JDT.T.basics_no());
+            UIOManager.I().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.getNextSortIdentifier_sort_warning_rly_title_(), _JDT.T.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), new AbstractIcon(IconKey.ICON_HELP, 32), _JDT.T.basics_yes(), _JDT.T.basics_no(), "org.jdownloader.gui.views.linkgrabber.LinkGrabberTable");
         }
         sortPackageChildren(newColumn.getRowSorter(), getModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
 
