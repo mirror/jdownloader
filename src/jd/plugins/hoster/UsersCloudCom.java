@@ -84,14 +84,14 @@ public class UsersCloudCom extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
-    private static final int               FREE_MAXDOWNLOADS            = 4;
+    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -5;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 3;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 3;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */

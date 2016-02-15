@@ -94,6 +94,9 @@ public class XXXBlg extends PluginForDecrypt {
                 pagepiece = br.getRegex("class=\\'easySpoilerTitleA\\'(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
             }
             if (pagepiece == null) {
+                pagepiece = this.br.getRegex("<div class=\"entry\">(.*?)</article>").getMatch(0);
+            }
+            if (pagepiece == null) {
                 logger.warning("pagepiece is null, using full html code!");
                 pagepiece = br.toString();
             }

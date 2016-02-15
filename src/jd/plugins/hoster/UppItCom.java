@@ -23,10 +23,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,7 +40,11 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uppit.com" }, urls = { "http://(www\\.)?uppit\\.com/[a-z0-9]{12}" }, flags = { 0 })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uppit.com" }, urls = { "http://(?:www\\.)?uppit\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class UppItCom extends antiDDoSForHost {
 
     private String              correctedBR         = "";
@@ -97,6 +97,7 @@ public class UppItCom extends antiDDoSForHost {
         return prepBr;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -151,7 +152,7 @@ public class UppItCom extends antiDDoSForHost {
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
-        if (inValidate(filesize)) {
+        if (!inValidate(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
