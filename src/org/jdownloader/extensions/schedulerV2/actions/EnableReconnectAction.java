@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("ENABLE_RECONNECT")
@@ -15,7 +16,7 @@ public class EnableReconnectAction extends AbstractScheduleAction<ScheduleAction
     }
 
     @Override
-    public void execute() {
+    public void execute(LogInterface logger) {
         org.jdownloader.settings.staticreferences.CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(true);
     }
 

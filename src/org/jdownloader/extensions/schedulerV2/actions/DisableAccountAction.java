@@ -13,6 +13,7 @@ import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.plugins.Account;
 
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
@@ -34,7 +35,7 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
     }
 
     @Override
-    public void execute() {
+    public void execute(LogInterface logger) {
         ArrayList<Account> accounts = AccountController.getInstance().list(getConfig().getHoster());
         for (Account acc : accounts) {
             if (acc.getUser().equals(getConfig().getUser())) {

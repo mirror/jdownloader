@@ -6,6 +6,13 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
@@ -25,13 +32,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CHEAP_CAPTCHA;
-
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-import jd.nutils.encoding.Encoding;
+import org.seamless.util.io.IO;
 
 public class CheapCaptchaSolver extends CESChallengeSolver<String> {
 
@@ -93,7 +94,13 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
 
-            r.addFormData(new FormData("captchafile", "ByteData.captcha", challenge.getAnnotatedImageBytes()));
+            final byte[] data;
+            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
+                data = challenge.getAnnotatedImageBytes();
+            } else {
+                data = IO.readBytes(challenge.getImageFile());
+            }
+            r.addFormData(new FormData("captchafile", "ByteData.captcha", data));
 
             URLConnectionAdapter conn = br.openRequestConnection(r);
             // 303 See Other if your CAPTCHA was successfully uploaded: Location HTTP header will point you to the uploaded CAPTCHA status

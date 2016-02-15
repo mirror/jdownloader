@@ -5,6 +5,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.schedulerV2.gui.SpeedSpinner;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
@@ -21,7 +22,7 @@ public class SetDownloadspeedAction extends AbstractScheduleAction<SetDownloadsp
     }
 
     @Override
-    public void execute() {
+    public void execute(LogInterface logger) {
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(true);
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(getConfig().getDownloadspeed());
     }

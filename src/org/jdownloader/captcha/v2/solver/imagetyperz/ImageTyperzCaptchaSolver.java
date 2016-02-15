@@ -5,6 +5,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -20,11 +25,7 @@ import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_IMAGE_TYPERZ;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
+import org.seamless.util.io.IO;
 
 public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
 
@@ -86,7 +87,13 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             r.addFormData(new FormData("password", (config.getPassword())));
             r.addFormData(new FormData("chkCase", "0"));
 
-            r.addFormData(new FormData("file", org.appwork.utils.encoding.Base64.encodeToString(challenge.getAnnotatedImageBytes(), false)));
+            final byte[] data;
+            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
+                data = challenge.getAnnotatedImageBytes();
+            } else {
+                data = IO.readBytes(challenge.getImageFile());
+            }
+            r.addFormData(new FormData("file", org.appwork.utils.encoding.Base64.encodeToString(data, false)));
 
             conn = br.openRequestConnection(r);
 

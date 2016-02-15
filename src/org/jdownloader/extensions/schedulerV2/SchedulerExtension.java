@@ -60,12 +60,12 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     private CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
     private final ShutdownEvent                 shutDownEvent   = new ShutdownEvent() {
 
-        @Override
-        public void onShutdown(ShutdownRequest shutdownRequest) {
-            CFG_SCHEDULER.ENTRY_LIST.getEventSender().removeListener(SchedulerExtension.this);
-            saveScheduleEntries(false);
-        }
-    };
+                                                                    @Override
+                                                                    public void onShutdown(ShutdownRequest shutdownRequest) {
+                                                                        CFG_SCHEDULER.ENTRY_LIST.getEventSender().removeListener(SchedulerExtension.this);
+                                                                        saveScheduleEntries(false);
+                                                                    }
+                                                                };
 
     @Override
     public boolean isHeadlessRunnable() {
@@ -253,7 +253,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-        break;
+            break;
         case SPECIFICDAYS: {
             Calendar c = Calendar.getInstance();
             // check whether day of week is correct
@@ -266,7 +266,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-        break;
+            break;
 
         case HOURLY: {
             Calendar event = Calendar.getInstance();
@@ -277,7 +277,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-        break;
+            break;
         case CHOOSEINTERVAL: {
             long nowMin = Calendar.getInstance().getTimeInMillis() / (60 * 1000);
             long startMin = plan.getTimestamp() / 60;
@@ -286,7 +286,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-        break;
+            break;
         }
         return false;
     }
@@ -297,7 +297,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
             if (needsRun(entry)) {
                 getLogger().info("Run action: " + entry.getAction().getReadableName());
                 try {
-                    entry.getAction().execute();
+                    entry.getAction().execute(getLogger());
                 } catch (final Throwable e) {
                     getLogger().log(e);
                 }

@@ -28,6 +28,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CBH;
+import org.seamless.util.io.IO;
 
 public class CBSolver extends CESChallengeSolver<String> {
 
@@ -60,7 +61,12 @@ public class CBSolver extends CESChallengeSolver<String> {
         try {
             counter.incrementAndGet();
             String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + Encoding.urlEncode(user) + "&password=" + Encoding.urlEncode(password) + "&captchaSource=jdPlugin&captchaSite=-1&timeout=80&version=1.2.1";
-            byte[] data = challenge.getAnnotatedImageBytes();
+            final byte[] data;
+            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
+                data = challenge.getAnnotatedImageBytes();
+            } else {
+                data = IO.readBytes(challenge.getImageFile());
+            }
             job.setStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
             final Browser br = new Browser();
@@ -81,7 +87,6 @@ public class CBSolver extends CESChallengeSolver<String> {
                 throw new SolverException(ret);
             }
             String captchaID = ret.substring(3);
-            data = null;
             Thread.sleep(6000);
             while (true) {
                 Thread.sleep(1000);

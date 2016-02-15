@@ -7,6 +7,7 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("ADD_ALL_DOWNLOADS")
@@ -22,7 +23,7 @@ public class AddAllDownloadsAction extends AbstractScheduleAction<ScheduleAction
     }
 
     @Override
-    public void execute() {
+    public void execute(LogInterface logger) {
         final List<CrawledLink> links = LinkCollector.getInstance().getAllChildren();
         final List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
         final boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.isEnabled();
