@@ -110,7 +110,6 @@ public class KingFilesNet extends PluginForHost {
     // captchatype: 4dignum
     // other: no redirects
     // mods: handleDl(error handling for 0 byte files on finallink), doFree [403 Server error errorhandling after submit download1]
-    // other: same wait regex as ozofiles.com
     // note: sister site uploadrocket.net
 
     private void setConstants(final Account account) {

@@ -20,6 +20,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
@@ -255,8 +256,15 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         // FINAL FAILOVER FOR UNSUPPORTED CONTENT, this way we wont have to keep making updates to this plugin! only time we would need to
         // is, when we need to customise / fixup results into proper url format. -raztoki20160211
 
-        final String iframe = new Regex(string, "<iframe [^>]+src=(\"|')((?!.*?assets\\.tumblr\\.com/.*?).*?)\\1").getMatch(1);
+        final String iframe = new Regex(string, "<iframe [^>]*src=(\"|')((?!<^>]+assets\\.tumblr\\.com/<^>]+).*?)\\1").getMatch(1);
         if (iframe != null) {
+            // multiple images in a single post show up as photoset within iframe!
+            if (iframe.contains("/photoset_iframe/")) {
+                // ok we don't need to process the iframe src link as best images which we are interested in are within google
+                // getGoogleCarousel!
+                processPhotoSet(decryptedLinks, puid);
+                return decryptedLinks;
+            }
             decryptedLinks.add(createDownloadlink(iframe));
             return decryptedLinks;
         }
@@ -280,15 +288,56 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 // determine file extension
                 final String ext = getFileNameExtensionFromURL(pic);
                 dl.setFinalFileName(filename + ext);
-                if (puid != null) {
-                    dl.setLinkID(getHost() + "://" + puid);
-                }
+                setMD5Hash(dl, pic);
+                setImageLinkID(dl, pic, puid);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
         }
         logger.info("Found nothing here so the decrypter is either broken or there isn't anything to decrypt. Link: " + parameter);
         return decryptedLinks;
+    }
+
+    private void processPhotoSet(final ArrayList<DownloadLink> decryptedLinks, final String puid) throws Exception {
+        final String gc = getGoogleCarousel(br);
+        if (gc != null) {
+            FilePackage fp = null;
+            final String JSON = new Regex(gc, "<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
+            final Map<String, Object> json = jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaMap(JSON);
+            final String articleBody = (String) json.get("articleBody");
+            if (articleBody != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(articleBody.replaceAll("[\r\n]+", "").trim());
+            }
+            final List<Object> results = (List<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "image/@list");
+            if (results != null) {
+                for (final Object result : results) {
+                    final String url = (String) result;
+                    final DownloadLink dl = createDownloadlink("directhttp://" + url);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
+                    setMD5Hash(dl, url);
+                    setImageLinkID(dl, url, puid);
+                    decryptedLinks.add(dl);
+                }
+            }
+        }
+    }
+
+    private void setImageLinkID(final DownloadLink dl, final String url, final String puid) {
+        if (puid != null) {
+            final String iuid = new Regex(url, "/tumblr_([A-Za-z0-9_]+)_\\d+\\.(?:jpe?g|gif|png)").getMatch(0);
+            if (iuid != null) {
+                dl.setLinkID(this.getHost() + "://" + puid + "/" + iuid);
+            }
+        }
+    }
+
+    private void setMD5Hash(final DownloadLink dl, final String url) {
+        // the 32hex is actually the file md5, it also shows up on download under the ETAG header response -raztoki20160215
+        final String md5 = new Regex(url, "/([a-f0-9]{32})/").getMatch(0);
+        dl.setMD5Hash(md5);
     }
 
     /**
@@ -344,10 +393,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         // determine file extension
         final String ext = getFileNameExtensionFromURL(externID);
         dl.setFinalFileName(filename + ext);
+        setMD5Hash(dl, externID);
+        setImageLinkID(dl, externID, puid);
         dl.setAvailable(true);
-        if (puid != null) {
-            dl.setLinkID(getHost() + "://" + puid);
-        }
         decryptedLinks.add(dl);
         return decryptedLinks;
     }
@@ -421,11 +469,6 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         } while (nextPage != null);
         logger.info("Decryption done - last 'nextPage' value was: " + nextPage);
 
-    }
-
-    private String getPuid(final String string) {
-        String puid = new Regex(string, "").getMatch(0);
-        return puid;
     }
 
     /**

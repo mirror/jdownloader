@@ -38,6 +38,12 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -56,6 +62,7 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
@@ -68,12 +75,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hugefiles.net" }, urls = { "https?://(www\\.)?hugefiles\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class HugeFilesNet extends PluginForHost {
@@ -111,13 +112,13 @@ public class HugeFilesNet extends PluginForHost {
     // mods: increased timeouts needed. changed the captcha look back to browser from form. removed mobile html
 
     private void setConstants(final Account account) {
-        if (account != null && account.getBooleanProperty("free")) {
+        if (account != null && AccountType.FREE.equals(account.getType())) {
             // free account
             chunks = -2;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
-        } else if (account != null && !account.getBooleanProperty("free")) {
+        } else if (account != null && AccountType.PREMIUM.equals(account.getType())) {
             // prem account
             chunks = -2;
             resumes = true;
@@ -133,10 +134,10 @@ public class HugeFilesNet extends PluginForHost {
     }
 
     private boolean allowsConcurrent(final Account account) {
-        if (account != null && account.getBooleanProperty("free")) {
+        if (account != null && AccountType.FREE.equals(account.getType())) {
             // free account
             return false;
-        } else if (account != null && !account.getBooleanProperty("free")) {
+        } else if (account != null && AccountType.PREMIUM.equals(account.getType())) {
             // prem account
             return true;
         } else {
@@ -149,12 +150,12 @@ public class HugeFilesNet extends PluginForHost {
         return true;
     }
 
-    public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
-        if (acc == null) {
+    public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account account) {
+        if (account == null) {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (AccountType.FREE.equals(account.getType())) {
             /* free accounts also have captchas */
             return true;
         }
@@ -600,6 +601,10 @@ public class HugeFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
             }
         }
+        if (cbr.containsHTML(">The file have reached the download limit for guest users at the moment, Try again later") && (account.equals(null) || AccountType.FREE.equals(account.getType()))) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free Download limit reached for this file, try again later");
+        }
+
         // monitor this
         if (cbr.containsHTML("(class=\"err\">(.*</br>)?You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
@@ -683,7 +688,7 @@ public class HugeFilesNet extends PluginForHost {
             }
             if (account != null) {
                 msg = account.getUser() + " @ " + acctype;
-                if (account.getBooleanProperty("free", false) && cbr.containsHTML(an + "|" + fa + "|" + pr)) {
+                if (AccountType.FREE.equals(account.getType()) && cbr.containsHTML(an + "|" + fa + "|" + pr)) {
                     // free
                     msg += " :: Only downloadable via premium account." + (!inValidate(fileSizeLimit) ? fileSizeLimit : "");
                     theLink.setProperty("requiresPremiumAccount", true);
@@ -755,9 +760,9 @@ public class HugeFilesNet extends PluginForHost {
         }
         // what type of account?
         if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
-            account.setProperty("free", true);
+            account.setType(AccountType.FREE);
         } else {
-            account.setProperty("free", false);
+            account.setType(AccountType.PREMIUM);
         }
         final String space[] = cbr.getRegex(">Used space: <span[^>]+>([0-9\\.]+) ?(KB|MB|GB|TB)?<").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
@@ -780,8 +785,8 @@ public class HugeFilesNet extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (account.getBooleanProperty("free")) {
-            ai.setStatus("Registered (free) User");
+        if (AccountType.FREE.equals(account.getType())) {
+            ai.setStatus("Free Account");
             account.setProperty("totalMaxSim", 20);
         } else {
             long expire = 0, expireD = 0, expireS = 0;
@@ -831,7 +836,7 @@ public class HugeFilesNet extends PluginForHost {
             account.setProperty("totalMaxSim", 4);
             account.setMaxSimultanDownloads(4);
             ai.setValidUntil(expire);
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -907,7 +912,7 @@ public class HugeFilesNet extends PluginForHost {
         setConstants(account);
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("free")) {
+        if (AccountType.FREE.equals(account.getType())) {
             getPage(downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
             if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
@@ -1057,7 +1062,7 @@ public class HugeFilesNet extends PluginForHost {
      *
      */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
+        if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || AccountType.FREE.equals(account.getType()))) {
             // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account
             // to download.
             return false;
@@ -1622,12 +1627,12 @@ public class HugeFilesNet extends PluginForHost {
                 return;
             }
             int was, current;
-            if (account != null && account.getBooleanProperty("free")) {
+            if (account != null && AccountType.FREE.equals(account.getType())) {
                 // free account
                 was = maxFreeAccSimDlPerHost.get();
                 maxFreeAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
                 current = maxFreeAccSimDlPerHost.get();
-            } else if (account != null && !account.getBooleanProperty("free")) {
+            } else if (account != null && AccountType.PREMIUM.equals(account.getType())) {
                 // premium account
                 was = maxPremAccSimDlPerHost.get();
                 maxPremAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
@@ -1698,7 +1703,7 @@ public class HugeFilesNet extends PluginForHost {
             Integer simHost;
             if (accHolder != null) {
                 user = accHolder.getUser();
-                if (accHolder.getBooleanProperty("free")) {
+                if (AccountType.FREE.equals(accHolder.getType())) {
                     // free account
                     simHost = maxFreeAccSimDlPerHost.get();
                 } else {
