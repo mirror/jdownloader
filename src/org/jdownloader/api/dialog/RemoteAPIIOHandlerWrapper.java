@@ -18,6 +18,7 @@ import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.uio.UserIODefinition;
 import org.appwork.uio.UserIOHandlerInterface;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
@@ -34,27 +35,39 @@ import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
 public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
 
-    private DialogApiImpl remoteHandler;
-    private LogSource     logger;
+    private final DialogApiImpl remoteHandler;
+    private final LogSource     logger;
 
     public RemoteAPIIOHandlerWrapper(UserIOHandlerInterface i) {
         remoteHandler = new DialogApiImpl(this);
         logger = LogController.getInstance().getLogger(RemoteAPIIOHandlerWrapper.class.getName());
+    }
 
+    @Override
+    public boolean showConfirmDialog(int flags, String title, String message, Icon icon, String ok, String cancel, final String dontShowAgainKey) {
+        final ConfirmDialog dialog;
+        if (StringUtils.isEmpty(dontShowAgainKey)) {
+            dialog = new ConfirmDialog(flags, title, message, icon, ok, cancel);
+        } else {
+            dialog = new ConfirmDialog(flags, title, message, icon, ok, cancel) {
+                @Override
+                public String getDontShowAgainKey() {
+                    return dontShowAgainKey;
+                }
+            };
+        }
+        final ConfirmDialogInterface io = show(ConfirmDialogInterface.class, dialog);
+        return io.getCloseReason() == CloseReason.OK;
     }
 
     @Override
     public boolean showConfirmDialog(int flags, String title, String message, Icon icon, String ok, String cancel) {
-        ConfirmDialog ret = new ConfirmDialog(flags, title, message, icon, ok, cancel);
-        ConfirmDialogInterface io = show(ConfirmDialogInterface.class, ret);
-        return io.getCloseReason() == CloseReason.OK;
+        return showConfirmDialog(flags, title, message, icon, ok, cancel, null);
     }
 
     @Override
-    public boolean showConfirmDialog(int flag, String title, String message) {
-        ConfirmDialog ret = new ConfirmDialog(flag, title, message, null, null, null);
-        ConfirmDialogInterface io = show(ConfirmDialogInterface.class, ret);
-        return io.getCloseReason() == CloseReason.OK;
+    public boolean showConfirmDialog(int flags, String title, String message) {
+        return showConfirmDialog(flags, title, message, null, null, null, null);
     }
 
     @Override
