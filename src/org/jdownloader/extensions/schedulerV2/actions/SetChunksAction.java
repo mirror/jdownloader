@@ -6,6 +6,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("SET_CHUNKS")
@@ -40,7 +41,7 @@ public class SetChunksAction extends AbstractScheduleAction<SetChunksActionConfi
     }
 
     @Override
-    public void execute() {
+    public void execute(LogInterface logger) {
         org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE.setValue(getConfig().getChunks());
     }
 

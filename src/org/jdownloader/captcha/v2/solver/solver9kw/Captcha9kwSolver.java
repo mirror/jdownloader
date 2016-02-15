@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
@@ -31,10 +35,7 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
+import org.seamless.util.io.IO;
 
 public class Captcha9kwSolver extends CESChallengeSolver<String> {
 
@@ -383,7 +384,12 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
             counter.incrementAndGet();
             job.showBubble(this, getBubbleTimeout(challenge));
             checkInterruption();
-            byte[] data = challenge.getAnnotatedImageBytes();
+            final byte[] data;
+            if (challenge instanceof AbstractRecaptcha2FallbackChallenge) {
+                data = challenge.getAnnotatedImageBytes();
+            } else {
+                data = IO.readBytes(challenge.getImageFile());
+            }
             final Browser br = new Browser();
 
             br.setAllowedResponseCodes(new int[] { 500 });
@@ -429,7 +435,6 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> {
             }
             // Error-No Credits
             String captchaID = ret.substring(3);
-            data = null;
             long startTime = System.currentTimeMillis();
 
             Thread.sleep(10000);

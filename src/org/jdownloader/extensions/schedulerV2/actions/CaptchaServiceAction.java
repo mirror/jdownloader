@@ -7,6 +7,7 @@ import javax.swing.JLabel;
 
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("SET_CAPTCHASERVICE")
@@ -22,7 +23,7 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
     }
 
     @Override
-    public void execute() {
+    public void execute(LogInterface logger) {
 
         switch (getConfig()._getService()) {
         case NINEKWEU:

@@ -2,6 +2,7 @@ package org.jdownloader.extensions.schedulerV2.actions;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("START_DOWNLOAD")
@@ -17,7 +18,7 @@ public class StartDownloadAction extends AbstractScheduleAction<ScheduleActionEm
     }
 
     @Override
-    public void execute() {
+    public void execute(LogInterface logger) {
         DownloadWatchDog.getInstance().startDownloads();
     }
 

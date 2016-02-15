@@ -12,6 +12,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
@@ -28,9 +31,6 @@ import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 
 public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> {
 
@@ -339,7 +339,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> {
             solverJob.showBubble(this, getBubbleTimeout(captchaChallenge));
             click9kw_counter.incrementAndGet();
             solverJob.setStatus(SolverStatus.UPLOADING);
-            byte[] data = IO.readFile(captchaChallenge.getImageFile());
+            final byte[] data = IO.readFile(captchaChallenge.getImageFile());
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
             String ret = "";
@@ -382,7 +382,6 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> {
             }
             // Error-No Credits
             String captchaID = ret.substring(3);
-            data = null;
             long startTime = System.currentTimeMillis();
 
             Thread.sleep(10000);

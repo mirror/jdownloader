@@ -167,7 +167,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> {
             // job.showBubble(this);
             checkInterruption();
 
-            byte[] data = IO.readFile(challenge.getImageFile());
             // Browser br = new Browser();
             // br.setAllowedResponseCodes(new int[] { 500 });
             job.showBubble(this, 0);

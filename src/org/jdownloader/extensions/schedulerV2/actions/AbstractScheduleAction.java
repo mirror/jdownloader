@@ -10,11 +10,12 @@ import javax.swing.JLabel;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
+import org.appwork.utils.logging2.LogInterface;
 
 public abstract class AbstractScheduleAction<T extends IScheduleActionConfig> {
 
-    private final T                             config;
-    protected LinkedHashMap<JComponent, String> panel = new LinkedHashMap<JComponent, String>();
+    private final T                                   config;
+    protected final LinkedHashMap<JComponent, String> panel = new LinkedHashMap<JComponent, String>();
 
     public AbstractScheduleAction(String configJson) {
         T config = null;
@@ -82,7 +83,7 @@ public abstract class AbstractScheduleAction<T extends IScheduleActionConfig> {
         panel.put(lbl, "");
     }
 
-    public abstract void execute();
+    public abstract void execute(LogInterface logger);
 
     public T getConfig() {
         return config;

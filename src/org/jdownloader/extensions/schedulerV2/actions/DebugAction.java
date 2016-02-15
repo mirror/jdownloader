@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 
 @ScheduleActionIDAnnotation("DEBUG_ACTION")
@@ -15,7 +16,7 @@ public class DebugAction extends AbstractScheduleAction<ScheduleActionEmptyConfi
     }
 
     @Override
-    public void execute() {
+    public void execute(LogInterface logger) {
         Dialog.I().showMessageDialog("Debug: Scheduler triggered");
     }
 }

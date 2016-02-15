@@ -6,10 +6,10 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import jd.plugins.Plugin;
+
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.captcha.v2.Challenge;
-
-import jd.plugins.Plugin;
 
 public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
 
@@ -19,7 +19,6 @@ public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
         super(method, explain);
         this.imageFile = file;
         this.plugin = plugin;
-
     }
 
     public byte[] getImageBytes() throws IOException {

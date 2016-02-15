@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
+import java.awt.Color;
 import java.util.EventObject;
 
 import javax.swing.Icon;
@@ -14,7 +15,7 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 public class FilterTableModel extends ExtTableModel<Filter> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1749243877638799385L;
 
@@ -27,7 +28,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
     protected void initColumns() {
         addColumn(new ExtTextColumn<Filter>("Hoster") {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -72,11 +73,12 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             }
         });
         addColumn(new ExtLongColumn<Filter>("Hoster") {
-            // {
-            // renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]",
-            // "[]"));
-            //
-            // }
+            private final Color defaultColor;
+
+            {
+                defaultColor = renderer.getForeground();
+            }
+
             @Override
             public int getMaxWidth() {
                 return 50;
@@ -94,25 +96,31 @@ public class FilterTableModel extends ExtTableModel<Filter> {
 
             @Override
             public boolean isEnabled(Filter obj) {
-                return obj.isEnabled();
+                return true;
             }
 
             @Override
             protected String getTooltipText(final Filter obj) {
-
                 return obj.getDescription();
             }
 
             @Override
             public boolean isSortable(Filter obj) {
-
                 return false;
             }
 
             @Override
             public void configureRendererComponent(Filter value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.configureRendererComponent(value, isSelected, hasFocus, row, column);
-                if (getLong(value) < 0) renderer.setText("");
+                final long num = getLong(value);
+                if (num < 0) {
+                    renderer.setText("");
+                    renderer.setForeground(defaultColor);
+                } else if (num > 0 && !value.isEnabled()) {
+                    renderer.setForeground(Color.RED);
+                } else {
+                    renderer.setForeground(defaultColor);
+                }
 
             }
 
@@ -124,20 +132,31 @@ public class FilterTableModel extends ExtTableModel<Filter> {
         });
         ExtTextColumn<Filter> hosterColumn;
         addColumn(hosterColumn = new ExtTextColumn<Filter>("Hoster") {
+            private final Color defaultColor;
+
             {
                 renderer.setLayout(new MigLayout("ins 0", "[grow,fill][]", "[grow,fill]"));
-
+                defaultColor = rendererField.getForeground();
             }
 
             @Override
             public boolean isEnabled(Filter obj) {
-                return obj.isEnabled();
+                return true;
             }
 
             @Override
             protected String getTooltipText(final Filter obj) {
-
                 return obj.getDescription();
+            }
+
+            @Override
+            public void configureRendererComponent(Filter value, boolean isSelected, boolean hasFocus, int row, int column) {
+                super.configureRendererComponent(value, isSelected, hasFocus, row, column);
+                if (value.getCounter() > 0 && !value.isEnabled()) {
+                    rendererField.setForeground(Color.RED);
+                } else {
+                    rendererField.setForeground(defaultColor);
+                }
             }
 
             @Override
