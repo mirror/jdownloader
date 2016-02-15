@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,6 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.com" }, urls = { "http://kumpulbagi\\.(?:com|id)/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[^\\s]+)?" }, flags = { 0 })
 public class KumpulbagiCom extends PluginForDecrypt {
@@ -61,7 +61,7 @@ public class KumpulbagiCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
-        /* No permission to see file/folder */ {
+        /* No permission to see file/folder */{
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -160,17 +160,20 @@ public class KumpulbagiCom extends PluginForDecrypt {
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
                     // String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
-                    String filename = new Regex(lnkinfo, "data-action-before=\"preview\">([^<>]+?)<").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(content_url, "/([^<>\"/]+)$").getMatch(0);
-                    }
-                    if (filename != null) {
-                        filename = filename.replace("," + fid, "");
+                    String filename = null;
+                    String filename_content_url = new Regex(content_url, "/([^<>\"/]+)$").getMatch(0);
+                    if (filename_content_url != null) {
+                        filename_content_url = filename_content_url.replace("," + fid, "");
+                        filename_content_url = filename_content_url.replaceAll(",gallery,\\d+,\\d+", "");
+                        final String filename_html = new Regex(lnkinfo, "data-action-before=\"preview\">([^<>]+?)<").getMatch(0);
+                        if (filename_html != null && (filename_content_url.length() > filename_html.length() || filename_html.endsWith("..."))) {
+                            filename = filename_content_url;
+                        } else {
+                            filename = filename_html;
+                        }
                         filename = Encoding.htmlDecode(filename);
                     } else {
-                        if (filename == null) {
-                            filename = finfo.getMatch(0);
-                        }
+                        filename = finfo.getMatch(0);
                         final String ext = finfo.getMatch(1);
                         if (ext == null || filename == null) {
                             logger.warning("Decrypter broken for link: " + parameter);
