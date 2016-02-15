@@ -66,6 +66,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
@@ -78,9 +79,10 @@ public class TurboBitNet extends PluginForHost {
      * When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
      *
      */
-    private static final String RECAPTCHATEXT                         = "api\\.recaptcha\\.net";
-    private static final String CAPTCHAREGEX                          = "\"(https?://(?:\\w+\\.)?turbobit\\.net/captcha/.*?)\"";
-    private static final String MAINPAGE                              = "http://turbobit.net";
+    private final String        HTML_RECAPTCHAV1                      = "api\\.recaptcha\\.net";
+    private final String        HTML_RECAPTCHAV2                      = "class=\"g\\-recaptcha\"";
+    private final String        CAPTCHAREGEX                          = "\"(https?://(?:\\w+\\.)?turbobit\\.net/captcha/.*?)\"";
+    private final String        MAINPAGE                              = "http://turbobit.net";
     private static Object       LOCK                                  = new Object();
     private static final String BLOCKED                               = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
     private boolean             prefer_single_linkcheck_linkcheckpage = false;
@@ -396,7 +398,8 @@ public class TurboBitNet extends PluginForHost {
         if (StringUtils.equalsIgnoreCase(captchaform.getAction(), "#")) {
             captchaform.setAction(br.getURL());
         }
-        if (br.containsHTML(RECAPTCHATEXT)) {
+        if (br.containsHTML(HTML_RECAPTCHAV1)) {
+            /* ReCaptchaV1 */
             logger.info("Handling Re Captcha");
             final String theId = new Regex(br.toString(), "challenge\\?k=(.*?)\"").getMatch(0);
             if (theId == null) {
@@ -411,13 +414,18 @@ public class TurboBitNet extends PluginForHost {
             final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.getForm().setAction("/download/free/" + id + "#");
             rc.setCode(c);
-            if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML("Incorrect, try again")) {
+            if (br.containsHTML(HTML_RECAPTCHAV1) || br.containsHTML("Incorrect, try again")) {
                 try {
                     invalidateLastChallengeResponse();
                 } catch (final Throwable e) {
                 }
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+        } else if (this.br.containsHTML(HTML_RECAPTCHAV2)) {
+            /* ReCaptchaV2 */
+            /* UNTESTED, added 2016-02-15 because of log: 4034111113541 */
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         } else {
             logger.info("Handling normal captchas");
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
@@ -453,7 +461,7 @@ public class TurboBitNet extends PluginForHost {
                     continue;
                 }
             }
-            if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(RECAPTCHATEXT)) {
+            if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(HTML_RECAPTCHAV1) || br.containsHTML(HTML_RECAPTCHAV2)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }

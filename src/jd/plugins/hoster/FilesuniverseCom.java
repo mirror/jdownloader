@@ -41,7 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -50,7 +49,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesuniverse.com" }, urls = { "https?://(www\\.)?filesuniverse\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class FilesuniverseCom extends PluginForHost {
+public class FilesuniverseCom extends antiDDoSForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
@@ -105,7 +104,7 @@ public class FilesuniverseCom extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.8.8
     // Tags: Script, template
-    // mods:
+    // mods: waitTime
     // limit-info:
     // protocol: no https
     // captchatype: solvemedia
@@ -705,19 +704,19 @@ public class FilesuniverseCom extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
-    private void postPage(final String page, final String postdata) throws Exception {
-        br.postPage(page, postdata);
+    protected void postPage(final String page, final String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void submitForm(final Form form) throws Exception {
-        br.submitForm(form);
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -736,7 +735,12 @@ public class FilesuniverseCom extends PluginForHost {
         if (ttt == null) {
             ttt = new Regex(correctedBR, "counter\\-analog\\d+\">(\\d+)<").getMatch(0);
         }
-        if (ttt != null) {
+        final Regex specialregex = new Regex(correctedBR, "function adBlockNotDetected\\(\\) \\{[\t\n\r ]+document\\.getElementById\\(\"[a-z0-9]+\"\\)\\.innerHTML = \"00:(\\d+):(\\d+)\"");
+        final String waitmin = specialregex.getMatch(0);
+        final String waitsec = specialregex.getMatch(1);
+        if (waitmin != null && waitsec != null) {
+            wait = Integer.parseInt(waitmin) * 60 + Integer.parseInt(waitsec);
+        } else if (ttt != null) {
             wait = Integer.parseInt(ttt);
             if (WAITFORCED && (wait >= WAITSECONDSMAX || wait <= WAITSECONDSMIN)) {
                 logger.warning("Wait exceeds max/min, using forced wait!");
@@ -780,22 +784,6 @@ public class FilesuniverseCom extends PluginForHost {
             }
         }
         return null;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /**
