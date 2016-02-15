@@ -84,6 +84,11 @@ public class OneFichierCom extends PluginForHost {
         setConfigElements();
     }
 
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 800);
+    }
+
     private String correctProtocol(final String input) {
         return input.replaceFirst("http://", "https://");
     }
@@ -219,6 +224,8 @@ public class OneFichierCom extends PluginForHost {
         doFree(downloadLink);
     }
 
+    private String regex_dllink_middle = "align:middle\">\\s+<a href=(\"|')(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+.*?)\\1";
+
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         this.setConstants(null, downloadLink);
         checkDownloadable();
@@ -290,8 +297,12 @@ public class OneFichierCom extends PluginForHost {
                 handlePassword();
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    logger.warning("Failed to find final downloadlink after password handling success");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // Link; 8182111113541.log; 464810; jdlog://8182111113541
+                    dllink = br.getRegex(regex_dllink_middle).getMatch(1);
+                    if (dllink == null) {
+                        logger.warning("Failed to find final downloadlink after password handling success");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 logger.info("Successfully went through the password handling");
                 break;
@@ -310,7 +321,7 @@ public class OneFichierCom extends PluginForHost {
                 errorHandling(downloadLink, br2);
                 dllink = br2.getRedirectLocation();
                 if (dllink == null) {
-                    dllink = br2.getRegex("align:middle\">\\s+<a href=\"([^<>\"]*?)\"").getMatch(0);
+                    dllink = br2.getRegex(regex_dllink_middle).getMatch(1);
                 }
                 if (dllink == null) {
                     sleep(2000, downloadLink);
@@ -628,12 +639,15 @@ public class OneFichierCom extends PluginForHost {
                     handlePassword();
                     /*
                      * The users' 'direct download' setting has no effect on the password handling so we should always get a redirect to the
-                     * final downloadlink after having entered the correct downloadpassword (for premium users).
+                     * final downloadlink after having entered the correct download password (for premium users).
                      */
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
-                        logger.warning("After successful password handling: Final downloadlink 'dllink' is null");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        dllink = br.getRegex(regex_dllink_middle).getMatch(1);
+                        if (dllink == null) {
+                            logger.warning("After successful password handling: Final downloadlink 'dllink' is null");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 }
                 try {
