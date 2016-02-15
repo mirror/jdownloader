@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "http://(www\\.)?xtube\\.com/(watch|play_re)\\.php\\?v=[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "http://(www\\.)?xtube\\.com/(video-watch/|(watch|play_re)\\.php\\?v=)[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class XTubeCom extends PluginForHost {
 
     private String              DLLINK   = null;
@@ -104,6 +104,9 @@ public class XTubeCom extends PluginForHost {
             }
         }
         String fileID = new Regex(downloadLink.getDownloadURL(), "xtube\\.com/watch\\.php\\?v=(.+)").getMatch(0);
+        if (fileID == null) {
+            fileID = br.getRegex("contentId\" value=\"([^\"]+)\"").getMatch(0);
+        }
         String ownerName = br.getRegex("\\?field_subscribe_user_id=([^<>\"]*?)\"").getMatch(0);
         if (ownerName == null) {
             ownerName = "undefined";
