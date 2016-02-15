@@ -98,7 +98,6 @@ public class OzoFilesCom extends PluginForHost {
     // protocol: no https
     // captchatype: null
     // other: Site launched January 04th, 2015, Server returns response code 404 instead of 503 on too many connections
-    // other same wait regex as kingfiles.
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
