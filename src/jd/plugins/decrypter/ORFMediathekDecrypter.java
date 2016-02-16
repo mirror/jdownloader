@@ -55,6 +55,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     private static final String Q_LOW         = "Q_LOW";
     private static final String Q_MEDIUM      = "Q_MEDIUM";
     private static final String Q_HIGH        = "Q_HIGH";
+    private static final String Q_VERYHIGH    = "Q_VERYHIGH";
     private static final String HTTP_STREAM   = "HTTP_STREAM";
     private boolean             BEST          = false;
 
@@ -69,9 +70,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (isStableEnviroment()) {
-            return decryptedLinks;
-        }
         String parameter = param.toString().replace("/index.php/", "/");
         this.br.setAllowedResponseCodes(500);
         this.br.setLoadLimit(this.br.getLoadLimit() * 2);
@@ -85,15 +83,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             }
         } else if (status != 200) {
             final DownloadLink link = this.createOfflinelink(parameter);
-            link.setAvailable(false);
-            link.setProperty("offline", true);
             decryptedLinks.add(link);
             return decryptedLinks;
         }
         if (br.containsHTML("(404 \\- Seite nicht gefunden\\.|area_headline error_message\">Keine Sendung vorhanden<)") || !br.containsHTML("class=\"video_headline\"") || status == 404 || status == 500) {
             final DownloadLink link = this.createOfflinelink(parameter);
-            link.setAvailable(false);
-            link.setProperty("offline", true);
             link.setName(new Regex(parameter, "tvthek\\.orf\\.at/programs/(.+)").getMatch(0));
             decryptedLinks.add(link);
             return decryptedLinks;
@@ -112,20 +106,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    private boolean isStableEnviroment() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        final int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "unused", "rawtypes" })
@@ -316,6 +296,12 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             } else {
                                 fmt = "HIGH";
                             }
+                        } else if ("VERYHIGH".equals(fmt)) {
+                            if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
+                                continue;
+                            } else {
+                                fmt = "VERYHIGH";
+                            }
                         } else {
                             if (unknownQualityIdentifier(fmt)) {
                                 logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
@@ -422,16 +408,19 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     }
 
     private String humanReadableQualityIdentifier(String s) {
+        final String humanreabable;
         if ("Q1A".equals(s)) {
-            return "LOW";
+            humanreabable = "LOW";
+        } else if ("Q4A".equals(s)) {
+            humanreabable = "MEDIUM";
+        } else if ("Q6A".equals(s)) {
+            humanreabable = "HIGH";
+        } else if ("Q8C".equals(s)) {
+            humanreabable = "VERYHIGH";
+        } else {
+            humanreabable = null;
         }
-        if ("Q4A".equals(s)) {
-            return "MEDIUM";
-        }
-        if ("Q6A".equals(s)) {
-            return "HIGH";
-        }
-        return s;
+        return humanreabable;
     }
 
     private boolean unknownQualityIdentifier(String s) {
