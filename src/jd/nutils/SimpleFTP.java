@@ -252,7 +252,7 @@ public class SimpleFTP {
      * Disconnects from the FTP server.
      */
     public void disconnect() throws IOException {
-        Socket lsocket = socket;
+        final Socket lsocket = socket;
         try {
             /* avoid stackoverflow for io-exception during sendLine */
             socket = null;
@@ -261,7 +261,9 @@ public class SimpleFTP {
             }
         } finally {
             try {
-                lsocket.close();
+                if (lsocket != null) {
+                    lsocket.close();
+                }
             } catch (final Throwable e) {
             }
         }

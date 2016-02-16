@@ -1,6 +1,7 @@
 package jd.plugins.download.usenet;
 
 import java.awt.Color;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,14 +29,12 @@ import jd.plugins.download.SparseFile;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
 import org.appwork.utils.net.usenet.SimpleUseNet;
-import org.appwork.utils.net.usenet.UUInputStream;
 import org.appwork.utils.net.usenet.YEncInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.controlling.FileCreationManager;
@@ -53,14 +52,13 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
 
     private final AtomicBoolean                     abort                    = new AtomicBoolean(false);
     private final AtomicBoolean                     terminated               = new AtomicBoolean(false);
-    private RandomAccessFile                        outputPartFileRaf;
     private File                                    outputCompleteFile;
     private File                                    outputFinalCompleteFile;
     private File                                    outputPartFile;
     protected long                                  totalLinkBytesLoaded     = -1;
     protected final AtomicLong                      totalLinkBytesLoadedLive = new AtomicLong(0);
     private long                                    startTimeStamp           = -1;
-    private boolean                                 resumed;
+    private boolean                                 resumed                  = false;
     private final SimpleUseNet                      client;
     private final UsenetFile                        usenetFile;
 
@@ -104,11 +102,11 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
         return connectionHandler;
     }
 
-    private void createOutputChannel() throws SkipReasonException {
+    private void createOutputFiles() throws SkipReasonException {
         try {
-            String fileOutput = downloadable.getFileOutput();
+            final String fileOutput = downloadable.getFileOutput();
             logger.info("createOutputChannel for " + fileOutput);
-            String finalFileOutput = downloadable.getFinalFileOutput();
+            final String finalFileOutput = downloadable.getFinalFileOutput();
             outputCompleteFile = new File(fileOutput);
             outputFinalCompleteFile = outputCompleteFile;
             if (!fileOutput.equals(finalFileOutput)) {
@@ -121,7 +119,6 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 }
             } catch (IOException e) {
             }
-            outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
         } catch (Exception e) {
             LogSource.exception(logger, e);
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
@@ -139,11 +136,17 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
     }
 
     protected void download() throws Exception {
+        final RandomAccessFile raf;
+        try {
+            raf = new RandomAccessFile(outputPartFile, "rw");
+        } catch (final IOException e) {
+            throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
+        }
         boolean localIO = false;
         totalLinkBytesLoaded = 0;
         MeteredThrottledInputStream meteredThrottledInputStream = null;
         try {
-            for (UsenetFileSegment segment : usenetFile.getSegments()) {
+            for (final UsenetFileSegment segment : usenetFile.getSegments()) {
                 if (abort.get()) {
                     break;
                 }
@@ -156,20 +159,10 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 }
                 if (bodyInputStream instanceof YEncInputStream) {
                     final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
-                    final String fileName = yEnc.getName();
-                    if (StringUtils.isNotEmpty(fileName) && downloadable.getFinalFileName() == null) {
-                        downloadable.setFinalFileName(fileName);
-                    }
                     final long fileSize = yEnc.getSize();
                     final long verifiedFileSize = downloadable.getVerifiedFileSize();
                     if (fileSize >= 0 && (verifiedFileSize == -1 || fileSize > verifiedFileSize)) {
                         downloadable.setVerifiedFileSize(fileSize);
-                    }
-                } else if (bodyInputStream instanceof UUInputStream) {
-                    final UUInputStream uu = (UUInputStream) bodyInputStream;
-                    final String fileName = uu.getName();
-                    if (StringUtils.isNotEmpty(fileName) && downloadable.getFinalFileName() == null) {
-                        downloadable.setFinalFileName(fileName);
                     }
                 }
                 int bytesRead = 0;
@@ -180,10 +173,10 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                         break;
                     }
                     if (bytesRead > 0) {
-                        totalLinkBytesLoaded += bytesRead;
                         localIO = true;
-                        outputPartFileRaf.write(buffer, 0, bytesRead);
+                        raf.write(buffer, 0, bytesRead);
                         localIO = false;
+                        totalLinkBytesLoaded += bytesRead;
                         totalLinkBytesLoadedLive.addAndGet(bytesRead);
                     }
                 }
@@ -191,7 +184,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                     final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
                     totalLinkBytesLoaded = loaded + yEnc.getPartSize();
                     totalLinkBytesLoadedLive.set(totalLinkBytesLoaded);
-                    outputPartFileRaf.seek(totalLinkBytesLoaded);
+                    raf.seek(totalLinkBytesLoaded);
                 }
             }
         } catch (IOException e) {
@@ -200,6 +193,8 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
             }
             throw e;
         } finally {
+            close(raf);
+            cleanupDownladInterface();
             downloadable.setDownloadBytesLoaded(totalLinkBytesLoaded);
             if (meteredThrottledInputStream != null) {
                 connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
@@ -211,16 +206,16 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
     public boolean startDownload() throws Exception {
         boolean deletePartFile = false;
         try {
-            DownloadPluginProgress downloadPluginProgress = null;
             downloadable.setConnectionHandler(this.getManagedConnetionHandler());
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
+            DownloadPluginProgress downloadPluginProgress = null;
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
 
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);
-                        createOutputChannel();
+                        createOutputFiles();
                         try {
                             downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
                         } catch (FileIsLockedException e) {
@@ -260,7 +255,6 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 downloadable.setHashResult(hashResult);
                 if (hashResult == null || hashResult.match()) {
                     downloadable.setVerifiedFileSize(outputPartFile.length());
-
                 } else {
                     if (hashResult.getHashInfo().isTrustworthy()) {
                         throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
@@ -283,18 +277,32 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
         }
     }
 
-    protected boolean isDownloadComplete() {
+    private void close(Closeable closable) {
+        try {
+            if (closable != null) {
+                closable.close();
+            }
+        } catch (Throwable e) {
+        }
+    }
+
+    private boolean isTerminated() {
+        return terminated.get();
+    }
+
+    private boolean isDownloadComplete() {
         final long verifiedFileSize = downloadable.getVerifiedFileSize();
         if (verifiedFileSize >= 0) {
             return totalLinkBytesLoaded == verifiedFileSize;
         }
-        if (externalDownloadStop() == false) {
+        if (externalDownloadStop() == false && isTerminated() == false) {
+            // no stop and not terminated, normal finish
             return true;
         }
         return false;
     }
 
-    protected void finalizeDownload(File outputPartFile, File outputCompleteFile) throws Exception {
+    private void finalizeDownload(final File outputPartFile, final File outputCompleteFile) throws Exception {
         if (downloadable.rename(outputPartFile, outputCompleteFile)) {
             try { /* set current timestamp as lastModified timestamp */
                 outputCompleteFile.setLastModified(System.currentTimeMillis());
@@ -306,7 +314,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
         }
     }
 
-    protected void cleanupDownladInterface() {
+    private void cleanupDownladInterface() {
         try {
             downloadable.removeConnectionHandler(this.getManagedConnetionHandler());
         } catch (final Throwable e) {
@@ -314,21 +322,6 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
         try {
             client.quit();
         } catch (Throwable e) {
-        }
-        closeOutputChannel();
-    }
-
-    private void closeOutputChannel() {
-        try {
-            RandomAccessFile loutputPartFileRaf = outputPartFileRaf;
-            if (loutputPartFileRaf != null) {
-                logger.info("Close File. Let AV programs run");
-                loutputPartFileRaf.close();
-            }
-        } catch (Throwable e) {
-            LogSource.exception(logger, e);
-        } finally {
-            outputPartFileRaf = null;
         }
     }
 
