@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.net.UnknownHostException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -253,18 +254,19 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
+        // find photo set iframe... can be outside of 'string' source
+        final String photoset = br.getRegex("<iframe [^>]*src=(\"|')([^<>]+?/post/\\d+/photoset_iframe/[^<>]+?)\\1").getMatch(1);
+        // note the /post/\d+ uid isn't same as /post/\d+/photoset_iframe
+        if (photoset != null) {
+            // ok we don't need to process the iframe src link as best images which we are interested in are within google
+            // getGoogleCarousel!
+            processPhotoSet(decryptedLinks, puid);
+            return decryptedLinks;
+        }
         // FINAL FAILOVER FOR UNSUPPORTED CONTENT, this way we wont have to keep making updates to this plugin! only time we would need to
         // is, when we need to customise / fixup results into proper url format. -raztoki20160211
-
-        final String iframe = new Regex(string, "<iframe [^>]*src=(\"|')((?![^>]+assets\\.tumblr\\.com/[^>]+).*?)\\1").getMatch(1);
+        final String iframe = new Regex(string, "<iframe [^>]*src=(\"|')((?![^>]*//assets\\.tumblr\\.com/[^>]+?).*?)\\1").getMatch(1);
         if (iframe != null) {
-            // multiple images in a single post show up as photoset within iframe!
-            if (iframe.contains("/photoset_iframe/")) {
-                // ok we don't need to process the iframe src link as best images which we are interested in are within google
-                // getGoogleCarousel!
-                processPhotoSet(decryptedLinks, puid);
-                return decryptedLinks;
-            }
             decryptedLinks.add(createDownloadlink(iframe));
             return decryptedLinks;
         }
@@ -305,21 +307,28 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             final String JSON = new Regex(gc, "<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
             final Map<String, Object> json = jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaMap(JSON);
             final String articleBody = (String) json.get("articleBody");
+            final String fpName = articleBody.replaceAll("[\r\n]+", "").trim();
             if (articleBody != null) {
                 fp = FilePackage.getInstance();
-                fp.setName(articleBody.replaceAll("[\r\n]+", "").trim());
+                fp.setName(fpName);
             }
             final List<Object> results = (List<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "image/@list");
             if (results != null) {
+                int count = 1;
+                final DecimalFormat df = new DecimalFormat(results.size() < 100 ? "00" : "000");
                 for (final Object result : results) {
                     final String url = (String) result;
                     final DownloadLink dl = createDownloadlink("directhttp://" + url);
                     if (fp != null) {
                         fp.add(dl);
                     }
+                    // cleanup...
+                    final String filename = setFileName(cleanupName(df.format(count) + " - " + fpName), puid) + getFileNameExtensionFromString(url);
+                    dl.setFinalFileName(filename);
                     setMD5Hash(dl, url);
                     setImageLinkID(dl, url, puid);
                     decryptedLinks.add(dl);
+                    count++;
                 }
             }
         }
