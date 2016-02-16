@@ -190,7 +190,6 @@ public class UseNet extends PluginForHost {
             ProxyController.getInstance().reportHTTPProxyException(proxies.get(0), uri, e);
             throw e;
         }
-        // TODO: proxy exception handling
         // checkCompleteness(downloadLink, client, usenetFile);
         if (downloadLink.getFinalFileName() == null) {
             final UsenetFileSegment firstSegment = usenetFile.getSegments().get(0);
