@@ -27,6 +27,7 @@ import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
 import jd.http.ClonedProxy;
 import jd.http.ProxySelectorInterface;
 import jd.http.Request;
@@ -121,24 +122,24 @@ public class ProxyController implements ProxySelectorInterface {
 
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
 
-        @Override
-        public void killQueue() {
-            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-            /*
-             * this queue can't be killed
-             */
-        }
+                                                                                                @Override
+                                                                                                public void killQueue() {
+                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+                                                                                                    /*
+                                                                                                     * this queue can't be killed
+                                                                                                     */
+                                                                                                }
 
-    };
+                                                                                            };
 
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
 
-        @Override
-        public boolean suppressEvent(ConfigEvent eventType) {
-            return true;
-        }
-    };
+                                                                                                @Override
+                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
+                                                                                                    return true;
+                                                                                                }
+                                                                                            };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -195,16 +196,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                @Override
-                public void delayedrun() {
-                    ProxyController.this.saveProxySettings();
-                }
+                                                  @Override
+                                                  public void delayedrun() {
+                                                      ProxyController.this.saveProxySettings();
+                                                  }
 
-                @Override
-                public String getID() {
-                    return "ProxyController";
-                }
-            };
+                                                  @Override
+                                                  public String getID() {
+                                                      return "ProxyController";
+                                                  }
+                                              };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -1116,7 +1117,7 @@ public class ProxyController implements ProxySelectorInterface {
         final LinkedHashSet<HTTPProxy> ret = new LinkedHashSet<HTTPProxy>();
         try {
             final URI uri = newURI(url);
-            final String host = uri.getHost();
+            final String host = Browser.getHostFromURI(uri);
             final Plugin plugin = getPluginFromThread();
             for (final AbstractProxySelectorImpl selector : _getList()) {
                 try {
@@ -1181,7 +1182,7 @@ public class ProxyController implements ProxySelectorInterface {
         }
         final LinkedHashSet<HTTPProxy> ret = new LinkedHashSet<HTTPProxy>();
         try {
-            final String host = uri.getHost();
+            final String host = Browser.getHostFromURI(uri);
             final String plgHost;
             if (plugin == null || plugin.isHandlingMultipleHosts()) {
                 plgHost = host;
