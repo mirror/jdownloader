@@ -11,6 +11,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.ChildrenView;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
@@ -27,12 +33,6 @@ import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.ChildrenView;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-
 public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private static class LinkInfo {
@@ -43,13 +43,13 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         private DownloadLink link;
     }
 
-    private final FilePackage fp;
+    private final FilePackage              fp;
 
-    protected volatile long lastUpdateTimestamp = -1;
+    protected volatile long                lastUpdateTimestamp      = -1;
 
-    protected volatile boolean lastRunningState = false;
-    protected volatile long    finishedDate     = -1;
-    protected volatile long    estimatedETA     = -1;
+    protected volatile boolean             lastRunningState         = false;
+    protected volatile long                finishedDate             = -1;
+    protected volatile long                estimatedETA             = -1;
 
     private volatile int                   offline                  = 0;
     private volatile int                   online                   = 0;
@@ -58,9 +58,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private volatile String                availabilityColumnString = null;
     private volatile ChildrenAvailablility availability             = ChildrenAvailablility.UNKNOWN;
 
-    private volatile int items = 0;
+    private volatile int                   items                    = 0;
 
-    protected static final long GUIUPDATETIMEOUT = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
+    protected static final long            GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
 
     public boolean isEnabled() {
         return enabledCount > 0;
@@ -88,9 +88,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         return finalCount;
     }
 
-    private long done = 0;
+    private long                  done = 0;
 
-    private int enabledCount;
+    private int                   enabledCount;
 
     private PluginStateCollection pluginStates;
 
@@ -155,20 +155,20 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     private class Temp {
-        private int                       newUnknownFileSizes = 0;
-        private int                       newFinalCount       = 0;
-        private long                      newFinishedDate     = -1;
-        private int                       newOffline          = 0;
-        private int                       newOnline           = 0;
-        private int                       newEnabledCount     = 0;
-        private int                       items               = 0;
-        private HashMap<String, LinkInfo> linkInfos           = new HashMap<String, LinkInfo>();
-        private HashSet<DomainInfo>       newInfos            = new HashSet<DomainInfo>();
-        private boolean                   allFinished         = true;
-        private String                    sameSource          = null;
-        private boolean                   sameSourceFullUrl   = true;
+        private int                          newUnknownFileSizes = 0;
+        private int                          newFinalCount       = 0;
+        private long                         newFinishedDate     = -1;
+        private int                          newOffline          = 0;
+        private int                          newOnline           = 0;
+        private int                          newEnabledCount     = 0;
+        private int                          items               = 0;
+        private HashMap<String, LinkInfo>    linkInfos           = new HashMap<String, LinkInfo>();
+        private HashSet<DomainInfo>          newInfos            = new HashSet<DomainInfo>();
+        private boolean                      allFinished         = true;
+        private String                       sameSource          = null;
+        private boolean                      sameSourceFullUrl   = true;
 
-        private HashMap<Object, PluginState> pluginStates = new HashMap<Object, PluginState>();
+        private HashMap<Object, PluginState> pluginStates        = new HashMap<Object, PluginState>();
     }
 
     public static class PluginState {
@@ -191,18 +191,18 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     }
 
-    private final static AbstractIcon EXTRACTICONOK    = new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16);
-    private final static AbstractIcon EXTRACTICONERROR = new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16);
-    private final static AbstractIcon EXTRACTICONSTART = new AbstractIcon(IconKey.ICON_EXTRACT_RUN, 16);
-    private final static AbstractIcon FALSEICON        = new AbstractIcon(IconKey.ICON_FALSE, 16);
+    private final static AbstractIcon           EXTRACTICONOK        = new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16);
+    private final static AbstractIcon           EXTRACTICONERROR     = new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16);
+    private final static AbstractIcon           EXTRACTICONSTART     = new AbstractIcon(IconKey.ICON_EXTRACT_RUN, 16);
+    private final static AbstractIcon           FALSEICON            = new AbstractIcon(IconKey.ICON_FALSE, 16);
 
     private final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
 
-        @Override
-        public int compare(DomainInfo o1, DomainInfo o2) {
-            return o1.getTld().compareTo(o2.getTld());
-        }
-    };
+                                                                         @Override
+                                                                         public int compare(DomainInfo o1, DomainInfo o2) {
+                                                                             return o1.getTld().compareTo(o2.getTld());
+                                                                         }
+                                                                     };
 
     @Override
     public FilePackageView setItems(List<DownloadLink> updatedItems) {
@@ -608,6 +608,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 LinkInfo linkInfo = tmp.linkInfos.get(displayName);
                 if (linkInfo == null) {
                     linkInfo = new LinkInfo();
+                    linkInfo.link = link;
                     tmp.linkInfos.put(displayName, linkInfo);
                 }
                 linkInfo.enabled = true;
@@ -636,6 +637,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             LinkInfo linkInfo = tmp.linkInfos.get(displayName);
             if (linkInfo == null) {
                 linkInfo = new LinkInfo();
+                linkInfo.link = link;
                 linkInfo.enabled = false;
                 tmp.linkInfos.put(displayName, linkInfo);
             }

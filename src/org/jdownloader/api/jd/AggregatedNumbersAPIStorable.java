@@ -46,11 +46,11 @@ public class AggregatedNumbersAPIStorable implements Storable {
         return aggregated.getEta();
     }
 
-    public Long getRunning() {
+    public Integer getRunning() {
         return aggregated.getRunning();
     }
 
-    public Long getConnections() {
+    public Integer getConnections() {
         return aggregated.getConnections();
     }
 
