@@ -533,10 +533,15 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 String urlParams = null;
-                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403) && (urlParams = downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null)) != null) {
+                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403 || (StringUtils.contains(urlConnection.getContentType(), "image") && urlConnection.getLongContentLength() < 1024)) && (urlParams = downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null)) != null) {
                     /* check if we need the URLPARAMS to download the file */
                     urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
-                    br.followConnection();
+                    try {
+                        br.followConnection();
+                    } catch (final Throwable e) {
+                    } finally {
+                        urlConnection.disconnect();
+                    }
                     final String newURL = getDownloadURL(downloadLink) + urlParams;
                     downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
                     setDownloadURL(newURL, downloadLink);
