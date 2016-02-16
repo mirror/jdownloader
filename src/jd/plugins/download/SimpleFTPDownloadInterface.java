@@ -1,6 +1,7 @@
 package jd.plugins.download;
 
 import java.awt.Color;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -43,17 +44,16 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     private final LogInterface                      logger;
     private final SimpleFTP                         simpleFTP;
     private String                                  filePath;
-    private AtomicBoolean                           abort                    = new AtomicBoolean(false);
-    private AtomicBoolean                           terminated               = new AtomicBoolean(false);
-    private RandomAccessFile                        outputPartFileRaf;
+    private final AtomicBoolean                     abort                    = new AtomicBoolean(false);
+    private final AtomicBoolean                     terminated               = new AtomicBoolean(false);
     private File                                    outputCompleteFile;
     private File                                    outputFinalCompleteFile;
     private File                                    outputPartFile;
     protected PluginException                       caughtPluginException    = null;
     protected long                                  totalLinkBytesLoaded     = -1;
-    protected AtomicLong                            totalLinkBytesLoadedLive = new AtomicLong(0);
+    protected final AtomicLong                      totalLinkBytesLoadedLive = new AtomicLong(0);
     private long                                    startTimeStamp           = -1;
-    private boolean                                 resumed;
+    private boolean                                 resumed                  = false;
 
     public SimpleFTPDownloadInterface(SimpleFTP simpleFTP, final DownloadLink link, String filePath) {
         connectionHandler = new ManagedThrottledConnectionHandler();
@@ -89,7 +89,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         return connectionHandler;
     }
 
-    private void createOutputChannel() throws SkipReasonException {
+    private void createOutputFiles() throws SkipReasonException {
         try {
             String fileOutput = downloadable.getFileOutput();
             logger.info("createOutputChannel for " + fileOutput);
@@ -106,7 +106,6 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 }
             } catch (IOException e) {
             }
-            outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
         } catch (Exception e) {
             LogSource.exception(logger, e);
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
@@ -123,15 +122,15 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         return totalLinkBytesLoadedLive.get();
     }
 
-    protected void download(String filename, RandomAccessFile raf, boolean resume) throws IOException, PluginException {
-        long resumePosition = 0;
+    protected void download(String filename, boolean resume) throws IOException, PluginException, SkipReasonException {
+        final File file = outputPartFile;
         if (!simpleFTP.isBinary()) {
             logger.info("Warning: Download in ASCII mode may fail!");
         }
         final InetSocketAddress pasv = simpleFTP.pasv();
         resumed = false;
         if (resume) {
-            resumePosition = raf.length();
+            final long resumePosition = file.length();
             if (resumePosition > 0) {
                 resumed = true;
                 totalLinkBytesLoadedLive.set(resumePosition);
@@ -140,13 +139,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                     simpleFTP.readLines(new int[] { 350 }, "Resume not supported");
                     downloadable.setResumeable(true);
                 } catch (final IOException e) {
+                    cleanupDownladInterface();
                     if (e.getMessage().contains("Resume not")) {
-                        try {
-                            raf.close();
-                        } catch (Throwable ignore) {
-                        } finally {
-                            outputPartFile.delete();
-                        }
+                        file.delete();
                         downloadable.setResumeable(false);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
@@ -154,9 +149,14 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 }
             }
         }
-        MeteredThrottledInputStream input = null;
+        final RandomAccessFile raf;
+        try {
+            raf = new RandomAccessFile(file, "rw");
+        } catch (final IOException e) {
+            throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
+        }
         Socket dataSocket = null;
-        totalLinkBytesLoaded = -1;
+        MeteredThrottledInputStream input = null;
         try {
             dataSocket = new Socket();
             dataSocket.setSoTimeout(30 * 1000);
@@ -165,13 +165,15 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             simpleFTP.readLines(new int[] { 150, 125 }, null);
             input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter(10));
             connectionHandler.addThrottledConnection(input);
-            if (resumePosition > 0) {
+            if (resumed) {
                 /* in case we do resume, reposition the writepointer */
-                raf.seek(resumePosition);
+                totalLinkBytesLoaded = file.length();
+                raf.seek(totalLinkBytesLoaded);
+            } else {
+                totalLinkBytesLoaded = 0;
             }
-            byte[] buffer = new byte[32767];
+            final byte[] buffer = new byte[32767];
             int bytesRead = 0;
-            totalLinkBytesLoaded = resumePosition;
             while ((bytesRead = input.read(buffer)) != -1) {
                 if (abort.get()) {
                     break;
@@ -194,54 +196,45 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         } catch (SocketTimeoutException e) {
             LogSource.exception(logger, e);
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
-            simpleFTP.sendLine("ABOR");
-            simpleFTP.readLine();
-            return;
         } catch (SocketException e) {
             LogSource.exception(logger, e);
             error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_networkreset(), 1000l * 60 * 5));
-            simpleFTP.sendLine("ABOR");
-            simpleFTP.readLine();
-            return;
         } catch (ConnectException e) {
             LogSource.exception(logger, e);
             error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_networkreset(), 1000l * 60 * 5));
-            simpleFTP.sendLine("ABOR");
-            simpleFTP.readLine();
-            return;
         } finally {
-            try {
-                connectionHandler.removeThrottledConnection(input);
-            } catch (final Throwable e) {
-            }
-            try {
-                input.close();
-            } catch (Throwable e) {
-            }
-            try {
-                raf.close();
-            } catch (Throwable e) {
-            }
+            close(raf);
+            close(input);
+            close(dataSocket);
+            cleanupDownladInterface();
             if (totalLinkBytesLoaded >= 0) {
                 downloadable.setDownloadBytesLoaded(totalLinkBytesLoaded);
             }
-            simpleFTP.shutDownSocket(dataSocket);
+        }
+    }
+
+    private void close(Closeable closable) {
+        try {
+            if (closable != null) {
+                closable.close();
+            }
+        } catch (Throwable e) {
         }
     }
 
     @Override
     public boolean startDownload() throws Exception {
         try {
-            DownloadPluginProgress downloadPluginProgress = null;
             downloadable.setConnectionHandler(this.getManagedConnetionHandler());
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
+            DownloadPluginProgress downloadPluginProgress = null;
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
 
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);
-                        createOutputChannel();
+                        createOutputFiles();
                         try {
                             downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
                         } catch (FileIsLockedException e) {
@@ -256,7 +249,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
                 downloadable.addPluginProgress(downloadPluginProgress);
                 downloadable.setAvailable(AvailableStatus.TRUE);
-                download(filePath, outputPartFileRaf, downloadable.isResumable());
+                download(filePath, downloadable.isResumable());
             } finally {
                 try {
                     downloadable.free(reservation);
@@ -271,14 +264,13 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             }
             if (isDownloadComplete()) {
                 logger.info("Download is complete");
-                HashResult hashResult = getHashResult(downloadable, outputPartFile);
+                final HashResult hashResult = getHashResult(downloadable, outputPartFile);
                 if (hashResult != null) {
                     logger.info(hashResult.toString());
                 }
                 downloadable.setHashResult(hashResult);
                 if (hashResult == null || hashResult.match()) {
                     downloadable.setVerifiedFileSize(outputPartFile.length());
-
                 } else {
                     if (hashResult.getHashInfo().isTrustworthy()) {
                         throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
@@ -298,7 +290,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         }
     }
 
-    protected boolean isDownloadComplete() throws Exception {
+    private boolean isDownloadComplete() throws Exception {
         final long verifiedFileSize = downloadable.getVerifiedFileSize();
         if (verifiedFileSize >= 0) {
             if (totalLinkBytesLoaded > verifiedFileSize) {
@@ -319,11 +311,11 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         return false;
     }
 
-    protected boolean isTerminated() {
+    private boolean isTerminated() {
         return terminated.get();
     }
 
-    protected void finalizeDownload(File outputPartFile, File outputCompleteFile) throws Exception {
+    private void finalizeDownload(final File outputPartFile, final File outputCompleteFile) throws Exception {
         if (downloadable.rename(outputPartFile, outputCompleteFile)) {
             try { /* set current timestamp as lastModified timestamp */
                 outputCompleteFile.setLastModified(System.currentTimeMillis());
@@ -338,7 +330,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     /**
      * ueber error() kann ein fehler gemeldet werden. DIe Methode entscheided dann ob dieser fehler zu einem Abbruch fuehren muss
      */
-    protected void error(PluginException pluginException) {
+    private void error(PluginException pluginException) {
         synchronized (this) {
             /* if we recieved external stop, then we dont have to handle errors */
             if (externalDownloadStop()) {
@@ -352,7 +344,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         terminate();
     }
 
-    protected void cleanupDownladInterface() {
+    private void cleanupDownladInterface() {
         try {
             downloadable.removeConnectionHandler(this.getManagedConnetionHandler());
         } catch (final Throwable e) {
@@ -360,21 +352,6 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         try {
             this.simpleFTP.disconnect();
         } catch (Throwable e) {
-        }
-        closeOutputChannel();
-    }
-
-    private void closeOutputChannel() {
-        try {
-            RandomAccessFile loutputPartFileRaf = outputPartFileRaf;
-            if (loutputPartFileRaf != null) {
-                logger.info("Close File. Let AV programs run");
-                loutputPartFileRaf.close();
-            }
-        } catch (Throwable e) {
-            LogSource.exception(logger, e);
-        } finally {
-            outputPartFileRaf = null;
         }
     }
 

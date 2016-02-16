@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.util.ArrayList;
@@ -28,12 +29,17 @@ import jd.plugins.components.UsenetFileSegment;
 import jd.plugins.components.UsenetServer;
 import jd.plugins.download.usenet.SimpleUseNetDownloadInterface;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.NullOutputStream;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.usenet.InvalidAuthException;
 import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
 import org.appwork.utils.net.usenet.SimpleUseNet;
+import org.appwork.utils.net.usenet.UUInputStream;
 import org.appwork.utils.net.usenet.UnrecognizedCommandException;
+import org.appwork.utils.net.usenet.YEncInputStream;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
@@ -186,6 +192,30 @@ public class UseNet extends PluginForHost {
         }
         // TODO: proxy exception handling
         // checkCompleteness(downloadLink, client, usenetFile);
+        if (downloadLink.getFinalFileName() == null) {
+            final UsenetFileSegment firstSegment = usenetFile.getSegments().get(0);
+            final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(firstSegment.getMessageID());
+            if (bodyInputStream instanceof YEncInputStream) {
+                final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
+                final String fileName = yEnc.getName();
+                if (StringUtils.isNotEmpty(fileName)) {
+                    downloadLink.setFinalFileName(fileName);
+                }
+                final long fileSize = yEnc.getSize();
+                final long verifiedFileSize = downloadLink.getVerifiedFileSize();
+                if (fileSize >= 0 && (verifiedFileSize == -1 || fileSize > verifiedFileSize)) {
+                    downloadLink.setVerifiedFileSize(fileSize);
+                }
+            } else if (bodyInputStream instanceof UUInputStream) {
+                final UUInputStream uu = (UUInputStream) bodyInputStream;
+                final String fileName = uu.getName();
+                if (StringUtils.isNotEmpty(fileName)) {
+                    downloadLink.setFinalFileName(fileName);
+                }
+            }
+            // dummy load the segment
+            IO.readStreamToOutputStream(-1, bodyInputStream, new NullOutputStream(), false);
+        }
         dl = new SimpleUseNetDownloadInterface(client, downloadLink, usenetFile);
         try {
             dl.startDownload();
