@@ -18,17 +18,16 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 /**
  * NOTE: <br />
@@ -79,13 +78,18 @@ public class ShinkIn extends antiDDoSForDecrypt {
             }
         }
         submitForm(dform);
-        final String finallink = br.getRedirectLocation();
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String finallink = br.getRedirectLocation();
+        if (inValidate(finallink)) {
+            finallink = br.getRegex("<a [^>]*href=('|\")(.*?)\\1[^>]*>GET LINK</a>").getMatch(1);
+            if (inValidate(finallink)) {
+                finallink = br.getRegex("<a class=('|\")\\s*btn btn-primary\\s*\\1 href=('|\")(.*?)\\2").getMatch(2);
+                if (inValidate(finallink)) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+            }
         }
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
