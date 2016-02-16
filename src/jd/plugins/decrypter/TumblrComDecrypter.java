@@ -256,7 +256,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         // FINAL FAILOVER FOR UNSUPPORTED CONTENT, this way we wont have to keep making updates to this plugin! only time we would need to
         // is, when we need to customise / fixup results into proper url format. -raztoki20160211
 
-        final String iframe = new Regex(string, "<iframe [^>]*src=(\"|')((?!<^>]+assets\\.tumblr\\.com/<^>]+).*?)\\1").getMatch(1);
+        final String iframe = new Regex(string, "<iframe [^>]*src=(\"|')((?![^>]+assets\\.tumblr\\.com/[^>]+).*?)\\1").getMatch(1);
         if (iframe != null) {
             // multiple images in a single post show up as photoset within iframe!
             if (iframe.contains("/photoset_iframe/")) {
@@ -335,6 +335,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     }
 
     private void setMD5Hash(final DownloadLink dl, final String url) {
+        // nullified at this stage.
+        if (true) {
+            return;
+        }
         // the 32hex is actually the file md5, it also shows up on download under the ETAG header response -raztoki20160215
         final String md5 = new Regex(url, "/([a-f0-9]{32})/").getMatch(0);
         dl.setMD5Hash(md5);
