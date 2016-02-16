@@ -4,6 +4,7 @@ import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.gui.swing.jdgui.JDGui;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -30,6 +31,19 @@ public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
     @Override
     public Class<String> getResultType() {
         return String.class;
+    }
+
+    @Override
+    public boolean canHandle(Challenge<?> c) {
+        if (super.canHandle(c)) {
+            final String[] browserCommandLine = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
+            if (!CrossSystem.isOpenBrowserSupported() && (browserCommandLine == null || browserCommandLine.length == 0)) {
+                return false;
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void checkSilentMode(final SolverJob<String> job) throws SkipException, InterruptedException {
