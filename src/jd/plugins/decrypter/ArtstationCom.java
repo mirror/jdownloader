@@ -21,8 +21,10 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -50,6 +52,7 @@ public class ArtstationCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         final FilePackage fp = FilePackage.getInstance();
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         if (parameter.matches(TYPE_ARTIST)) {
             final String username = parameter.substring(parameter.lastIndexOf("/"));
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
@@ -135,6 +138,17 @@ public class ArtstationCom extends PluginForDecrypt {
                 final String url = (String) imageJson.get("image_url");
                 final String fid = Long.toString(DummyScriptEnginePlugin.toLong(imageJson.get("id"), -1));
                 final String imageTitle = (String) imageJson.get("title");
+                final String playerEmbedded = (String) imageJson.get("player_embedded");
+                if (!inValidate(playerEmbedded)) {
+                    final String[] results = HTMLParser.getHttpLinks(playerEmbedded, null);
+                    if (results != null) {
+                        for (final String result : results) {
+                            final DownloadLink dl = this.createDownloadlink(result);
+                            fp.add(dl);
+                            decryptedLinks.add(dl);
+                        }
+                    }
+                }
                 if (fid.equals("-1") || url == null) {
                     continue;
                 }

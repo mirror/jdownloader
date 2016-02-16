@@ -128,6 +128,7 @@ public class LinkCrawler {
     private final long                                     created;
 
     public final static String                             PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
+    public final static String                             PACKAGE_ALLOW_INHERITANCE   = "ALLOW_INHERITANCE";
     public final static String                             PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
     public final static String                             PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
     public static final UniqueAlltimeID                    PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
@@ -1939,6 +1940,9 @@ public class LinkCrawler {
             final FilePackage fp = link.getDownloadLink().getFilePackage();
             if (!FilePackage.isDefaultFilePackage(fp)) {
                 fp.remove(link.getDownloadLink());
+                if (link.getDesiredPackageInfo() != null && Boolean.TRUE.equals(link.getDesiredPackageInfo().isAllowInheritance())) {
+                    return link.getDesiredPackageInfo();
+                }
                 PackageInfo fpi = null;
                 if (fp.getDownloadDirectory() != null && !fp.getDownloadDirectory().equals(defaultDownloadFolder)) {
                     // do not set downloadfolder if it is the defaultfolder
@@ -1999,6 +2003,16 @@ public class LinkCrawler {
                     } else {
                         fpi.setIgnoreVarious(false);
                     }
+                }
+                if (fp.hasProperty(PACKAGE_ALLOW_INHERITANCE)) {
+                    if (fpi == null) {
+                        if (link.getDesiredPackageInfo() == null) {
+                            fpi = new PackageInfo();
+                        } else {
+                            fpi = link.getDesiredPackageInfo();
+                        }
+                    }
+                    fpi.setAllowInheritance(fp.getBooleanProperty(PACKAGE_ALLOW_INHERITANCE));
                 }
                 if (fpi != null) {
                     link.setDesiredPackageInfo(fpi);

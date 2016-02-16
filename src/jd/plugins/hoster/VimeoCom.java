@@ -51,6 +51,8 @@ import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/(video/)?\\d+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
 
@@ -488,9 +490,13 @@ public class VimeoCom extends PluginForHost {
                         if (ext == null) {
                             ext = new Regex(url, ".+(\\.[a-z0-9]{3,4})$").getMatch(0);
                         }
+                        final String quality = (String) abc.get("quality");
                         qualities[foundqualities][0] = url;
                         qualities[foundqualities][1] = ext;
                         qualities[foundqualities][2] = Integer.parseInt(height) >= 720 ? "hd" : "sd";
+                        if (StringUtils.containsIgnoreCase(quality, "720") || StringUtils.containsIgnoreCase(quality, "1080")) {
+                            qualities[foundqualities][2] = "hd";
+                        }
                         qualities[foundqualities][3] = (height == null || width == null ? null : width + "x" + height);
                         qualities[foundqualities][4] = bitrate;
                         /* No filesize given */

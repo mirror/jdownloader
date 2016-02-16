@@ -8,6 +8,15 @@ public class PackageInfo {
 
     private boolean         packagizerRuleMatched = false;
     private Boolean         ignoreVarious         = null;
+    private Boolean         allowInheritance      = null;
+
+    public Boolean isAllowInheritance() {
+        return allowInheritance;
+    }
+
+    public void setAllowInheritance(Boolean allowInheritance) {
+        this.allowInheritance = allowInheritance;
+    }
 
     public UniqueAlltimeID getUniqueId() {
         return uniqueId;
@@ -29,6 +38,7 @@ public class PackageInfo {
         ret.setIgnoreVarious(isIgnoreVarious());
         ret.setPackagizerRuleMatched(isPackagizerRuleMatched());
         ret.setUniqueId(getUniqueId());
+        ret.setAllowInheritance(isAllowInheritance());
         return ret;
     }
 
