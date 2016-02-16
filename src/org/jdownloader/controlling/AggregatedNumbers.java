@@ -1,5 +1,9 @@
 package org.jdownloader.controlling;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.plugins.DownloadLink;
@@ -10,34 +14,38 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
+import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.MirrorLoading;
+import org.jdownloader.plugins.SkipReason;
 
 public class AggregatedNumbers {
 
-    private long totalBytes;
+    private final long totalBytes;
 
-    public String getFinishedString(boolean inclDisabled) {
-        long ret = downloadsFinished;
+    public final String getFinishedString(final boolean inclDisabled) {
         if (inclDisabled) {
-            ret += disabledDownloadsFinished;
+            return String.valueOf(downloadsFinished + disabledDownloadsFinished);
+        } else {
+            return String.valueOf(downloadsFinished);
         }
-        return ret + "";
     }
 
     public String getSkippedString(boolean inclDisabled) {
-        long ret = downloadsSkipped;
         if (inclDisabled) {
-            ret += disabledDownloadsSkipped;
+            return String.valueOf(downloadsSkipped + disabledDownloadsSkipped);
+        } else {
+            return String.valueOf(downloadsSkipped);
         }
-        return ret + "";
     }
 
     public String getFailedString(boolean inclDisabled) {
-        long ret = downloadsFailed;
         if (inclDisabled) {
-            ret += disabledDownloadsFailed;
+            return String.valueOf(downloadsFailed + disabledDownloadsFailed);
+        } else {
+            return String.valueOf(downloadsFailed);
         }
-        return ret + "";
     }
 
     public String getTotalBytesString(boolean inclDisabled) {
@@ -69,138 +77,261 @@ public class AggregatedNumbers {
         return eta > 0 ? TimeFormatter.formatSeconds(eta, 0) : "~";
     }
 
-    public int getLinkCount() {
+    public final int getLinkCount() {
         return linkCount;
     }
 
-    public int getPackageCount() {
+    public final int getPackageCount() {
         return packageCount;
     }
 
-    private long loadedBytes;
-    private long downloadSpeed;
-    private long eta;
-    private int  linkCount;
-    private int  packageCount;
-    private long running;
+    private final long loadedBytes;
+    private final long downloadSpeed;
+    private final long eta;
+    private final int  linkCount;
+    private final int  packageCount;
+    private final int  running;
 
-    public long getRunning() {
+    public final int getRunning() {
         return running;
     }
 
-    public long getConnections() {
+    public final int getConnections() {
         return connections;
     }
 
-    private long connections;
-    private long disabledTotalBytes;
-    private long disabledLoadedBytes;
+    private final int  connections;
+    private final long disabledTotalBytes;
+    private final long disabledLoadedBytes;
 
-    private long downloadsFinished;
-    private long downloadsFailed;
-    private long downloadsSkipped;
-    private long disabledDownloadsFinished;
-    private long disabledDownloadsFailed;
-    private long disabledDownloadsSkipped;
+    private final long downloadsFinished;
+    private final long downloadsFailed;
+    private final long downloadsSkipped;
+    private final long disabledDownloadsFinished;
+    private final long disabledDownloadsFailed;
+    private final long disabledDownloadsSkipped;
 
-    public long getDisabledTotalBytes() {
-        return disabledTotalBytes;
+    private final static class AggregatedDownloadLink {
+        private long         bytesTotal = -1;
+        private long         bytesDone  = -1;
+        private long         speed      = -1;
+        private boolean      enabled    = true;
+        private DownloadLink link       = null;
     }
 
-    public long getDisabledLoadedBytes() {
-        return disabledLoadedBytes;
+    private void aggregrate(DownloadLink link, Map<String, AggregatedDownloadLink> linkInfos) {
+        final boolean isEnabled = link.isEnabled();
+        final DownloadLinkView view = link.getView();
+        final ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+        final String displayName = view.getDisplayName();
+        if (isEnabled) {
+            if (conditionalSkipReason instanceof MirrorLoading) {
+                final MirrorLoading mirrorLoading = (MirrorLoading) conditionalSkipReason;
+                final DownloadLink downloadLink = mirrorLoading.getDownloadLink();
+                AggregatedDownloadLink linkInfo = linkInfos.get(displayName);
+                if (linkInfo == null || linkInfo.link != downloadLink) {
+                    linkInfo = new AggregatedDownloadLink();
+                    linkInfo.link = downloadLink;
+                    final DownloadLinkView downloadView = downloadLink.getView();
+                    linkInfo.bytesTotal = downloadView.getBytesTotal();
+                    linkInfo.bytesDone = downloadView.getBytesLoaded();
+                    final SingleDownloadController controller = downloadLink.getDownloadLinkController();
+                    if (controller != null) {
+                        final DownloadInterface downloadInterface = controller.getDownloadInstance();
+                        if (downloadInterface == null || ((System.currentTimeMillis() - downloadInterface.getStartTimeStamp()) < 5000)) {
+                            linkInfo.speed = 0;
+                        } else {
+                            linkInfo.speed = downloadView.getSpeedBps();
+                        }
+                    }
+                    linkInfos.put(displayName, linkInfo);
+                }
+            } else {
+                AggregatedDownloadLink linkInfo = linkInfos.get(displayName);
+                if (linkInfo == null) {
+                    linkInfo = new AggregatedDownloadLink();
+                    linkInfo.link = link;
+                    linkInfos.put(displayName, linkInfo);
+                }
+                linkInfo.enabled = true;
+                final SingleDownloadController controller = link.getDownloadLinkController();
+                if (controller != null) {
+                    linkInfo.bytesTotal = view.getBytesTotal();
+                    linkInfo.bytesDone = view.getBytesLoaded();
+                    final DownloadInterface downloadInterface = controller.getDownloadInstance();
+                    if (downloadInterface == null || ((System.currentTimeMillis() - downloadInterface.getStartTimeStamp()) < 5000)) {
+                        linkInfo.speed = 0;
+                    } else {
+                        linkInfo.speed = view.getSpeedBps();
+                    }
+                } else {
+                    if (linkInfo.speed < 0) {
+                        if (linkInfo.bytesTotal < view.getBytesTotal()) {
+                            linkInfo.bytesTotal = view.getBytesTotal();
+                        }
+                        if (linkInfo.bytesDone < view.getBytesLoaded()) {
+                            linkInfo.bytesDone = view.getBytesLoaded();
+                        }
+                    }
+                }
+            }
+        } else {
+            AggregatedDownloadLink linkInfo = linkInfos.get(displayName);
+            if (linkInfo == null) {
+                linkInfo = new AggregatedDownloadLink();
+                linkInfo.link = link;
+                linkInfo.enabled = false;
+                linkInfos.put(displayName, linkInfo);
+            }
+            if (linkInfo.enabled == false && linkInfo.speed < 0) {
+                if (linkInfo.bytesTotal < view.getBytesTotal()) {
+                    linkInfo.bytesTotal = view.getBytesTotal();
+                }
+                if (linkInfo.bytesDone < view.getBytesLoaded()) {
+                    linkInfo.bytesDone = view.getBytesLoaded();
+                }
+            }
+        }
+
     }
 
     public AggregatedNumbers(final SelectionInfo<FilePackage, DownloadLink> selection) {
-        totalBytes = 0l;
-        disabledTotalBytes = 0l;
-        disabledLoadedBytes = 0l;
+        final List<PackageView<FilePackage, DownloadLink>> packageViews = selection.getPackageViews();
+        packageCount = packageViews.size();
+        int linkCount = 0;
+        long downloadSpeed = 0;
 
-        loadedBytes = 0l;
-        downloadSpeed = 0l;
-        running = 0l;
-        connections = 0l;
-        packageCount = selection.getPackageViews().size();
-        linkCount = selection.getChildren().size();
-        downloadsFinished = 0l;
-        downloadsFailed = 0l;
-        downloadsSkipped = 0l;
-        disabledDownloadsFinished = 0l;
-        disabledDownloadsFailed = 0l;
-        disabledDownloadsSkipped = 0l;
-        for (DownloadLink dl : selection.getChildren()) {
-            if (dl == null) {
-                continue;
+        long totalBytes = -1;
+        long totalBytesDisabled = -1;
+
+        long loadedBytes = 0;
+        long loadedBytesDisabled = 0;
+
+        long downloadsSkipped = 0;
+        long downloadsSkippedDisabled = 0l;
+
+        long downloadsFinished = 0l;
+        long downloadsFinishedDisabled = 0l;
+
+        long downloadsFailed = 0l;
+        long downloadsFailedDisabled = 0l;
+
+        int running = 0;
+        int connections = 0;
+
+        for (PackageView<FilePackage, DownloadLink> packageView : packageViews) {
+            final HashMap<String, AggregatedDownloadLink> linkInfos = new HashMap<String, AggregatedDownloadLink>();
+            for (final DownloadLink link : packageView.getChildren()) {
+                aggregrate(link, linkInfos);
             }
-
-            if (dl.isEnabled()) {
-                FinalLinkState state = dl.getFinalLinkState();
-                if (state == null) {
-                    if (dl.isSkipped()) {
-                        downloadsSkipped++;
+            linkCount += linkInfos.size();
+            for (final AggregatedDownloadLink linkInfo : linkInfos.values()) {
+                final FinalLinkState state = linkInfo.link.getFinalLinkState();
+                final SkipReason skipReason = linkInfo.link.getSkipReason();
+                if (linkInfo.speed >= 0) {
+                    if (downloadSpeed == -1) {
+                        downloadSpeed = 0;
+                    }
+                    downloadSpeed += linkInfo.speed;
+                    running++;
+                    final SingleDownloadController controller = linkInfo.link.getDownloadLinkController();
+                    if (controller != null) {
+                        final DownloadInterface downloadInterface = controller.getDownloadInstance();
+                        if (downloadInterface != null) {
+                            final ManagedThrottledConnectionHandler handlerP = downloadInterface.getManagedConnetionHandler();
+                            if (handlerP != null) {
+                                connections += handlerP.size();
+                            }
+                        }
+                    }
+                }
+                if (linkInfo.enabled) {
+                    if (state == null) {
+                        if (skipReason != null) {
+                            downloadsSkipped++;
+                        }
+                    } else {
+                        if (state.isFailed()) {
+                            downloadsFailed++;
+                        } else if (state.isFinished()) {
+                            downloadsFinished++;
+                        }
+                    }
+                    if (linkInfo.bytesTotal >= 0) {
+                        if (totalBytes == -1) {
+                            totalBytes = 0;
+                        }
+                        totalBytes += linkInfo.bytesTotal;
+                    }
+                    if (linkInfo.bytesDone >= 0) {
+                        loadedBytes += linkInfo.bytesDone;
                     }
                 } else {
-                    if (state.isFailed()) {
-                        downloadsFailed++;
-                    } else if (state.isFinished()) {
-                        downloadsFinished++;
+                    if (state == null) {
+                        if (skipReason != null) {
+                            downloadsSkippedDisabled++;
+                        }
+                    } else {
+                        if (state.isFailed()) {
+                            downloadsFailedDisabled++;
+                        } else if (state.isFinished()) {
+                            downloadsFinishedDisabled++;
+                        }
                     }
-                }
-                totalBytes += dl.getView().getBytesTotalEstimated();
-                loadedBytes += dl.getView().getBytesLoaded();
-
-            } else {
-                FinalLinkState state = dl.getFinalLinkState();
-                if (state == null) {
-                    if (dl.isSkipped()) {
-                        disabledDownloadsSkipped++;
+                    if (linkInfo.bytesTotal >= 0) {
+                        if (totalBytesDisabled == -1) {
+                            totalBytesDisabled = 0;
+                        }
+                        totalBytesDisabled += linkInfo.bytesTotal;
                     }
-                } else {
-                    if (state.isFailed()) {
-                        disabledDownloadsFailed++;
-                    } else if (state.isFinished()) {
-                        disabledDownloadsFinished++;
+                    if (linkInfo.bytesDone >= 0) {
+                        loadedBytesDisabled += linkInfo.bytesDone;
                     }
-                }
-                disabledTotalBytes += dl.getView().getBytesTotalEstimated();
-                disabledLoadedBytes += dl.getView().getBytesLoaded();
-
-            }
-
-            downloadSpeed += dl.getView().getSpeedBps();
-            SingleDownloadController sdc = dl.getDownloadLinkController();
-            if (sdc != null) {
-                running++;
-                DownloadInterface conInst = sdc.getDownloadInstance();
-                if (conInst != null) {
-                    ManagedThrottledConnectionHandler handlerP = conInst.getManagedConnetionHandler();
-                    if (handlerP != null) {
-                        connections += handlerP.size();
-
-                    }
-
                 }
             }
-
+        }
+        if (totalBytes >= 0 && downloadSpeed > 0) {
+            /* we could calc an ETA because at least one filesize is known */
+            final long bytesLeft = Math.max(-1, totalBytes - loadedBytes);
+            eta = bytesLeft / downloadSpeed;
+        } else {
+            /* no filesize is known, we use Integer.Min_value to signal this */
+            eta = Integer.MIN_VALUE;
         }
 
-        eta = downloadSpeed == 0 ? 0 : (totalBytes - loadedBytes) / downloadSpeed;
+        this.connections = connections;
+        this.running = running;
+        this.downloadSpeed = downloadSpeed;
+
+        this.disabledDownloadsFailed = downloadsFailedDisabled;
+        this.disabledDownloadsFinished = downloadsFinishedDisabled;
+        this.disabledDownloadsSkipped = downloadsSkippedDisabled;
+        this.disabledLoadedBytes = loadedBytesDisabled;
+        this.disabledTotalBytes = totalBytesDisabled;
+
+        this.downloadsFailed = downloadsFailed;
+        this.downloadsFinished = downloadsFinished;
+        this.downloadsSkipped = downloadsSkipped;
+        this.totalBytes = totalBytes;
+        this.loadedBytes = loadedBytes;
+
+        this.linkCount = linkCount;
 
     }
 
-    public long getTotalBytes() {
+    public final long getTotalBytes() {
         return totalBytes;
     }
 
-    public long getDownloadSpeed() {
+    public final long getDownloadSpeed() {
         return downloadSpeed;
     }
 
-    public long getEta() {
+    public final long getEta() {
         return eta;
     }
 
-    public long getLoadedBytes() {
+    public final long getLoadedBytes() {
         return loadedBytes;
     }
 
