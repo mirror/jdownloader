@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -39,6 +37,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridLinkFr extends PluginForHost {
@@ -354,7 +354,7 @@ public class DebridLinkFr extends PluginForHost {
                         // Unable to retrieve the file name
                         // what todo here? revert to another plugin **
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    } else if ("notFreeHost".equals(error)) {
+                    } else if ("notFreeHost".equals(error) || "needPremium".equals(error)) {
                         /*
                          * Filehost is disabled for current FREE account --> Disable it "forever" --> Should usually not happen as already
                          * handled below in canHandle.

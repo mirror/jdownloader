@@ -54,6 +54,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
@@ -293,6 +294,17 @@ public class HitFileNet extends PluginForHost {
             }
         }
 
+        Form captchaform = br.getForm(2);
+        if (captchaform == null) {
+            captchaform = br.getForm(1);
+        }
+        if (captchaform == null) {
+            captchaform = br.getForm(0);
+        }
+        if (captchaform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
         if (br.containsHTML(HTML_RECAPTCHATEXT)) {
             final Recaptcha rc = new Recaptcha(br, this);
             rc.parse();
@@ -303,25 +315,23 @@ public class HitFileNet extends PluginForHost {
             if (br.containsHTML(HTML_RECAPTCHATEXT) || br.containsHTML(HTML_CAPTCHATEXT)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+        } else if (br.containsHTML("class=\"g-recaptcha\"")) {
+            /* ReCaptchaV2 */
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(captchaform);
         } else {
             if (!br.containsHTML(HTML_CAPTCHATEXT)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Handling normal captchas");
             final String captchaUrl = br.getRegex("<div><img alt=\"Captcha\" src=\"(https?://(?:\\w+\\.)?hitfile\\.net/captcha/.*?)\"").getMatch(0);
-            Form captchaForm = br.getForm(2);
-            if (captchaForm == null) {
-                captchaForm = br.getForm(1);
-            }
-            if (captchaForm == null) {
-                captchaForm = br.getForm(0);
-            }
-            if (captchaForm == null || captchaUrl == null) {
+            if (captchaUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            captchaForm.remove(null);
-            if (StringUtils.equalsIgnoreCase(captchaForm.getAction(), "#")) {
-                captchaForm.setAction(br.getURL());
+            captchaform.remove(null);
+            if (StringUtils.equalsIgnoreCase(captchaform.getAction(), "#")) {
+                captchaform.setAction(br.getURL());
             }
             final int retry = 3;
             for (int i = 0; i < retry; i++) {
@@ -334,10 +344,10 @@ public class HitFileNet extends PluginForHost {
                 } else {
                     captchaCode = getCaptchaCode("hitfile.net", captchaUrl, downloadLink);
                 }
-                captchaForm.put("captcha_response", Encoding.urlEncode(captchaCode));
+                captchaform.put("captcha_response", Encoding.urlEncode(captchaCode));
                 final Browser br = this.br.cloneBrowser();
                 try {
-                    br.submitForm(captchaForm);
+                    br.submitForm(captchaform);
                 } catch (final BrowserException e) {
                     if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
                         // Server- or captcha error
