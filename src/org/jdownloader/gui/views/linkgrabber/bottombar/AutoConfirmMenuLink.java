@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +13,8 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.KeyStroke;
+
+import jd.controlling.linkcollector.LinkCollector;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
@@ -25,7 +26,6 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
@@ -34,25 +34,11 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextActi
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
-import jd.controlling.linkcollector.LinkCollector;
-
 public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfLayoutInterface {
 
-    private static final String        SHORTCUT2                = "shortcut";
+    private static final String SHORTCUT2  = "shortcut";
 
-    private static final String        ASSIGN_PRIORITY_ENABLED  = "AssignPriorityEnabled";
-
-    private static final String        CLEAR_LIST_AFTER_CONFIRM = "ClearListAfterConfirm";
-
-    private static final String        FORCE_DOWNLOADS          = "ForceDownloads";
-
-    private static final String        HANDLE_OFFLINE           = "HandleOffline";
-
-    private static final String        PIORITY2                 = "Piority";
-
-    protected static AutoConfirmButton INSTANCE;
-
-    public static final String         AUTO_START               = "autoStart";
+    public static final String  AUTO_START = "autoStart";
 
     @Override
     public List<AppAction> createActionsToLink() {
@@ -93,25 +79,6 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
     }
 
     @Override
-    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        if (INSTANCE != null) {
-            return INSTANCE;
-        }
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                INSTANCE = new AutoConfirmButton();
-                updateButton();
-
-            }
-        }.waitForEDT();
-
-        return INSTANCE;
-
-    }
-
-    @Override
     public JComponent createSettingsPanel() {
 
         ActionData ad = ensureActionData();
@@ -142,7 +109,6 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
                 KeyStroke currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
                 shortcut.setText(msg1);
                 actionData.putSetup(SHORTCUT2, currentShortcut == null ? null : currentShortcut.toString());
-                updateButton();
 
             }
 
@@ -174,7 +140,6 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
                         String msg1 = KeyUtils.getShortcutString(ks, true);
                         shortcut.setText(msg1);
                         actionData.putSetup(SHORTCUT2, null);
-                        updateButton();
                     }
                 };
             }
@@ -263,98 +228,15 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
         return p;
     }
 
-    // public AutoStartOptions getAutoStart() {
-    //
-    // try {
-    // Object label = ensureActionData().fetchSetup(AUTO_START);
-    // if (label != null) {
-    // return AutoStartOptions.valueOf(label + "");
-    // }
-    // } catch (Throwable e) {
-    //
-    // }
-    //
-    // return AutoStartOptions.AUTO;
-    // }
-
-    // public OnOfflineLinksAction getHandleOffline() {
-    // try {
-    // Object label = ensureActionData().fetchSetup(HANDLE_OFFLINE);
-    // if (label != null) {
-    // return OnOfflineLinksAction.valueOf(label + "");
-    // }
-    // } catch (Throwable e) {
-    //
-    // }
-    //
-    // return OnOfflineLinksAction.GLOBAL;
-    // }
-
-    protected void updateButton() {
-        if (INSTANCE != null) {
-            KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-            try {
-
-                ActionData ad = getActionData();
-                Object sc = ad.fetchSetup(SHORTCUT2);
-                if (sc != null && sc instanceof String) {
-
-                    ks = KeyStroke.getKeyStroke((String) sc);
-                }
-
-            } catch (Throwable e) {
-            }
-            INSTANCE.setAccelerator(ks);
-        }
-    }
-
     @Override
     public String getIconKey() {
-        return "paralell";
+        return org.jdownloader.gui.IconKey.ICON_PARALELL;
     }
 
     @Override
     public String getName() {
         return _GUI.T.AutoConfirmMenuLink_getName();
     }
-
-    // public Priority getPiority() {
-    // try {
-    // Object label = ensureActionData().fetchSetup(PIORITY2);
-    // if (label != null) {
-    // return Priority.valueOf(label + "");
-    // }
-    // } catch (Throwable e) {
-    //
-    // }
-    //
-    // return Priority.DEFAULT;
-    // }
-    //
-    // public boolean isAssignPriorityEnabled() {
-    // return Boolean.TRUE.equals(ensureActionData().fetchSetup(ASSIGN_PRIORITY_ENABLED));
-    // }
-    //
-    // public boolean isClearListAfterConfirm() {
-    // return Boolean.TRUE.equals(ensureActionData().fetchSetup(CLEAR_LIST_AFTER_CONFIRM));
-    // }
-
-    // public boolean isForceDownloads() {
-    // return Boolean.TRUE.equals(ensureActionData().fetchSetup(FORCE_DOWNLOADS));
-    // }
-    //
-    // public void setAssignPriorityEnabled(boolean assignPriorityEnabled) {
-    // ensureActionData().putSetup(ASSIGN_PRIORITY_ENABLED, assignPriorityEnabled);
-    //
-    //
-    // }
-
-    // public void setAutoStart(AutoStartOptions autoStart) {
-    // if (autoStart == null) {
-    // autoStart = AutoStartOptions.AUTO;
-    // }
-    // ensureActionData().putSetup(AUTO_START, autoStart.name());
-    // }
 
     public ActionData ensureActionData() {
         ActionData ad = this.getActionData();
@@ -364,28 +246,5 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
         }
         return ad;
     }
-
-    // public void setClearListAfterConfirm(boolean clearListAfterConfirm) {
-    // ensureActionData().putSetup(CLEAR_LIST_AFTER_CONFIRM, clearListAfterConfirm);
-    // }
-
-    // public void setForceDownloads(boolean forceDownloads) {
-    // ensureActionData().putSetup(FORCE_DOWNLOADS, forceDownloads);
-    // }
-    //
-    // public void setHandleOffline(OnOfflineLinksAction handleOffline) {
-    // if (handleOffline == null) {
-    // handleOffline = OnOfflineLinksAction.GLOBAL;
-    // }
-    // ensureActionData().putSetup(HANDLE_OFFLINE, handleOffline.name());
-    //
-    // }
-    //
-    // public void setPiority(Priority piority) {
-    // if (piority == null) {
-    // piority = Priority.DEFAULT;
-    // }
-    // ensureActionData().putSetup(PIORITY2, piority.name());
-    // }
 
 }

@@ -35,18 +35,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.utils.Application;
-import org.appwork.utils.swing.EDTHelper;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.updatev2.gui.LAFOptions;
-
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
@@ -66,6 +54,19 @@ import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import net.miginfocom.swing.MigLayout;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.bottombar.AutoConfirmProcessIndicator;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
     static {
@@ -211,13 +212,11 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
         });
 
-        // linkGrabberIndicator.setToolTipText("<html><img src=\"" +
-        // NewTheme.I().getImageUrl("linkgrabber") +
-        // "\"></img>Crawling for Downloads</html>");
-
-        // extractIndicator.setToolTipText("<html><img src=\"" +
-        // NewTheme.I().getImageUrl("archive") +
-        // "\"></img>Extracting Archives: 85%</html>");
+        final AutoConfirmProcessIndicator autoConfirmProcessIndicator = new AutoConfirmProcessIndicator();
+        LinkCollector.getInstance().getAutoStartManager().getEventSender().addListener(autoConfirmProcessIndicator);
+        if (LinkCollector.getInstance().getAutoStartManager().isRunning()) {
+            autoConfirmProcessIndicator.onAutoStartManagerRunning();
+        }
 
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
@@ -240,7 +239,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         };
         redoLayout();
 
-        // add(extractIndicator, "height 22!,width 22!,hidemode 2");
     }
 
     private void redoLayout() {

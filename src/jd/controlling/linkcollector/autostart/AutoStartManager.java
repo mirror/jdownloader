@@ -31,24 +31,19 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
     private final DelayedRunnable             delayer;
     private volatile boolean                  globalAutoStart;
     private volatile boolean                  globalAutoConfirm;
-    private volatile long                     lastReset;
     private final AutoStartManagerEventSender eventSender;
-    private final int                         waittime;
-    private volatile long                     lastStarted;
 
     public AutoStartManagerEventSender getEventSender() {
         return eventSender;
     }
 
     public AutoStartManager() {
-
         eventSender = new AutoStartManagerEventSender();
         CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getEventSender().addListener(this, true);
         CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getEventSender().addListener(this, true);
         globalAutoStart = CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
         globalAutoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
-        waittime = CFG_LINKGRABBER.CFG.getAutoConfirmDelay();
-        delayer = new DelayedRunnable(waittime, -1) {
+        delayer = new DelayedRunnable(CFG_LINKGRABBER.CFG.getAutoConfirmDelay(), -1) {
 
             @Override
             public String getID() {
@@ -122,7 +117,6 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             }
                             ConfirmLinksContextAction.confirmSelection(MoveLinksMode.AUTO, si, autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, BooleanStatus.convert(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads()), onOfflineHandler, onDupesHandler);
                         }
-                        // lastReset = -1;
                         if (delayer.isDelayerActive() == false && eventSender.hasListener()) {
                             eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
                         }
@@ -135,11 +129,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
 
     public void onLinkAdded(CrawledLink link) {
         if (globalAutoStart || globalAutoConfirm || link.isAutoConfirmEnabled() || link.isAutoStartEnabled() || link.isForcedAutoStartEnabled()) {
-            if (!delayer.isDelayerActive()) {
-                lastStarted = System.currentTimeMillis();
-            }
             delayer.resetAndStart();
-            lastReset = System.currentTimeMillis();
             if (eventSender.hasListener()) {
                 eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RESET));
             }
@@ -157,11 +147,11 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
     }
 
     public int getMaximum() {
-        return (int) (lastReset + waittime - lastStarted);
+        return (int) (delayer.getMinimumDelay());
     }
 
     public int getValue() {
-        return (int) (System.currentTimeMillis() - lastStarted);
+        return (int) (delayer.getEstimatedNextRun());
     }
 
     public boolean isRunning() {
