@@ -150,7 +150,7 @@ public class SimpleFTP {
      * returns current value of 'binarymode'.
      *
      * @since JD2
-     * */
+     */
     public boolean isBinary() {
         if (this.binarymode) {
             return true;
@@ -387,7 +387,7 @@ public class SimpleFTP {
         sendLine("SIZE " + file);
         String size = null;
         try {
-            size = readLines(new int[] { 213 }, "SIZE failed");
+            size = readLines(new int[] { 200, 213 }, "SIZE failed");
         } catch (IOException e) {
             LogSource.exception(logger, e);
             if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) {
