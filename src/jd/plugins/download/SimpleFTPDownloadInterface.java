@@ -128,7 +128,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         if (!simpleFTP.isBinary()) {
             logger.info("Warning: Download in ASCII mode may fail!");
         }
-        InetSocketAddress pasv = simpleFTP.pasv();
+        final InetSocketAddress pasv = simpleFTP.pasv();
         resumed = false;
         if (resume) {
             resumePosition = raf.length();
@@ -141,6 +141,12 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                     downloadable.setResumeable(true);
                 } catch (final IOException e) {
                     if (e.getMessage().contains("Resume not")) {
+                        try {
+                            raf.close();
+                        } catch (Throwable ignore) {
+                        } finally {
+                            outputPartFile.delete();
+                        }
                         downloadable.setResumeable(false);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
@@ -171,8 +177,8 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                     break;
                 }
                 if (bytesRead > 0) {
-                    totalLinkBytesLoaded += bytesRead;
                     raf.write(buffer, 0, bytesRead);
+                    totalLinkBytesLoaded += bytesRead;
                     totalLinkBytesLoadedLive.addAndGet(bytesRead);
                 }
             }
@@ -292,15 +298,29 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         }
     }
 
-    protected boolean isDownloadComplete() {
+    protected boolean isDownloadComplete() throws Exception {
         final long verifiedFileSize = downloadable.getVerifiedFileSize();
         if (verifiedFileSize >= 0) {
+            if (totalLinkBytesLoaded > verifiedFileSize) {
+                if (resumed) {
+                    logger.severe("It seems the ftp server has buggy REST support: transfered=" + totalLinkBytesLoaded + " fileSize=" + verifiedFileSize);
+                    outputPartFile.delete();
+                    downloadable.setDownloadBytesLoaded(0);
+                    downloadable.setResumeable(false);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
             return totalLinkBytesLoaded == verifiedFileSize;
         }
-        if (externalDownloadStop() == false) {
+        if (externalDownloadStop() == false && isTerminated() == false) {
+            // no stop and not terminated, normal finish
             return true;
         }
         return false;
+    }
+
+    protected boolean isTerminated() {
+        return terminated.get();
     }
 
     protected void finalizeDownload(File outputPartFile, File outputCompleteFile) throws Exception {
