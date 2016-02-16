@@ -66,6 +66,10 @@ public abstract class RecaptchaV1Handler {
         if (StringUtils.isNotEmpty(rcBr.getCookie("google.com", "SID")) && StringUtils.isNotEmpty(rcBr.getCookie("google.com", "HSID"))) {
             return null;
         }
+        final String[] browserCommandLine = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
+        if (!CrossSystem.isOpenBrowserSupported() && (browserCommandLine == null || browserCommandLine.length == 0)) {
+            return null;
+        }
         final AtomicReference<String> url = new AtomicReference<String>();
         final AbstractBrowserChallenge dummyChallenge = new AbstractBrowserChallenge("recaptcha", null) {
 
@@ -76,11 +80,9 @@ public abstract class RecaptchaV1Handler {
 
             @Override
             public String getHTML() {
-                String html;
                 try {
-                    URL url = RecaptchaV1Handler.class.getResource("recaptchaGetChallenge.html");
-                    html = IO.readURLToString(url);
-
+                    final URL url = RecaptchaV1Handler.class.getResource("recaptchaGetChallenge.html");
+                    String html = IO.readURLToString(url);
                     html = html.replace("%%%sitekey%%%", siteKey);
                     return html;
                 } catch (IOException e) {
@@ -108,7 +110,7 @@ public abstract class RecaptchaV1Handler {
                 return null;
             }
         };
-        BrowserReference ref = new BrowserReference(dummyChallenge) {
+        final BrowserReference ref = new BrowserReference(dummyChallenge) {
 
             @Override
             public void onResponse(String request) {
@@ -142,11 +144,9 @@ public abstract class RecaptchaV1Handler {
 
                 @Override
                 protected JComponent getIconComponent() {
-
-                    URLConnectionAdapter con;
+                    URLConnectionAdapter con = null;
                     try {
                         con = new Browser().openGetConnection(url.get());
-
                         BufferedImage niceImage = IconIO.toBufferedImage(ImageIO.read(con.getInputStream()));
                         Browser br = new Browser();
                         br.getPage("http://www.google.com/recaptcha/api/challenge?k=" + siteKey);
@@ -173,6 +173,10 @@ public abstract class RecaptchaV1Handler {
                         return ret;
                     } catch (IOException e) {
                         e.printStackTrace();
+                    } finally {
+                        if (con != null) {
+                            con.disconnect();
+                        }
                     }
                     return super.getIconComponent();
                 }
@@ -200,7 +204,6 @@ public abstract class RecaptchaV1Handler {
         if (StringUtils.isEmpty(urlString)) {
             return null;
         }
-
         return urlString.substring(urlString.indexOf("c=") + 2);
     }
 }
