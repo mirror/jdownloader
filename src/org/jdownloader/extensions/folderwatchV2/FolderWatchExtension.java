@@ -426,7 +426,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                             link.setDesiredPackageInfo(existing);
                         }
                     }
-
                     final BooleanStatus extract = j.getExtractAfterDownload();
                     if (extract != null && extract != BooleanStatus.UNSET) {
                         link.getArchiveInfo().setAutoExtract(extract);
@@ -435,7 +434,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     if (priority != null) {
                         link.setPriority(j.getPriority());
                     }
-                    DownloadLink dlLink = link.getDownloadLink();
+                    final DownloadLink dlLink = link.getDownloadLink();
                     if (dlLink != null) {
                         if (StringUtils.isNotEmpty(j.getComment())) {
                             if (StringUtils.isEmpty(dlLink.getComment())) {
@@ -487,6 +486,10 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     if (StringUtils.isNotEmpty(j.getFilename())) {
                         link.setName(j.getFilename());
                     }
+                    final BooleanStatus enabled = j.getEnabled();
+                    if (autoStart != null && autoStart != BooleanStatus.UNSET) {
+                        link.setEnabled(enabled.getBoolean());
+                    }
                 }
             };
             job.setCrawledLinkModifierPrePackagizer(modifier);
@@ -498,13 +501,13 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             if (lc.getCrawledLinksFoundCounter() == 0) {
                 try {
                     final DownloadLink dl = new DownloadLink(HostPluginController.getInstance().get("directhttp").getPrototype(null), j.getText(), "folder.watch", j.getText(), false);
-                    FilePackage fp = FilePackage.getInstance();
+                    final FilePackage fp = FilePackage.getInstance();
                     dl.setAvailableStatus(AvailableStatus.FALSE);
                     fp.setName("FolderWatch Errors");
                     // let the packagizer merge several packages that have the same name
                     fp.setProperty("ALLOW_MERGE", true);
                     fp.add(dl);
-                    CrawledLink cl = new CrawledLink(dl);
+                    final CrawledLink cl = new CrawledLink(dl);
                     cl.setName(j.getText());
                     switch (j.getAutoStart()) {
                     case FALSE:
