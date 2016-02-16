@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,8 +31,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -61,13 +64,6 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
@@ -79,10 +75,9 @@ public class TurboBitNet extends PluginForHost {
      * When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
      *
      */
-    private final String        HTML_RECAPTCHAV1                      = "api\\.recaptcha\\.net";
-    private final String        HTML_RECAPTCHAV2                      = "class=\"g\\-recaptcha\"";
+    private static final String HTML_RECAPTCHAV1                      = "api\\.recaptcha\\.net";
     private final String        CAPTCHAREGEX                          = "\"(https?://(?:\\w+\\.)?turbobit\\.net/captcha/.*?)\"";
-    private final String        MAINPAGE                              = "http://turbobit.net";
+    private static final String MAINPAGE                              = "http://turbobit.net";
     private static Object       LOCK                                  = new Object();
     private static final String BLOCKED                               = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
     private boolean             prefer_single_linkcheck_linkcheckpage = false;
@@ -109,11 +104,7 @@ public class TurboBitNet extends PluginForHost {
             link.setUrlDownload(protocol + NICE_HOST + "/" + uid + ".html");
             // we wont use linkid for match format either.
             final String linkID = getHost() + "://" + uid;
-            try {
-                link.setLinkID(linkID);
-            } catch (Throwable e) {
-                link.setProperty("LINKDUPEID", linkID);
-            }
+            link.setLinkID(linkID);
         }
     }
 
@@ -253,46 +244,6 @@ public class TurboBitNet extends PluginForHost {
         return -1;
     }
 
-    protected void showFreeDialog(final String domain) {
-        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
-            super.showFreeDialog(domain);
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            String lng = System.getProperty("user.language");
-                            String message = null;
-                            String title = null;
-                            String tab = "                        ";
-                            if ("de".equalsIgnoreCase(lng)) {
-                                title = domain + " Free Download";
-                                message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
-                                message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
-                                message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
-                            } else {
-                                title = domain + " Free Download";
-                                message = "You are using the " + domain + " Free Mode.\r\n";
-                                message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
-                                message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
-                            }
-                            if (CrossSystem.isOpenBrowserSupported()) {
-                                int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                                if (JOptionPane.OK_OPTION == result) {
-                                    CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
-                                }
-                            }
-                        } catch (Throwable e) {
-                        }
-                    }
-                });
-            } catch (Throwable e) {
-            }
-        }
-    }
-
     private String id = null;
 
     @SuppressWarnings("deprecation")
@@ -303,13 +254,9 @@ public class TurboBitNet extends PluginForHost {
             handlePremiumLink(downloadLink);
             return;
         }
-        /*
-         * we have to load the plugin first! we must not reference a plugin class without loading it before
-         */
-        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         if (checkShowFreeDialog(getHost())) {
-            showFreeDialog(getHost());
+            super.showFreeDialog(getHost());
         }
         br = new Browser();
         dupe.clear();
@@ -346,14 +293,7 @@ public class TurboBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (StringUtils.equalsIgnoreCase(br.getRedirectLocation(), downloadLink.getDownloadURL().replace("www.", "")) || br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         Form captchaform = null;
         final Form[] allForms = br.getForms();
@@ -415,17 +355,14 @@ public class TurboBitNet extends PluginForHost {
             rc.getForm().setAction("/download/free/" + id + "#");
             rc.setCode(c);
             if (br.containsHTML(HTML_RECAPTCHAV1) || br.containsHTML("Incorrect, try again")) {
-                try {
-                    invalidateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
+                invalidateLastChallengeResponse();
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-        } else if (this.br.containsHTML(HTML_RECAPTCHAV2)) {
+        } else if (br.containsHTML("class=\"g-recaptcha\"")) {
             /* ReCaptchaV2 */
-            /* UNTESTED, added 2016-02-15 because of log: 4034111113541 */
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(captchaform);
         } else {
             logger.info("Handling normal captchas");
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
@@ -461,7 +398,7 @@ public class TurboBitNet extends PluginForHost {
                     continue;
                 }
             }
-            if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(HTML_RECAPTCHAV1) || br.containsHTML(HTML_RECAPTCHAV2)) {
+            if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
