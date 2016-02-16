@@ -4,16 +4,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#share/[a-f0-9\\-]+|#?folder/[A-Z0-9]+)" }, flags = { 0 })
-public class OBoomCom extends PluginForDecrypt {
+public class OBoomCom extends antiDDoSForDecrypt {
 
     private final String APPID  = "43340D9C23";
     private final String wwwURL = "https://www.oboom.com/1.0/";
@@ -25,8 +23,8 @@ public class OBoomCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(wwwURL + "guestsession?source=" + APPID);
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        getPage(wwwURL + "guestsession?source=" + APPID);
         final String uid = new Regex(parameter.toString(), "(share|folder)/([A-Z0-9\\-]+)").getMatch(1);
         String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
         if (guestSession == null || uid == null) {
@@ -35,7 +33,7 @@ public class OBoomCom extends PluginForDecrypt {
         }
         String name = null;
         if (parameter.toString().contains("share/")) {
-            br.getPage(wwwURL + guestSession + "/share?share=" + uid);
+            getPage(wwwURL + guestSession + "/share?share=" + uid);
             String files = br.getRegex("\"files\":\\[(.*?)\\]").getMatch(0);
             name = br.getRegex("\"name\":\"(.*?)\"").getMatch(0);
             if (name != null && "undefined".equals(name)) {
@@ -48,7 +46,7 @@ public class OBoomCom extends PluginForDecrypt {
                 }
             }
         } else if (parameter.toString().contains("folder/")) {
-            br.getPage(apiURL + "ls?item=" + uid + "&token=" + guestSession);
+            getPage(apiURL + "ls?item=" + uid + "&token=" + guestSession);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
                 offline.setFinalFileName(uid);
@@ -103,68 +101,6 @@ public class OBoomCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
 }

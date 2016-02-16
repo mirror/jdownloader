@@ -16,6 +16,11 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -30,15 +35,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" }, flags = { 2 })
-public class OBoomCom extends PluginForHost {
+public class OBoomCom extends antiDDoSForHost {
 
     private static Map<Account, Map<String, String>> ACCOUNTINFOS = new HashMap<Account, Map<String, String>>();
     private final String                             APPID        = "43340D9C23";
@@ -98,16 +97,12 @@ public class OBoomCom extends PluginForHost {
 
     /**
      * defines custom browser requirements.
-     * */
-    private Browser prepBrowser(final Browser prepBr) {
-        try {
-            /* not available in old stable */
-            prepBr.setAllowedResponseCodes(new int[] { 500 });
-        } catch (Throwable e) {
-        }
-        // enable debug for older versions of JD
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
-            prepBr.setDebug(true);
+     */
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.addAllowedResponseCodes(500);
         }
         return prepBr;
     }
@@ -137,7 +132,7 @@ public class OBoomCom extends PluginForHost {
             ai.setValidUntil(premiumUntil);
 
             if (!ai.isExpired()) {
-                ai.setStatus("Premium account");
+                ai.setStatus("Premium Account");
                 return ai;
             }
         }
@@ -153,7 +148,6 @@ public class OBoomCom extends PluginForHost {
             try {
                 Map<String, String> infos = ACCOUNTINFOS.get(account);
                 if (infos == null || forceLogin) {
-                    prepBrowser(br);
                     br.setFollowRedirects(true);
                     if (account.getUser() == null || account.getUser().trim().length() == 0) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -161,7 +155,8 @@ public class OBoomCom extends PluginForHost {
                     if (account.getPass() == null || account.getPass().trim().length() == 0) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    String response = br.getPage("https://www.oboom.com/1.0/login?auth=" + Encoding.urlEncode(account.getUser()) + "&pass=" + PBKDF2Key(account.getPass()) + "&source=" + APPID);
+                    getPage("https://www.oboom.com/1.0/login?auth=" + Encoding.urlEncode(account.getUser()) + "&pass=" + PBKDF2Key(account.getPass()) + "&source=" + APPID);
+                    final String response = br.toString();
                     if (br.containsHTML("400,\"Invalid Login") || !response.startsWith("[200")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -210,26 +205,6 @@ public class OBoomCom extends PluginForHost {
         return new Regex(response, "\"([a-zA-Z0-9\\_]+)\":").getColumn(0);
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
     private static String PBKDF2Key(String password) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder(password);
         /* evtl muss hier UTF-16 ? */
@@ -260,7 +235,7 @@ public class OBoomCom extends PluginForHost {
                 Map<String, String> infos = GUESTSESSION.get(guestIP);
                 if (infos == null || forceNew || forceNewIfSession != null && forceNewIfSession.equals(infos.get("guestSession"))) {
                     br.setFollowRedirects(true);
-                    br.getPage("https://www.oboom.com/1.0/guestsession?source=" + APPID);
+                    getPage("https://www.oboom.com/1.0/guestsession?source=" + APPID);
                     String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
                     if (guestSession == null) {
                         if (br.containsHTML("<h1>OBOOM.com is currently under heavy attack</h1>")) {
@@ -306,7 +281,7 @@ public class OBoomCom extends PluginForHost {
                 sb.append(id);
             }
             br.setReadTimeout(60 * 1000);
-            br.getPage("https://api.oboom.com/1.0/info?items=" + sb.toString() + "&http_errors=0&with_ref_token=true");
+            getPage("https://api.oboom.com/1.0/info?items=" + sb.toString() + "&http_errors=0&with_ref_token=true");
             final String fileInfos[] = br.getRegex("\\{(.*?)\\}").getColumn(0);
             if (fileInfos != null) {
                 for (String fileInfo : fileInfos) {
@@ -324,7 +299,7 @@ public class OBoomCom extends PluginForHost {
                         continue;
                     }
                     if (name != null) {
-                        link.setFinalFileName(unescape(name));
+                        link.setFinalFileName(name);
                     }
                     link.setProperty("obm_directdownload", Boolean.parseBoolean(directdownload));
                     try {
@@ -356,13 +331,14 @@ public class OBoomCom extends PluginForHost {
     }
 
     protected AvailableStatus fetchFileInformation(DownloadLink link, String session) throws Exception {
-        prepBrowser(br);
         final String response;
         final String ID = getFileID(link);
         if (session != null) {
-            response = br.getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + ID + "&http_errors=0&with_ref_token=true");
+            getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + ID + "&http_errors=0&with_ref_token=true");
+            response = br.toString();
         } else {
-            response = br.getPage("https://api.oboom.com/1.0/info?items=" + ID + "&http_errors=0&with_ref_token=true");
+            getPage("https://api.oboom.com/1.0/info?items=" + ID + "&http_errors=0&with_ref_token=true");
+            response = br.toString();
         }
 
         if (response.contains("404,\"token") || response.contains("403,\"token")) {
@@ -377,7 +353,7 @@ public class OBoomCom extends PluginForHost {
         final String state = getJson(response, "state");
         final String refToken = getJson(response, "ref_token");
         if (name != null) {
-            link.setFinalFileName(unescape(name));
+            link.setFinalFileName(name);
         }
         try {
             if (size != null) {
@@ -391,66 +367,6 @@ public class OBoomCom extends PluginForHost {
         }
         setLatestRefID(refToken);
         return AvailableStatus.TRUE;
-    }
-
-    public String unescape(String s) {
-        if (s == null) {
-            return null;
-        }
-        char ch;
-        char ch2;
-        final StringBuilder sb = new StringBuilder();
-        int ii;
-        int i;
-        for (i = 0; i < s.length(); i++) {
-            ch = s.charAt(i);
-            // prevents StringIndexOutOfBoundsException with ending char equals case trigger
-            if (s.length() != i + 1) {
-                switch (ch) {
-                case '%':
-                case '\\':
-                    ch2 = ch;
-                    ch = s.charAt(++i);
-                    StringBuilder sb2 = null;
-                    switch (ch) {
-                    case 'u':
-                        /* unicode */
-                        sb2 = new StringBuilder();
-                        i++;
-                        ii = i + 4;
-                        for (; i < ii; i++) {
-                            ch = s.charAt(i);
-                            if (sb2.length() > 0 || ch != '0') {
-                                sb2.append(ch);
-                            }
-                        }
-                        i--;
-                        sb.append((char) Long.parseLong(sb2.toString(), 16));
-                        continue;
-                    case 'x':
-                        /* normal hex coding */
-                        sb2 = new StringBuilder();
-                        i++;
-                        ii = i + 2;
-                        for (; i < ii; i++) {
-                            ch = s.charAt(i);
-                            sb2.append(ch);
-                        }
-                        i--;
-                        sb.append((char) Long.parseLong(sb2.toString(), 16));
-                        continue;
-                    default:
-                        if (ch2 == '%') {
-                            sb.append(ch2);
-                        }
-                        sb.append(ch);
-                        continue;
-                    }
-                }
-            }
-            sb.append(ch);
-        }
-        return sb.toString();
     }
 
     @Override
@@ -470,7 +386,7 @@ public class OBoomCom extends PluginForHost {
             refreshTokenHandling(usedInfos, account, freshInfos);
         }
         final String ID = getFileID(link);
-        br.getPage("https://api.oboom.com/1.0/dl?token=" + usedInfos.get("session") + "&item=" + ID + "&http_errors=0");
+        getPage("https://api.oboom.com/1.0/dl?token=" + usedInfos.get("session") + "&item=" + ID + "&http_errors=0");
         downloadErrorHandling(account);
         /* Handling for possible error 400 */
         refreshTokenHandling(usedInfos, account, freshInfos);
@@ -529,10 +445,10 @@ public class OBoomCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-         * account != null &&
-         */
-                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+             * account != null &&
+             */
+        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }
@@ -662,7 +578,7 @@ public class OBoomCom extends PluginForHost {
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String code = getCaptchaCode("recaptcha", cf, link);
-                br.getPage("https://www.oboom.com/1.0/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
+                getPage("https://www.oboom.com/1.0/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
                 if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
                     continue;
                 }
@@ -697,7 +613,7 @@ public class OBoomCom extends PluginForHost {
 
             }
             sleep(30 * 1000l, link);
-            br.getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
+            getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
             downloadErrorHandling(account);
             urlInfos = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
             if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
