@@ -149,7 +149,8 @@ public class ReconnectPluginController {
                 }
             });
         } catch (final Throwable e) {
-            LogController.GL.log(e);
+
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
         return scripts;
     }

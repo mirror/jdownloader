@@ -23,13 +23,13 @@ import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
 
-public class MyJDownloaderAction extends AbstractToolBarAction {
+public class MyJDownloaderStatusAction extends AbstractToolBarAction {
     /**
      *
      */
     private static final long serialVersionUID = 1L;
 
-    public MyJDownloaderAction() {
+    public MyJDownloaderStatusAction() {
         setIconKey(IconKey.ICON_LOGO_MYJDOWNLOADER);
         setEnabled(true);
         setTooltipText(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_());
@@ -64,7 +64,7 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
         private final DelayedRunnable iconDelayer;
 
         public Button() {
-            super(MyJDownloaderAction.this);
+            super(MyJDownloaderStatusAction.this);
             setIcon(new AbstractIcon(getIconKey(), 22));
             setHideActionText(true);
             iconDelayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 2000) {

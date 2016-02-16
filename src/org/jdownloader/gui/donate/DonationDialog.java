@@ -187,7 +187,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                         }
                     } catch (InterruptedException e) {
                         StatsManager.I().track("/donation/button/exception/InterruptedException");
-                        startFallbackWaiter(list, noteText, amt, provider, cCode);
+                        // startFallbackWaiter(list, noteText, amt, provider, cCode);
                         close.set(true);
                     } catch (Throwable e) {
                         try {

@@ -227,7 +227,7 @@ public class DelayWriteController {
 
     public void init() {
         if (initialized.compareAndSet(false, true)) {
-            final LogInterface logger = LogController.GL;
+            final LogInterface logger =  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger();
             final DelayWriteMode mode = CFG_GENERAL.CFG.getDelayWriteMode();
             logger.info("DelayWriteMode: " + mode);
             if ((DelayWriteMode.AUTO.equals(mode) && Application.isHeadless())) {

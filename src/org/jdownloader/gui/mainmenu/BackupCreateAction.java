@@ -143,7 +143,7 @@ public class BackupCreateAction extends CustomizableAppAction {
                                 running.set(true);
                                 create(backupFile, progress);
                             } catch (Throwable e) {
-                                LogController.GL.log(e);
+                                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                                 Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e.getMessage(), e);
                             } finally {
                                 synchronized (running) {

@@ -115,7 +115,7 @@ public class SubConfiguration extends Property implements Serializable {
                 }
                 setProperties(load);
             } catch (final Throwable e) {
-                LogController.GL.log(e);
+                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         } else {
             writeMark.set(-1);
@@ -131,7 +131,7 @@ public class SubConfiguration extends Property implements Serializable {
                 }
             } catch (final NoOldJDDataBaseFoundException e) {
             } catch (final Throwable e) {
-                LogController.GL.log(e);
+                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         }
         valid = !importOnly;
@@ -142,7 +142,7 @@ public class SubConfiguration extends Property implements Serializable {
             long lastSetMark = setMark.get();
             if (writeMark.getAndSet(lastSetMark) != lastSetMark) {
                 try {
-                    LogController.GL.info("Save Name:" + getName() + "|SetMark:" + lastSetMark + "|File:" + file);
+                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Save Name:" + getName() + "|SetMark:" + lastSetMark + "|File:" + file);
                     final byte[] json = JSonStorage.getMapper().objectToByteArray(getProperties());
                     writeMark.set(setMark.get());
                     final Runnable run = new Runnable() {
@@ -154,7 +154,7 @@ public class SubConfiguration extends Property implements Serializable {
                     };
                     StorageHandler.enqueueWrite(run, file.getAbsolutePath(), true);
                 } catch (final Throwable e) {
-                    LogController.GL.log(e);
+                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
             }
         }

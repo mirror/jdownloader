@@ -104,6 +104,22 @@ public class NewTheme extends Theme {
 
     }
 
+    public static void main(String[] args) {
+        long t = System.currentTimeMillis();
+        for (int i = 1000; i >= 0; i--) {
+
+            IconIO.getImageIcon(NewTheme.class.getResource("/themes/flat/org/jdownloader/images/add.svg"), 32);
+        }
+        System.out.println(System.currentTimeMillis() - t);
+
+        t = System.currentTimeMillis();
+        for (int i = 1000; i >= 0; i--) {
+
+            IconIO.getImageIcon(NewTheme.class.getResource("/themes/standard/org/jdownloader/images/add.png"), 32);
+        }
+        System.out.println(System.currentTimeMillis() - t);
+    }
+
     public Icon getCheckBoxImage(String path, boolean selected, int size) {
         return getCheckBoxImage(path, selected, size, null);
     }

@@ -85,7 +85,9 @@ public class SetTableModel extends ExtTableModel<IconResource> {
             public String getStringValue(IconResource value) {
 
                 Icon org = value.getIcon("standard", -1);
-
+                if (org == null) {
+                    return "";
+                }
                 return org.getIconWidth() + " x " + org.getIconHeight();
             }
         });

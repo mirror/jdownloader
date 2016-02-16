@@ -139,7 +139,7 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
             }
         }
         if (logger == null) {
-            logger = LogController.GL;
+            logger =  org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger();
         }
         return logger;
     }

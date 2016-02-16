@@ -15,37 +15,38 @@ import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.ClassLoaderExtension;
 
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+
 public class PluginClassLoader extends URLClassLoader {
 
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-        {
-            add("java.lang.Boolean");
-            add("java.lang.Byte");
-            add("java.lang.String");
-            add("java.lang.Double");
-            add("java.lang.Integer");
-            add("java.lang.Long");
-            add("java.lang.Float");
-            add("java.lang.Short");
-            add("java.math.BigInteger");
-            add("java.math.BigDecimal");
-        }
-    };
+                                                                                              {
+                                                                                                  add("java.lang.Boolean");
+                                                                                                  add("java.lang.Byte");
+                                                                                                  add("java.lang.String");
+                                                                                                  add("java.lang.Double");
+                                                                                                  add("java.lang.Integer");
+                                                                                                  add("java.lang.Long");
+                                                                                                  add("java.lang.Float");
+                                                                                                  add("java.lang.Short");
+                                                                                                  add("java.math.BigInteger");
+                                                                                                  add("java.math.BigDecimal");
+                                                                                              }
+                                                                                          };
 
     private static class PluginClassLoaderClass {
         private final WeakReference<Class<?>> clazz;
@@ -157,7 +158,7 @@ public class PluginClassLoader extends URLClassLoader {
                     }
                     return defineClass(name, data, 0, data.length);
                 } catch (ClassFormatError e) {
-                    LogSource logger = LogController.getRebirthLogger(LogController.GL);
+                    LogInterface logger = LogController.getRebirthLogger(org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger());
                     if (logger != null) {
                         if (data != null) {
                             logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl + "|size=" + data.length);
@@ -172,7 +173,7 @@ public class PluginClassLoader extends URLClassLoader {
                         Thread.sleep(150);
                     }
                 } catch (IOException e) {
-                    LogSource logger = LogController.getRebirthLogger(LogController.GL);
+                    LogInterface logger = LogController.getRebirthLogger(org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger());
                     if (logger != null) {
                         logger.severe("IOException:class=" + name + "|file=" + myUrl);
                         logger.log(e);
@@ -326,15 +327,15 @@ public class PluginClassLoader extends URLClassLoader {
                         check = !name.equals("org.appwork.utils.speedmeter.SpeedMeterInterface");/* available in 09581 Stable */
                     }
                     if (check) {
-                        check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
-                         * available in 09581
-                         * Stable
-                         */
+                        check = !name.equals(
+                                "org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
+                                                                                                          * available in 09581 Stable
+                                                                                                          */
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/*
-                         * available in 09581 Stable
-                         */
+                                                                                                               * available in 09581 Stable
+                                                                                                               */
                     }
                     if (check) {
                         if (name.startsWith("org.appwork") || name.startsWith("jd.plugins.hoster") || name.startsWith("jd.plugins.decrypter")) {
@@ -370,7 +371,7 @@ public class PluginClassLoader extends URLClassLoader {
                 }
                 return clazz;
             } catch (Exception e) {
-                LogSource logger = LogController.getRebirthLogger(LogController.GL);
+                LogInterface logger = LogController.getRebirthLogger(org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger());
                 if (logger != null) {
                     logger.log(e);
                 }
@@ -416,6 +417,7 @@ public class PluginClassLoader extends URLClassLoader {
     private static final PluginClassLoader                                                                INSTANCE                     = new PluginClassLoader();
 
     private static final HashMap<String, String>                                                          DYNAMIC_LOADABLE_LOBRARIES   = new HashMap<String, String>();
+
     static {
         synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
             DYNAMIC_LOADABLE_LOBRARIES.put("org.bouncycastle", "bcprov-jdk15on.jar");

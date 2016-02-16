@@ -10,17 +10,8 @@ import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.FilePackageView.PluginState;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
-
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.MultiLineLabelTooltip;
 import org.appwork.swing.components.tooltips.MultiLineLabelTooltip.LabelInfo;
@@ -34,6 +25,7 @@ import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateTooltip;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
@@ -42,6 +34,16 @@ import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.FilePackageView.PluginState;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
@@ -111,8 +113,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         this.trueIcon = NewTheme.I().getIcon(IconKey.ICON_TRUE, 16);
         this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
         startingIcon = NewTheme.I().getIcon(IconKey.ICON_RUN, 16);
-        trueIconExtracted = NewTheme.I().getIcon(IconKey.ICON_EXTRACTION_TRUE, 32);
-        trueIconExtractedFailed = NewTheme.I().getIcon(IconKey.ICON_EXTRACTION_TRUE_FAILED, 32);
+
+        trueIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
+        trueIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
+
         startingString = _GUI.T.TaskColumn_fillColumnHelper_starting();
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 

@@ -1,6 +1,7 @@
 package org.jdownloader.settings;
 
 import java.awt.event.KeyEvent;
+import java.net.URL;
 import java.util.HashMap;
 
 import org.appwork.storage.Storable;
@@ -516,8 +517,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
         public boolean isAvailable() {
             try {
-                final Class<?> c = Class.forName(getClazz());
-                return c != null;
+                // do not use Class.forName here since this would load the class
+                String path = "/" + getClazz().replace(".", "/") + ".class";
+                URL classPath = getClass().getResource(path);
+                return classPath != null;
             } catch (Throwable e) {
                 e.printStackTrace();
             }

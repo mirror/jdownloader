@@ -324,7 +324,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
             }
         } catch (Throwable e1) {
-            LogController.GL.log(e1);
+             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
 
         }
 
@@ -351,7 +351,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             }
             return false;
         } catch (Throwable e) {
-            LogController.GL.log(e);
+             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             return false;
         }
     }

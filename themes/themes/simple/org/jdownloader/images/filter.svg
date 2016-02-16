@@ -1,7 +1,3 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?><!-- Generator: Adobe Illustrator 18.1.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  --><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 48 48" id="Layer_1" style="fill:#000000" version="1.0" viewBox="0 0 48 48" x="0px" xml:space="preserve" y="0px">
-<polygon fill="#F57C00" points="29,23 19,23 7,9 41,9 "/>
-<g>
-	<polygon fill="#FF9800" points="29,38 19,44 19,23 29,23  "/>
-	<path d="M41.5,9h-35C5.7,9,5,8.3,5,7.5v0C5,6.7,5.7,6,6.5,6h35C42.3,6,43,6.7,43,7.5v0C43,8.3,42.3,9,41.5,9z" fill="#FF9800"/>
-</g>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" style="fill:#000000;fill-opacity:0.6862745" viewBox="0 0 32 32">
+    <path color="#000" d="M 5 4 L 5 5 L 5 6 L 5 6.34375 L 5.21875 6.625 L 13 16.34375 L 13 26 L 13 28 L 14.59375 26.8125 L 18.59375 23.8125 L 19 23.5 L 19 23 L 19 16.34375 L 26.78125 6.625 L 27 6.34375 L 27 6 L 27 5 L 27 4 L 26 4 L 6 4 L 5 4 z M 7.28125 6 L 24.71875 6 L 17.53125 15 L 14.46875 15 L 7.28125 6 z M 15 17 L 17 17 L 17 22.5 L 15 24 L 15 17 z" font-family="Bitstream Vera Sans" overflow="visible" style="text-indent:0;text-align:start;line-height:normal;text-transform:none;block-progression:tb;-inkscape-font-specification:Bitstream Vera Sans"/>
 </svg>

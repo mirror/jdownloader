@@ -4,14 +4,6 @@ import java.util.WeakHashMap;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.BrowserSettingsThread;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-
 import org.appwork.utils.event.queue.QueueThread;
 import org.appwork.utils.logging2.LogConsoleHandler;
 import org.appwork.utils.logging2.LogInterface;
@@ -21,26 +13,33 @@ import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionQueue;
 
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.BrowserSettingsThread;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+
 public class LogController extends LogSourceProvider {
     private static final LogController                     INSTANCE = new LogController();
 
     /**
      * GL = Generic Logger, returns a shared Logger for name JDownloader
      */
-    public static LogSource                                GL       = getInstance().getLogger("JDownloader");
     public static LogSource                                TRASH    = new LogSource("Trash") {
 
                                                                         @Override
-        public synchronized void log(LogRecord record) {
-            /* trash */
-        }
+                                                                        public synchronized void log(LogRecord record) {
+                                                                                                                        /* trash */
+                                                                        }
 
-        @Override
-        public String toString() {
-            return "Log > /dev/null!";
-        }
+                                                                        @Override
+                                                                        public String toString() {
+                                                                            return "Log > /dev/null!";
+                                                                        }
 
-    };
+                                                                    };
 
     private static volatile WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
 
@@ -129,11 +128,11 @@ public class LogController extends LogSourceProvider {
         return null;
     }
 
-    public static LogSource getRebirthLogger(final LogSource fallbackLogger) {
+    public static LogInterface getRebirthLogger(final LogInterface fallbackLogger) {
         if (fallbackLogger == null) {
             throw new IllegalArgumentException("fallbackLogger is null");
         }
-        LogSource ret = getRebirthLogger();
+        LogInterface ret = getRebirthLogger();
         if (ret == null) {
             ret = fallbackLogger;
         }
