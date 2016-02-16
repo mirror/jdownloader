@@ -691,19 +691,21 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                 /*
                                  * convert paths relative to JDownloader root,only in jared version
                                  */
-                                for (FilePackage pkg : ret2) {
+                                for (final FilePackage pkg : ret2) {
                                     if (!CrossSystem.isAbsolutePath(pkg.getDownloadDirectory())) {
                                         /* no need to convert relative paths */
                                         continue;
                                     }
                                     final String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath();
-                                    if (pkgPath.startsWith(oldRootPath + "/")) {
+                                    if (pkgPath.startsWith(oldRootPath + "/") || pkgPath.startsWith(oldRootPath + "\\")) {
                                         /*
                                          * folder is inside JDRoot, lets update it
                                          */
                                         final String restPath = pkgPath.substring(oldRootPath.length());
                                         final String newPath = new File(newRoot, restPath).getAbsolutePath();
-                                        pkg.setDownloadDirectory(newPath);
+                                        if (!StringUtils.equals(pkgPath, newPath)) {
+                                            pkg.setDownloadDirectory(newPath);
+                                        }
                                     }
                                 }
                             }
