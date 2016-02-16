@@ -21,7 +21,6 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://([a-z0-9]+\\.)?lolabits\\.es/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lolabits.es" }, urls = { "http://([a-z0-9]+\\.)?lolabits\\.es/.+" }, flags = { 0 })
 public class LolaBitsEsDecrypter extends PluginForDecrypt {
 
     public LolaBitsEsDecrypter(PluginWrapper wrapper) {
@@ -44,16 +43,7 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("www.", "");
         br.setFollowRedirects(true);
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            final DownloadLink dl = createDownloadlink("http://lolabitsdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
+        br.getPage(parameter);
         final String server = new Regex(parameter, "(https?://[a-z0-9]+\\.lolabits\\.es/)").getMatch(0);
         if (server != null) {
             /* Find normal links of online viewable doc links */
@@ -72,10 +62,7 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
 
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
-            final DownloadLink dl = createDownloadlink("http://lolabitsdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
+            final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -106,14 +93,9 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
             dl.setProperty("plain_filesize", filesize);
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
-            dl.setProperty("LINKDUPEID", fid + filename);
+            dl.setLinkID(fid + filename);
 
-            try {
-                dl.setContentUrl(parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(parameter);
-            }
+            dl.setContentUrl(parameter);
 
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -136,7 +118,10 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
             }
             for (final String lnkinfo : linkinfo) {
                 String contenturl = new Regex(lnkinfo, "\"(/[^<>\"]*?)\"").getMatch(0);
-                final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
+                String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
+                if (fid == null && contenturl != null) {
+                    fid = new Regex(contenturl, ".+,(\\d+).+$").getMatch(0);
+                }
                 final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
                 String filename = new Regex(lnkinfo, "title=\"([^<>\"]*?)\"").getMatch(0);
                 // String filename = finfo.getMatch(0); // Not correct for long name (not always)
@@ -163,14 +148,9 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
                 dl.setProperty("plain_filesize", filesize);
                 dl.setProperty("plain_fid", fid);
                 dl.setProperty("mainlink", parameter);
-                dl.setProperty("LINKDUPEID", fid + filename);
+                dl.setLinkID(fid + filename);
 
-                try {
-                    dl.setContentUrl(contenturl);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    dl.setBrowserUrl(contenturl);
-                }
+                dl.setContentUrl(contenturl);
 
                 dl.setName(filename);
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));

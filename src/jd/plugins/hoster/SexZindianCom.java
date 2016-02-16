@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexzindian.com" }, urls = { "http://(www\\.)?sexzindian\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "http://(www\\.)?sexzindian\\.com/video/\\d+" }, flags = { 0 })
 public class SexZindianCom extends PluginForHost {
 
     public SexZindianCom(PluginWrapper wrapper) {
@@ -47,6 +47,7 @@ public class SexZindianCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -54,6 +55,13 @@ public class SexZindianCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            /* Fallback to url-filename */
+            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -74,7 +82,7 @@ public class SexZindianCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

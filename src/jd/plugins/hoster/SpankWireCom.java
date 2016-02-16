@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankwire.com" }, urls = { "http://(www\\.)?spankwire\\.com/(.*?/video\\d+|EmbedPlayer\\.aspx/?\\?ArticleId=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spankwire.com" }, urls = { "http://(www\\.)?spankwire\\.com/(.*?/video\\d+|EmbedPlayer\\.aspx/?\\?ArticleId=\\d+)" }, flags = { 0 })
 public class SpankWireCom extends PluginForHost {
 
     public String DLLINK = null;
@@ -125,7 +125,7 @@ public class SpankWireCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = br2.openGetConnection(DLLINK);
+        final URLConnectionAdapter con = br2.openHeadConnection(DLLINK);
         if (!con.getContentType().contains("html")) {
             downloadLink.setDownloadSize(con.getLongContentLength());
         } else {
@@ -150,7 +150,7 @@ public class SpankWireCom extends PluginForHost {
     }
 
     private String finddllink() throws PluginException {
-        final String[] qualities = { "720", "480", "240", "180" };
+        final String[] qualities = { "720", "480", "240", "180", "144" };
         final int count_max = qualities.length;
         int count_offline = 0;
         String dllink = null;
@@ -170,6 +170,9 @@ public class SpankWireCom extends PluginForHost {
             /* No downloadlink available --> Video is not streamable --> Offline ?! */
             /* E.g. http://www.spankwire.com/More-Teenager-Girls-On-Porn-Load/video1888571/ */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (dllink != null) {
+            dllink = dllink.replace("\\", "");
         }
         return dllink;
     }

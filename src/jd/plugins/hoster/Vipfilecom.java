@@ -68,6 +68,7 @@ public class Vipfilecom extends PluginForHost {
      * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
      * minute
      * */
+    @SuppressWarnings("deprecation")
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -106,12 +107,18 @@ public class Vipfilecom extends PluginForHost {
                     if (br.containsHTML("\"data\":\\[\\[\\]\\]")) {
                         dllink.setAvailable(false);
                     } else {
-                        final String md5 = fInfo.getMatch(3);
-                        dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
-                        dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(1)));
-                        dllink.setAvailable(true);
-                        if (!md5.equals("0")) {
-                            dllink.setMD5Hash(md5);
+                        final String fname = fInfo.getMatch(0);
+                        final String fsize = fInfo.getMatch(2);
+                        final String md5 = fInfo.getMatch(5);
+                        if (fname == null || fsize == null) {
+                            dllink.setAvailable(false);
+                        } else {
+                            dllink.setFinalFileName(Encoding.htmlDecode(fname));
+                            dllink.setDownloadSize(Long.parseLong(fsize));
+                            dllink.setAvailable(true);
+                            if (md5 != null && !md5.equals("0")) {
+                                dllink.setMD5Hash(md5);
+                            }
                         }
                     }
                 }

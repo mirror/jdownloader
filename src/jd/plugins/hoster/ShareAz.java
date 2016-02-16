@@ -143,6 +143,9 @@ public class ShareAz extends PluginForHost {
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!correctedBR.contains("id=\"btn_download\"")) {
+            /* E.g. http://www.share.az/5nv9fy9zqc4z */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);

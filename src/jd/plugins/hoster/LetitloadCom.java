@@ -112,6 +112,7 @@ public class LetitloadCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 416, 429 });
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {

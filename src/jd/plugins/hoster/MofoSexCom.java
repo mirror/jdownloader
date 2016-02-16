@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
  * - related to keezmovies, same group of sites. Tells: incapsula and phncdn.com CDN -raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
 public class MofoSexCom extends antiDDoSForHost {
 
     private String DLLINK = null;
@@ -53,19 +53,30 @@ public class MofoSexCom extends antiDDoSForHost {
 
     private static final String TYPE_EMBED = "http://(www\\.)?mofosex\\.com/(embed\\?videoid=|embed_player\\.php\\?id=)\\d+";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        DLLINK = null;
         setBrowserExclusive();
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().matches(TYPE_EMBED)) {
             logger.info("Handling embedded url...");
-            getPage("http://www.mofosex.com/embed?videoid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+            final String linkid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            /* Offline links should get good filenames too */
+            downloadLink.setName(linkid);
+            getPage("http://www.mofosex.com/embed?videoid=" + linkid);
             if (br.containsHTML("This video is no longer available")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String real_url = br.getRegex("link_url=(http%3A%2F%2F(www\\.)?mofosex\\.com%2Fvideos%2F[^<>\"/]*?\\.html)\\&amp;").getMatch(0);
             if (real_url == null) {
+                real_url = br.getRegex("class=\"footer\"><br/><a href=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (real_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (real_url.startsWith("/")) {
+                real_url = "http://" + this.br.getHost() + real_url;
             }
             real_url = Encoding.htmlDecode(real_url);
             downloadLink.setUrlDownload(real_url);
@@ -99,7 +110,7 @@ public class MofoSexCom extends antiDDoSForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
