@@ -19,9 +19,9 @@ package jd.plugins.decrypter;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
@@ -312,7 +312,15 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 fp = FilePackage.getInstance();
                 fp.setName(fpName);
             }
-            final List<Object> results = (List<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "image/@list");
+            // single entry objects are not in 'list'
+            ArrayList<Object> results = null;
+            try {
+                results = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "image/@list");
+            } catch (Throwable t) {
+                // single entry ?
+                final String[] a = new String[] { (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "image") };
+                results = new ArrayList<Object>(Arrays.asList(a));
+            }
             if (results != null) {
                 int count = 1;
                 final DecimalFormat df = new DecimalFormat(results.size() < 100 ? "00" : "000");
