@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -15,6 +14,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -24,8 +24,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.AccountUpOrDowngradeEvent;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.StorageException;
@@ -71,34 +94,6 @@ import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.controlling.AccountUpOrDowngradeEvent;
-import jd.controlling.downloadcontroller.AccountCache;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.gui.swing.jdgui.DirectFeedback;
-import jd.gui.swing.jdgui.DownloadFeedBack;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
     public static final String        LID                          = "lid";
     public static final String        SLV                          = "slv";
@@ -133,28 +128,29 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         return StatsManager.INSTANCE;
     }
 
-    private StatsManagerConfigV2           config;
+    private final StatsManagerConfigV2           config;
 
-    private LogSource                      logger;
-    private ArrayList<StatsLogInterface>   list;
-    private Thread                         thread;
+    private final LogSource                      logger;
+    private final LinkedList<StatsLogInterface>  list       = new LinkedList<StatsLogInterface>();
+    private final Thread                         thread;
 
-    private HashMap<String, AtomicInteger> counterMap;
+    private final HashMap<String, AtomicInteger> counterMap = new HashMap<String, AtomicInteger>();
 
-    private long                           sessionStart;
+    private final long                           sessionStart;
 
-    private File                           reducerFile;
+    private final File                           reducerFile;
 
-    private HashMap<String, Integer>       reducerRandomMap;
+    private HashMap<String, Integer>             reducerRandomMap;
+    private final boolean                        isJared    = Application.isJared(null);
 
-    private boolean log(StatsLogInterface dl) {
+    private boolean log(final StatsLogInterface dl) {
         if (isEnabled()) {
-            if (Math.random() > 0.25d && !(dl instanceof AbstractTrackEntry) && Application.isJared(null)) {
+            if (Math.random() > 0.25d && !(dl instanceof AbstractTrackEntry) && isJared) {
                 return false;
             }
             synchronized (list) {
                 if (list.size() > 20) {
-                    list.clear();
+                    list.pollFirst();
                 }
                 list.add(dl);
                 list.notifyAll();
@@ -171,10 +167,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
      * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #link()}.
      */
     private StatsManager() {
-        list = new ArrayList<StatsLogInterface>();
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
-
-        counterMap = new HashMap<String, AtomicInteger>();
         config = JsonConfig.create(StatsManagerConfigV2.class);
         reducerFile = Application.getResource("cfg/reducer.json");
         if (reducerFile.exists()) {
@@ -202,21 +195,18 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         } else {
             this.revision = revision;
         }
-
-        DownloadWatchDog.getInstance().getEventSender().addListener(this);
         config._getStorageHandler().getKeyHandler("enabled").getEventSender().addListener(this);
         thread = new Thread(this);
         thread.setDaemon(true);
         thread.setName("StatsSender");
         thread.start();
         sessionStart = System.currentTimeMillis();
-
         trackR();
-
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
+                DownloadWatchDog.getInstance().getEventSender().addListener(StatsManager.this);
                 AccountController.getInstance().getEventSender().addListener(new AccountControllerListener() {
 
                     @Override
@@ -366,7 +356,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         });
     }
 
-    public void trackR() {
+    private void trackR() {
         final long started = (int) System.currentTimeMillis();
         final HashMap<String, String> cvar = new HashMap<String, String>();
         cvar.put("j", Long.toString(Application.getJavaVersion()));
@@ -375,7 +365,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             return;
         }
         new Thread("Pinger") {
-
             {
                 setDaemon(true);
             }
@@ -392,7 +381,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     if (!track(1000, null, "ping", cvar, CollectionName.PING)) {
                         return;
                     }
-
                 }
 
             };
@@ -613,15 +601,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
-        String dev = System.getProperty("statsmanager");
+        final String dev = System.getProperty("statsmanager");
         if (dev != null && dev.equalsIgnoreCase("true")) {
             return true;
         }
         if (!Application.isJared(StatsManager.class)) {
             return false;
         }
-        return config.isEnabled() /* && */;
-
+        return config.isEnabled();
     }
 
     @Override
@@ -630,7 +617,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     @Override
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-
     }
 
     @Override
@@ -650,21 +636,17 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     private void createAndUploadLog(PostAction action, boolean silent) {
-
         /*
          * this is our current logfolder, flush it before we can upload it
          */
-
         LogFolder lf = new LogFolder(LogController.getInstance().getLogFolder(), LogController.getInstance().getInitTime());
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
         // return .format(date);
         lf.setNeedsFlush(true);
-
         final File zip = Application.getTempResource("logs/logPackage_" + System.currentTimeMillis() + ".zip");
         zip.delete();
         zip.getParentFile().mkdirs();
         ZipIOWriter writer = null;
-
         final String name = lf.getFolder().getName() + "-" + df.format(new Date(lf.getCreated())) + " to " + df.format(new Date(lf.getLastModified()));
         final File folder = Application.getTempResource("logs/" + name);
         try {
@@ -682,24 +664,20 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         super.addFile(addFile, compress, fullPath);
                     }
                 };
-
                 if (folder.exists()) {
                     Files.deleteRecursiv(folder);
                 }
                 IO.copyFolderRecursive(lf.getFolder(), folder, true);
                 writer.addDirectory(folder, true, null);
-
             } finally {
                 try {
                     writer.close();
                 } catch (final Throwable e) {
                 }
             }
-
             if (Thread.currentThread().isInterrupted()) {
                 throw new WTFException("INterrupted");
             }
-
             String id = JDServUtils.upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
 
             zip.delete();
@@ -710,13 +688,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (!silent) {
                 UIOManager.I().showMessageDialog(_GUI.T.StatsManager_createAndUploadLog_thanks_(action.getData()));
             }
-
         } catch (Exception e) {
             logger.log(e);
-
         }
         return;
-
     }
 
     @Override
@@ -740,9 +715,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         try {
             // HashResult hashResult = downloadController.getHashResult();
             // long startedAt = downloadController.getStartTimestamp();
-            DownloadLink link = downloadController.getDownloadLink();
-
-            DownloadLogEntry dl = new DownloadLogEntry();
+            final DownloadLink link = downloadController.getDownloadLink();
+            final DownloadLogEntry dl = new DownloadLogEntry();
             Throwable th = null;
             if (result.getResult() != null) {
                 switch (result.getResult()) {
@@ -771,23 +745,18 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 case FAILED:
                     dl.setResult(DownloadResult.FAILED);
                     break;
-
                 case FAILED_INCOMPLETE:
                     dl.setResult(DownloadResult.FAILED_INCOMPLETE);
                     th = result.getThrowable();
                     if (th != null) {
-
                         if (th instanceof PluginException) {
-
                             // String error = ((PluginException) th).getErrorMessage();
                             if (((PluginException) th).getValue() == LinkStatus.VALUE_NETWORK_IO_ERROR) {
                                 dl.setResult(DownloadResult.CONNECTION_ISSUES);
                             } else if (((PluginException) th).getValue() == LinkStatus.VALUE_LOCAL_IO_ERROR) {
                                 return;
                             }
-
                         }
-
                     }
                     break;
                 case FATAL_ERROR:
@@ -812,7 +781,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             if (error != null && (error.contains("Reconnection") || error.contains("Waiting till new downloads can be started"))) {
                                 dl.setResult(DownloadResult.IP_BLOCKED);
                             }
-
                         }
                     }
                     break;
@@ -831,7 +799,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 case SKIPPED:
                     dl.setResult(DownloadResult.SKIPPED);
                     break;
-
                 case FAILED_EXISTS:
                 case RETRY:
                 case STOPPED:
@@ -863,7 +830,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     case WAIT:
                         waittime += task.getRuntime();
                         break;
-
                     }
                 }
                 if (task.getId() == PluginTaskID.DOWNLOAD) {
@@ -875,19 +841,15 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 // download stopped or failed, before the downloadtask
             }
             long pluginRuntime = downloadTask != null ? (downloadTask.getStartTime() - plugintask.getStartTime()) : plugintask.getRuntime();
-
             HTTPProxy usedProxy = downloadController.getUsedProxy();
             CachedAccount account = candidate.getCachedAccount();
             boolean aborted = downloadController.isAborting();
             // long duration = link.getView().getDownloadTime();
-
             long sizeChange = Math.max(0, link.getView().getBytesLoaded() - downloadController.getSizeBefore());
             long duration = downloadTask != null ? downloadTask.getRuntime() : 0;
             long speed = duration <= 0 ? 0 : (sizeChange * 1000) / duration;
-
             pluginRuntime -= userIO;
             pluginRuntime -= captcha;
-
             switch (result.getResult()) {
             case ACCOUNT_INVALID:
             case ACCOUNT_REQUIRED:
@@ -901,7 +863,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             case FAILED_INCOMPLETE:
             case FATAL_ERROR:
             case FILE_UNAVAILABLE:
-
             case FINISHED_EXISTS:
             case HOSTER_UNAVAILABLE:
             case IP_BLOCKED:
@@ -911,34 +872,25 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             case RETRY:
             case SKIPPED:
             case STOPPED:
-
                 break;
             case FINISHED:
-
                 if (downloadTask != null) {
                     // we did at least download somthing
                 }
-
-            }
-            //
+            } //
 
             // dl.set
-
             dl.setBuildTime(readBuildTime());
-
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
             dl.setHost(Candidate.replace(link.getHost()));
             dl.setCandidate(Candidate.create(account));
-
             dl.setCaptchaRuntime(captcha);
             dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
             dl.setPluginRuntime(pluginRuntime);
             dl.setProxy(usedProxy != null && !usedProxy.isDirect() && !usedProxy.isNone());
-
             dl.setSpeed(speed);
             dl.setWaittime(waittime);
-
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
             final String errorID = result.getErrorID();
@@ -946,7 +898,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (stacktrace != null) {
                 stacktrace = "IDV" + STACKTRACE_VERSION + ":\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + account.getPlugin().getClass().getName() + "\r\n" + cleanErrorID(stacktrace);
             }
-
             dl.setErrorID(errorID == null ? null : Hash.getMD5(stacktrace));
             dl.setTimestamp(System.currentTimeMillis());
             dl.setSessionStart(sessionStart);
@@ -958,21 +909,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (errorCounter == null) {
                 counterMap.put(id, errorCounter = new AtomicInteger());
             }
-
-            //
             dl.setCounter(errorCounter.incrementAndGet());
-            ;
-
             if (dl.getErrorID() != null) {
                 ErrorDetails error = errors.get(dl.getErrorID());
-
                 if (error == null) {
-
                     ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID()));
                     error.setStacktrace(stacktrace);
-
                     error.setBuildTime(dl.getBuildTime());
-
                     if (error2 != null) {
                         error = error2;
                     }
@@ -982,19 +925,16 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (dl.getErrorID() != null) {
                 logger.info("Error Details: \r\n" + JSonStorage.serializeToJson(errors.get(dl.getErrorID())));
             }
-
             if (result.getLastPluginHost() != null && !StringUtils.equals(dl.getCandidate().getPlugin(), result.getLastPluginHost())) {
                 // the error did not happen in the plugin
                 logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
                 // return;
             }
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
-
             log(dl);
         } catch (Throwable e) {
             logger.log(e);
         }
-
     }
 
     public static String cleanErrorID(String errorID) {
@@ -1003,13 +943,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         }
         if (errorID.contains("java.lang.NumberFormatException")) {
             errorID = Pattern.compile("java.lang.NumberFormatException: For input string: \".*?\"\\s*[\r\n]{1,}", Pattern.DOTALL).matcher(errorID).replaceAll("java.lang.NumberFormatException: For input string: \"@See Log\"\r\n");
-
         }
         return errorID;
     }
 
     public static enum ActionID {
-
         REQUEST_LOG,
         REQUEST_ERROR_DETAILS,
         REQUEST_MESSAGE;
@@ -1023,7 +961,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public static class PostAction extends AbstractJsonData implements Storable {
         public PostAction(/* storable */) {
-
         }
 
         public PostAction(ActionID id, String data) {
@@ -1086,41 +1023,41 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     @Override
     public void run() {
         while (true) {
-            ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
-            ArrayList<AbstractLogEntry> sendRequest = new ArrayList<AbstractLogEntry>();
-            ArrayList<AbstractTrackEntry> trackRequest = new ArrayList<AbstractTrackEntry>();
-            Browser br = createBrowser();
+            final ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
+            final ArrayList<AbstractLogEntry> sendRequest = new ArrayList<AbstractLogEntry>();
+            final ArrayList<AbstractTrackEntry> trackRequest = new ArrayList<AbstractTrackEntry>();
+            final Browser br = createBrowser();
             try {
                 while (list.size() == 0) {
                     synchronized (list) {
                         if (list.size() == 0) {
                             list.wait(10 * 60 * 1000);
-
                         }
                     }
                 }
                 retry: while (true) {
                     try {
                         synchronized (list) {
-                            for (StatsLogInterface l : list) {
-                                if (l instanceof AbstractLogEntry) {
-                                    sendRequest.add((AbstractLogEntry) l);
-                                    sendTo.add(new LogEntryWrapper((AbstractLogEntry) l, LogEntryWrapper.VERSION));
-                                } else if (l instanceof AbstractTrackEntry) {
-                                    trackRequest.add((AbstractTrackEntry) l);
+                            try {
+                                for (final StatsLogInterface l : list) {
+                                    if (l instanceof AbstractLogEntry) {
+                                        sendRequest.add((AbstractLogEntry) l);
+                                        sendTo.add(new LogEntryWrapper((AbstractLogEntry) l, LogEntryWrapper.VERSION));
+                                    } else if (l instanceof AbstractTrackEntry) {
+                                        trackRequest.add((AbstractTrackEntry) l);
+                                    }
                                 }
+                            } finally {
+                                list.clear();
                             }
-
-                            list.clear();
                         }
                         if (trackRequest.size() > 0) {
-                            for (AbstractTrackEntry l : trackRequest) {
+                            for (final AbstractTrackEntry l : trackRequest) {
                                 try {
                                     l.send(br);
                                 } catch (Throwable e) {
                                     logger.log(e);
                                 }
-
                             }
                         }
                         if (sendTo.size() > 0) {
@@ -1130,10 +1067,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                 return;
                             }
                             br.postPageRaw(getBase() + "stats/push", Encoding.urlEncode(JSonStorage.serializeToJson(new TimeWrapper(sendTo))));
-
                             // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
-
-                            Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<RIDWrapper<Response>>() {
+                            final Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<RIDWrapper<Response>>() {
                             }).getData();
                             switch (response.getCode()) {
                             case OK:
@@ -1209,7 +1144,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                                 }
                                                             }
                                                         }
-
                                                     }
                                                 }
                                                 if (!found) {
@@ -1256,11 +1190,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                 // if (StringUtils.equals(getErrorID(), action.getData())) {
                                                 // StatsManager.I().sendLogs(getErrorID(),);
                                                 // }
-
                                                 break;
-
                                             }
-
                                         }
                                     }
                                 }
@@ -1270,35 +1201,17 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             case KILL:
                                 return;
                             }
-
                         } else {
                             break retry;
                         }
-                        System.out.println(1);
-                    } catch (ConnectException e) {
+                    } catch (Throwable e) {
                         logger.log(e);
                         logger.info("Wait and retry");
                         Thread.sleep(5 * 60 * 1000l);
-                        // not sent. push back
-                        // synchronized (list) {
-                        // list.addAll(sendRequest);
-                        // }
-                    } catch (JSonMapperException e) {
-                        logger.log(e);
-                        logger.info("Wait and retry");
-                        Thread.sleep(5 * 60 * 1000l);
-                        // not sent. push back
-                        // synchronized (list) {
-                        // list.addAll(sendRequest);
-                        // }
                     }
                 }
             } catch (Exception e) {
-                // failed. push back
                 logger.log(e);
-                // synchronized (list) {
-                // list.addAll(sendRequest);
-                // }
             }
         }
     }
@@ -1317,11 +1230,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 }
             }
         }.start();
-
     }
 
     public Browser createBrowser() {
-        Browser br = new Browser();
+        final Browser br = new Browser();
         final int[] codes = new int[999];
         for (int i = 0; i < codes.length; i++) {
             codes[i] = i;
@@ -1331,15 +1243,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     private void sendLogDetails(LogDetails log) throws StorageException, IOException {
-        Browser br = createBrowser();
+        final Browser br = createBrowser();
         br.postPageRaw(getBase() + "stats/sendLog", Encoding.urlEncode(JSonStorage.serializeToJson(log)));
-
     }
 
     private void sendErrorDetails(ErrorDetails error) throws StorageException, IOException {
-        Browser br = createBrowser();
+        final Browser br = createBrowser();
         br.postPageRaw(getBase() + "stats/sendError", Encoding.urlEncode(JSonStorage.serializeToJson(error)));
-
     }
 
     private String getBase() {
@@ -1356,56 +1266,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
     }
 
-    public void feedback(DirectFeedback feedback) {
-
-        if (feedback instanceof DownloadFeedBack) {
-            DownloadLink link = ((DownloadFeedBack) feedback).getDownloadLink();
-
-            ArrayList<Candidate> possibleAccounts = new ArrayList<Candidate>();
-            AccountCache accountCache = new DownloadSession().getAccountCache(link);
-            HashSet<String> dupe = new HashSet<String>();
-            for (CachedAccount s : accountCache) {
-                Account acc = s.getAccount();
-                if (acc != null && !acc.isEnabled()) {
-                    continue;
-                }
-                Candidate candidate = Candidate.create(s);
-                if (dupe.add(candidate.toID())) {
-                    possibleAccounts.add(candidate);
-                }
-            }
-
-            DownloadFeedbackLogEntry dl = new DownloadFeedbackLogEntry();
-            dl.setHost(link.getHost());
-            dl.setCandidates(possibleAccounts);
-            dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
-
-            dl.setBuildTime(readBuildTime());
-
-            dl.setOs(CrossSystem.getOSFamily().name());
-            dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-            dl.setTimestamp(System.currentTimeMillis());
-
-            dl.setSessionStart(sessionStart);
-            // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
-            // this.
-            dl.setLinkID(link.getUniqueID().getID());
-            String id = dl.getLinkID() + "";
-            AtomicInteger errorCounter = counterMap.get(id);
-            if (errorCounter == null) {
-                counterMap.put(id, errorCounter = new AtomicInteger());
-            }
-            dl.setCounter(errorCounter.incrementAndGet());
-            sendFeedback(dl);
-
-            UIOManager.I().showMessageDialog(_GUI.T.VoteFinderWindow_runInEDT_thankyou_2());
-        }
-
-    }
-
     public static long readBuildTime() {
         try {
-            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
+            final HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
             return readBuildTime(map);
         } catch (Throwable e) {
             return 0;
@@ -1414,117 +1277,19 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public static long readBuildTime(HashMap<String, Object> map) {
         try {
-            Object ret = map.get("buildTimestamp");
+            final Object ret = map.get("buildTimestamp");
             if (ret instanceof Number) {
                 return ((Number) ret).longValue();
             }
-
             return Long.parseLong(ret + "");
         } catch (Throwable e) {
             return 0;
         }
     }
 
-    private void sendFeedback(AbstractFeedbackLogEntry dl) {
-        Browser br = createBrowser();
-        ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
-        sendTo.add(new LogEntryWrapper(dl, LogEntryWrapper.VERSION));
-        try {
-            String feedbackjson = JSonStorage.serializeToJson(new TimeWrapper(sendTo));
-
-            br.postPageRaw(getBase() + "stats/push", Encoding.urlEncode(feedbackjson));
-
-            // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
-
-            Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<RIDWrapper<Response>>() {
-            }).getData();
-            switch (response.getCode()) {
-            case FAILED:
-                break;
-            case KILL:
-                break;
-
-            case OK:
-
-                PostAction[] actions = response.getActions();
-                if (actions != null) {
-                    for (final PostAction action : actions) {
-                        try {
-                            if (action != null) {
-                                switch (action.getId()) {
-                                case REQUEST_MESSAGE:
-                                    requestMessage(action);
-                                    break;
-                                case REQUEST_ERROR_DETAILS:
-                                    break;
-
-                                case REQUEST_LOG:
-
-                                    // new Thread("Log Requestor") {
-                                    // @Override
-                                    // public void run() {
-                                    // UploadGeneralSessionLogDialogInterface d =
-                                    // UIOManager.I().show(UploadGeneralSessionLogDialogInterface.class, new
-                                    // UploadGeneralSessionLogDialog());
-                                    // if (d.getCloseReason() == CloseReason.OK) {
-                                    // UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
-                                    //
-                                    // @Override
-                                    // public void run() throws Exception {
-                                    // createAndUploadLog(action, false);
-                                    // }
-                                    //
-                                    // @Override
-                                    // public String getString() {
-                                    // return null;
-                                    // }
-                                    //
-                                    // @Override
-                                    // public int getProgress() {
-                                    // return -1;
-                                    // }
-                                    //
-                                    // @Override
-                                    // public String getLabelString() {
-                                    // return null;
-                                    // }
-                                    // }, 0, _GUI.T.StatsManager_run_upload_error_title(), _GUI.T.StatsManager_run_upload_error_message(),
-                                    // new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
-                                    // public java.awt.Dialog.ModalityType getModalityType() {
-                                    // return ModalityType.MODELESS;
-                                    // };
-                                    // });
-                                    // }
-                                    // }
-                                    // }.start();
-                                    // non-error related log request
-                                }
-                                // if (StringUtils.equals(getErrorID(), action.getData())) {
-                                // StatsManager.I().sendLogs(getErrorID(),);
-                                // }
-
-                            }
-                        } catch (Exception e) {
-                            logger.log(e);
-
-                        }
-                    }
-                }
-
-            }
-
-        } catch (StorageException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     protected void sendMessage(String text, PostAction action) throws StorageException, IOException {
-
-        Browser br = createBrowser();
+        final Browser br = createBrowser();
         br.postPageRaw(getBase() + "stats/sendMessage", Encoding.urlEncode(JSonStorage.serializeToJson(new MessageData(text, action.getData()))));
-
     }
 
     public static enum CollectionName {
@@ -1537,17 +1302,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public boolean track(final int reducer, String reducerID, final String id, final Map<String, String> infos, final CollectionName col) {
         final String reducerKey;
-
         if (reducer > 1) {
             if (StringUtils.isEmpty(reducerID)) {
                 reducerKey = id + "_in" + reducer;
             } else {
                 reducerKey = reducerID + "_in" + reducer;
             }
-
             synchronized (reducerRandomMap) {
-                Integer randomValue = reducerRandomMap.get(reducerKey);
-
+                final Integer randomValue = reducerRandomMap.get(reducerKey);
                 if (randomValue != null) {
                     if (randomValue.intValue() != 0) {
                         return false;
@@ -1557,7 +1319,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         } else {
             reducerKey = null;
         }
-
         return log(new AbstractTrackEntry() {
 
             @Override
@@ -1595,19 +1356,16 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     cvar.put("rev", revision.toString());
                     cvar.put("c", System.getProperty("user.country"));
                     cvar.put("l", System.getProperty("user.language"));
-
                     if (infos != null) {
                         cvar.putAll(infos);
                     }
                     final Browser browser = new Browser();
                     try {
                         URLConnectionAdapter con = null;
-
                         if (col == null || col == CollectionName.BASIC) {
                             con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
                         } else {
                             con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)) + "&null&" + col.name());
-
                         }
                         con.disconnect();
                     } finally {
@@ -1619,10 +1377,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
-
             }
         });
-
     }
 
     /**
