@@ -268,16 +268,12 @@ public abstract class Plugin implements ActionListener {
         if (url == null) {
             return null;
         }
-        final URL u;
         try {
-            u = new URL(url);
+            final String output = Plugin.getFileNameFromURL(new URL(url));
+            if (output != null && output.contains(".")) {
+                return output.substring(output.lastIndexOf("."));
+            }
         } catch (final MalformedURLException e) {
-            return failover;
-        }
-        // should have had all the cleanup from the getFileNameFromURL
-        final String output = Plugin.getFileNameFromURL(u);
-        if (output != null && output.contains(".")) {
-            return output.substring(output.lastIndexOf("."));
         }
         return failover;
     }
@@ -307,7 +303,7 @@ public abstract class Plugin implements ActionListener {
         if (filename == null) {
             return null;
         }
-        String output = extractFileNameFromURL(filename);
+        final String output = extractFileNameFromURL(filename);
         if (output != null && output.contains(".")) {
             return output.substring(output.lastIndexOf("."));
         }
@@ -342,7 +338,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     public static String getFileNameFromURL(final URL url) {
-        return Plugin.extractFileNameFromURL(url.toExternalForm());
+        return Plugin.extractFileNameFromURL(url.getPath());
     }
 
     /**

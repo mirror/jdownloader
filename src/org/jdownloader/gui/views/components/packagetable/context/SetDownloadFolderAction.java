@@ -5,6 +5,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
@@ -20,9 +23,6 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public abstract class SetDownloadFolderAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
@@ -81,7 +81,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
             if (file == null) {
                 return;
             }
-
+            final String dontShowAgainKey = getClass().getName();
             final SelectionInfo<PackageType, ChildrenType> lselection = getSelection();
             final List<PackageView<PackageType, ChildrenType>> incompletePackageViews = new ArrayList<PackageView<PackageType, ChildrenType>>(0);
             getQueue().add(new QueueAction<Object, RuntimeException>() {
@@ -107,7 +107,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
                                     if (oldPath.equals(newPath)) {
                                         continue;
                                     }
-                                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT.T.SetDownloadFolderAction_msg(entry.getName(), packageView.getChildren().size()), null, _JDT.T.SetDownloadFolderAction_yes(), _JDT.T.SetDownloadFolderAction_no());
+                                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT.T.SetDownloadFolderAction_msg(entry.getName(), packageView.getChildren().size()), null, _JDT.T.SetDownloadFolderAction_yes(), _JDT.T.SetDownloadFolderAction_no(), dontShowAgainKey);
 
                                     getQueue().add(new QueueAction<Object, RuntimeException>() {
 
