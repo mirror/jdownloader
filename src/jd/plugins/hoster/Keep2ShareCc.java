@@ -236,7 +236,22 @@ public class Keep2ShareCc extends K2SApi {
         if (isPremiumOnly()) {
             premiumDownloadRestriction("This file is only available to premium members");
         }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String dllink = downloadLink.getStringProperty(directlinkproperty, null);
+        // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
+        if (!inValidate(dllink)) {
+            final Browser obr = br.cloneBrowser();
+            logger.info("Reusing cached finallink!");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || dl.getConnection().getResponseCode() == 401) {
+                br.followConnection();
+                handleGeneralServerErrors(account, downloadLink);
+                // we now want to restore!
+                br = obr;
+                dllink = null;
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
+            }
+        }
+        // if above has failed, dllink will be null
         if (inValidate(dllink)) {
             if (br.containsHTML(DOWNLOADPOSSIBLE)) {
                 dllink = getDllink();
@@ -308,20 +323,20 @@ public class Keep2ShareCc extends K2SApi {
                     }
                 }
             }
-        }
-        logger.info("dllink = " + dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            logger.info(br.toString());
-            dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                handleGeneralServerErrors(account, downloadLink);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = dllink.replace("\\", "");
-            // Try again...
+            logger.info("dllink = " + dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                logger.info(br.toString());
+                dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    handleGeneralServerErrors(account, downloadLink);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = dllink.replace("\\", "");
+                // Try again...
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            }
         }
         downloadLink.setProperty("directlink", dllink);
         // add download slot

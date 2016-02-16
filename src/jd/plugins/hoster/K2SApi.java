@@ -390,12 +390,25 @@ public abstract class K2SApi extends PluginForHost {
         // linkcheck here..
         reqFileInformation(downloadLink);
         String fuid = getFUID(downloadLink);
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String dllink = downloadLink.getStringProperty(directlinkproperty, null);
         // required to get overrides to work
         br = prepAPI(newBrowser());
+        // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
         if (!inValidate(dllink)) {
+            final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached finallink!");
-        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || dl.getConnection().getResponseCode() == 401) {
+                br.followConnection();
+                handleGeneralServerErrors(account, downloadLink);
+                // we now want to restore!
+                br = obr;
+                dllink = null;
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
+            }
+        }
+        // if above has failed, dllink will be null
+        if (inValidate(dllink)) {
             if ("premium".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
                 // download not possible
                 premiumDownloadRestriction(getErrorMessage(3));
@@ -437,14 +450,14 @@ public abstract class K2SApi extends PluginForHost {
             if (inValidate(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        logger.info("dllink = " + dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            handleGeneralServerErrors(account, downloadLink);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("dllink = " + dllink);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                handleGeneralServerErrors(account, downloadLink);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         // add download slot
@@ -1101,14 +1114,7 @@ public abstract class K2SApi extends PluginForHost {
      * @throws PluginException
      */
     public void premiumDownloadRestriction(final String msg) throws PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     /**
@@ -1157,6 +1163,8 @@ public abstract class K2SApi extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many request in short succession");
         }
     }
 
@@ -1186,31 +1194,6 @@ public abstract class K2SApi extends PluginForHost {
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
-    }
-
-    protected String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property, null);
-        if (!inValidate(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 401) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     /**
