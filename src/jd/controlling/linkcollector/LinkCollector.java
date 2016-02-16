@@ -30,6 +30,41 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcollector.autostart.AutoStartManager;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -87,41 +122,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcollector.autostart.AutoStartManager;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkProperty;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerFilter;
-import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.controlling.linkcrawler.LinkCrawlerRule;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
 
@@ -1865,25 +1865,27 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 if (lcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathsJDRoot()) {
                     try {
-                        String oldRootPath = lcs.getRootPath();
+                        final String oldRootPath = lcs.getRootPath();
                         if (!StringUtils.isEmpty(oldRootPath)) {
-                            String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
+                            final String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
                             /*
                              * convert paths relative to JDownloader root,only in jared version
                              */
-                            for (CrawledPackage pkg : ret2) {
+                            for (final CrawledPackage pkg : ret2) {
                                 if (!CrossSystem.isAbsolutePath(pkg.getDownloadFolder())) {
                                     /* no need to convert relative paths */
                                     continue;
                                 }
-                                String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).toString();
-                                if (pkgPath.startsWith(oldRootPath)) {
+                                final String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).toString();
+                                if (pkgPath.startsWith(oldRootPath + "/") || pkgPath.startsWith(oldRootPath + "\\")) {
                                     /*
                                      * folder is inside JDRoot, lets update it
                                      */
-                                    String restPath = pkgPath.substring(oldRootPath.length());
-                                    String newPath = new File(newRoot, restPath).toString();
-                                    pkg.setDownloadFolder(newPath);
+                                    final String restPath = pkgPath.substring(oldRootPath.length());
+                                    final String newPath = new File(newRoot, restPath).toString();
+                                    if (!StringUtils.equals(pkgPath, newPath)) {
+                                        pkg.setDownloadFolder(newPath);
+                                    }
                                 }
                             }
                         }
