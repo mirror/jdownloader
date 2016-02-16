@@ -3,6 +3,7 @@ package jd.controlling.proxy;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 
+import jd.http.Browser;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.StringUtils;
@@ -29,7 +30,7 @@ public class EndPointConnectExceptionBan extends AbstractBan {
     }
 
     protected String getHost() {
-        return getURI().getHost();
+        return Browser.getHostFromURI(getURI());
     }
 
     @Override
@@ -54,7 +55,7 @@ public class EndPointConnectExceptionBan extends AbstractBan {
     @Override
     public boolean isProxyBannedByUrlOrPlugin(final HTTPProxy proxy, final URI uri, final Plugin pluginFromThread, boolean ignoreConnectBans) {
         if (!ignoreConnectBans && proxyEquals(getProxy(), proxy)) {
-            final boolean ret = getPort() == getPort(uri) && StringUtils.containsIgnoreCase(getHost(), uri.getHost()) && StringUtils.equals(getScheme(), uri.getScheme());
+            final boolean ret = getPort() == getPort(uri) && StringUtils.containsIgnoreCase(getHost(), Browser.getHostFromURI(uri)) && StringUtils.equals(getScheme(), uri.getScheme());
             return ret;
         }
         return false;

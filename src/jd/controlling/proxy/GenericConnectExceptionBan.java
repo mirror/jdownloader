@@ -2,6 +2,7 @@ package jd.controlling.proxy;
 
 import java.net.URI;
 
+import jd.http.Browser;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -18,7 +19,7 @@ public class GenericConnectExceptionBan extends AuthExceptionGenericBan {
     public String toString() {
         final URI uri = getURI();
         if (uri != null) {
-            return _JDT.T.ConnectExceptionInPluginBan(uri.getHost().concat(":").concat(Integer.toString(getPort(uri))));
+            return _JDT.T.ConnectExceptionInPluginBan(Browser.getHostFromURI(uri).concat(":").concat(Integer.toString(getPort(uri))));
         }
         final HTTPProxy proxy = getProxy();
         return _JDT.T.ConnectExceptionInPluginBan(proxy == null ? "" : proxy.toString());
