@@ -117,7 +117,6 @@ import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
-import org.jdownloader.updatev2.gui.LAFOptions;
 
 import com.btr.proxy.selector.pac.PACScriptEngineFactory;
 import com.btr.proxy.selector.pac.PacProxySelector;
@@ -136,6 +135,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.zip.SharedMemoryState;
 import jd.plugins.DownloadLink;
@@ -146,7 +146,6 @@ public class SecondLevelLaunch {
         statics();
     }
 
-    private static LogSource                 LOG;
     public final static SingleReachableState UPDATE_HANDLER_SET    = new SingleReachableState("UPDATE_HANDLER_SET");
     public final static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
     public final static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
@@ -154,8 +153,8 @@ public class SecondLevelLaunch {
     public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
     public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
 
-    private static File      FILE;
-    public final static long startup = System.currentTimeMillis();
+    private static File                      FILE;
+    public final static long                 startup               = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
 
@@ -168,8 +167,8 @@ public class SecondLevelLaunch {
             com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", -1));
         } catch (final Throwable e) {
             /* not every mac has this */
-            SecondLevelLaunch.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
-            SecondLevelLaunch.LOG.log(e);
+            LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + e);
+            LoggerFactory.getDefaultLogger().log(e);
         }
 
         // Use ScreenMenu in every LAF
@@ -178,7 +177,7 @@ public class SecondLevelLaunch {
         new Thread() {
             public void run() {
                 try {
-                    LOG.info("Try to disable AppNap");
+                    LoggerFactory.getDefaultLogger().info("Try to disable AppNap");
 
                     // single bundle installer
                     File file = getInfoPlistPath();
@@ -188,12 +187,12 @@ public class SecondLevelLaunch {
 
                     }
 
-                    LOG.info("MAC Bundle Identifier: " + cFBundleIdentifier);
+                    LoggerFactory.getDefaultLogger().info("MAC Bundle Identifier: " + cFBundleIdentifier);
                     if (cFBundleIdentifier == null) {
 
                         cFBundleIdentifier = "org.jdownloader.launcher";
 
-                        LOG.info("Use MAC Default Bundle Identifier: " + cFBundleIdentifier);
+                        LoggerFactory.getDefaultLogger().info("Use MAC Default Bundle Identifier: " + cFBundleIdentifier);
                     }
                     if (StringUtils.isNotEmpty(cFBundleIdentifier)) {
                         ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSAppSleepDisabled", "-bool", "YES");
@@ -201,7 +200,7 @@ public class SecondLevelLaunch {
                         try {
                             process = p.start();
                             String ret = IO.readInputStreamToString(process.getInputStream());
-                            LOG.info("Disable App Nap");
+                            LoggerFactory.getDefaultLogger().info("Disable App Nap");
                         } finally {
                             try {
                                 if (process != null) {
@@ -214,7 +213,7 @@ public class SecondLevelLaunch {
                         try {
                             process = p.start();
                             String ret = IO.readInputStreamToString(process.getInputStream());
-                            LOG.info("App Defaults: \r\n" + ret);
+                            LoggerFactory.getDefaultLogger().info("App Defaults: \r\n" + ret);
                         } finally {
                             try {
                                 if (process != null) {
@@ -225,7 +224,7 @@ public class SecondLevelLaunch {
                         }
                     }
                 } catch (Throwable e) {
-                    LOG.log(e);
+                    LoggerFactory.getDefaultLogger().log(e);
                 }
             };
         }.start();
@@ -245,8 +244,8 @@ public class SecondLevelLaunch {
         try {
             MacOSApplicationAdapter.enableMacSpecial();
         } catch (final Throwable e) {
-            SecondLevelLaunch.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
-            SecondLevelLaunch.LOG.log(e);
+            LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + e);
+            LoggerFactory.getDefaultLogger().log(e);
         }
 
     }
@@ -295,12 +294,12 @@ public class SecondLevelLaunch {
             return;
         }
         if (Application.getJavaVersion() < Application.JAVA15) {
-            SecondLevelLaunch.LOG.warning("Javacheck: JDownloader needs at least Java 1.5 or higher!");
+            LoggerFactory.getDefaultLogger().warning("Javacheck: JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
         if (Application.isOutdatedJavaVersion(true)) {
             try {
-                SecondLevelLaunch.LOG.severe("BUGGY Java Version detected: " + Application.getJavaVersion());
+                LoggerFactory.getDefaultLogger().severe("BUGGY Java Version detected: " + Application.getJavaVersion());
                 if (CrossSystem.isMac() && Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
                     /* TODO: remove me after we've upgraded mac installer */
                     return;
@@ -320,7 +319,7 @@ public class SecondLevelLaunch {
      */
 
     public static void mainStart(final String args[]) {
-        SecondLevelLaunch.LOG = LogController.GL;
+
         /* setup JSPermission */
 
         try {
@@ -337,21 +336,21 @@ public class SecondLevelLaunch {
             };
 
         } catch (final Throwable e) {
-            SecondLevelLaunch.LOG.log(e);
+            LoggerFactory.getDefaultLogger().log(e);
         }
         try {
 
             JSRhinoPermissionRestricter.init();
 
         } catch (final Throwable e) {
-            SecondLevelLaunch.LOG.log(e);
+            LoggerFactory.getDefaultLogger().log(e);
         }
 
         try {
             JSHtmlUnitPermissionRestricter.init();
 
         } catch (final Throwable e) {
-            SecondLevelLaunch.LOG.log(e);
+            LoggerFactory.getDefaultLogger().log(e);
         }
         // Mac OS specific
         if (CrossSystem.isMac()) {
@@ -394,30 +393,30 @@ public class SecondLevelLaunch {
                 }
             }
         } catch (Throwable e1) {
-            SecondLevelLaunch.LOG.log(e1);
+            LoggerFactory.getDefaultLogger().log(e1);
         }
         final Properties pr = System.getProperties();
         final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
         for (final Object it : propKeys) {
             final String key = it.toString();
-            SecondLevelLaunch.LOG.finer(key + "=" + pr.get(key));
+            LoggerFactory.getDefaultLogger().finer(key + "=" + pr.get(key));
         }
-        SecondLevelLaunch.LOG.info("JavaVersion=" + Application.getJavaVersion());
+        LoggerFactory.getDefaultLogger().info("JavaVersion=" + Application.getJavaVersion());
         long maxHeap = -1;
         try {
             java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
             List<String> arguments = runtimeMxBean.getInputArguments();
             if (arguments != null) {
-                SecondLevelLaunch.LOG.finer("VMArgs: " + arguments.toString());
+                LoggerFactory.getDefaultLogger().finer("VMArgs: " + arguments.toString());
             }
             java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
             maxHeap = memory.getMax();
         } catch (final Throwable e) {
-            SecondLevelLaunch.LOG.log(e);
+            LoggerFactory.getDefaultLogger().log(e);
         }
-        SecondLevelLaunch.LOG.info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
+        LoggerFactory.getDefaultLogger().info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
         vmOptionsWorkaround(maxHeap);
-        SecondLevelLaunch.LOG.info("JDownloader2");
+        LoggerFactory.getDefaultLogger().info("JDownloader2");
 
         // checkSessionInstallLog();
 
@@ -425,9 +424,9 @@ public class SecondLevelLaunch {
         String revision = JDUtilities.getRevision();
         if (!jared) {
             /* always enable debug and cache refresh in developer version */
-            SecondLevelLaunch.LOG.info("Non Jared Version(" + revision + "): RefreshCache=true");
+            LoggerFactory.getDefaultLogger().info("Non Jared Version(" + revision + "): RefreshCache=true");
         } else {
-            SecondLevelLaunch.LOG.info("Jared Version(" + revision + ")");
+            LoggerFactory.getDefaultLogger().info("Jared Version(" + revision + ")");
         }
         SecondLevelLaunch.preInitChecks();
         SecondLevelLaunch.start(args);
@@ -438,7 +437,7 @@ public class SecondLevelLaunch {
         try {
             IO.setErrorHandler(null);
             if (maxHeap > 0 && maxHeap <= 100 * 1024 * 1024) {
-                SecondLevelLaunch.LOG.warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
+                LoggerFactory.getDefaultLogger().warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
                 if (CrossSystem.isWindows() || CrossSystem.isUnix()) {
                     java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
                     List<String> arguments = runtimeMxBean.getInputArguments();
@@ -460,7 +459,7 @@ public class SecondLevelLaunch {
                         for (File vmOption : vmOptions) {
                             byte[] bytes = IO.readFile(vmOption, 1024 * 50);
                             if (new String(bytes, "UTF-8").contains("-Xmx")) {
-                                SecondLevelLaunch.LOG.info("Rename " + vmOption + " because it contains too low Xmx VM arg!");
+                                LoggerFactory.getDefaultLogger().info("Rename " + vmOption + " because it contains too low Xmx VM arg!");
                                 int i = 1;
                                 File backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
                                 while (backup.exists() || i == 10) {
@@ -472,7 +471,7 @@ public class SecondLevelLaunch {
                                 }
                                 vmOption.renameTo(backup);
                             } else {
-                                SecondLevelLaunch.LOG.info("Modify " + vmOption + " because the exe launcher contains too low Xmx VM arg!");
+                                LoggerFactory.getDefaultLogger().info("Modify " + vmOption + " because the exe launcher contains too low Xmx VM arg!");
                                 int i = 1;
                                 File backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
                                 while (backup.exists() || i == 10) {
@@ -503,7 +502,7 @@ public class SecondLevelLaunch {
                         if (StringUtils.isEmpty(launcher)) {
                             launcher = System.getProperty("exe4j.moduleName");
                         }
-                        SecondLevelLaunch.LOG.info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
+                        LoggerFactory.getDefaultLogger().info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
                         if (StringUtils.isNotEmpty(launcher)) {
                             if (CrossSystem.isWindows()) {
                                 launcher = launcher.replaceFirst("\\.exe$", ".vmoptions");
@@ -539,14 +538,14 @@ public class SecondLevelLaunch {
                                 writeChanges = true;
                             }
                             if (writeChanges) {
-                                SecondLevelLaunch.LOG.info("Workaround for buggy Java 1.7 update 5");
+                                LoggerFactory.getDefaultLogger().info("Workaround for buggy Java 1.7 update 5");
                             }
                         } else if (str.contains("<string>-Xmx64m</string>")) {
                             str = str.replace("<string>-Xmx64m</string>", "<string>-Xms64m</string>");
                             writeChanges = true;
                         }
                         if (writeChanges) {
-                            SecondLevelLaunch.LOG.info("Modify " + file + " because it contains too low Xmx VM arg!");
+                            LoggerFactory.getDefaultLogger().info("Modify " + file + " because it contains too low Xmx VM arg!");
                             if (!isMacLauncherSigned()) {
                                 int i = 1;
                                 File backup = new File(file.getCanonicalPath() + ".backup_" + i);
@@ -562,16 +561,16 @@ public class SecondLevelLaunch {
                                     IO.writeStringToFile(file, str);
                                 }
                             } else {
-                                SecondLevelLaunch.LOG.info("Cannot modify, because the Laucher is signed. User has to reinstall.");
+                                LoggerFactory.getDefaultLogger().info("Cannot modify, because the Laucher is signed. User has to reinstall.");
                             }
                         } else {
-                            SecondLevelLaunch.LOG.info("User needs to modify Pinfo.list to specify higher Xmx vm arg!");
+                            LoggerFactory.getDefaultLogger().info("User needs to modify Pinfo.list to specify higher Xmx vm arg!");
                         }
                     }
                 }
             }
         } catch (final Throwable e) {
-            SecondLevelLaunch.LOG.log(e);
+            LoggerFactory.getDefaultLogger().log(e);
         } finally {
             IO.setErrorHandler(errorHandler);
         }
@@ -612,7 +611,7 @@ public class SecondLevelLaunch {
                 new Thread("ShowBadExit") {
                     public void run() {
                         String txt = "It seems that JDownloader did not exit properly on " + error + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
-                        LOG.warning("BAD EXIT Detected!: " + txt);
+                        LoggerFactory.getDefaultLogger().warning("BAD EXIT Detected!: " + txt);
 
                         if (!Application.isHeadless()) {
                             UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt, AWUTheme.I().getIcon(Dialog.ICON_ERROR, 32), null, null);
@@ -658,11 +657,11 @@ public class SecondLevelLaunch {
     }
 
     private static void go() {
-        SecondLevelLaunch.LOG.info("Initialize JDownloader2");
+        LoggerFactory.getDefaultLogger().info("Initialize JDownloader2");
         // try {
         // Log.closeLogfile();
         // } catch (final Throwable e) {
-        // SecondLevelLaunch.LOG.log(e);
+        // LoggerFactory.getDefaultLogger().log(e);
         // }
         // try {
         // for (Handler handler : org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().getHandlers()) {
@@ -733,7 +732,7 @@ public class SecondLevelLaunch {
             if (e.getMessage() != null && e.getMessage().contains("Can't find dependent libraries")) {
                 StatsManager.I().track("UnsatisfiedLinkError/JNA");
                 // probably the path contains unsupported special chars
-                LOG.info("The Library Path probably contains special chars: " + Application.getResource("tmp/jna").getAbsolutePath());
+                LoggerFactory.getDefaultLogger().info("The Library Path probably contains special chars: " + Application.getResource("tmp/jna").getAbsolutePath());
                 ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI.T.lit_error_occured(), _GUI.T.special_char_lib_loading_problem(Application.getHome(), "Java Native Interface"), e, null, _GUI.T.lit_close()) {
                     @Override
                     public ModalityType getModalityType() {
@@ -744,9 +743,9 @@ public class SecondLevelLaunch {
             } else {
                 StatsManager.I().track("UnsatisfiedLinkError/Diff");
             }
-            LOG.log(e);
+            LoggerFactory.getDefaultLogger().log(e);
         } catch (final Throwable e1) {
-            LOG.log(e1);
+            LoggerFactory.getDefaultLogger().log(e1);
         }
         UJCECheck.check();
         LogSource edtLogger = LogController.getInstance().getLogger("BlockingEDT");
@@ -761,12 +760,12 @@ public class SecondLevelLaunch {
                 try {
                     if (Application.getJavaVersion() < Application.JAVA17 || CFG_GENERAL.CFG.isPreferBouncyCastleForTLS()) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        SecondLevelLaunch.LOG.info("Use 'BouncyCastle' for default SSLSocketStreamFactory!");
+                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory!");
                     } else {
-                        SecondLevelLaunch.LOG.info("Use 'JSSE' for default SSLSocketStreamFactory!");
+                        LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory!");
                     }
                 } catch (final Throwable e) {
-                    SecondLevelLaunch.LOG.log(e);
+                    LoggerFactory.getDefaultLogger().log(e);
                 }
                 try {
                     CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
@@ -801,11 +800,11 @@ public class SecondLevelLaunch {
                             org.jdownloader.jna.windows.User32 u = org.jdownloader.jna.windows.User32.INSTANCE;
                             org.jdownloader.jna.windows.Kernel32 k = org.jdownloader.jna.windows.Kernel32.INSTANCE;
                         } catch (final Throwable e) {
-                            SecondLevelLaunch.LOG.log(e);
+                            LoggerFactory.getDefaultLogger().log(e);
                         }
                     }
                 } catch (Throwable e) {
-                    SecondLevelLaunch.LOG.log(e);
+                    LoggerFactory.getDefaultLogger().log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
                     // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
@@ -820,21 +819,21 @@ public class SecondLevelLaunch {
                 // check if windows are already available.
                 // http://board.jdownloader.org/showthread.php?p=260100#post260100
                 try {
-                    LOG.info("LAF INIT");
+                    LoggerFactory.getDefaultLogger().info("LAF INIT");
                     Window awindow[];
                     int j = (awindow = Window.getWindows()).length;
                     for (int i = 0; i < j; i++) {
                         Window window = awindow[i];
-                        LOG.info("Window: " + window);
+                        LoggerFactory.getDefaultLogger().info("Window: " + window);
 
                         boolean flag = !(window instanceof JWindow) && !(window instanceof JFrame) && !(window instanceof JDialog);
                         if (!window.getClass().getName().contains("Popup$HeavyWeightWindow") && !flag) {
-                            LOG.info("Window: " + "Reshape: yes");
+                            LoggerFactory.getDefaultLogger().info("Window: " + "Reshape: yes");
                         }
 
                     }
                 } catch (Exception e) {
-                    LOG.log(e);
+                    LoggerFactory.getDefaultLogger().log(e);
                 }
 
                 Dialog.getInstance().initLaf();
@@ -845,15 +844,16 @@ public class SecondLevelLaunch {
         if (!org.appwork.utils.Application.isHeadless()) {
             lafInit.start();
         } else {
-            LAFOptions.init("org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
-            try {
-                final String theme = LAFOptions.getInstance().getCfg().getIconSetID();
-
-                org.jdownloader.images.NewTheme.getInstance().setTheme(theme);
-
-            } catch (Throwable e) {
-                LoggerFactory.getDefaultLogger().log(e);
-            }
+            LookAndFeelController.getInstance().init();
+            // LAFOptions.init("org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
+            // try {
+            // final String theme = LAFOptions.getInstance().getCfg().getIconSetID();
+            //
+            // org.jdownloader.images.NewTheme.getInstance().setTheme(theme);
+            //
+            // } catch (Throwable e) {
+            // LoggerFactory.getDefaultLogger().log(e);
+            // }
         }
         Locale.setDefault(TranslationFactory.getDesiredLocale());
         // Disable silentmode on each session start
@@ -1045,7 +1045,7 @@ public class SecondLevelLaunch {
                                 }
                             });
                         } catch (Throwable e) {
-                            SecondLevelLaunch.LOG.log(e);
+                            LoggerFactory.getDefaultLogger().log(e);
                             if (Application.isHeadless()) {
                                 ConsoleDialog.showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
                             } else {
@@ -1095,15 +1095,15 @@ public class SecondLevelLaunch {
 
                         }
                         lafInit.waitForEDT();
-                        SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
+                        LoggerFactory.getDefaultLogger().info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                         JDGui.init();
                         // init Archivecontroller.init has to be done AFTER downloadcontroller and linkcollector
                         ArchiveController.getInstance();
                         Toolkit.getDefaultToolkit().addAWTEventListener(new CustomCopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
 
-                        SecondLevelLaunch.LOG.info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
+                        LoggerFactory.getDefaultLogger().info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                     } catch (Throwable e) {
-                        SecondLevelLaunch.LOG.log(e);
+                        LoggerFactory.getDefaultLogger().log(e);
                         Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
                         // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
@@ -1127,7 +1127,7 @@ public class SecondLevelLaunch {
                 try {
                     initThread.join(100);
                 } catch (InterruptedException e1) {
-                    SecondLevelLaunch.LOG.log(e1);
+                    LoggerFactory.getDefaultLogger().log(e1);
                     break;
                 }
             }
@@ -1135,7 +1135,7 @@ public class SecondLevelLaunch {
         }
 
         SecondLevelLaunch.GUI_COMPLETE.setReached();
-        SecondLevelLaunch.LOG.info("Initialisation finished");
+        LoggerFactory.getDefaultLogger().info("Initialisation finished");
         SecondLevelLaunch.INIT_COMPLETE.setReached();
 
         // init statsmanager
@@ -1147,14 +1147,14 @@ public class SecondLevelLaunch {
                 if (CrossSystem.isWindows()) {
                     SecuritySoftwareResponse sw = null;
                     try {
-                        LOG.info("AntiVirusProduct START");
+                        LoggerFactory.getDefaultLogger().info("AntiVirusProduct START");
                         sw = CrossSystem.getAntiVirusSoftwareInfo();
                         HashMap<String, String> infos = createInfoMap(sw);
                         StatsManager.I().track(100, "secur", "av", infos, CollectionName.SECURITY);
                     } catch (UnsupportedOperationException e) {
 
                     } catch (Throwable e) {
-                        LOG.log(e);
+                        LoggerFactory.getDefaultLogger().log(e);
                         HashMap<String, String> infos = new HashMap<String, String>();
                         if (e instanceof SecuritySoftwareException) {
                             infos.put("response", ((SecuritySoftwareException) e).getResponse());
@@ -1163,17 +1163,17 @@ public class SecondLevelLaunch {
                         infos.put("exception", Exceptions.getStackTrace(e));
                         StatsManager.I().track(100, "secur", "av/error", infos, CollectionName.SECURITY);
                     } finally {
-                        LOG.info("AntiVirusProduct END");
+                        LoggerFactory.getDefaultLogger().info("AntiVirusProduct END");
                     }
 
                     try {
-                        LOG.info("FirewallProduct START");
+                        LoggerFactory.getDefaultLogger().info("FirewallProduct START");
                         sw = CrossSystem.getFirewallSoftwareInfo();
                         HashMap<String, String> infos = createInfoMap(sw);
                         StatsManager.I().track(100, "secur", "fw", infos, CollectionName.SECURITY);
                     } catch (UnsupportedOperationException e) {
                     } catch (Throwable e) {
-                        LOG.log(e);
+                        LoggerFactory.getDefaultLogger().log(e);
                         HashMap<String, String> infos = new HashMap<String, String>();
                         if (e instanceof SecuritySoftwareException) {
                             infos.put("response", ((SecuritySoftwareException) e).getResponse());
@@ -1182,7 +1182,7 @@ public class SecondLevelLaunch {
                         infos.put("exception", Exceptions.getStackTrace(e));
                         StatsManager.I().track(100, "secur", "fw/error", infos, CollectionName.SECURITY);
                     } finally {
-                        LOG.info("FirewallProduct END");
+                        LoggerFactory.getDefaultLogger().info("FirewallProduct END");
                     }
 
                     switch (CrossSystem.getOS()) {
@@ -1192,14 +1192,14 @@ public class SecondLevelLaunch {
                     case WINDOWS_8:
 
                         try {
-                            LOG.info("AntiSpywareProduct START");
+                            LoggerFactory.getDefaultLogger().info("AntiSpywareProduct START");
                             sw = CrossSystem.getAntiSpySoftwareInfo();
                             HashMap<String, String> infos = createInfoMap(sw);
                             StatsManager.I().track(100, "secur", "as", infos, CollectionName.SECURITY);
                         } catch (UnsupportedOperationException e) {
 
                         } catch (Throwable e) {
-                            LOG.log(e);
+                            LoggerFactory.getDefaultLogger().log(e);
                             HashMap<String, String> infos = new HashMap<String, String>();
 
                             infos.put("error", e.getMessage());
@@ -1210,7 +1210,7 @@ public class SecondLevelLaunch {
                             StatsManager.I().track(100, "secur", "as/error", infos, CollectionName.SECURITY);
 
                         } finally {
-                            LOG.info("AntiSpywareProduct END");
+                            LoggerFactory.getDefaultLogger().info("AntiSpywareProduct END");
                         }
                     }
 
@@ -1259,7 +1259,7 @@ public class SecondLevelLaunch {
                         return (File[]) sun.awt.shell.ShellFolder.get("fileChooserComboBoxFolders");
                     }
                 });
-                LOG.info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t));
+                LoggerFactory.getDefaultLogger().info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t));
             } catch (final Throwable e) {
                 e.printStackTrace();
             }

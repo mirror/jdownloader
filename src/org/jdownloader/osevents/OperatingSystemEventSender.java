@@ -49,7 +49,7 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
                 }
             }.init();
         } catch (final Throwable e) {
-            LogController.GL.log(e);
+             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
     }
 

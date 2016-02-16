@@ -14,6 +14,7 @@ import javax.swing.JFrame;
 
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.JSonStorage;
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -29,11 +30,10 @@ import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class JDownloaderMainFrame extends ExtJFrame {
+    private FrameStatus     latestNormalState;
 
     private LogSource       logger;
     private DelayedRunnable delayedStateSaver;
-
-    protected ExtendedState lastKnownVisibleExtendedState;
 
     public JDownloaderMainFrame(String string, final LogSource logger) {
         super(string);
@@ -48,12 +48,23 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void delayedrun() {
+                // new EDTRunner() {
+                //
+                // @Override
+                // protected void runInEDT() {
                 FrameStatus newState = FrameStatus.create(JDownloaderMainFrame.this, latestFrameStatus);
 
                 if (newState.isLocationSet()) {
                     latestFrameStatus = newState;
-                    // System.out.println("new State " + JSonStorage.toString(latestFrameStatus));
+                    if (newState.getExtendedState() == ExtendedState.NORMAL) {
+                        latestNormalState = newState.clone();
+                        System.out.println("NormalState");
+                    }
+                    System.out.println("new State " + JSonStorage.toString(latestFrameStatus));
                 }
+                // }
+                // };
+
             }
 
         };
@@ -61,17 +72,20 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void componentShown(ComponentEvent e) {
-                ExtendedState ext = ExtendedState.get(JDownloaderMainFrame.this);
-                if (ext != null && ext != ExtendedState.ICONIFIED) {
-
-                    lastKnownVisibleExtendedState = ext;
-                }
+                // System.out.println(e);
+                // ExtendedState ext = ExtendedState.get(JDownloaderMainFrame.this);
+                // if (ext != null && ext != ExtendedState.ICONIFIED) {
+                //
+                // lastKnownVisibleExtendedState = ext;
+                // System.out.println("Last state " + ext);
+                // }
             }
 
             @Override
             public void componentResized(ComponentEvent e) {
 
                 delayedStateSaver.resetAndStart();
+
             }
 
             @Override
@@ -96,6 +110,14 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             }
         });
+    }
+
+    public FrameStatus getLatestNormalState() {
+        return latestNormalState;
+    }
+
+    public void setLatestNormalState(FrameStatus latestNormalState) {
+        this.latestNormalState = latestNormalState;
     }
 
     @Override
@@ -151,9 +173,9 @@ public class JDownloaderMainFrame extends ExtJFrame {
         super.setPreferredSize(preferredSize);
     }
 
-    public ExtendedState getLastKnownVisibleExtendedState() {
-        return lastKnownVisibleExtendedState;
-    }
+    // public ExtendedState getLastKnownVisibleExtendedState() {
+    // return lastKnownVisibleExtendedState;
+    // }
 
     /**
      *

@@ -19,8 +19,6 @@ package org.jdownloader.extensions.antistandby;
 import java.awt.Dialog.ModalityType;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.plugins.AddonPanel;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -36,6 +34,8 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.plugins.AddonPanel;
 
 public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> implements ShutdownVetoListener {
 
@@ -141,7 +141,10 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     protected void initExtension() throws StartException {
-        configPanel = new AntistandbyConfigPanel(this);
+        if (!Application.isHeadless()) {
+
+            configPanel = new AntistandbyConfigPanel(this);
+        }
     }
 
     public Mode getMode() {

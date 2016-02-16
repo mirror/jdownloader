@@ -48,7 +48,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.GlobalPremiumSwitchToggleAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.MyJDownloaderAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.MyJDownloaderStatusAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.OpenDefaultDownloadFolderAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
@@ -139,7 +139,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
 
         mr.add(ReconnectAction.class);
         mr.add(UpdateAction.class);
-        mr.add(MyJDownloaderAction.class);
+
         // if (!Application.isJared(MainToolbarManager.class)) {
         // MenuContainer opt;
         // mr.add(opt = new MenuContainer("Dialog Debug", "menu"));
@@ -148,7 +148,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         // }
         OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
-
+        opt.add(MyJDownloaderStatusAction.class);
         if (!Application.isJared(MainToolBar.class)) {
             opt.add(DoAnyThingForADeveloperAction.class);
         }

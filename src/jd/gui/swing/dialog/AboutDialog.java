@@ -236,10 +236,10 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
                 comp.setToolTipText(sb.toString());
             } catch (final Throwable e1) {
-                LogController.GL.log(e1);
+                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
             }
         } catch (final Throwable e) {
-            LogController.GL.log(e);
+             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
 
         stats.add(new JLabel("RTMP Support:"), "");

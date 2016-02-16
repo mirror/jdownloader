@@ -109,7 +109,7 @@ public class DownloadSpeedManager {
                             try {
                                 Thread.sleep(sleepTime);
                             } catch (final InterruptedException e) {
-                                LogController.GL.log(e);
+                                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                             }
 
                             int newBandwidth = 0;
@@ -229,7 +229,7 @@ public class DownloadSpeedManager {
                             }
                         }
                     } catch (Throwable e) {
-                        LogController.GL.log(e);
+                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                     }
                 }
             };

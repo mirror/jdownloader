@@ -15,7 +15,7 @@ public class FileArchiveFactoryNIO {
         try {
             return J7FileList.findFiles(pattern, directory, true, false);
         } catch (IOException e) {
-            LogController.GL.log(e);
+             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             return new ArrayList<File>();
         }
     }

@@ -151,15 +151,15 @@ import jd.nutils.Screen;
 import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
-    private static final String TITLE_PATTERN_UPDATE = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_TITLE = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_TITLE             = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_SPEED_AVERAGE = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_SPEED_AVERAGE     = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
 
     private static final String TITLE_PATTERN_RUNNING_DOWNLOADS = "\\|([^\\|]*)\\#RUNNING_DOWNLOADS([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_SPEED = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_SPEED             = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
 
     static {
         if (Application.isHeadless()) {
@@ -216,29 +216,29 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private MainFrameClosingHandler closingHandler;
 
-    private DownloadsView downloadView;
+    private DownloadsView           downloadView;
 
-    private Thread initThread = null;
+    private Thread                  initThread = null;
 
-    private LinkGrabberView        linkgrabberView;
-    private LogSource              logger;
-    protected JDownloaderMainFrame mainFrame;
+    private LinkGrabberView         linkgrabberView;
+    private LogSource               logger;
+    protected JDownloaderMainFrame  mainFrame;
 
-    private MainTabbedPane mainTabbedPane;
-    private JDMenuBar      menuBar;
-    private StatusBarImpl  statusBar;
+    private MainTabbedPane          mainTabbedPane;
+    private JDMenuBar               menuBar;
+    private StatusBarImpl           statusBar;
 
-    private MainToolBar toolBar;
+    private MainToolBar             toolBar;
 
-    private final TrayExtension tray;
+    private final TrayExtension     tray;
 
-    private Thread trayIconChecker;
+    private Thread                  trayIconChecker;
 
-    private JPanel waitingPane;
+    private JPanel                  waitingPane;
 
-    private volatile Timer speedInTitleUpdater;
+    private volatile Timer          speedInTitleUpdater;
 
-    private boolean busy;
+    private boolean                 busy;
 
     private JDGui() {
         logger = LogController.getInstance().getLogger("Gui");
@@ -819,10 +819,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         JDGui.this.mainFrame.setSize(new Dimension(800, 600));
                         final Rectangle abounds = JDGui.this.mainFrame.getBounds();
                         JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
-                        LogController.GL.info("Center MainFrame");
+                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Center MainFrame");
                         return true;
                     } catch (final Exception ee) {
-                        LogController.GL.log(ee);
+                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(ee);
                     }
                 }
                 return false;
@@ -1726,14 +1726,32 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                 if (!minimize) {
                     int estate = getMainFrame().getExtendedState();
-                    ExtendedState latest = getMainFrame().getLastKnownVisibleExtendedState();
-                    if (latest != null) {
-                        estate = latest.getId();
-                    }
-                    if (!getMainFrame().isVisible()) {
-                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
+
+                    FrameStatus frameState = getMainFrame().getLatestFrameStatus();
+                    if (frameState != null) {
+
+                        estate = frameState.getExtendedState().getId();
+                        getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
                     }
 
+                    if (!getMainFrame().isVisible()) {
+                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
+
+                    }
+                    if (frameState != null) {
+                        if ((estate & JFrame.NORMAL) != 0) {
+                            // on windows 8 and 10, you can maximize to half screen. this is not a real maximized, but if you toggle the
+                            // window
+                            // visibility in such a state, windows restores the old size.
+                            // this we have to manually set the correct size here
+                            getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
+
+                        }
+                        if ((estate & JFrame.MAXIMIZED_BOTH) != 0) {
+                            // windows sets the location to 0 when the frame has been invisible
+                            getMainFrame().setLocation(frameState.getX(), frameState.getY());
+                        }
+                    }
                     if ((estate & JFrame.ICONIFIED) != 0) {
                         WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
                     } else {

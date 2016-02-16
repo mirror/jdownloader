@@ -199,7 +199,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                         }
                     };
                 } catch (IOException e) {
-                    LogController.GL.log(e);
+                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
                 return null;
             }

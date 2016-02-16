@@ -9,13 +9,13 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
-import jd.gui.swing.jdgui.JDownloaderMainFrame;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.swing.EDTHelper;
+
+import jd.gui.swing.jdgui.JDownloaderMainFrame;
 
 public class FrameStatus implements Storable {
     public static enum ExtendedState {
@@ -116,6 +116,24 @@ public class FrameStatus implements Storable {
 
     public void setExtendedState(ExtendedState extendedState) {
         this.extendedState = extendedState;
+    }
+
+    public FrameStatus clone() {
+        FrameStatus ret = new FrameStatus();
+        ret.active = this.active;
+        ret.createTime = createTime;
+        ret.extendedState = extendedState;
+        ret.focus = focus;
+        ret.height = height;
+        ret.locationSet = locationSet;
+        ret.screenID = screenID;
+        ret.silentShutdown = silentShutdown;
+        ret.visible = visible;
+        ret.width = width;
+        ret.x = x;
+        ret.y = y;
+
+        return ret;
     }
 
     public int getWidth() {
@@ -235,7 +253,7 @@ public class FrameStatus implements Storable {
             jdRectange.height = 30;
             Rectangle inter = jdRectange.intersection(bounds);
 
-            if (inter.width > 50 && inter.height >= 30) {
+            if (inter.width > 50 && inter.height >= 16) {
                 // ok. Titlebar is in screen.
                 isok = true;
 
@@ -308,7 +326,7 @@ public class FrameStatus implements Storable {
                         ret.x = mainFrame.getLocationOnScreen().x;
                         ret.y = mainFrame.getLocationOnScreen().y;
                     } else if (mainFrame instanceof JDownloaderMainFrame) {
-                        FrameStatus fs = ((JDownloaderMainFrame) mainFrame).getLatestFrameStatus();
+                        FrameStatus fs = ((JDownloaderMainFrame) mainFrame).getLatestNormalState();
                         if (fs != null && fs.isVisible()) {
                             ret.x = fs.x;
                             ret.y = fs.y;

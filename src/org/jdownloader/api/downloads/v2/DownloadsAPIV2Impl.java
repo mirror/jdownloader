@@ -6,16 +6,6 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
@@ -34,6 +24,16 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.UrlDisplayType;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
+
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
@@ -41,6 +41,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public DownloadsAPIV2Impl() {
         RemoteAPIController.validateInterfaces(DownloadsAPIV2.class, DownloadsListInterface.class);
         packageControllerUtils = new PackageControllerUtils<FilePackage, DownloadLink>(DownloadController.getInstance());
+
     }
 
     @Override
@@ -335,13 +336,13 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 case ERRROR_FILE_NOT_FOUND:
 
                     label = extractionStatus.getExplanation();
-                    dls.setStatusIconKey(IconKey.ICON_EXTRACTION_TRUE_FAILED);
+                    dls.setStatusIconKey(IconKey.ICON_EXTRACT_ERROR);
                     dls.setStatus(label);
                     return dls;
                 case SUCCESSFUL:
 
                     label = extractionStatus.getExplanation();
-                    dls.setStatusIconKey(IconKey.ICON_EXTRACTION_TRUE);
+                    dls.setStatusIconKey(IconKey.ICON_EXTRACT_OK);
 
                     dls.setStatus(label);
                     return dls;
