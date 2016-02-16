@@ -77,7 +77,6 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
 
     public ExtTooltip createExtTooltip(final Point mousePosition) {
         IconedProcessIndicator comp = new IconedProcessIndicator();
-
         comp.valuePainter = valuePainter;
         comp.nonValuePainter = nonValuePainter;
         comp.activeValuePainter = activeValuePainter;
@@ -88,9 +87,7 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         comp.setPreferredSize(new Dimension(32, 32));
         comp.setValue(getValue());
         TooltipPanel panel = new TooltipPanel("ins 0,wrap 2", "[][grow,fill]", "[]0[grow,fill]");
-
         comp.setOpaque(false);
-
         JLabel lbl = new JLabel(toString());
         lbl.setForeground((LAFOptions.getInstance().getColorForTooltipForeground()));
         JTextArea txt = new JTextArea();
@@ -103,7 +100,6 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         panel.add(txt);
         lbl.setText(getTitle());
         txt.setText(getDescription());
-
         return new PanelToolTip(panel);
     }
 
@@ -133,11 +129,9 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
 
     protected void setActive(boolean newValue) {
         active = newValue;
-
         if (active) {
             this.setValueClipPainter(activeValuePainter);
             this.setNonvalueClipPainter(activeNonValuePainter);
-
         } else {
             this.setValueClipPainter(valuePainter);
             this.setNonvalueClipPainter(nonValuePainter);
@@ -153,13 +147,10 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
 
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-
             ToolTipController.getInstance().hideTooltip();
-
         } else {
             ToolTipController.getInstance().show(this);
         }
-
     }
 
     public void mousePressed(MouseEvent e) {
