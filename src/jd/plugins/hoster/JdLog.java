@@ -16,8 +16,19 @@
 
 package jd.plugins.hoster;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.HTACCESSController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -38,7 +49,7 @@ public class JdLog extends PluginForHost {
 
     private String  dllink     = null;
     private String  uid        = null;
-    private boolean isNewLogin = false; ;
+    private boolean isNewLogin = false;;
 
     @Override
     public String getAGBLink() {
@@ -83,6 +94,36 @@ public class JdLog extends PluginForHost {
         }
         org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicauthInfo[1], basicauthInfo[2]), dllink);
         dl.startDownload();
+        // the following determine is its empty container.
+        final File file = new File(dl.getDownloadable().getFileOutput());
+        if (file.exists()) {
+            final long dlsize = dl.getDownloadable().getDownloadTotalBytes();
+            // limit the check because it will use less memory than placing 100+MiB log to String
+            if (dlsize < 50) {
+                final String out = parseLocalFile(file);
+                if (StringUtils.equals(out, "LogID: " + uid + "\r\n\r\n")) {
+                    // set as offline
+                    downloadLink.setProperty("offlineByRegexConfirmation", true);
+                    // delete method
+                    downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+
+                        @Override
+                        public void interrupt() {
+                        }
+
+                        @Override
+                        public void execute(DownloadSession currentSession) {
+                            final ArrayList<DownloadLink> delete = new ArrayList<DownloadLink>();
+                            delete.add(downloadLink);
+                            DownloadWatchDog.getInstance().delete(delete, null);
+                        }
+                    });
+                    // not set as offline! have to throw exception!!
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+        }
+
     }
 
     private String[] getBasicAuth(final DownloadLink link) throws PluginException {
@@ -92,6 +133,25 @@ public class JdLog extends PluginForHost {
             isNewLogin = true;
         }
         return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
+    }
+
+    private String parseLocalFile(final File file) {
+        final BufferedReader f;
+        final StringBuffer buffer = new StringBuffer();
+        try {
+            f = new BufferedReader(new FileReader(file));
+
+            String line;
+
+            while ((line = f.readLine()) != null) {
+                buffer.append(line + "\r\n");
+            }
+            f.close();
+            return buffer.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
     @Override
