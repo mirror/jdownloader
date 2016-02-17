@@ -2,15 +2,12 @@ package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.AWTKeyStroke;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.LayoutManager;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.EventObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,16 +19,20 @@ import javax.swing.ActionMap;
 import javax.swing.DropMode;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
@@ -61,17 +62,11 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.miginfocom.swing.MigLayout;
-
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
 
     private static final long          serialVersionUID = 8843600834248098174L;
     private HashMap<KeyStroke, Action> shortCutActions;
-    private LogSource                  logger;
+    private final LogSource            logger;
     private static DownloadsTable      INSTANCE         = null;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
@@ -84,12 +79,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         logger = LogController.getInstance().getLogger(DownloadsTable.class.getName());
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-
-        // loaderPanel.setSize(400, 400);
-
-        final LayoutManager orgLayout = getLayout();
-        final Component rendererPane = getComponent(0);
-
         setLayout(new MigLayout("ins 0", "[grow]", "[grow]"));
 
     }
@@ -131,24 +120,12 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-        // showPropertiesMenu(e.getPoint(), obj);
-
         return false;
     }
 
     @Override
     public boolean isSearchEnabled() {
-
         return false;
-    }
-
-    protected boolean onSingleClick(MouseEvent e, final AbstractNode obj) {
-
-        // if (e.isAltDown() || e.isAltGraphDown()) {
-        // showPropertiesMenu(e.getPoint(), obj);
-        // return true;
-        // }
-        return super.onSingleClick(e, obj);
     }
 
     @Override
@@ -170,21 +147,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
         /* split selection into downloadlinks and filepackages */
         return DownloadTableContextMenuFactory.getInstance().create(this, popup, contextObject, selection, column, ev);
-    }
-
-    @Override
-    public boolean editCellAt(int row, int column) {
-
-        boolean ret = super.editCellAt(row, column);
-
-        return ret;
-    }
-
-    @Override
-    public boolean editCellAt(int row, int column, EventObject e) {
-        boolean ret = super.editCellAt(row, column, e);
-
-        return ret;
     }
 
     @Override
@@ -270,7 +232,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
         boolean actionNotified = false;
@@ -469,12 +430,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     public static DownloadsTable getInstance() {
         return INSTANCE;
-    }
-
-    private Component leftLabel(String name) {
-        JLabel ret = new JLabel(name);
-        ret.setHorizontalAlignment(SwingConstants.LEFT);
-        return ret;
     }
 
 }
