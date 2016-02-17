@@ -732,6 +732,7 @@ ManagerFrame_layoutPanel_info=Izmijeni Čvor Menia
 ManagerFrame_layoutPanel_menustructure_=Izmijeni Strukturu Menia (Koristiti Povuci i Pusti)
 ManagerFrame_layoutPanel_resettodefault=Resetuj na Podrazumijevano
 ManagerFrame_layoutPanel_resettodefault_parametered=Resetovati na Podrazumijevano: %s1
+MenuBar_loading=Učitavanje menia i alatne trake
 MenuEditors_boxwidth_max=Maksimalna širina
 MenuEditors_boxwidth_min=Minimalna širina
 MenuEditors_boxwidth_pref=Preferirana širina
