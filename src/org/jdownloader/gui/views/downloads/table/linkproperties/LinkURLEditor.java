@@ -4,17 +4,25 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.TaskQueue;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.BasicJDTable;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
@@ -24,17 +32,10 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.BasicJDTable;
 
 public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends MigPanel {
 
-    private SelectionInfo<PackageType, ChildrenType> si;
+    private final SelectionInfo<PackageType, ChildrenType> si;
 
     public LinkURLEditor(SelectionInfo<PackageType, ChildrenType> selectionInfo) {
         super("ins 2,wrap 2", "[grow,fill][]", "[][grow,fill]");
@@ -123,22 +124,28 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
                 return popup;
             }
 
-            protected boolean onShortcutCopy(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt) {
-                StringBuilder sb = new StringBuilder();
-                List<AbstractNode> links = new ArrayList<AbstractNode>();
-                if (selectedObjects.size() == 0) {
-                    links.addAll(si.getChildren());
-                } else {
-                    links.addAll(selectedObjects);
+            protected boolean onShortcutCopy(final List<AbstractNode> selectedObjects, final KeyEvent evt) {
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                }
-                for (String url : LinkTreeUtils.getURLs(links, false)) {
-                    if (sb.length() > 0) {
-                        sb.append("\r\n");
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        final Set<String> urls;
+                        if (selectedObjects.size() == 0) {
+                            urls = LinkTreeUtils.getURLs(si, false);
+                        } else {
+                            urls = LinkTreeUtils.getURLs(new SelectionInfo<PackageType, ChildrenType>(null, selectedObjects), false);
+                        }
+                        final StringBuilder sb = new StringBuilder();
+                        for (final String url : urls) {
+                            if (sb.length() > 0) {
+                                sb.append("\r\n");
+                            }
+                            sb.append(url);
+                        }
+                        ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
+                        return null;
                     }
-                    sb.append(url);
-                }
-                ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
+                });
                 return true;
             }
         };

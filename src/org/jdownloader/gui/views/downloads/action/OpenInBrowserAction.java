@@ -1,8 +1,11 @@
 package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -16,9 +19,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
-
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class OpenInBrowserAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
@@ -60,10 +60,9 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
         }
         final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
         if (hasSelection(selection)) {
-            final List<DownloadLink> links = selection.getChildren();
             new Thread("OpenInBrowserAction") {
                 public void run() {
-                    final HashSet<String> urls = LinkTreeUtils.getURLs(links, true);
+                    final Set<String> urls = LinkTreeUtils.getURLs(selection, true);
                     if (urls.size() < 5) {
                         for (String url : urls) {
                             CrossSystem.openURLOrShowMessage(url);

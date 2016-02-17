@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -199,14 +200,14 @@ public class LinkTreeUtils {
         }
     }
 
-    public static HashSet<String> getURLs(List<? extends AbstractNode> links, final boolean openInBrowser) {
+    public static Set<String> getURLs(SelectionInfo<? extends AbstractPackageNode, ? extends AbstractPackageChildrenNode> selectionInfo, final boolean openInBrowser) {
         final LinkedHashSet<String> urls = new LinkedHashSet<String>();
-        if (links == null || links.size() == 0) {
+        if (selectionInfo == null || selectionInfo.isEmpty()) {
             return urls;
         }
         String rawURL = null;
-        final List<AbstractPackageChildrenNode<?>> actualChildren = new SelectionInfo(null, links).getChildren();
-        for (AbstractPackageChildrenNode<?> node : actualChildren) {
+        final List<? extends AbstractPackageChildrenNode> children = selectionInfo.getChildren();
+        for (final AbstractPackageChildrenNode<?> node : children) {
             final DownloadLink link;
             if (node instanceof DownloadLink) {
                 link = (DownloadLink) node;
@@ -229,13 +230,14 @@ public class LinkTreeUtils {
         if (openInBrowser) {
             // should always open browserURL, otherwise you get users going to final links returned from decrypters into directhttp or
             // dedicated hoster plugins.
-        } else if (actualChildren.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+        } else if (children.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
             // for 'copy urls' and 'open in browser', when youtube type of prefixes are pointless within this context! Only open rawURL when
             // URL are actually traditional browser URL structure.
-        } else if (actualChildren.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+        } else if (children.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
             urls.clear();
             urls.add(rawURL);
         }
         return urls;
     }
+
 }

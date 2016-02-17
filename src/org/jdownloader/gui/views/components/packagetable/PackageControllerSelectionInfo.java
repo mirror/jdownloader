@@ -13,23 +13,22 @@ import org.jdownloader.gui.views.SelectionInfo;
 
 public class PackageControllerSelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionInfo<PackageType, ChildrenType> {
 
-    final private PackageController<PackageType, ChildrenType> packageController;
-    private volatile long                                      backendVersion = -1;
+    private volatile long backendVersion = -1;
 
     public long getBackendVersion() {
         return backendVersion;
     }
 
     public PackageControllerSelectionInfo(PackageController<PackageType, ChildrenType> packageController) {
-        super();
-        this.packageController = packageController;
+        super(packageController);
         aggregate(packageController.getQueue());
     }
 
     @Override
     protected void aggregate() {
-        backendVersion = packageController.getBackendChanged();
-        packageController.visitNodes(new AbstractNodeVisitor<ChildrenType, PackageType>() {
+        final PackageController<PackageType, ChildrenType> controller = getController();
+        backendVersion = controller.getBackendChanged();
+        controller.visitNodes(new AbstractNodeVisitor<ChildrenType, PackageType>() {
 
             @Override
             public Boolean visitPackageNode(final PackageType currentPackage) {

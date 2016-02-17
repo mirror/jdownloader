@@ -11,10 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
@@ -23,9 +26,6 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.downloads.table.DownloadsTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
@@ -60,16 +60,22 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         public boolean isExpanded();
     };
 
-    protected final List<AbstractNode> rawSelection;
-    private final AbstractNode         contextObject;
+    protected final List<AbstractNode>                           rawSelection;
+    private final AbstractNode                                   contextObject;
+    protected final PackageController<PackageType, ChildrenType> controller;
+
+    public PackageController<PackageType, ChildrenType> getController() {
+        return controller;
+    }
 
     public SelectionInfo(final AbstractNode contextObject) {
         this(contextObject, new ArrayList<AbstractNode>(0));
     }
 
-    protected SelectionInfo() {
+    protected SelectionInfo(PackageController<PackageType, ChildrenType> controller) {
         this.contextObject = null;
         this.rawSelection = new ArrayList<AbstractNode>();
+        this.controller = controller;
     }
 
     @SuppressWarnings("unchecked")
@@ -86,27 +92,28 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         } else {
             rawSelection = (List<AbstractNode>) selection;
         }
-        final PackageControllerTable<PackageType, ChildrenType> table;
+        final PackageController<?, ?> controller;
         if (contextObject != null) {
             if (contextObject instanceof DownloadLink || contextObject instanceof FilePackage) {
-                table = (PackageControllerTable<PackageType, ChildrenType>) DownloadsTable.getInstance();
+                controller = DownloadController.getInstance();
             } else {
-                table = (PackageControllerTable<PackageType, ChildrenType>) LinkGrabberTable.getInstance();
+                controller = LinkCollector.getInstance();
             }
         } else if (rawSelection != null && rawSelection.size() > 0 && rawSelection.get(0) != null) {
             if (rawSelection.get(0) instanceof DownloadLink || rawSelection.get(0) instanceof FilePackage) {
-                table = (PackageControllerTable<PackageType, ChildrenType>) DownloadsTable.getInstance();
+                controller = DownloadController.getInstance();
             } else {
-                table = (PackageControllerTable<PackageType, ChildrenType>) LinkGrabberTable.getInstance();
+                controller = LinkCollector.getInstance();
             }
         } else {
-            table = null;
+            controller = null;
         }
-        if (table != null) {
-            aggregate(table.getController().getQueue());
+        if (controller != null) {
+            aggregate(controller.getQueue());
         } else {
             aggregate(null);
         }
+        this.controller = (PackageController<PackageType, ChildrenType>) controller;
     }
 
     protected void aggregate(Queue queue) {

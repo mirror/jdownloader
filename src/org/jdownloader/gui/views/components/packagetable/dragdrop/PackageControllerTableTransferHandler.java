@@ -4,6 +4,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JTable;
@@ -16,7 +17,6 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -45,22 +45,11 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
          * get all selected packages and children and create a transferable if possible
          */
         final SelectionInfo<PackageType, ChildrenType> selectionInfo = table.getSelectionInfo(true, true);
-        Transferable ret = null;
         if (selectionInfo.getPackageViews().size() > 0) {
-            final ArrayList<PackageType> packages = new ArrayList<PackageType>(selectionInfo.getPackageViews().size());
-            final ArrayList<ChildrenType> children = new ArrayList<ChildrenType>(selectionInfo.getPackageViews().size());
-            for (PackageView<PackageType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
-                if (packageView.isPackageSelected()) {
-                    packages.add(packageView.getPackage());
-                }
-                if (packageView.isExpanded()) {
-                    children.addAll(packageView.getSelectedChildren());
-                }
-            }
-            PackageControllerTableTransferable<PackageType, ChildrenType> ret2 = new PackageControllerTableTransferable<PackageType, ChildrenType>(packages, children, table);
-            ret = customizeTransferable(ret2);
+            final PackageControllerTableTransferable<PackageType, ChildrenType> ret2 = new PackageControllerTableTransferable<PackageType, ChildrenType>(selectionInfo, table);
+            return customizeTransferable(ret2);
         }
-        return ret;
+        return null;
     }
 
     /* here you can customize the Transferable or create new one if needed */
@@ -68,7 +57,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         return ret2;
     }
 
-    protected boolean allowImport(java.util.List<PackageType> packages, java.util.List<ChildrenType> links) {
+    protected boolean allowImport(SelectionInfo<PackageType, ChildrenType> selectionInfo) {
         return true;
     }
 
@@ -85,16 +74,16 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
     }
 
     @SuppressWarnings("unchecked")
-    protected PackageControllerTableTransferableContent<PackageType, ChildrenType> getContent(TransferSupport support) {
+    protected SelectionInfo<PackageType, ChildrenType> getSelectionInfo(TransferSupport support) {
         if (!support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
             return null;
         }
         try {
-            PackageControllerTableTransferableContent<?, ?> content = (PackageControllerTableTransferableContent<?, ?>) support.getTransferable().getTransferData(PackageControllerTableTransferable.FLAVOR);
-            if (content.table != table) {
+            final SelectionInfo<?, ?> content = (SelectionInfo<?, ?>) support.getTransferable().getTransferData(PackageControllerTableTransferable.FLAVOR);
+            if (content.getController() != table.getController()) {
                 return null;
             }
-            return (PackageControllerTableTransferableContent<PackageType, ChildrenType>) content;
+            return (SelectionInfo<PackageType, ChildrenType>) content;
         } catch (final Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             return null;
@@ -105,16 +94,18 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         if (!table.isOriginalOrder() || table.getModel().isFilteredView()) {
             return false;
         }
-        PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
-        if (content == null) {
+        final SelectionInfo<PackageType, ChildrenType> selectionInfo = getSelectionInfo(support);
+        if (selectionInfo == null || selectionInfo.isEmpty()) {
             return false;
         }
-        if (!allowImport(content.packages, content.links)) {
+        if (!allowImport(selectionInfo)) {
             return false;
         }
         Object onElement = null;
-        boolean linksAvailable = content.links != null && content.links.size() > 0;
-        boolean packagesAvailable = content.packages != null && content.packages.size() > 0;
+        List<ChildrenType> links = getSelectedChildren(selectionInfo);
+        List<PackageType> packages = getSelectedPackages(selectionInfo);
+        boolean linksAvailable = links != null && links.size() > 0;
+        boolean packagesAvailable = packages != null && packages.size() > 0;
         if (support.isDrop()) {
             /* dragdrop */
             JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
@@ -161,8 +152,6 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                         } else {
                             fp = null;
                         }
-                        java.util.List<PackageType> packages = content.getPackages();
-                        ;
                         /*
                          * we do not allow drop on items that are part of our transferable
                          */
@@ -189,7 +178,6 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             if (packagesAvailable) {
                 if (onElement instanceof AbstractPackageNode) {
                     /* only drop on packages is allowed */
-                    java.util.List<PackageType> packages = content.getPackages();
                     /*
                      * we do not allow drop on items that are part of our transferable
                      */
@@ -212,7 +200,6 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                      */
                     return false;
                 } else if (onElement instanceof AbstractPackageNode) {
-                    java.util.List<ChildrenType> links = content.getLinks();
                     /*
                      * children are not allowed to drop on their own packages
                      */
@@ -240,17 +227,38 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         return ret;
     }
 
+    private List<ChildrenType> getSelectedChildren(SelectionInfo<PackageType, ChildrenType> selectionInfo) {
+        final ArrayList<ChildrenType> ret = new ArrayList<ChildrenType>();
+        for (final PackageView<PackageType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
+            if (packageView.isExpanded()) {
+                ret.addAll(packageView.getSelectedChildren());
+            }
+        }
+        return ret;
+    }
+
+    private List<PackageType> getSelectedPackages(SelectionInfo<PackageType, ChildrenType> selectionInfo) {
+        final List<PackageView<PackageType, ChildrenType>> packageViews = selectionInfo.getPackageViews();
+        final ArrayList<PackageType> ret = new ArrayList<PackageType>(packageViews.size());
+        for (final PackageView<PackageType, ChildrenType> packageView : packageViews) {
+            if (packageView.isPackageSelected()) {
+                ret.add(packageView.getPackage());
+            }
+        }
+        return ret;
+    }
+
     protected boolean importPackageControllerTransferable(TransferSupport support) {
         if (canImportPackageControllerTransferable(support) == false) {
             return false;
         }
         QueuePriority prio = org.appwork.utils.event.queue.Queue.QueuePriority.HIGH;
-        PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
+        final SelectionInfo<PackageType, ChildrenType> selectionInfo = getSelectionInfo(support);
         java.util.List<ChildrenType> tmpLinks = null;
         java.util.List<PackageType> tmpPackages = null;
-        if (content != null) {
-            tmpLinks = content.links;
-            tmpPackages = content.packages;
+        if (selectionInfo != null) {
+            tmpLinks = getSelectedChildren(selectionInfo);
+            tmpPackages = getSelectedPackages(selectionInfo);
             if (tmpLinks != null && tmpLinks.size() == 0) {
                 tmpLinks = null;
             }
@@ -357,7 +365,6 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                 });
             }
         }
-        content.exportDone();
         return true;
 
     }

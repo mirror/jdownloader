@@ -36,7 +36,7 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
     }
 
     protected PackageControllerTableModelSelectionOnlySelectionInfo(final AbstractNode contextObject, final PackageControllerTableModel<PackageType, ChildrenType> tableModel) {
-        super();
+        super(tableModel.getController());
         this.rawContext = contextObject;
         this.tableModel = tableModel;
         this.tableModelData = tableModel.getTableData();
@@ -44,7 +44,7 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
     }
 
     protected PackageControllerTableModelSelectionOnlySelectionInfo(final AbstractNode contextObject, PackageControllerTableModelSelectionOnlySelectionInfo<PackageType, ChildrenType> selectionInfo) {
-        super();
+        super(selectionInfo.getController());
         this.rawContext = contextObject;
         this.tableModel = selectionInfo.tableModel;
         this.tableModelData = selectionInfo.tableModelData;
