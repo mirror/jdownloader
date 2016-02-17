@@ -1,12 +1,80 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?><!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  --><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" enable-background="new 0 0 48 48" height="48px" id="????????_1" preserveAspectRatio="xMidYMid meet" style="fill:#000000" version="1.1" viewBox="0 0 48 48" width="48px" x="0px" xml:space="preserve" y="0px" zoomAndPan="magnify">
-<g>
-	<polygon fill="#FFC107" points="22,17.992 33.081,6.919 31.134,4.975 20.052,16.048  "/>
-	<polygon fill="#FFC107" points="28.918,24.906 39.999,13.833 38.086,11.923 27.004,22.996  "/>
-</g>
-<path d="M15.503,41.978c-1.325,0-2.254-0.11-2.368-0.125c-3.05-0.673-4.725-1.865-5.072-3.562  c-0.625-3.057,3.556-6.153,4.034-6.496l1.166,1.625c-1.182,0.851-3.53,3.062-3.24,4.472c0.17,0.828,1.396,1.536,3.453,1.992l0,0  c0.04,0,7.589,0.872,10.27-2.7c3.209-4.274,12.736-4.206,15.867-4.186L40.024,33v2l-0.426-0.002  c-9.615-0.06-13.065,1.805-14.253,3.387C23.033,41.466,18.354,41.978,15.503,41.978z" fill="#CFD8DC"/>
-<polygon fill="#90A4AE" points="18.442,13.229 13.883,17.784 14.502,24.79 20.145,30.47 27.181,31.073 31.74,26.518 "/>
-<g>
-	<polygon fill="#546E7A" points="20.145,30.47 14.502,24.79 10.065,30.456 14.498,34.886 20.146,30.47  "/>
-	<polygon fill="#546E7A" points="36.809,24.404 32.704,28.507 16.451,12.265 20.555,8.164  "/>
-</g>
-</svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   contentScriptType="application/ecmascript"
+   contentStyleType="text/css"
+   enable-background="new 0 0 48 48"
+   height="37"
+   id="????????_1"
+   preserveAspectRatio="xMidYMid meet"
+   style="fill:#000000"
+   version="1.1"
+   viewBox="0 0 37.000001 37"
+   width="37"
+   x="0px"
+   xml:space="preserve"
+   y="0px"
+   zoomAndPan="magnify"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="plugin.svg"><metadata
+     id="metadata23"><rdf:RDF><cc:Work
+         rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+     id="defs21" /><sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1200"
+     inkscape:window-height="1857"
+     id="namedview19"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="4.9166667"
+     inkscape:cx="16.000527"
+     inkscape:cy="17.978"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="????????_1" /><g
+     id="g4151"
+     transform="translate(2.4877365,0.0014982)"><g
+       transform="translate(-7.9994729,-4.9779984)"
+       id="g3"><polygon
+         style="fill:#ffc107"
+         id="polygon5"
+         points="20.052,16.048 22,17.992 33.081,6.919 31.134,4.975 " /><polygon
+         style="fill:#ffc107"
+         id="polygon7"
+         points="27.004,22.996 28.918,24.906 39.999,13.833 38.086,11.923 " /></g><path
+       style="fill:#cfd8dc"
+       inkscape:connector-curvature="0"
+       id="path9"
+       d="m 7.5035271,37.000002 c -1.325,0 -2.254,-0.11 -2.368,-0.125 -3.05,-0.673 -4.72499999,-1.865 -5.07199999,-3.562 -0.625,-3.057 3.55599999,-6.153 4.03399999,-6.496 l 1.166,1.625 c -1.182,0.851 -3.53,3.062 -3.24,4.472 0.17,0.828 1.396,1.536 3.453,1.992 l 0,0 c 0.04,0 7.5889999,0.872 10.2699999,-2.7 3.209,-4.274 12.736,-4.206 15.867,-4.186 l 0.411,0.002 0,2 -0.426,-0.002 c -9.615,-0.06 -13.065,1.805 -14.253,3.387 -2.312,3.081 -6.991,3.593 -9.8419999,3.593 z" /><polygon
+       transform="translate(-7.9994729,-4.9779984)"
+       style="fill:#90a4ae"
+       id="polygon11"
+       points="31.74,26.518 18.442,13.229 13.883,17.784 14.502,24.79 20.145,30.47 27.181,31.073 " /><g
+       transform="translate(-7.9994729,-4.9779984)"
+       id="g13"><polygon
+         style="fill:#546e7a"
+         id="polygon15"
+         points="14.502,24.79 10.065,30.456 14.498,34.886 20.146,30.47 20.145,30.47 " /><polygon
+         style="fill:#546e7a"
+         id="polygon17"
+         points="20.555,8.164 36.809,24.404 32.704,28.507 16.451,12.265 " /></g></g></svg>

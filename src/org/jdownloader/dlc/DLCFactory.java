@@ -12,18 +12,6 @@ import javax.swing.JComponent;
 import javax.swing.filechooser.FileFilter;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import jd.config.SubConfiguration;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.UserIO;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
-
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -45,6 +33,18 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
+
+import jd.config.SubConfiguration;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.UserIO;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
 
 public class DLCFactory extends D {
 
@@ -195,7 +195,7 @@ public class DLCFactory extends D {
                     FileCreationManager.getInstance().delete(file, null);
                 }
                 IO.writeStringToFile(file, cipher);
-                if (new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DLCFactory_writeDLC_success_ok(), _GUI.T.DLCFactory_createDLC_created_(file.getAbsolutePath()), NewTheme.I().getIcon(IconKey.ICON_DLC, 32), _GUI.T.DLCFactory_writeDLC_showpath(), _GUI.T.lit_close()) {
+                if (new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DLCFactory_writeDLC_success_ok(), _GUI.T.DLCFactory_createDLC_created_(file.getAbsolutePath()), NewTheme.I().getIcon(IconKey.ICON_LOGO_DLC, 32), _GUI.T.DLCFactory_writeDLC_showpath(), _GUI.T.lit_close()) {
                     public String getDontShowAgainKey() {
                         return "createDLC";
                     };

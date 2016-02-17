@@ -1,16 +1,14 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?><!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  --><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" enable-background="new 0 0 48 48" height="48px" id="????????_1" preserveAspectRatio="xMidYMid meet" style="fill:#000000" version="1.1" viewBox="0 0 48 48" width="48px" x="0px" xml:space="preserve" y="0px" zoomAndPan="magnify">
+<?xml version="1.0" encoding="utf-8" standalone="no"?><!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  --><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" enable-background="new 0 0 48 48" height="48px" id="????????_1" preserveAspectRatio="xMidYMid meet" style="fill:#000000;fill-opacity:0.6862745" version="1.1" viewBox="0 0 48 48" width="48px" x="0px" xml:space="preserve" y="0px" zoomAndPan="magnify">
 <g>
-	
-		<rect fill="#546E7A" height="4.001" transform="matrix(0.7071 0.7071 -0.7071 0.7071 22.9366 -12.5061)" width="20" x="16.565" y="19.434"/>
-	
-		<rect fill="#546E7A" height="4" transform="matrix(0.7071 0.7071 -0.7071 0.7071 24.6305 -8.4165)" width="20" x="12.475" y="23.525"/>
+	<rect fill="#B0BEC5" height="2" width="40" x="4" y="13"/>
+	<rect fill="#B0BEC5" height="2" width="39" x="4" y="33"/>
 </g>
 <g>
-	<polygon fill="#90A4AE" points="33.637,25.678 38,21.435 38,16 32,10 26.564,10 22.322,14.364  "/>
-	
-		<rect fill="#90A4AE" height="8.021" transform="matrix(0.707 0.7072 -0.7072 0.707 18.3104 -23.6945)" width="4" x="35.75" y="6.24"/>
-	<polygon fill="#90A4AE" points="26.718,32.596 22.475,36.96 17.04,36.96 11.04,30.96 11.04,25.524 15.404,21.282  "/>
-	
-		<rect fill="#90A4AE" height="10.607" transform="matrix(0.707 0.7072 -0.7072 0.707 29.3227 2.8979)" width="4" x="9.164" y="31.532"/>
+	<circle cx="35.771" cy="14" fill="#00ACC1" r="4"/>
+	<circle cx="23.771" cy="14" fill="#00ACC1" r="4"/>
+	<circle cx="11.771" cy="14" fill="#00ACC1" r="4"/>
+	<circle cx="12" cy="34" fill="#00ACC1" r="4"/>
+	<circle cx="24" cy="34" fill="#00ACC1" r="4"/>
+	<circle cx="36" cy="34" fill="#00ACC1" r="4"/>
 </g>
 </svg>
