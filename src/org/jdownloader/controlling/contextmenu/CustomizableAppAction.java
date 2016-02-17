@@ -148,12 +148,16 @@ public abstract class CustomizableAppAction extends AppAction {
 
     @Override
     public BasicAction setAccelerator(KeyStroke stroke) {
+
         if (menuItemData != null) {
             if (StringUtils.isNotEmpty(menuItemData.getShortcut())) {
                 stroke = KeyStroke.getKeyStroke(menuItemData.getShortcut());
             }
         }
-
+        if (stroke == null) {
+            // else we would revert keystrokes set in the action constructor
+            return this;
+        }
         return super.setAccelerator(stroke);
     }
 
@@ -244,6 +248,7 @@ public abstract class CustomizableAppAction extends AppAction {
 
                 setName(getName());
                 setIconKey(getIconKey());
+
                 setAccelerator(null);
 
             }

@@ -43,6 +43,7 @@ import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.ActionData;
+import org.jdownloader.controlling.contextmenu.CustomSettingsPanelInterface;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
@@ -429,7 +430,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         updateHeaderLabel(mid);
         customPanel.removeAll();
 
-        CustomizableAppAction action;
+        CustomizableAppAction action = null;
         try {
             if (mid.getActionData() != null && mid.getActionData()._isValidDataForCreatingAnAction() && !(mid instanceof MenuLink)) {
                 if (shortcutLabel != null) {
@@ -513,8 +514,13 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     shortCutReset.setVisible(false);
                 }
             }
-            if (mid instanceof MenuLink) {
-                JComponent panel = ((MenuLink) mid).createSettingsPanel();
+            if (mid instanceof CustomSettingsPanelInterface) {
+                JComponent panel = ((CustomSettingsPanelInterface) mid).createSettingsPanel();
+                if (panel != null) {
+                    customPanel.add(panel, "pushx,growx");
+                }
+            } else if (action != null && action instanceof CustomSettingsPanelInterface) {
+                JComponent panel = ((CustomSettingsPanelInterface) action).createSettingsPanel();
                 if (panel != null) {
                     customPanel.add(panel, "pushx,growx");
                 }
