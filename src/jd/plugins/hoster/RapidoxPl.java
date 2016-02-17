@@ -46,19 +46,20 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class RapidoxPl extends PluginForHost {
 
-    private static final String                            DOMAIN                       = "http://rapidox.pl/";
-    private static final String                            NICE_HOST                    = "rapidox.pl";
-    private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
+    private final String                                   DOMAIN                       = "http://rapidox.pl/";
+    private final String                                   NICE_HOST                    = "rapidox.pl";
+    private final String                                   NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private final String                                   NORESUME                     = NICE_HOSTproperty + "NORESUME";
 
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean                                  ACCOUNT_PREMIUM_RESUME       = true;
+    private final int                                      ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private final int                                      ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final int                                      ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     /* How long do we want to wait until the file is on their servers so we can download it? */
     private int                                            maxreloads                   = 200;
     private int                                            wait_between_reload          = 3;
-    private static final String                            default_UA                   = "JDownloader";
+    private final String                                   default_UA                   = "JDownloader";
 
     private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
@@ -274,6 +275,7 @@ public class RapidoxPl extends PluginForHost {
          */
         if (traffic_max.equals("0MB") || traffic_available.indexOf("-") == 0) {
             account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) account");
             /* Free accounts have no traffic - set this so they will not be used (accidently) but still accept them. */
             ai.setTrafficLeft(0);

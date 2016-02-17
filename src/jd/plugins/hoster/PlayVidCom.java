@@ -231,6 +231,7 @@ public class PlayVidCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -286,7 +287,7 @@ public class PlayVidCom extends PluginForHost {
     }
 
     public static String getQuality(final String quality, final String videosource) {
-        return new Regex(videosource, "video_vars\\[video_urls\\]\\[" + quality + "\\]= ?(http://[^<>\"]*?)\\&").getMatch(0);
+        return new Regex(videosource, "video_vars\\[video_urls\\]\\[" + quality + "\\]= ?(https?://[^<>\"]*?)\\&").getMatch(0);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
