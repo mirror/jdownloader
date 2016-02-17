@@ -23,10 +23,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +37,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -99,8 +100,8 @@ public class PremiumaxNet extends antiDDoSForHost {
     private static final String                                       NICE_HOST          = "premiumax.net";
     private static final String                                       NICE_HOSTproperty  = "premiumaxnet";
 
-    private Account      currAcc          = null;
-    private DownloadLink currDownloadLink = null;
+    private Account                                                   currAcc            = null;
+    private DownloadLink                                              currDownloadLink   = null;
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -551,5 +552,10 @@ public class PremiumaxNet extends antiDDoSForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_MultihosterScript;
     }
 }
