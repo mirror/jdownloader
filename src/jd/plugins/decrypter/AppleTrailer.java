@@ -20,8 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-
-import org.appwork.utils.formatter.SizeFormatter;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,8 +36,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 /**
  * @author raztoki
@@ -53,10 +58,9 @@ public class AppleTrailer extends PluginForDecrypt {
     private boolean                       itunes         = false;
     private boolean                       poster         = false;
     private boolean                       tryposter      = false;
-    private static boolean                loaded         = false;
     private String                        parameter      = null;
     private String                        title          = null;
-    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();;
+    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(); ;
     private final ArrayList<DownloadLink> SD             = new ArrayList<DownloadLink>();
     private final ArrayList<DownloadLink> HD             = new ArrayList<DownloadLink>();
     private final HashSet<String>         dupe           = new HashSet<String>();
@@ -70,13 +74,7 @@ public class AppleTrailer extends PluginForDecrypt {
         // cleanup required
         parameter = param.toString().replaceAll("://(\\w+\\.)?apple", "://trailers.apple");
 
-        // prevent agent detection, mainly due to the fail over method to the poster retry method..
-        if (!loaded) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            loaded = true;
-        }
-        br1.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        br1.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
 
         // make sure they don't have any stupid redirects here
         br1.setFollowRedirects(true);
@@ -100,12 +98,18 @@ public class AppleTrailer extends PluginForDecrypt {
             }
         }
 
-        br2 = br1.cloneBrowser();
-
-        if (itunes) {
-            processItunes();
-        } else {
-            processNormal();
+        final String filmID = br1.getRegex("var\\s*FilmId\\s*=\\s*'(\\d+)'").getMatch(0);
+        if (filmID != null) {
+            br2 = br1.cloneBrowser();
+            processFeed(filmID);
+        }
+        if (decryptedLinks.size() == 0) {
+            br2 = br1.cloneBrowser();
+            if (itunes) {
+                processItunes();
+            } else {
+                processNormal();
+            }
         }
         // poster checks required!
         if (tryposter) {
@@ -197,13 +201,61 @@ public class AppleTrailer extends PluginForDecrypt {
             }
         }
 
-        if (title != null) {
-            FilePackage fp = FilePackage.getInstance();
+        if (StringUtils.isNotEmpty(title)) {
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(title.trim());
             fp.addLinks(decryptedLinks);
         }
 
         return decryptedLinks;
+    }
+
+    private void processFeed(String filmID) throws Exception {
+        br2.getPage("http://trailers.apple.com/trailers/feeds/data/" + filmID + ".json");
+        final LinkedHashMap<String, Object> json;
+        try {
+            if (br2.containsHTML("404 - Page Not Found")) {
+                return;
+            }
+            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br2.toString());
+        } catch (Exception e) {
+            return;
+        }
+        final Map<String, Object> page = (Map<String, Object>) json.get("page");
+        if (page != null) {
+            title = (String) page.get("movie_title");
+            final List<Map<String, Object>> clips = (List<Map<String, Object>>) json.get("clips");
+            for (Map<String, Object> clip : clips) {
+                final String clipTitle = (String) clip.get("title");
+                final String[] sizes = new Regex(clip.toString(), "src=((http://.*?apple[^<>]*?|/[^<>]*?)_h?\\d+p\\.mov)").getColumn(0);
+                if (sizes != null) {
+                    for (final String size : sizes) {
+                        /* correct url */
+                        String url = size.replaceFirst("movies\\.", "www.");
+                        if (dupe.add(url) == false) {
+                            continue;
+                        }
+                        /* get format */
+                        String format = new Regex(url, "_h?(\\d+)p").getMatch(0);
+                        /* get filename */
+                        String fname = title + "-" + clipTitle + " (" + format + "p_HD)" + url.substring(url.lastIndexOf("."));
+                        if (fname == null || format == null) {
+                            continue;
+                        }
+                        /* correct url if its relative */
+                        if (!url.startsWith("http")) {
+                            url = "http://trailers.apple.com" + url;
+                        }
+                        final DownloadLink dlLink = createDownloadlink(url.replace(".apple.com", ".appledecrypted.com"));
+                        dlLink.setLinkID(getHost() + "://" + filmID + "/" + Hash.getMD5(clipTitle) + "/" + format);
+                        dlLink.setFinalFileName(fname);
+                        dlLink.setProperty("Referer", br1.getURL());
+                        dlLink.setAvailable(true);
+                        decryptedLinks.add(dlLink);
+                    }
+                }
+            }
+        }
     }
 
     private Browser prepAjax(Browser prepBr) {
