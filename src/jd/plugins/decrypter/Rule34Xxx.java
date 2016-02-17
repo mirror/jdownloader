@@ -18,11 +18,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,12 +31,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
 /**
- *
+ * 
  * @author raztoki
- *
+ * 
  */
-@DecrypterPlugin(revision = "$Revision: 32224 $", interfaceVersion = 3, names = { "rule34.xxx" }, urls = { "http://(www\\.)?rule34\\.xxx/index\\.php\\?page=post&s=(view&id=\\d+|list&tags=\\w+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 32224 $", interfaceVersion = 3, names = { "rule34.xxx" }, urls = { "http://(www\\.)?rule34\\.xxx/index\\.php\\?page=post&s=(view&id=\\d+|list&tags=.+)" }, flags = { 0 })
 public class Rule34Xxx extends PluginForDecrypt {
 
     private final String prefixLinkID = getHost().replaceAll("[\\.\\-]+", "") + "://";
@@ -48,7 +49,7 @@ public class Rule34Xxx extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = Encoding.htmlDecode(param.toString());
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">No Images Found<")) {
