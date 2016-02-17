@@ -17,8 +17,8 @@ import javax.swing.JToolBar;
 import org.jdownloader.gui.translate._GUI;
 
 public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
-    public static final String ALICE_BLUE_APPROX             = "ffF5FCFF";
-    public static final String ALPHA_CC_TROPICAL_BLUE_APPROX = "ccCAE8FA";
+    public static final String ALICE_BLUE_APPROX                                 = "ffF5FCFF";
+    public static final String ALPHA_CC_TROPICAL_BLUE_APPROX                     = "ccCAE8FA";
 
     public static final String BLACK                                             = "FF000000";
     public static final String DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
@@ -343,11 +343,6 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     @Override
     public int getLinkTableHorizontalRowLineWeight() {
         return 0;
-    }
-
-    @Override
-    public String getMenuBackgroundPainterClass() {
-        return DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER;
     }
 
     @Override
