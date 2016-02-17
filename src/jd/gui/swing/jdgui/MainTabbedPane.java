@@ -23,7 +23,12 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -38,6 +43,7 @@ import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -64,7 +70,7 @@ import jd.gui.swing.jdgui.views.ClosableView;
 
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
-    private static final long serialVersionUID = -1531827591735215594L;
+    private static final long     serialVersionUID               = -1531827591735215594L;
 
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
@@ -77,12 +83,14 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     //
     // private Font specialDealFont;
     // private Color specialDealColor;
-    private Rectangle specialDealBounds;
-    private boolean   specialDealMouseOver = false;
+    private Rectangle             specialDealBounds;
+    private boolean               specialDealMouseOver           = false;
 
-    private View donatePanel;
+    private View                  donatePanel;
 
-    private DonateTabHeader donateHeader;
+    private DonateTabHeader       donateHeader;
+
+    protected int                 rightest                       = -1;
 
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) {
@@ -351,7 +359,66 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             }
 
         });
+
+        addComponentListener(new ComponentListener() {
+
+            @Override
+            public void componentShown(ComponentEvent e) {
+                update();
+            }
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                update();
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                update();
+            }
+
+            @Override
+            public void componentHidden(ComponentEvent e) {
+            }
+        });
+        this.addContainerListener(new ContainerListener() {
+
+            @Override
+            public void componentRemoved(ContainerEvent e) {
+
+                update();
+            }
+
+            @Override
+            public void componentAdded(ContainerEvent e) {
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        update();
+
+                    }
+                });
+
+            }
+        });
         LAFOptions.getInstance().getExtension().customizeMainTabbedPane(this);
+
+    }
+
+    private void update() {
+
+        int rightest = Integer.MIN_VALUE;
+
+        for (int t = 0; t < getTabCount(); t++) {
+            Rectangle bounds = getUI().getTabBounds(MainTabbedPane.this, t);
+            int right = bounds.x + bounds.width;
+            if (right > rightest) {
+                rightest = right;
+            }
+        }
+        MainTabbedPane.this.rightest = rightest;
+
     }
 
     public void notifyCurrentTab() {
@@ -381,21 +448,19 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         if (JDGui.getInstance() != null) {
             JDGui.getInstance().setWaiting(false);
         }
-        int rightest = Integer.MIN_VALUE;
-
-        for (int t = 0; t < getTabCount(); t++) {
-            // g.drawLine(tab.getX(), 0, tab.getX() + tab.getWidth(), 0);
-            Rectangle bounds = getUI().getTabBounds(this, t);
-            int right = bounds.x + bounds.width;
-            if (right > rightest) {
-                rightest = right;
-            }
-        }
 
         // System.out.println(getPreferredSize().width - p.x);
-        if (topRightPainter != null) {
-            g.setClip(rightest, 0, getWidth() - rightest, 32);
-            specialDealBounds = topRightPainter.paint((Graphics2D) g);
+        if (topRightPainter != null && rightest > 0)
+
+        {
+            Shape clip = g.getClip();
+            try {
+                g.setClip(rightest, 0, getWidth() - rightest, 32);
+                specialDealBounds = topRightPainter.paint((Graphics2D) g);
+
+            } finally {
+                g.setClip(clip);
+            }
         }
 
     }
