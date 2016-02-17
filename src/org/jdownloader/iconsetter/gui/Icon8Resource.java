@@ -18,11 +18,16 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import jd.nutils.DiffMatchPatch;
 import jd.nutils.DiffMatchPatch.Diff;
@@ -125,7 +130,31 @@ public class Icon8Resource {
             docFactory.setValidating(false);
 
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            docBuilder.setEntityResolver(new EntityResolver() {
 
+                @Override
+                public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+                    return null;
+                }
+            });
+
+            docBuilder.setErrorHandler(new ErrorHandler() {
+
+                @Override
+                public void warning(SAXParseException exception) throws SAXException {
+                    LoggerFactory.getDefaultLogger().log(exception);
+                }
+
+                @Override
+                public void fatalError(SAXParseException exception) throws SAXException {
+                    LoggerFactory.getDefaultLogger().log(exception);
+                }
+
+                @Override
+                public void error(SAXParseException exception) throws SAXException {
+                    LoggerFactory.getDefaultLogger().log(exception);
+                }
+            });
             Document doc = docBuilder.parse(new ByteArrayInputStream(svg.getBytes("iso-8859-1")));
             float alpha = color.getAlpha() / 255f;
             Node svg = doc.getElementsByTagName("svg").item(0);
@@ -152,7 +181,7 @@ public class Icon8Resource {
             ByteArrayOutputStream bao;
             StreamResult result = new StreamResult(bao = new ByteArrayOutputStream());
             transformer.transform(source, result);
-
+            // String str = new String(bao.toByteArray(), "ASCII");
             return bao.toByteArray();
 
         } catch (ParserConfigurationException pce) {
