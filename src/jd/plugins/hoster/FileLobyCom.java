@@ -20,10 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,6 +35,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileloby.com" }, urls = { "https?://(www\\.)?fileloby\\.com/[A-Za-z0-9]+" }, flags = { 0 })
 public class FileLobyCom extends PluginForHost {
@@ -85,7 +85,7 @@ public class FileLobyCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
-    private static final int     free_MAXCHUNKS                               = -2;
+    private static final int     free_MAXCHUNKS                               = 1;
     private static final int     free_MAXDOWNLOADS                            = 1;
     private static final boolean account_FREE_RESUME                          = true;
     private static final int     account_FREE_MAXCHUNKS                       = 0;

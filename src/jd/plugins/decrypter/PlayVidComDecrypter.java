@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvids?.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(?:www\\.)?playvids?.com/(?:watch(?:\\?v=|/)|embed/|[A-Za-z]{2}/v/|v/)[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class PlayVidComDecrypter extends PluginForDecrypt {
 
     public PlayVidComDecrypter(PluginWrapper wrapper) {
@@ -57,7 +57,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "static-access", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        PARAMETER = new Regex(param.toString(), "https?://").getMatch(-1) + "playvid.com/watch/" + new Regex(param.toString(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+        PARAMETER = "http://www.playvid.com/watch/" + new Regex(param.toString(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
         br.setFollowRedirects(true);
         // Log in if possible to get 720p quality
         getUserLogin(false);
@@ -72,6 +72,13 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             FILENAME = br.getRegex("data\\-callback=\"pv_hideshowTitle\">([^<>\"]*?)<").getMatch(0);
         }
         if (FILENAME == null) {
+            FILENAME = br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
+        }
+        if (FILENAME == null) {
+            /* Fallback to url-filename */
+            FILENAME = new Regex(this.PARAMETER, "/([^/]+)$").getMatch(0);
+        }
+        if (FILENAME == null) {
             logger.warning("Playvid.com decrypter failed..." + PARAMETER);
             return null;
         }
@@ -79,8 +86,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         fp.setName(FILENAME);
 
         /** Decrypt qualities START */
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("playvid.com");
-        FOUNDQUALITIES = ((jd.plugins.hoster.PlayVidCom) hostPlugin).getQualities(this.br);
+        FOUNDQUALITIES = jd.plugins.hoster.PlayVidCom.getQualities(this.br);
         if (FOUNDQUALITIES == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             return null;

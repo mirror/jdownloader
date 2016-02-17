@@ -133,7 +133,6 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.7<br />
-     * Tags: Script, template<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
