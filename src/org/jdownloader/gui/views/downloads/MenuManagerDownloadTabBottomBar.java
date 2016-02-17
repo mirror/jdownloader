@@ -15,6 +15,7 @@ import org.jdownloader.gui.mainmenu.ChunksEditorLink;
 import org.jdownloader.gui.mainmenu.ParalellDownloadsEditorLink;
 import org.jdownloader.gui.mainmenu.ParallelDownloadsPerHostEditorLink;
 import org.jdownloader.gui.mainmenu.SpeedlimitEditorLink;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistAction;
 import org.jdownloader.gui.views.downloads.bottombar.AbstractBottomBarMenuManager;
@@ -28,6 +29,7 @@ import org.jdownloader.gui.views.downloads.bottombar.QuickSettingsMenuContainer;
 import org.jdownloader.gui.views.downloads.bottombar.SearchMenuItem;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
+import org.jdownloader.gui.views.linkgrabber.bottombar.AutoConfirmStopAction;
 import org.jdownloader.gui.views.linkgrabber.bottombar.PasteLinksAction;
 
 public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManager {
@@ -93,6 +95,12 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
         quicksettings.add(BottomBarMenuManagerAction.class);
 
         mr.add(quicksettings);
+
+        OptionalContainer opt;
+        mr.add(opt = new OptionalContainer(false));
+
+        opt.add(AutoConfirmStopAction.class);
+
         return mr;
     }
 

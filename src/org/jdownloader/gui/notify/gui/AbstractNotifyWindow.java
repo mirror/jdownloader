@@ -58,7 +58,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.ExtRealCheckBoxMenuItem;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -324,7 +323,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
             }
         } catch (Throwable e1) {
-             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
 
         }
 
@@ -351,7 +350,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             }
             return false;
         } catch (Throwable e) {
-             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             return false;
         }
     }
@@ -481,7 +480,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             protected void onRollOut() {
                 setContentAreaFilled(false);
 
-                setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage(IconKey.ICON_WRENCH, 16), 0.5f));
+                setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage(IconKey.ICON_WRENCH, 10), 0.5f));
                 // setIcon(new AbstractIcon(IconKey.ICON_brightmix/w2", 18));
             }
 
@@ -489,11 +488,11 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
              *
              */
             protected void onRollOver() {
-                setIcon(new AbstractIcon(IconKey.ICON_WRENCH, 16));
+                setIcon(new AbstractIcon(IconKey.ICON_WRENCH, 10));
             }
 
         };
-        ret.add(settings, "width 16!,height 16!");
+        ret.add(settings, "width 10!,height 10!");
         ExtButton closeButton = new ExtButton() {
             {
                 setToolTipText(_GUI.T.Notify_createHeader_close_tt());
@@ -527,7 +526,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             }
 
         };
-        ret.add(closeButton, "width 16!,height 16!");
+        ret.add(closeButton, "width 10!,height 10!");
         SwingUtils.setOpaque(ret, false);
         SwingUtils.setOpaque(headerLbl, false);
         SwingUtils.setOpaque(closeButton, false);

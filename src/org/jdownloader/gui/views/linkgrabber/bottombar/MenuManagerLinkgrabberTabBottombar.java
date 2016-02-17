@@ -6,6 +6,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 import org.jdownloader.gui.views.downloads.bottombar.AbstractBottomBarMenuManager;
@@ -86,7 +87,6 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
 
         mr.add(new LeftRightDividerItem());
 
-        mr.add(new AutoConfirmMenuLink());
         mr.add(new ConfirmButtonMenuItem());
 
         //
@@ -121,6 +121,10 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         quicksettings.add(new SeparatorData());
         quicksettings.add(BottomBarMenuManagerAction.class);
         mr.add(quicksettings);
+        OptionalContainer opt;
+        mr.add(opt = new OptionalContainer(false));
+
+        opt.add(AutoConfirmStopAction.class);
         return mr;
     }
 }

@@ -29,7 +29,7 @@ public class CloseButton extends ExtButton {
     private static final long serialVersionUID = 1L;
 
     protected void onRollOut() {
-        setIcon(new AbstractIcon(IconKey.ICON_CLOSE, -1));
+        setIcon(new AbstractIcon(IconKey.ICON_CLOSE, 10));
 
     }
 
@@ -37,7 +37,7 @@ public class CloseButton extends ExtButton {
      *
      */
     protected void onRollOver() {
-        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("close", -1), 0.5f));
+        setIcon(IconIO.getTransparentIcon(NewTheme.I().getImage("close", 10), 0.5f));
 
     }
 }

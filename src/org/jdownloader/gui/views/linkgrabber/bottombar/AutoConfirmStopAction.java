@@ -3,148 +3,42 @@ package org.jdownloader.gui.views.linkgrabber.bottombar;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.util.ArrayList;
-import java.util.List;
 
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.KeyStroke;
 
-import jd.controlling.linkcollector.LinkCollector;
-
 import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.KeyUtils;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.controlling.contextmenu.ActionData;
-import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuLink;
+import org.jdownloader.controlling.contextmenu.CustomSettingsPanelInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
-public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfLayoutInterface {
+import jd.controlling.linkcollector.LinkCollector;
 
-    private static final String SHORTCUT2  = "shortcut";
-
-    public static final String  AUTO_START = "autoStart";
-
-    @Override
-    public List<AppAction> createActionsToLink() {
-        ArrayList<AppAction> ret = new ArrayList<AppAction>();
-        // DownloadsTableSearchField item = DownloadsTableSearchField.getInstance();
-        KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        try {
-
-            ActionData ad = this.getActionData();
-            Object sc = ad.fetchSetup(SHORTCUT2);
-            if (sc != null && sc instanceof String) {
-
-                ks = KeyStroke.getKeyStroke((String) sc);
-            }
-
-        } catch (Throwable e) {
-        }
-        AppAction a = new AppAction() {
-            @Override
-            public boolean isEnabled() {
-                return LinkCollector.getInstance().getAutoStartManager().isRunning();
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                LinkCollector.getInstance().getAutoStartManager().interrupt();
-            }
-
-        };
-        a.setAccelerator(ks);
-        ret.add(a);
-        return ret;
+public class AutoConfirmStopAction extends CustomizableAppAction implements CustomSettingsPanelInterface {
+    public AutoConfirmStopAction() {
+        super();
+        setName(_GUI.T.AutoConfirmMenuLink_getName());
+        setIconKey(IconKey.ICON_GO_NEXT);
+        setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
     }
 
-    @Override
-    public String createConstraints() {
-        return "height 24!,width 24!,hidemode 3,gapright 3";
-    }
+    public static final String AUTO_START = "autoStart";
 
     @Override
     public JComponent createSettingsPanel() {
 
-        ActionData ad = ensureActionData();
-
-        final ActionData actionData = ad;
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
-        final ExtTextField shortcut = new ExtTextField();
-        shortcut.setHelpText(_GUI.T.InfoPanel_InfoPanel_shortcuthelp2());
-        shortcut.setEditable(false);
-        KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        try {
-            Object sc = ad.fetchSetup(SHORTCUT2);
-            if (sc != null && sc instanceof String) {
-
-                ks = KeyStroke.getKeyStroke((String) sc);
-            }
-        } catch (Throwable e) {
-        }
-        String msg1 = KeyUtils.getShortcutString(ks, true);
-
-        shortcut.setText(msg1);
-        shortcut.addKeyListener(new KeyListener() {
-
-            @Override
-            public void keyPressed(KeyEvent event) {
-                String msg1 = KeyUtils.getShortcutString(event, true);
-                KeyStroke currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
-                shortcut.setText(msg1);
-                actionData.putSetup(SHORTCUT2, currentShortcut == null ? null : currentShortcut.toString());
-
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-            }
-
-            @Override
-            public void keyTyped(KeyEvent e) {
-            }
-
-        });
-
-        p.add(new JLabel(_GUI.T.InfoPanel_InfoPanel_shortcuts()));
-        p.add(shortcut, "newline");
-        JButton shortCutReset;
-        p.add(shortCutReset = new JButton(new AppAction() {
-            {
-                setIconKey(IconKey.ICON_RESET);
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-                        String msg1 = KeyUtils.getShortcutString(ks, true);
-                        shortcut.setText(msg1);
-                        actionData.putSetup(SHORTCUT2, null);
-                    }
-                };
-            }
-
-        }), "width 22!,height 22!");
 
         p.add(new JLabel(ConfirmLinksContextAction.getTranslationForAutoStart()));
         final JComboBox<AutoStartOptions> autostart = new JComboBox<AutoStartOptions>(AutoStartOptions.values());
@@ -229,22 +123,8 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
     }
 
     @Override
-    public String getIconKey() {
-        return org.jdownloader.gui.IconKey.ICON_PARALELL;
-    }
-
-    @Override
-    public String getName() {
-        return _GUI.T.AutoConfirmMenuLink_getName();
-    }
-
-    public ActionData ensureActionData() {
-        ActionData ad = this.getActionData();
-        if (ad == null) {
-            ad = new ActionData();
-            setActionData(ad);
-        }
-        return ad;
+    public void actionPerformed(ActionEvent e) {
+        LinkCollector.getInstance().getAutoStartManager().interrupt();
     }
 
 }

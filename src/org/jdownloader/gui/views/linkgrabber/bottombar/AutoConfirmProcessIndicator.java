@@ -7,16 +7,16 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.Timer;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.autostart.AutoStartManagerListener;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
-
 import org.appwork.swing.components.tooltips.BasicExtTooltip;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.autostart.AutoStartManagerListener;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public class AutoConfirmProcessIndicator extends IconedProcessIndicator implements AutoStartManagerListener {
     /**
@@ -26,7 +26,7 @@ public class AutoConfirmProcessIndicator extends IconedProcessIndicator implemen
     private final Timer       timer;
 
     public AutoConfirmProcessIndicator() {
-        super(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_PARALELL, 16));
+        super(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_GO_NEXT, 16));
         timer = new Timer(100, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
