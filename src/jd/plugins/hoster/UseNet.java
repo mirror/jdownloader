@@ -155,11 +155,10 @@ public class UseNet extends PluginForHost {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         final UsenetFile usenetFile = UsenetFile._read(downloadLink);
         if (usenetFile == null) {
-            logger.info("UsenetFile is missing!");
+            logger.severe("UsenetFile is missing!");
             setIncomplete(downloadLink, true);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         final String username = getUsername(account);
         final String password = getPassword(account);
         final UsenetConfigInterface config = getUsenetConfig();
@@ -170,58 +169,66 @@ public class UseNet extends PluginForHost {
             config.setPort(server.getPort());
             config.setSSLEnabled(server.isSSL());
         }
-
         final URI uri = new URI("socket://" + server.getHost() + ":" + server.getPort());
         final List<HTTPProxy> proxies = selectProxies(uri);
         final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger()) {
-
             @Override
             protected Socket createSocket() {
                 return SocketConnectionFactory.createSocket(getProxy());
             }
-
         };
         try {
             this.client.set(client);
             client.connect(server.getHost(), server.getPort(), server.isSSL(), username, password);
+            if (downloadLink.getFinalFileName() == null) {
+                final UsenetFileSegment firstSegment = usenetFile.getSegments().get(0);
+                final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(firstSegment.getMessageID());
+                if (bodyInputStream instanceof YEncInputStream) {
+                    final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
+                    final int totalParts = yEnc.getPartTotal();
+                    if (totalParts >= 1 && totalParts != usenetFile.getSegments().size()) {
+                        logger.severe("Segments missing: " + totalParts + "!=" + usenetFile.getSegments().size());
+                        setIncomplete(downloadLink, true);
+                        drain(bodyInputStream);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final String fileName = yEnc.getName();
+                    if (StringUtils.isNotEmpty(fileName)) {
+                        downloadLink.setFinalFileName(fileName);
+                    }
+                    final long fileSize = yEnc.getSize();
+                    final long verifiedFileSize = downloadLink.getVerifiedFileSize();
+                    if (fileSize >= 0 && (verifiedFileSize == -1 || fileSize > verifiedFileSize)) {
+                        downloadLink.setVerifiedFileSize(fileSize);
+                    }
+                } else if (bodyInputStream instanceof UUInputStream) {
+                    final UUInputStream uu = (UUInputStream) bodyInputStream;
+                    final String fileName = uu.getName();
+                    if (StringUtils.isNotEmpty(fileName)) {
+                        downloadLink.setFinalFileName(fileName);
+                    }
+                }
+                drain(bodyInputStream);
+            }
+            dl = new SimpleUseNetDownloadInterface(client, downloadLink, usenetFile);
+            try {
+                dl.startDownload();
+            } catch (MessageBodyNotFoundException e) {
+                setIncomplete(downloadLink, true);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(proxies.get(0), uri, e);
             throw e;
+        } finally {
+            quitClient();
         }
-        // checkCompleteness(downloadLink, client, usenetFile);
-        if (downloadLink.getFinalFileName() == null) {
-            final UsenetFileSegment firstSegment = usenetFile.getSegments().get(0);
-            final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(firstSegment.getMessageID());
-            if (bodyInputStream instanceof YEncInputStream) {
-                final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
-                final String fileName = yEnc.getName();
-                if (StringUtils.isNotEmpty(fileName)) {
-                    downloadLink.setFinalFileName(fileName);
-                }
-                final long fileSize = yEnc.getSize();
-                final long verifiedFileSize = downloadLink.getVerifiedFileSize();
-                if (fileSize >= 0 && (verifiedFileSize == -1 || fileSize > verifiedFileSize)) {
-                    downloadLink.setVerifiedFileSize(fileSize);
-                }
-            } else if (bodyInputStream instanceof UUInputStream) {
-                final UUInputStream uu = (UUInputStream) bodyInputStream;
-                final String fileName = uu.getName();
-                if (StringUtils.isNotEmpty(fileName)) {
-                    downloadLink.setFinalFileName(fileName);
-                }
-            }
-            // dummy load the segment
-            IO.readStreamToOutputStream(-1, bodyInputStream, new NullOutputStream(), false);
-        }
-        dl = new SimpleUseNetDownloadInterface(client, downloadLink, usenetFile);
-        try {
-            dl.startDownload();
-        } catch (MessageBodyNotFoundException e) {
-            setIncomplete(downloadLink, true);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+    }
+
+    private void drain(final InputStream is) throws IOException {
+        IO.readStreamToOutputStream(-1, is, new NullOutputStream(), false);
     }
 
     @Override
@@ -270,16 +277,20 @@ public class UseNet extends PluginForHost {
         return status;
     }
 
+    private void quitClient() {
+        try {
+            final SimpleUseNet client = this.client.getAndSet(null);
+            if (client != null) {
+                client.quit();
+            }
+        } catch (final Throwable e) {
+        }
+    }
+
     @Override
     public void clean() {
         try {
-            try {
-                final SimpleUseNet client = this.client.getAndSet(null);
-                if (client != null) {
-                    client.quit();
-                }
-            } catch (final Throwable e) {
-            }
+            quitClient();
         } finally {
             super.clean();
         }
