@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 
+import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -54,7 +55,10 @@ public class RenameAction extends CustomizableTableContextAppAction implements A
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (isSimpleMode() || (getSelection().isPackageContext() && getSelection().getRawSelection().size() == 1)) {
+
+        if (isSimpleMode() || ((getSelection().getRawSelection().size() == 1 && !(e.getSource() instanceof JMenuItem)))) {
+            // do not edit in table if the user clicked on the menu item, but do it if the user uses a shortcut (source is the table in this
+            // case)
             try {
                 // LinkgrabberContextMenuManager.getInstance().getPanel().getTable().get
 
