@@ -362,7 +362,10 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 sb.append(file.toURI().toString());
             }
         }
+        
         final LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null/* add useragent? */), sb.toString());
+        final boolean overridePackagizerRules = query.isOverridePackagizerRules() == null ? false : query.isOverridePackagizerRules();
+
         final HashSet<String> finalExtPws;
         if (StringUtils.isNotEmpty(query.getExtractPassword())) {
             finalExtPws = new HashSet<String>();
@@ -370,37 +373,35 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         } else {
             finalExtPws = null;
         }
-        final BooleanStatus finalExtractStatus = BooleanStatus.convert(query.isAutoExtract());
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
             @Override
             public void modifyCrawledLink(CrawledLink link) {
+                PackageInfo existing = link.getDesiredPackageInfo();
                 if (finalExtPws != null && finalExtPws.size() > 0) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalExtPws);
                 }
-                if (StringUtils.isNotEmpty(query.getPackageName())) {
-                    PackageInfo packageInfo = link.getDesiredPackageInfo();
-                    if (packageInfo == null) {
-                        packageInfo = new PackageInfo();
+                if (overridePackagizerRules || existing == null || StringUtils.isNotEmpty(query.getPackageName())) {
+                    if (existing == null) {
+                        existing = new PackageInfo();
                     }
-                    packageInfo.setName(query.getPackageName());
-                    packageInfo.setIgnoreVarious(true);
-                    packageInfo.setUniqueId(null);
-                    link.setDesiredPackageInfo(packageInfo);
+                    existing.setName(query.getPackageName());
+                    existing.setIgnoreVarious(true);
+                    existing.setUniqueId(null);
+                    link.setDesiredPackageInfo(existing);
                 }
-                if (!Priority.DEFAULT.equals(fp)) {
+                if (overridePackagizerRules || existing == null || !Priority.DEFAULT.equals(fp)) {
                     link.setPriority(fp);
                 }
-                if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
-                    PackageInfo packageInfo = link.getDesiredPackageInfo();
-                    if (packageInfo == null) {
-                        packageInfo = new PackageInfo();
+                if (overridePackagizerRules || existing == null || StringUtils.isNotEmpty(query.getDestinationFolder())) {
+                    if (existing == null) {
+                        existing = new PackageInfo();
                     }
-                    packageInfo.setDestinationFolder(query.getDestinationFolder());
-                    packageInfo.setIgnoreVarious(true);
+                    existing.setDestinationFolder(query.getDestinationFolder());
+                    existing.setIgnoreVarious(true);
 
-                    packageInfo.setUniqueId(null);
-                    link.setDesiredPackageInfo(packageInfo);
+                    existing.setUniqueId(null);
+                    link.setDesiredPackageInfo(existing);
                 }
                 final DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
@@ -408,26 +409,33 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                         dlLink.setDownloadPassword(query.getDownloadPassword());
                     }
                 }
-                switch (BooleanStatus.convert(query.isAutostart())) {
-                case TRUE:
-                    link.setAutoConfirmEnabled(true);
-                    link.setAutoStartEnabled(true);
-                    break;
-                case FALSE:
-                    link.setAutoConfirmEnabled(false);
-                    link.setAutoStartEnabled(false);
-                    break;
-                default:
-                    break;
-                }
-
-                if (!BooleanStatus.UNSET.equals(finalExtractStatus)) {
-                    BooleanStatus existing = BooleanStatus.UNSET;
+                if (overridePackagizerRules && query.isAutostart() != null) {
+                    BooleanStatus existingAutoStartStatus = BooleanStatus.UNSET;
                     if (link.hasArchiveInfo()) {
-                        existing = link.getArchiveInfo().getAutoExtract();
+                        existingAutoStartStatus = link.getArchiveInfo().getAutoExtract();
                     }
-                    if (existing == null || BooleanStatus.UNSET.equals(existing)) {
-                        link.getArchiveInfo().setAutoExtract(finalExtractStatus);
+                    if (query.isOverridePackagizerRules() || existing == null || BooleanStatus.UNSET.equals(existingAutoStartStatus)) {
+                        switch (BooleanStatus.convert(query.isAutoExtract())) {
+                        case TRUE:
+                            link.setAutoConfirmEnabled(true);
+                            link.setAutoStartEnabled(true);
+                            break;
+                        case FALSE:
+                            link.setAutoConfirmEnabled(false);
+                            link.setAutoStartEnabled(false);
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+                if (overridePackagizerRules && query.isAutoExtract() != null) {
+                    BooleanStatus existingAutoExtractStatus = BooleanStatus.UNSET;
+                    if (link.hasArchiveInfo()) {
+                        existingAutoExtractStatus = link.getArchiveInfo().getAutoExtract();
+                    }
+                    if (existingAutoExtractStatus == null || BooleanStatus.UNSET.equals(existingAutoExtractStatus)) {
+                        link.getArchiveInfo().setAutoExtract(BooleanStatus.convert(query.isAutoExtract()));
                     }
                 }
             }
@@ -435,14 +443,14 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         lcj.setCrawledLinkModifierPrePackagizer(modifier);
 
         switch (BooleanStatus.convert(query.isDeepDecrypt())) {
-        case TRUE:
-            lcj.setDeepAnalyse(true);
-            break;
-        case FALSE:
-            lcj.setDeepAnalyse(false);
-            break;
-        default:
-            break;
+            case TRUE:
+                lcj.setDeepAnalyse(true);
+                break;
+            case FALSE:
+                lcj.setDeepAnalyse(false);
+                break;
+            default:
+                break;
         }
 
         if (StringUtils.isNotEmpty(query.getDestinationFolder()) || StringUtils.isNotEmpty(query.getPackageName())) {
@@ -727,5 +735,11 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public boolean setDownloadPassword(final long[] linkIds, final long[] packageIds, final String pass) throws BadParameterException {
         return packageControllerUtils.setDownloadPassword(linkIds, packageIds, pass);
+    }
+
+    @Override
+    public boolean abort() {
+        LinkCollector.getInstance().abort();
+        return true;
     }
 }
