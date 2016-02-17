@@ -17,16 +17,16 @@ public interface LAFSettings extends SyntheticaSettings {
     public static final String ALICE_BLUE_APPROX             = "ffF5FCFF";
     public static final String ALPHA_CC_TROPICAL_BLUE_APPROX = "ccCAE8FA";
 
-    public static final String BLACK                                             = "FF000000";
-    public static final String DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
-    public static final String GRAY                                              = "ffC0C0C0";
-    public static final String GREEN                                             = "FF00FF00";
-    public static final String JAGGED_ICE_APPROX                                 = "ffD7E7F0";
-    public static final String MYSTIC_APPROX                                     = "FFDEE7ED";
-    public static final String ORANGE                                            = "ffFFC800";
-    public static final String PIGEON_POST_APPROX                                = "ffABC7D8";
-    public static final String RED                                               = "FFFF0000";
-    public static final String TROPICAL_BLUE_APPROX                              = "ffCAE8FA";
+    public static final String BLACK                         = "FF000000";
+
+    public static final String GRAY                          = "ffC0C0C0";
+    public static final String GREEN                         = "FF00FF00";
+    public static final String JAGGED_ICE_APPROX             = "ffD7E7F0";
+    public static final String MYSTIC_APPROX                 = "FFDEE7ED";
+    public static final String ORANGE                        = "ffFFC800";
+    public static final String PIGEON_POST_APPROX            = "ffABC7D8";
+    public static final String RED                           = "FFFF0000";
+    public static final String TROPICAL_BLUE_APPROX          = "ffCAE8FA";
 
     @AboutConfig
     @DescriptionForConfigEntry("Paint all labels/text with or without antialias. Default value is false.")
@@ -221,10 +221,6 @@ public interface LAFSettings extends SyntheticaSettings {
 
     public void setColorForPanelBorders(String color);
 
-    @DescriptionForConfigEntry("This Painter class is used to paint Main Menu Items without a popdown menu")
-    @RequiresRestart("A JDownloader Restart is Required")
-    public String getMenuBackgroundPainterClass();
-
     // @AboutConfig
     // @DefaultIntArrayValue({ 0, 2, 4, 2 })
     // public int[] getPopupBorderInsets();
@@ -295,8 +291,6 @@ public interface LAFSettings extends SyntheticaSettings {
     void setColorForTableSortedColumnView(String colorHex);
 
     public void setColorForTooltipForeground(String colorHex);
-
-    public abstract void setMenuBackgroundPainterClass(String menuBackgroundPainterClass);
 
     public abstract void setPaintStatusbarTopBorder(boolean paintStatusbarTopBorder);
 

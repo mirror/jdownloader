@@ -26,6 +26,11 @@ public abstract class LookAndFeelExtension implements LAFSettings {
     }
 
     @Override
+    public void setPaintStatusbarTopBorder(boolean paintStatusbarTopBorder) {
+        throw new WTFException("Not Implemented. Do not use this method");
+    }
+
+    @Override
     public void setColorForConfigHeaderTextColor(String color) {
         throw new WTFException("Not Implemented. Do not use this method");
     }
@@ -227,16 +232,6 @@ public abstract class LookAndFeelExtension implements LAFSettings {
 
     @Override
     public void setCustomTableRowHeight(int height) {
-        throw new WTFException("Not Implemented. Do not use this method");
-    }
-
-    @Override
-    public void setMenuBackgroundPainterClass(String menuBackgroundPainterClass) {
-        throw new WTFException("Not Implemented. Do not use this method");
-    }
-
-    @Override
-    public void setPaintStatusbarTopBorder(boolean paintStatusbarTopBorder) {
         throw new WTFException("Not Implemented. Do not use this method");
     }
 

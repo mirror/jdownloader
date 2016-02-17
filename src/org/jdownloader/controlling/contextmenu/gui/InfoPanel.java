@@ -8,12 +8,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.Action;
 import javax.swing.Icon;
@@ -34,10 +35,13 @@ import javax.swing.event.ListSelectionListener;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.FileHandler;
+import org.appwork.utils.Files;
 import org.appwork.utils.GetterSetter;
 import org.appwork.utils.KeyUtils;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
@@ -54,6 +58,8 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+
+import net.miginfocom.swing.MigLayout;
 
 public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     public Dimension getPreferredScrollableViewportSize() {
@@ -151,45 +157,65 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                 final JPopupMenu p = new JPopupMenu();
 
-                File imagesDir;
+                final File imagesDir = NewTheme.I().getImagesDirectory();
 
-                imagesDir = NewTheme.I().getImagesDirectory();
+                ArrayList<File> files = new ArrayList<File>();
+                Files.internalWalkThroughStructure(new FileHandler<RuntimeException>() {
 
-                String[] names = imagesDir.list(new FilenameFilter() {
-
-                    public boolean accept(File dir, String name) {
-                        return name.endsWith(".png") || name.endsWith(".svg");
+                    @Override
+                    public void intro(File f) throws RuntimeException {
                     }
-                });
 
-                final JList list = new JList(names);
+                    @Override
+                    public boolean onFile(File f, int depths) throws RuntimeException {
+                        String name = f.getName().toLowerCase(Locale.ENGLISH);
+                        if (name.endsWith(".png") || name.endsWith(".svg")) {
+                            files.add(f);
+                        }
+                        return true;
+                    }
+
+                    @Override
+                    public void outro(File f) throws RuntimeException {
+                    }
+                }, imagesDir, 5);
+                final JList list = new JList(files.toArray(new File[] {}));
                 list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
                 final ListCellRenderer org = list.getCellRenderer();
                 list.setCellRenderer(new ListCellRenderer() {
 
                     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                        String key = value.toString().substring(0, value.toString().length() - 4);
+                        File f = (File) value;
+                        // String key = value.toString().substring(0, value.toString().length() - 4);
                         JLabel ret = (JLabel) org.getListCellRendererComponent(list, "", index, isSelected, cellHasFocus);
-                        ret.setIcon(NewTheme.I().getIcon(key, 20));
+                        try {
+                            ret.setIcon(IconIO.getImageIcon(f.toURI().toURL(), 20));
+                        } catch (MalformedURLException e) {
+                            e.printStackTrace();
+                        }
                         return ret;
                     }
                 });
-                list.setFixedCellHeight(22);
-                list.setFixedCellWidth(22);
+                list.setFixedCellHeight(24);
+                list.setFixedCellWidth(24);
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                 list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
                     public void valueChanged(ListSelectionEvent e) {
-                        String v = list.getSelectedValue().toString();
-                        v = v.substring(0, v.length() - 4);
-                        item.setIconKey(v);
+                        File v = (File) list.getSelectedValue();
+                        String rel = Files.getRelativePath(imagesDir, v);
+                        rel = rel.substring(0, rel.length() - 4);
+                        item.setIconKey(rel);
 
                         updateInfo(item);
                         p.setVisible(false);
                         managerFrame.fireUpdate();
                     }
                 });
-                p.add(list);
+
+                // list.setMinimumSize(new Dimension(64, 64));
+                p.setLayout(new MigLayout("ins 5", "[grow,fill]", "[grow,fill]"));
+                p.add(list, "width 32:n:n");
                 p.show(iconChange, 0, iconChange.getHeight());
 
             }

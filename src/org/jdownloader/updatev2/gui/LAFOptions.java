@@ -218,18 +218,6 @@ public class LAFOptions {
         return cfg.isPaintStatusbarTopBorder();
     }
 
-    public Class<?> getMenuBackgroundPainterClass() {
-        try {
-            return Class.forName(cfg.getMenuBackgroundPainterClass());
-        } catch (ClassNotFoundException e) {
-            try {
-                return Class.forName(LAFSettings.DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER);
-            } catch (ClassNotFoundException e1) {
-                throw new WTFException("No Synthetica Loaded");
-            }
-        }
-    }
-
     public Color getColorForErrorForeground() {
         return createColor(cfg.getColorForErrorForeground());
     }

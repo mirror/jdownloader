@@ -51,7 +51,9 @@ public class PlainLookAndFeel extends SyntheticaLookAndFeel {
                 LoggerFactory.getDefaultLogger().log(e);
             } finally {
                 try {
-                    fis.close();
+                    if (fis != null) {
+                        fis.close();
+                    }
                 } catch (Throwable e) {
                     LoggerFactory.getDefaultLogger().log(e);
                 }
