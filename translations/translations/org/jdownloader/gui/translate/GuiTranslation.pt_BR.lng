@@ -732,6 +732,7 @@ ManagerFrame_layoutPanel_info=Editar Nó do Menu
 ManagerFrame_layoutPanel_menustructure_=Editar Estrutura do Menu (Use Arrastar & Soltar)
 ManagerFrame_layoutPanel_resettodefault=Restaurar Padrão
 ManagerFrame_layoutPanel_resettodefault_parametered=Restaurar padrão: %s1
+MenuBar_loading=Carregando Menu & Barra de Ferramentas...
 MenuEditors_boxwidth_max=Largura máxima
 MenuEditors_boxwidth_min=Largura mínima
 MenuEditors_boxwidth_pref=Largura de preferência
