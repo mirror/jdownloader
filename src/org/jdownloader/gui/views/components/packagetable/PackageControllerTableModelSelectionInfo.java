@@ -16,7 +16,7 @@ public class PackageControllerTableModelSelectionInfo<PackageType extends Abstra
     private final AbstractNode                                               rawContext;
 
     protected PackageControllerTableModelSelectionInfo(final AbstractNode contextObject, final PackageControllerTableModel<PackageType, ChildrenType> tableModel) {
-        super();
+        super(tableModel.getController());
         this.rawContext = contextObject;
         this.tableModelData = tableModel.getTableData();
         aggregate();

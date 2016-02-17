@@ -1,8 +1,11 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -16,9 +19,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
-
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 
 public class OpenInBrowserAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> {
 
@@ -62,13 +62,12 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
             return;
         }
         final SelectionInfo<CrawledPackage, CrawledLink> lselection = getSelection();
-        if (lselection == null) {
+        if (lselection == null || lselection.isEmpty()) {
             return;
         }
-        final List<CrawledLink> links = lselection.getChildren();
         new Thread("OpenInBrowserAction") {
             public void run() {
-                final HashSet<String> urls = LinkTreeUtils.getURLs(links, true);
+                final Set<String> urls = LinkTreeUtils.getURLs(lselection, true);
                 if (urls.size() < 5) {
                     for (String url : urls) {
                         CrossSystem.openURLOrShowMessage(url);
