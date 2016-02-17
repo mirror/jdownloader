@@ -47,6 +47,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
+import jd.gui.swing.jdgui.maintab.CustomTabHeader;
+import jd.gui.swing.jdgui.maintab.TabHeader;
+import jd.gui.swing.jdgui.views.ClosableView;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -60,13 +67,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
-import jd.gui.swing.jdgui.maintab.CustomTabHeader;
-import jd.gui.swing.jdgui.maintab.TabHeader;
-import jd.gui.swing.jdgui.views.ClosableView;
 
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
@@ -83,7 +83,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     //
     // private Font specialDealFont;
     // private Color specialDealColor;
-    private Rectangle             specialDealBounds;
+    private Rectangle             specialDealBounds              = null;
     private boolean               specialDealMouseOver           = false;
 
     private View                  donatePanel;
@@ -357,11 +357,9 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     e2.printStackTrace();
                 }
             }
-
         });
 
         addComponentListener(new ComponentListener() {
-
             @Override
             public void componentShown(ComponentEvent e) {
                 update();
@@ -382,43 +380,35 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             }
         });
         this.addContainerListener(new ContainerListener() {
-
             @Override
             public void componentRemoved(ContainerEvent e) {
-
                 update();
             }
 
             @Override
             public void componentAdded(ContainerEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        update();
-
-                    }
-                });
-
+                update();
             }
         });
         LAFOptions.getInstance().getExtension().customizeMainTabbedPane(this);
-
     }
 
     private void update() {
-
-        int rightest = Integer.MIN_VALUE;
-
-        for (int t = 0; t < getTabCount(); t++) {
-            Rectangle bounds = getUI().getTabBounds(MainTabbedPane.this, t);
-            int right = bounds.x + bounds.width;
-            if (right > rightest) {
-                rightest = right;
+        // invokeLater is needed because componentAdded gets called before actual added
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                int rightest = Integer.MIN_VALUE;
+                for (int t = 0; t < getTabCount(); t++) {
+                    Rectangle bounds = getUI().getTabBounds(MainTabbedPane.this, t);
+                    int right = bounds.x + bounds.width;
+                    if (right > rightest) {
+                        rightest = right;
+                    }
+                }
+                MainTabbedPane.this.rightest = rightest;
             }
-        }
-        MainTabbedPane.this.rightest = rightest;
-
+        });
     }
 
     public void notifyCurrentTab() {
@@ -448,21 +438,17 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         if (JDGui.getInstance() != null) {
             JDGui.getInstance().setWaiting(false);
         }
-
+        final TopRightPainter topRightPainter = getTopRightPainter();
         // System.out.println(getPreferredSize().width - p.x);
-        if (topRightPainter != null && rightest > 0)
-
-        {
-            Shape clip = g.getClip();
+        if (topRightPainter != null && rightest > 0) {
+            final Shape clip = g.getClip();
             try {
                 g.setClip(rightest, 0, getWidth() - rightest, 32);
                 specialDealBounds = topRightPainter.paint((Graphics2D) g);
-
             } finally {
                 g.setClip(clip);
             }
         }
-
     }
 
     /**
@@ -561,6 +547,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     @Override
     public void mouseMoved(MouseEvent e) {
+        final TopRightPainter topRightPainter = getTopRightPainter();
+        final Rectangle specialDealBounds = this.specialDealBounds;
         if (topRightPainter != null && topRightPainter.isVisible()) {
             if (specialDealBounds != null && specialDealBounds.contains(e.getPoint()) && !specialDealMouseOver) {
                 specialDealMouseOver = true;
@@ -577,6 +565,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     @Override
     public void mouseClicked(MouseEvent e) {
+        final TopRightPainter topRightPainter = getTopRightPainter();
         if (specialDealMouseOver && topRightPainter != null && topRightPainter.isVisible()) {
             topRightPainter.onClicked(e);
         }
