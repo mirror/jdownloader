@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,11 +33,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 /**
- * 
+ *
  * @author raztoki
- * 
+ *
  */
 @DecrypterPlugin(revision = "$Revision: 32224 $", interfaceVersion = 3, names = { "rule34.xxx" }, urls = { "http://(www\\.)?rule34\\.xxx/index\\.php\\?page=post&s=(view&id=\\d+|list&tags=.+)" }, flags = { 0 })
 public class Rule34Xxx extends PluginForDecrypt {
@@ -79,14 +81,11 @@ public class Rule34Xxx extends PluginForDecrypt {
             fp = FilePackage.getInstance();
             fp.setName(fpName);
         }
-        String next = null;
-        do {
+        final HashSet<String> loop = new HashSet<String>();
+        loop: do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 return decryptedLinks;
-            }
-            if (next != null) {
-                br.getPage(HTMLEntities.unhtmlentities(next));
             }
             // from list to post page
             final String[] links = br.getRegex("<a id=\"p\\d+\" href=('|\")(index\\.php\\?page=post&(:?amp;)?s=view&(:?amp;)?id=\\d+)\\1").getColumn(1);
@@ -101,6 +100,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                     final String id = new Regex(link, "id=(\\d+)").getMatch(0);
                     dl.setLinkID(prefixLinkID + id);
                     dl.setName(id);
+                    dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                     distribute(dl);
                     decryptedLinks.add(dl);
                 }
@@ -108,8 +108,15 @@ public class Rule34Xxx extends PluginForDecrypt {
                 // no links found we should break!
                 return null;
             }
-            next = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=\\w+&(:?amp;)?pid=\\d+)\" alt=\"next\">").getMatch(0);
-        } while (next != null);
+            final String nexts[] = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
+            for (final String next : nexts) {
+                if (loop.add(next)) {
+                    br.getPage(HTMLEntities.unhtmlentities(next));
+                    continue loop;
+                }
+            }
+            break;
+        } while (true);
         return decryptedLinks;
     }
 
