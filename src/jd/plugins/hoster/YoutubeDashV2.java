@@ -143,6 +143,11 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
@@ -958,8 +963,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT.T.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-             * 15.12.2014
-             */"This video is not available.")) {
+                                                                                                                                 * 15.12.2014
+                                                                                                                                 */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);

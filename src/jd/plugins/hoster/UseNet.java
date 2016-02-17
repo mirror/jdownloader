@@ -229,6 +229,11 @@ public class UseNet extends PluginForHost {
         }
     }
 
+    @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
+    }
+
     private void drainInputStream(final InputStream is) throws IOException {
         IO.readStreamToOutputStream(-1, is, new NullOutputStream(), false);
     }
