@@ -7,6 +7,9 @@ import java.awt.event.KeyEvent;
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.Flashable;
+import jd.gui.swing.jdgui.JDGui;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
@@ -16,15 +19,11 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
-
-import jd.gui.swing.jdgui.Flashable;
-import jd.gui.swing.jdgui.JDGui;
 
 public class UpdateAction extends AbstractToolBarAction {
 
@@ -138,7 +137,7 @@ public class UpdateAction extends AbstractToolBarAction {
                 return false;
             }
             if (l % 2 == 0) {
-                Button.this.setIcon(new AbstractIcon(IconKey.ICON_UPDATE_B, 24));
+                Button.this.setIcon(NewTheme.I().getIcon(IconKey.ICON_UPDATE_B, 24));
             } else {
                 Button.this.setIcon(NewTheme.I().getIcon(getIconKey(), 24));
             }
