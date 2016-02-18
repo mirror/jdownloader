@@ -283,7 +283,6 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
         if (newState.isLocationSet()) {
             latestFrameStatus = newState;
-
             if (newState.getExtendedState() == ExtendedState.NORMAL) {
                 latestNormalState = newState.clone();
                 // logger.info("New Window State (Normal): " + JSonStorage.toString(latestFrameStatus));

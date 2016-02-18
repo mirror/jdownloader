@@ -1,5 +1,6 @@
 package jd.plugins.download;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class HashResult {
@@ -42,13 +43,12 @@ public class HashResult {
                 return FinalLinkState.FAILED_CRC32;
             default:
                 return FinalLinkState.FAILED;
-
             }
         }
     }
 
     public boolean match() {
-        return fileHash != null && hashInfo.getHash().equalsIgnoreCase(fileHash);
+        return StringUtils.equalsIgnoreCase(hashInfo.getHash(), fileHash);
     }
 
     public HashInfo getHashInfo() {

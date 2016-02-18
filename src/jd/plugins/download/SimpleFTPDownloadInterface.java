@@ -267,8 +267,8 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 final HashResult hashResult = getHashResult(downloadable, outputPartFile);
                 if (hashResult != null) {
                     logger.info(hashResult.toString());
+                    downloadable.setHashResult(hashResult);
                 }
-                downloadable.setHashResult(hashResult);
                 if (hashResult == null || hashResult.match()) {
                     downloadable.setVerifiedFileSize(outputPartFile.length());
                 } else {

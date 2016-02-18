@@ -6,8 +6,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -24,13 +28,16 @@ import jd.plugins.components.UsenetFileSegment;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
 import jd.plugins.download.SparseFile;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.NullInputStream;
 import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.net.usenet.MessageBodyNotFoundException;
@@ -50,24 +57,25 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
     private final ManagedThrottledConnectionHandler connectionHandler;
     private final LogInterface                      logger;
 
-    private final AtomicBoolean                     abort                    = new AtomicBoolean(false);
-    private final AtomicBoolean                     terminated               = new AtomicBoolean(false);
+    private final AtomicBoolean                     abort                = new AtomicBoolean(false);
+    private final AtomicBoolean                     terminated           = new AtomicBoolean(false);
     private File                                    outputCompleteFile;
     private File                                    outputFinalCompleteFile;
     private File                                    outputPartFile;
-    protected long                                  totalLinkBytesLoaded     = -1;
-    protected final AtomicLong                      totalLinkBytesLoadedLive = new AtomicLong(0);
-    private long                                    startTimeStamp           = -1;
-    private boolean                                 resumed                  = false;
+    protected final AtomicLong                      totalLinkBytesLoaded = new AtomicLong(0);
+    private long                                    startTimeStamp       = -1;
+    private boolean                                 resumed              = false;
     private final SimpleUseNet                      client;
     private final UsenetFile                        usenetFile;
+    private final DownloadLink                      downloadLink;
 
-    public SimpleUseNetDownloadInterface(final SimpleUseNet client, final DownloadLink link, final UsenetFile usenetFile) {
+    public SimpleUseNetDownloadInterface(final SimpleUseNet client, final DownloadLink downloadLink, final UsenetFile usenetFile) {
         connectionHandler = new ManagedThrottledConnectionHandler();
         this.usenetFile = usenetFile;
         final boolean resumeable = usenetFile.getNumSegments() > 1;
         final String host = SocketConnection.getHostName(client.getSocket().getRemoteSocketAddress());
-        downloadable = new DownloadLinkDownloadable(link) {
+        this.downloadLink = downloadLink;
+        downloadable = new DownloadLinkDownloadable(downloadLink) {
             @Override
             public boolean isResumable() {
                 return resumeable;
@@ -76,6 +84,16 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
             @Override
             public String getHost() {
                 return host;
+            }
+
+            @Override
+            public HashInfo getHashInfo() {
+                final HashInfo ret = super.getHashInfo();
+                if (ret == null) {
+                    return HashInfo.importFromString(usenetFile.getHash());
+                } else {
+                    return ret;
+                }
             }
 
             @Override
@@ -132,7 +150,17 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
 
     @Override
     public long getTotalLinkBytesLoadedLive() {
-        return totalLinkBytesLoadedLive.get();
+        return getTotalLinkBytesLoaded();
+    }
+
+    private long getTotalLinkBytesLoaded() {
+        return totalLinkBytesLoaded.get();
+    }
+
+    private void drainInputStream(final InputStream is) throws IOException {
+        final byte[] drainBuffer = new byte[1024];
+        while (is.read(drainBuffer) != -1) {
+        }
     }
 
     protected void download() throws Exception {
@@ -143,48 +171,79 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }
         boolean localIO = false;
-        totalLinkBytesLoaded = 0;
-        MeteredThrottledInputStream meteredThrottledInputStream = null;
+        totalLinkBytesLoaded.set(0);
+        final MeteredThrottledInputStream meteredThrottledInputStream = new MeteredThrottledInputStream(new NullInputStream(), new AverageSpeedMeter(10));
+        boolean writeUsenetFile = false;
         try {
-            for (final UsenetFileSegment segment : usenetFile.getSegments()) {
-                if (abort.get()) {
+            final ArrayList<UsenetFileSegment> segments = new ArrayList<UsenetFileSegment>(usenetFile.getSegments());
+            if (downloadable.isResumable() && raf.length() > 0) {
+                final long partFileSize = raf.length();
+                final Iterator<UsenetFileSegment> it = segments.iterator();
+                long resumePosition = 0;
+                while (it.hasNext()) {
+                    final UsenetFileSegment next = it.next();
+                    if (next.getPartBegin() > 0 && next.getPartEnd() > 0) {
+                        if (partFileSize > next.getPartEnd()) {
+                            resumePosition = next.getPartEnd();
+                            it.remove();
+                            continue;
+                        }
+                    }
                     break;
                 }
-                final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(segment.getMessageID());
-                if (meteredThrottledInputStream == null) {
-                    meteredThrottledInputStream = new MeteredThrottledInputStream(bodyInputStream, new AverageSpeedMeter(10));
-                    connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+                if (resumePosition > 0) {
+                    resumed = true;
+                }
+            }
+            connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+            segmentLoop: for (final UsenetFileSegment segment : segments) {
+                if (abort.get()) {
+                    break segmentLoop;
                 } else {
+                    final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(segment.getMessageID());
                     meteredThrottledInputStream.setInputStream(bodyInputStream);
-                }
-                if (bodyInputStream instanceof YEncInputStream) {
-                    final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
-                    final long fileSize = yEnc.getSize();
-                    final long verifiedFileSize = downloadable.getVerifiedFileSize();
-                    if (fileSize >= 0 && (verifiedFileSize == -1 || fileSize > verifiedFileSize)) {
-                        downloadable.setVerifiedFileSize(fileSize);
+                    if (bodyInputStream instanceof YEncInputStream) {
+                        final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
+                        final long partSize = yEnc.getPartSize();
+                        if (partSize >= 0) {
+                            segment.setPartBegin(yEnc.getPartBegin());
+                            final long writePosition = yEnc.getPartBegin() - 1;
+                            // update file-pointer and totalLinkBytesLoaded
+                            raf.seek(writePosition);
+                            totalLinkBytesLoaded.set(writePosition);
+                            segment.setPartEnd(yEnc.getPartEnd());
+                            writeUsenetFile = true;
+                        }
+                        meteredThrottledInputStream.setInputStream(new CheckedInputStream(bodyInputStream, new CRC32()));
                     }
-                }
-                int bytesRead = 0;
-                final byte[] buffer = new byte[32767];
-                final long loaded = totalLinkBytesLoaded;
-                while ((bytesRead = meteredThrottledInputStream.read(buffer)) != -1) {
-                    if (abort.get()) {
-                        break;
+                    int bytesRead = 0;
+                    final byte[] buffer = new byte[32767];
+                    while ((bytesRead = meteredThrottledInputStream.read(buffer)) != -1) {
+                        if (abort.get()) {
+                            // so we can quit normally
+                            drainInputStream(bodyInputStream);
+                            break segmentLoop;
+                        }
+                        if (bytesRead > 0) {
+                            localIO = true;
+                            raf.write(buffer, 0, bytesRead);
+                            localIO = false;
+                            totalLinkBytesLoaded.addAndGet(bytesRead);
+                        }
                     }
-                    if (bytesRead > 0) {
-                        localIO = true;
-                        raf.write(buffer, 0, bytesRead);
-                        localIO = false;
-                        totalLinkBytesLoaded += bytesRead;
-                        totalLinkBytesLoadedLive.addAndGet(bytesRead);
+                    if (bodyInputStream instanceof YEncInputStream) {
+                        final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
+                        if (yEnc.getPartCRC32() != null && meteredThrottledInputStream.getInputStream() instanceof CheckedInputStream) {
+                            final long checksum = ((CheckedInputStream) meteredThrottledInputStream.getInputStream()).getChecksum().getValue();
+                            if (!new HashResult(new HashInfo(yEnc.getPartCRC32(), HashInfo.TYPE.CRC32), HexFormatter.byteArrayToHex(new byte[] { (byte) (checksum >>> 24), (byte) (checksum >>> 16), (byte) (checksum >>> 8), (byte) checksum })).match()) {
+                                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(HashInfo.TYPE.CRC32));
+                            }
+                        }
+                        if (usenetFile.getHash() == null && yEnc.getFileCRC32() != null) {
+                            usenetFile.setHash(new HashInfo(yEnc.getFileCRC32(), HashInfo.TYPE.CRC32, true).exportAsString());
+                            writeUsenetFile = true;
+                        }
                     }
-                }
-                if (bodyInputStream instanceof YEncInputStream) {
-                    final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
-                    totalLinkBytesLoaded = loaded + yEnc.getPartSize();
-                    totalLinkBytesLoadedLive.set(totalLinkBytesLoaded);
-                    raf.seek(totalLinkBytesLoaded);
                 }
             }
         } catch (IOException e) {
@@ -195,7 +254,10 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
         } finally {
             close(raf);
             cleanupDownladInterface();
-            downloadable.setDownloadBytesLoaded(totalLinkBytesLoaded);
+            if (writeUsenetFile) {
+                usenetFile._write(downloadLink);
+            }
+            downloadable.setDownloadBytesLoaded(getTotalLinkBytesLoaded());
             if (meteredThrottledInputStream != null) {
                 connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
             }
@@ -251,8 +313,8 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                 final HashResult hashResult = getHashResult(downloadable, outputPartFile);
                 if (hashResult != null) {
                     logger.info(hashResult.toString());
+                    downloadable.setHashResult(hashResult);
                 }
-                downloadable.setHashResult(hashResult);
                 if (hashResult == null || hashResult.match()) {
                     downloadable.setVerifiedFileSize(outputPartFile.length());
                 } else {
@@ -293,7 +355,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
     private boolean isDownloadComplete() {
         final long verifiedFileSize = downloadable.getVerifiedFileSize();
         if (verifiedFileSize >= 0) {
-            return totalLinkBytesLoaded == verifiedFileSize;
+            return getTotalLinkBytesLoaded() == verifiedFileSize;
         }
         if (externalDownloadStop() == false && isTerminated() == false) {
             // no stop and not terminated, normal finish
