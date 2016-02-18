@@ -16,7 +16,9 @@ import org.appwork.utils.IO;
 
 public class UsenetFile implements Storable {
 
-    private long size = -1;
+    private String hash = null;
+
+    private long   size = -1;
 
     public long getSize() {
         return size;
@@ -79,4 +81,20 @@ public class UsenetFile implements Storable {
         final String compressedJSonString = org.appwork.utils.encoding.Base64.encodeToString(bos.toByteArray(), false);
         downloadLink.setProperty(PROPERTY, compressedJSonString);
     }
+
+    /**
+     * @return the hash
+     */
+    public String getHash() {
+        return hash;
+    }
+
+    /**
+     * @param hash
+     *            the hash to set
+     */
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
 }

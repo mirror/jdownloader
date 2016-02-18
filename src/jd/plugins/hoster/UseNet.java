@@ -27,11 +27,10 @@ import jd.plugins.components.UsenetConfigPanel;
 import jd.plugins.components.UsenetFile;
 import jd.plugins.components.UsenetFileSegment;
 import jd.plugins.components.UsenetServer;
+import jd.plugins.download.HashInfo;
 import jd.plugins.download.usenet.SimpleUseNetDownloadInterface;
 
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.NullOutputStream;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.usenet.InvalidAuthException;
@@ -181,36 +180,60 @@ public class UseNet extends PluginForHost {
         try {
             this.client.set(client);
             client.connect(server.getHost(), server.getPort(), server.isSSL(), username, password);
-            if (downloadLink.getFinalFileName() == null || downloadLink.getBooleanProperty(PRECHECK_DONE, false) == false) {
+            if (downloadLink.getBooleanProperty(PRECHECK_DONE, false) == false) {
                 downloadLink.setProperty(PRECHECK_DONE, true);
-                final UsenetFileSegment firstSegment = usenetFile.getSegments().get(0);
-                final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(firstSegment.getMessageID());
-                if (bodyInputStream instanceof YEncInputStream) {
-                    final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
-                    final int totalParts = yEnc.getPartTotal();
-                    if (totalParts >= 1 && totalParts != usenetFile.getSegments().size()) {
-                        logger.severe("Segments missing: " + totalParts + "!=" + usenetFile.getSegments().size());
-                        setIncomplete(downloadLink, true);
+                boolean writeUsenetFile = false;
+                try {
+                    final UsenetFileSegment firstSegment = usenetFile.getSegments().get(0);
+                    final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(firstSegment.getMessageID());
+                    if (bodyInputStream instanceof YEncInputStream) {
+                        final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
+                        final String fileName = yEnc.getName();
+                        if (StringUtils.isNotEmpty(fileName)) {
+                            if (downloadLink.getFinalFileName() == null) {
+                                downloadLink.setFinalFileName(fileName);
+                            }
+                            writeUsenetFile = true;
+                            usenetFile.setName(fileName);
+                        }
+                        final long fileSize = yEnc.getSize();
+                        final long verifiedFileSize = downloadLink.getVerifiedFileSize();
+                        if (fileSize >= 0) {
+                            if (verifiedFileSize == -1 || fileSize != verifiedFileSize) {
+                                downloadLink.setVerifiedFileSize(fileSize);
+                            }
+                            writeUsenetFile = true;
+                            usenetFile.setSize(fileSize);
+                        }
                         drainInputStream(bodyInputStream);
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        if (StringUtils.isNotEmpty(yEnc.getFileCRC32())) {
+                            usenetFile.setHash(new HashInfo(yEnc.getFileCRC32(), HashInfo.TYPE.CRC32, true).exportAsString());
+                            writeUsenetFile = true;
+                        }
+                        final int totalParts = yEnc.getPartTotal();
+                        if (totalParts >= 1 && totalParts != usenetFile.getSegments().size()) {
+                            logger.severe("Segments missing: " + totalParts + "!=" + usenetFile.getSegments().size());
+                            setIncomplete(downloadLink, true);
+                            drainInputStream(bodyInputStream);
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                    } else if (bodyInputStream instanceof UUInputStream) {
+                        final UUInputStream uu = (UUInputStream) bodyInputStream;
+                        final String fileName = uu.getName();
+                        if (StringUtils.isNotEmpty(fileName)) {
+                            if (downloadLink.getFinalFileName() == null) {
+                                downloadLink.setFinalFileName(fileName);
+                            }
+                            writeUsenetFile = true;
+                            usenetFile.setName(fileName);
+                        }
                     }
-                    final String fileName = yEnc.getName();
-                    if (StringUtils.isNotEmpty(fileName) && downloadLink.getFinalFileName() == null) {
-                        downloadLink.setFinalFileName(fileName);
-                    }
-                    final long fileSize = yEnc.getSize();
-                    final long verifiedFileSize = downloadLink.getVerifiedFileSize();
-                    if (fileSize >= 0 && (verifiedFileSize == -1 || fileSize > verifiedFileSize)) {
-                        downloadLink.setVerifiedFileSize(fileSize);
-                    }
-                } else if (bodyInputStream instanceof UUInputStream) {
-                    final UUInputStream uu = (UUInputStream) bodyInputStream;
-                    final String fileName = uu.getName();
-                    if (StringUtils.isNotEmpty(fileName) && downloadLink.getFinalFileName() == null) {
-                        downloadLink.setFinalFileName(fileName);
+                    drainInputStream(bodyInputStream);
+                } finally {
+                    if (writeUsenetFile) {
+                        usenetFile._write(downloadLink);
                     }
                 }
-                drainInputStream(bodyInputStream);
             }
             dl = new SimpleUseNetDownloadInterface(client, downloadLink, usenetFile);
             try {
@@ -235,7 +258,9 @@ public class UseNet extends PluginForHost {
     }
 
     private void drainInputStream(final InputStream is) throws IOException {
-        IO.readStreamToOutputStream(-1, is, new NullOutputStream(), false);
+        final byte[] drainBuffer = new byte[1024];
+        while (is.read(drainBuffer) != -1) {
+        }
     }
 
     @Override
