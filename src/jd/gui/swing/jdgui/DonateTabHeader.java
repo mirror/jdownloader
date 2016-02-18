@@ -6,19 +6,20 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.Timer;
 
-import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.maintab.TabHeader;
-
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.maintab.TabHeader;
 
 public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
 
@@ -89,7 +90,7 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
             public void mousePressed(MouseEvent e) {
                 setShown();
                 if (doFlash()) {
-                    ConfirmDialog d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.donation_news_title(), _GUI.T.donation_news(), new AbstractIcon("robot_info", -1), _GUI.T.lit_continue(), null);
+                    ConfirmDialog d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.donation_news_title(), _GUI.T.donation_news(), new AbstractIcon(IconKey.ICON_BOTTY_ROBOT_INFO, -1), _GUI.T.lit_continue(), null);
                     UIOManager.I().show(ConfirmDialogInterface.class, d);
                 }
                 CFG_GUI.CFG.setDonationNotifyID(ELV_CC);
