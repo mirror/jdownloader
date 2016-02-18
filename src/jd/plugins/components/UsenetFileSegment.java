@@ -3,7 +3,27 @@ package jd.plugins.components;
 import org.appwork.storage.Storable;
 
 public class UsenetFileSegment implements Storable {
-    private int index = -1;
+    private int  index     = -1;
+
+    private long partBegin = -1;
+
+    public long getPartBegin() {
+        return partBegin;
+    }
+
+    public void setPartBegin(long partBegin) {
+        this.partBegin = partBegin;
+    }
+
+    public long getPartEnd() {
+        return partEnd;
+    }
+
+    public void setPartEnd(long partEnd) {
+        this.partEnd = partEnd;
+    }
+
+    private long partEnd = -1;
 
     public int getIndex() {
         return index;
