@@ -1746,8 +1746,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         // window
                         // visibility in such a state, windows restores the old size.
                         // this we have to manually set the correct size here
-                        getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
-                        GraphicsDevice screen = SwingUtils.getScreenByLocation(frameState.getX(), frameState.getY());
+                        if (frameState != null) {
+                            getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
+                        }
+                        GraphicsDevice screen = frameState == null ? null : SwingUtils.getScreenByLocation(frameState.getX(), frameState.getY());
 
                         if (screen != null && frameState != null && StringUtils.equals(screen.getIDstring(), frameState.getScreenID())) {
 
@@ -1772,7 +1774,9 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         // window
                         // visibility in such a state, windows restores the old size.
                         // this we have to manually set the correct size here
-                        getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
+                        if (frameState != null) {
+                            getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
+                        }
 
                     }
 
