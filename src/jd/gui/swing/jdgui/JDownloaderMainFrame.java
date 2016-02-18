@@ -14,7 +14,6 @@ import javax.swing.JDialog;
 
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.JSonStorage;
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -287,9 +286,9 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             if (newState.getExtendedState() == ExtendedState.NORMAL) {
                 latestNormalState = newState.clone();
-                logger.info("New Window State (Normal): " + JSonStorage.toString(latestFrameStatus));
+                // logger.info("New Window State (Normal): " + JSonStorage.toString(latestFrameStatus));
             } else {
-                logger.info("New Window State: " + JSonStorage.toString(latestFrameStatus));
+                // logger.info("New Window State: " + JSonStorage.toString(latestFrameStatus));
             }
 
         }
