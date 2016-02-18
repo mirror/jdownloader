@@ -55,15 +55,21 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv", "videopremium.net" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/(embed\\-)?[a-z0-9]{12}", "r489e0zu0564hjzrt50p9jhgtpiohkDELETE_MEdsngiurhz958hchswinefihighr" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/(embed\\-)?[a-z0-9]{12}", }, flags = { 2 })
 public class VideoPremiumNet extends antiDDoSForHost {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "videopremium.tv", "videopremium.me" };
+        // note: .net is parked
+    }
 
     private String               passCode                     = null;
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://videopremium.tv";
     private static final String  CURRENT_DOMAIN               = "videopremium.tv";
-    private static final String  NICE_HOSTproperty            = "videopremiumnet";
+    private static final String  NICE_HOSTproperty            = "videopremiumtv";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");

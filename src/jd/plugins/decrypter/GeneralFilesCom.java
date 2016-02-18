@@ -29,10 +29,18 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "general-files.org" }, urls = { "http://(www\\.)?(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "generalfil.es" }, urls = { "http://(www\\.)?(general-files\\.com|generalfiles\\.org|generalfiles\\.me|general-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general-file\\.com|general-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
 public class GeneralFilesCom extends PluginForDecrypt {
+
+    @Override
+    public String[] siteSupportedNames() {
+        // working domains
+        return new String[] { "general-fil.es", "generalfil.es" };
+        // all the following are parked, "general-files.com, generalfiles.org generalfiles.me , generalfiles.org general-files.org ,
+        // "general-files.org"
+    }
 
     public GeneralFilesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,14 +51,14 @@ public class GeneralFilesCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es|generalfil\\.es)/", currenthost + "/");
+        final String parameter = param.toString().replaceAll("(general-files\\.com|generalfiles\\.org|generalfiles\\.me|general-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general-file\\.com|general-fil\\.es|generalfil\\.es)/", currenthost + "/");
         try {
             br.getPage(parameter);
         } catch (final UnknownHostException e) {
             decryptedLinks.add(createOfflinelink(parameter, "Link offline (server error)"));
             return decryptedLinks;
         }
-        if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location|class=\"gf\\-removed\\-h\"|class=\"deleted\"|class=\"removed\"") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().equals("http://www." + currenthost + "/")) {
+        if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location|class=\"gf-removed-h\"|class=\"deleted\"|class=\"removed\"") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().equals("http://www." + currenthost + "/")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -60,12 +68,12 @@ public class GeneralFilesCom extends PluginForDecrypt {
         }
 
         br.setFollowRedirects(false);
-        String fpName = br.getRegex("<h4 class=\"file\\-header\\-2\">([^<>\"]*?)</h4>").getMatch(0);
+        String fpName = br.getRegex("<h4 class=\"file-header-2\">([^<>\"]*?)</h4>").getMatch(0);
         if (fpName == null) {
             fpName = new Regex(parameter, "/download/[a-z0-9]+/([^<>\"/]*?)\\.html").getMatch(0);
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        String goLink = br.getRegex("\\'(/go/(\\d+)(\\?ajax=1)?)\\'").getMatch(0);
+        String goLink = br.getRegex("'(/go/(\\d+)(\\?ajax=1)?)'").getMatch(0);
         if (goLink == null) {
             goLink = br.getRegex("/rate/2/(\\d+)\\'\\)").getMatch(0);
             if (goLink != null) {
@@ -83,7 +91,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
                 return null;
             }
             for (int i = 1; i <= 3; i++) {
-                final String c = getCaptchaCode("http://www." + currenthost + "/captcha/" + goLink, param);
+                final String c = getCaptchaCode("/captcha/" + goLink, param);
                 // this is probably wrong.... raztoki 20150817
                 br.postPage(goLink, "captcha=" + Encoding.urlEncode(c));
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?" + currenthost + "/download/[a-z0-9]+/[^<>\"/]*?\\.html")) {
@@ -101,9 +109,9 @@ public class GeneralFilesCom extends PluginForDecrypt {
             br.getPage(goLink);
         }
         /* First try ajax regex */
-        String finallink = JSonUtils.getJson(br, "link");
+        String finallink = PluginJSonUtils.getJson(br, "link");
         if (finallink == null) {
-            finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
+            finallink = br.getRegex("window\\.location\\.replace\\('(http[^<>\"]*?)'\\)").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRedirectLocation();
                 if (finallink == null) {
