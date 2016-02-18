@@ -109,6 +109,7 @@ public class FileLobyCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br = prepBR(this.br);
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
@@ -382,6 +383,13 @@ public class FileLobyCom extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    private Browser prepBR(final Browser br) {
+        /* Higher timeouts needed especially for resuming for this host. */
+        br.setReadTimeout(1 * 60 * 1000);
+        br.setConnectTimeout(1 * 60 * 1000);
+        return br;
     }
 
     @Override
