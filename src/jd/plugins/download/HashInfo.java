@@ -7,8 +7,8 @@ public class HashInfo {
     public static enum TYPE {
         MD5("MD5", 32),
         CRC32("CRC32", 8),
-        SHA1("SHA1", 64),
-        SHA256("SHA-256", 40);
+        SHA1("SHA1", 40),
+        SHA256("SHA-256", 64);
 
         private final String digest;
         private final int    size;
@@ -77,6 +77,8 @@ public class HashInfo {
         this.type = type;
         if (hash.length() < type.getSize()) {
             hash = String.format("%0" + (type.getSize() - hash.length()) + "d%s", 0, hash);
+        } else if (hash.length() > type.getSize()) {
+            hash = hash.substring(0, type.getSize());
         }
         this.hash = hash;
         this.trustworthy = trustworthy;
