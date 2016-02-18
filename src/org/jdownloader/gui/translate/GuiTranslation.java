@@ -6068,4 +6068,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Loading Menu & Toolbar..." })
 
     String MenuBar_loading();
+
+    @Default(lngs = { "en" }, values = { "MyJDownloader Download list right click menu Manager" })
+
+    String MenuManagerMYJDDownloadTableContext_getName();
+
+    @Default(lngs = { "en" }, values = { "Remote Menu Manager" })
+    String MyJDownloaderSettingsPanelForTab_menus();
 }

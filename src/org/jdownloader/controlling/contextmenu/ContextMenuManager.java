@@ -328,6 +328,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                     ret.validate();
 
                     menuData = ret;
+                    onSetupMenuData(menuData);
                     // System.out.println(System.currentTimeMillis() - t);
                     return ret;
                 } catch (Exception e) {
@@ -335,18 +336,23 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                     try {
                         menuData = setupDefaultStructure();
                         menuData.validate();
+                        onSetupMenuData(menuData);
                         return menuData;
                     } catch (Exception e1) {
                         logger.log(e1);
                         menuData = new MenuContainerRoot();
                         menuData._setOwner(ContextMenuManager.this);
                         menuData.validate();
+                        onSetupMenuData(menuData);
                         return menuData;
                     }
                 }
             }
         }.getReturnValue();
 
+    }
+
+    protected void onSetupMenuData(MenuContainerRoot menuData) {
     }
 
     private void convertOldFiles() {

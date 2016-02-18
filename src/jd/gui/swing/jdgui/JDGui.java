@@ -61,6 +61,7 @@ import javax.swing.WindowConstants;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -81,6 +82,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
@@ -96,6 +98,7 @@ import org.appwork.utils.swing.dialog.WindowZHandler;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
+import org.appwork.utils.swing.locator.CenterOfScreenLocator;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
@@ -819,10 +822,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         JDGui.this.mainFrame.setSize(new Dimension(800, 600));
                         final Rectangle abounds = JDGui.this.mainFrame.getBounds();
                         JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
-                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Center MainFrame");
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Center MainFrame");
                         return true;
                     } catch (final Exception ee) {
-                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(ee);
+                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(ee);
                     }
                 }
                 return false;
@@ -1725,38 +1728,72 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 /* set visible state */
 
                 if (!minimize) {
-                    int estate = getMainFrame().getExtendedState();
+                    ExtendedState estate = ExtendedState.get(getMainFrame());
 
                     FrameStatus frameState = getMainFrame().getLatestFrameStatus();
+                    logger.info("Reset frame to \r\n" + JSonStorage.serializeToJson(frameState));
                     if (frameState != null) {
+                        estate = frameState.getExtendedState();
 
-                        estate = frameState.getExtendedState().getId();
+                    }
+
+                    switch (estate) {
+                    case MAXIMIZED_BOTH:
+                    case MAXIMIZED_HORIZ:
+                    case MAXIMIZED_VERT:
+                        // set size before. else the locator may be wrong
+                        // on windows 8 and 10, you can maximize to half screen. this is not a real maximized, but if you toggle the
+                        // window
+                        // visibility in such a state, windows restores the old size.
+                        // this we have to manually set the correct size here
                         getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
+                        GraphicsDevice screen = SwingUtils.getScreenByLocation(frameState.getX(), frameState.getY());
+
+                        if (screen != null && frameState != null && StringUtils.equals(screen.getIDstring(), frameState.getScreenID())) {
+
+                            getMainFrame().setLocation(frameState.getX(), frameState.getY());
+                        } else {
+                            Point center = new CenterOfScreenLocator().getLocationOnScreen(getMainFrame());
+                            if (center != null) {
+                                getMainFrame().setLocation(center);
+                            }
+                        }
+
+                        break;
+                    case NORMAL:
+                        // when I snap a windows 10 window e.g. to the left side, java thinks it is in normal state. when I send hide it to
+                        // tray and restore it, windows will restore it to the dimensions it had before snapping.
+                        // setting the state to normal here (even if it already is) will tell windows that we are not in extended state any
+                        // more, and accept the setsize below.
+                        getMainFrame().setExtendedState(ExtendedState.NORMAL.getId());
+                    case ICONIFIED:
+                    default:
+                        // on windows 8 and 10, you can maximize to half screen. this is not a real maximized, but if you toggle the
+                        // window
+                        // visibility in such a state, windows restores the old size.
+                        // this we have to manually set the correct size here
+                        getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
+
+                    }
+
+                    switch (estate) {
+
+                    case MAXIMIZED_BOTH:
+                    case MAXIMIZED_HORIZ:
+                    case MAXIMIZED_VERT:
+                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.MAXIMIZED_BOTH);
+                        break;
+                    default:
+                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
+
                     }
 
                     if (!getMainFrame().isVisible()) {
+
                         WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
 
                     }
-                    if (frameState != null) {
-                        if ((estate & JFrame.NORMAL) != 0) {
-                            // on windows 8 and 10, you can maximize to half screen. this is not a real maximized, but if you toggle the
-                            // window
-                            // visibility in such a state, windows restores the old size.
-                            // this we have to manually set the correct size here
-                            getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
 
-                        }
-                        if ((estate & JFrame.MAXIMIZED_BOTH) != 0) {
-                            // windows sets the location to 0 when the frame has been invisible
-                            getMainFrame().setLocation(frameState.getX(), frameState.getY());
-                        }
-                    }
-                    if ((estate & JFrame.ICONIFIED) != 0) {
-                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
-                    } else {
-                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.get(estate));
-                    }
                     if (trayIconChecker != null) {
                         trayIconChecker.interrupt();
                         trayIconChecker = null;
