@@ -8,7 +8,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    height="50"
-   style="fill:#000000;fill-opacity:0.60784316"
+   style="fill:#000000;fill-opacity:1.0"
    viewBox="0 0 50 50"
    width="50"
    id="svg2"
@@ -58,7 +58,7 @@
      style="text-indent:0;text-align:start;line-height:normal;text-transform:none;block-progression:tb;-inkscape-font-specification:Bitstream Vera Sans"
      id="path4" />
   <g
-     style="fill:#000000;fill-opacity:0.60784314;stroke:none;stroke-width:0.83583331;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     style="fill:#000000;fill-opacity:1.0;stroke:none;stroke-width:0.83583331;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
      id="g4148"
      transform="matrix(0.56355932,0,0,0.56355932,10.911017,13.877119)">
     <path

@@ -7,7 +7,7 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   style="fill:#000000;fill-opacity:0.60784316"
+   style="fill:#000000;fill-opacity:1.0"
    viewBox="0 0 50 50"
    id="svg2"
    version="1.1"
@@ -55,7 +55,7 @@
      inkscape:connector-curvature="0"
      d="m 27.467164,20.276349 a 0.62986144,0.62986144 0 0 0 -0.354262,0.196812 l -6.86874,6.849058 -0.432986,0.452667 0.432986,0.452668 6.86874,6.849059 a 0.62986144,0.62986144 0 1 0 0.885654,-0.885655 l -5.786273,-5.786273 9.781557,0 c 3.784807,0 6.451466,0.957487 8.167699,2.499512 1.716232,1.542025 2.538875,3.695728 2.538875,6.317667 0,5.25686 -2.420788,9.112396 -2.420788,9.112396 a 0.62986144,0.62986144 0 1 0 1.062785,0.669161 c 0,0 2.6176,-4.136606 2.6176,-9.781557 0,-2.892578 -0.945674,-5.45953 -2.952181,-7.262364 -2.006506,-1.802835 -5.017007,-2.814412 -9.01399,-2.814412 l -9.781557,0 5.786273,-5.786273 a 0.62986144,0.62986144 0 0 0 -0.531392,-1.082466 z"
      overflow="visible"
-     style="color:#000000;line-height:normal;font-family:'Bitstream Vera Sans';-inkscape-font-specification:'Bitstream Vera Sans';text-indent:0;text-align:start;text-transform:none;block-progression:tb;overflow:visible;fill:#000000;fill-opacity:0.61746991;enable-background:accumulate"
+     style="color:#000000;line-height:normal;font-family:'Bitstream Vera Sans';-inkscape-font-specification:'Bitstream Vera Sans';text-indent:0;text-align:start;text-transform:none;block-progression:tb;overflow:visible;fill:#000000;fill-opacity:1.0;enable-background:accumulate"
      id="path4-1" />
   <g
      transform="matrix(0,0.39103527,1.0837754,0,9.1831133,12.499028)"
@@ -64,17 +64,17 @@
     <path
        inkscape:connector-curvature="0"
        id="path4209"
-       style="font-style:normal;font-weight:normal;font-size:24.02693176px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.63999999;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="font-style:normal;font-weight:normal;font-size:24.02693176px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1.0;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 69.904674,22.847891 13.267465,6.018464 0,-2.111742 -10.462212,-4.6341 10.462212,-4.634101 0,-2.111742 -13.267465,6.018465 0,1.454756 z" />
     <path
        inkscape:connector-curvature="0"
        id="path4209-3"
-       style="font-style:normal;font-weight:normal;font-size:24.02693176px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.63999999;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="font-style:normal;font-weight:normal;font-size:24.02693176px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1.0;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 61.513672,22.84789 13.267466,6.018465 0,-2.111742 -10.462212,-4.6341 10.462212,-4.634102 0,-2.111742 -13.267466,6.018465 0,1.454756 z" />
     <path
        inkscape:connector-curvature="0"
        id="path4209-0"
-       style="font-style:normal;font-weight:normal;font-size:24.02693176px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.63999999;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="font-style:normal;font-weight:normal;font-size:24.02693176px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1.0;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 53.122669,22.84789 13.267466,6.018465 0,-2.111742 -10.462212,-4.6341 10.462212,-4.634102 0,-2.111742 -13.267466,6.018465 0,1.454756 z" />
   </g>
 </svg>
