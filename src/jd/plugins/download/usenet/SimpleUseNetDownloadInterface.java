@@ -207,11 +207,11 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                         final long partSize = yEnc.getPartSize();
                         if (partSize >= 0) {
                             segment.setPartBegin(yEnc.getPartBegin());
+                            segment.setPartEnd(yEnc.getPartEnd());
                             final long writePosition = yEnc.getPartBegin() - 1;
                             // update file-pointer and totalLinkBytesLoaded
                             raf.seek(writePosition);
                             totalLinkBytesLoaded.set(writePosition);
-                            segment.setPartEnd(yEnc.getPartEnd());
                             writeUsenetFile = true;
                         }
                         meteredThrottledInputStream.setInputStream(new CheckedInputStream(bodyInputStream, new CRC32()));
