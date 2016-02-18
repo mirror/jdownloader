@@ -106,7 +106,6 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
             }
         }
         postParameterParsed = true;
-
         for (final KeyValuePair param : postParameters) {
             if (param.key != null) {
                 /* key=value(parameter) */
@@ -131,7 +130,6 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
                     requestProperties.diffID = param.value;
                     continue;
                 }
-
             }
         }
         return postParameters;

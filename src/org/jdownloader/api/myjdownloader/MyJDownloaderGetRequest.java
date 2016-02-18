@@ -85,9 +85,7 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
     @Override
     public void setRequestedURLParameters(final List<KeyValuePair> requestedURLParameters) {
         super.setRequestedURLParameters(requestedURLParameters);
-
         requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);
-
     }
 
     public int getApiVersion() {
