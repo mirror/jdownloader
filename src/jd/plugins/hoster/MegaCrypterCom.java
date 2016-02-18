@@ -52,12 +52,12 @@ import jd.plugins.PluginProgress;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.neerdi\\.x10\\.bz|megacrypter\\.neerdi\\.com|encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.neerdi\\.x10\\.bz|megacrypter\\.neerdi\\.com|encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
 public class MegaCrypterCom extends antiDDoSForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "megacrypter.neerdi.x10.bz", "megacrypter.neerdi.com", "encrypterme.ga", "megacrypter.noestasinvitado.com", "youpaste.co", "linkcrypter.net", "megacrypter.linkcrypter.net" };
+        return new String[] { "megacrypter.neerdi.x10.bz", "megacrypter.neerdi.com", "encrypterme.ga", "megacrypter.noestasinvitado.com", "youpaste.co" };
     }
 
     // note: hosts removed due to be down.
@@ -70,7 +70,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("megacrypter.linkcrypter.net/", "linkcrypter.net/").replace("%21", "!"));
+        link.setUrlDownload(link.getDownloadURL().replace("%21", "!"));
     }
 
     private void setUrl(final DownloadLink downloadLink) {
@@ -78,7 +78,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
             // https seems to some soccer sports page
             supportsHTTPS = false;
             enforcesHTTPS = false;
-        } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/") || downloadLink.getDownloadURL().contains("linkcrypter.net/")) {
+        } else if (downloadLink.getDownloadURL().contains("megacrypter.noestasinvitado.com/")) {
             // all others enable by default.
             supportsHTTPS = true;
             enforcesHTTPS = true;

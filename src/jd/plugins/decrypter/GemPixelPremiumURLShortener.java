@@ -41,7 +41,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30447 $", interfaceVersion = 3, names = { "shortenurl.pw", "newf.xyz", "hwba.ch", "888.xirkle.com", "gempixel.com" }, urls = { "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?newf\\.xyz/[a-zA-Z0-9]+", "https?://(?:www\\.)?hwba\\.ch/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 30447 $", interfaceVersion = 3, names = { "shortenurl.pw", "hwba.ch", "888.xirkle.com", "gempixel.com" }, urls = { "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?hwba\\.ch/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+" }, flags = { 0 })
 public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
 
     public GemPixelPremiumURLShortener(PluginWrapper wrapper) {
