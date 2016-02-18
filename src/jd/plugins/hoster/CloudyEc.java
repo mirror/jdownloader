@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec", "onevideo.to" }, urls = { "https?://(?:www\\.)?cloudy\\.ec/(?:v/|embed\\.php\\?id=|video)[a-z0-9]+", "https?://(?:www\\.)?onevideo\\.to/(?:v/|embed\\.php\\?id=)[a-z0-9]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec" }, urls = { "https?://(?:www\\.)?cloudy\\.ec/(?:v/|embed\\.php\\?id=|video)[a-z0-9]+" }, flags = { 0 })
 public class CloudyEc extends PluginForHost {
 
     private static final String DOMAIN = "cloudy.ec";

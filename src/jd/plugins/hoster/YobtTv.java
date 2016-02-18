@@ -31,11 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oraltown.com", "cuntriot.com", "iboner.com", "yobt.tv", "bestbigmovs.com", "coolmovs.com", "gayspower.com", "bigxvideos.com", "hdporn.in", "fetishok.com", "nastymovs.com", "angrymovs.com", "madmovs.com" }, urls = { "http://(www\\.)?oraltown\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?cuntriot\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?iboner\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?yobt\\.tv/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?bestbigmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?coolmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?gayspower\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?bigxvideos\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?hdporn\\.in/content/\\d+/[a-z0-9\\-]+\\.html",
-        "http://(www\\.)?fetishok\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?nastymovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?angrymovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?madmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iboner.com", "yobt.tv", "coolmovs.com", "bigxvideos.com", "hdporn.in", "fetishok.com", "nastymovs.com" }, urls = { "http://(www\\.)?iboner\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?yobt\\.tv/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?coolmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?bigxvideos\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?hdporn\\.in/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?fetishok\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?nastymovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
 public class YobtTv extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public YobtTv(final PluginWrapper wrapper) {
         super(wrapper);
@@ -82,17 +81,17 @@ public class YobtTv extends PluginForHost {
             if (bismarkishID.equals("")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            DLLINK = decryptTheSecret(bismarkishID);
+            dllink = decryptTheSecret(bismarkishID);
         } else {
-            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null || !DLLINK.startsWith("http")) {
+        if (dllink == null || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = getFileNameExtensionFromString(dllink);
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
@@ -102,7 +101,7 @@ public class YobtTv extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -139,7 +138,7 @@ public class YobtTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
