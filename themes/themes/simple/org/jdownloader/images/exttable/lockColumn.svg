@@ -48,14 +48,14 @@
      inkscape:window-maximized="1"
      inkscape:current-layer="g4140-6" />
   <ellipse
-     style="fill:#ffffff;fill-opacity:0.56716418;stroke:none;stroke-opacity:0.60895523"
+     style="fill:#ffffff;fill-opacity:1.0;stroke:none;stroke-opacity:1.0"
      id="path4154"
      cx="13.026233"
      cy="12.995864"
      rx="8.2090683"
      ry="8.1648731" />
   <path
-     style="color:#000000;line-height:normal;font-family:'Bitstream Vera Sans';-inkscape-font-specification:'Bitstream Vera Sans';text-indent:0;text-align:start;text-transform:none;block-progression:tb;overflow:visible;fill:#000000;fill-opacity:0.56716418;enable-background:accumulate"
+     style="color:#000000;line-height:normal;font-family:'Bitstream Vera Sans';-inkscape-font-specification:'Bitstream Vera Sans';text-indent:0;text-align:start;text-transform:none;block-progression:tb;overflow:visible;fill:#000000;fill-opacity:1.0;enable-background:accumulate"
      d="M 13 3.8476562 C 8.4183753 3.8476562 4.6259295 7.2288846 3.9609375 11.626953 L 2.1445312 11.626953 L 3.9628906 7.2070312 A 0.56278724 1.3746889 0 0 0 3.5410156 4.859375 A 0.56278724 1.3746889 0 0 0 3.1679688 5.2617188 L 0.40429688 12.029297 L 0.001953125 12.992188 L 0.40429688 13.955078 L 3.1679688 20.726562 A 0.5597247 1.3672081 0 0 0 3.6210938 21.134766 A 0.5597247 1.3672081 0 0 0 3.953125 18.78125 L 2.1445312 14.363281 L 3.9609375 14.363281 C 4.6226789 18.765373 8.4157234 22.154298 13 22.154297 C 17.585041 22.154298 21.380213 18.766447 22.041016 14.363281 L 23.869141 14.363281 L 22.074219 18.78125 A 0.55518815 1.3672081 0 0 0 22.402344 21.134766 A 0.55518815 1.3672081 0 0 0 22.853516 20.726562 L 25.59375 13.955078 L 25.994141 12.992188 L 25.59375 12.029297 L 22.853516 5.2617188 A 0.55822587 1.3746889 0 0 0 22.484375 4.859375 A 0.55822587 1.3746889 0 0 0 22.480469 4.859375 A 0.55822587 1.3746889 0 0 0 22.0625 7.2070312 L 23.869141 11.626953 L 22.039062 11.626953 C 21.37407 7.2288845 17.581624 3.8476562 13 3.8476562 z M 13 4.8261719 C 17.520003 4.8261719 21.173829 8.479996 21.173828 13 C 21.173828 17.520003 17.520003 21.173828 13 21.173828 C 8.479996 21.173828 4.8261709 17.520003 4.8261719 13 C 4.8261709 8.479996 8.479996 4.8261719 13 4.8261719 z "
      id="path4142" />
   <path
@@ -65,7 +65,7 @@
   <g
      id="g4140"
      transform="translate(55.14476,-15.492852)"
-     style="fill:none;stroke:#000000;stroke-opacity:0.6089552" />
+     style="fill:none;stroke:#000000;stroke-opacity:1.0" />
   <g
      id="g4140-9"
      transform="translate(48.369336,-18.632683)"
@@ -82,7 +82,7 @@
        id="path4169-3"
        overflow="visible"
        d="m -47.321395,45.181938 c -1.05886,0 -1.974895,0.476206 -2.545093,1.249816 -0.570198,0.77361 -0.808442,1.776291 -0.808442,2.856723 l 0,0.568099 1.437229,0 0,-0.568099 c 0,-0.820589 0.186218,-1.465198 0.49405,-1.88284 0.307828,-0.417643 0.723387,-0.665486 1.422256,-0.665486 0.700699,0 1.115388,0.234184 1.422259,0.649253 0.30687,0.415071 0.494049,1.070226 0.494049,1.899073 l 0,0.568099 1.437229,0 0,-0.568099 c 0,-1.086718 -0.252255,-2.10041 -0.823413,-2.872955 -0.571157,-0.772546 -1.473087,-1.233584 -2.530124,-1.233584 z m -3.353535,5.194041 c -0.793351,0 -1.437229,0.698079 -1.437229,1.558211 l 0,5.19404 c 0,0.860133 0.643878,1.558212 1.437229,1.558212 l 6.707072,0 c 0.79335,0 1.43723,-0.698079 1.43723,-1.558212 l 0,-5.19404 c 0,-0.860132 -0.64388,-1.558211 -1.43723,-1.558211 l -6.707072,0 z m 3.353535,2.597019 c 0.528902,0 0.958154,0.465386 0.958154,1.038809 0,0.383321 -0.193547,0.712493 -0.479076,0.892724 l 0,1.184892 c 0,0.286191 -0.215106,0.519404 -0.479078,0.519404 -0.263971,0 -0.479076,-0.233213 -0.479076,-0.519404 l 0,-1.184892 c -0.285527,-0.180231 -0.479074,-0.508884 -0.479074,-0.892724 0,-0.573423 0.429252,-1.038809 0.95815,-1.038809 z"
-       style="color:#000000;line-height:normal;font-family:'Bitstream Vera Sans';-inkscape-font-specification:'Bitstream Vera Sans';text-indent:0;text-align:start;text-transform:none;block-progression:tb;overflow:visible;fill:#000000;stroke:none;stroke-opacity:1;enable-background:accumulate;fill-opacity:0.5970149"
+       style="color:#000000;line-height:normal;font-family:'Bitstream Vera Sans';-inkscape-font-specification:'Bitstream Vera Sans';text-indent:0;text-align:start;text-transform:none;block-progression:tb;overflow:visible;fill:#000000;stroke:none;stroke-opacity:1;enable-background:accumulate;fill-opacity:1.0"
        inkscape:connector-curvature="0" />
   </g>
 </svg>

@@ -8,7 +8,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    height="50"
-   style="fill:#000000;fill-opacity:0.6862745"
+   style="fill:#000000;fill-opacity:1.0"
    viewBox="0 0 50 50"
    width="50"
    id="svg2"
@@ -53,18 +53,18 @@
      style="text-indent:0;text-align:start;line-height:normal;text-transform:none;block-progression:tb;-inkscape-font-specification:Bitstream Vera Sans"
      id="path4" />
   <g
-     style="fill:#000000;fill-opacity:0.60784314"
+     style="fill:#000000;fill-opacity:1.0"
      id="g4148"
      transform="matrix(0.72072419,0,0,0.72072419,15.8802,16.092065)">
     <circle
-       style="fill:#ffffff;fill-opacity:0.80597013;stroke:none;stroke-opacity:1"
+       style="fill:#ffffff;fill-opacity:1.0;stroke:none;stroke-opacity:1"
        id="path4151"
        cx="25"
        cy="25"
        r="20.038216" />
     <path
        id="path4140"
-       style="color:#000000;line-height:normal;font-family:'Bitstream Vera Sans';-inkscape-font-specification:'Bitstream Vera Sans';text-indent:0;text-align:start;text-transform:none;block-progression:tb;overflow:visible;enable-background:accumulate;fill:#000000;fill-opacity:0.66561514;stroke:none;stroke-opacity:1"
+       style="color:#000000;line-height:normal;font-family:'Bitstream Vera Sans';-inkscape-font-specification:'Bitstream Vera Sans';text-indent:0;text-align:start;text-transform:none;block-progression:tb;overflow:visible;enable-background:accumulate;fill:#000000;fill-opacity:1.0;stroke:none;stroke-opacity:1"
        overflow="visible"
        d="M 25,3 C 12.86158,3 3,12.86158 3,25 3,37.13842 12.86158,47 25,47 37.13842,47 47,37.13842 47,25 47,12.86158 37.13842,3 25,3 Z m 0,2 C 36.05754,5 45,13.94246 45,25 45,36.05754 36.05754,45 25,45 13.94246,45 5,36.05754 5,25 5,13.94246 13.94246,5 25,5 Z M 13.8125,21 A 1.0001,1.0001 0 0 0 13,22 l 0,6 a 1.0001,1.0001 0 0 0 1,1 l 22,0 a 1.0001,1.0001 0 0 0 1,-1 l 0,-6 a 1.0001,1.0001 0 0 0 -1,-1 l -22,0 a 1.0001,1.0001 0 0 0 -0.09375,0 1.0001,1.0001 0 0 0 -0.09375,0 z M 15,23 l 20,0 0,4 -20,0 0,-4 z"
        inkscape:connector-curvature="0" />
