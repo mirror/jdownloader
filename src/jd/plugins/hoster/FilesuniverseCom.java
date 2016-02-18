@@ -178,7 +178,7 @@ public class FilesuniverseCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (SUPPORTS_ALT_AVAILABLECHECK) {
-                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                    postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
                 }
                 /* 2nd offline check */
@@ -223,7 +223,7 @@ public class FilesuniverseCom extends antiDDoSForHost {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
             try {
-                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                 fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }
@@ -293,8 +293,8 @@ public class FilesuniverseCom extends antiDDoSForHost {
         return fileInfo;
     }
 
-    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
-        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
+        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -319,7 +319,7 @@ public class FilesuniverseCom extends antiDDoSForHost {
             try {
                 logger.info("Trying to get link via mp3embed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/mp3embed-" + fuid);
+                getPage(brv, "/mp3embed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
@@ -337,7 +337,7 @@ public class FilesuniverseCom extends antiDDoSForHost {
             try {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/vidembed-" + fuid);
+                getPage(brv, "/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     logger.info("Failed to get link via vidembed because: " + br.toString());
@@ -702,22 +702,6 @@ public class FilesuniverseCom extends antiDDoSForHost {
             finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(\"|\\')").getMatch(1);
         }
         return finallink;
-    }
-
-    protected void getPage(final String page) throws Exception {
-        super.getPage(page);
-        correctBR();
-    }
-
-    @SuppressWarnings("unused")
-    protected void postPage(final String page, final String postdata) throws Exception {
-        super.postPage(page, postdata);
-        correctBR();
-    }
-
-    protected void submitForm(final Form form) throws Exception {
-        super.submitForm(form);
-        correctBR();
     }
 
     /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */

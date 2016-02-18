@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -134,7 +135,7 @@ public class KingFilesNet extends PluginForHost {
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.7<br />
      * Tags: Script, template<br />
-     * mods: checkServerErrors[Extra errorhandling for 0-byte-files]<br />
+     * mods: heavily modified, do NOT upgrade!<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -547,8 +548,8 @@ public class KingFilesNet extends PluginForHost {
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    /* wait time is usually skippable for reCaptcha handling */
-                    skipWaittime = true;
+                    /* wait time is usually skippable for reCaptcha handling - in this case NOT! */
+                    skipWaittime = false;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
 
@@ -603,7 +604,14 @@ public class KingFilesNet extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        } catch (final BrowserException e) {
+            if (e.getCause().getMessage() != null && e.getCause().getMessage().contains("timed out")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Downloadserver offline ?!", 30 * 60 * 1000l);
+            }
+            throw e;
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
@@ -854,6 +862,9 @@ public class KingFilesNet extends PluginForHost {
         }
         if (ttt == null) {
             ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "class=\"seconds\" style=\"[^\"]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);
