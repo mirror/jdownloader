@@ -362,9 +362,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 sb.append(file.toURI().toString());
             }
         }
-        
+
         final LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null/* add useragent? */), sb.toString());
-        final boolean overwritePackagizerRules = query.isOverwritePackagizerRules() == null ? false : query.isOverwritePackagizerRules();
+        final boolean overwritePackagizerRules = Boolean.TRUE.equals(query.isOverwritePackagizerRules());
 
         final HashSet<String> finalExtPws;
         if (StringUtils.isNotEmpty(query.getExtractPassword())) {
@@ -378,43 +378,49 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             @Override
             public void modifyCrawledLink(CrawledLink link) {
                 PackageInfo existing = link.getDesiredPackageInfo();
+                if (existing == null) {
+                    existing = new PackageInfo();
+                }
+
                 if (finalExtPws != null && finalExtPws.size() > 0) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalExtPws);
                 }
-                if (overwritePackagizerRules || existing == null || StringUtils.isNotEmpty(query.getPackageName())) {
-                    if (existing == null) {
-                        existing = new PackageInfo();
+
+                if (StringUtils.isNotEmpty(query.getPackageName())) {
+                    if (overwritePackagizerRules || StringUtils.isEmpty(existing.getName())) {
+                        existing.setName(query.getPackageName());
+                        existing.setIgnoreVarious(true);
+                        existing.setUniqueId(null);
+                        link.setDesiredPackageInfo(existing);
                     }
-                    existing.setName(query.getPackageName());
-                    existing.setIgnoreVarious(true);
-                    existing.setUniqueId(null);
-                    link.setDesiredPackageInfo(existing);
                 }
-                if (overwritePackagizerRules || existing == null || !Priority.DEFAULT.equals(fp)) {
+
+                if (!Priority.DEFAULT.equals(fp)) {
                     link.setPriority(fp);
                 }
-                if (overwritePackagizerRules || existing == null || StringUtils.isNotEmpty(query.getDestinationFolder())) {
-                    if (existing == null) {
-                        existing = new PackageInfo();
-                    }
-                    existing.setDestinationFolder(query.getDestinationFolder());
-                    existing.setIgnoreVarious(true);
 
-                    existing.setUniqueId(null);
-                    link.setDesiredPackageInfo(existing);
+                if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
+                    if (overwritePackagizerRules ||  StringUtils.isEmpty(existing.getDestinationFolder())) {
+                        existing.setDestinationFolder(query.getDestinationFolder());
+                        existing.setIgnoreVarious(true);
+                        existing.setUniqueId(null);
+                        link.setDesiredPackageInfo(existing);
+                    }
                 }
+
                 final DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
                     if (StringUtils.isNotEmpty(query.getDownloadPassword())) {
                         dlLink.setDownloadPassword(query.getDownloadPassword());
                     }
                 }
+
                 if (overwritePackagizerRules && query.isAutostart() != null) {
                     BooleanStatus existingAutoStartStatus = BooleanStatus.UNSET;
                     if (link.hasArchiveInfo()) {
                         existingAutoStartStatus = link.getArchiveInfo().getAutoExtract();
                     }
-                    if (query.isOverwritePackagizerRules() || existing == null || BooleanStatus.UNSET.equals(existingAutoStartStatus)) {
+                    if (query.isOverwritePackagizerRules() || BooleanStatus.UNSET.equals(existingAutoStartStatus)) {
                         switch (BooleanStatus.convert(query.isAutoExtract())) {
                         case TRUE:
                             link.setAutoConfirmEnabled(true);
@@ -429,6 +435,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                         }
                     }
                 }
+
                 if (overwritePackagizerRules && query.isAutoExtract() != null) {
                     BooleanStatus existingAutoExtractStatus = BooleanStatus.UNSET;
                     if (link.hasArchiveInfo()) {
@@ -443,17 +450,17 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         lcj.setCrawledLinkModifierPrePackagizer(modifier);
 
         switch (BooleanStatus.convert(query.isDeepDecrypt())) {
-            case TRUE:
-                lcj.setDeepAnalyse(true);
-                break;
-            case FALSE:
-                lcj.setDeepAnalyse(false);
-                break;
-            default:
-                break;
+        case TRUE:
+            lcj.setDeepAnalyse(true);
+            break;
+        case FALSE:
+            lcj.setDeepAnalyse(false);
+            break;
+        default:
+            break;
         }
 
-        if (StringUtils.isNotEmpty(query.getDestinationFolder()) || StringUtils.isNotEmpty(query.getPackageName())) {
+        if (overwritePackagizerRules) {
             lcj.setCrawledLinkModifierPostPackagizer(modifier);
         }
         if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
