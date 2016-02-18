@@ -127,7 +127,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
         return _JDT.T.StartDownloadsAction_createTooltip_();
     }
 
-    private boolean hideIfDownloadsAreRunning = false;
+    private boolean            hideIfDownloadsAreRunning     = false;
 
     public static final String HIDE_IF_DOWNLOADS_ARE_RUNNING = "HideIfDownloadsAreRunning";
 
@@ -217,9 +217,9 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     }
 
     private Icon normalSmall = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 18);
-    private Icon forcedSmall = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START_FORCED, 18);;
+    private Icon forcedSmall = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 18);;
     private Icon normalLarge = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24);
-    private Icon forcedLarge = new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START_FORCED, 24);;
+    private Icon forcedLarge = new AbstractIcon(IconKey.ICON_PLAY_BREAKUP_FORCED_ONLY, 24);;
     private Icon smallIcon   = normalSmall;
     private Icon largeIcon   = normalLarge;
 
