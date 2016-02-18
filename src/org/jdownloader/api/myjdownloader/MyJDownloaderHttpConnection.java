@@ -127,7 +127,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     }
 
     protected PostRequest buildPostRequest() {
-
         return new MyJDownloaderPostRequest(this);
     }
 
@@ -298,10 +297,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getRawOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                                                                  // public void close() throws IOException {
-                                                                  // };
+                            // public void close() throws IOException {
+                            // };
 
-                                                              };
+                        };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
                         {
