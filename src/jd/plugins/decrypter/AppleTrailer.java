@@ -24,6 +24,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -38,10 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 /**
  * @author raztoki
@@ -60,7 +60,7 @@ public class AppleTrailer extends PluginForDecrypt {
     private boolean                       tryposter      = false;
     private String                        parameter      = null;
     private String                        title          = null;
-    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(); ;
+    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();;
     private final ArrayList<DownloadLink> SD             = new ArrayList<DownloadLink>();
     private final ArrayList<DownloadLink> HD             = new ArrayList<DownloadLink>();
     private final HashSet<String>         dupe           = new HashSet<String>();
@@ -148,7 +148,7 @@ public class AppleTrailer extends PluginForDecrypt {
                             }
                             String psize = new Regex(url, "(\\d+)\\.mov$").getMatch(0);
                             if (name != null) {
-                                name = title + " - " + name + " (" + psize + "p_SD).mov";
+                                name = title + " - " + name + " (" + p_q(psize) + ").mov";
                             }
                             url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
                             DownloadLink dlLink = createDownloadlink(url);
@@ -238,7 +238,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         /* get format */
                         String format = new Regex(url, "_h?(\\d+)p").getMatch(0);
                         /* get filename */
-                        String fname = title + "-" + clipTitle + " (" + format + "p_HD)" + url.substring(url.lastIndexOf("."));
+                        String fname = title + "-" + clipTitle + " (" + p_q(format) + ")" + url.substring(url.lastIndexOf("."));
                         if (fname == null || format == null) {
                             continue;
                         }
@@ -326,7 +326,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     /* get format */
                     String format = new Regex(url, "_h?(\\d+)p").getMatch(0);
                     /* get filename */
-                    String fname = filename + " (" + format + "p_HD)" + url.substring(url.lastIndexOf("."));
+                    String fname = filename + " (" + p_q(format) + ")" + url.substring(url.lastIndexOf("."));
                     if (fname == null || format == null) {
                         continue;
                     }
