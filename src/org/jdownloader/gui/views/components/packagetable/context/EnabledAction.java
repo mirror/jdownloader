@@ -63,7 +63,7 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
 
     }
 
-    enum State {
+    public static enum State {
         ALL_ENABLED(false, getCheckBoxedIcon("select", true, true)),
         ALL_DISABLED(true, getCheckBoxedIcon("select", false, true)),
         MIXED_ENABLE(true, getCheckBoxedIcon("select", true, false)),

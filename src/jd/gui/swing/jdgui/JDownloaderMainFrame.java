@@ -7,10 +7,10 @@ import java.awt.Window;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
 
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -39,7 +39,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
         super(string);
         this.logger = logger;
 
-        delayedStateSaver = new DelayedRunnable(500, 10000l) {
+        delayedStateSaver = new DelayedRunnable(250, 1000l) {
 
             @Override
             public String getID() {
@@ -52,16 +52,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
                 //
                 // @Override
                 // protected void runInEDT() {
-                FrameStatus newState = FrameStatus.create(JDownloaderMainFrame.this, latestFrameStatus);
-
-                if (newState.isLocationSet()) {
-                    latestFrameStatus = newState;
-                    if (newState.getExtendedState() == ExtendedState.NORMAL) {
-                        latestNormalState = newState.clone();
-                        System.out.println("NormalState");
-                    }
-                    System.out.println("new State " + JSonStorage.toString(latestFrameStatus));
-                }
+                updateFrameStatus();
                 // }
                 // };
 
@@ -72,13 +63,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void componentShown(ComponentEvent e) {
-                // System.out.println(e);
-                // ExtendedState ext = ExtendedState.get(JDownloaderMainFrame.this);
-                // if (ext != null && ext != ExtendedState.ICONIFIED) {
-                //
-                // lastKnownVisibleExtendedState = ext;
-                // System.out.println("Last state " + ext);
-                // }
+                delayedStateSaver.resetAndStart();
             }
 
             @Override
@@ -95,7 +80,44 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void componentHidden(ComponentEvent e) {
-                // delayedStateSaver.resetAndStart();
+                delayedStateSaver.resetAndStart();
+            }
+        });
+        addWindowListener(new WindowListener() {
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+                delayedStateSaver.resetAndStart();
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+                delayedStateSaver.resetAndStart();
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+                delayedStateSaver.resetAndStart();
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+                delayedStateSaver.resetAndStart();
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                delayedStateSaver.resetAndStart();
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                delayedStateSaver.resetAndStart();
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+                delayedStateSaver.resetAndStart();
             }
         });
         addWindowStateListener(new WindowStateListener() {
@@ -103,10 +125,6 @@ public class JDownloaderMainFrame extends ExtJFrame {
             @Override
             public void windowStateChanged(WindowEvent e) {
                 delayedStateSaver.resetAndStart();
-                ExtendedState ext = ExtendedState.get(JDownloaderMainFrame.this);
-                if (ext != null && ext != ExtendedState.ICONIFIED) {
-
-                }
 
             }
         });
@@ -191,10 +209,11 @@ public class JDownloaderMainFrame extends ExtJFrame {
     private FrameStatus      latestFrameStatus;
 
     public void setExtendedState(final int i) {
-        if (i != JFrame.NORMAL && getExtendedState() == JFrame.NORMAL) {
-            latestFrameStatus = FrameStatus.create(this, latestFrameStatus);
-
-        }
+        // updateFrameStatus();
+        // if (i != JFrame.NORMAL && getExtendedState() == JFrame.NORMAL) {
+        // latestFrameStatus = FrameStatus.create(this, latestFrameStatus);
+        //
+        // }
         super.setExtendedState(i);
     }
 
@@ -227,7 +246,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
         // if we hide a frame which is locked by an active modal dialog,
         // we get in problems. avoid this!
         if (!b) {
-            latestFrameStatus = FrameStatus.create(this, latestFrameStatus);
+            // latestFrameStatus = FrameStatus.create(this, latestFrameStatus);
             for (Window w : getOwnedWindows()) {
                 if (w instanceof JDialog) {
                     boolean mod = ((JDialog) w).isModal();
@@ -258,6 +277,33 @@ public class JDownloaderMainFrame extends ExtJFrame {
         super.toFront();
         //
 
+    }
+
+    private void updateFrameStatus() {
+        FrameStatus newState = FrameStatus.create(JDownloaderMainFrame.this, latestFrameStatus);
+
+        if (newState.isLocationSet()) {
+            latestFrameStatus = newState;
+
+            if (newState.getExtendedState() == ExtendedState.NORMAL) {
+                latestNormalState = newState.clone();
+                logger.info("New Window State (Normal): " + JSonStorage.toString(latestFrameStatus));
+            } else {
+                logger.info("New Window State: " + JSonStorage.toString(latestFrameStatus));
+            }
+
+        }
+
+        // Rectangle bounds = getGraphicsConfiguration().getBounds();
+        // String dev = getGraphicsConfiguration().getDevice().getIDstring();
+        // Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
+        // bounds.x += insets.left;
+        // bounds.y += insets.top;
+        // bounds.width -= insets.left + insets.right;
+        // bounds.height -= insets.top + insets.bottom;
+        // Rectangle usable = SunGraphicsEnvironment.getUsableBounds(getGraphicsConfiguration().getDevice());
+        // setMaximizedBounds(bounds);
+        // System.out.println("Set max bounds " + bounds + " " + dev + " " + usable);
     }
 
 }

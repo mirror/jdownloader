@@ -60,6 +60,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                 return false;
             }
         }
+
         container._setValidated(true);
         boolean ret = true;
         container._setRoot(_getRoot());
@@ -78,6 +79,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                         continue;
                     }
                     mid._setValidateException(null);
+
                     MenuItemData lr = null;
                     try {
                         try {
@@ -93,6 +95,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                             LogController.CL().log(e);
                             // extension not loaded or anything like this.
                             mid._setValidateException(e);
+
                             lr = mid;
                         }
                         lr._setRoot(_getRoot());
