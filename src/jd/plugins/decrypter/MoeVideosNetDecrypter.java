@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import org.appwork.utils.StringUtils;
 
@@ -35,8 +34,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideos.net" }, urls = { "http://(www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/((?:\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "http://(www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/((?:\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
 public class MoeVideosNetDecrypter extends PluginForDecrypt {
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "moevideo.net", "videochart.net", "playreplay.me" };
+        // moevideos.net parked.
+    }
 
     public MoeVideosNetDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,20 +61,12 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
             } catch (final BrowserException e) {
-                final DownloadLink offline = createDownloadlink("http://moevideosdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                offline.setName(new Regex(parameter, "moevideos\\.net/(.+)").getMatch(0));
-                offline.setProperty("offline", true);
-                offline.setAvailable(false);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
 
             if (br.containsHTML("Vídeo no existe posiblemente")) {
-                final DownloadLink offline = createDownloadlink("http://moevideosdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                offline.setName(new Regex(parameter, "moevideos\\.net/(.+)").getMatch(0));
-                offline.setProperty("offline", true);
-                offline.setAvailable(false);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
 
@@ -89,11 +86,7 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
             br.submitForm(iAmHuman);
 
             if (br.containsHTML("Vídeo no existe posiblemente")) {
-                final DownloadLink offline = createDownloadlink("http://moevideosdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                offline.setName(new Regex(parameter, "moevideos\\.net/(.+)").getMatch(0));
-                offline.setProperty("offline", true);
-                offline.setAvailable(false);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             final String vidframe = br.getRegex("\"(https?://moevideo\\.net/framevideo[^<>\"]*?)\"").getMatch(0);

@@ -28,10 +28,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideos.net" }, urls = { "http://moevideosdecrypted\\.net/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "http://moevideosdecrypted\\.net/\\d+" }, flags = { 0 })
 public class MoeVideosNet extends PluginForHost {
 
-    private String               DLLINK;
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "moevideo.net", "videochart.net", "playreplay.me" };
+        // moevideos.net parked.
+    }
+
+    private String               dllink;
     private static AtomicBoolean isDled = new AtomicBoolean(false);
 
     public MoeVideosNet(PluginWrapper wrapper) {
@@ -40,7 +46,7 @@ public class MoeVideosNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.moevideos.net/tos";
+        return "http://www.moevideo.net/tos";
     }
 
     @Override
@@ -54,16 +60,22 @@ public class MoeVideosNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([0-9a-f\\.]+)$").getMatch(0) + ".flv");
-        if (DECRYPTER_ONLY) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (DECRYPTER_ONLY) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         setBrowserExclusive();
         br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
         /* uid */
         uid = new Regex(dllink, "uid=(.*?)$").getMatch(0);
-        if (uid == null) uid = new Regex(dllink, "(video/|file=)(.*?)$").getMatch(1);
+        if (uid == null) {
+            uid = new Regex(dllink, "(video/|file=)(.*?)$").getMatch(1);
+        }
         if (uid == null) {
             br.getPage(dllink);
-            if (br.containsHTML("Vídeo no existe posiblemente")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Vídeo no existe posiblemente")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         }
         return AvailableStatus.UNCHECKABLE;
@@ -74,7 +86,9 @@ public class MoeVideosNet extends PluginForHost {
         requestFileInformation(downloadLink);
         if (uid == null) {
             final Form iAmHuman = br.getFormbyProperty("name", "formulario");
-            if (iAmHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (iAmHuman == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             iAmHuman.remove("enviar");
 
             /* Waittime is still skippable */
@@ -89,25 +103,31 @@ public class MoeVideosNet extends PluginForHost {
         /* finallink */
         br.postPage("http://api.letitbit.net/", "r=[\"tVL0gjqo5\",[\"preview/flv_image\",{\"uid\":\"" + uid + "\"}],[\"preview/flv_link\",{\"uid\":\"" + uid + "\"}]]");
         final String fsize = br.getRegex("\"convert_size\":\"(\\d+)\"").getMatch(0);
-        if (fsize != null) downloadLink.setDownloadSize(Long.parseLong(fsize));
+        if (fsize != null) {
+            downloadLink.setDownloadSize(Long.parseLong(fsize));
+        }
 
         boolean status = br.getRegex("\"status\":\"OK\"").matches() ? true : false;
 
-        DLLINK = br.getRegex("\"link\":\"([^\"]+)").getMatch(0);
-        if (DLLINK == null) {
-            if (status) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = br.getRegex("\"link\":\"([^\"]+)").getMatch(0);
+        if (dllink == null) {
+            if (status) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = DLLINK.replaceAll("\\\\", "");
+        dllink = dllink.replaceAll("\\\\", "");
         /* filename */
-        String filename = new Regex(DLLINK, "/[0-9a-f]+_\\d+_(.*?)\\.flv").getMatch(0);
+        String filename = new Regex(dllink, "/[0-9a-f]+_\\d+_(.*?)\\.flv").getMatch(0);
         filename = filename != null ? filename : "unknown_filename" + uid + ".flv";
         downloadLink.setFinalFileName(filename);
 
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 401) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 30 * 60 * 1000l);
+                if (dl.getConnection().getResponseCode() == 401) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 30 * 60 * 1000l);
+                }
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
