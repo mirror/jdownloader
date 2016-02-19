@@ -205,7 +205,7 @@ public class XFileSharingProBasic extends PluginForHost {
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                if (this.br.containsHTML(">No such file<")) {
+                if (altbr.containsHTML(">No such file<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
