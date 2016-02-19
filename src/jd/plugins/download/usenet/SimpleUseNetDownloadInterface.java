@@ -23,17 +23,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginProgress;
 import jd.plugins.components.UsenetFile;
 import jd.plugins.components.UsenetFileSegment;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
 import jd.plugins.download.SparseFile;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -47,6 +50,7 @@ import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
@@ -90,10 +94,57 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
             public HashInfo getHashInfo() {
                 final HashInfo ret = super.getHashInfo();
                 if (ret == null) {
-                    return HashInfo.importFromString(usenetFile.getHash());
+                    return usenetFile._getHashInfo();
                 } else {
                     return ret;
                 }
+            }
+
+            @Override
+            public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
+                if (hashInfo != null) {
+                    return super.getHashResult(hashInfo, outputPartFile);
+                } else {
+                    HashInfo.TYPE type = null;
+                    for (final UsenetFileSegment segment : usenetFile.getSegments()) {
+                        if (segment.getHash() != null) {
+                            final HashInfo segmentHashInfo = segment._getHashInfo();
+                            if (segmentHashInfo != null) {
+                                if (type == null) {
+                                    type = segmentHashInfo.getType();
+                                } else if (type != segmentHashInfo.getType()) {
+                                    type = null;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (type != null) {
+                        final PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
+                        hashProgress.setProgressSource(this);
+                        try {
+                            addPluginProgress(hashProgress);
+                            final HashInfo fileHashInfo;
+                            switch (type) {
+                            case CRC32:
+                                final long checksum = Hash.getCRC32(outputPartFile);
+                                fileHashInfo = new HashInfo(HexFormatter.byteArrayToHex(new byte[] { (byte) (checksum >>> 24), (byte) (checksum >>> 16), (byte) (checksum >>> 8), (byte) checksum }), TYPE.CRC32);
+                                break;
+                            default:
+                                fileHashInfo = null;
+                                break;
+                            }
+                            if (fileHashInfo != null) {
+                                return new HashResult(fileHashInfo, fileHashInfo.getHash());
+                            }
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        } finally {
+                            removePluginProgress(hashProgress);
+                        }
+                    }
+                }
+                return null;
             }
 
             @Override
@@ -234,13 +285,16 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                     if (bodyInputStream instanceof YEncInputStream) {
                         final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
                         if (yEnc.getPartCRC32() != null && meteredThrottledInputStream.getInputStream() instanceof CheckedInputStream) {
+                            final HashInfo hashInfo = new HashInfo(yEnc.getPartCRC32(), HashInfo.TYPE.CRC32);
                             final long checksum = ((CheckedInputStream) meteredThrottledInputStream.getInputStream()).getChecksum().getValue();
-                            if (!new HashResult(new HashInfo(yEnc.getPartCRC32(), HashInfo.TYPE.CRC32), HexFormatter.byteArrayToHex(new byte[] { (byte) (checksum >>> 24), (byte) (checksum >>> 16), (byte) (checksum >>> 8), (byte) checksum })).match()) {
+                            if (!new HashResult(hashInfo, HexFormatter.byteArrayToHex(new byte[] { (byte) (checksum >>> 24), (byte) (checksum >>> 16), (byte) (checksum >>> 8), (byte) checksum })).match()) {
                                 throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(HashInfo.TYPE.CRC32));
                             }
+                            segment._setHashInfo(hashInfo);
+                            writeUsenetFile = true;
                         }
                         if (usenetFile.getHash() == null && yEnc.getFileCRC32() != null) {
-                            usenetFile.setHash(new HashInfo(yEnc.getFileCRC32(), HashInfo.TYPE.CRC32, true).exportAsString());
+                            usenetFile._setHashInfo(new HashInfo(yEnc.getFileCRC32(), HashInfo.TYPE.CRC32, true));
                             writeUsenetFile = true;
                         }
                     }

@@ -136,7 +136,7 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties {
             // name equals normal name
             return;
         }
-        DownloadWatchDog.getInstance().renameLink(currentLink, curName);
+        DownloadWatchDog.getInstance().renameLink(currentLink, name);
     }
 
     @Override
