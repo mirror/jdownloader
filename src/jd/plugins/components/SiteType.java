@@ -17,6 +17,11 @@ public class SiteType {
         ArlesImageWebPageCreator,
 
         /**
+         * image board. <a href="https://github.com/r888888888/danbooru">danbooru github project</a>
+         */
+        Danbooru,
+
+        /**
          * As the name says this class contains code to handle redirect/linkcrypt sites which have no direct redirects. Basically it is for
          * websites for which a single class would be too much as only 1-2 lines of code are needed to handle them. <b>Main decrypter
          * class:</b> DecrypterForRedirectServicesWithoutDirectRedirects<br />
@@ -229,9 +234,10 @@ public class SiteType {
         SafeLinking_SafeLinking,
 
         /**
-         * image board. <a href="https://github.com/r888888888/danbooru">danbooru github project</a>
+         * Old link crypt script e.g. <a href="http://save-link.info">save-link.info</a> <br />
+         * <b>Main decrypter class:</b> Zro10BasicDecrypt
          */
-        Danbooru;
+        Zero10BasicDecrypt;
 
     }
 
