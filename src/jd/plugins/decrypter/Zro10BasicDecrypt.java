@@ -82,8 +82,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        /* TODO */
-        return null;
+        return SiteTemplate.Zero10BasicDecrypt;
     }
 
 }
