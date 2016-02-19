@@ -173,6 +173,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 if (e == null || e.getValueIsAdjusting() || tableModel.isTableSelectionClearing()) {
                     return;
                 }
+                selectionVersion.incrementAndGet();
             }
         });
 

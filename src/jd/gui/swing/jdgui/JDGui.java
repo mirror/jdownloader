@@ -58,6 +58,21 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.nutils.Screen;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -137,21 +152,6 @@ import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
-
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.nutils.Screen;
-import net.miginfocom.swing.MigLayout;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
     private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
@@ -1726,7 +1726,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             @Override
             public Object edtRun() {
                 /* set visible state */
-
                 if (!minimize) {
                     ExtendedState estate = ExtendedState.get(getMainFrame());
                     if (estate == null) {
@@ -1736,14 +1735,12 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     FrameStatus frameState = getMainFrame().getLatestFrameStatus();
                     logger.info("Reset frame to \r\n" + JSonStorage.serializeToJson(frameState));
                     if (frameState != null) {
-
                         if (frameState.getExtendedState() == null) {
                             logger.info("Bad ExtendedState in Framestate ");
                         } else {
                             estate = frameState.getExtendedState();
                         }
                     }
-
                     switch (estate) {
                     case MAXIMIZED_BOTH:
                     case MAXIMIZED_HORIZ:
@@ -1756,17 +1753,13 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         boolean locationSet = false;
                         if (frameState != null) {
                             getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
-
                             GraphicsDevice screen = SwingUtils.getScreenByLocation(frameState.getX(), frameState.getY());
-
                             if (screen != null && StringUtils.equals(screen.getIDstring(), frameState.getScreenID())) {
-
                                 getMainFrame().setLocation(frameState.getX(), frameState.getY());
                                 locationSet = true;
                             }
                         }
                         if (!locationSet) {
-
                             Point center = new CenterOfScreenLocator().getLocationOnScreen(getMainFrame());
                             if (center != null) {
                                 getMainFrame().setLocation(center);
@@ -1774,7 +1767,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                                 getMainFrame().setLocationByPlatform(true);
                             }
                         }
-
                         break;
                     case NORMAL:
                         // when I snap a windows 10 window e.g. to the left side, java thinks it is in normal state. when I send hide it to
@@ -1791,11 +1783,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         if (frameState != null) {
                             getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
                         }
-
                     }
-
                     switch (estate) {
-
                     case MAXIMIZED_BOTH:
                     case MAXIMIZED_HORIZ:
                     case MAXIMIZED_VERT:
@@ -1803,25 +1792,18 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         break;
                     default:
                         WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
-
+                        break;
                     }
-
                     if (!getMainFrame().isVisible()) {
-
                         WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
-
                     }
-
                     if (trayIconChecker != null) {
                         trayIconChecker.interrupt();
                         trayIconChecker = null;
                     }
-
                 } else {
-
                     WindowManager.getInstance().hide(getMainFrame());
                     trayIconChecker = new Thread() {
-
                         @Override
                         public void run() {
                             boolean reInitNeeded = false;
@@ -1852,7 +1834,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                                 }
                             }
                         }
-
                     };
                     trayIconChecker.setDaemon(true);
                     trayIconChecker.setName("TrayIconRestore");
