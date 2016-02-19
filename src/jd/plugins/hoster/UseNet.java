@@ -52,7 +52,7 @@ public class UseNet extends PluginForHost {
         return link != null && "usenet".equals(link.getHost());
     }
 
-    private UsenetConfigPanel<?> configPanel;
+    protected UsenetConfigPanel<?> configPanel;
 
     @Override
     public PluginConfigPanelNG createConfigPanel() {
