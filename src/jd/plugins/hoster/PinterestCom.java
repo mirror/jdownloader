@@ -122,21 +122,31 @@ public class PinterestCom extends PluginForHost {
                 if (isOffline(this.br, pin_id)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                LinkedHashMap<String, Object> entries = null;
+                ArrayList<Object> ressourcelist = null;
                 /*
                  * Site actually contains similar json compared to API --> Grab that and get the final link via that as it is not always
                  * present in the normal html code.
                  */
+                site_title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
                 String json = br.getRegex("P\\.(?:start\\.start|main\\.start)\\((.*?)\\);\n").getMatch(0);
                 if (json == null) {
                     json = br.getRegex("P\\.startArgs = (.*?);\n").getMatch(0);
                 }
-                if (json == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (json != null) {
+                    /* Website json */
+                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                    ressourcelist = (ArrayList) entries.get("resourceDataCache");
+                } else {
+                    /* API json e.g. needed: https://www.pinterest.com/pin/104497653832270636/ */
+                    prepAPIBR(this.br);
+                    final String pin_json_url = "https://www.pinterest.com/resource/PinResource/get/?source_url=%2Fpin%2F" + pin_id + "%2F&data=%7B%22options%22%3A%7B%22field_set_key%22%3A%22detailed%22%2C%22ptrf%22%3Anull%2C%22fetch_visual_search_objects%22%3Atrue%2C%22id%22%3A%22" + pin_id + "%22%7D%2C%22context%22%3A%7B%7D%7D&module_path=Pin(show_pinner%3Dtrue%2C+show_board%3Dtrue%2C+is_original_pin_in_related_pins_grid%3Dtrue)&_=" + System.currentTimeMillis();
+                    this.br.getPage(pin_json_url);
+                    json = this.br.toString();
+                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                    ressourcelist = (ArrayList) entries.get("resource_data_cache");
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-                final ArrayList<Object> ressourcelist = (ArrayList) entries.get("resourceDataCache");
                 dllink = getDirectlinkFromJson(ressourcelist, pin_id);
-                site_title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -387,8 +387,8 @@ public class FileLobyCom extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         /* Higher timeouts needed especially for resuming for this host. */
-        br.setReadTimeout(1 * 60 * 1000);
-        br.setConnectTimeout(1 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
         return br;
     }
 

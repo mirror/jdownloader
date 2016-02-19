@@ -160,7 +160,7 @@ public class FilesuniverseCom extends antiDDoSForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        if (new Regex(correctedBR, MAINTENANCE).matches() || this.br.getHttpConnection().getResponseCode() == 500) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
             if (fileInfo[0] != null) {
                 link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
@@ -608,6 +608,7 @@ public class FilesuniverseCom extends antiDDoSForHost {
             }
             br.getHeaders().put("User-Agent", agent.get());
         }
+        br.setAllowedResponseCodes(500);
     }
 
     /**
@@ -945,7 +946,7 @@ public class FilesuniverseCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        if (new Regex(correctedBR, MAINTENANCE).matches() || this.br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
     }
