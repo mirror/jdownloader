@@ -1,5 +1,7 @@
 package org.jdownloader.captcha.v2.challenge.keycaptcha;
 
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
@@ -10,13 +12,11 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 
-import jd.plugins.Plugin;
-
 public class KeyCaptchaCategoryChallenge extends Challenge<String> {
 
-    private KeyCaptcha helper;
-    private boolean    noAutoSolver;
-    private Plugin     plugin;
+    private final KeyCaptcha helper;
+    private final boolean    noAutoSolver;
+    private final Plugin     plugin;
 
     public KeyCaptchaCategoryChallenge(KeyCaptcha keyCaptcha, Plugin plg, boolean noAutoSolver) {
         super("KeyCaptchaCategoryChallenge", null);
@@ -92,8 +92,7 @@ public class KeyCaptchaCategoryChallenge extends Challenge<String> {
 
     @Override
     public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
-
-        String token;
+        final String token;
         try {
             token = helper.sendCategoryResult(JSonStorage.restoreFromString(json, TypeRef.STRING));
         } catch (Exception e) {
@@ -103,20 +102,17 @@ public class KeyCaptchaCategoryChallenge extends Challenge<String> {
             return new KeyCaptchaResponse(this, solver, token, 100);
         }
         return null;
-
     }
 
     public Storable getAPIStorable(String format) throws Exception {
-        CategoryData data = getHelper().getCategoryData();
-
-        APIData ret = new APIData();
-        String[] pieces = new String[data.getImages().size()];
+        final CategoryData data = getHelper().getCategoryData();
+        final APIData ret = new APIData();
+        final String[] pieces = new String[data.getImages().size()];
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = IconIO.toDataUrl(IconIO.toBufferedImage(data.getImages().get(i)));
+            pieces[i] = IconIO.toDataUrl(IconIO.toBufferedImage(data.getImages().get(i)), IconIO.DataURLFormat.PNG);
         }
         ret.setPieces(pieces);
-
-        ret.setCategories(IconIO.toDataUrl(data.getBackground()));
+        ret.setCategories(IconIO.toDataUrl(data.getBackground(), IconIO.DataURLFormat.JPG));
         return ret;
     }
 

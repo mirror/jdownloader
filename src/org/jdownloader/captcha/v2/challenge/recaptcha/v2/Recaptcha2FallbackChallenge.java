@@ -5,6 +5,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
@@ -14,11 +19,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.captcha.v2.AbstractResponse;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
 
 public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChallenge {
 
@@ -79,11 +79,12 @@ public class Recaptcha2FallbackChallenge extends AbstractRecaptcha2FallbackChall
             }
             if (!Application.isJared(null) && getExplainIcon(getExplain()) == null) {
                 try {
-                    String filename = new Regex(getExplain(), WITH_OF_ALL_THE).getMatch(0).replaceAll("[^\\w]", "");
-                    File cache = Application.getResource("tmp/recaptcha/" + filename + "/" + Hash.getMD5(getImageBytes()) + ".jpg");
+                    final String filename = new Regex(getExplain(), WITH_OF_ALL_THE).getMatch(0).replaceAll("[^\\w]", "");
+                    final byte[] imageBytes = IO.readFile(getImageFile());
+                    final File cache = Application.getResource("tmp/recaptcha/" + filename + "/" + Hash.getMD5(imageBytes) + ".jpg");
                     if (!cache.exists()) {
                         cache.getParentFile().mkdirs();
-                        IO.writeToFile(cache, getImageBytes());
+                        IO.writeToFile(cache, imageBytes);
                     }
                 } catch (Throwable e) {
                 }

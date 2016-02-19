@@ -16,9 +16,9 @@ import org.jdownloader.captcha.v2.solverjob.ResponseList;
 
 public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
 
-    private KeyCaptcha helper;
-    private boolean    noAutoSolver;
-    private Plugin     plugin;
+    private final KeyCaptcha helper;
+    private final boolean    noAutoSolver;
+    private final Plugin     plugin;
 
     public KeyCaptcha getHelper() {
         return helper;
@@ -61,11 +61,9 @@ public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
 
     @Override
     public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
-
-        KeyCaptchaApiResponse response = JSonStorage.restoreFromString(json, new TypeRef<KeyCaptchaApiResponse>() {
-
+        final KeyCaptchaApiResponse response = JSonStorage.restoreFromString(json, new TypeRef<KeyCaptchaApiResponse>() {
         });
-        String token;
+        final String token;
         try {
             token = helper.sendPuzzleResult(response.getMouseArray(), response.getOut());
         } catch (IOException e) {
@@ -78,16 +76,14 @@ public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
     }
 
     public Storable getAPIStorable(String format) throws Exception {
-
-        APIData ret = new APIData();
-        String[] pieces = new String[getHelper().getPuzzleData().getImages().pieces.size()];
+        final APIData ret = new APIData();
+        final String[] pieces = new String[getHelper().getPuzzleData().getImages().pieces.size()];
         for (int i = 0; i < pieces.length; i++) {
-            pieces[i] = IconIO.toDataUrl(getHelper().getPuzzleData().getImages().pieces.get(i));
+            pieces[i] = IconIO.toDataUrl(getHelper().getPuzzleData().getImages().pieces.get(i), IconIO.DataURLFormat.PNG);
         }
         ret.setPieces(pieces);
-        ret.setBackground(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().backgroundImage));
-        ret.setSample(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().sampleImage));
- 
+        ret.setBackground(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().backgroundImage, IconIO.DataURLFormat.JPG));
+        ret.setSample(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().sampleImage, IconIO.DataURLFormat.JPG));
         return ret;
     }
 
@@ -99,7 +95,6 @@ public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
         super("keyCaptchaPuzzle", null);
         this.helper = keyCaptcha;
         this.plugin = plg;
-
         this.noAutoSolver = noAutoSolver;
     }
 
