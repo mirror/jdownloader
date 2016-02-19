@@ -84,11 +84,11 @@ public class UsersCloudCom extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXDOWNLOADS            = 4;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 4;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
@@ -106,7 +106,7 @@ public class UsersCloudCom extends PluginForHost {
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
     // captchatype: null
-    // other:
+    // other: 2016-02-19: Updated connection limits - tested with MP3 links!
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")

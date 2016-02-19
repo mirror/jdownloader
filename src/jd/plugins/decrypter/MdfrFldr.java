@@ -260,16 +260,16 @@ public class MdfrFldr extends PluginForDecrypt {
             }
 
             if ("112".equals(this.ERRORCODE) || (isFile != null && isFolder == null)) {
-                /* untested code */
                 // new pages can be folders, and do not work as UID from API. only way thing todo is find the uid and reprobe!
-                Browser br2 = new Browser();
+                final Browser br2 = new Browser();
                 br2.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36");
                 br2.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
                 br2.getHeaders().put("Connection", "keep-alive");
                 br2.getHeaders().put("Accept-Charset", null);
                 br2.getHeaders().put("Pragma", null);
                 br2.getPage(parameter);
-                String uid = br2.getRegex("(?-i)afI= '([^']+)").getMatch(0);
+                final String uid = br2.getRegex("(?-i)afI=[ ]*?(?:\\'|\")([^\\'\"]+)").getMatch(0);
+                /* Make sure the ID we found is different from our original ID to prevent decryption loops! */
                 if (uid != null && !id.equalsIgnoreCase(uid)) {
                     // lets return back into itself, and hope we don't create a infinite loop!
                     final DownloadLink link = createDownloadlink("http://www.mediafire.com/folder/" + uid);

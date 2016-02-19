@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "traileraddict.com" }, urls = { "http://(www\\.)?traileraddict\\.com/trailer/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "traileraddict.com" }, urls = { "http://(?:www\\.)?traileraddict\\.com/(?:trailer/)?[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
 public class TrailerAddictCom extends PluginForHost {
 
     private String dllink = null;
@@ -63,12 +63,16 @@ public class TrailerAddictCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("traileraddict.com/error") || br.containsHTML("(404\\.png\" alt=\"404 Error\"|<title>Page Not Found\\s*-\\s*Trailer Addict</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.containsHTML("schema\\.org/VideoObject")) {
+            /* Not a video / Nothing for us to download! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?) \\- Trailer Addict</title>").getMatch(0);
@@ -99,12 +103,12 @@ public class TrailerAddictCom extends PluginForHost {
         }
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

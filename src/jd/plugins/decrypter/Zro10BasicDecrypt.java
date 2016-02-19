@@ -26,51 +26,41 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save-link.info" }, urls = { "http://(www\\.)?((save\\-link\\.info|share\\-link\\.info|h\\-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|angel\\-tears\\.com/short|imzdb\\.com|dvd4arablinks\\.com|lionzlinks\\.com|mazajna\\.com/links|tvegy\\.info|forexurls\\.net|zmelody\\.com|forexshare\\.net|link\\.arabda3m\\.com|wwenews\\.us|ymoviez\\.com)/[0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save-link.info" }, urls = { "https?://(?:www\\.)?(?:save\\-link\\.info|share\\-link\\.info|h\\-link\\.us|forexurls\\.net|zmelody\\.com|filmey\\.co)/[0-9]+" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public String[] siteSupportedNames() {
+        return new String[] { "save-link.info", "share-link.info", "h-link.us", "forexurls.net", "zmelody.com", "forexshare.net", "filmey.co" };
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        /** Workarounds for changed domains */
-        parameter = parameter.replace("get.sirtggp.com", "get.el3lam.com").replace("save-link.info/", "wwenews.us/");
         br.setFollowRedirects(false);
         // finallink2 is used for unusual zero10 crypters like arbforce
         String finallink2 = null;
         String finallink = null;
-        if (parameter.contains("arbforce.com/short")) {
-            String ID = new Regex(parameter, "arbforce\\.com/short/([0-9]+)").getMatch(0);
-            String redirectlink = "http://www.arbforce.com/short/2.php?" + ID;
-            br.getPage(redirectlink);
-            finallink2 = br.getRedirectLocation();
-            // Errorhandling
-            if (br.getRedirectLocation() == null) {
-                logger.warning("The requested document was not found on this server.");
-                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            }
-        } else {
-            String ID = new Regex(parameter, "/([0-9A-Z]+)$").getMatch(0);
-            String domain = new Regex(parameter.replaceAll("(www\\.|http://)", ""), "(.+)/" + ID).getMatch(0);
-            String m1link = "http://" + domain + "/m1.php?id=" + ID;
-            br.getPage(m1link);
-            // little errorhandling
-            if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(ID)) {
-                return decryptedLinks;
-            }
-            if (br.getRedirectLocation() != null) {
-                br.getPage(br.getRedirectLocation());
-            }
-            finallink = br.getRegex("onclick=\"NewWindow\\(\\'(.*?)\\',\\'name\\'").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("a href=\"(htt.*?)\"").getMatch(0);
-            }
+        String ID = new Regex(parameter, "/([0-9A-Z]+)$").getMatch(0);
+        String domain = new Regex(parameter.replaceAll("(www\\.|http://)", ""), "(.+)/" + ID).getMatch(0);
+        String m1link = "http://" + domain + "/m1.php?id=" + ID;
+        br.getPage(m1link);
+        // little errorhandling
+        if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(ID)) {
+            return decryptedLinks;
+        }
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
+        finallink = br.getRegex("onclick=\"NewWindow\\(\\'(.*?)\\',\\'name\\'").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("a href=\"(htt.*?)\"").getMatch(0);
         }
         if (finallink == null) {
             finallink = finallink2;
@@ -88,6 +78,12 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        /* TODO */
+        return null;
     }
 
 }

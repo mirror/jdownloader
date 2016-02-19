@@ -31,16 +31,19 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
 
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 
@@ -81,6 +84,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -99,6 +103,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         String fpName = null;
 
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("shahid.mbc.net"));
         if ("bluefishtv.com".equals(PROVIDER)) {
             if (br.containsHTML(">That product is not available at this time<")) {
                 logger.info("Link offline: " + parameter);
@@ -108,6 +113,13 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             if (fpName == null) {
                 fpName = br.getRegex("<div id=\"ProductDetails_Overview\" style=\"position.*?alt=\"[^\"]+").getMatch(0);
             }
+        } else if (aa != null) {
+            /* User has account - add special account link. */
+            final DownloadLink dl = this.createDownloadlink("shahid.mbc.netrtmpe://mbcd.csl.delvenetworks.com/" + Encoding.Base64Encode(parameter));
+            dl.setProperty("premiumonly", true);
+            dl.setProperty("mainlink", parameter);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
 
         if (br.getHttpConnection().getResponseCode() == 503) {

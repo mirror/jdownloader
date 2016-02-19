@@ -32,6 +32,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -73,6 +74,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         String parameter = param.toString().replace("/index.php/", "/");
         this.br.setAllowedResponseCodes(500);
         this.br.setLoadLimit(this.br.getLoadLimit() * 2);
+        final SubConfiguration cfg = SubConfiguration.getConfig("orf.at");
+        BEST = cfg.getBooleanProperty(Q_BEST, false);
         br.getPage(parameter);
         int status = br.getHttpConnection().getResponseCode();
         if (status == 301 || status == 302) {
@@ -93,8 +96,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final SubConfiguration cfg = SubConfiguration.getConfig("orf.at");
-        BEST = cfg.getBooleanProperty(Q_BEST, false);
         decryptedLinks.addAll(getDownloadLinks(parameter, cfg));
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
@@ -243,10 +244,14 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 ArrayList<DownloadLink> part = new ArrayList<DownloadLink>();
-                HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 String vIdTemp = "";
+                String bestFMT = null;
+                boolean is_best = false;
+                DownloadLink bestQuality = null;
+                DownloadLink bestSubtitle = null;
 
                 for (Entry<String, HashMap<String, String>> next : mediaEntries.entrySet()) {
+                    is_best = false;
                     mediaEntry = new HashMap<String, String>(next.getValue());
                     String fileName = next.getKey();
                     fileName = fileName.replaceAll("\"", "");
@@ -256,6 +261,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     final String delivery = mediaEntry.get("delivery");
                     final String selector = mediaEntry.get("selector");
                     final String url = mediaEntry.get("src");
+                    long filesize = 0;
                     String fmt = mediaEntry.get("quality");
 
                     // available protocols: http, rtmp, rtsp, hds, hls
@@ -267,48 +273,75 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     // continue;
                     // }
 
-                    if (fileName == null) {
+                    if (fileName == null || url == null || isEmpty(fmt)) {
                         continue;
                     }
+
+                    fmt = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
 
                     boolean sub = true;
                     if (fileName.equals(vIdTemp)) {
                         sub = false;
                     }
-                    if (!isEmpty(fmt)) {
-                        fmt = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
-                        /* best selection is done at the end */
-                        if ("LOW".equals(fmt)) {
-                            if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
-                                continue;
+                    if ("VERYHIGH".equals(fmt) || BEST) {
+                        /*
+                         * VERYHIGH is always available but is not always REALLY available which means we have to check this here and skip
+                         * it if needed! Filesize is also needed to find BEST quality.
+                         */
+                        boolean veryhigh_is_available = true;
+                        try {
+                            final URLConnectionAdapter con = br.openHeadConnection(url);
+                            if (!con.isOK()) {
+                                veryhigh_is_available = false;
                             } else {
-                                fmt = "LOW";
+                                /*
+                                 * Basically we already did the availablecheck here so for this particular quality we don't have to do it
+                                 * again in the linkgrabber!
+                                 */
+                                filesize = con.getLongContentLength();
                             }
-                        } else if ("MEDIUM".equals(fmt)) {
-                            if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
-                                continue;
-                            } else {
-                                fmt = "MEDIUM";
+                            try {
+                                con.disconnect();
+                            } catch (final Throwable e) {
                             }
-                        } else if ("HIGH".equals(fmt)) {
-                            if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
-                                continue;
-                            } else {
-                                fmt = "HIGH";
-                            }
-                        } else if ("VERYHIGH".equals(fmt)) {
-                            if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
-                                continue;
-                            } else {
-                                fmt = "VERYHIGH";
-                            }
-                        } else {
-                            if (unknownQualityIdentifier(fmt)) {
-                                logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
-                                logger.info("Link: " + data);
-                            }
+                        } catch (final Throwable e) {
+                            veryhigh_is_available = false;
+                        }
+                        if (!veryhigh_is_available) {
                             continue;
                         }
+                    }
+                    /* best selection is done at the end */
+                    if ("LOW".equals(fmt)) {
+                        if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
+                            continue;
+                        } else {
+                            fmt = "LOW";
+                        }
+                    } else if ("MEDIUM".equals(fmt)) {
+                        if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
+                            continue;
+                        } else {
+                            fmt = "MEDIUM";
+                        }
+                    } else if ("HIGH".equals(fmt)) {
+                        if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
+                            continue;
+                        } else {
+                            fmt = "HIGH";
+                        }
+                    } else if ("VERYHIGH".equals(fmt)) {
+                        if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
+                            continue;
+                        } else {
+                            fmt = "VERYHIGH";
+                        }
+                    } else {
+                        if (unknownQualityIdentifier(fmt)) {
+                            logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
+                            logger.info("Link: " + data);
+                        }
+                        continue;
                     }
                     String ext = url.substring(url.lastIndexOf("."));
                     if (ext.length() == 4) {
@@ -330,15 +363,18 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     } else {
                         link.setProperty("streamingType", protocol);
                         link.setProperty("delivery", delivery);
-                        if (!"http".equals(protocol)) {
+                        if (filesize > 0) {
+                            link.setAvailable(true);
+                            link.setDownloadSize(filesize);
+                        } else if (!"http".equals(protocol)) {
                             link.setAvailable(true);
                         }
                     }
                     link.setLinkID(video_id_detailed + "_" + fmt);
 
-                    DownloadLink best = bestMap.get(fmt);
-                    if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
-                        bestMap.put(fmt, link);
+                    if (bestQuality == null || link.getDownloadSize() > bestQuality.getDownloadSize()) {
+                        bestQuality = link;
+                        is_best = true;
                     }
                     part.add(link);
                     if (sub) {
@@ -356,20 +392,30 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                 subtitle.setContentUrl(data);
                                 subtitle.setLinkID(video_id_detailed + "_" + fmt + "_subtitle");
                                 part.add(subtitle);
+                                if (is_best) {
+                                    bestSubtitle = subtitle;
+                                }
                                 vIdTemp = fileName;
                             }
                         }
                     }
                     newRet.addAll(part);
                     part.clear();
-                    bestMap.clear();
+                    // bestMap.clear();
                 }
                 if (newRet.size() > 1) {
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(fpName);
                     fp.addLinks(newRet);
                 }
-                ret = newRet;
+                if (BEST) {
+                    ret.add(bestQuality);
+                    if (bestSubtitle != null) {
+                        ret.add(bestSubtitle);
+                    }
+                } else {
+                    ret = newRet;
+                }
             }
         } catch (final Throwable e) {
             e.printStackTrace();

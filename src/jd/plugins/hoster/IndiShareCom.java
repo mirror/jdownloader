@@ -52,14 +52,14 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indishare.com" }, urls = { "https?://(www\\.)?indishare\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indishare.co", "indishare.com" }, urls = { "https?://(?:www\\.)?indishare\\.com?/(vidembed\\-)?[a-z0-9]{12}", "//NULLIFIED_AFTER_32687" }, flags = { 2, 0 })
 public class IndiShareCom extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                  = "http://indishare.com";
+    private static final String  COOKIE_HOST                  = "http://indishare.co";
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -107,6 +107,16 @@ public class IndiShareCom extends antiDDoSForHost {
     public IndiShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("indishare.com".equals(getHost())) {
+            if (host == null || "indishare.com".equals(host)) {
+                return "indishare.co";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")

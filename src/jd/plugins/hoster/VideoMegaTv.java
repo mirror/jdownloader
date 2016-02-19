@@ -229,7 +229,7 @@ public class VideoMegaTv extends antiDDoSForHost {
             adbr.getHeaders().put("Accept", "*/*");
             final String[] adlinks = br.getRegex("\"(/[A-Z0-9]+/ad\\.php[^<>\"]*?)\"").getColumn(0);
             final HashSet<String> dupe = new HashSet<String>();
-            if (adlinks != null) {
+            if (adlinks != null && adlinks.length > 0) {
                 getPage(adbr, adlinks[0]);
                 adbr = br.cloneBrowser();
                 adbr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
