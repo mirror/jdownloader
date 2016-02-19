@@ -78,7 +78,7 @@ public class HashInfo {
         if (hash.length() < type.getSize()) {
             hash = String.format("%0" + (type.getSize() - hash.length()) + "d%s", 0, hash);
         } else if (hash.length() > type.getSize()) {
-            hash = hash.substring(0, type.getSize());
+            throw new IllegalArgumentException("invalid hash size");
         }
         this.hash = hash;
         this.trustworthy = trustworthy;

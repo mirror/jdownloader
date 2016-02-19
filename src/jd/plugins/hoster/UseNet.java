@@ -209,6 +209,11 @@ public class UseNet extends PluginForHost {
                         if (StringUtils.isNotEmpty(yEnc.getFileCRC32())) {
                             usenetFile.setHash(new HashInfo(yEnc.getFileCRC32(), HashInfo.TYPE.CRC32, true).exportAsString());
                             writeUsenetFile = true;
+                        } else {
+                            if (usenetFile.getHash() != null) {
+                                usenetFile.setHash(null);
+                                writeUsenetFile = true;
+                            }
                         }
                         final int totalParts = yEnc.getPartTotal();
                         if (totalParts >= 1 && totalParts != usenetFile.getSegments().size()) {
@@ -353,6 +358,9 @@ public class UseNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(PRECHECK_DONE);
+        }
     }
 
     @Override

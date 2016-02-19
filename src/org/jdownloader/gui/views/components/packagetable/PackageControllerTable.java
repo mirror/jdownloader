@@ -173,9 +173,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 if (e == null || e.getValueIsAdjusting() || tableModel.isTableSelectionClearing()) {
                     return;
                 }
-                selectionVersion.incrementAndGet();
+                System.out.println(selectionVersion.incrementAndGet());
             }
         });
+
         final int horizontalLineWeight = LAFOptions.getInstance().getCfg().getLinkTableHorizontalRowLineWeight();
         if (horizontalLineWeight > 0) {
             this.setRowMargin(horizontalLineWeight);
@@ -243,9 +244,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     protected AbstractNode getContextMenuTrigger() {
         final WeakReference<AbstractNode> lContextMenuTrigger = contextMenuTrigger;
         if (lContextMenuTrigger != null) {
+            // refresh contextMenuTrigger on every rightclick!
+            contextMenuTrigger = null;
             return lContextMenuTrigger.get();
+        } else {
+            // use leadSelectionIndex as ContextMenuTrigger. for example when selection has changed via keyboard
+            final int leadSelectionIndex = getSelectionModel().getLeadSelectionIndex();
+            return this.getModel().getObjectbyRow(leadSelectionIndex);
         }
-        return null;
     }
 
     /** access within EDT only **/

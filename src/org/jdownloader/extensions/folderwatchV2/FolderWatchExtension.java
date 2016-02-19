@@ -487,7 +487,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         link.setName(j.getFilename());
                     }
                     final BooleanStatus enabled = j.getEnabled();
-                    if (autoStart != null && autoStart != BooleanStatus.UNSET) {
+                    if (enabled != null && enabled != BooleanStatus.UNSET) {
                         link.setEnabled(enabled.getBoolean());
                     }
                 }

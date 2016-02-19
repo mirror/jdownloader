@@ -1,11 +1,33 @@
 package jd.plugins.components;
 
+import jd.plugins.download.HashInfo;
+
 import org.appwork.storage.Storable;
 
 public class UsenetFileSegment implements Storable {
-    private int  index     = -1;
+    private int    index     = -1;
+    private long   partBegin = -1;
+    private String hash      = null;
 
-    private long partBegin = -1;
+    public String getHash() {
+        return hash;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
+    public void _setHashInfo(HashInfo hashInfo) {
+        if (hashInfo != null) {
+            this.hash = hashInfo.exportAsString();
+        } else {
+            this.hash = null;
+        }
+    }
+
+    public HashInfo _getHashInfo() {
+        return HashInfo.importFromString(hash);
+    }
 
     public long getPartBegin() {
         return partBegin;

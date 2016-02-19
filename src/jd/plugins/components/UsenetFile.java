@@ -8,6 +8,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
@@ -19,6 +20,18 @@ public class UsenetFile implements Storable {
     private String hash = null;
 
     private long   size = -1;
+
+    public void _setHashInfo(HashInfo hashInfo) {
+        if (hashInfo != null) {
+            this.hash = hashInfo.exportAsString();
+        } else {
+            this.hash = null;
+        }
+    }
+
+    public HashInfo _getHashInfo() {
+        return HashInfo.importFromString(hash);
+    }
 
     public long getSize() {
         return size;
