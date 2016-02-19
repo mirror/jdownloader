@@ -58,12 +58,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingfiles.net" }, urls = { "https?://(www\\.)?kingfiles\\.net/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class KingFilesNet extends PluginForHost {
 
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
-
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
     private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
