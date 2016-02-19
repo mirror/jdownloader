@@ -1,7 +1,6 @@
 package org.jdownloader.captcha.v2.challenge.keycaptcha;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import jd.plugins.Plugin;
 
@@ -25,7 +24,7 @@ public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
         return helper;
     }
 
-    public class APIData implements Storable {
+    public static class APIData implements Storable {
         public APIData(/* Storable */) {
         }
 
@@ -60,35 +59,10 @@ public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
         private String background;
     }
 
-    public class ApiResponse implements Storable {
-        public ApiResponse(/* Storable */) {
-        }
-
-        private ArrayList<Integer> mouseArray;
-
-        public ArrayList<Integer> getMouseArray() {
-            return mouseArray;
-        }
-
-        public void setMouseArray(ArrayList<Integer> mouseArray) {
-            this.mouseArray = mouseArray;
-        }
-
-        public String getOut() {
-            return out;
-        }
-
-        public void setOut(String cout) {
-            this.out = cout;
-        }
-
-        private String out;
-    }
-
     @Override
     public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
 
-        ApiResponse response = JSonStorage.restoreFromString(json, new TypeRef<ApiResponse>() {
+        KeyCaptchaApiResponse response = JSonStorage.restoreFromString(json, new TypeRef<KeyCaptchaApiResponse>() {
 
         });
         String token;
@@ -113,7 +87,7 @@ public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
         ret.setPieces(pieces);
         ret.setBackground(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().backgroundImage));
         ret.setSample(IconIO.toDataUrl(getHelper().getPuzzleData().getImages().sampleImage));
-
+ 
         return ret;
     }
 
