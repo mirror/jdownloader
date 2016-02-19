@@ -19,6 +19,8 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import jd.controlling.captcha.SkipRequest;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
@@ -34,8 +36,6 @@ import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.controlling.captcha.SkipRequest;
 
 public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaChallenge {
     private static final int             LINE_HEIGHT = 16;
@@ -121,14 +121,14 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                     g.setColor(Color.BLACK);
                     g.drawString(num + "", columnWidth - 20 + 5, 0 + 15);
                     g.dispose();
-                    images.add(IconIO.toDataUrl(jpg));
+                    images.add(IconIO.toDataUrl(jpg, IconIO.DataURLFormat.JPG));
                 }
             }
             return data;
         } else {
             // String mime = FileResponse.getMimeType(getImageFile().getName());
             final BufferedImage newImage = getAnnotatedImage();
-            final String ret = IconIO.toDataUrl(newImage);
+            final String ret = IconIO.toDataUrl(newImage, IconIO.DataURLFormat.JPG);
             return ret;
         }
     }
