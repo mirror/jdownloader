@@ -38,7 +38,6 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -160,12 +159,21 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     }
                 } else {
                     /* jsonData --> HashMap */
-                    mediaEntry = new HashMap<String, String>();
-                    HashMap<String, String> tmpMediaEntry = new HashMap<String, String>();
                     ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
                     LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
                     entries = (LinkedHashMap<String, Object>) entries.get("values");
                     ressourcelist = (ArrayList) entries.get("segments");
+
+                    String fpName = getTitle(br);
+                    if (video_id != null) {
+                        fpName += "_" + video_id;
+                    }
+                    String extension = ".mp4";
+                    if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
+                        extension = ".mp3";
+                    }
+
+                    ArrayList<DownloadLink> part = new ArrayList<DownloadLink>();
 
                     for (final Object segmento : ressourcelist) {
                         final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) segmento;
@@ -184,9 +192,16 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             titlethis = titlethis.substring(0, 80);
                         }
 
+                        String vIdTemp = "";
+                        String bestFMT = null;
+                        String subtitle = null;
+                        boolean is_best = false;
+                        DownloadLink bestQuality = null;
+                        DownloadLink bestSubtitle = null;
+
                         for (final Object sourceo : sources_video) {
-                            String subtitle = null;
-                            mediaEntry = new HashMap<String, String>();
+                            subtitle = null;
+                            is_best = false;
                             final LinkedHashMap<String, Object> entry_source = (LinkedHashMap<String, Object>) sourceo;
                             final Iterator<Entry<String, Object>> it = entry_source.entrySet().iterator();
                             while (it.hasNext()) {
@@ -202,231 +217,190 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             }
 
                             /* Backward compatibility with xml method */
-                            String url = (String) entry_source.get("src");
+                            final String url = (String) entry_source.get("src");
                             String fmt = (String) entry_source.get("quality");
-                            String p = (String) entry_source.get("protocol");
-                            String d = (String) entry_source.get("delivery");
-                            if (isEmpty(url) && isEmpty(fmt) && isEmpty(p) && isEmpty(d)) {
+                            final String protocol = (String) entry_source.get("protocol");
+                            final String delivery = (String) entry_source.get("delivery");
+                            if (isEmpty(url) && isEmpty(fmt) && isEmpty(protocol) && isEmpty(delivery)) {
                                 continue;
                             }
                             if (sources_subtitle_o != null) {
                                 /* [0] = .srt, [1] = WEBVTT .vtt */
                                 subtitle = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(sources_subtitle_o, "{0}/src");
                             }
-                            if (subtitle != null) {
-                                mediaEntry.put("SubTitleUrl", subtitle.replace("\\", ""));
-                            }
-                            mediaEntry.put("decrypted_id", decrypted_id);
-                            String selector = p + d;
-                            mediaEntry.put(fmt, url);
-                            mediaEntry.put("selector", selector);
+                            long filesize = 0;
 
-                            String entryKey = titlethis + "@" + selector;
+                            // available protocols: http, rtmp, rtsp, hds, hls
+                            if (!"http".equals(protocol) || !"progressive".equals(delivery)) {
+                                continue;
+                            }
+                            /* Leave this in in case we want to support rtmp versions again in the future. */
+                            // if (cfg.getBooleanProperty(HTTP_STREAM, false) && "rtmp".equals(protocol)) {
+                            // continue;
+                            // }
+
+                            if (url == null || isEmpty(fmt)) {
+                                continue;
+                            }
+
+                            final String selector = protocol + delivery;
+
+                            String fileName = titlethis + "@" + selector;
                             if (video_id != null) {
-                                entryKey += "_" + video_id;
+                                fileName += "_" + video_id;
                             }
                             if (decrypted_id != null) {
-                                entryKey += "_" + decrypted_id;
+                                fileName += "_" + decrypted_id;
                             }
-                            entryKey += "@" + humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
-                            mediaEntries.put(entryKey, mediaEntry);
-                        }
-                    }
-                }
-                String fpName = getTitle(br);
-                if (video_id != null) {
-                    fpName += "_" + video_id;
-                }
-                String extension = ".mp4";
-                if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
-                    extension = ".mp3";
-                }
+                            fileName += "@" + humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
+                            fileName = fileName.replaceAll("\"", "");
+                            fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
 
-                ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-                ArrayList<DownloadLink> part = new ArrayList<DownloadLink>();
-                String vIdTemp = "";
-                String bestFMT = null;
-                boolean is_best = false;
-                DownloadLink bestQuality = null;
-                DownloadLink bestSubtitle = null;
+                            final String ext_from_directurl = url.substring(url.lastIndexOf("."));
+                            if (ext_from_directurl.length() == 4) {
+                                extension = ext_from_directurl;
+                            }
+                            fmt = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
 
-                for (Entry<String, HashMap<String, String>> next : mediaEntries.entrySet()) {
-                    is_best = false;
-                    mediaEntry = new HashMap<String, String>(next.getValue());
-                    String fileName = next.getKey();
-                    fileName = fileName.replaceAll("\"", "");
-                    fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
-                    final String video_id_detailed = mediaEntry.get("decrypted_id");
-                    final String protocol = mediaEntry.get("protocol");
-                    final String delivery = mediaEntry.get("delivery");
-                    final String selector = mediaEntry.get("selector");
-                    final String url = mediaEntry.get("src");
-                    long filesize = 0;
-                    String fmt = mediaEntry.get("quality");
+                            boolean sub = true;
+                            if (fileName.equals(vIdTemp)) {
+                                sub = false;
+                            }
 
-                    // available protocols: http, rtmp, rtsp, hds, hls
-                    if (!"http".equals(protocol) || !"progressive".equals(delivery)) {
-                        continue;
-                    }
-                    /* Leave this in in case we want to support rtmp versions again in the future. */
-                    // if (cfg.getBooleanProperty(HTTP_STREAM, false) && "rtmp".equals(protocol)) {
-                    // continue;
-                    // }
-
-                    if (fileName == null || url == null || isEmpty(fmt)) {
-                        continue;
-                    }
-
-                    fmt = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
-
-                    boolean sub = true;
-                    if (fileName.equals(vIdTemp)) {
-                        sub = false;
-                    }
-                    if ("VERYHIGH".equals(fmt) || BEST) {
-                        /*
-                         * VERYHIGH is always available but is not always REALLY available which means we have to check this here and skip
-                         * it if needed! Filesize is also needed to find BEST quality.
-                         */
-                        boolean veryhigh_is_available = true;
-                        try {
-                            final URLConnectionAdapter con = br.openHeadConnection(url);
-                            if (!con.isOK()) {
-                                veryhigh_is_available = false;
-                            } else {
+                            if ("VERYHIGH".equals(fmt) || BEST) {
                                 /*
-                                 * Basically we already did the availablecheck here so for this particular quality we don't have to do it
-                                 * again in the linkgrabber!
+                                 * VERYHIGH is always available but is not always REALLY available which means we have to check this here
+                                 * and skip it if needed! Filesize is also needed to find BEST quality.
                                  */
-                                filesize = con.getLongContentLength();
-                            }
-                            try {
-                                con.disconnect();
-                            } catch (final Throwable e) {
-                            }
-                        } catch (final Throwable e) {
-                            veryhigh_is_available = false;
-                        }
-                        if (!veryhigh_is_available) {
-                            continue;
-                        }
-                    }
-                    /* best selection is done at the end */
-                    if ("LOW".equals(fmt)) {
-                        if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
-                            continue;
-                        } else {
-                            fmt = "LOW";
-                        }
-                    } else if ("MEDIUM".equals(fmt)) {
-                        if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
-                            continue;
-                        } else {
-                            fmt = "MEDIUM";
-                        }
-                    } else if ("HIGH".equals(fmt)) {
-                        if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
-                            continue;
-                        } else {
-                            fmt = "HIGH";
-                        }
-                    } else if ("VERYHIGH".equals(fmt)) {
-                        if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
-                            continue;
-                        } else {
-                            fmt = "VERYHIGH";
-                        }
-                    } else {
-                        if (unknownQualityIdentifier(fmt)) {
-                            logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
-                            logger.info("Link: " + data);
-                        }
-                        continue;
-                    }
-                    String ext = url.substring(url.lastIndexOf("."));
-                    if (ext.length() == 4) {
-                        extension = ext;
-                    }
-                    final String final_filename_without_extension = fileName + (protocol != null ? "_" + protocol : "");
-                    final String final_filename_video = final_filename_without_extension + extension;
-                    final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-
-                    link.setFinalFileName(final_filename_video);
-                    link.setContentUrl(data);
-                    link.setProperty("directURL", url);
-                    link.setProperty("directName", final_filename_video);
-                    link.setProperty("directQuality", fmt);
-                    link.setProperty("mainlink", data);
-                    if (protocol == null && delivery == null) {
-                        link.setAvailable(true);
-                        link.setProperty("streamingType", "rtmp");
-                    } else {
-                        link.setProperty("streamingType", protocol);
-                        link.setProperty("delivery", delivery);
-                        if (filesize > 0) {
-                            link.setAvailable(true);
-                            link.setDownloadSize(filesize);
-                        } else if (!"http".equals(protocol)) {
-                            link.setAvailable(true);
-                        }
-                    }
-                    link.setLinkID(video_id_detailed + "_" + fmt);
-
-                    if (bestQuality == null || link.getDownloadSize() > bestQuality.getDownloadSize()) {
-                        bestQuality = link;
-                        is_best = true;
-                    }
-                    part.add(link);
-                    if (sub) {
-                        if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
-                            String subtitleUrl = mediaEntry.get("SubTitleUrl");
-                            if (!isEmpty(subtitleUrl)) {
-                                final String final_filename_subtitle = final_filename_without_extension + ".srt";
-                                final DownloadLink subtitle = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                                subtitle.setProperty("directURL", subtitleUrl);
-                                subtitle.setProperty("directName", final_filename_subtitle);
-                                subtitle.setProperty("streamingType", "subtitle");
-                                subtitle.setProperty("mainlink", data);
-                                subtitle.setAvailable(true);
-                                subtitle.setFinalFileName(final_filename_subtitle);
-                                subtitle.setContentUrl(data);
-                                subtitle.setLinkID(video_id_detailed + "_" + fmt + "_subtitle");
-                                part.add(subtitle);
-                                if (is_best) {
-                                    bestSubtitle = subtitle;
+                                boolean veryhigh_is_available = true;
+                                try {
+                                    final URLConnectionAdapter con = br.openHeadConnection(url);
+                                    if (!con.isOK()) {
+                                        veryhigh_is_available = false;
+                                    } else {
+                                        /*
+                                         * Basically we already did the availablecheck here so for this particular quality we don't have to
+                                         * do it again in the linkgrabber!
+                                         */
+                                        filesize = con.getLongContentLength();
+                                    }
+                                    try {
+                                        con.disconnect();
+                                    } catch (final Throwable e) {
+                                    }
+                                } catch (final Throwable e) {
+                                    veryhigh_is_available = false;
                                 }
-                                vIdTemp = fileName;
+                                if (!veryhigh_is_available) {
+                                    continue;
+                                }
+                            }
+                            /* best selection is done at the end */
+                            if ("LOW".equals(fmt)) {
+                                if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
+                                    continue;
+                                } else {
+                                    fmt = "LOW";
+                                }
+                            } else if ("MEDIUM".equals(fmt)) {
+                                if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
+                                    continue;
+                                } else {
+                                    fmt = "MEDIUM";
+                                }
+                            } else if ("HIGH".equals(fmt)) {
+                                if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
+                                    continue;
+                                } else {
+                                    fmt = "HIGH";
+                                }
+                            } else if ("VERYHIGH".equals(fmt)) {
+                                if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
+                                    continue;
+                                } else {
+                                    fmt = "VERYHIGH";
+                                }
+                            } else {
+                                if (unknownQualityIdentifier(fmt)) {
+                                    logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
+                                    logger.info("Link: " + data);
+                                }
+                                continue;
+                            }
+                            final String final_filename_without_extension = fileName + (protocol != null ? "_" + protocol : "");
+                            final String final_filename_video = final_filename_without_extension + extension;
+                            final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+
+                            link.setFinalFileName(final_filename_video);
+                            link.setContentUrl(data);
+                            link.setProperty("directURL", url);
+                            link.setProperty("directName", final_filename_video);
+                            link.setProperty("directQuality", fmt);
+                            link.setProperty("mainlink", data);
+                            if (protocol == null && delivery == null) {
+                                link.setAvailable(true);
+                                link.setProperty("streamingType", "rtmp");
+                            } else {
+                                link.setProperty("streamingType", protocol);
+                                link.setProperty("delivery", delivery);
+                                if (filesize > 0) {
+                                    link.setAvailable(true);
+                                    link.setDownloadSize(filesize);
+                                } else if (!"http".equals(protocol)) {
+                                    link.setAvailable(true);
+                                }
+                            }
+                            link.setLinkID(decrypted_id + "_" + fmt);
+
+                            if (bestQuality == null || link.getDownloadSize() > bestQuality.getDownloadSize()) {
+                                bestQuality = link;
+                                is_best = true;
+                            }
+                            part.add(link);
+                            if (sub) {
+                                if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
+                                    final String subtitleUrl = (String) entry_source.get("SubTitleUrl");
+                                    if (!isEmpty(subtitleUrl)) {
+                                        final String final_filename_subtitle = final_filename_without_extension + ".srt";
+                                        final DownloadLink subtitle_downloadlink = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                                        subtitle_downloadlink.setProperty("directURL", subtitleUrl);
+                                        subtitle_downloadlink.setProperty("directName", final_filename_subtitle);
+                                        subtitle_downloadlink.setProperty("streamingType", "subtitle");
+                                        subtitle_downloadlink.setProperty("mainlink", data);
+                                        subtitle_downloadlink.setAvailable(true);
+                                        subtitle_downloadlink.setFinalFileName(final_filename_subtitle);
+                                        subtitle_downloadlink.setContentUrl(data);
+                                        subtitle_downloadlink.setLinkID(decrypted_id + "_" + fmt + "_subtitle");
+                                        part.add(subtitle_downloadlink);
+                                        if (is_best) {
+                                            bestSubtitle = subtitle_downloadlink;
+                                        }
+                                        vIdTemp = fileName;
+                                    }
+                                }
                             }
                         }
+                        if (BEST) {
+                            ret.add(bestQuality);
+                            if (bestSubtitle != null) {
+                                ret.add(bestSubtitle);
+                            }
+                        } else {
+                            ret.addAll(part);
+                        }
+                        part.clear();
                     }
-                    newRet.addAll(part);
-                    part.clear();
-                    // bestMap.clear();
                 }
-                if (newRet.size() > 1) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(fpName);
-                    fp.addLinks(newRet);
-                }
-                if (BEST) {
-                    ret.add(bestQuality);
-                    if (bestSubtitle != null) {
-                        ret.add(bestSubtitle);
-                    }
-                } else {
-                    ret = newRet;
-                }
+
+                // if (newRet.size() > 1) {
+                // final FilePackage fp = FilePackage.getInstance();
+                // fp.setName(fpName);
+                // fp.addLinks(newRet);
+                // }
             }
         } catch (final Throwable e) {
             e.printStackTrace();
             logger.severe(e.getMessage());
-        }
-        for (DownloadLink dl : ret) {
-            try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
         }
         return ret;
     }
