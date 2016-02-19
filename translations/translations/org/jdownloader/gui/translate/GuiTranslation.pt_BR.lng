@@ -739,6 +739,7 @@ MenuEditors_boxwidth_pref=Largura de preferência
 MenuEditors_editorwidth=Lagura do campo de entrada (-1=auto)
 MenuManagerAction_MenuManagerAction=Abrir Gerenciador de Menu
 MenuManagerDialog_actionPerformed_title=Restaurar padrões?
+MenuManagerMYJDDownloadTableContext_getName=Gerenciador do menu do clique direito da lista de downloads do MyJDownloader
 MenuManagerMainToolbarAction_MenuManagerMainToolbarAction=Abrir Gerenciador da Barra de Ferramentas
 MergeToPackageAction_MergeToPackageAction_=Mover para novo Pacote
 MergeToPackageAction_actionPerformed_newpackage_=Novo Pacote
@@ -750,6 +751,7 @@ MyJDownloaderAccount_connected_devices=Dispositivos Conectados
 MyJDownloaderAccount_title=Detalhes da Conta
 MyJDownloaderService_createPanel_description_2=O serviço my.JDownloader.org tentar resolver todos os captchas automaticamente, enviando-os para nosso Serviço de Solucionar Captchas
 MyJDownloaderService_getDescription_tt_=Captcha decifrado pelos aplicativos remotos My.JDownloader (Webinterface, Mobile Apps,...)
+MyJDownloaderSettingsPanelForTab_menus=Gerenciador de Menu Remoto
 MyJDownloaderSettingsPanelForTab_title=Configurar & Iniciar Sessão
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_connect_=Conectar
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description=Inscreva-se para uma conta em my.jdownloader.org, e acesse uma variedade de recursos como, um controle remoto para o JDownloader pela interface web do seu navegador, ou apps para Android, iPhone e Windows Phone.
