@@ -49,7 +49,7 @@ public class JdLog extends PluginForHost {
 
     private String  dllink     = null;
     private String  uid        = null;
-    private boolean isNewLogin = false;;
+    private boolean isNewLogin = false;
 
     @Override
     public String getAGBLink() {

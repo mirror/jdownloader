@@ -28,6 +28,8 @@ import javax.script.ScriptEngineManager;
 import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -45,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to", "nowvideo.ch", "nowvideo.co", "nowvideo.eu" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013", "NEVERUSETHISSUPERDUBERREGEXATALL2014", "NEVERUSETHISSUPERDUBERREGEXATALL2015" }, flags = { 2, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+" }, flags = { 2 })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
@@ -54,7 +56,6 @@ public class NowVideoEu extends PluginForHost {
     private static Object                  LOCK               = new Object();
     private static final String            currentMainDomain  = "nowvideo.to";
     private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www." + currentMainDomain);
-    private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
     private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
     private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at|ec|li|to)";
     private String                         filename           = null;
@@ -66,29 +67,42 @@ public class NowVideoEu extends PluginForHost {
         final String[] ccTLDs = { "to", "ch", "sx", "eu", "co", "ag", "at", "ec", "li" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
-            String CCtld = ccTLDs[i];
+            final String ccTLD = ccTLDs[i];
             try {
-                Browser br = new Browser();
+                final Browser br = new Browser();
                 workAroundTimeOut(br);
                 br.setCookiesExclusive(true);
-                br.getPage("http://www.nowvideo." + CCtld);
-                String redirect = br.getRedirectLocation();
-                br = null;
-                if (redirect != null) {
-                    return new Regex(redirect, domains).getMatch(0);
+                br.getPage("http://www.nowvideo." + ccTLD);
+                final String redirect = br.getRedirectLocation();
+                if (redirect == null && Browser.getHost(br.getURL()).matches(domains)) {
+                    // primary domain wont redirect
+                    return ccTLD;
+                } else if (redirect != null) {
+                    final String cctld = new Regex(redirect, domains).getMatch(0);
+                    if (cctld != null) {
+                        return ccTLD;
+                    }
                 } else {
-                    return CCtld;
+                    continue;
                 }
             } catch (Exception e) {
-                logger.warning("nowvideo." + CCtld + " seems to be offline...");
+                logger.warning("NowVideo." + ccTLD + " seems to be offline...");
             }
         }
         return null;
     }
 
+    private final static String  PROPERTY_FILENAME_WITH_FUID         = "PROPERTY_FILENAME_WITH_FUID";
+    private final static boolean PROPERTY_DEFAULT_FILENAME_WITH_FUID = true;
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_FILENAME_WITH_FUID, "Use FUID (File Unquie ID) within File Name").setDefaultValue(PROPERTY_DEFAULT_FILENAME_WITH_FUID));
+    }
+
     public NowVideoEu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE.get() + "/premium.php");
+        setConfigElements();
     }
 
     @Override
@@ -128,23 +142,21 @@ public class NowVideoEu extends PluginForHost {
         }
     }
 
-    private void correctCurrentDomain() {
+    private void correctCurrentDomain() throws PluginException {
         if (AVAILABLE_PRECHECK.get() == false) {
             synchronized (LOCK) {
-                if (AVAILABLE_PRECHECK.get() == false) {
-                    /*
-                     * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before
-                     * proceeding.
-                     */
+                /*
+                 * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before
+                 * proceeding.
+                 */
 
-                    String CCtld = validateHost();
-                    if (CCtld != null) {
-                        ccTLD.set(CCtld);
-                    }
-                    MAINPAGE.set("http://www.nowvideo." + CCtld);
-                    this.enablePremium(MAINPAGE.toString() + "/premium.php");
-                    AVAILABLE_PRECHECK.set(true);
+                final String CCtld = validateHost();
+                if (CCtld == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Could not determine proper ccTLD!");
                 }
+                MAINPAGE.set("http://www.nowvideo." + CCtld);
+                this.enablePremium(MAINPAGE.toString() + "/premium.php");
+                AVAILABLE_PRECHECK.set(true);
             }
         }
     }
@@ -158,7 +170,6 @@ public class NowVideoEu extends PluginForHost {
         return prepBr;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = new Browser();
@@ -166,9 +177,11 @@ public class NowVideoEu extends PluginForHost {
         prepBrowser(br);
         correctCurrentDomain();
         correctDownloadLink(link);
-        /* Offline urls should also get nice filenames! */
         final String linkid = getLinkid(link);
-        link.setName(linkid);
+        /* Offline urls should also get nice filenames! */
+        if (link.getName() == null) {
+            link.setName(linkid);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getContentUrl());
@@ -191,7 +204,7 @@ public class NowVideoEu extends PluginForHost {
                 }
             }
         }
-        filename = filename.trim() + "(" + linkid + ")";
+        filename = filename.trim() + (getPluginConfig().getBooleanProperty(PROPERTY_FILENAME_WITH_FUID, PROPERTY_DEFAULT_FILENAME_WITH_FUID) ? "(" + linkid + ")" : "");
         link.setName(Encoding.htmlDecode(filename) + ".flv");
         return AvailableStatus.TRUE;
     }

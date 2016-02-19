@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,9 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 0 })
 public class NowDownloadEu extends PluginForHost {
 
@@ -61,24 +61,29 @@ public class NowDownloadEu extends PluginForHost {
     private final String                   domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at|ec|li|to)";
 
     private String validateHost() {
-        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag", "at", "ec", "li", "to" };
+        final String[] ccTLDs = { "to", "sx", "eu", "co", "ch", "ag", "at", "ec", "li" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
-            String domain = ccTLDs[i];
+            final String ccTLD = ccTLDs[i];
             try {
-                Browser br = new Browser();
+                final Browser br = new Browser();
                 workAroundTimeOut(br);
                 br.setCookiesExclusive(true);
-                br.getPage("http://www.nowdownload." + domain);
-                String redirect = br.getRedirectLocation();
-                br = null;
-                if (redirect != null) {
-                    return new Regex(redirect, domains).getMatch(0);
+                br.getPage("http://www.nowdownload." + ccTLD);
+                final String redirect = br.getRedirectLocation();
+                if (redirect == null && Browser.getHost(br.getURL()).matches(domains)) {
+                    // primary domain wont redirect
+                    return ccTLD;
+                } else if (redirect != null) {
+                    final String cctld = new Regex(redirect, domains).getMatch(0);
+                    if (cctld != null) {
+                        return ccTLD;
+                    }
                 } else {
-                    return domain;
+                    continue;
                 }
             } catch (Exception e) {
-                logger.warning("NowDownload." + domain + " seems to be offline...");
+                logger.warning("NowDownload." + ccTLD + " seems to be offline...");
             }
         }
         return null;
@@ -119,25 +124,24 @@ public class NowDownloadEu extends PluginForHost {
         }
     }
 
-    private void correctCurrentDomain() {
+    private void correctCurrentDomain() throws PluginException {
         if (AVAILABLE_PRECHECK.get() == false) {
             synchronized (LOCK) {
-                if (AVAILABLE_PRECHECK.get() == false) {
-                    /*
-                     * == Fix original link ==
-                     * 
-                     * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
-                     * proceed, to select one available.
-                     */
+                /*
+                 * == Fix original link ==
+                 * 
+                 * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
+                 * proceed, to select one available.
+                 */
 
-                    String newDomain = validateHost();
-                    if (newDomain != null) {
-                        DOMAIN.set(newDomain);
-                    }
-                    MAINPAGE.set("http://www.nowdownload." + newDomain);
-                    this.enablePremium(MAINPAGE.toString() + "/premium.php");
-                    AVAILABLE_PRECHECK.set(true);
+                final String CCtld = validateHost();
+                if (CCtld == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Could not determine proper ccTLD!");
                 }
+                DOMAIN.set(CCtld);
+                MAINPAGE.set("http://www.nowdownload." + CCtld);
+                this.enablePremium(MAINPAGE.toString() + "/premium.php");
+                AVAILABLE_PRECHECK.set(true);
             }
         }
     }
