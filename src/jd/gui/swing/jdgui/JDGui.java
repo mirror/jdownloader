@@ -1729,12 +1729,19 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                 if (!minimize) {
                     ExtendedState estate = ExtendedState.get(getMainFrame());
-
+                    if (estate == null) {
+                        logger.info("Bad ExtendedState \r\n" + getMainFrame().getExtendedState());
+                        estate = ExtendedState.NORMAL;
+                    }
                     FrameStatus frameState = getMainFrame().getLatestFrameStatus();
                     logger.info("Reset frame to \r\n" + JSonStorage.serializeToJson(frameState));
                     if (frameState != null) {
-                        estate = frameState.getExtendedState();
 
+                        if (frameState.getExtendedState() == null) {
+                            logger.info("Bad ExtendedState in Framestate ");
+                        } else {
+                            estate = frameState.getExtendedState();
+                        }
                     }
 
                     switch (estate) {
@@ -1746,18 +1753,25 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         // window
                         // visibility in such a state, windows restores the old size.
                         // this we have to manually set the correct size here
+                        boolean locationSet = false;
                         if (frameState != null) {
                             getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
+
+                            GraphicsDevice screen = SwingUtils.getScreenByLocation(frameState.getX(), frameState.getY());
+
+                            if (screen != null && StringUtils.equals(screen.getIDstring(), frameState.getScreenID())) {
+
+                                getMainFrame().setLocation(frameState.getX(), frameState.getY());
+                                locationSet = true;
+                            }
                         }
-                        GraphicsDevice screen = frameState == null ? null : SwingUtils.getScreenByLocation(frameState.getX(), frameState.getY());
+                        if (!locationSet) {
 
-                        if (screen != null && frameState != null && StringUtils.equals(screen.getIDstring(), frameState.getScreenID())) {
-
-                            getMainFrame().setLocation(frameState.getX(), frameState.getY());
-                        } else {
                             Point center = new CenterOfScreenLocator().getLocationOnScreen(getMainFrame());
                             if (center != null) {
                                 getMainFrame().setLocation(center);
+                            } else {
+                                getMainFrame().setLocationByPlatform(true);
                             }
                         }
 
