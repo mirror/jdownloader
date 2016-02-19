@@ -257,7 +257,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         // find photo set iframe... can be outside of 'string' source
         final String photoset = br.getRegex("<iframe [^>]*src=(\"|')([^<>]+?/post/\\d+/photoset_iframe/[^<>]+?)\\1").getMatch(1);
         // note the /post/\d+ uid isn't same as /post/\d+/photoset_iframe
-        if (photoset != null) {
+        if (photoset != null || br.containsHTML("<article class=\"post-photoset\" id=\"" + puid + "\">|<div id=\"photoset_" + puid + "\" class=\"html_photoset\">")) {
             // ok we don't need to process the iframe src link as best images which we are interested in are within google
             // getGoogleCarousel!
             processPhotoSet(decryptedLinks, puid);

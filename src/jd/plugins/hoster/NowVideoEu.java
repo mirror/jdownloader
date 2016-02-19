@@ -179,7 +179,7 @@ public class NowVideoEu extends PluginForHost {
         correctDownloadLink(link);
         final String linkid = getLinkid(link);
         /* Offline urls should also get nice filenames! */
-        if (link.getName() == null) {
+        if (!link.isNameSet()) {
             link.setName(linkid);
         }
         this.setBrowserExclusive();
