@@ -96,7 +96,7 @@ public class Ftp extends PluginForHost {
             ftp.setLogger(logger);
             URL url = new URL(ftpurl);
             /* cut off all ?xyz at the end */
-            String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
+            final String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             connect(ftp, downloadLink, url);
             checkFile(ftp, downloadLink, filePath);
             dl = new SimpleFTPDownloadInterface(ftp, downloadLink, filePath);
@@ -132,7 +132,6 @@ public class Ftp extends PluginForHost {
                 filePath = currentDir + filePath;
             }
         }
-
         long size = ftp.getSize(filePath);
         String name = null;
         if (size == -1) {
@@ -217,7 +216,7 @@ public class Ftp extends PluginForHost {
             ftp.setLogger(logger);
             final URL url = new URL(downloadLink.getDownloadURL());
             /* cut off all ?xyz at the end */
-            String filePath = new Regex(downloadLink.getDownloadURL(), "://[^/]+/(.+?)(\\?|$)").getMatch(0);
+            final String filePath = new Regex(downloadLink.getDownloadURL(), "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             connect(ftp, downloadLink, url);
             checkFile(ftp, downloadLink, filePath);
         } catch (ConnectException e) {
