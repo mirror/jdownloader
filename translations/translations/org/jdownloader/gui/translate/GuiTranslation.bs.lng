@@ -739,6 +739,7 @@ MenuEditors_boxwidth_pref=Preferirana širina
 MenuEditors_editorwidth=Širina polja za unos (-1=auto)
 MenuManagerAction_MenuManagerAction=Otvori Upravitelj Menia
 MenuManagerDialog_actionPerformed_title=Resetovati na Podrazumijevano?
+MenuManagerMYJDDownloadTableContext_getName=MyJDownloader Upravitelj menia desnog klika na Download listu
 MenuManagerMainToolbarAction_MenuManagerMainToolbarAction=Otvori upravitelj Alatnih traka
 MergeToPackageAction_MergeToPackageAction_=Premakni i novi Paket
 MergeToPackageAction_actionPerformed_newpackage_=Novi Paket
@@ -750,6 +751,7 @@ MyJDownloaderAccount_connected_devices=KOnektovani uređaji
 MyJDownloaderAccount_title=Detalji naloga
 MyJDownloaderService_createPanel_description_2=Servis my.JDownloader.org pokušava da riješi sve captcha-e potpuno automatizovano tako što će ih poslati u naš Servis Rješavanja Captcha
 MyJDownloaderService_getDescription_tt_=Captcha je riješila My.JDownloader Aplikacija za Daljinsko upravljanje (Webiniterface, Mobilne Aplikacije,...)
+MyJDownloaderSettingsPanelForTab_menus=Udaljeni upravitelj menia
 MyJDownloaderSettingsPanelForTab_title=Podešabanje i Logiranje
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_connect_=Konektuj
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description=Prijavite se za nalog na my.jdownloader.org, i pridobijte pristup velikom broju premium mogućnosti kao što je JDownloader Daljinska kontrola putem Web sučelja iz web preglednika, ili aplikacije za Android, IPhone i WindowsPhone
