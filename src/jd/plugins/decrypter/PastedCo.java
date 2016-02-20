@@ -33,9 +33,9 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.controlling.PasswordUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pasted.co" }, urls = { "https?://(?:www\\.)?(?:tinypaste\\.com|tny\\.cz|pasted\\.co)/(?!tools|terms|api|contact|login|register|press)([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
-public class Tnypst extends PluginForDecrypt {
+public class PastedCo extends PluginForDecrypt {
 
-    public Tnypst(PluginWrapper wrapper) {
+    public PastedCo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,9 +45,9 @@ public class Tnypst extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String link = parameter.toString().replaceFirst("tinypaste\\.com/|tny\\.cz/", "pasted.co/");
+        final String link = parameter.toString().replaceFirst("tinypaste\\.com/|tny\\.cz/", "pasted.co/");
         br.getPage(link);
-        if (br.containsHTML(">404 - URL not found<|>The content has either been deleted|>Paste deleted<|>There does not seem to be anything here")) {
+        if (br.containsHTML(">404 - URL not found<|>The content has either been deleted|>Paste deleted<|>There does not seem to be anything here") || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -57,7 +57,7 @@ public class Tnypst extends PluginForDecrypt {
                 if (id == null) {
                     id = new Regex(link, domains + "/([0-9a-z]+)").getMatch(0);
                 }
-                Form pwform = br.getForm(0);
+                final Form pwform = br.getForm(0);
                 if (pwform == null || id == null) {
                     return null;
                 }
