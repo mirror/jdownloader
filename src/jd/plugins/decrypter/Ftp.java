@@ -3,13 +3,12 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.auth.Login;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -22,6 +21,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.auth.Login;
 
 @DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/([^\"\r\n ]+|$)" }, flags = { 0 })
 public class Ftp extends PluginForDecrypt {
@@ -92,7 +95,7 @@ public class Ftp extends PluginForDecrypt {
                 }
             }
             final String currentDir = ftp.getDir();
-            String filePath = URLDecoder.decode(url.getPath(), "UTF-8");
+            String filePath = url.getPath();
             if (!filePath.startsWith("/")) {
                 filePath = "/" + filePath;
             }
@@ -104,9 +107,13 @@ public class Ftp extends PluginForDecrypt {
                 }
             }
             final String finalFilePath = filePath;
-            String name = filePath.substring(filePath.lastIndexOf("/") + 1);
-            if (StringUtils.isEmpty(name)) {
-                name = null;
+            String nameString = filePath.substring(filePath.lastIndexOf("/") + 1);
+            final byte[] nameBytes;
+            if (StringUtils.isEmpty(nameString)) {
+                nameString = null;
+                nameBytes = null;
+            } else {
+                nameBytes = SimpleFTP.toRawBytes(nameString);
             }
             filePath = filePath.substring(0, filePath.lastIndexOf("/") + 1);
             String packageName = new Regex(filePath, "/([^/]+)(/$|$)").getMatch(0);
@@ -124,14 +131,15 @@ public class Ftp extends PluginForDecrypt {
                      * name ftp.../file.exe/file.exe -raztoki
                      */
                     for (final SimpleFTPListEntry entry : entries) {
-                        if (StringUtils.equals(entry.getName(), name)) {
+                        // we compare bytes because of hex encoding
+                        if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes)) {
                             if (entry.isFile()) {
-                                final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(entry.getFullPath(), "UTF-8"));
+                                final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
                                 link.setAvailable(true);
                                 if (entry.getSize() >= 0) {
                                     link.setVerifiedFileSize(entry.getSize());
                                 }
-                                link.setFinalFileName(entry.getName());
+                                link.setFinalFileName(BestEncodingGuessingURLDecode(entry.getName()));
                                 ret.add(link);
                                 break;
                             } else {
@@ -151,39 +159,39 @@ public class Ftp extends PluginForDecrypt {
                         /*
                          * if 'name' == file then packagename == correct, ELSE if name != file then it should be packagename! -raztoki
                          */
-                        if (name != null) {
-                            packageName = name;
+                        if (nameString != null) {
+                            packageName = nameString;
                         }
                         for (final SimpleFTPListEntry entry : entries) {
                             if (entry.isFile()) {
-                                final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(entry.getFullPath(), "UTF-8"));
+                                final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + entry.getFullPath());
                                 link.setAvailable(true);
                                 if (entry.getSize() >= 0) {
                                     link.setVerifiedFileSize(entry.getSize());
                                 }
-                                link.setFinalFileName(entry.getName());
+                                link.setFinalFileName(BestEncodingGuessingURLDecode(entry.getName()));
                                 ret.add(link);
                             }
                         }
                     }
                 }
             }
-            if (ret.size() == 0 && name != null) {
+            if (ret.size() == 0 && nameString != null) {
                 // sometimes dir listing/changing is not allowed but direct access is still possible
                 if (ftp.bin()) {
                     final long size = ftp.getSize(finalFilePath);
                     if (size >= 0) {
-                        final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + URLEncoder.encode(finalFilePath, "UTF-8"));
+                        final DownloadLink link = createDownloadlink("ftpviajd://" + auth + url.getHost() + (url.getPort() != -1 ? (":" + url.getPort()) : "") + finalFilePath);
                         link.setAvailable(true);
                         link.setVerifiedFileSize(size);
-                        link.setFinalFileName(name);
+                        link.setFinalFileName(BestEncodingGuessingURLDecode(nameString));
                         ret.add(link);
                     }
                 }
             }
-            if (packageName != null) {
+            if (ret.size() > 0 && packageName != null) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(packageName);
+                fp.setName(BestEncodingGuessingURLDecode(packageName));
                 fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, Boolean.TRUE);
                 fp.addLinks(ret);
             }
@@ -191,6 +199,41 @@ public class Ftp extends PluginForDecrypt {
             ftp.disconnect();
         }
         return ret;
+    }
+
+    // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
+    public static String BestEncodingGuessingURLDecode(String urlCoded) throws IOException {
+        final LinkedHashMap<String, String> results = new LinkedHashMap<String, String>();
+        for (final String encoding : new String[] { "cp1251", "UTF-8", "ISO-8859-5", "KOI8-R" }) {
+            try {
+                results.put(encoding, URLDecoder.decode(urlCoded, encoding));
+            } catch (final Throwable ignore) {
+                ignore.printStackTrace();
+            }
+        }
+        final List<String> bestMatchRound1 = new ArrayList<String>();
+        int bestCountRound1 = -1;
+        for (final Entry<String, String> result : results.entrySet()) {
+            int count = 0;
+            for (int index = 0; index < result.getValue().length(); index++) {
+                if ('\uFFFD' == result.getValue().charAt(index)) {
+                    count++;
+                }
+            }
+            if (bestCountRound1 == -1 || bestCountRound1 == count) {
+                bestCountRound1 = count;
+                bestMatchRound1.add(result.getKey());
+            } else {
+                bestCountRound1 = count;
+                bestMatchRound1.clear();
+                bestMatchRound1.add(result.getKey());
+            }
+        }
+        final List<String> bestMatches = new ArrayList<String>();
+        for (final String bestMatchEncoding : bestMatchRound1) {
+            bestMatches.add(results.get(bestMatchEncoding));
+        }
+        return bestMatches.get(0);
     }
 
     @Override
