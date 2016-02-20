@@ -68,7 +68,8 @@ public class Ftp extends PluginForDecrypt {
             try {
                 ftp.connect(url);
             } catch (IOException e) {
-                if (e.getMessage().contains("Sorry, the maximum number of clients") && maxFTPConnections == -1) {
+                final String msg = e.getMessage();
+                if ((StringUtils.containsIgnoreCase(msg, "Sorry, the maximum number of clients") || StringUtils.startsWithCaseInsensitive(msg, "421")) && maxFTPConnections == -1) {
                     final String lockHost = Browser.getHost(cLink.getCryptedUrl());
                     final String maxConnections = new Regex(e.getMessage(), "Sorry, the maximum number of clients \\((\\d+)\\)").getMatch(0);
                     synchronized (LOCKS) {
@@ -79,7 +80,7 @@ public class Ftp extends PluginForDecrypt {
                         }
                     }
                     return decryptIt(cLink, progress);
-                } else if (e.getMessage().contains("was unable to log in with the supplied") || e.getMessage().contains("530 Login or Password incorrect")) {
+                } else if (msg.contains("was unable to log in with the supplied") || msg.contains("530 Login or Password incorrect")) {
                     final DownloadLink dummyLink = new DownloadLink(null, null, url.getHost(), cLink.getCryptedUrl(), true);
                     final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), dummyLink);
                     if (login != null) {
