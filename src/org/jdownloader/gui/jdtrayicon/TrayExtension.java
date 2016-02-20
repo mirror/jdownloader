@@ -58,6 +58,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
+import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -80,7 +81,7 @@ import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation>implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
     @Override
     public boolean isHeadlessRunnable() {
         return false;
@@ -162,21 +163,21 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         return true;
     }
 
-    private TrayIconPopup                       trayIconPopup;
+    private TrayIconPopup trayIconPopup;
 
-    private TrayIcon                            trayIcon;
+    private TrayIcon trayIcon;
 
-    private JFrame                              guiFrame;
+    private JFrame guiFrame;
 
-    private TrayIconTooltip                     trayIconTooltip;
+    private TrayIconTooltip trayIconTooltip;
 
-    private TrayMouseAdapter                    ma;
+    private TrayMouseAdapter ma;
 
     private ExtensionConfigPanel<TrayExtension> configPanel;
 
-    private long                                lastCloseRequest;
+    private long lastCloseRequest;
 
-    private boolean                             asking;
+    private boolean asking;
 
     public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
         return configPanel;
@@ -419,6 +420,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         trayIconTooltip.hideTooltip();
 
         if (e.getSource() instanceof TrayIcon) {
+
             if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
                     JDGui.getInstance().setWindowToTray(guiFrame.isVisible());
@@ -728,7 +730,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         // exit clicked
                         break main;
                     case TO_TASKBAR:
-                        JDGui.getInstance().getMainFrame().setExtendedState(JFrame.ICONIFIED);
+                        WindowManager.getInstance().setExtendedState(JDGui.getInstance().getMainFrame(), WindowExtendedState.ICONIFIED);
+
                         return;
                     case TO_TRAY:
                         if (SystemTray.isSupported()) {
@@ -739,7 +742,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 case EXIT:
                     break main;
                 case TO_TASKBAR:
-                    JDGui.getInstance().getMainFrame().setExtendedState(JFrame.ICONIFIED);
+                    WindowManager.getInstance().setExtendedState(JDGui.getInstance().getMainFrame(), WindowExtendedState.ICONIFIED);
                     return;
                 case TO_TRAY:
                     if (SystemTray.isSupported()) {

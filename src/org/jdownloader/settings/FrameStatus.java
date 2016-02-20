@@ -3,9 +3,7 @@ package org.jdownloader.settings;
 import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
@@ -14,6 +12,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.SwingUtils;
 
 import jd.gui.swing.jdgui.JDownloaderMainFrame;
 
@@ -34,24 +33,6 @@ public class FrameStatus implements Storable {
          * @see #getExtendedState
          */
         ICONIFIED(Frame.ICONIFIED),
-
-        /**
-         * This state bit indicates that frame is maximized in the horizontal direction.
-         *
-         * @see #setExtendedState(int)
-         * @see #getExtendedState
-         * @since 1.4
-         */
-        MAXIMIZED_HORIZ(Frame.MAXIMIZED_HORIZ),
-
-        /**
-         * This state bit indicates that frame is maximized in the vertical direction.
-         *
-         * @see #setExtendedState(int)
-         * @see #getExtendedState
-         * @since 1.4
-         */
-        MAXIMIZED_VERT(Frame.MAXIMIZED_VERT),
 
         /**
          * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience
@@ -88,27 +69,31 @@ public class FrameStatus implements Storable {
         }
 
         public static ExtendedState get(JFrame mainFrame) {
+            int actualState = mainFrame.getExtendedState();
             for (ExtendedState es : ExtendedState.values()) {
-                if (es.getId() == mainFrame.getExtendedState()) {
+                if (es == ExtendedState.NORMAL) {
+                    continue;
+                }
+                if ((actualState & es.getId()) == es.getId()) {
                     return es;
                 }
             }
-            return null;
+            return ExtendedState.NORMAL;
         }
     }
 
-    public static final TypeRef<FrameStatus> TYPE_REF       = new TypeRef<FrameStatus>() {
+    public static final TypeRef<FrameStatus> TYPE_REF = new TypeRef<FrameStatus>() {
 
-                                                            };
+    };
 
-    private ExtendedState                    extendedState  = ExtendedState.NORMAL;
-    private int                              width          = -1;
-    private int                              height         = -1;
-    private int                              x              = -1;
-    private boolean                          visible        = true;
-    private int                              y              = -1;
-    private boolean                          silentShutdown = false;
-    private String                           screenID       = null;
+    private ExtendedState extendedState  = ExtendedState.NORMAL;
+    private int           width          = -1;
+    private int           height         = -1;
+    private int           x              = -1;
+    private boolean       visible        = true;
+    private int           y              = -1;
+    private boolean       silentShutdown = false;
+    private String        screenID       = null;
 
     public ExtendedState getExtendedState() {
         return extendedState;
@@ -242,13 +227,8 @@ public class FrameStatus implements Storable {
         Rectangle jdRectange = new Rectangle(jdBounds);
         boolean isok = false;
         for (final GraphicsDevice screen : screens) {
-            final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
-            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen.getDefaultConfiguration());
 
-            bounds.x += insets.left;
-            bounds.y += insets.top;
-            bounds.width -= (insets.left + insets.right);
-            bounds.height -= (insets.top + insets.bottom);
+            final Rectangle bounds = SwingUtils.getUsableScreenBounds(screen);
 
             jdRectange.height = 30;
             Rectangle inter = jdRectange.intersection(bounds);

@@ -27,7 +27,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.nutils.Formatter;
@@ -133,7 +132,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         if (!isVisible()) {
             return;
         }
-        GUIUtils.saveLastLocation(this);
+
         dispose();
     }
 
