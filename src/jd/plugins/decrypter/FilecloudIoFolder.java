@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -32,10 +30,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io" }, urls = { "https?://(www\\.)?(ifile\\.it|filecloud\\.io)/_[a-z0-9]+" }, flags = { 0 })
-public class IFileItFldr extends PluginForDecrypt {
+import org.appwork.utils.formatter.SizeFormatter;
 
-    public IFileItFldr(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io" }, urls = { "https?://(?:www\\.)?(?:ifile\\.it|filecloud\\.io)/_[a-z0-9]+" }, flags = { 0 })
+public class FilecloudIoFolder extends PluginForDecrypt {
+
+    public FilecloudIoFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
