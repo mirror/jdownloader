@@ -315,7 +315,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         }
                     }
                     if (values != null && values.length > (id - 1)) {
-                        output = Pattern.compile("<jd:source:" + id + "\\s*/?\\s*>").matcher(output).replaceAll(Matcher.quoteReplacement(Encoding.urlDecode(values[id - 1], false)));
+                        final String value = Encoding.urlDecode(stringOrEmpty(values[id - 1]), false);
+                        output = Pattern.compile("<jd:source:" + id + "\\s*/?\\s*>").matcher(output).replaceAll(Matcher.quoteReplacement(value));
                     }
                 }
                 return output;
@@ -328,7 +329,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (StringUtils.isNotEmpty(modifiers)) {
-                    final String rep = new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getMatch(Integer.parseInt(modifiers) - 1);
+                    final String rep = stringOrEmpty(new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getMatch(Integer.parseInt(modifiers) - 1));
                     return Pattern.compile("<jd:" + ORGFILENAME + ":" + modifiers + "\\s*/?\\s*>").matcher(input).replaceAll(Matcher.quoteReplacement(rep));
                 }
                 return pat.matcher(input).replaceAll(Matcher.quoteReplacement(link.getName()));
@@ -360,9 +361,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
                 packagename = CrossSystem.alleviatePathParts(packagename);
                 if (StringUtils.isNotEmpty(modifiers)) {
-                    Pattern patt = lgr.getPackageNameRule().getPattern();
-                    String[] matches = new Regex(packagename, patt).getRow(0);
-                    return Pattern.compile("<jd:" + ORGPACKAGENAME + ":" + modifiers + "\\s*/?\\s*>").matcher(input).replaceAll(Matcher.quoteReplacement(matches[Integer.parseInt(modifiers) - 1]));
+                    final Pattern patt = lgr.getPackageNameRule().getPattern();
+                    final String[] matches = new Regex(packagename, patt).getRow(0);
+                    return Pattern.compile("<jd:" + ORGPACKAGENAME + ":" + modifiers + "\\s*/?\\s*>").matcher(input).replaceAll(Matcher.quoteReplacement(stringOrEmpty(matches[Integer.parseInt(modifiers) - 1])));
                     //
                 }
                 return pat.matcher(input).replaceAll(Matcher.quoteReplacement(packagename));
@@ -430,7 +431,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     fileType = "";
                 }
                 if (StringUtils.isNotEmpty(modifiers)) {
-                    return Pattern.compile("<jd:orgfiletype:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]));
+                    return Pattern.compile("<jd:orgfiletype:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(stringOrEmpty(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1])));
                 }
                 return pat.matcher(input).replaceAll(Matcher.quoteReplacement(fileType));
             }
@@ -450,8 +451,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 final int id = Integer.parseInt(modifiers);
                 final Regex regex = new Regex(link.getURL(), lgr.getHosterRule().getPattern());
                 if (regex.matches()) {
-                    String[] values = regex.getRow(0);
-                    return Pattern.compile("<jd:hoster:" + id + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(values[id - 1]));
+                    final String[] values = regex.getRow(0);
+                    return Pattern.compile("<jd:hoster:" + id + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(Encoding.urlDecode(stringOrEmpty(values[id - 1]), false)));
                 }
                 return input;
             }
@@ -469,7 +470,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     return input;
                 }
                 final Object property = link.getDownloadLink().getProperty(modifiers);
-                if (property == null || !(property instanceof String)) {
+                if (property == null || (!(property instanceof String) && !(property instanceof Number))) {
                     return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll("");
                 } else {
                     return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(property.toString()));
@@ -481,6 +482,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
 
         });
+    }
+
+    private String stringOrEmpty(String input) {
+        if (StringUtils.isEmpty(input)) {
+            return "";
+        } else {
+            return input;
+        }
     }
 
     private void addReplacer(PackagizerReplacer replacer) {
