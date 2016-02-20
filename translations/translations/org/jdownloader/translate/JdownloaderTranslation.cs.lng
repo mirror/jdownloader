@@ -128,6 +128,7 @@ LinkSource_ADD_LINKS_DIALOG=Přidat akci odkazů
 LinkSource_CLIPBOARD=Schránka
 LinkSource_CNL=Clik'n'Load
 LinkSource_DOWNLOADED_CONTAINER=Stažený kontejner
+LinkSource_DRAG_DROP_ACTION=Akce přetažení
 LinkSource_EXTENSION=Jakákoliv přípona
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Dok (pouze Mac)
