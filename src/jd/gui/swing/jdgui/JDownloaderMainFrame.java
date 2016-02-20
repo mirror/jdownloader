@@ -14,6 +14,7 @@ import javax.swing.JDialog;
 
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.JSonStorage;
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -29,7 +30,7 @@ import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class JDownloaderMainFrame extends ExtJFrame {
-    private FrameStatus     latestNormalState;
+    private FrameStatus latestNormalState;
 
     private LogSource       logger;
     private DelayedRunnable delayedStateSaver;
@@ -39,6 +40,10 @@ public class JDownloaderMainFrame extends ExtJFrame {
         this.logger = logger;
 
         delayedStateSaver = new DelayedRunnable(250, 1000l) {
+            @Override
+            public void resetAndStart() {
+                super.resetAndStart();
+            }
 
             @Override
             public String getID() {
@@ -75,6 +80,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
             @Override
             public void componentMoved(ComponentEvent e) {
                 delayedStateSaver.resetAndStart();
+
             }
 
             @Override
@@ -101,7 +107,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void windowDeactivated(WindowEvent e) {
-                delayedStateSaver.resetAndStart();
+                // delayedStateSaver.resetAndStart();
             }
 
             @Override
@@ -116,7 +122,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void windowActivated(WindowEvent e) {
-                delayedStateSaver.resetAndStart();
+                // delayedStateSaver.resetAndStart();
             }
         });
         addWindowStateListener(new WindowStateListener() {
@@ -144,6 +150,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
     @Override
     public void setSize(int width, int height) {
+        System.out.println("Set Frame size: " + width + "x" + height);
         super.setSize(width, height);
     }
 
@@ -285,9 +292,10 @@ public class JDownloaderMainFrame extends ExtJFrame {
             latestFrameStatus = newState;
             if (newState.getExtendedState() == ExtendedState.NORMAL) {
                 latestNormalState = newState.clone();
-                // logger.info("New Window State (Normal): " + JSonStorage.toString(latestFrameStatus));
+
+                System.out.println("New Window State (Normal): " + JSonStorage.toString(latestFrameStatus));
             } else {
-                // logger.info("New Window State: " + JSonStorage.toString(latestFrameStatus));
+                System.out.println("New Window State: " + JSonStorage.toString(latestFrameStatus));
             }
 
         }

@@ -58,21 +58,6 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
-import jd.SecondLevelLaunch;
-import jd.config.ConfigContainer;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UIConstants;
-import jd.gui.swing.jdgui.components.StatusBarImpl;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.nutils.Screen;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -153,16 +138,30 @@ import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdateHandler;
 import org.jdownloader.updatev2.UpdaterListener;
 
+import jd.SecondLevelLaunch;
+import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.UIConstants;
+import jd.gui.swing.jdgui.components.StatusBarImpl;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import net.miginfocom.swing.MigLayout;
+
 public class JDGui implements UpdaterListener, OwnerFinder {
-    private static final String TITLE_PATTERN_UPDATE            = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_UPDATE = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_TITLE             = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_TITLE = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_SPEED_AVERAGE     = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_SPEED_AVERAGE = "\\|([^\\|]*)\\#AVGSPEED([^\\|]*)\\|";
 
     private static final String TITLE_PATTERN_RUNNING_DOWNLOADS = "\\|([^\\|]*)\\#RUNNING_DOWNLOADS([^\\|]*)\\|";
 
-    private static final String TITLE_PATTERN_SPEED             = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
+    private static final String TITLE_PATTERN_SPEED = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
 
     static {
         if (Application.isHeadless()) {
@@ -219,29 +218,29 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private MainFrameClosingHandler closingHandler;
 
-    private DownloadsView           downloadView;
+    private DownloadsView downloadView;
 
-    private Thread                  initThread = null;
+    private Thread initThread = null;
 
-    private LinkGrabberView         linkgrabberView;
-    private LogSource               logger;
-    protected JDownloaderMainFrame  mainFrame;
+    private LinkGrabberView        linkgrabberView;
+    private LogSource              logger;
+    protected JDownloaderMainFrame mainFrame;
 
-    private MainTabbedPane          mainTabbedPane;
-    private JDMenuBar               menuBar;
-    private StatusBarImpl           statusBar;
+    private MainTabbedPane mainTabbedPane;
+    private JDMenuBar      menuBar;
+    private StatusBarImpl  statusBar;
 
-    private MainToolBar             toolBar;
+    private MainToolBar toolBar;
 
-    private final TrayExtension     tray;
+    private final TrayExtension tray;
 
-    private Thread                  trayIconChecker;
+    private Thread trayIconChecker;
 
-    private JPanel                  waitingPane;
+    private JPanel waitingPane;
 
-    private volatile Timer          speedInTitleUpdater;
+    private volatile Timer speedInTitleUpdater;
 
-    private boolean                 busy;
+    private boolean busy;
 
     private JDGui() {
         logger = LogController.getInstance().getLogger("Gui");
@@ -1009,7 +1008,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         }
         final FrameStatus status = stat;
         Dimension dim = null;
-        if (status.getWidth() > 0 && status.getHeight() > 0) {
+        if (status.getWidth() > 50 && status.getHeight() > 50) {
             dim = new Dimension(status.getWidth(), status.getHeight());
         }
         if (dim == null) {
@@ -1017,120 +1016,48 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         }
 
         Point loc = new Point(status.getX(), status.getY());
-        GraphicsDevice lastScreen = null;
-        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        final GraphicsDevice[] screens = ge.getScreenDevices();
-
-        for (final GraphicsDevice screen : screens) {
-            if (screen.getIDstring() != null && screen.getIDstring().equals(status.getScreenID())) {
-                lastScreen = screen;
-                break;
-            }
+        boolean noOrInvalidLocation = (loc.x == -1 && loc.y == -1) || !status.isLocationSet();
+        if (noOrInvalidLocation) {
+            // rest location
+            Rectangle usableDefaultBounds = SwingUtils.getUsableScreenBounds(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice());
+            loc = new Point(usableDefaultBounds.x, usableDefaultBounds.y);
         }
+        GraphicsDevice lastScreen = SwingUtils.getScreenByID(status.getScreenID());
 
         if (lastScreen == null) {
-            lastScreen = GUIUtils.getScreenDevice(status.getX(), status.getY());
+            if (!noOrInvalidLocation) {
+                // under windows 10, frames have a huge "border" (Probably the shadow). a window that has actually the size of 1920x1080
+                // will have the location -8,0 instead of 0,0
+                // adding a few bytes to the top left window corner will workaround that problem
+                lastScreen = SwingUtils.getScreenByLocation(new Point(loc.x + 30, loc.y + 30));
+            }
         }
         if (setExtendedState) {
             switch (status.getExtendedState()) {
             case MAXIMIZED_BOTH:
-
-                GraphicsDevice screenByCoordinates = GUIUtils.getScreenDevice(status.getX(), status.getY());
+                // +30->See comment above
+                GraphicsDevice screenByCoordinates = SwingUtils.getScreenByLocation(new Point(loc.x + 30, loc.y + 30));
                 if (screenByCoordinates == null || !screenByCoordinates.equals(lastScreen)) {
+                    // maximized and last known normal location do not match
+                    loc = new CenterOfScreenLocator().getCenterLocationByWindowBounds(new Rectangle(loc, dim));
 
-                    Rectangle screenSize = lastScreen.getDefaultConfiguration().getBounds();
-                    int width = screenSize.width;
-                    int height = screenSize.height;
-                    loc = new Point(screenSize.x + width / 2 - dim.width / 2, screenSize.y + height / 2 - dim.height / 2);
                 }
-                break;
-            case MAXIMIZED_HORIZ:
-                // TODO: no idea what this should do. seems do have no effect for win7
-                // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_HORIZ)==false
-                // check on other OSs
-                break;
-
-            case MAXIMIZED_VERT:
-                // TODO: no idea what this should do. seems do have no effect for win7
-                // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_VERT)==false
-                // check on other OSs
                 break;
 
             }
         }
 
-        if (!status.isLocationSet()) {
-            loc = Screen.getCenterOfComponent(null, mainFrame);
-        } else if (lastScreen == null) {
-            loc = Screen.getCenterOfComponent(null, mainFrame);
+        if (noOrInvalidLocation || lastScreen == null) {
+
+            loc = new CenterOfScreenLocator().getCenterLocationByWindowBounds(new Rectangle(loc, dim));
+
         }
 
         // try to find offscreen
         logger.info("Check if Screen Location are ok " + loc + " - " + dim);
 
-        Rectangle jdRectange = new Rectangle(loc, dim);
-        boolean isok = false;
-        for (final GraphicsDevice screen : screens) {
-            logger.info("Screen: " + screen.getIDstring() + " " + screen.getDefaultConfiguration());
-            final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
-
-            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen.getDefaultConfiguration());
-
-            logger.info("Screenbounds: " + bounds);
-            logger.info("Screen Insets: " + insets);
-            bounds.x += insets.left;
-            bounds.y += insets.top;
-            bounds.width -= (insets.left + insets.right);
-            bounds.height -= (insets.top + insets.bottom);
-            logger.info("New Screenbounds: " + bounds);
-
-            jdRectange.height = 30;
-            Rectangle inter = jdRectange.intersection(bounds);
-
-            logger.info("Intersection(actual): " + inter);
-            if (inter.width > 50 && inter.height >= 30) {
-                // ok. Titlebar is in screen.
-                isok = true;
-                logger.info("Screen OK");
-                break;
-
-            } else {
-                logger.info("Screen BAD");
-            }
-
-        }
-        final Dimension fDim2 = dim;
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                mainFrame.setSize(fDim2);
-            }
-        };
-
-        Point finalLocation;
-        if (!isok) {
-
-            final Dimension fDim = dim;
-            final Point cuLoc = loc;
-            finalLocation = new EDTHelper<Point>() {
-                @Override
-                public Point edtRun() {
-                    mainFrame.setSize(fDim);
-                    return AbstractLocator.correct(cuLoc, mainFrame);
-                }
-            }.getReturnValue();
-
-            logger.info("Screen BAD: Reset the Location to: " + finalLocation + "@" + dim);
-
-        } else {
-            // Point correctedLocation = AbstractLocator.correct(loc, mainFrame);
-            // if (!correctedLocation.equals(loc)) {
-            // logger.info("Corrected Location from " + loc + " to " + correctedLocation);
-            // loc = correctedLocation;
-            // }
-            finalLocation = loc;
-        }
+        // ensure that the window is on screen
+        final Point finalLocation = loc == null ? null : AbstractLocator.correct(loc, dim);
 
         Integer state = null;
         if (status.isSilentShutdown() && !status.isActive()) {
@@ -1145,26 +1072,31 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         }
 
         final Dimension finalDim = dim;
-        final Integer finalState = state;
+        final WindowExtendedState extendedState = WindowExtendedState.get(state);
 
-        final Point finalLocation2 = finalLocation;
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                if (finalLocation2 != null) {
-                    mainFrame.setLocation(finalLocation2);
+                mainFrame.setSize(finalDim);
+                if (finalLocation != null) {
+                    mainFrame.setLocationByPlatform(false);
+                    mainFrame.setLocation(finalLocation);
+                } else {
+                    mainFrame.setLocationByPlatform(true);
                 }
 
                 mainFrame.setMinimumSize(new Dimension(400, 100));
                 // mainFrame.setSize(finalDim);
                 mainFrame.setPreferredSize(finalDim);
+                mainFrame.pack();
                 if (setExtendedState) {
-                    if (finalState != null) {
-                        mainFrame.setExtendedState(finalState);
+                    if (extendedState != null) {
+                        WindowManager.getInstance().setExtendedState(mainFrame, extendedState);
+
                     }
                 }
-                mainFrame.pack();
+
                 if (setVisible) {
                     WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                 }
@@ -1353,6 +1285,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         tray.dispose();
                         JDGui.this.mainTabbedPane.onClose();
                         FrameStatus framestatus = FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus());
+                        System.out.println("Save FS: " + JSonStorage.serializeToJson(framestatus));
                         JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(framestatus);
 
                         WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
@@ -1722,12 +1655,14 @@ public class JDGui implements UpdaterListener, OwnerFinder {
      * @param minimize
      */
     public void setWindowToTray(final boolean minimize) {
+        System.out.println("setWindowToTray");
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
+                ExtendedState estate = ExtendedState.get(getMainFrame());
                 /* set visible state */
-                if (!minimize) {
-                    ExtendedState estate = ExtendedState.get(getMainFrame());
+                if (!minimize || estate == ExtendedState.ICONIFIED) {
+
                     if (estate == null) {
                         logger.info("Bad ExtendedState \r\n" + getMainFrame().getExtendedState());
                         estate = ExtendedState.NORMAL;
@@ -1743,17 +1678,14 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     }
                     switch (estate) {
                     case MAXIMIZED_BOTH:
-                    case MAXIMIZED_HORIZ:
-                    case MAXIMIZED_VERT:
-                        // set size before. else the locator may be wrong
-                        // on windows 8 and 10, you can maximize to half screen. this is not a real maximized, but if you toggle the
-                        // window
-                        // visibility in such a state, windows restores the old size.
-                        // this we have to manually set the correct size here
+                        // let's remind java of the actuall non-maximized size. the os should return to this size when restoring the window
                         boolean locationSet = false;
                         if (frameState != null) {
                             getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
-                            GraphicsDevice screen = SwingUtils.getScreenByLocation(frameState.getX(), frameState.getY());
+                            // under windows 10, frames have a huge "border" (Probably the shadow). a window that has actually the size of
+                            // 1920x1080 will have the location -8,0 instead of 0,0
+                            // adding a few bytes to the top left window corner will workaround that problem
+                            GraphicsDevice screen = SwingUtils.getScreenByLocation(frameState.getX() + 30, frameState.getY() + 30);
                             if (screen != null && StringUtils.equals(screen.getIDstring(), frameState.getScreenID())) {
                                 getMainFrame().setLocation(frameState.getX(), frameState.getY());
                                 locationSet = true;
@@ -1768,41 +1700,37 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                             }
                         }
                         break;
-                    case NORMAL:
-                        // when I snap a windows 10 window e.g. to the left side, java thinks it is in normal state. when I send hide it to
-                        // tray and restore it, windows will restore it to the dimensions it had before snapping.
-                        // setting the state to normal here (even if it already is) will tell windows that we are not in extended state any
-                        // more, and accept the setsize below.
-                        getMainFrame().setExtendedState(ExtendedState.NORMAL.getId());
-                    case ICONIFIED:
-                    default:
-                        // on windows 8 and 10, you can maximize to half screen. this is not a real maximized, but if you toggle the
-                        // window
-                        // visibility in such a state, windows restores the old size.
-                        // this we have to manually set the correct size here
-                        if (frameState != null) {
-                            getMainFrame().setSize(frameState.getWidth(), frameState.getHeight());
-                        }
+
                     }
+
+                    if (!getMainFrame().isVisible()) {
+                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
+                    }
+
                     switch (estate) {
                     case MAXIMIZED_BOTH:
-                    case MAXIMIZED_HORIZ:
-                    case MAXIMIZED_VERT:
+
                         WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.MAXIMIZED_BOTH);
                         break;
                     default:
                         WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
                         break;
                     }
-                    if (!getMainFrame().isVisible()) {
-                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
-                    }
+
                     if (trayIconChecker != null) {
                         trayIconChecker.interrupt();
                         trayIconChecker = null;
                     }
                 } else {
-                    WindowManager.getInstance().hide(getMainFrame());
+                    getMainFrame().addWindowListener(new WindowAdapter() {
+                        public void windowIconified(WindowEvent e) {
+                            getMainFrame().removeWindowListener(this);
+                            System.out.println("HIDE");
+                            WindowManager.getInstance().hide(getMainFrame());
+                        };
+                    });
+                    WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.ICONIFIED);
+
                     trayIconChecker = new Thread() {
                         @Override
                         public void run() {
