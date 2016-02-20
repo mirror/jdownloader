@@ -31,16 +31,13 @@
  */
 package jd.nutils;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
-import java.io.OutputStreamWriter;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -49,6 +46,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.rmi.ConnectException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -59,6 +57,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.Login;
 import org.jdownloader.logging.LogController;
+import org.seamless.util.io.IO;
 
 /**
  * SimpleFTP is a simple package that implements a Java FTP client. With SimpleFTP, you can connect to an FTP server and upload multiple
@@ -69,9 +68,7 @@ import org.jdownloader.logging.LogController;
 public class SimpleFTP {
     private static final int TIMEOUT            = 20 * 1000;
     private boolean          binarymode         = false;
-    private BufferedReader   reader             = null;
     private Socket           socket             = null;
-    private BufferedWriter   writer             = null;
     private String           dir                = "/";
     private String           host;
     private LogInterface     logger             = LogController.CL();
@@ -194,8 +191,6 @@ public class SimpleFTP {
         socket = new Socket(host, port);
         this.host = host;
         socket.setSoTimeout(TIMEOUT);
-        reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         String response = readLines(new int[] { 220 }, "SimpleFTP received an unknown response when connecting to the FTP server: ");
         sendLine("USER " + user);
         response = readLines(new int[] { 230, 331 }, "SimpleFTP received an unknown response after sending the user: ");
@@ -257,7 +252,7 @@ public class SimpleFTP {
             /* avoid stackoverflow for io-exception during sendLine */
             socket = null;
             if (lsocket != null) {
-                sendLine("QUIT");
+                sendLine(lsocket, "QUIT");
             }
         } finally {
             try {
@@ -287,9 +282,70 @@ public class SimpleFTP {
     }
 
     public String readLine() throws IOException {
-        String line = reader.readLine();
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final int length = readLine(socket.getInputStream(), bos);
+        if (length == -1) {
+            throw new EOFException();
+        } else if (length == 0) {
+            return null;
+        }
+        final String line = fromRawBytes(bos.toByteArray());
         logger.info(host + " < " + line);
         return line;
+    }
+
+    public static String fromRawBytes(byte[] bytes) {
+        final StringBuilder sb = new StringBuilder();
+        for (int index = 0; index < bytes.length; index++) {
+            final int c = bytes[index] & 0xff;
+            if (c <= 127) {
+                sb.append((char) c);
+            } else {
+                final String hexEncoded = Integer.toString(c, 16);
+                if (hexEncoded.length() == 1) {
+                    sb.append("%0");
+                } else {
+                    sb.append("%");
+                }
+                sb.append(hexEncoded);
+            }
+        }
+        return sb.toString();
+    }
+
+    protected int readLine(InputStream is, final OutputStream buffer) throws IOException {
+        int c = 0;
+        int length = 0;
+        boolean CR = false;
+        while (true) {
+            c = is.read();
+            if (c == -1) {
+                if (length > 0) {
+                    return length;
+                }
+                return -1;
+            } else if (c == 13) {
+                if (CR) {
+                    throw new IOException("CRCR!?");
+                } else {
+                    CR = true;
+                }
+            } else if (c == 10) {
+                if (CR) {
+                    break;
+                } else {
+                    throw new IOException("LF!?");
+                }
+            } else {
+                if (CR) {
+                    throw new IOException("CRXX!?");
+                }
+                buffer.write(c);
+                length++;
+            }
+        }
+        return length;
+
     }
 
     public boolean wasLatestOperationNotPermitted() {
@@ -349,44 +405,46 @@ public class SimpleFTP {
         }
     }
 
-    public boolean remove(String string) throws IOException {
-        sendLine("DELE " + string);
-        try {
-            readLines(new int[] { 250 }, "could not remove file");
-            return true;
-        } catch (IOException e) {
-            LogController.CL().log(e);
-            if (e.getMessage().contains("could not remove file")) {
-                return false;
-            }
-            throw e;
-        }
-    }
+    // Untested
+    // public boolean remove(String string) throws IOException {
+    // sendLine("DELE " + string);
+    // try {
+    // readLines(new int[] { 250 }, "could not remove file");
+    // return true;
+    // } catch (IOException e) {
+    // LogController.CL().log(e);
+    // if (e.getMessage().contains("could not remove file")) {
+    // return false;
+    // }
+    // throw e;
+    // }
+    // }
 
-    public boolean rename(String from, String to) throws IOException {
-        sendLine("RNFR " + from);
-        try {
-            readLines(new int[] { 350 }, "RNFR failed");
-        } catch (IOException e) {
-            LogSource.exception(logger, e);
-            if (e.getMessage().contains("RNFR")) {
-                return false;
-            }
-        }
-        sendLine("RNTO " + to);
-        try {
-            readLines(new int[] { 250 }, "RNTO failed");
-        } catch (IOException e) {
-            LogSource.exception(logger, e);
-            if (e.getMessage().contains("RNTO")) {
-                return false;
-            }
-        }
-        return true;
-    }
+    // Untested
+    // public boolean rename(String from, String to) throws IOException {
+    // sendLine("RNFR " + from);
+    // try {
+    // readLines(new int[] { 350 }, "RNFR failed");
+    // } catch (IOException e) {
+    // LogSource.exception(logger, e);
+    // if (e.getMessage().contains("RNFR")) {
+    // return false;
+    // }
+    // }
+    // sendLine("RNTO " + to);
+    // try {
+    // readLines(new int[] { 250 }, "RNTO failed");
+    // } catch (IOException e) {
+    // LogSource.exception(logger, e);
+    // if (e.getMessage().contains("RNTO")) {
+    // return false;
+    // }
+    // }
+    // return true;
+    // }
 
-    public long getSize(String file) throws IOException {
-        sendLine("SIZE " + file);
+    public long getSize(final String filePath) throws IOException {
+        sendLine("SIZE " + filePath);
         String size = null;
         try {
             size = readLines(new int[] { 200, 213 }, "SIZE failed");
@@ -396,89 +454,114 @@ public class SimpleFTP {
                 return -1;
             }
         }
-        String[] split = size.split(" ");
+        final String[] split = size.split(" ");
         return Long.parseLong(split[1].trim());
+    }
+
+    public static byte[] toRawBytes(final String string) {
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        for (int index = 0; index < string.length(); index++) {
+            final char c = string.charAt(index);
+            if (c == '%') {
+                final int hexDecoded = Integer.parseInt(string.substring(index + 1, index + 3), 16);
+                bos.write(hexDecoded);
+                index += 2;
+            } else {
+                bos.write(c);
+            }
+        }
+        return bos.toByteArray();
     }
 
     /**
      * Sends a raw command to the FTP server.
      */
     public void sendLine(String line) throws IOException {
-        try {
-            logger.info(host + " > " + line);
-            writer.write(line + "\r\n");
-            writer.flush();
-        } catch (IOException e) {
-            LogSource.exception(logger, e);
-            if (socket != null) {
-                disconnect();
-            }
-            throw e;
-        }
+        sendLine(this.socket, line);
     }
 
-    /**
-     * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to
-     * avoid NAT or firewall problems at the client end.
-     */
-    public boolean stor(File file) throws IOException {
-        if (file.isDirectory()) {
-            throw new IOException("SimpleFTP cannot upload a directory.");
-        }
-        String filename = file.getName();
-        return stor(new FileInputStream(file), filename);
-    }
-
-    /**
-     * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to
-     * avoid NAT or firewall problems at the client end.
-     */
-    public boolean stor(InputStream input, String filename) throws IOException {
-        Socket dataSocket = null;
-        BufferedOutputStream output = null;
-        try {
-            InetSocketAddress pasv = pasv();
-            sendLine("STOR " + filename);
-            String response = null;
+    private void sendLine(Socket socket, String line) throws IOException {
+        if (socket != null) {
             try {
-                dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
-                response = readLine();
-                if (!response.startsWith("150 ") && !response.startsWith("125 ")) {
-                    throw new IOException("SimpleFTP was not allowed to send the file: " + response);
+                logger.info(host + " > " + line);
+                final OutputStream os = socket.getOutputStream();
+                os.write(toRawBytes(line));
+                os.write(new byte[] { 0x0d, 0x0a });
+                os.flush();
+            } catch (IOException e) {
+                LogSource.exception(logger, e);
+                if (socket != null) {
+                    disconnect();
                 }
-                output = new BufferedOutputStream(dataSocket.getOutputStream());
-                byte[] buffer = new byte[4096];
-                int bytesRead = 0;
-                while ((bytesRead = input.read(buffer)) != -1) {
-                    output.write(buffer, 0, bytesRead);
-                }
-                input.close();
-            } finally {
-                try {
-                    output.flush();
-                } catch (final Throwable e) {
-                }
-                try {
-                    output.close();
-                } catch (final Throwable e) {
-                }
-                this.shutDownSocket(dataSocket);
+                throw e;
             }
-            response = readLine();
-            return response.startsWith("226 ");
-        } catch (ConnectException e) {
-            LogSource.exception(logger, e);
-            cancelTransfer();
-            return stor(input, filename);
-        } catch (SocketException e) {
-            LogSource.exception(logger, e);
-            cancelTransfer();
-            return stor(input, filename);
-        } finally {
-            input.close();
         }
-
     }
+
+    // Untested
+    // /**
+    // * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to
+    // * avoid NAT or firewall problems at the client end.
+    // */
+    // public boolean stor(File file) throws IOException {
+    // if (file.isDirectory()) {
+    // throw new IOException("SimpleFTP cannot upload a directory.");
+    // }
+    // String filename = file.getName();
+    // return stor(new FileInputStream(file), filename);
+    // }
+
+    // Untested
+    // /**
+    // * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to
+    // * avoid NAT or firewall problems at the client end.
+    // */
+    // public boolean stor(InputStream input, String filename) throws IOException {
+    // Socket dataSocket = null;
+    // BufferedOutputStream output = null;
+    // try {
+    // InetSocketAddress pasv = pasv();
+    // sendLine("STOR " + filename);
+    // String response = null;
+    // try {
+    // dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
+    // response = readLine();
+    // if (!response.startsWith("150 ") && !response.startsWith("125 ")) {
+    // throw new IOException("SimpleFTP was not allowed to send the file: " + response);
+    // }
+    // output = new BufferedOutputStream(dataSocket.getOutputStream());
+    // byte[] buffer = new byte[4096];
+    // int bytesRead = 0;
+    // while ((bytesRead = input.read(buffer)) != -1) {
+    // output.write(buffer, 0, bytesRead);
+    // }
+    // input.close();
+    // } finally {
+    // try {
+    // output.flush();
+    // } catch (final Throwable e) {
+    // }
+    // try {
+    // output.close();
+    // } catch (final Throwable e) {
+    // }
+    // this.shutDownSocket(dataSocket);
+    // }
+    // response = readLine();
+    // return response.startsWith("226 ");
+    // } catch (ConnectException e) {
+    // LogSource.exception(logger, e);
+    // cancelTransfer();
+    // return stor(input, filename);
+    // } catch (SocketException e) {
+    // LogSource.exception(logger, e);
+    // cancelTransfer();
+    // return stor(input, filename);
+    // } finally {
+    // input.close();
+    // }
+    //
+    // }
 
     public void cancelTransfer() {
         try {
@@ -511,67 +594,68 @@ public class SimpleFTP {
         throw new IOException("SimpleFTP received bad data link information: " + response);
     }
 
-    /**
-     * creates directories
-     *
-     * @param cw
-     * @return
-     * @throws IOException
-     */
-    public boolean mkdir(String cw2) throws IOException {
-        String tmp = this.dir;
-        String cw = cw2;
-        try {
-            cw = cw.replace("\\", "/");
+    // Untested
+    // /**
+    // * creates directories
+    // *
+    // * @param cw
+    // * @return
+    // * @throws IOException
+    // */
+    // public boolean mkdir(String cw2) throws IOException {
+    // String tmp = this.dir;
+    // String cw = cw2;
+    // try {
+    // cw = cw.replace("\\", "/");
+    //
+    // String[] cwdirs = cw.split("[\\\\|/]{1}");
+    // String[] dirdirs = dir.split("[\\\\|/]{1}");
+    // int i;
+    // int length = 0;
+    // String root = "";
+    // for (i = 0; i < Math.min(cwdirs.length, dirdirs.length); i++) {
+    // if (cwdirs[i].equals(dirdirs[i])) {
+    // length += cwdirs[i].length() + 1;
+    // root += cwdirs[i] + "/";
+    // }
+    // }
+    // // cw=cw;
+    // cw = cw.substring(length);
+    // String[] dirs = cw.split("[\\\\|/]{1}");
+    // if (root.length() > 0) {
+    // cwd(root);
+    // }
+    // for (String d : dirs) {
+    // if (d == null || d.trim().length() == 0) {
+    // cwd("/");
+    // continue;
+    // }
+    //
+    // sendLine("MKD " + d);
+    // String response = readLine();
+    // if (!response.startsWith("257 ") && !response.startsWith("550 ")) {
+    //
+    // return false;
+    //
+    // }
+    //
+    // cwd(d);
+    // }
+    // return true;
+    // } finally {
+    //
+    // this.cwd(tmp);
+    // }
+    //
+    // }
 
-            String[] cwdirs = cw.split("[\\\\|/]{1}");
-            String[] dirdirs = dir.split("[\\\\|/]{1}");
-            int i;
-            int length = 0;
-            String root = "";
-            for (i = 0; i < Math.min(cwdirs.length, dirdirs.length); i++) {
-                if (cwdirs[i].equals(dirdirs[i])) {
-                    length += cwdirs[i].length() + 1;
-                    root += cwdirs[i] + "/";
-                }
-            }
-            // cw=cw;
-            cw = cw.substring(length);
-            String[] dirs = cw.split("[\\\\|/]{1}");
-            if (root.length() > 0) {
-                cwd(root);
-            }
-            for (String d : dirs) {
-                if (d == null || d.trim().length() == 0) {
-                    cwd("/");
-                    continue;
-                }
-
-                sendLine("MKD " + d);
-                String response = readLine();
-                if (!response.startsWith("257 ") && !response.startsWith("550 ")) {
-
-                    return false;
-
-                }
-
-                cwd(d);
-            }
-            return true;
-        } finally {
-
-            this.cwd(tmp);
-        }
-
-    }
-
-    public boolean cwdAdd(String cw) throws IOException {
-        if (cw.startsWith("/") || cw.startsWith("\\")) {
-            cw = cw.substring(1);
-        }
-        return cwd(dir + cw);
-
-    }
+    // Untested
+    // public boolean cwdAdd(String cw) throws IOException {
+    // if (cw.startsWith("/") || cw.startsWith("\\")) {
+    // cw = cw.substring(1);
+    // }
+    // return cwd(dir + cw);
+    // }
 
     public String getDir() {
         return dir;
@@ -756,14 +840,15 @@ public class SimpleFTP {
     public SimpleFTPListEntry[] listEntries() throws IOException {
         final String[][] entries = list();
         if (entries != null) {
-            final String cwd = getDir();
+            // convert spaces to %20 like browser does
+            final String cwd = getDir().replaceAll(" ", "%20");
             final List<SimpleFTPListEntry> ret = new ArrayList<SimpleFTPListEntry>();
             for (final String[] entry : entries) {
                 if (entry.length == 4) {
                     final boolean isFile = !"<DIR>".equalsIgnoreCase(entry[2]);
                     final String name = entry[3];
                     final long size = isFile ? Long.parseLong(entry[2]) : -1;
-                    ret.add(new SimpleFTPListEntry(isFile, name, cwd, size));
+                    ret.add(new SimpleFTPListEntry(isFile, name.replaceAll(" ", "%20"), cwd, size));
                 } else if (entry.length == 7) {
                     final boolean isFile = entry[0].startsWith("-");
                     String name = entry[6];
@@ -772,7 +857,7 @@ public class SimpleFTP {
                         name = new Regex(name, "->\\s*(.+)").getMatch(0);
                     }
                     final long size = isFile ? Long.parseLong(entry[4]) : -1;
-                    ret.add(new SimpleFTPListEntry(isFile, name, cwd, size));
+                    ret.add(new SimpleFTPListEntry(isFile, name.replaceAll(" ", "%20"), cwd, size));
                 }
             }
             return ret.toArray(new SimpleFTPListEntry[0]);
@@ -786,64 +871,45 @@ public class SimpleFTP {
      * @return
      * @throws IOException
      */
-    public String[][] list() throws IOException {
+    private String[][] list() throws IOException {
         InetSocketAddress pasv = pasv();
         sendLine("LIST");
         Socket dataSocket = null;
-        InputStreamReader input = null;
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         try {
             dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
-            input = new InputStreamReader(dataSocket.getInputStream(), "UTF8");
             readLines(new int[] { 125, 150 }, null);
-            char[] buffer = new char[4096];
-            int bytesRead = 0;
-            while ((bytesRead = input.read(buffer)) != -1) {
-                if (bytesRead > 0) {
-                    sb.append(buffer, 0, bytesRead);
-                }
-            }
+            sb.append(fromRawBytes(IO.readBytes(dataSocket.getInputStream())));
         } catch (IOException e) {
             if (e.getMessage().contains("550")) {
                 return null;
             }
             throw e;
         } finally {
-            try {
-                input.close();
-            } catch (final Throwable e) {
-            }
             shutDownSocket(dataSocket);
         }
         readLines(new int[] { 226 }, null);
         /* permission,type,user,group,size,date,filename */
-        String[][] matches = new Regex(sb.toString(), "([-dxrw]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
+        final String listResponse = sb.toString();
+        String[][] matches = new Regex(listResponse, "([-dxrw]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();
         if (matches == null || matches.length == 0) {
             /* date,time,size,name */
-            matches = new Regex(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(<DIR>|\\d+)\\s+(.*?)[$\r\n]+").getMatches();
+            matches = new Regex(listResponse, "(\\S+)\\s+(\\S+)\\s+(<DIR>|\\d+)\\s+(.*?)[$\r\n]+").getMatches();
         }
         return matches;
     }
 
-    /**
-     * permissionmask, ?, user?, group?, size?, date, name
-     *
-     * @param path
-     * @return
-     * @throws IOException
-     */
-    public String[] getFileInfo(String path) throws IOException {
-        String name = path.substring(path.lastIndexOf("/") + 1);
-        path = path.substring(0, path.lastIndexOf("/"));
-        if (!this.cwd(path)) {
+    public SimpleFTPListEntry getFileInfo(final String path) throws IOException {
+        final String name = path.substring(path.lastIndexOf("/") + 1);
+        final String workingDir = path.substring(0, path.lastIndexOf("/"));
+        if (!this.cwd(workingDir)) {
             return null;
         }
-        for (String[] file : list()) {
-            if (file.length == 4 && file[3].equals(name)) {
-                return file;
-            }
-            if (file.length == 7 && file[6].equals(name)) {
-                return file;
+        final byte[] nameBytes = toRawBytes(name);
+        for (final SimpleFTPListEntry entry : listEntries()) {
+            // we compare bytes because of hex encoding
+            if (Arrays.equals(SimpleFTP.toRawBytes(entry.getName()), nameBytes)) {
+                return entry;
             }
         }
         return null;
