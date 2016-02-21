@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -32,12 +31,12 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.QueryInfo;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
 import jd.http.requests.PostRequest;
-import jd.http.requests.RequestVariable;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -216,7 +215,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
-        final PostRequest request = ibr.createPostRequest(page, new ArrayList<RequestVariable>(), null);
+        final PostRequest request = ibr.createPostRequest(page, new QueryInfo(), null);
         request.setPostDataString(post);
         setContentType(request, isJson);
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we

@@ -7,17 +7,12 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.http.requests.RequestVariable;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
@@ -27,6 +22,11 @@ import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
 
 public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
@@ -66,7 +66,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         byte[] ret = null;
         try {
             final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
-            PostRequest request = (PostRequest) br.createPostRequest(this.getServerRoot() + query, new ArrayList<RequestVariable>(), null);
+            PostRequest request = br.createPostRequest(this.getServerRoot() + query, new ArrayList<KeyValueStringEntry>(), null);
             request.setPostBytes(sendBytes);
             request.setContentType("application/json; charset=utf-8");
             if (keyAndIV != null) {

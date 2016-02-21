@@ -28,6 +28,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -615,50 +627,50 @@ public class TbCmV2 extends PluginForDecrypt {
             if (cfg.isDescriptionTextEnabled()) {
 
                 final String descText = helper.loadDescription(vid);
+                if (StringUtils.isNotEmpty(descText)) {
+                    try {
 
-                try {
+                        String groupID;
+                        switch (cfg.getGroupLogic()) {
+                        case BY_FILE_TYPE:
+                        case NO_GROUP:
+                            groupID = "desc";
+                            break;
 
-                    String groupID;
-                    switch (cfg.getGroupLogic()) {
-                    case BY_FILE_TYPE:
-                    case NO_GROUP:
-                        groupID = "desc";
-                        break;
+                        case BY_MEDIA_TYPE:
+                            groupID = YoutubeVariantInterface.VariantGroup.DESCRIPTION.name();
+                            break;
+                        default:
+                            throw new WTFException("Unknown Grouping");
+                        }
+                        VariantInfo vi;
+                        descriptions.add(vi = new VariantInfo(YoutubeVariant.DESCRIPTION, null, null, new YoutubeStreamData(vid, null, YoutubeITAG.DESCRIPTION)) {
 
-                    case BY_MEDIA_TYPE:
-                        groupID = YoutubeVariantInterface.VariantGroup.DESCRIPTION.name();
-                        break;
-                    default:
-                        throw new WTFException("Unknown Grouping");
-                    }
-                    VariantInfo vi;
-                    descriptions.add(vi = new VariantInfo(YoutubeVariant.DESCRIPTION, null, null, new YoutubeStreamData(vid, null, YoutubeITAG.DESCRIPTION)) {
+                            @Override
+                            public void fillExtraProperties(DownloadLink thislink, List<VariantInfo> alternatives) {
+                                thislink.setProperty(YoutubeHelper.YT_DESCRIPTION, descText);
 
-                        @Override
-                        public void fillExtraProperties(DownloadLink thislink, List<VariantInfo> alternatives) {
-                            thislink.setProperty(YoutubeHelper.YT_DESCRIPTION, descText);
+                            }
 
+                            @Override
+                            public int compareTo(VariantInfo o) {
+                                return this.variant._getName().compareToIgnoreCase(o.variant._getName());
+
+                            }
+                        });
+
+                        List<VariantInfo> list = groups.get(groupID);
+                        if (list == null) {
+                            list = new ArrayList<TbCmV2.VariantInfo>();
+                            groups.put(groupID, list);
                         }
 
-                        @Override
-                        public int compareTo(VariantInfo o) {
-                            return this.variant._getName().compareToIgnoreCase(o.variant._getName());
+                        list.add(vi);
 
-                        }
-                    });
-
-                    List<VariantInfo> list = groups.get(groupID);
-                    if (list == null) {
-                        list = new ArrayList<TbCmV2.VariantInfo>();
-                        groups.put(groupID, list);
+                    } catch (Exception e) {
+                        getLogger().log(e);
                     }
-
-                    list.add(vi);
-
-                } catch (Exception e) {
-                    getLogger().log(e);
                 }
-
             }
 
             if (requestedVariant != null) {
@@ -782,30 +794,30 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                     }
                 }
-            if (extra != null && extra.length > 0) {
-                main: for (VariantInfo v : allVariants.values()) {
-                    for (String s : extra) {
-                        if (v.variant.getTypeId().equals(s)) {
-                            String groupID = getGroupID(v.variant);
-                            List<VariantInfo> fromGroup = groups.get(groupID);
-                            decryptedLinks.add(createLink(v, fromGroup));
-                            continue main;
-                        }
-                    }
-                }
-            }
-            ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
-            if (extraSubtitles != null) {
-                for (String v : extraSubtitles) {
-                    if (v != null) {
-                        for (VariantInfo vi : allSubtitles) {
-                            if (vi.getIdentifier().equalsIgnoreCase(v)) {
-                                decryptedLinks.add(createLink(vi, allSubtitles));
+                if (extra != null && extra.length > 0) {
+                    main: for (VariantInfo v : allVariants.values()) {
+                        for (String s : extra) {
+                            if (v.variant.getTypeId().equals(s)) {
+                                String groupID = getGroupID(v.variant);
+                                List<VariantInfo> fromGroup = groups.get(groupID);
+                                decryptedLinks.add(createLink(v, fromGroup));
+                                continue main;
                             }
                         }
                     }
                 }
-            }
+                ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
+                if (extraSubtitles != null) {
+                    for (String v : extraSubtitles) {
+                        if (v != null) {
+                            for (VariantInfo vi : allSubtitles) {
+                                if (vi.getIdentifier().equalsIgnoreCase(v)) {
+                                    decryptedLinks.add(createLink(vi, allSubtitles));
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         for (DownloadLink dl : decryptedLinks) {
@@ -955,10 +967,15 @@ public class TbCmV2 extends PluginForDecrypt {
             if (variantInfo.videoStream != null) {
 
                 thislink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO, variantInfo.videoStream.getUrl());
+                thislink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO_SEGMENTS, JSonStorage.serializeToJson(variantInfo.videoStream.getSegments()));
+
             }
             if (variantInfo.audioStream != null) {
 
                 thislink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO, variantInfo.audioStream.getUrl());
+
+                thislink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO_SEGMENTS, JSonStorage.serializeToJson(variantInfo.audioStream.getSegments()));
+
             }
             if (variantInfo.data != null) {
 

@@ -1,6 +1,5 @@
 package jd.plugins.components;
 
-
 public class YoutubeStreamData {
 
     private YoutubeClipData clip;
@@ -25,6 +24,16 @@ public class YoutubeStreamData {
 
     public String getUrl() {
         return url;
+    }
+
+    private String[] segments;
+
+    public String[] getSegments() {
+        return segments;
+    }
+
+    public void setSegments(String[] segments) {
+        this.segments = segments;
     }
 
     public YoutubeITAG getItag() {
