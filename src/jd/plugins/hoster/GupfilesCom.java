@@ -202,7 +202,7 @@ public class GupfilesCom extends PluginForHost {
             try {
                 if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                     fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                    if (br.containsHTML(">No such file<")) {
+                    if (altbr.containsHTML(">No such file<")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                 }

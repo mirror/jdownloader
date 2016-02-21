@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,9 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "mfs_shorturlscript", "lourl.us", "urlshortener.co.in" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?lourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?urlshortener\\.co\\.in/([a-zA-Z0-9_\\-]+)$" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "mfs_shorturlscript", "lourl.us", "urlshortener.co.in", "gourl.us" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?lourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?urlshortener\\.co\\.in/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$" }, flags = { 0 })
 public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
 
     /**
@@ -68,20 +68,21 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
         }
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         setConstants(param);
         final String parameter = param.toString().replaceFirst("^https?://", (supportsHTTPS ? "https://" : "http://"));
         final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // redirects happen
-        br.getPage(parameter);
+        getPage(parameter);
         // password files
         final String redirect = br.getRedirectLocation();
         if (!inValidate(redirect)) {
             if (StringUtils.containsIgnoreCase(redirect, Browser.getHost(redirect) + "/error.html?")) {
                 return decryptedLinks;
             }
-            br.getPage(redirect);
+            getPage(redirect);
             final int repeat = 3;
             Form password = br.getFormByInputFieldKeyValue("accessPass", "");
             for (int i = 0; i <= repeat; i++) {
@@ -93,7 +94,7 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
                 password.put("accessPass", Encoding.urlEncode(pass));
-                br.submitForm(password);
+                submitForm(password);
                 password = br.getFormByInputFieldKeyValue("accessPass", "");
                 if (password != null) {
                     if (i + 1 >= repeat) {
@@ -111,13 +112,13 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
             logger.warning("Possible Plugin Defect, confirm in browser: " + parameter);
             return decryptedLinks;
         }
-        br.getPage(frame);
-        String link = br.getRegex("<a [^>]*href=\"(.*?)\" class=[^>]+>skip advert\\s*></a>").getMatch(0);
+        getPage(frame);
+        String link = br.getRegex("<a [^>]*[^\\S]*href=\"(.*?)\" class=[^>]+>skip advert\\s*</a>").getMatch(0);
         if (link == null) {
             link = br.getRegex("<a [^>]*href=\"(sk_redirect_ads\\.html\\?url=" + fuid + ")\"").getMatch(0);
             if (link != null) {
                 final Browser br2 = br.cloneBrowser();
-                br2.getPage(link);
+                getPage(br2, link);
                 link = br2.getRedirectLocation();
                 if (link == null) {
                     logger.warning("Possible Plugin Defect, confirm in browser: " + parameter);

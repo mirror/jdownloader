@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -29,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save-link.info" }, urls = { "https?://(?:www\\.)?(?:save\\-link\\.info|share\\-link\\.info|h\\-link\\.us|forexurls\\.net|zmelody\\.com|filmey\\.co)/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save-link.info" }, urls = { "https?://(?:www\\.)?(?:links-secure\\.com|save-link\\.info|share-link\\.info|h-link\\.us|forexurls\\.net|zmelody\\.com|filmey\\.co)/[0-9]+" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {
@@ -37,19 +38,15 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
     }
 
     public String[] siteSupportedNames() {
-        return new String[] { "save-link.info", "share-link.info", "h-link.us", "forexurls.net", "zmelody.com", "forexshare.net", "filmey.co" };
+        return new String[] { "links-secure.com", "save-link.info", "share-link.info", "h-link.us", "forexurls.net", "zmelody.com", "forexshare.net", "filmey.co" };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setFollowRedirects(false);
-        // finallink2 is used for unusual zero10 crypters like arbforce
-        String finallink2 = null;
-        String finallink = null;
-        String ID = new Regex(parameter, "/([0-9A-Z]+)$").getMatch(0);
-        String domain = new Regex(parameter.replaceAll("(www\\.|http://)", ""), "(.+)/" + ID).getMatch(0);
-        String m1link = "http://" + domain + "/m1.php?id=" + ID;
+        final String ID = new Regex(parameter, "/([0-9A-Z]+)$").getMatch(0);
+        final String m1link = Request.getLocation("/m1.php?id=" + ID, br.createGetRequest(parameter));
         br.getPage(m1link);
         // little errorhandling
         if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(ID)) {
@@ -58,15 +55,17 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }
-        finallink = br.getRegex("onclick=\"NewWindow\\(\\'(.*?)\\',\\'name\\'").getMatch(0);
+        String finallink = br.getRegex("onclick=\"NewWindow\\('([^']+)','name'").getMatch(0);
         if (finallink == null) {
-            finallink = br.getRegex("a href=\"(htt.*?)\"").getMatch(0);
-        }
-        if (finallink == null) {
-            finallink = finallink2;
-        }
-        if (finallink == null) {
-            return null;
+            // links-secure.com
+            finallink = br.getRegex("<a id=(\"|')download\\1 href=(\"|')(.*?)\\2").getMatch(2);
+            if (finallink == null) {
+                // generic failover, this will bring up false positives
+                finallink = br.getRegex("a href=\"(htt.*?)\"").getMatch(0);
+                if (finallink == null) {
+                    return null;
+                }
+            }
         }
         if ("".equals(finallink)) {
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));

@@ -786,7 +786,7 @@ public class WorldBytezCom extends antiDDoSForHost {
         if (!br.getURL().contains("/?op=my_account")) {
             getPage("/?op=my_account");
         }
-        final String space[] = new Regex(correctedBR, ">\\s*Used space:\\s*(?:<[^>]+>)*([0-9\\.]+)\\s*of \\d+ (KB|MB|GB|TB)?\\s*<").getRow(0);
+        final String space[] = new Regex(correctedBR, ">\\s*Used space:?\\s*(?:<[^>]+>)*([0-9\\.]+)\\s*of \\d+ (KB|MB|GB|TB)?\\s*<").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -805,11 +805,13 @@ public class WorldBytezCom extends antiDDoSForHost {
             expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if (expiretime - System.currentTimeMillis() <= 0 || expire == null) {
+            account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
             // free accounts can still have captcha.
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
         } else {
+            account.setType(AccountType.PREMIUM);
             ai.setValidUntil(expiretime);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
