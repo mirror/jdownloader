@@ -25,12 +25,15 @@ import jd.plugins.PluginForDecrypt;
 
 public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForDecrypt> {
 
-    public CaptchaHelperCrawlerPluginRecaptchaV2(PluginForDecrypt plugin, Browser br, String siteKey) {
-        super(plugin, br, siteKey);
-
+    public CaptchaHelperCrawlerPluginRecaptchaV2(final PluginForDecrypt plugin, final Browser br, final String siteKey, final String secureToken) {
+        super(plugin, br, siteKey, secureToken);
     }
 
-    public CaptchaHelperCrawlerPluginRecaptchaV2(PluginForDecrypt plugin, Browser br) {
+    public CaptchaHelperCrawlerPluginRecaptchaV2(final PluginForDecrypt plugin, final Browser br, final String siteKey) {
+        this(plugin, br, siteKey, null);
+    }
+
+    public CaptchaHelperCrawlerPluginRecaptchaV2(final PluginForDecrypt plugin, final Browser br) {
         this(plugin, br, null);
     }
 
@@ -39,15 +42,18 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
         }
-        String apiKey = siteKey;
-        if (apiKey == null) {
-            apiKey = getRecaptchaV2ApiKey();
-            if (apiKey == null) {
+        if (siteKey == null) {
+            getSiteKey();
+            if (siteKey == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "RecaptchaV2 API Key can not be found");
             }
         }
+        if (secureToken == null) {
+            secureToken = getSecureToken();
+            // non fatal if secureToken is null.
+        }
         final PluginForDecrypt plugin = getPlugin();
-        final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, getSecureToken(), plugin, br, getSiteDomain(), getSiteUrl());
+        final RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, secureToken, plugin, br, getSiteDomain(), getSiteUrl());
         c.setTimeout(plugin.getCaptchaTimeout());
         plugin.invalidateLastChallengeResponse();
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);

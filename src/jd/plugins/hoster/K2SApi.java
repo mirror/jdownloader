@@ -1482,60 +1482,70 @@ public abstract class K2SApi extends PluginForHost {
                     cloudflare = ibr.getFormbyProperty("id", "challenge-form");
                 }
                 if (responseCode == 403 && cloudflare != null) {
-                    // new method seems to be within 403
-                    if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                        // recapthcha v2
-                        if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
-                            final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                            this.setDownloadLink(dllink);
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr).getToken();
-                            cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        } else {
-                            // recapthca v1
-                            if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                                // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                                // we will manually remove all those
-                                while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                                    cloudflare.remove("recaptcha_response_field");
-                                }
-                                while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                                    cloudflare.remove("recaptcha_challenge_field");
-                                }
-                                // this one is null, needs to be ""
-                                if (cloudflare.hasInputFieldByName("message")) {
-                                    cloudflare.remove("message");
-                                    cloudflare.put("messsage", "\"\"");
-                                }
-                                // recaptcha bullshit,
-                                String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                                if (apiKey == null) {
-                                    apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                                    if (apiKey == null) {
-                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                    }
-                                }
-                                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                                final Recaptcha rc = new Recaptcha(ibr, this);
-                                rc.setId(apiKey);
-                                rc.load();
-                                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                                final String response = getCaptchaCode("recaptcha", cf, dllink);
-                                if (inValidate(response)) {
-                                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                                }
-                                cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                                cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+                    // recapthcha v2
+                    if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                        this.setDownloadLink(dllink);
+                        final Form cf = cloudflare;
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+
+                            @Override
+                            public String getSiteKey() {
+                                return getSiteKey(cf.getHtmlCode());
                             }
+
+                            @Override
+                            public String getSecureToken() {
+                                return getSecureToken(cf.getHtmlCode());
+                            }
+
+                        }.getToken();
+                        cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } else {
+                        // recapthca v1
+                        if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                            // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                            // we will manually remove all those
+                            while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                                cloudflare.remove("recaptcha_response_field");
+                            }
+                            while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                                cloudflare.remove("recaptcha_challenge_field");
+                            }
+                            // this one is null, needs to be ""
+                            if (cloudflare.hasInputFieldByName("message")) {
+                                cloudflare.remove("message");
+                                cloudflare.put("messsage", "\"\"");
+                            }
+                            // recaptcha bullshit,
+                            String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                            if (apiKey == null) {
+                                apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                                if (apiKey == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                            }
+                            final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                            final Recaptcha rc = new Recaptcha(ibr, this);
+                            rc.setId(apiKey);
+                            rc.load();
+                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                            final String response = getCaptchaCode("recaptcha", cf, dllink);
+                            if (inValidate(response)) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                            cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                            cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         }
-                        ibr.submitForm(cloudflare);
-                        if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                            logger.warning("Wrong captcha");
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        // if it works, there should be a redirect.
-                        if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                            ibr.getPage(ibr.getRedirectLocation());
-                        }
+                    }
+                    ibr.submitForm(cloudflare);
+                    if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
+                        logger.warning("Wrong captcha");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    // if it works, there should be a redirect.
+                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                        ibr.getPage(ibr.getRedirectLocation());
                     }
                 } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
                     // website address could be www. or what ever prefixes, need to make sure
@@ -1670,6 +1680,7 @@ public abstract class K2SApi extends PluginForHost {
                 antiDDoSCookies.putAll(cookies);
             }
         }
+
     }
 
     /**

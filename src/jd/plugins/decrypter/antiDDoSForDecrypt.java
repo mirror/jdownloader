@@ -490,7 +490,20 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         if (responseCode == 403 && cloudflare != null) {
             // recapthcha v2
             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr).getToken();
+                final Form cf = cloudflare;
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
+
+                    @Override
+                    public String getSiteKey() {
+                        return getSiteKey(cf.getHtmlCode());
+                    }
+
+                    @Override
+                    public String getSecureToken() {
+                        return getSecureToken(cf.getHtmlCode());
+                    }
+
+                }.getToken();
                 cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             // recapthca v1

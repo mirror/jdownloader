@@ -490,7 +490,20 @@ public abstract class antiDDoSForHost extends PluginForHost {
             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
                 final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
                 this.setDownloadLink(dllink);
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr).getToken();
+                final Form cf = cloudflare;
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+
+                    @Override
+                    public String getSiteKey() {
+                        return getSiteKey(cf.getHtmlCode());
+                    }
+
+                    @Override
+                    public String getSecureToken() {
+                        return getSecureToken(cf.getHtmlCode());
+                    }
+
+                }.getToken();
                 cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             // recapthca v1
