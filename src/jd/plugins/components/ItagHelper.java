@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;
@@ -21,6 +20,7 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 
 import jd.http.Browser;
+import jd.http.QueryInfo;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 
@@ -319,7 +319,7 @@ public class ItagHelper {
         return null;
     }
 
-    private Map<String, String>     query;
+    private QueryInfo               query;
     private String                  url;
     private String                  itag;
     private Browser                 br;
@@ -328,7 +328,7 @@ public class ItagHelper {
     private YoutubeClipData         vid;
     private File                    file;
 
-    public ItagHelper(YoutubeClipData vid, Browser br, Map<String, String> query, String url) {
+    public ItagHelper(YoutubeClipData vid, Browser br, QueryInfo query, String url) {
         this.query = query;
         this.url = url;
         this.itag = query.get("itag");

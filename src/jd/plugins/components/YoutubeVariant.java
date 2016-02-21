@@ -1193,6 +1193,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return _GUI.T.YoutubeVariant_filenametag_MP4_1080();
         }
     },
+
     MP4_360("MP4_360", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
         public String _getName() {
@@ -2175,9 +2176,74 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         public String getQualityExtension() {
             return _GUI.T.YoutubeVariant_nametag_generic_video("480p 24fps");
         }
-    }
+    } // hls
+    ,
+    HLS_MP4_720("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_720P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
 
-    ;
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_nametag_generic_video("720p");
+        }
+    },
+    HLS_MP4_480("MP4_480", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_480P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_nametag_generic_video("480p");
+        }
+    },
+    HLS_MP4_360("MP4_360", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_360P_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_nametag_generic_video("360p");
+        }
+    },
+    HLS_MP4_240("MP4_240", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_240P_15FPS_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_nametag_generic_video("240p");
+        }
+    },
+    HLS_MP4_240_2("MP4_240", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_240P_AUDIO_AAC_2, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_nametag_generic_video("240p");
+        }
+    },
+    HLS_MP4_72("MP4_72", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.HLS_VIDEO, "mp4", YoutubeITAG.HLS_VIDEO_MP4_72P_6FPS_AUDIO_AAC, null, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI.T.YoutubeVariant_name_generic_video2(getQualityExtension(), getVideoCodec(), getAudioQuality(), getAudioCodec());
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI.T.YoutubeVariant_nametag_generic_video("72p");
+        }
+    };
 
     private YoutubeConverter                           converter;
     final private String                               fileExtension;

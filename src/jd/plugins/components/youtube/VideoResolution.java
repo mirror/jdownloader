@@ -11,7 +11,8 @@ public enum VideoResolution implements MediaQualityInterface {
     P_360(360, 1),
     P_480(480, 1),
     P_720(720, 1),
-    P_4320(4320, 1);
+    P_4320(4320, 1),
+    P_72(72, 1);
     private double rating = -1;
 
     private VideoResolution(double rating, double modifier) {

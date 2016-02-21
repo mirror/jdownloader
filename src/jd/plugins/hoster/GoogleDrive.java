@@ -16,11 +16,12 @@
 
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.QueryInfo;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -199,7 +200,7 @@ public class GoogleDrive extends PluginForHost {
                 links[i] = unescape(links[i]);
             }
 
-            final LinkedHashMap<String, String> query = Request.parseQuery(links[0]);
+            final QueryInfo query = Request.parseQuery(links[0]);
             streamLink = Encoding.urlDecode(query.get("url"), false);
         }
         br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");

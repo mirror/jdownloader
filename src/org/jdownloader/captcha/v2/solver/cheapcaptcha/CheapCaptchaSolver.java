@@ -1,17 +1,9 @@
 package org.jdownloader.captcha.v2.solver.cheapcaptcha;
 
-import java.util.LinkedHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
-import jd.nutils.encoding.Encoding;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -33,6 +25,14 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CHEAP_CAPTCHA;
 import org.seamless.util.io.IO;
+
+import jd.http.Browser;
+import jd.http.QueryInfo;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
+import jd.nutils.encoding.Encoding;
 
 public class CheapCaptchaSolver extends CESChallengeSolver<String> {
 
@@ -135,7 +135,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
             if (null != checkUrl) {
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
                 while (true) {
-                    LinkedHashMap<String, String> pollResponse = Request.parseQuery(br.getPage(checkUrl));
+                    QueryInfo pollResponse = Request.parseQuery(br.getPage(checkUrl));
                     String txt = Encoding.urlDecode(pollResponse.get("text"), false);
                     boolean solved = StringUtils.isNotEmpty(txt);
                     if (!"1".equals(pollResponse.get("is_correct"))) {
@@ -229,7 +229,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
             if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
                 throw new WTFException(br.toString());
             }
-            LinkedHashMap<String, String> response = Request.parseQuery(br.toString());
+            QueryInfo response = Request.parseQuery(br.toString());
             ret.setUserName(response.get("user") + " (" + config.getUserName() + ")");
             ret.setBalance(Double.parseDouble(response.get("balance")) / 100);
 

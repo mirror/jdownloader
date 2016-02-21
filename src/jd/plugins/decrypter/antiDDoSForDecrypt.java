@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -37,7 +38,6 @@ import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
 import jd.http.requests.PostRequest;
-import jd.http.requests.RequestVariable;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -218,7 +218,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected void postPageRaw(final Browser ibr, final String page, final String post, final boolean isJson) throws Exception {
-        final PostRequest request = ibr.createPostRequest(page, new ArrayList<RequestVariable>(), null);
+        final PostRequest request = ibr.createPostRequest(page, new ArrayList<KeyValueStringEntry>(), null);
         request.setPostDataString(post);
         setContentType(request, isJson);
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we

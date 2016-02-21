@@ -1,6 +1,8 @@
 package jd.plugins.decrypter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -9,8 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -22,7 +24,14 @@ import javax.script.ScriptEngineManager;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
@@ -40,6 +49,17 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
@@ -47,6 +67,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.QueryInfo;
 import jd.http.Request;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
@@ -78,9 +99,16 @@ import jd.plugins.components.youtube.MediaTagsVarious;
 import jd.plugins.components.youtube.VideoCodec;
 import jd.plugins.components.youtube.VideoContainer;
 import jd.plugins.components.youtube.VideoResolution;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 
 public class YoutubeHelper implements YoutubeHelperInterface {
+    private static final String REGEX_DASHMPD_FROM_JSPLAYER_SETUP = "\"dashmpd\"\\s*:\\s*(\".*?\")";
+
+    private static final String REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP = "\"adaptive_fmts\"\\s*:\\s*(\".*?\")";
+
+    private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
+
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         MediaTagsVarious.VIDEO_FPS_60.setRating(cfg.getRating60Fps() / 100d);
@@ -99,17 +127,17 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         VideoCodec.VP9_BETTER_PROFILE_2.setRating(vp9 + 2);
     }
 
-    public static final String    PAID_VIDEO        = "Paid Video:";
+    public static final String PAID_VIDEO = "Paid Video:";
 
-    protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
+    protected static final String YT_CHANNEL_ID = "YT_CHANNEL_ID";
 
-    protected static final String YT_DURATION       = "YT_DURATION";
+    protected static final String YT_DURATION = "YT_DURATION";
 
-    protected static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
+    protected static final String YT_DATE_UPDATE = "YT_DATE_UPDATE";
 
     protected static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
 
-    private Browser               br;
+    private Browser br;
 
     public Browser getBr() {
         return br;
@@ -119,7 +147,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         this.br = br;
     }
 
-    private final YoutubeConfig           cfg;
+    private final YoutubeConfig cfg;
 
     private final LogInterface            logger;
     private String                        base;
@@ -585,18 +613,22 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         });
     }
 
-    public static final String YT_EXT             = "YT_EXT";
-    public static final String YT_TITLE           = "YT_TITLE";
-    public static final String YT_PLAYLIST_INT    = "YT_PLAYLIST_INT";
-    public static final String YT_ID              = "YT_ID";
-    public static final String YT_AGE_GATE        = "YT_AGE_GATE";
-    public static final String YT_CHANNEL         = "YT_CHANNEL";
-    public static final String YT_USER            = "YT_USER";
-    public static final String YT_DATE            = "YT_DATE";
-    public static final String YT_VARIANTS        = "YT_VARIANTS";
-    public static final String YT_VARIANT         = "YT_VARIANT";
-    public static final String YT_STREAMURL_VIDEO = "YT_STREAMURL_VIDEO";
-    public static final String YT_STREAMURL_AUDIO = "YT_STREAMURL_AUDIO";
+    public static final String YT_EXT                      = "YT_EXT";
+    public static final String YT_TITLE                    = "YT_TITLE";
+    public static final String YT_PLAYLIST_INT             = "YT_PLAYLIST_INT";
+    public static final String YT_ID                       = "YT_ID";
+    public static final String YT_AGE_GATE                 = "YT_AGE_GATE";
+    public static final String YT_CHANNEL                  = "YT_CHANNEL";
+    public static final String YT_USER                     = "YT_USER";
+    public static final String YT_DATE                     = "YT_DATE";
+    public static final String YT_VARIANTS                 = "YT_VARIANTS";
+    public static final String YT_VARIANT                  = "YT_VARIANT";
+    public static final String YT_STREAMURL_VIDEO          = "YT_STREAMURL_VIDEO";
+    public static final String YT_STREAMURL_AUDIO          = "YT_STREAMURL_AUDIO";
+    public static final String YT_STREAMURL_VIDEO_SEGMENTS = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String YT_STREAMURL_AUDIO_SEGMENTS = "YT_STREAMURL_AUDIO_SEGMENTS";
+
+    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
 
@@ -682,6 +714,20 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     }
 
     private HashMap<String, HashMap<String, String>> jsCache = new HashMap<String, HashMap<String, String>>();
+
+    private HashSet<String> fmtMaps;
+
+    private HashSet<String> mpdUrls;
+
+    private HashMap<String, String> videoInfo;
+
+    private boolean hlsEnabled = false;
+
+    private boolean dashMpdEnabled = true;
+
+    private boolean adaptiveFmtsEnabled = true;
+
+    private boolean fmtMapEnabled = true;
 
     String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
         if (sig == null) {
@@ -912,6 +958,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 match = match.replaceAll("<a.*?href=\"([^\"]*)\".*?>(.*?)</a\\s*>", "$1");
                 vid.description = match;
 
+            } else {
+                // video has no description
+                vid.description = "";
             }
         }
         if (StringUtils.isEmpty(vid.title)) {
@@ -1130,13 +1179,23 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             html5PlayerJs = "http:" + html5PlayerJs;
         }
         String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
+        fmtMaps = new HashSet<String>();
+        mpdUrls = new HashSet<String>();
+        videoInfo = new HashMap<String, String>();
 
         vid.ageCheck = br.containsHTML("age-gate");
         this.handleContentWarning(br);
+
+        collectMapsFormHtmlSource(br.getRequest().getHtmlCode());
+
         Browser apiBrowser = null;
 
-        boolean apiRequired = br.getRegex("\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")").getMatch(0) == null;
+        boolean apiRequired = br.getRegex(REGEX_FMT_MAP_FROM_JSPLAYER_SETUP).getMatch(0) == null;
 
+        apiBrowser = this.br.cloneBrowser();
+        apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&el=info&ps=default&eurl=&gl=US&hl=en");
+
+        collectMapsFromVideoInfo(apiBrowser.toString());
         if (apiRequired) {
             apiBrowser = this.br.cloneBrowser();
             apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
@@ -1243,37 +1302,31 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         doFeedScan(vid);
         doUserAPIScan(vid);
 
-        String html5_fmt_map;
-        String dashFmt;
-        String dashmpd;
-        if (apiRequired) {
-            // age check bypass active
+        // String html5_fmt_map;
+        // String dashFmt;
+        // String dashmpd;
+        // if (apiRequired) {
+        // // age check bypass active
+        //
+        // html5_fmt_map = apiBrowser.getRegex("url_encoded_fmt_stream_map\\s*=\\s*(.*?)(&|$)").getMatch(0);
+        // html5_fmt_map = Encoding.htmlDecode(html5_fmt_map);
+        //
+        // dashFmt = apiBrowser.getRegex("adaptive_fmts\\s*=\\s*(.*?)(&|$)").getMatch(0);
+        // dashFmt = Encoding.htmlDecode(dashFmt);
+        //
+        // dashmpd = apiBrowser.getRegex("dashmpd\\s*=\\s*(.*?)(&|$)").getMatch(0);
+        // dashmpd = Encoding.htmlDecode(dashmpd);
+        //
+        // } else {
+        // regular url testlink: http://www.youtube.com/watch?v=4om1rQKPijI
 
-            html5_fmt_map = apiBrowser.getRegex("url_encoded_fmt_stream_map\\s*=\\s*(.*?)(&|$)").getMatch(0);
-            html5_fmt_map = Encoding.htmlDecode(html5_fmt_map);
+        collectMapsFormHtmlSource(br.getRequest().getHtmlCode());
+        // }
+        for (String fmt : fmtMaps) {
 
-            dashFmt = apiBrowser.getRegex("adaptive_fmts\\s*=\\s*(.*?)(&|$)").getMatch(0);
-            dashFmt = Encoding.htmlDecode(dashFmt);
-
-            dashmpd = apiBrowser.getRegex("dashmpd\\s*=\\s*(.*?)(&|$)").getMatch(0);
-            dashmpd = Encoding.htmlDecode(dashmpd);
-
-        } else {
-            // regular url testlink: http://www.youtube.com/watch?v=4om1rQKPijI
-
-            html5_fmt_map = this.br.getRegex("\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")").getMatch(0);
-
-            html5_fmt_map = JSonStorage.restoreFromString(html5_fmt_map, TypeRef.STRING);
-
-            dashFmt = this.br.getRegex("\"adaptive_fmts\"\\s*:\\s*(\".*?\")").getMatch(0);
-            dashFmt = JSonStorage.restoreFromString(dashFmt, TypeRef.STRING);
-            dashmpd = this.br.getRegex("\"dashmpd\"\\s*:\\s*(\".*?\")").getMatch(0);
-            dashmpd = JSonStorage.restoreFromString(dashmpd, TypeRef.STRING);
-        }
-        if (html5_fmt_map != null) {
-            for (final String line : html5_fmt_map.split("\\,")) {
+            for (final String line : fmt.split(",")) {
                 try {
-                    final YoutubeStreamData match = this.parseLine(vid, line, html5PlayerJs);
+                    final YoutubeStreamData match = this.parseLine(vid, Request.parseQuery(line), html5PlayerJs);
                     if (match != null) {
                         if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
                             continue;
@@ -1285,93 +1338,209 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 }
             }
         }
-        if (dashFmt != null) {
-            for (final String line : dashFmt.split("\\,")) {
+        if (cfg.isExternMultimediaToolUsageEnabled()) {
+            mpd: for (String mpdUrl : mpdUrls) {
                 try {
-                    final YoutubeStreamData match = this.parseLine(vid, line, html5PlayerJs);
-                    if (match != null) {
-                        if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
-                            continue;
-                        }
-                        ret.put(match.getItag(), match);
-                    }
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        try {
-            if (dashmpd != null && cfg.isExternMultimediaToolUsageEnabled()) {
-                Browser clone = br.cloneBrowser();
-                clone.getPage(dashmpd);
-                String[] repres = clone.getRegex("(<Representation.*?</Representation>)").getColumn(0);
-                for (String r : repres) {
-                    // System.out.println(r);
 
-                    String url = new Regex(r, "<BaseURL( yt:contentLength=\"\\d+\")?>(.*?)</BaseURL>").getMatch(1);
-                    if (url.matches("https?://.*?googlevideo.com/videoplayback/.*/")) {
-                        String[][] params = new Regex(url, "/([^/]+)/([^/]+)").getMatches();
-                        LinkedHashMap<String, String> query = new LinkedHashMap<String, String>();
-                        String[][] xmlArguments = new Regex(r, "\\s+(\\w+)=\"([^\"]+)").getMatches();
-                        if (xmlArguments != null) {
-                            for (int i = 0; i < xmlArguments.length; i++) {
-                                query.put(xmlArguments[i][0], xmlArguments[i][1]);
+                    Browser clone = br.cloneBrowser();
+                    clone.getPage(mpdUrl);
+                    String xml = clone.getRequest().getHtmlCode();
+                    if (xml.trim().startsWith("#EXTM3U")) {
+                        ArrayList<HlsContainer> containers = GenericM3u8Decrypter.getHlsQualities(clone);
+                        for (HlsContainer c : containers) {
+                            System.out.println(1);
+                            String[][] params = new Regex(c.downloadurl, "/([^/]+)/([^/]+)").getMatches();
+                            final QueryInfo query = Request.parseQuery(c.downloadurl);
+                            if (params != null) {
+                                for (int i = 1; i < params.length; i++) {
+                                    query.addAndReplace(params[i][0], Encoding.htmlDecode(params[i][1]));
+                                }
                             }
-                        }
-                        for (int i = 1; i < params.length; i++) {
-                            query.put(params[i][0], Encoding.htmlDecode(params[i][1]));
-                        }
-                        if ((!query.containsKey("type"))) {
-                            query.put("type", query.get("codecs") + "-" + query.get("mime"));
-                        }
-                        if ((!query.containsKey("fps"))) {
-                            query.put("fps", query.get("frameRate"));
-                        }
-                        if ((!query.containsKey("size") && query.containsKey("width") && query.containsKey("height"))) {
-                            query.put("size", query.get("width") + "x" + query.get("height"));
-                        }
-                        handleQuery(vid, ret, html5PlayerJs, r, url, query);
-                    } else if (url.matches("https?://.*?googlevideo.com/videoplayback?.*")) {
-                        url = Encoding.htmlDecode(url);
-                        final LinkedHashMap<String, String> query = Request.parseQuery(url);
-                        String[][] xmlArguments = new Regex(r, "\\s+(\\w+)=\"([^\"]+)").getMatches();
-                        if (xmlArguments != null) {
-                            for (int i = 0; i < xmlArguments.length; i++) {
-                                query.put(xmlArguments[i][0], xmlArguments[i][1]);
-                            }
-                        }
 
-                        if ((!query.containsKey("type"))) {
-                            query.put("type", query.get("codecs") + "-" + query.get("mime"));
+                            query.addIfNoAvailable("codecs", c.codecs);
+                            query.addIfNoAvailable("type", query.get("codecs") + "-" + query.get("mime"));
+
+                            query.addIfNoAvailable("fps", query.get("frameRate"));
+                            query.addIfNoAvailable("width", c.width + "");
+                            query.addIfNoAvailable("height", c.height + "");
+                            if (query.containsKey("width") && query.containsKey("height")) {
+                                query.addIfNoAvailable("size", query.get("width") + "x" + query.get("height"));
+                            }
+                            String fps = query.get("fps");
+                            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.width, c.height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
+                            validateItag(query.get("size"), c.height, query.get("type"), itag);
+                            YoutubeStreamData vsd;
+                            ret.put(itag, vsd = new YoutubeStreamData(vid, c.downloadurl, itag));
+                            // NodeList segmentListNodes = representation.getElementsByTagName("SegmentList");
+                            // ArrayList<String> segmentsList = new ArrayList<String>();
+                            // if (segmentListNodes != null && segmentListNodes.getLength() > 0) {
+                            // // we have segments
+                            //
+                            // Node segments = segmentListNodes.item(0);
+                            // NodeList childs = segments.getChildNodes();
+                            // for (int c = 0; c < childs.getLength(); c++) {
+                            // String seg = ((Element) childs.item(c)).getAttribute("sourceURL");
+                            // if (StringUtils.isEmpty(seg)) {
+                            // seg = ((Element) childs.item(c)).getAttribute("media");
+                            // }
+                            // segmentsList.add(seg);
+                            // }
+                            //
+                            // }
+                            // if (url != null && itag != null) {
+                            //
+
+                            // if (segmentsList.size() > 0) {
+                            // vsd.setSegments(segmentsList.toArray(new String[] {}));
+                            // }
+
                         }
-                        if ((!query.containsKey("fps"))) {
-                            query.put("fps", query.get("frameRate"));
-                        }
-                        if ((!query.containsKey("size") && query.containsKey("width") && query.containsKey("height"))) {
-                            query.put("size", query.get("width") + "x" + query.get("height"));
-                        }
-                        handleQuery(vid, ret, html5PlayerJs, r, url, query);
                     } else {
-                        throw new Exception("Unknown DashUrl");
+                        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+                        docFactory.setValidating(false);
+
+                        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+                        docBuilder.setEntityResolver(new EntityResolver() {
+
+                            @Override
+                            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+                                return null;
+                            }
+                        });
+
+                        docBuilder.setErrorHandler(new ErrorHandler() {
+
+                            @Override
+                            public void warning(SAXParseException exception) throws SAXException {
+                                logger.log(exception);
+                            }
+
+                            @Override
+                            public void fatalError(SAXParseException exception) throws SAXException {
+                                logger.log(exception);
+                            }
+
+                            @Override
+                            public void error(SAXParseException exception) throws SAXException {
+                                logger.log(exception);
+                            }
+                        });
+                        Document doc = docBuilder.parse(new InputSource(new StringReader(xml)));
+                        NodeList representations = doc.getElementsByTagName("Representation");
+                        for (int r = 0; r < representations.getLength(); r++) {
+                            Element representation = (Element) representations.item(r);
+                            Element baseUrlElement = (Element) representation.getElementsByTagName("BaseURL").item(0);
+                            String contentLength = baseUrlElement.getAttribute("yt:contentLength");
+                            String url = baseUrlElement.getTextContent();
+
+                            String[][] params = new Regex(url, "/([^/]+)/([^/]+)").getMatches();
+                            final QueryInfo query = Request.parseQuery(url);
+                            if (params != null) {
+                                for (int i = 1; i < params.length; i++) {
+                                    query.addAndReplace(params[i][0], Encoding.htmlDecode(params[i][1]));
+                                }
+                            }
+                            handleQuery(vid, representation, ret, html5PlayerJs, url, query);
+
+                        }
                     }
 
+                } catch (BrowserException e) {
+                    logger.log(e);
+                } catch (Throwable e) {
+                    logger.log(e);
+                    Map<String, String> infos = new HashMap<String, String>();
+                    infos.put("name", e.getMessage());
+                    infos.put("stacktrace", Exceptions.getStackTrace(e));
+                    StatsManager.I().track(0, null, "loadVideo/Exception", infos, CollectionName.PLUGINS);
                 }
             }
-        } catch (BrowserException e) {
-            logger.log(e);
-        } catch (Throwable e) {
-            logger.log(e);
-            Map<String, String> infos = new HashMap<String, String>();
-            infos.put("name", e.getMessage());
-            infos.put("stacktrace", Exceptions.getStackTrace(e));
-            StatsManager.I().track(0, null, "loadVideo/Exception", infos, CollectionName.PLUGINS);
         }
-
         for (YoutubeStreamData sd : loadThumbnails(vid)) {
             ret.put(sd.getItag(), sd);
         }
 
         return ret;
+    }
+
+    private void collectFmtMap(String htmlCode, String regex) {
+        String map = new Regex(htmlCode, regex).getMatch(0);
+        if (map == null) {
+            return;
+        }
+        map = JSonStorage.restoreFromString(map, TypeRef.STRING);
+
+        if (StringUtils.isNotEmpty(map)) {
+            // map = Encoding.urlDecode(map, false);
+            if (!fmtMaps.contains(map)) {
+                fmtMaps.add(map);
+            }
+        }
+    }
+
+    private void collectMapsFormHtmlSource(String html) {
+        if (fmtMapEnabled) {
+            collectFmtMap(html, REGEX_FMT_MAP_FROM_JSPLAYER_SETUP);
+        }
+        if (adaptiveFmtsEnabled) {
+            collectFmtMap(html, REGEX_ADAPTIVE_FMTS_FROM_JSPLAYER_SETUP);
+        }
+        if (dashMpdEnabled) {
+            collectMpdMap(html, REGEX_DASHMPD_FROM_JSPLAYER_SETUP);
+        }
+        if (hlsEnabled) {
+            collectMpdMap(html, REGEX_HLSMPD_FROM_JSPLAYER_SETUP);
+        }
+    }
+
+    private void collectMapsFromVideoInfo(String queryString) throws MalformedURLException {
+        // QueryInfo map = Request.parseQuery(queryString);
+        if (adaptiveFmtsEnabled) {
+            String adaptive_fmts = videoInfo.get("adaptive_fmts");
+            if (StringUtils.isNotEmpty(adaptive_fmts)) {
+                // adaptive_fmts = Encoding.urlDecode(adaptive_fmts, false);
+                fmtMaps.add(adaptive_fmts);
+
+            }
+        }
+        if (fmtMapEnabled) {
+            String url_encoded_fmt_stream_map = videoInfo.get("url_encoded_fmt_stream_map");
+            if (StringUtils.isNotEmpty(url_encoded_fmt_stream_map)) {
+                // url_encoded_fmt_stream_map = Encoding.urlDecode(url_encoded_fmt_stream_map, false);
+                fmtMaps.add(url_encoded_fmt_stream_map);
+            }
+        }
+        if (dashMpdEnabled) {
+            String dashmpd = videoInfo.get("dashmpd");
+            if (StringUtils.isNotEmpty(dashmpd)) {
+                mpdUrls.add(dashmpd);
+
+            }
+        }
+        if (hlsEnabled) {
+            String hlsvp = videoInfo.get("hlsvp");
+            if (StringUtils.isNotEmpty(hlsvp)) {
+                mpdUrls.add(hlsvp);
+
+            }
+        }
+    }
+
+    private void collectMpdMap(String htmlCode, String regex) {
+        String map = new Regex(htmlCode, regex).getMatch(0);
+        if (map == null) {
+            return;
+        }
+        map = JSonStorage.restoreFromString(map, TypeRef.STRING);
+
+        if (StringUtils.isNotEmpty(map)) {
+            if (!mpdUrls.contains(map)) {
+                // if(!map.toLowerCase(Locale.ENGLISH).startsWith("http"))){
+                // map=br.getBaseURL()
+                // }
+                mpdUrls.add(map);
+            }
+        }
     }
 
     /**
@@ -1384,7 +1553,39 @@ public class YoutubeHelper implements YoutubeHelperInterface {
      * @throws IOException
      * @throws PluginException
      */
-    private void handleQuery(final YoutubeClipData vid, final Map<YoutubeITAG, YoutubeStreamData> ret, String html5PlayerJs, String r, String url, final LinkedHashMap<String, String> query) throws IOException, PluginException {
+    private void handleQuery(final YoutubeClipData vid, Element representation, final Map<YoutubeITAG, YoutubeStreamData> ret, String html5PlayerJs, String url, final QueryInfo query) throws IOException, PluginException {
+        String r = null;
+        try {
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer;
+
+            transformer = transformerFactory.newTransformer();
+
+            DOMSource source = new DOMSource(representation);
+            ByteArrayOutputStream bao;
+            StreamResult result = new StreamResult(bao = new ByteArrayOutputStream());
+            transformer.transform(source, result);
+            // r = result.getWriter().toString();
+            r = new String(bao.toByteArray(), "ASCII");
+
+        } catch (Throwable e1) {
+            logger.log(e1);
+        }
+
+        NamedNodeMap ats = representation.getAttributes();
+        for (int a = 0; a < ats.getLength(); a++) {
+            Attr at = (Attr) ats.item(a);
+            query.addAndReplace(at.getName(), at.getValue());
+
+        }
+
+        query.addIfNoAvailable("type", query.get("codecs") + "-" + query.get("mime"));
+
+        query.addIfNoAvailable("fps", query.get("frameRate"));
+
+        if (query.containsKey("width") && query.containsKey("height")) {
+            query.addIfNoAvailable("size", query.get("width") + "x" + query.get("height"));
+        }
         String signature = new Regex(url, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
 
         if (StringUtils.isEmpty(signature)) {
@@ -1420,17 +1621,51 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (StringUtils.isNotEmpty(type)) {
             type = Encoding.urlDecode(type, false);
         }
-        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, vid.date);
+
+        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
         validateItag(size, height, type, itag);
-        logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
+        logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
+        NodeList segmentListNodes = representation.getElementsByTagName("SegmentList");
+        ArrayList<String> segmentsList = new ArrayList<String>();
+        if (segmentListNodes != null && segmentListNodes.getLength() > 0) {
+            // we have segments
+
+            Node segments = segmentListNodes.item(0);
+            NodeList childs = segments.getChildNodes();
+            for (int c = 0; c < childs.getLength(); c++) {
+                String seg = ((Element) childs.item(c)).getAttribute("sourceURL");
+                if (StringUtils.isEmpty(seg)) {
+                    seg = ((Element) childs.item(c)).getAttribute("media");
+                    String testUrl = url + seg;
+                    // try {
+                    // getBr().openHeadConnection(testUrl);
+                    // System.out.println(getBr().getHttpConnection());
+                    // getBr().getHttpConnection().disconnect();
+                    // if (getBr().getHttpConnection().getResponseCode() != 200) {
+                    // System.out.println("ERROR");
+                    // System.out.println(getBr().getHttpConnection());
+                    // }
+                    // } catch (Throwable e) {
+                    // e.printStackTrace();
+                    // }
+                }
+
+                segmentsList.add(seg);
+            }
+
+        }
         if (url != null && itag != null) {
 
             YoutubeStreamData vsd;
             ret.put(itag, vsd = new YoutubeStreamData(vid, url, itag));
+            if (segmentsList.size() > 0) {
+                vsd.setSegments(segmentsList.toArray(new String[] {}));
+            }
 
         } else {
 
             this.logger.info("Unknown Line: " + r);
+
             this.logger.info("Unknown ITAG: " + query.get("itag"));
             this.logger.info(url + "");
             this.logger.info(query + "");
@@ -1774,15 +2009,16 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return;
     }
 
-    public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
-    public static final String YT_STATIC_URL         = "YT_STATIC_URL";
+    public static final String YT_LENGTH_SECONDS = "YT_LENGTH_SECONDS";
+    public static final String YT_STATIC_URL     = "YT_STATIC_URL";
+
     public static final String YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
     public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";     // Update YoutubeSubtitleName
     public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
-    public static final String YT_BEST_VIDEO         = "YT_BEST_VIDEO";
+    public static final String YT_BEST_VIDEO = "YT_BEST_VIDEO";
 
-    public static final String YT_DESCRIPTION        = "YT_DESCRIPTION";
+    public static final String YT_DESCRIPTION = "YT_DESCRIPTION";
 
     public String createFilename(DownloadLink link) {
 
@@ -1848,16 +2084,24 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         return formattedFilename;
     }
 
-    protected YoutubeStreamData parseLine(final YoutubeClipData vid, final String line, String html5PlayerJs) throws MalformedURLException, IOException, PluginException {
+    protected YoutubeStreamData parseLine(final YoutubeClipData vid, final QueryInfo query, String html5PlayerJs) throws MalformedURLException, IOException, PluginException {
 
-        final LinkedHashMap<String, String> query = Request.parseQuery(line);
-        if (line.contains("conn=rtmp")) {
+        if (StringUtils.equalsIgnoreCase(query.get("conn"), "rtmp")) {
             logger.info("Stream is not supported: " + query);
             vid.error = "RTMP(E) Stream not supported";
             return null;
         }
-        String url = Encoding.htmlDecode(Encoding.urlDecode(query.get("url"), true));
+        String url = query.getDecoded("url");
+        if (url == null) {
+            String fallback_host = query.getDecoded("fallback_host");
+            if (fallback_host != null) {
+                url = new Regex(fallback_host, "url=(.+)").getMatch(0);
 
+            }
+        }
+        if (StringUtils.isEmpty(url)) {
+            throw new WTFException("No Url found " + query);
+        }
         String signature = new Regex(url, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
 
         if (StringUtils.isEmpty(signature)) {
@@ -1898,30 +2142,38 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (StringUtils.isNotEmpty(type)) {
             type = Encoding.urlDecode(type, false);
         }
-        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, vid.date);
-        validateItag(size, height, type, itag);
-        final String quality = Encoding.urlDecode(query.get("quality"), false);
-        logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
-        if (url != null && itag != null) {
+        String itagString = query.get("itag");
 
-            YoutubeStreamData vsd;
-            vsd = new YoutubeStreamData(vid, url, itag);
+        try {
+            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
 
-            return vsd;
-        } else {
-            this.logger.info("Unknown Line: " + line);
-            this.logger.info(url + "");
-            this.logger.info(query + "");
-            try {
+            validateItag(size, height, type, itag);
+            final String quality = Encoding.urlDecode(query.get("quality"), false);
+            logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
+            if (url != null && itag != null) {
 
-                if (!Application.isJared(null)) {
-                    new ItagHelper(vid, br, query, url).run();
+                YoutubeStreamData vsd;
+                vsd = new YoutubeStreamData(vid, url, itag);
+
+                return vsd;
+            } else {
+                this.logger.info("Unknown Line: " + query);
+                this.logger.info(url + "");
+                this.logger.info(query + "");
+                try {
+
+                    if (!Application.isJared(null)) {
+                        new ItagHelper(vid, br, query, url).run();
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
                 }
-            } catch (Exception e) {
-                logger.log(e);
             }
+            return null;
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            throw e;
         }
-        return null;
     }
 
     protected void validateItag(String size, int height, String type, final YoutubeITAG itag) {

@@ -2,6 +2,7 @@ package jd.plugins.components;
 
 import java.util.Date;
 
+import jd.http.QueryInfo;
 import jd.plugins.components.youtube.AudioBitrate;
 import jd.plugins.components.youtube.AudioCodec;
 import jd.plugins.components.youtube.ImageQuality;
@@ -131,7 +132,22 @@ public enum YoutubeITAG {
     MP4_ITAG78_H264_480P_24FPS_AAC_128KBIT(78, "H264", "480p", "AAC", "128kbit", VideoResolution.P_480, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_128),
 
     // not sure - did not find testvideos
-    WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, "VP8", "720p", "Vorbis", "192kbit", VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP8, AudioCodec.VORBIS, AudioBitrate.KBIT_192), ;
+    WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, "VP8", "720p", "Vorbis", "192kbit", VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP8, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
+    // fps 6
+    HLS_VIDEO_MP4_72P_6FPS_AUDIO_AAC(151, "H264", "72P", "AAC", "24kbit", VideoResolution.P_72, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_24, MediaTagsVarious.VIDEO_FPS_6),
+    // fps 15
+    HLS_VIDEO_MP4_240P_15FPS_AUDIO_AAC(132, "H264", "240P", "AAC", "48kbit", VideoResolution.P_240, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_48, MediaTagsVarious.VIDEO_FPS_15),
+
+    HLS_VIDEO_MP4_240P_AUDIO_AAC_2(92, "H264", "240P", "AAC", "48kbit", VideoResolution.P_240, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_48),
+
+    HLS_VIDEO_MP4_360P_AUDIO_AAC(93, "H264", "360P", "AAC", "128kbit", VideoResolution.P_360, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_128),
+
+    HLS_VIDEO_MP4_480P_AUDIO_AAC(94, "H264", "480P", "AAC", "128kbit", VideoResolution.P_480, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_128),
+    HLS_VIDEO_MP4_720P_AUDIO_AAC(95, "H264", "720p", "AAC", "256kbit", VideoResolution.P_720, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_256),
+    HLS_VIDEO_MP4_720P_AUDIO_AAC_300(300, "H264", "720p", "AAC", "256kbit", VideoResolution.P_720, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_256),
+
+    HLS_VIDEO_MP4_1080P_AUDIO_AAC(96, "H264", "1080p", "AAC", "256kbit", VideoResolution.P_1080, VideoContainer.MP4, VideoCodec.H264, AudioCodec.AAC, AudioBitrate.KBIT_256);
+
     public static enum YoutubeITAGVersion {
         // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
         // Before March 2011, YouTube used these audio qualities for several years:
@@ -224,10 +240,20 @@ public enum YoutubeITAG {
     //
     // public static final MediaQualityTags VORBIS_96 = MediaQualityTags.VORBIS_96;
 
-    public static YoutubeITAG get(int itag, int width, int height, int fps, String type, long uploadDate) {
+    public static YoutubeITAG get(int itag, int width, int height, int fps, String type, QueryInfo query, long uploadDate) {
         YoutubeITAGVersion version = null;
-
+        if (query == null) {
+            query = new QueryInfo();
+        }
         switch (itag) {
+        case 132:
+            // https://www.youtube.com/watch?v=KF47Za1lfjM
+            if ("hls_playlist".equals(query.get("manifest")) || (type != null && (type.contains("avc") || type.contains("mp4")))) {
+                return HLS_VIDEO_MP4_240P_15FPS_AUDIO_AAC;
+            } else {
+                return THREEGP_VIDEO_240P_H263_AUDIO_AAC;
+            }
+
         case 138:
             switch (height) {
             case 4320:
@@ -334,6 +360,13 @@ public enum YoutubeITAG {
         this(itag, codecTagVideo, qualityTagVideo, codecTagAudio, qualityTagAudio);
 
         this.qualityTags = new MediaQualityInterface[] { tags, bitrate };
+
+    }
+
+    private YoutubeITAG(final int itag, String codecTagVideo, String qualityTagVideo, String codecTagAudio, String qualityTagAudio, VideoResolution resolution, VideoContainer container, VideoCodec codec, AudioCodec audioCodec, AudioBitrate bitrate, MediaTagsVarious various) {
+        this(itag, codecTagVideo, qualityTagVideo, codecTagAudio, qualityTagAudio);
+
+        this.qualityTags = new MediaQualityInterface[] { resolution, container, codec, audioCodec, bitrate, various };
 
     }
 

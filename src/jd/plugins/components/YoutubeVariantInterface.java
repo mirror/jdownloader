@@ -3,12 +3,12 @@ package jd.plugins.components;
 import java.io.File;
 import java.util.List;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 public interface YoutubeVariantInterface extends LinkVariant {
 
@@ -23,6 +23,7 @@ public interface YoutubeVariantInterface extends LinkVariant {
         IMAGE,
         SUBTITLES,
         DESCRIPTION,
+        HLS_VIDEO,
 
     }
 
