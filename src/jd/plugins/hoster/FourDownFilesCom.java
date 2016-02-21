@@ -54,7 +54,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.net" }, urls = { "https?://(www\\.)?4downfiles\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+// note: 4downfiles.com is parked!
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.net" }, urls = { "https?://(www\\.)?4downfiles\\.(?:net|com)/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class FourDownFilesCom extends PluginForHost {
 
     private String               correctedBR                  = "";
